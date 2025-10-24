@@ -4,7 +4,6 @@
     "version": "1.0.0",
     "description": "Common dependencies and utilities for BudgetBuddy Lambda functions to reduce cold start times and deployment sizes",
     "dependencies": {
-        "_dependencies_comment": "Shared dependencies used across multiple Lambda functions",
         "@aws-sdk/client-dynamodb": "^3.450.0",
         "@aws-sdk/lib-dynamodb": "^3.450.0",
         "@aws-sdk/client-bedrock-runtime": "^3.450.0",
