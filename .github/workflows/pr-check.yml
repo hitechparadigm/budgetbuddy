@@ -23,21 +23,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
-      - name: Enable Corepack
-        run: corepack enable
+          cache: 'npm'
         
       - name: Install dependencies
-        run: yarn install --immutable
+        run: npm ci
         
       - name: Run ESLint
-        run: yarn lint
+        run: npm run lint
         
       - name: Check Prettier formatting
-        run: yarn format:check
+        run: npm run format:check
         
       - name: TypeScript compilation check
-        run: yarn type-check
+        run: npm run type-check
 
   infrastructure-validation:
     name: Infrastructure Validation
@@ -51,20 +49,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
-      - name: Enable Corepack
-        run: corepack enable
+          cache: 'npm'
         
       - name: Install dependencies
-        run: yarn install --immutable
+        run: npm ci
         
       - name: Install CDK dependencies
         working-directory: infrastructure
-        run: yarn install --immutable
+        run: npm ci
         
       - name: Build infrastructure
         working-directory: infrastructure
-        run: yarn build
+        run: npm run build
         
       - name: CDK synthesis validation
         working-directory: infrastructure
@@ -82,18 +78,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
-      - name: Enable Corepack
-        run: corepack enable
+          cache: 'npm'
         
       - name: Install dependencies
-        run: yarn install --immutable
+        run: npm ci
         
       - name: Run unit tests
-        run: yarn test:unit
+        run: npm run test:unit
         
       - name: Generate test coverage
-        run: yarn test:coverage
+        run: npm run test:coverage
         
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -114,15 +108,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
-      - name: Enable Corepack
-        run: corepack enable
+          cache: 'npm'
         
       - name: Install dependencies
-        run: yarn install --immutable
+        run: npm ci
         
-      - name: Run yarn audit
-        run: yarn audit
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
 
   lambda-function-tests:
     name: Lambda Function Tests
@@ -136,12 +128,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
-      - name: Enable Corepack
-        run: corepack enable
+          cache: 'npm'
         
       - name: Install dependencies
-        run: yarn install --immutable
+        run: npm ci
         
       - name: Install Lambda function dependencies
         run: |
@@ -155,7 +145,7 @@ jobs:
           cd ../admin && npm ci
         
       - name: Run Lambda function tests
-        run: yarn test:lambda
+        run: npm run test:lambda
 
   build-validation:
     name: Build Validation
@@ -170,15 +160,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
-      - name: Enable Corepack
-        run: corepack enable
+          cache: 'npm'
         
       - name: Install dependencies
-        run: yarn install --immutable
+        run: npm ci
         
       - name: Build all packages
-        run: yarn build
+        run: npm run build
         
       - name: Validate build artifacts
         run: |
