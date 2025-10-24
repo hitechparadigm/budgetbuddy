@@ -407,18 +407,517 @@ budget-buddy/
 - **PCI Compliance**: Stripe handles all payment card data
 - **Regional Compliance**: Data residency considerations for Canadian users
 
-## Deployment Strategy
+## CI/CD Pipeline Architecture
 
-### Environment Setup
-- **Development**: Local development with DynamoDB Local and Cognito Local
-- **Staging**: Full AWS environment for integration testing
-- **Production**: Multi-region deployment for high availability
+### Overview
+The BudgetBuddy CI/CD pipeline uses GitHub Actions with the hitechparadigm AWS profile to provide automated, secure, and reliable deployments across multiple environments. The pipeline implements infrastructure as code validation, comprehensive testing, and environment-specific deployment strategies.
 
-### CI/CD Pipeline
-- **Code Quality**: ESLint, Prettier, TypeScript compilation
-- **Testing**: Automated test suite execution on all pull requests
-- **Security Scanning**: Snyk for dependency vulnerabilities
-- **Deployment**: Automated deployment to staging on merge, manual promotion to production
+### Pipeline Architecture
+
+```mermaid
+graph TB
+    subgraph "GitHub Repository"
+        MAIN[main branch]
+        DEV[develop branch]
+        FEAT[feature branches]
+        PR[Pull Requests]
+    end
+    
+    subgraph "GitHub Actions Workflows"
+        CI[CI Workflow<br/>Test & Validate]
+        DEV_DEPLOY[Dev Deploy<br/>Auto on main]
+        STAGING_DEPLOY[Staging Deploy<br/>Manual trigger]
+        PROD_DEPLOY[Prod Deploy<br/>Manual approval]
+    end
+    
+    subgraph "AWS Environments"
+        DEV_ENV[Development<br/>budgetbuddy-dev-*]
+        STAGING_ENV[Staging<br/>budgetbuddy-staging-*]
+        PROD_ENV[Production<br/>budgetbuddy-prod-*]
+    end
+    
+    subgraph "AWS Profile"
+        HTECH[hitechparadigm<br/>AWS Profile]
+    end
+    
+    FEAT --> PR
+    PR --> CI
+    MAIN --> DEV_DEPLOY
+    DEV --> STAGING_DEPLOY
+    MAIN --> PROD_DEPLOY
+    
+    DEV_DEPLOY --> HTECH
+    STAGING_DEPLOY --> HTECH
+    PROD_DEPLOY --> HTECH
+    
+    HTECH --> DEV_ENV
+    HTECH --> STAGING_ENV
+    HTECH --> PROD_ENV
+```
+
+### GitHub Actions Workflows
+
+#### 1. Continuous Integration Workflow (`.github/workflows/ci.yml`)
+
+**Triggers**: Pull requests to main/develop branches
+**Purpose**: Code quality, testing, and validation
+
+```yaml
+name: Continuous Integration
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+      - name: Setup Node.js
+      - name: Install dependencies
+      - name: Run ESLint
+      - name: Run Prettier check
+      - name: TypeScript compilation
+      - name: Run unit tests
+      - name: Run integration tests
+      - name: Security scan (Snyk)
+      - name: Infrastructure validation (CDK synth)
+```
+
+#### 2. Development Deployment Workflow (`.github/workflows/deploy-dev.yml`)
+
+**Triggers**: Push to main branch
+**Purpose**: Automatic deployment to development environment
+
+```yaml
+name: Deploy to Development
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - name: Configure AWS credentials (hitechparadigm)
+      - name: Install dependencies
+      - name: Build infrastructure
+      - name: Deploy to dev environment
+      - name: Run post-deployment health checks
+      - name: Update deployment status
+```
+
+#### 3. Staging Deployment Workflow (`.github/workflows/deploy-staging.yml`)
+
+**Triggers**: Manual workflow dispatch
+**Purpose**: Controlled deployment to staging environment
+
+```yaml
+name: Deploy to Staging
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: 'Git reference to deploy'
+        required: true
+        default: 'main'
+
+jobs:
+  deploy-staging:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Configure AWS credentials (hitechparadigm)
+      - name: Deploy to staging environment
+      - name: Run comprehensive health checks
+      - name: Performance testing
+      - name: Security validation
+```
+
+#### 4. Production Deployment Workflow (`.github/workflows/deploy-prod.yml`)
+
+**Triggers**: Manual workflow dispatch with approval
+**Purpose**: Secure deployment to production environment
+
+```yaml
+name: Deploy to Production
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: 'Git reference to deploy'
+        required: true
+      approval_required:
+        description: 'Require manual approval'
+        type: boolean
+        default: true
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Manual approval gate
+      - name: Configure AWS credentials (hitechparadigm)
+      - name: Blue-green deployment
+      - name: Health checks and monitoring
+      - name: Rollback capability
+```
+
+### AWS Credential Management
+
+#### GitHub Secrets Configuration
+The following secrets must be configured in the GitHub repository:
+
+```bash
+# AWS Credentials for hitechparadigm profile
+AWS_ACCESS_KEY_ID_HITECHPARADIGM
+AWS_SECRET_ACCESS_KEY_HITECHPARADIGM
+AWS_DEFAULT_REGION
+
+# Environment-specific configurations
+CDK_DEFAULT_ACCOUNT
+STRIPE_SECRET_KEY_DEV
+STRIPE_SECRET_KEY_STAGING
+STRIPE_SECRET_KEY_PROD
+
+# Notification settings
+SLACK_WEBHOOK_URL (optional)
+TEAMS_WEBHOOK_URL (optional)
+```
+
+#### AWS Profile Configuration in Workflows
+```yaml
+- name: Configure AWS Credentials
+  uses: aws-actions/configure-aws-credentials@v4
+  with:
+    aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_HITECHPARADIGM }}
+    aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_HITECHPARADIGM }}
+    aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+    role-duration-seconds: 3600
+    role-session-name: BudgetBuddyDeployment
+```
+
+### Environment-Specific Deployment Strategies
+
+#### Development Environment
+- **Deployment**: Automatic on main branch push
+- **Infrastructure**: Cost-optimized with DESTROY removal policy
+- **Testing**: Basic health checks and smoke tests
+- **Monitoring**: Essential metrics only
+- **Rollback**: Simple redeployment from previous commit
+
+#### Staging Environment
+- **Deployment**: Manual trigger with comprehensive testing
+- **Infrastructure**: Production-like with RETAIN removal policy
+- **Testing**: Full test suite, performance testing, security scans
+- **Monitoring**: Enhanced monitoring with alerting
+- **Rollback**: Automated rollback on health check failures
+
+#### Production Environment
+- **Deployment**: Manual approval required with blue-green strategy
+- **Infrastructure**: High availability with comprehensive backup
+- **Testing**: Canary deployments with gradual traffic shifting
+- **Monitoring**: Full observability with real-time alerting
+- **Rollback**: Immediate rollback capability with traffic switching
+
+### Infrastructure as Code Validation
+
+#### Pre-Deployment Validation
+```bash
+# CDK Synthesis and Validation
+cdk synth --context environment=$ENVIRONMENT
+cdk diff --context environment=$ENVIRONMENT
+
+# Security and Compliance Checks
+cfn-lint cdk.out/*.template.json
+checkov -f cdk.out/ --framework cloudformation
+
+# Cost Estimation
+aws ce get-cost-and-usage --time-period Start=2024-01-01,End=2024-01-31
+```
+
+#### Deployment Process
+```bash
+# Bootstrap CDK (if needed)
+cdk bootstrap aws://$AWS_ACCOUNT_ID/$AWS_REGION
+
+# Deploy with proper context
+cdk deploy --all \
+  --context environment=$ENVIRONMENT \
+  --require-approval never \
+  --outputs-file deployment-outputs.json
+
+# Post-deployment validation
+./scripts/check-deployment.sh $ENVIRONMENT
+```
+
+### Testing Integration
+
+#### Automated Testing Pipeline
+1. **Unit Tests**: Jest for all Lambda functions and React components
+2. **Integration Tests**: API testing with DynamoDB Local
+3. **End-to-End Tests**: Cypress for web, Detox for mobile
+4. **Security Tests**: OWASP ZAP for API security scanning
+5. **Performance Tests**: Artillery.js for load testing
+
+#### Test Environment Management
+```yaml
+test-infrastructure:
+  runs-on: ubuntu-latest
+  services:
+    dynamodb-local:
+      image: amazon/dynamodb-local
+      ports:
+        - 8000:8000
+    cognito-local:
+      image: jagregory/cognito-local
+      ports:
+        - 9229:9229
+```
+
+### Monitoring and Alerting
+
+#### Deployment Monitoring
+- **CloudWatch Dashboards**: Real-time deployment metrics
+- **AWS X-Ray**: Distributed tracing for deployment issues
+- **Custom Metrics**: Deployment success rates, rollback frequency
+- **Log Aggregation**: Centralized logging with correlation IDs
+
+#### Alert Configuration
+```yaml
+deployment-alerts:
+  - name: "Deployment Failure"
+    condition: "deployment_status == 'failed'"
+    channels: ["slack", "email"]
+    severity: "critical"
+  
+  - name: "Health Check Failure"
+    condition: "health_check_success_rate < 95%"
+    channels: ["slack"]
+    severity: "warning"
+  
+  - name: "High Error Rate Post-Deployment"
+    condition: "error_rate > 5% for 5 minutes"
+    channels: ["slack", "pagerduty"]
+    severity: "critical"
+```
+
+### Rollback Strategy
+
+#### Automated Rollback Triggers
+- Health check failures exceeding threshold
+- Error rate spikes above 5% for 5+ minutes
+- Critical infrastructure component failures
+- Database connection failures
+
+#### Rollback Process
+```bash
+# Identify last known good deployment
+LAST_GOOD_COMMIT=$(git log --oneline --grep="deploy: success" -1 --format="%H")
+
+# Trigger rollback deployment
+gh workflow run deploy-prod.yml \
+  --ref $LAST_GOOD_COMMIT \
+  --field approval_required=false \
+  --field rollback=true
+
+# Monitor rollback progress
+./scripts/check-deployment.sh prod --rollback-validation
+```
+
+### Security Considerations
+
+#### Deployment Security
+- **Least Privilege**: IAM roles with minimal required permissions
+- **Secret Management**: GitHub Secrets with rotation policies
+- **Audit Logging**: CloudTrail for all deployment activities
+- **Network Security**: VPC endpoints for private deployments
+
+#### Compliance and Governance
+- **Change Management**: All production deployments require approval
+- **Audit Trail**: Complete deployment history with rollback capability
+- **Security Scanning**: Automated vulnerability scanning in pipeline
+- **Compliance Checks**: Automated policy validation before deployment
+
+### Performance Optimization
+
+#### Build Optimization
+- **Parallel Builds**: Multi-stage builds for different components
+- **Caching Strategy**: Docke
+
+### CI/CD Pipeline Architecture
+
+#### GitHub Actions Workflow Structure
+
+```mermaid
+graph TB
+    subgraph "GitHub Repository"
+        MAIN[main branch]
+        DEV[develop branch]
+        FEAT[feature branches]
+        PR[Pull Requests]
+    end
+    
+    subgraph "CI/CD Workflows"
+        LINT[Code Quality Check]
+        TEST[Automated Testing]
+        BUILD[Build & Package]
+        DEPLOY_DEV[Deploy to Dev]
+        DEPLOY_STAGING[Deploy to Staging]
+        DEPLOY_PROD[Deploy to Production]
+    end
+    
+    subgraph "AWS Environments"
+        AWS_DEV[Development<br/>hitechparadigm profile]
+        AWS_STAGING[Staging<br/>hitechparadigm profile]
+        AWS_PROD[Production<br/>hitechparadigm profile]
+    end
+    
+    FEAT --> PR
+    PR --> LINT
+    PR --> TEST
+    LINT --> BUILD
+    TEST --> BUILD
+    
+    DEV --> DEPLOY_DEV
+    MAIN --> DEPLOY_STAGING
+    DEPLOY_STAGING --> DEPLOY_PROD
+    
+    DEPLOY_DEV --> AWS_DEV
+    DEPLOY_STAGING --> AWS_STAGING
+    DEPLOY_PROD --> AWS_PROD
+```
+
+#### Workflow Definitions
+
+**1. Pull Request Workflow** (`.github/workflows/pr-check.yml`)
+- **Triggers**: Pull request to main/develop
+- **Jobs**: 
+  - Code quality (ESLint, Prettier, TypeScript)
+  - Unit tests (Jest)
+  - Integration tests
+  - Security scanning (Snyk)
+  - Build verification
+
+**2. Development Deployment** (`.github/workflows/deploy-dev.yml`)
+- **Triggers**: Push to develop branch
+- **Environment**: Development
+- **AWS Profile**: hitechparadigm
+- **Jobs**:
+  - Run all PR checks
+  - Deploy infrastructure (CDK)
+  - Deploy Lambda functions
+  - Run health checks
+  - Update deployment status
+
+**3. Staging Deployment** (`.github/workflows/deploy-staging.yml`)
+- **Triggers**: Push to main branch
+- **Environment**: Staging
+- **AWS Profile**: hitechparadigm
+- **Jobs**:
+  - Run comprehensive test suite
+  - Deploy infrastructure
+  - Deploy applications
+  - Run E2E tests
+  - Performance testing
+  - Security validation
+
+**4. Production Deployment** (`.github/workflows/deploy-prod.yml`)
+- **Triggers**: Manual approval after staging
+- **Environment**: Production
+- **AWS Profile**: hitechparadigm
+- **Jobs**:
+  - Manual approval gate
+  - Blue/green deployment
+  - Health checks
+  - Rollback capability
+  - Monitoring setup
+
+#### AWS Credential Management
+
+**GitHub Secrets Configuration**:
+```yaml
+AWS_ACCESS_KEY_ID: ${{ secrets.HITECHPARADIGM_AWS_ACCESS_KEY_ID }}
+AWS_SECRET_ACCESS_KEY: ${{ secrets.HITECHPARADIGM_AWS_SECRET_ACCESS_KEY }}
+AWS_DEFAULT_REGION: us-east-1
+AWS_PROFILE: hitechparadigm
+```
+
+**CDK Context Configuration**:
+```json
+{
+  "environments": {
+    "dev": {
+      "account": "hitechparadigm-account-id",
+      "region": "us-east-1",
+      "profile": "hitechparadigm"
+    },
+    "staging": {
+      "account": "hitechparadigm-account-id", 
+      "region": "us-east-1",
+      "profile": "hitechparadigm"
+    },
+    "prod": {
+      "account": "hitechparadigm-account-id",
+      "region": "us-east-1", 
+      "profile": "hitechparadigm"
+    }
+  }
+}
+```
+
+#### Deployment Strategy
+
+**Environment Progression**:
+1. **Development**: Automatic deployment on develop branch push
+2. **Staging**: Automatic deployment on main branch push
+3. **Production**: Manual approval required after staging validation
+
+**Infrastructure as Code**:
+- All AWS resources defined in CDK
+- Environment-specific configurations
+- Automated rollback capabilities
+- Resource tagging for cost allocation
+
+**Application Deployment**:
+- Lambda functions: Automated deployment with versioning
+- Frontend apps: S3 + CloudFront with cache invalidation
+- Database migrations: Automated with rollback support
+
+#### Quality Gates
+
+**Pre-deployment Checks**:
+- All tests passing (unit, integration, E2E)
+- Code coverage above 80%
+- Security vulnerabilities resolved
+- Performance benchmarks met
+- Infrastructure validation passed
+
+**Post-deployment Validation**:
+- Health check endpoints responding
+- Database connectivity verified
+- Authentication flow working
+- Critical user journeys tested
+- Monitoring alerts configured
+
+#### Monitoring and Alerting
+
+**Deployment Monitoring**:
+- Real-time deployment status in Slack/Teams
+- CloudWatch dashboards for deployment metrics
+- Automated rollback on health check failures
+- Performance regression detection
+
+**Cost Monitoring**:
+- AWS cost alerts for budget overruns
+- Resource utilization tracking
+- Environment-specific cost allocation
+- Monthly cost reports
 
 ### Monitoring and Observability
 - **Application Monitoring**: CloudWatch dashboards for key metrics
