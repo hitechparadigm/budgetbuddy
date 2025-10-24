@@ -7,7 +7,7 @@
     "scripts": {
         "build": "cd infrastructure && npm run build",
         "dev": "echo 'Use CDK for local development'",
-        "lint": "eslint . --ext .ts,.js --ignore-path .gitignore",
+        "lint": "cd infrastructure && npm run lint",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "type-check": "cd infrastructure && npm run typecheck",
