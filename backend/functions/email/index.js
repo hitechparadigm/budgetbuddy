@@ -35,6 +35,15 @@ exports.handler = async (event, context) => {
         } = event;
 
         switch (`${httpMethod} ${path}`) {
+            case 'GET /health':
+            case 'GET /email/health':
+                return successResponse({
+                    status: 'healthy',
+                    service: 'email',
+                    timestamp: new Date().toISOString(),
+                    version: '1.0.0'
+                });
+
             case 'POST /email/send-invitation':
                 return await handleSendInvitation(event, correlationId);
             case 'POST /email/send-tips':

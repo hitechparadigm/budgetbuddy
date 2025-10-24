@@ -48,6 +48,15 @@ exports.handler = async (event, context) => {
 
         // Route requests to appropriate handlers
         switch (`${httpMethod} ${path}`) {
+            case 'GET /health':
+            case 'GET /transactions/health':
+                return successResponse({
+                    status: 'healthy',
+                    service: 'transactions',
+                    timestamp: new Date().toISOString(),
+                    version: '1.0.0'
+                });
+
             case 'GET /transactions':
                 return await handleGetTransactions(event, correlationId);
 

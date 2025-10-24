@@ -60,6 +60,15 @@ exports.handler = async (event, context) => {
 
         // Route requests to appropriate handlers based on method and path
         switch (`${httpMethod} ${path}`) {
+            case 'GET /health':
+            case 'GET /auth/health':
+                return successResponse({
+                    status: 'healthy',
+                    service: 'auth',
+                    timestamp: new Date().toISOString(),
+                    version: '1.0.0'
+                });
+
             case 'POST /auth':
                 return await handleAuthentication(event, correlationId);
 

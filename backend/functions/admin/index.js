@@ -29,6 +29,15 @@ exports.handler = async (event, context) => {
         } = event;
 
         switch (`${httpMethod} ${path}`) {
+            case 'GET /health':
+            case 'GET /admin/health':
+                return successResponse({
+                    status: 'healthy',
+                    service: 'admin',
+                    timestamp: new Date().toISOString(),
+                    version: '1.0.0'
+                });
+
             case 'GET /admin':
                 return await handleGetDashboard(event, correlationId);
             case 'GET /admin/users':

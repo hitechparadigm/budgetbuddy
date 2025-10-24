@@ -28,6 +28,15 @@ exports.handler = async (event, context) => {
         } = event;
 
         switch (`${httpMethod} ${path}`) {
+            case 'GET /health':
+            case 'GET /payment/health':
+                return successResponse({
+                    status: 'healthy',
+                    service: 'payment',
+                    timestamp: new Date().toISOString(),
+                    version: '1.0.0'
+                });
+
             case 'POST /payments':
                 return await handleCreateSubscription(event, correlationId);
             case 'POST /webhooks/stripe':
