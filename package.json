@@ -18,11 +18,11 @@
         "test": "turbo run test",
         "test:unit": "turbo run test:unit",
         "test:coverage": "turbo run test:coverage",
-        "test:lambda": "npm run test --prefix backend/functions/auth && npm run test --prefix backend/functions/budget && npm run test --prefix backend/functions/transactions",
+        "test:lambda": "cd backend/functions/auth && npm run test && cd ../budget && npm run test && cd ../transactions && npm run test",
         "clean": "turbo run clean",
-        "deploy:dev": "cd infrastructure && npm run deploy:dev",
-        "deploy:staging": "cd infrastructure && npm run deploy:staging",
-        "deploy:prod": "cd infrastructure && npm run deploy:prod",
+        "deploy:dev": "cd infrastructure && yarn deploy:dev",
+        "deploy:staging": "cd infrastructure && yarn deploy:staging",
+        "deploy:prod": "cd infrastructure && yarn deploy:prod",
         "health-check": "bash scripts/check-deployment.sh"
     },
     "devDependencies": {
