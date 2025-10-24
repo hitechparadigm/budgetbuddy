@@ -25,10 +25,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
         
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         
       - name: Run linting
         run: npm run lint
@@ -39,7 +38,7 @@ jobs:
       - name: Build infrastructure
         working-directory: infrastructure
         run: |
-          npm ci
+          npm install
           npm run build
           
       - name: CDK synthesis validation
@@ -74,11 +73,11 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         
       - name: Install infrastructure dependencies
         working-directory: infrastructure
-        run: npm ci
+        run: npm install
         
       - name: Install Lambda layer dependencies
         run: |
