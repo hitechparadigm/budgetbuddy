@@ -1,13 +1,11 @@
 {
-    "name": "@budget-buddy/shared",
+    "name": "@budget-buddy/mobile",
     "version": "1.0.0",
     "private": true,
-    "description": "Shared components and utilities for BudgetBuddy",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "description": "BudgetBuddy mobile application built with React Native and Expo",
     "scripts": {
-        "build": "tsc",
-        "dev": "tsc --watch",
+        "build": "expo export",
+        "dev": "expo start",
         "lint": "eslint src --ext .ts,.tsx",
         "typecheck": "tsc --noEmit",
         "test": "jest",
@@ -15,8 +13,13 @@
         "test:coverage": "jest --coverage",
         "clean": "rm -rf dist"
     },
-    "dependencies": {},
+    "dependencies": {
+        "react": "^18.0.0",
+        "react-native": "^0.72.0",
+        "expo": "^49.0.0"
+    },
     "devDependencies": {
+        "@types/react": "^18.0.0",
         "typescript": "^5.1.0",
         "eslint": "^8.45.0",
         "jest": "^29.0.0"

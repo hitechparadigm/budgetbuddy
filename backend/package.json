@@ -4,13 +4,15 @@
     "private": true,
     "description": "BudgetBuddy AWS Lambda functions and backend services",
     "scripts": {
-        "build": "echo 'Building Lambda functions...' && npm run build:functions && npm run build:layers",
+        "build": "echo 'Building Lambda functions...' && yarn build:functions && yarn build:layers",
         "build:functions": "echo 'Lambda functions built via CDK'",
-        "build:layers": "cd layers/common/nodejs && npm install",
+        "build:layers": "cd layers/common/nodejs && npm install --production",
         "dev": "echo 'Use CDK for local development'",
-        "lint": "echo 'Linting Lambda functions'",
-        "typecheck": "echo 'Type checking Lambda functions'",
-        "test": "echo 'Testing Lambda functions'",
+        "lint": "echo 'Linting Lambda functions - handled by individual function packages'",
+        "typecheck": "echo 'Type checking Lambda functions - handled by individual function packages'",
+        "test": "echo 'Testing Lambda functions - handled by individual function packages'",
+        "test:unit": "echo 'Unit testing Lambda functions - handled by individual function packages'",
+        "test:coverage": "echo 'Coverage testing Lambda functions - handled by individual function packages'",
         "clean": "echo 'Cleaning build artifacts'"
     },
     "workspaces": [

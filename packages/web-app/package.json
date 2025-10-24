@@ -1,13 +1,11 @@
 {
-    "name": "@budget-buddy/shared",
+    "name": "@budget-buddy/web-app",
     "version": "1.0.0",
     "private": true,
-    "description": "Shared components and utilities for BudgetBuddy",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "description": "BudgetBuddy web application built with React and Vite",
     "scripts": {
-        "build": "tsc",
-        "dev": "tsc --watch",
+        "build": "vite build",
+        "dev": "vite",
         "lint": "eslint src --ext .ts,.tsx",
         "typecheck": "tsc --noEmit",
         "test": "jest",
@@ -15,9 +13,15 @@
         "test:coverage": "jest --coverage",
         "clean": "rm -rf dist"
     },
-    "dependencies": {},
+    "dependencies": {
+        "react": "^18.0.0",
+        "react-dom": "^18.0.0"
+    },
     "devDependencies": {
+        "@types/react": "^18.0.0",
+        "@types/react-dom": "^18.0.0",
         "typescript": "^5.1.0",
+        "vite": "^4.0.0",
         "eslint": "^8.45.0",
         "jest": "^29.0.0"
     }
