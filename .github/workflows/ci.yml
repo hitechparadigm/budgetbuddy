@@ -1,0 +1,72 @@
+# Continuous Integration Pipeline for BudgetBuddy
+# Runs on pull requests and pushes to develop branch
+# Performs linting, type checking, testing, and security scanning
+
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+
+jobs:
+  # Main CI job that runs linting, type checking, and tests
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Set up Node.js with caching for faster builds
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'yarn'
+      
+      # Install all dependencies using frozen lockfile for consistency
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      
+      # Run ESLint across all packages
+      - name: Lint code
+        run: yarn lint
+      
+      # Run TypeScript type checking
+      - name: Type check
+        run: yarn typecheck
+      
+      # Run unit tests across all packages
+      - name: Run tests
+        run: yarn test
+      
+      # Build all packages to ensure they compile correctly
+      - name: Build packages
+        run: yarn build
+      
+      # Upload test coverage to Codecov for tracking
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/coverage-final.json
+          fail_ci_if_error: false
+
+  # Security scanning job to check for vulnerabilities
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Run Snyk security scan to check for known vulnerabilities
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high

@@ -1,0 +1,13 @@
+# Global code owners
+* @hitechparadigm
+
+# Infrastructure changes require additional review
+infrastructure/ @hitechparadigm
+.github/workflows/ @hitechparadigm
+
+# Backend Lambda functions
+backend/ @hitechparadigm
+
+# Documentation
+docs/ @hitechparadigm
+*.md @hitechparadigm

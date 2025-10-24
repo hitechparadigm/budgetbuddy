@@ -1,0 +1,19 @@
+{
+    "_comment": "AI budget generation Lambda function package.json - Handles AI-powered budget creation using AWS Bedrock",
+    "name": "budgetbuddy-ai-function",
+    "version": "1.0.0",
+    "description": "BudgetBuddy AI Lambda function for personalized budget generation using AWS Bedrock Claude 3.5",
+    "main": "index.js",
+    "scripts": {
+        "_scripts_comment": "Lambda function specific scripts for local testing and deployment",
+        "test": "jest",
+        "local": "sam local start-api"
+    },
+    "dependencies": {
+        "_dependencies_comment": "Function-specific dependencies - common deps are in the layer",
+        "@aws-sdk/client-bedrock-runtime": "^3.450.0"
+    },
+    "devDependencies": {
+        "jest": "^29.0.0"
+    }
+}

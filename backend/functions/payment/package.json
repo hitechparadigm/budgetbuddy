@@ -1,0 +1,13 @@
+{
+    "_comment": "Payment and subscription Lambda function package.json - Handles Stripe integration and subscription management",
+    "name": "budgetbuddy-payment-function",
+    "version": "1.0.0",
+    "description": "BudgetBuddy payment handler for Stripe integration and subscription management",
+    "main": "index.js",
+    "dependencies": {
+        "stripe": "^14.0.0"
+    },
+    "devDependencies": {
+        "jest": "^29.0.0"
+    }
+}

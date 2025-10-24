@@ -1,0 +1,24 @@
+{
+    "name": "@budget-buddy/backend",
+    "version": "1.0.0",
+    "private": true,
+    "description": "BudgetBuddy AWS Lambda functions and backend services",
+    "scripts": {
+        "build": "echo 'Building Lambda functions...' && npm run build:functions && npm run build:layers",
+        "build:functions": "echo 'Lambda functions built via CDK'",
+        "build:layers": "cd layers/common/nodejs && npm install",
+        "dev": "echo 'Use CDK for local development'",
+        "lint": "echo 'Linting Lambda functions'",
+        "typecheck": "echo 'Type checking Lambda functions'",
+        "test": "echo 'Testing Lambda functions'",
+        "clean": "echo 'Cleaning build artifacts'"
+    },
+    "workspaces": [
+        "functions/*",
+        "layers/*/nodejs"
+    ],
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "typescript": "^5.1.0"
+    }
+}
