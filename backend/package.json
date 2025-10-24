@@ -4,7 +4,7 @@
     "private": true,
     "description": "BudgetBuddy AWS Lambda functions and backend services",
     "scripts": {
-        "build": "echo 'Building Lambda functions...' && yarn build:functions && yarn build:layers",
+        "build": "echo 'Building Lambda functions...' && npm run build:functions && npm run build:layers",
         "build:functions": "echo 'Lambda functions built via CDK'",
         "build:layers": "cd layers/common/nodejs && npm install --production",
         "dev": "echo 'Use CDK for local development'",

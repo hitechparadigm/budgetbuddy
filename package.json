@@ -20,9 +20,9 @@
         "test:coverage": "turbo run test:coverage",
         "test:lambda": "cd backend/functions/auth && npm run test && cd ../budget && npm run test && cd ../transactions && npm run test",
         "clean": "turbo run clean",
-        "deploy:dev": "cd infrastructure && yarn deploy:dev",
-        "deploy:staging": "cd infrastructure && yarn deploy:staging",
-        "deploy:prod": "cd infrastructure && yarn deploy:prod",
+        "deploy:dev": "cd infrastructure && npm run deploy:dev",
+        "deploy:staging": "cd infrastructure && npm run deploy:staging",
+        "deploy:prod": "cd infrastructure && npm run deploy:prod",
         "health-check": "bash scripts/check-deployment.sh"
     },
     "devDependencies": {
@@ -38,5 +38,5 @@
         "turbo": "^1.10.0",
         "typescript": "^5.1.0"
     },
-    "packageManager": "yarn@3.6.0"
+
 }

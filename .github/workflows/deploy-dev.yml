@@ -25,24 +25,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
-      - name: Enable Corepack
-        run: corepack enable
+          cache: 'npm'
         
       - name: Install dependencies
-        run: yarn install --immutable
+        run: npm ci
         
       - name: Run linting
-        run: yarn lint
+        run: npm run lint
         
       - name: Run unit tests
-        run: yarn test:unit
+        run: npm run test:unit
         
       - name: Build infrastructure
         working-directory: infrastructure
         run: |
-          yarn install --immutable
-          yarn build
+          npm ci
+          npm run build
           
       - name: CDK synthesis validation
         working-directory: infrastructure
@@ -66,9 +64,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          
-      - name: Enable Corepack
-        run: corepack enable
+          cache: 'npm'
         
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -78,11 +74,11 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           
       - name: Install dependencies
-        run: yarn install --immutable
+        run: npm ci
         
       - name: Install infrastructure dependencies
         working-directory: infrastructure
-        run: yarn install --immutable
+        run: npm ci
         
       - name: Install Lambda layer dependencies
         run: |
@@ -91,7 +87,7 @@ jobs:
           
       - name: Build infrastructure
         working-directory: infrastructure
-        run: yarn build
+        run: npm run build
         
       - name: Bootstrap CDK (if needed)
         working-directory: infrastructure
