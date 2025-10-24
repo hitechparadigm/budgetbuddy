@@ -1,0 +1,13 @@
+{
+    "_comment": "Email notification Lambda function package.json - Handles SES email sending for notifications and tips",
+    "name": "budgetbuddy-email-function",
+    "version": "1.0.0",
+    "description": "BudgetBuddy email handler for notifications, tips delivery, and family invitations via SES",
+    "main": "index.js",
+    "dependencies": {
+        "@aws-sdk/client-ses": "^3.450.0"
+    },
+    "devDependencies": {
+        "jest": "^29.0.0"
+    }
+}
