@@ -137,7 +137,6 @@ Estimated monthly costs for development environment:
 
 ### Security Scanning
 
-- Automated vulnerability scanning with Snyk
 - npm audit for dependency vulnerabilities
 - Regular security updates
 
