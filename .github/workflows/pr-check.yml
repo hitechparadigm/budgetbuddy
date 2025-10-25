@@ -28,7 +28,7 @@ jobs:
         run: npm install
 
       - name: Run ESLint
-        run: echo "ESLint temporarily disabled - will be re-enabled after deployment fix"
+        run: npm run lint
 
       - name: Check for syntax errors in Lambda functions
         run: |
