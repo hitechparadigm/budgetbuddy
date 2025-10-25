@@ -40,6 +40,7 @@
 
 
 
+
   - [ ] 2.3 Create API Gateway and Lambda function infrastructure
     - Set up API Gateway with CORS configuration
     - Create Lambda layer for shared dependencies and utilities

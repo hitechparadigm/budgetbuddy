@@ -55,7 +55,7 @@ export class ApiStack extends cdk.Stack {
     const commonLayer = this.createCommonLayer();
 
     // Create Lambda functions for different business domains
-    this.createLambdaFunctions(props.table, commonLayer);
+    this.createLambdaFunctions(props, commonLayer);
 
     // Create API Gateway with proper configuration
     this.api = this.createApiGateway(props.userPool);
@@ -84,10 +84,10 @@ export class ApiStack extends cdk.Stack {
    * Create all Lambda functions for the application
    * Each function handles a specific business domain
    */
-  private createLambdaFunctions(table: dynamodb.Table, commonLayer: lambda.LayerVersion): void {
+  private createLambdaFunctions(props: ApiStackProps, commonLayer: lambda.LayerVersion): void {
     // Common environment variables for all functions
     const commonEnvironment = {
-      TABLE_NAME: table.tableName,
+      TABLE_NAME: props.table.tableName,
       NODE_ENV: 'production',
       LOG_LEVEL: 'info',
     };
@@ -214,7 +214,7 @@ export class ApiStack extends cdk.Stack {
 
     // Grant DynamoDB permissions to all functions
     Object.values(this.functions).forEach(func => {
-      table.grantReadWriteData(func);
+      props.table.grantReadWriteData(func);
     });
 
     // Grant additional permissions for specific functions
