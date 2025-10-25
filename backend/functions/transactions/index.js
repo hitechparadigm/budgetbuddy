@@ -1,11 +1,11 @@
 /**
- * BudgetBuddy Admin Lambda Function
+ * BudgetBuddy Transactions Lambda Function
  *
- * Handles admin dashboard operations and user management
+ * Handles transaction CRUD operations and budget calculations
  */
 
 exports.handler = async (event, _context) => {
-    console.log('Admin request received', {
+    console.log('Transactions request received', {
         httpMethod: event.httpMethod,
         path: event.path
     });
@@ -17,7 +17,7 @@ exports.handler = async (event, _context) => {
         } = event;
 
         // Handle health check endpoint
-        if (httpMethod === 'GET' && path === '/admin/health') {
+        if (httpMethod === 'GET' && path === '/transactions/health') {
             return {
                 statusCode: 200,
                 headers: {
@@ -28,7 +28,7 @@ exports.handler = async (event, _context) => {
                 },
                 body: JSON.stringify({
                     status: 'healthy',
-                    service: 'admin',
+                    service: 'transactions',
                     timestamp: new Date().toISOString(),
                     version: '1.0.0'
                 })
@@ -58,12 +58,12 @@ exports.handler = async (event, _context) => {
             body: JSON.stringify({
                 error: 'Not Found',
                 message: `Route ${httpMethod} ${path} not found`,
-                service: 'admin'
+                service: 'transactions'
             })
         };
 
     } catch (error) {
-        console.error('Admin function error:', error);
+        console.error('Transactions function error:', error);
 
         return {
             statusCode: 500,
@@ -74,7 +74,7 @@ exports.handler = async (event, _context) => {
             body: JSON.stringify({
                 error: 'Internal Server Error',
                 message: 'An error occurred processing your request',
-                service: 'admin'
+                service: 'transactions'
             })
         };
     }
