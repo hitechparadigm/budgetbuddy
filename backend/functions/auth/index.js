@@ -6,16 +6,22 @@
  * DynamoDB for storing additional user profile information.
  */
 
-const AWS = require('aws-sdk');
-
-// Initialize AWS services
-const cognito = new AWS.CognitoIdentityServiceProvider();
-// const dynamodb = new AWS.DynamoDB.DocumentClient(); // TODO: Will be used for user profile storage
-
 // Environment variables
 const USER_POOL_ID = process.env.USER_POOL_ID;
 const CLIENT_ID = process.env.CLIENT_ID;
 const TABLE_NAME = process.env.TABLE_NAME;
+
+// Lazy initialization of AWS services to avoid startup errors
+let cognito = null;
+// let dynamodb = null; // TODO: Will be used for user profile storage
+
+function getCognitoClient() {
+    if (!cognito) {
+        const AWS = require('aws-sdk');
+        cognito = new AWS.CognitoIdentityServiceProvider();
+    }
+    return cognito;
+}
 
 /**
  * Main Lambda handler function
@@ -190,7 +196,7 @@ async function handleRegister(body) {
             });
         }
 
-        const result = await cognito.signUp(params).promise();
+        const result = await getCognitoClient().signUp(params).promise();
 
         return createResponse(201, {
             message: 'User registered successfully',
@@ -241,7 +247,7 @@ async function handleLogin(body) {
             }
         };
 
-        const result = await cognito.initiateAuth(params).promise();
+        const result = await getCognitoClient().initiateAuth(params).promise();
 
         return createResponse(200, {
             message: 'Login successful',
@@ -298,7 +304,7 @@ async function handleConfirmSignUp(body) {
             ConfirmationCode: confirmationCode
         };
 
-        await cognito.confirmSignUp(params).promise();
+        await getCognitoClient().confirmSignUp(params).promise();
 
         return createResponse(200, {
             message: 'Email confirmed successfully'
@@ -335,7 +341,7 @@ async function handleForgotPassword(body) {
             Username: email
         };
 
-        await cognito.forgotPassword(params).promise();
+        await getCognitoClient().forgotPassword(params).promise();
 
         return createResponse(200, {
             message: 'Password reset code sent to your email'
@@ -376,7 +382,7 @@ async function handleResetPassword(body) {
             Password: newPassword
         };
 
-        await cognito.confirmForgotPassword(params).promise();
+        await getCognitoClient().confirmForgotPassword(params).promise();
 
         return createResponse(200, {
             message: 'Password reset successfully'
