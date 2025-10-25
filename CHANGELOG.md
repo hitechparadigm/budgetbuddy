@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Recreated all 8 Lambda functions with proper handler implementations
   - Added comprehensive health check endpoints for all services
   - Root `/health` endpoint now properly routes to auth handler
+  - Fixed transactions function that was corrupted with admin function code
 - **Health Check Endpoints**: Implemented proper API health monitoring
   - Added `/health` root endpoint for overall API health
   - Added service-specific health endpoints: `/auth/health`, `/budget/health`, etc.
