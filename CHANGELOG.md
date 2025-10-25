@@ -33,6 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Corrected health endpoint path to `/transactions/health`
   - Updated service identifier from 'admin' to 'transactions' in responses
   - All health check endpoints now properly configured and responding
+- **Payment Service Fix**: Resolved payment health endpoint 403 error
+  - Fixed health check script to use correct `/payments/health` endpoint (plural)
+  - Updated payment Lambda function to handle `/payments/health` path
+  - Corrected API Gateway resource naming mismatch between script and infrastructure
+  - Payment service health check now properly configured
 
 ### Changed
 - Updated all Lambda function signatures from `(event, context)` to `(event, _context)`

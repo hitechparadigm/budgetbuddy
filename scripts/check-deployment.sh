@@ -54,11 +54,11 @@ test_api_endpoint() {
     local url=$1
     local endpoint=$2
     local expected_status=${3:-200}
-    
+
     print_status "Testing $endpoint..."
-    
+
     local response=$(curl -s -w "%{http_code}" -o /dev/null "$url$endpoint" || echo "000")
-    
+
     if [ "$response" = "$expected_status" ]; then
         print_success "$endpoint responded with status $response"
         return 0
@@ -71,16 +71,16 @@ test_api_endpoint() {
 # Main health check function
 main() {
     local environment=${1:-dev}
-    
+
     echo "=== BudgetBuddy Deployment Health Check ==="
     echo "Environment: $environment"
     echo ""
-    
+
     local errors=0
-    
+
     # Check all stacks exist
     print_status "Checking CloudFormation stacks..."
-    
+
     local stacks=(
         "budgetbuddy-$environment-database"
         "budgetbuddy-$environment-auth"
@@ -88,7 +88,7 @@ main() {
         "budgetbuddy-$environment-hosting"
         "budgetbuddy-$environment-monitoring"
     )
-    
+
     for stack in "${stacks[@]}"; do
         if check_stack_exists "$stack"; then
             print_success "Stack exists: $stack"
@@ -97,19 +97,19 @@ main() {
             ((errors++))
         fi
     done
-    
+
     echo ""
-    
+
     # Get deployment outputs
     print_status "Retrieving deployment outputs..."
-    
+
     local api_url=$(get_stack_output "budgetbuddy-$environment-api" "ApiUrl")
     local user_pool_id=$(get_stack_output "budgetbuddy-$environment-auth" "UserPoolId")
     local user_pool_client_id=$(get_stack_output "budgetbuddy-$environment-auth" "UserPoolClientId")
     local table_name=$(get_stack_output "budgetbuddy-$environment-database" "TableName")
     local web_domain=$(get_stack_output "budgetbuddy-$environment-hosting" "WebDistributionDomainName")
     local admin_domain=$(get_stack_output "budgetbuddy-$environment-hosting" "AdminDistributionDomainName")
-    
+
     echo "API URL: $api_url"
     echo "User Pool ID: $user_pool_id"
     echo "User Pool Client ID: $user_pool_client_id"
@@ -117,11 +117,11 @@ main() {
     echo "Web Domain: $web_domain"
     echo "Admin Domain: $admin_domain"
     echo ""
-    
+
     # Test API endpoints if API URL is available
     if [ -n "$api_url" ]; then
         print_status "Testing API endpoints..."
-        
+
         # Test health endpoint
         if test_api_endpoint "$api_url" "/health"; then
             print_success "Health endpoint working"
@@ -129,7 +129,7 @@ main() {
             print_error "Health endpoint failed"
             ((errors++))
         fi
-        
+
         # Test auth endpoints
         if test_api_endpoint "$api_url" "/auth/health"; then
             print_success "Auth service working"
@@ -137,7 +137,7 @@ main() {
             print_error "Auth service failed"
             ((errors++))
         fi
-        
+
         # Test budget endpoints
         if test_api_endpoint "$api_url" "/budget/health"; then
             print_success "Budget service working"
@@ -145,9 +145,9 @@ main() {
             print_error "Budget service failed"
             ((errors++))
         fi
-        
+
         # Test other service endpoints
-        local services=("transactions" "ai" "family" "payment" "email" "admin")
+        local services=("transactions" "ai" "family" "email" "admin")
         for service in "${services[@]}"; do
             if test_api_endpoint "$api_url" "/$service/health"; then
                 print_success "$service service working"
@@ -156,13 +156,21 @@ main() {
                 ((errors++))
             fi
         done
+
+        # Test payment endpoint (uses plural form)
+        if test_api_endpoint "$api_url" "/payments/health"; then
+            print_success "payment service working"
+        else
+            print_error "payment service failed"
+            ((errors++))
+        fi
     else
         print_error "API URL not found - cannot test endpoints"
         ((errors++))
     fi
-    
+
     echo ""
-    
+
     # Test web distributions if domains are available
     if [ -n "$web_domain" ]; then
         print_status "Testing web distribution..."
@@ -172,7 +180,7 @@ main() {
             print_warning "Web distribution not accessible (may not have content yet)"
         fi
     fi
-    
+
     if [ -n "$admin_domain" ]; then
         print_status "Testing admin distribution..."
         if test_api_endpoint "https://$admin_domain" "/" 200; then
@@ -181,10 +189,10 @@ main() {
             print_warning "Admin distribution not accessible (may not have content yet)"
         fi
     fi
-    
+
     echo ""
     echo "=== HEALTH CHECK SUMMARY ==="
-    
+
     if [ $errors -eq 0 ]; then
         print_success "All checks passed! Deployment is healthy."
         echo ""

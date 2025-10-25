@@ -16,8 +16,8 @@ exports.handler = async (event, _context) => {
             path
         } = event;
 
-        // Handle health check endpoint
-        if (httpMethod === 'GET' && path === '/payment/health') {
+        // Handle health check endpoint (API Gateway uses /payments/health)
+        if (httpMethod === 'GET' && path === '/payments/health') {
             return {
                 statusCode: 200,
                 headers: {
