@@ -41,7 +41,8 @@
 
 
 
-  - [ ] 2.3 Create API Gateway and Lambda function infrastructure
+  - [x] 2.3 Create API Gateway and Lambda function infrastructure
+
     - Set up API Gateway with CORS configuration
     - Create Lambda layer for shared dependencies and utilities
     - Implement base Lambda function structure with error handling
@@ -68,13 +69,15 @@
     - _Requirements: 3.2, 10.3_
 
 - [ ] 4. Authentication System Implementation
-  - [ ] 4.1 Create authentication Lambda functions
+  - [x] 4.1 Create authentication Lambda functions
+
     - Implement user registration with email verification
     - Build login/logout functionality with JWT token management
     - Create password reset flow with secure token generation
     - _Requirements: 1.2, 1.3, 1.8_
 
-  - [ ] 4.2 Build authentication UI components and screens
+  - [-] 4.2 Build authentication UI components and screens
+
     - Create Login, Register, and Password Reset screens for web and mobile
     - Implement form validation with real-time feedback
     - Add loading states and error handling
