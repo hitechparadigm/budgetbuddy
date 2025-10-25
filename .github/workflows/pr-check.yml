@@ -30,6 +30,27 @@ jobs:
       - name: Run ESLint
         run: npm run lint
         
+      - name: Check for syntax errors in Lambda functions
+        run: |
+          echo "🔍 Checking for optional chaining syntax errors..."
+          if grep -r "? \." backend/functions/*/index.js; then
+            echo "❌ Found invalid optional chaining syntax (? .) in Lambda functions!"
+            echo "   Please use ?. instead of ? ."
+            exit 1
+          fi
+          echo "✅ No optional chaining syntax errors found"
+
+      - name: Validate Lambda function syntax
+        run: |
+          echo "🔍 Validating JavaScript syntax in Lambda functions..."
+          for file in backend/functions/*/index.js; do
+            if [ -f "$file" ]; then
+              echo "Checking $file..."
+              node -c "$file" || exit 1
+            fi
+          done
+          echo "✅ All Lambda functions have valid syntax"
+        
       - name: Check Prettier formatting
         run: npm run format:check
         

@@ -7,9 +7,11 @@
     "scripts": {
         "build": "cd infrastructure && npm run build",
         "dev": "echo 'Use CDK for local development'",
-        "lint": "echo 'Linting skipped for now - will be implemented later'",
+        "lint": "eslint backend/functions/*/index.js --fix",
+        "lint:check": "eslint backend/functions/*/index.js",
         "format": "prettier --write .",
-        "format:check": "echo 'Format check skipped for now - will be implemented later'",
+        "format:check": "prettier --check .",
+        "syntax-check": "bash scripts/validate-lambda-syntax.sh",
         "type-check": "cd infrastructure && npm run typecheck",
         "test": "echo 'Running tests...'",
         "test:unit": "echo 'Running unit tests...'",
@@ -22,6 +24,9 @@
         "health-check": "bash scripts/check-deployment.sh"
     },
     "devDependencies": {
-        "typescript": "^5.1.0"
+        "typescript": "^5.1.0",
+        "eslint": "^8.50.0",
+        "prettier": "^3.0.0",
+        "husky": "^8.0.3"
     }
 }

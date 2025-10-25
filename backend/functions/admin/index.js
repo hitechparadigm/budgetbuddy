@@ -1,25 +1,13 @@
 /**
- * BudgetBuddy Admin Dashboard Lambda Function
+ * BudgetBuddy Admin Lambda Function
  * 
- * Handles administrative operations including user management, analytics,
- * subscription management, and system monitoring for the admin dashboard.
+ * Handles admin dashboard operations and user management
  */
 
-const {
-    successResponse,
-    errorResponse,
-    parseRequestBody,
-    getUserFromEvent,
-    dynamoHelpers,
-    logger
-} = require('/opt/nodejs/utils');
-
 exports.handler = async (event, context) => {
-    const correlationId = context.awsRequestId;
-    logger.info('Admin request received', {
-        correlationId,
+    console.log('Admin request received', {
         httpMethod: event.httpMethod,
-        path: event.path,
+        path: event.path
     });
 
     try {
@@ -28,89 +16,48 @@ exports.handler = async (event, context) => {
             path
         } = event;
 
-        switch (`${httpMethod} ${path}`) {
-            case 'GET /health':
-            case 'GET /admin/health':
-                return successResponse({
+        // Handle health check endpoint
+        if (httpMethod === 'GET' && path === '/admin/health') {
+            return {
+                statusCode: 200,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                body: JSON.stringify({
                     status: 'healthy',
                     service: 'admin',
                     timestamp: new Date().toISOString(),
                     version: '1.0.0'
-                });
-
-            case 'GET /admin':
-                return await handleGetDashboard(event, correlationId);
-            case 'GET /admin/users':
-                return await handleGetUsers(event, correlationId);
-            case 'GET /admin/analytics':
-                return await handleGetAnalytics(event, correlationId);
-            default:
-                return errorResponse.notFound('Route not found');
+                })
+            };
         }
-    } catch (error) {
-        logger.error('Unhandled error in admin handler', error, {
-            correlationId
-        });
-        return errorResponse.internalError('An unexpected error occurred');
-    }
-};
 
-async function handleGetDashboard(event, correlationId) {
-    try {
-        logger.info('Get admin dashboard request', {
-            correlationId
-        });
-
-        // TODO: Implement admin dashboard data aggregation
-        const dashboardData = {
-            totalUsers: 0,
-            activeUsers: 0,
-            premiumUsers: 0,
-            monthlyRevenue: 0,
-            systemHealth: 'healthy',
+        return {
+            statusCode: 404,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({
+                error: 'Route not found',
+                path: path,
+                method: httpMethod
+            })
         };
 
-        return successResponse(dashboardData, 'Dashboard data retrieved successfully');
     } catch (error) {
-        logger.error('Get dashboard error', error, {
-            correlationId
-        });
-        return errorResponse.internalError('Failed to retrieve dashboard data');
+        console.error('Error in admin handler:', error);
+        return {
+            statusCode: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({
+                error: 'Internal server error',
+                message: error.message
+            })
+        };
     }
-}
-
-async function handleGetUsers(event, correlationId) {
-    try {
-        logger.info('Get users request', {
-            correlationId
-        });
-
-        // TODO: Implement user listing with pagination
-        return successResponse({
-            users: []
-        }, 'User management functionality coming soon');
-    } catch (error) {
-        logger.error('Get users error', error, {
-            correlationId
-        });
-        return errorResponse.internalError('Failed to retrieve users');
-    }
-}
-
-async function handleGetAnalytics(event, correlationId) {
-    try {
-        logger.info('Get analytics request', {
-            correlationId
-        });
-
-        // TODO: Implement analytics data aggregation
-        return successResponse({
-            analytics: {}
-        }, 'Analytics functionality coming soon');
-    } catch (error) {
-        logger.error('Get analytics error', error, {
-            correlationId
-        });
-        return errorResponse.internalError('Failed to retrieve analytics');
-    }
-}
+};
