@@ -267,7 +267,7 @@ export class ApiStack extends cdk.Stack {
     const api = new apigateway.RestApi(this, 'BudgetBuddyApi', {
       restApiName: 'budgetbuddy-api',
       description: 'BudgetBuddy REST API for web and mobile clients with serverless Lambda backend',
-      
+
       // Enable CORS for web clients
       defaultCorsPreflightOptions: {
         allowOrigins: [
@@ -312,10 +312,24 @@ export class ApiStack extends cdk.Stack {
   private setupApiRoutes(): void {
     const authorizer = (this.api as any).authorizer;
 
+    // Health check endpoints (public, no auth required)
+    const healthResource = this.api.root.addResource('health');
+    healthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'HealthCheck',
+    });
+
     // Authentication routes (public)
     const authResource = this.api.root.addResource('auth');
     authResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {
       operationName: 'AuthenticateUser',
+    });
+
+    // Auth health endpoint
+    const authHealthResource = authResource.addResource('health');
+    authHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'AuthHealthCheck',
     });
 
     // User profile routes (protected)
@@ -342,6 +356,13 @@ export class ApiStack extends cdk.Stack {
     budgetResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
       authorizer,
       operationName: 'UpdateBudget',
+    });
+
+    // Budget health endpoint
+    const budgetHealthResource = budgetResource.addResource('health');
+    budgetHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'BudgetHealthCheck',
     });
 
     // Budget categories routes
@@ -373,6 +394,13 @@ export class ApiStack extends cdk.Stack {
       operationName: 'CreateTransaction',
     });
 
+    // Transactions health endpoint
+    const transactionsHealthResource = transactionsResource.addResource('health');
+    transactionsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.transactionHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'TransactionsHealthCheck',
+    });
+
     // Family routes (protected)
     const familyResource = this.api.root.addResource('family');
     familyResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
@@ -384,11 +412,25 @@ export class ApiStack extends cdk.Stack {
       operationName: 'CreateFamily',
     });
 
+    // Family health endpoint
+    const familyHealthResource = familyResource.addResource('health');
+    familyHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'FamilyHealthCheck',
+    });
+
     // Payment routes (protected)
     const paymentsResource = this.api.root.addResource('payments');
     paymentsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.paymentHandler), {
       authorizer,
       operationName: 'CreateSubscription',
+    });
+
+    // Payment health endpoint
+    const paymentHealthResource = paymentsResource.addResource('health');
+    paymentHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.paymentHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'PaymentHealthCheck',
     });
 
     // Webhook routes (public, but validated by Stripe)
@@ -403,6 +445,29 @@ export class ApiStack extends cdk.Stack {
     adminResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.adminHandler), {
       authorizer,
       operationName: 'GetAdminDashboard',
+    });
+
+    // Admin health endpoint
+    const adminHealthResource = adminResource.addResource('health');
+    adminHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.adminHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'AdminHealthCheck',
+    });
+
+    // Email routes (public for webhooks, protected for sending)
+    const emailResource = this.api.root.addResource('email');
+    const emailHealthResource = emailResource.addResource('health');
+    emailHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'EmailHealthCheck',
+    });
+
+    // AI routes (separate from budget for health checks)
+    const aiResource = this.api.root.addResource('ai');
+    const aiHealthResource = aiResource.addResource('health');
+    aiHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.aiHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'AIHealthCheck',
     });
   }
 
@@ -431,7 +496,7 @@ export class ApiStack extends cdk.Stack {
         description: `BudgetBuddy Lambda function ARN for ${name} handler monitoring and permissions`,
         exportName: `budgetbuddy-${name.toLowerCase()}-arn`,
       });
-      
+
       // Add comprehensive tags to each Lambda function
       cdk.Tags.of(func).add('Component', 'API');
       cdk.Tags.of(func).add('Service', 'Lambda');
