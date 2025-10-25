@@ -1,10 +1,10 @@
 /**
  * API Stack for BudgetBuddy Application
- * 
+ *
  * Creates API Gateway REST API with Lambda function integrations for all
  * backend functionality. Includes proper CORS configuration, authentication,
  * and error handling for web and mobile clients.
- * 
+ *
  * Key Features:
  * - REST API with resource-based routing
  * - Lambda function integrations for business logic
@@ -112,6 +112,11 @@ export class ApiStack extends cdk.Stack {
       code: lambda.Code.fromAsset('../backend/functions/auth'),
       handler: 'index.handler',
       description: 'BudgetBuddy authentication handler for user registration, login, and profile management',
+      environment: {
+        ...commonEnvironment,
+        USER_POOL_ID: props.userPool.userPoolId,
+        CLIENT_ID: props.userPoolClient.userPoolClientId,
+      },
     });
 
     /**
@@ -220,6 +225,23 @@ export class ApiStack extends cdk.Stack {
    * Grant additional AWS service permissions to specific functions
    */
   private grantAdditionalPermissions(): void {
+    // Auth Handler needs Cognito permissions
+    this.functions.authHandler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        'cognito-idp:SignUp',
+        'cognito-idp:InitiateAuth',
+        'cognito-idp:ConfirmSignUp',
+        'cognito-idp:ForgotPassword',
+        'cognito-idp:ConfirmForgotPassword',
+        'cognito-idp:GetUser',
+        'cognito-idp:UpdateUserAttributes',
+        'cognito-idp:AdminGetUser',
+        'cognito-idp:AdminUpdateUserAttributes',
+      ],
+      resources: ['*'], // Cognito permissions are typically broad for user pool operations
+    }));
+
     // AI Handler needs Bedrock permissions
     this.functions.aiHandler.addToRolePolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
@@ -321,8 +343,46 @@ export class ApiStack extends cdk.Stack {
 
     // Authentication routes (public)
     const authResource = this.api.root.addResource('auth');
-    authResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {
-      operationName: 'AuthenticateUser',
+
+    // User registration
+    const registerResource = authResource.addResource('register');
+    registerResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      operationName: 'RegisterUser',
+    });
+
+    // User login
+    const loginResource = authResource.addResource('login');
+    loginResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      operationName: 'LoginUser',
+    });
+
+    // Email confirmation
+    const confirmResource = authResource.addResource('confirm');
+    confirmResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      operationName: 'ConfirmEmail',
+    });
+
+    // Forgot password
+    const forgotPasswordResource = authResource.addResource('forgot-password');
+    forgotPasswordResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      operationName: 'ForgotPassword',
+    });
+
+    // Reset password
+    const resetPasswordResource = authResource.addResource('reset-password');
+    resetPasswordResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      operationName: 'ResetPassword',
+    });
+
+    // User profile (protected)
+    const profileResource = authResource.addResource('profile');
+    profileResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      authorizer,
+      operationName: 'GetProfile',
+    });
+    profileResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      authorizer,
+      operationName: 'UpdateProfile',
     });
 
     // Auth health endpoint

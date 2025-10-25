@@ -25,11 +25,14 @@
     - Set up on-demand billing with cost monitoring
     - _Requirements: 9.2_
 
-  - [ ] 2.2 Set up Amazon Cognito User Pools for authentication
+  - [x] 2.2 Set up Amazon Cognito User Pools for authentication
+
+
     - Configure user pool with custom attributes for family relationships and account types
     - Set up user pool client for web/mobile applications
     - Configure email verification and password reset flows
     - _Requirements: 1.3, 1.8, 9.3_
+
 
 
 

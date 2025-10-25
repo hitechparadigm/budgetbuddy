@@ -1,17 +1,20 @@
 {
-    "_comment": "Authentication Lambda function package.json - Handles user registration, login, and profile management",
     "name": "budgetbuddy-auth-function",
     "version": "1.0.0",
-    "description": "BudgetBuddy authentication Lambda function for user management and Cognito integration",
+    "description": "BudgetBuddy Authentication Lambda Function",
     "main": "index.js",
     "scripts": {
-        "test": "jest",
-        "local": "sam local start-api"
+        "test": "echo \"Error: no test specified\" && exit 1"
     },
     "dependencies": {
-        "@aws-sdk/client-cognito-identity-provider": "^3.450.0"
+        "aws-sdk": "^2.1691.0"
     },
-    "devDependencies": {
-        "jest": "^29.0.0"
-    }
+    "keywords": [
+        "budgetbuddy",
+        "authentication",
+        "cognito",
+        "lambda"
+    ],
+    "author": "BudgetBuddy Team",
+    "license": "MIT"
 }
