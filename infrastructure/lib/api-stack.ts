@@ -463,8 +463,8 @@ export class ApiStack extends cdk.Stack {
     });
 
     // AI routes (separate from budget for health checks)
-    const aiResource = this.api.root.addResource('ai');
-    const aiHealthResource = aiResource.addResource('health');
+    const aiRootResource = this.api.root.addResource('ai');
+    const aiHealthResource = aiRootResource.addResource('health');
     aiHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.aiHandler), {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'AIHealthCheck',
