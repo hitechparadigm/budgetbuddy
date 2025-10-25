@@ -28,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added service-specific health endpoints: `/auth/health`, `/budget/health`, etc.
   - All endpoints return proper JSON responses with service status
   - CORS headers configured for cross-origin requests
+- **Transactions Service Fix**: Resolved final health check failure
+  - Fixed transactions Lambda function that was incorrectly checking `/admin/health`
+  - Corrected health endpoint path to `/transactions/health`
+  - Updated service identifier from 'admin' to 'transactions' in responses
+  - All health check endpoints now properly configured and responding
 
 ### Changed
 - Updated all Lambda function signatures from `(event, context)` to `(event, _context)`
