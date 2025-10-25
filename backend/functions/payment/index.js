@@ -1,24 +1,13 @@
 /**
- * BudgetBuddy Payment and Subscription Lambda Function
+ * BudgetBuddy Payment Lambda Function
  * 
- * Handles Stripe integration for subscription management, payment processing,
- * and webhook handling. Manages free and premium tier transitions.
+ * Handles Stripe payment processing and subscription management
  */
 
-const {
-    successResponse,
-    errorResponse,
-    parseRequestBody,
-    getUserFromEvent,
-    logger
-} = require('/opt/nodejs/utils');
-
 exports.handler = async (event, context) => {
-    const correlationId = context.awsRequestId;
-    logger.info('Payment request received', {
-        correlationId,
+    console.log('Payment request received', {
         httpMethod: event.httpMethod,
-        path: event.path,
+        path: event.path
     });
 
     try {
@@ -27,63 +16,48 @@ exports.handler = async (event, context) => {
             path
         } = event;
 
-        switch (`${httpMethod} ${path}`) {
-            case 'GET /health':
-            case 'GET /payment/health':
-                return successResponse({
+        // Handle health check endpoint
+        if (httpMethod === 'GET' && path === '/payment/health') {
+            return {
+                statusCode: 200,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                body: JSON.stringify({
                     status: 'healthy',
                     service: 'payment',
                     timestamp: new Date().toISOString(),
                     version: '1.0.0'
-                });
-
-            case 'POST /payments':
-                return await handleCreateSubscription(event, correlationId);
-            case 'POST /webhooks/stripe':
-                return await handleStripeWebhook(event, correlationId);
-            default:
-                return errorResponse.notFound('Route not found');
+                })
+            };
         }
+
+        return {
+            statusCode: 404,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({
+                error: 'Route not found',
+                path: path,
+                method: httpMethod
+            })
+        };
+
     } catch (error) {
-        logger.error('Unhandled error in payment handler', error, {
-            correlationId
-        });
-        return errorResponse.internalError('An unexpected error occurred');
+        console.error('Error in payment handler:', error);
+        return {
+            statusCode: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({
+                error: 'Internal server error',
+                message: error.message
+            })
+        };
     }
 };
-
-async function handleCreateSubscription(event, correlationId) {
-    try {
-        const user = getUserFromEvent(event);
-        const body = parseRequestBody(event.body);
-
-        logger.info('Create subscription request', {
-            correlationId,
-            userId: user.userId
-        });
-
-        // TODO: Implement Stripe subscription creation
-        return successResponse({}, 'Stripe integration functionality coming soon');
-    } catch (error) {
-        logger.error('Create subscription error', error, {
-            correlationId
-        });
-        return errorResponse.internalError('Failed to create subscription');
-    }
-}
-
-async function handleStripeWebhook(event, correlationId) {
-    try {
-        logger.info('Stripe webhook received', {
-            correlationId
-        });
-
-        // TODO: Implement Stripe webhook handling
-        return successResponse({}, 'Webhook processed');
-    } catch (error) {
-        logger.error('Stripe webhook error', error, {
-            correlationId
-        });
-        return errorResponse.internalError('Failed to process webhook');
-    }
-}
