@@ -157,7 +157,7 @@ main() {
             fi
         done
 
-        # Test payment endpoint (uses plural form)
+        # Test payment endpoint (uses plural form - /payments/health)
         if test_api_endpoint "$api_url" "/payments/health"; then
             print_success "payment service working"
         else
