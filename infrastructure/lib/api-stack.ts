@@ -238,6 +238,9 @@ export class ApiStack extends cdk.Stack {
         'cognito-idp:UpdateUserAttributes',
         'cognito-idp:AdminGetUser',
         'cognito-idp:AdminUpdateUserAttributes',
+        'cognito-idp:AdminCreateUser',
+        'cognito-idp:AdminSetUserPassword',
+        'cognito-idp:AdminDeleteUser',
       ],
       resources: ['*'], // Cognito permissions are typically broad for user pool operations
     }));

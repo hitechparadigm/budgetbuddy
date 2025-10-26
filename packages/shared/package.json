@@ -15,7 +15,9 @@
         "test:coverage": "jest --coverage",
         "clean": "rm -rf dist"
     },
-    "dependencies": {},
+    "dependencies": {
+        "zod": "^3.22.4"
+    },
     "devDependencies": {
         "typescript": "^5.1.0",
         "eslint": "^8.45.0",

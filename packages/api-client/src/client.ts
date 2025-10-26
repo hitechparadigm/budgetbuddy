@@ -1,219 +1,396 @@
 /**
- * Base API client for BudgetBuddy application
- * Handles HTTP requests with authentication, retries, and error handling
- * Provides a consistent interface for all API interactions
+ * BudgetBuddy API Client
+ * Authenticated HTTP client wrapper for all API communications
  */
 
-import { ApiResponse } from '@budget-buddy/shared';
+// ============================================================================
+// Inline Types (will be moved to shared package later)
+// ============================================================================
 
-/**
- * Configuration options for the API client
- */
-export interface ApiClientConfig {
-  baseUrl: string; // Base URL for all API requests (e.g., 'https://api.budgetbuddy.com')
-  timeout?: number; // Request timeout in milliseconds (default: 10000)
-  retries?: number; // Number of retry attempts for failed requests (default: 3)
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  idToken: string;
+  expiresIn: number;
 }
 
-/**
- * HTTP client class with built-in authentication, retry logic, and error handling
- * Manages JWT tokens and provides methods for all HTTP verbs
- */
+export interface ApiResponse<T = any> {
+  message?: string;
+  data?: T;
+  error?: string;
+  details?: string;
+}
+
+export interface ApiError {
+  error: string;
+  message: string;
+  details?: string;
+  errors?: string[];
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  accountType: string;
+  subscriptionTier: string;
+  nextSteps: string[];
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  message: string;
+  accessToken: string;
+  refreshToken: string;
+  idToken: string;
+  user: {
+    userId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    accountType: string;
+    subscriptionTier: string;
+  };
+  expiresIn: number;
+}
+
+// ============================================================================
+// Configuration
+// ============================================================================
+
+export interface ApiClientConfig {
+  baseUrl: string;
+  timeout?: number;
+  retryAttempts?: number;
+  retryDelay?: number;
+}
+
+const DEFAULT_CONFIG: Required<ApiClientConfig> = {
+  baseUrl: 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1',
+  timeout: 10000,
+  retryAttempts: 3,
+  retryDelay: 1000,
+};
+
+// ============================================================================
+// Token Management
+// ============================================================================
+
+class TokenManager {
+  private static readonly ACCESS_TOKEN_KEY = 'budgetbuddy_access_token';
+  private static readonly REFRESH_TOKEN_KEY = 'budgetbuddy_refresh_token';
+  private static readonly ID_TOKEN_KEY = 'budgetbuddy_id_token';
+  private static readonly EXPIRES_AT_KEY = 'budgetbuddy_expires_at';
+
+  static setTokens(tokens: AuthTokens): void {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(this.ACCESS_TOKEN_KEY, tokens.accessToken);
+      localStorage.setItem(this.REFRESH_TOKEN_KEY, tokens.refreshToken);
+      localStorage.setItem(this.ID_TOKEN_KEY, tokens.idToken);
+
+      // Calculate expiration time
+      const expiresAt = Date.now() + (tokens.expiresIn * 1000);
+      localStorage.setItem(this.EXPIRES_AT_KEY, expiresAt.toString());
+    }
+  }
+
+  static getTokens(): AuthTokens | null {
+    if (typeof window === 'undefined') return null;
+
+    const accessToken = localStorage.getItem(this.ACCESS_TOKEN_KEY);
+    const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    const idToken = localStorage.getItem(this.ID_TOKEN_KEY);
+    const expiresAt = localStorage.getItem(this.EXPIRES_AT_KEY);
+
+    if (!accessToken || !refreshToken || !idToken || !expiresAt) {
+      return null;
+    }
+
+    const expiresIn = Math.max(0, Math.floor((parseInt(expiresAt) - Date.now()) / 1000));
+
+    return {
+      accessToken,
+      refreshToken,
+      idToken,
+      expiresIn,
+    };
+  }
+
+  static clearTokens(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(this.ACCESS_TOKEN_KEY);
+      localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+      localStorage.removeItem(this.ID_TOKEN_KEY);
+      localStorage.removeItem(this.EXPIRES_AT_KEY);
+    }
+  }
+
+  static isTokenExpired(): boolean {
+    if (typeof window === 'undefined') return true;
+
+    const expiresAt = localStorage.getItem(this.EXPIRES_AT_KEY);
+    if (!expiresAt) return true;
+
+    return Date.now() >= parseInt(expiresAt);
+  }
+
+  static getAccessToken(): string | null {
+    const tokens = this.getTokens();
+    return tokens?.accessToken || null;
+  }
+}
+
+// ============================================================================
+// HTTP Client
+// ============================================================================
+
 export class ApiClient {
-  private baseUrl: string; // API base URL
-  private timeout: number; // Request timeout duration
-  private retries: number; // Maximum retry attempts
-  private accessToken?: string; // JWT access token for authenticated requests
+  private config: Required<ApiClientConfig>;
+  private isRefreshing = false;
+  private refreshPromise: Promise<void> | null = null;
 
-  /**
-   * Initialize the API client with configuration
-   * @param config - Client configuration including base URL and optional timeout/retry settings
-   */
-  constructor(config: ApiClientConfig) {
-    this.baseUrl = config.baseUrl;
-    this.timeout = config.timeout || 10000; // Default 10 second timeout
-    this.retries = config.retries || 3; // Default 3 retry attempts
+  constructor(config: Partial<ApiClientConfig> = {}) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
-  /**
-   * Set the JWT access token for authenticated requests
-   * Token will be included in Authorization header for subsequent requests
-   * @param token - JWT access token from authentication response
-   */
-  setAccessToken(token: string) {
-    this.accessToken = token;
-  }
+  // ============================================================================
+  // Core HTTP Methods
+  // ============================================================================
 
-  /**
-   * Clear the stored access token (used during logout)
-   * Removes authentication from subsequent requests
-   */
-  clearAccessToken() {
-    this.accessToken = undefined;
-  }
-
-  /**
-   * Core HTTP request method with retry logic and error handling
-   * Handles authentication, timeouts, and automatic retries for transient failures
-   * @param endpoint - API endpoint path (e.g., '/auth/login')
-   * @param options - Fetch API options (method, body, headers, etc.)
-   * @returns Promise resolving to typed API response
-   */
-  private async makeRequest<T>(
+  private async request<T = any>(
     endpoint: string,
     options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
-    const url = `${this.baseUrl}${endpoint}`;
-    
-    // Set up default headers with JSON content type
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+  ): Promise<T> {
+    const url = `${this.config.baseUrl}${endpoint}`;
 
-    // Add JWT token to Authorization header if available
-    if (this.accessToken) {
-      headers.Authorization = `Bearer ${this.accessToken}`;
+    // Add authentication header if available
+    const headers = new Headers(options.headers);
+    headers.set('Content-Type', 'application/json');
+
+    const accessToken = TokenManager.getAccessToken();
+    if (accessToken && !TokenManager.isTokenExpired()) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
     }
 
     const requestOptions: RequestInit = {
       ...options,
       headers,
+      signal: AbortSignal.timeout(this.config.timeout),
     };
 
-    let lastError: Error;
-    
-    // Retry loop with exponential backoff
-    for (let attempt = 0; attempt <= this.retries; attempt++) {
-      try {
-        // Set up request timeout using AbortController
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    try {
+      const response = await this.fetchWithRetry(url, requestOptions);
 
-        const response = await fetch(url, {
-          ...requestOptions,
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        // Parse JSON response
-        const data = await response.json();
-
-        // Check for HTTP error status codes
-        if (!response.ok) {
-          throw new Error(data.error?.message || `HTTP ${response.status}`);
-        }
-
-        return data;
-      } catch (error) {
-        lastError = error as Error;
-        
-        // Only retry if we haven't exceeded max attempts and error is retryable
-        if (attempt < this.retries && this.shouldRetry(error as Error)) {
-          // Exponential backoff: wait 1s, 2s, 4s, etc.
-          await this.delay(Math.pow(2, attempt) * 1000);
-          continue;
-        }
-        
-        break;
+      if (!response.ok) {
+        await this.handleErrorResponse(response);
       }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new ApiClientError(error.message, 0);
+      }
+      throw error;
+    }
+  }
+
+  private async fetchWithRetry(
+    url: string,
+    options: RequestInit,
+    attempt = 1
+  ): Promise<Response> {
+    try {
+      const response = await fetch(url, options);
+
+      // If unauthorized and we have a refresh token, try to refresh
+      if (response.status === 401 && !this.isRefreshing) {
+        await this.refreshTokenIfNeeded();
+
+        // Retry the request with new token
+        const accessToken = TokenManager.getAccessToken();
+        if (accessToken) {
+          const headers = new Headers(options.headers);
+          headers.set('Authorization', `Bearer ${accessToken}`);
+          return fetch(url, { ...options, headers });
+        }
+      }
+
+      return response;
+    } catch (error) {
+      if (attempt < this.config.retryAttempts) {
+        await this.delay(this.config.retryDelay * attempt);
+        return this.fetchWithRetry(url, options, attempt + 1);
+      }
+      throw error;
+    }
+  }
+
+  private async handleErrorResponse(response: Response): Promise<never> {
+    let errorData: ApiError;
+
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = {
+        error: 'Unknown Error',
+        message: `HTTP ${response.status}: ${response.statusText}`,
+      };
     }
 
-    // If all retries failed, throw the last error
-    throw lastError!;
+    throw new ApiClientError(
+      errorData.message || 'An error occurred',
+      response.status,
+      errorData
+    );
   }
 
-  /**
-   * Determine if an error should trigger a retry attempt
-   * Retries network errors, timeouts, and server errors (5xx)
-   * @param error - The error that occurred during the request
-   * @returns true if the request should be retried
-   */
-  private shouldRetry(error: Error): boolean {
-    // Retry on network errors, timeouts, or 5xx server errors
-    return error.name === 'AbortError' || 
-           error.message.includes('fetch') ||
-           error.message.includes('5');
+  private async refreshTokenIfNeeded(): Promise<void> {
+    if (this.isRefreshing) {
+      return this.refreshPromise || Promise.resolve();
+    }
+
+    const tokens = TokenManager.getTokens();
+    if (!tokens?.refreshToken) {
+      TokenManager.clearTokens();
+      throw new ApiClientError('No refresh token available', 401);
+    }
+
+    this.isRefreshing = true;
+    this.refreshPromise = this.performTokenRefresh(tokens.refreshToken);
+
+    try {
+      await this.refreshPromise;
+    } finally {
+      this.isRefreshing = false;
+      this.refreshPromise = null;
+    }
   }
 
-  /**
-   * Utility method to create a delay for retry backoff
-   * @param ms - Milliseconds to delay
-   * @returns Promise that resolves after the specified delay
-   */
+  private async performTokenRefresh(refreshToken: string): Promise<void> {
+    try {
+      // TODO: Implement refresh token endpoint when available
+      // For now, clear tokens and require re-login
+      TokenManager.clearTokens();
+      throw new ApiClientError('Token refresh not implemented', 401);
+    } catch (error) {
+      TokenManager.clearTokens();
+      throw error;
+    }
+  }
+
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  /**
-   * Perform a GET request to retrieve data
-   * @param endpoint - API endpoint path
-   * @returns Promise resolving to typed response data
-   */
-  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.makeRequest<T>(endpoint, { method: 'GET' });
-  }
+  // ============================================================================
+  // Authentication Methods
+  // ============================================================================
 
-  /**
-   * Perform a POST request to create or submit data
-   * @param endpoint - API endpoint path
-   * @param data - Optional request body data (will be JSON stringified)
-   * @returns Promise resolving to typed response data
-   */
-  async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
-    return this.makeRequest<T>(endpoint, {
+  async register(data: RegisterRequest): Promise<RegisterResponse> {
+    const response = await this.request<RegisterResponse>('/auth/register', {
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      body: JSON.stringify(data),
     });
+
+    return response;
   }
 
-  /**
-   * Perform a PUT request to update existing data
-   * @param endpoint - API endpoint path
-   * @param data - Optional request body data (will be JSON stringified)
-   * @returns Promise resolving to typed response data
-   */
-  async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
-    return this.makeRequest<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
+  async login(data: LoginRequest): Promise<LoginResponse> {
+    const response = await this.request<LoginResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
+
+    // Store tokens after successful login
+    TokenManager.setTokens({
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+      idToken: response.idToken,
+      expiresIn: response.expiresIn,
+    });
+
+    return response;
   }
 
-  /**
-   * Perform a DELETE request to remove data
-   * @param endpoint - API endpoint path
-   * @returns Promise resolving to typed response data
-   */
-  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.makeRequest<T>(endpoint, { method: 'DELETE' });
+  async logout(): Promise<void> {
+    TokenManager.clearTokens();
+    // TODO: Call logout endpoint when available
+  }
+
+  // ============================================================================
+  // Utility Methods
+  // ============================================================================
+
+  isAuthenticated(): boolean {
+    const tokens = TokenManager.getTokens();
+    return tokens !== null && !TokenManager.isTokenExpired();
+  }
+
+  getTokens(): AuthTokens | null {
+    return TokenManager.getTokens();
+  }
+
+  clearTokens(): void {
+    TokenManager.clearTokens();
+  }
+
+  // ============================================================================
+  // Health Check
+  // ============================================================================
+
+  async healthCheck(): Promise<{ status: string; timestamp: string }> {
+    return this.request('/health');
   }
 }
 
-// Global API client instance - singleton pattern for consistent configuration
-let apiClient: ApiClient;
+// ============================================================================
+// Error Classes
+// ============================================================================
 
-/**
- * Initialize the global API client with configuration
- * Must be called before using getApiClient() or any API methods
- * @param config - API client configuration
- * @returns Configured API client instance
- */
-export const initializeApiClient = (config: ApiClientConfig) => {
-  apiClient = new ApiClient(config);
-  return apiClient;
-};
-
-/**
- * Get the global API client instance
- * Throws error if client hasn't been initialized
- * @returns The configured API client instance
- * @throws Error if initializeApiClient hasn't been called
- */
-export const getApiClient = (): ApiClient => {
-  if (!apiClient) {
-    throw new Error('API client not initialized. Call initializeApiClient first.');
+export class ApiClientError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number,
+    public apiError?: ApiError
+  ) {
+    super(message);
+    this.name = 'ApiClientError';
   }
-  return apiClient;
-};
+
+  get isNetworkError(): boolean {
+    return this.statusCode === 0;
+  }
+
+  get isAuthError(): boolean {
+    return this.statusCode === 401 || this.statusCode === 403;
+  }
+
+  get isValidationError(): boolean {
+    return this.statusCode === 400;
+  }
+
+  get isServerError(): boolean {
+    return this.statusCode >= 500;
+  }
+}
+
+// ============================================================================
+// Default Export
+// ============================================================================
+
+export const apiClient = new ApiClient();
+export default apiClient;

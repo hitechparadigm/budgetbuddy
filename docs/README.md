@@ -7,9 +7,12 @@
 - **[Stack Management Guide](./stack-management-guide.md)** - How to manage, deploy, and maintain the stacks
 - **[Deployment Management](./deployment-management.md)** - Deployment commands, monitoring, and troubleshooting
 
-### Configuration & Setup  
-- **[Configuration Guide](./configuration-guide.md)** - Environment variables, frontend config, and AWS resource tags
+### Development & Status
+- **[Development Status](./development-status.md)** - Current progress, next steps, and roadmap
 - **[API Endpoints](./api-endpoints.md)** - Complete API documentation with examples
+
+### Configuration & Setup
+- **[Configuration Guide](./configuration-guide.md)** - Environment variables, frontend config, and AWS resource tags
 - **[AWS Resource Standards](./aws-resource-standards.md)** - Naming conventions and tagging standards
 
 ### CI/CD & Deployment
@@ -20,27 +23,31 @@
 ## 🏗️ Current Infrastructure Status
 
 ### Deployed Stacks (Development Environment)
-✅ **budgetbuddy-dev-auth** - Authentication & user management  
-✅ **budgetbuddy-dev-database** - DynamoDB data storage  
-✅ **budgetbuddy-dev-hosting** - S3 + CloudFront web hosting  
-✅ **budgetbuddy-dev-api** - Lambda functions & API Gateway  
-✅ **budgetbuddy-dev-monitoring** - CloudWatch dashboards & alerts  
+✅ **budgetbuddy-dev-auth** - Authentication & user management
+✅ **budgetbuddy-dev-database** - DynamoDB data storage
+✅ **budgetbuddy-dev-hosting** - S3 + CloudFront web hosting
+✅ **budgetbuddy-dev-api** - Lambda functions & API Gateway
+✅ **budgetbuddy-dev-monitoring** - CloudWatch dashboards & alerts
 
 ### Key URLs & Endpoints
 - **API Gateway**: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/`
-- **Health Check**: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/health`
+- **Authentication**:
+  - Registration: `POST /auth/register` ✅
+  - Login: `POST /auth/login` ✅
+  - Health Check: `GET /health` ✅
 - **CloudWatch Dashboard**: AWS Console → CloudWatch → Dashboards → `budgetbuddy-dev-application-metrics`
 
 ## 🚀 Quick Start
 
 ### For Developers
-1. **API Integration**: Use the API Gateway URL in your frontend applications
-2. **Authentication**: Configure Cognito with the User Pool ID and Client ID
-3. **Health Monitoring**: Use health endpoints to verify service status
+1. **API Integration**: Use the API Gateway URL with the `@budget-buddy/api-client` package
+2. **Authentication**: Complete backend ready - implement frontend components
+3. **Type Safety**: Use `@budget-buddy/shared` types and validation schemas
+4. **Health Monitoring**: Use health endpoints to verify service status
 
 ### For DevOps
 1. **Monitor Stacks**: Check CloudFormation console for stack status
-2. **View Metrics**: Access CloudWatch dashboard for performance monitoring  
+2. **View Metrics**: Access CloudWatch dashboard for performance monitoring
 3. **Manage Deployments**: Use CDK commands for updates and rollbacks
 
 ### For Project Managers
