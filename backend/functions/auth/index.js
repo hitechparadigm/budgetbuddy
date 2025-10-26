@@ -52,110 +52,23 @@ exports.handler = async (event, _context) => {
             };
         }
 
-        // Handle registration endpoint
+        // Handle registration endpoint - ULTRA SIMPLE TEST
         if (httpMethod === 'POST' && path === '/auth/register') {
-            console.log('Registration request received');
-            console.log('Request body:', event.body);
+            console.log('Registration endpoint hit - returning immediate success');
 
-            // Parse request body
-            let requestBody;
-            try {
-                requestBody = JSON.parse(event.body);
-                console.log('Parsed body:', requestBody);
-            } catch (error) {
-                console.error('JSON parse error:', error);
-                return {
-                    statusCode: 400,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    body: JSON.stringify({
-                        error: 'Bad Request',
-                        message: 'Invalid JSON in request body'
-                    })
-                };
-            }
-
-            // Validate required fields
-            const {
-                email,
-                password,
-                firstName,
-                lastName
-                // country // TODO: Will be used when implementing full Cognito registration
-            } = requestBody;
-            if (!email || !password || !firstName || !lastName) {
-                console.log('Missing required fields');
-                return {
-                    statusCode: 400,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    body: JSON.stringify({
-                        error: 'Bad Request',
-                        message: 'Email, password, firstName, and lastName are required'
-                    })
-                };
-            }
-
-            // Try Cognito registration
-            try {
-                console.log('Testing AWS SDK availability...');
-                try {
-                    require('aws-sdk');
-                    console.log('AWS SDK is available');
-                } catch (sdkError) {
-                    console.error('AWS SDK not available:', sdkError);
-                    throw sdkError;
-                }
-                console.log('AWS SDK test completed successfully');
-
-                // Test mode - return success without actually calling Cognito
-                return {
-                    statusCode: 200,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    body: JSON.stringify({
-                        message: 'AWS SDK and Cognito client initialized successfully',
-                        testMode: true,
-                        clientId: CLIENT_ID ? 'configured' : 'not configured',
-                        userEmail: email
-                    })
-                };
-
-            } catch (error) {
-                console.error('Registration error:', error);
-
-                if (error.code === 'UsernameExistsException') {
-                    return {
-                        statusCode: 409,
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Access-Control-Allow-Origin': '*'
-                        },
-                        body: JSON.stringify({
-                            error: 'Conflict',
-                            message: 'User with this email already exists'
-                        })
-                    };
-                }
-
-                return {
-                    statusCode: 400,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    body: JSON.stringify({
-                        error: 'Registration Failed',
-                        message: error.message
-                    })
-                };
-            }
+            return {
+                statusCode: 200,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                body: JSON.stringify({
+                    message: 'Registration endpoint working - ultra simple test',
+                    method: httpMethod,
+                    path: path,
+                    bodyReceived: event.body ? 'yes' : 'no'
+                })
+            };
         }
 
         // For other POST requests, return a simple success response
