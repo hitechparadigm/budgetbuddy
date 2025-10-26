@@ -1,0 +1,102 @@
+#!/bin/bash
+
+# BudgetBuddy Pre-Push Documentation Check
+# This hook ensures documentation is updated before pushing to GitHub
+
+echo "🔍 BudgetBuddy Pre-Push Documentation Check..."
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Check if documentation files exist
+REQUIRED_DOCS=("CHANGELOG.md" "DEVELOPMENT_LOG.md" "README.md" "docs/development-status.md")
+MISSING_DOCS=()
+
+for doc in "${REQUIRED_DOCS[@]}"; do
+    if [ ! -f "$doc" ]; then
+        MISSING_DOCS+=("$doc")
+    fi
+done
+
+if [ ${#MISSING_DOCS[@]} -ne 0 ]; then
+    echo -e "${RED}❌ Missing required documentation files:${NC}"
+    printf '%s\n' "${MISSING_DOCS[@]}"
+    echo -e "${YELLOW}Please create these files before pushing.${NC}"
+    exit 1
+fi
+
+# Check if documentation was updated recently (within last 24 hours)
+CURRENT_TIME=$(date +%s)
+TWENTY_FOUR_HOURS=86400
+
+check_file_age() {
+    local file=$1
+    local file_time=$(stat -c %Y "$file" 2>/dev/null || stat -f %m "$file" 2>/dev/null)
+    local age=$((CURRENT_TIME - file_time))
+
+    if [ $age -gt $TWENTY_FOUR_HOURS ]; then
+        return 1
+    fi
+    return 0
+}
+
+OLD_DOCS=()
+for doc in "${REQUIRED_DOCS[@]}"; do
+    if ! check_file_age "$doc"; then
+        OLD_DOCS+=("$doc")
+    fi
+done
+
+# Interactive documentation update prompt
+if [ ${#OLD_DOCS[@]} -ne 0 ] || [ "$1" = "--force-check" ]; then
+    echo -e "${YELLOW}📋 Documentation Update Required${NC}"
+    echo -e "${BLUE}The following documentation should be updated:${NC}"
+
+    if [ ${#OLD_DOCS[@]} -ne 0 ]; then
+        echo -e "${YELLOW}Files not updated in last 24 hours:${NC}"
+        printf '  - %s\n' "${OLD_DOCS[@]}"
+    fi
+
+    echo ""
+    echo -e "${BLUE}📝 Documentation Update Checklist:${NC}"
+    echo ""
+    echo -e "${GREEN}CHANGELOG.md Updates:${NC}"
+    echo "  □ Add new version entry with today's date"
+    echo "  □ List all features added in this session"
+    echo "  □ Document all issues fixed with root cause and resolution"
+    echo "  □ Record lessons learned with application guidance"
+    echo "  □ Update progress metrics"
+    echo ""
+    echo -e "${GREEN}DEVELOPMENT_LOG.md Updates:${NC}"
+    echo "  □ Add session accomplishments"
+    echo "  □ Document all issues encountered with detailed resolution steps"
+    echo "  □ Record lessons learned with context and application"
+    echo "  □ Update progress metrics"
+    echo ""
+    echo -e "${GREEN}README.md Updates:${NC}"
+    echo "  □ Update project status phase"
+    echo "  □ Update overall progress percentage"
+    echo "  □ Update recent achievements section"
+    echo "  □ Verify all links and commands work"
+    echo ""
+    echo -e "${GREEN}Task Status Updates:${NC}"
+    echo "  □ Mark completed tasks in tasks.md"
+    echo "  □ Update task progress in development-status.md"
+    echo ""
+
+    read -p "Have you updated all documentation? (y/n): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo -e "${RED}❌ Push cancelled. Please update documentation first.${NC}"
+        echo -e "${BLUE}💡 Use the checklist above to ensure all documentation is current.${NC}"
+        exit 1
+    fi
+fi
+
+echo -e "${GREEN}✅ Documentation check passed!${NC}"
+echo -e "${BLUE}🚀 Proceeding with push...${NC}"
+exit 0
