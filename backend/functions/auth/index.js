@@ -4,7 +4,7 @@
 
 // Environment variables
 // const USER_POOL_ID = process.env.USER_POOL_ID; // TODO: Will be used for additional validation
-const CLIENT_ID = process.env.CLIENT_ID;
+// const CLIENT_ID = process.env.CLIENT_ID; // TODO: Will be used for Cognito registration
 // const TABLE_NAME = process.env.TABLE_NAME; // TODO: Will be used for user profile storage
 
 /**
@@ -65,7 +65,7 @@ exports.handler = async (event, _context) => {
                 body: JSON.stringify({
                     message: 'Registration endpoint working - ultra simple test',
                     method: httpMethod,
-                    path: path,
+                    path,
                     bodyReceived: event.body ? 'yes' : 'no'
                 })
             };
