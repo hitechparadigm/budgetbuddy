@@ -17,8 +17,14 @@ let cognito = null;
 
 function getCognitoClient() {
     if (!cognito) {
-        const AWS = require('aws-sdk');
-        cognito = new AWS.CognitoIdentityServiceProvider();
+        try {
+            const AWS = require('aws-sdk');
+            cognito = new AWS.CognitoIdentityServiceProvider();
+            console.log('Cognito client initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize Cognito client:', error);
+            throw error;
+        }
     }
     return cognito;
 }
@@ -142,6 +148,8 @@ function createResponse(statusCode, body) {
  * Handle user registration
  */
 async function handleRegister(body) {
+    console.log('handleRegister called with body:', JSON.stringify(body));
+
     const {
         email,
         password,
@@ -151,11 +159,14 @@ async function handleRegister(body) {
     } = body;
 
     if (!email || !password || !firstName || !lastName) {
+        console.log('Missing required fields');
         return createResponse(400, {
             error: 'Bad Request',
             message: 'Email, password, firstName, and lastName are required'
         });
     }
+
+    console.log('All required fields present, attempting Cognito registration');
 
     try {
         const params = {

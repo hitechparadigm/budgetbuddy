@@ -76,14 +76,16 @@
     - Create password reset flow with secure token generation
     - _Requirements: 1.2, 1.3, 1.8_
 
-  - [-] 4.2 Build authentication UI components and screens
+  - [x] 4.2 Build authentication UI components and screens
+
 
     - Create Login, Register, and Password Reset screens for web and mobile
     - Implement form validation with real-time feedback
     - Add loading states and error handling
     - _Requirements: 1.1, 1.2_
 
-  - [ ] 4.3 Implement protected route guards and session management
+  - [-] 4.3 Implement protected route guards and session management
+
     - Create authentication context and hooks
     - Build route protection for authenticated areas
     - Implement automatic token refresh and logout on expiration
