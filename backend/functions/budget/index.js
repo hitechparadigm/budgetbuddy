@@ -3,6 +3,8 @@
  *
  * Handles budget CRUD operations, category management, and zero-based budgeting calculations.
  * Implements the core budget management system with real-time balance calculations.
+ *
+ * Version: 1.1.0 - Updated with encoding fixes and manual deployment trigger
  */
 
 const {
