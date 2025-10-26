@@ -225,12 +225,47 @@ BudgetBuddy is a comprehensive family budgeting application similar to EveryDoll
 3. **Email Verification**: Implement email verification process (currently suppressed)
 4. **Session Management**: Implement proper JWT token handling and refresh
 
-### Key Learnings
-1. **Systematic Debugging**: Ultra-simple testing approach proved highly effective
-2. **IAM Permissions**: Cognito admin operations require specific permissions
-3. **Custom Attributes**: Must be defined in User Pool schema before use
-4. **Error Handling**: Comprehensive error handling improves debugging significantly
-5. **Infrastructure as Code**: CDK provides excellent infrastructure management
+### Key Learnings and Issues Resolved
+
+#### 🔧 Development Process Lessons
+1. **Systematic Debugging Approach**
+   - **Lesson**: Ultra-simple testing (minimal endpoint first) proved highly effective
+   - **Application**: Always start with simplest possible implementation, then add complexity incrementally
+   - **Impact**: Reduced debugging time from hours to minutes
+
+2. **Step-by-Step Verification**
+   - **Lesson**: Test each layer before adding the next (JSON parsing → validation → AWS integration)
+   - **Application**: Never add multiple complex features simultaneously
+   - **Impact**: Easier to isolate and fix issues
+
+#### 🏗️ AWS Infrastructure Lessons
+3. **IAM Permissions Specificity**
+   - **Issue**: Lambda returning 500 errors due to missing permissions
+   - **Root Cause**: Cognito admin operations require specific permissions (AdminCreateUser, AdminSetUserPassword)
+   - **Resolution**: Added explicit IAM permissions for Cognito operations
+   - **Prevention**: Always check AWS service documentation for required permissions
+
+4. **Cognito Custom Attributes**
+   - **Issue**: Lambda failing when trying to set custom:userId attribute
+   - **Root Cause**: Custom attributes must be defined in User Pool schema before use
+   - **Resolution**: Added custom:userId attribute to Cognito User Pool configuration
+   - **Prevention**: Define all custom attributes during User Pool creation
+
+5. **Infrastructure as Code Benefits**
+   - **Lesson**: CDK provides excellent infrastructure management and repeatability
+   - **Application**: Always use IaC for consistent deployments
+   - **Impact**: Eliminated environment drift and deployment inconsistencies
+
+#### 📊 Error Handling and Debugging
+6. **Comprehensive Error Handling**
+   - **Lesson**: Structured error responses with correlation IDs improve debugging significantly
+   - **Application**: Implement consistent error response format across all endpoints
+   - **Impact**: Faster issue identification and resolution
+
+7. **CloudWatch Logging Strategy**
+   - **Lesson**: Detailed logging at each step helps identify exact failure points
+   - **Application**: Log inputs, outputs, and intermediate steps in Lambda functions
+   - **Impact**: Reduced debugging time and improved system observability
 
 ## Current Project Structure
 
@@ -349,6 +384,41 @@ budget-buddy/
    - ✅ Logout functionality
    - ✅ Error handling for invalid credentials
 
+### � Issues  Resolved and Lessons Learned (Evening Session)
+
+#### Frontend Development Issues
+1. **Missing Vite Configuration Files**
+   - **Issue**: Development server showing 404 errors despite running
+   - **Root Cause**: Missing `index.html` file required by Vite to serve React application
+   - **Resolution**: Created `index.html` with proper script reference to `/src/main.tsx`
+   - **Lesson**: Vite requires specific file structure - always verify required files exist
+   - **Prevention**: Use Vite project templates or verify file structure against documentation
+
+2. **TypeScript Configuration Errors**
+   - **Issue**: Vite compilation failing with tsconfig.node.json not found error
+   - **Root Cause**: Main tsconfig.json referenced tsconfig.node.json but file didn't exist
+   - **Resolution**: Created `tsconfig.node.json` with proper configuration for build tools
+   - **Lesson**: TypeScript project references must point to existing files
+   - **Prevention**: Always create referenced configuration files or remove references
+
+3. **Package Dependency Issues**
+   - **Issue**: React components not rendering, missing dependencies
+   - **Root Cause**: npm install not run in web-app package after adding new dependencies
+   - **Resolution**: Ran `npm install` in packages/web-app directory
+   - **Lesson**: Monorepo packages require individual dependency installation
+   - **Prevention**: Always run npm install after adding dependencies to package.json
+
+#### Development Process Improvements
+4. **Systematic Issue Resolution**
+   - **Approach**: Check server status → verify files → fix configuration → restart server
+   - **Lesson**: Follow logical troubleshooting sequence for faster resolution
+   - **Impact**: Reduced debugging time from potential hours to 15 minutes
+
+5. **Configuration File Dependencies**
+   - **Lesson**: Modern build tools have complex configuration dependencies
+   - **Application**: Always verify all referenced configuration files exist
+   - **Impact**: Prevents silent failures and compilation errors
+
 ### 📊 Updated Progress Metrics
 - **Authentication System**: 95% complete (full frontend + backend working)
 - **Shared Foundation**: 90% complete (types + validation + API client + UI components)
@@ -362,3 +432,81 @@ For detailed current status and next steps, see [docs/development-status.md](./d
 ---
 *Last Updated: October 26, 2025*
 *Development Phase: Authentication System Complete, Budget Features Next*
+
+---
+
+## 📋 Issue Tracking Template for Future Sessions
+
+### Session Format
+```markdown
+### 🎯 Session: [Date] - [Phase/Feature Name]
+
+#### ✅ Accomplishments
+- [List of completed features/tasks]
+
+#### 🔧 Issues Resolved
+1. **[Issue Category] - [Issue Title]**
+   - **Issue**: Detailed description of the problem
+   - **Root Cause**: What caused the issue
+   - **Resolution**: How it was fixed
+   - **Lesson**: Key takeaway
+   - **Prevention**: How to avoid in the future
+   - **Time Impact**: How long it took to resolve
+
+#### 📚 Lessons Learned
+1. **[Category] - [Lesson Title]**
+   - **Context**: What we were trying to accomplish
+   - **Discovery**: What we learned
+   - **Application**: How to apply this lesson
+   - **Impact**: How this affects future development
+
+#### 📊 Progress Metrics
+- [Component]: X% complete
+- Overall MVP Progress: X%
+```
+
+### Issue Categories
+- **Infrastructure**: AWS, CDK, deployment
+- **Authentication**: Cognito, JWT, user management
+- **Frontend**: React, TypeScript, UI components
+- **Backend**: Lambda, API Gateway, DynamoDB
+- **Development**: Build tools, dependencies, configuration
+- **Testing**: Test failures, validation
+- **Performance**: Speed, optimization, cost
+
+### Lesson Categories
+- **Architecture**: System design decisions
+- **Development Process**: Workflow improvements
+- **Debugging**: Troubleshooting techniques
+- **AWS Services**: Cloud service specifics
+- **Cost Optimization**: Expense management
+- **Security**: Authentication, authorization
+- **Performance**: Speed and efficiency
+
+---
+
+## 📈 Cumulative Lessons Learned Summary
+
+### Most Valuable Debugging Techniques
+1. **Ultra-Simple Testing**: Start with minimal implementation, add complexity incrementally
+2. **Step-by-Step Verification**: Test each layer before adding the next
+3. **Systematic Troubleshooting**: Follow logical sequence (server → files → config → restart)
+4. **Comprehensive Logging**: Log inputs, outputs, and intermediate steps
+
+### Critical Configuration Requirements
+1. **Vite Projects**: Require `index.html` and `tsconfig.node.json`
+2. **Cognito Integration**: Custom attributes must be defined in User Pool schema
+3. **IAM Permissions**: AWS services require specific, explicit permissions
+4. **Monorepo Dependencies**: Each package requires individual npm install
+
+### Development Process Best Practices
+1. **Infrastructure as Code**: Always use CDK/CloudFormation for consistency
+2. **Error Handling**: Implement structured error responses with correlation IDs
+3. **Documentation**: Update documentation immediately after resolving issues
+4. **Testing**: Test each component individually before integration
+
+### Time-Saving Strategies
+1. **Configuration Templates**: Maintain templates for common configurations
+2. **Issue Documentation**: Record solutions for faster future resolution
+3. **Incremental Development**: Build and test small pieces before combining
+4. **Systematic Debugging**: Follow established troubleshooting sequences
