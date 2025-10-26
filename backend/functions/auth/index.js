@@ -38,21 +38,22 @@ function getCognitoClient() {
  * @returns {Promise<Object>} HTTP response object
  */
 exports.handler = async (event, _context) => {
-    console.log('Authentication request received', {
-        httpMethod: event.httpMethod,
-        path: event.path,
-        headers: event.headers
-    });
+    console.log('=== AUTH HANDLER START ===');
+    console.log('Event:', JSON.stringify(event, null, 2));
 
     try {
+        console.log('Extracting event properties...');
         const {
             httpMethod,
             path,
             body
         } = event;
 
+        console.log('Method:', httpMethod, 'Path:', path);
+
         // Handle health check endpoints (both root and service-specific)
         if (httpMethod === 'GET' && (path === '/health' || path === '/auth/health')) {
+            console.log('Health check requested');
             return createResponse(200, {
                 status: 'healthy',
                 service: 'auth',
@@ -65,15 +66,19 @@ exports.handler = async (event, _context) => {
 
         // Handle CORS preflight requests
         if (httpMethod === 'OPTIONS') {
+            console.log('CORS preflight requested');
             return createResponse(200, '');
         }
 
         // Parse request body for POST requests
         let requestBody = {};
         if (body) {
+            console.log('Parsing request body...');
             try {
                 requestBody = JSON.parse(body);
+                console.log('Parsed body:', JSON.stringify(requestBody));
             } catch (error) {
+                console.error('JSON parse error:', error);
                 return createResponse(400, {
                     error: 'Bad Request',
                     message: 'Invalid JSON in request body'
@@ -81,8 +86,23 @@ exports.handler = async (event, _context) => {
             }
         }
 
+        // Simple test endpoint that doesn't use AWS SDK
+        if (httpMethod === 'POST' && path === '/auth/test') {
+            console.log('Test endpoint called');
+            return createResponse(200, {
+                message: 'Test endpoint working',
+                receivedBody: requestBody,
+                environment: {
+                    USER_POOL_ID: USER_POOL_ID ? 'set' : 'not set',
+                    CLIENT_ID: CLIENT_ID ? 'set' : 'not set',
+                    TABLE_NAME: TABLE_NAME ? 'set' : 'not set'
+                }
+            });
+        }
+
         // Route to appropriate handler based on path and method
         if (httpMethod === 'POST' && path === '/auth/register') {
+            console.log('Routing to handleRegister...');
             return await handleRegister(requestBody);
         }
 
