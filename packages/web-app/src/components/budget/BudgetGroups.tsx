@@ -1,10 +1,11 @@
 /**
  * Budget Groups Component
  * Displays expandable/collapsible budget groups (Income, Savings, Expenses)
+ * Simplified design inspired by EveryDollar for easy budget management
  */
 
 import React, { useState } from 'react';
-import { BudgetGroup } from '../../contexts/BudgetContext';
+import { BudgetGroup, Category } from '../../contexts/BudgetContext';
 
 // ============================================================================
 // Types
@@ -17,6 +18,11 @@ interface BudgetGroupsProps {
     expenses: BudgetGroup[];
   };
   loading?: boolean;
+  onUpdateGroups?: (groups: {
+    income: BudgetGroup[];
+    savings: BudgetGroup[];
+    expenses: BudgetGroup[];
+  }) => void;
 }
 
 interface BudgetGroupCardProps {
@@ -24,6 +30,8 @@ interface BudgetGroupCardProps {
   groupType: 'income' | 'savings' | 'expenses';
   isExpanded: boolean;
   onToggle: () => void;
+  onAddCategory: () => void;
+  onUpdateCategory: (category: Category, plannedAmount: number) => void;
 }
 
 // ============================================================================
@@ -32,9 +40,10 @@ interface BudgetGroupCardProps {
 
 export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
   groups,
-  loading = false
+  loading = false,
+  onUpdateGroups
 }) => {
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['income-0', 'savings-0', 'expenses-0'])); // Expand all by default
 
   // ============================================================================
   // Event Handlers
@@ -48,6 +57,63 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
       newExpanded.add(groupKey);
     }
     setExpandedGroups(newExpanded);
+  };
+
+  const handleAddCategory = (groupKey: string) => {
+    if (!onUpdateGroups) return;
+
+    const [type, indexStr] = groupKey.split('-');
+    const index = parseInt(indexStr);
+    const groupType = type as 'income' | 'savings' | 'expenses';
+
+    // Create a simple new category
+    const newCategory: Category = {
+      categoryId: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      categoryName: `New ${groupType === 'income' ? 'Income' : groupType === 'savings' ? 'Savings' : 'Expense'}`,
+      parentGroup: groups[groupType][index].groupName,
+      groupType: groupType === 'savings' ? 'saving' : groupType === 'expenses' ? 'expense' : 'income',
+      categoryOrder: groups[groupType][index].categories.length,
+      icon: groupType === 'income' ? '💰' : groupType === 'savings' ? '🏦' : '🛒',
+      colorCode: groupType === 'income' ? '#10B981' : groupType === 'savings' ? '#3B82F6' : '#F59E0B',
+      plannedAmount: 0,
+      spentAmount: 0,
+      remainingAmount: 0,
+      isCustom: true,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    const updatedGroups = { ...groups };
+    updatedGroups[groupType][index] = {
+      ...updatedGroups[groupType][index],
+      categories: [...updatedGroups[groupType][index].categories, newCategory]
+    };
+
+    onUpdateGroups(updatedGroups);
+  };
+
+  const handleUpdateCategory = (groupKey: string, category: Category, plannedAmount: number) => {
+    if (!onUpdateGroups) return;
+
+    const [type, indexStr] = groupKey.split('-');
+    const index = parseInt(indexStr);
+    const groupType = type as 'income' | 'savings' | 'expenses';
+
+    const updatedGroups = { ...groups };
+    const group = updatedGroups[groupType][index];
+
+    const updatedCategories = group.categories.map(cat =>
+      cat.categoryId === category.categoryId
+        ? { ...cat, plannedAmount, remainingAmount: plannedAmount - cat.spentAmount }
+        : cat
+    );
+
+    updatedGroups[groupType][index] = {
+      ...group,
+      categories: updatedCategories
+    };
+
+    onUpdateGroups(updatedGroups);
   };
 
   // ============================================================================
@@ -84,6 +150,8 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
           groupType="income"
           isExpanded={expandedGroups.has(`income-${index}`)}
           onToggle={() => toggleGroup(`income-${index}`)}
+          onAddCategory={() => handleAddCategory(`income-${index}`)}
+          onUpdateCategory={(cat, amount) => handleUpdateCategory(`income-${index}`, cat, amount)}
         />
       ))}
 
@@ -95,6 +163,8 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
           groupType="savings"
           isExpanded={expandedGroups.has(`savings-${index}`)}
           onToggle={() => toggleGroup(`savings-${index}`)}
+          onAddCategory={() => handleAddCategory(`savings-${index}`)}
+          onUpdateCategory={(cat, amount) => handleUpdateCategory(`savings-${index}`, cat, amount)}
         />
       ))}
 
@@ -106,6 +176,8 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
           groupType="expenses"
           isExpanded={expandedGroups.has(`expenses-${index}`)}
           onToggle={() => toggleGroup(`expenses-${index}`)}
+          onAddCategory={() => handleAddCategory(`expenses-${index}`)}
+          onUpdateCategory={(cat, amount) => handleUpdateCategory(`expenses-${index}`, cat, amount)}
         />
       ))}
 
@@ -139,166 +211,196 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
   groupType,
   isExpanded,
   onToggle,
+  onAddCategory,
+  onUpdateCategory,
 }) => {
-  // ============================================================================
-  // Calculate Progress
-  // ============================================================================
-
-  const progressPercentage = group.totalPlanned > 0
-    ? Math.min((group.totalSpent / group.totalPlanned) * 100, 100)
-    : 0;
-
-  const isOverBudget = group.totalSpent > group.totalPlanned && group.totalPlanned > 0;
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState<string>('');
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [editName, setEditName] = useState<string>('');
 
   // ============================================================================
-  // Group Type Styling
+  // Group Type Styling - Simplified
   // ============================================================================
 
-  const getGroupStyling = (type: string) => {
+  const getGroupColor = (type: string) => {
     switch (type) {
       case 'income':
-        return {
-          bgColor: 'bg-green-50',
-          borderColor: 'border-green-200',
-          textColor: 'text-green-800',
-          progressColor: 'bg-green-600',
-          progressBg: 'bg-green-200',
-          icon: '💰',
-        };
+        return 'text-green-700';
       case 'savings':
-        return {
-          bgColor: 'bg-blue-50',
-          borderColor: 'border-blue-200',
-          textColor: 'text-blue-800',
-          progressColor: 'bg-blue-600',
-          progressBg: 'bg-blue-200',
-          icon: '🏦',
-        };
+        return 'text-blue-700';
       case 'expenses':
-        return {
-          bgColor: 'bg-orange-50',
-          borderColor: 'border-orange-200',
-          textColor: 'text-orange-800',
-          progressColor: isOverBudget ? 'bg-red-600' : 'bg-orange-600',
-          progressBg: isOverBudget ? 'bg-red-200' : 'bg-orange-200',
-          icon: '🛒',
-        };
+        return 'text-gray-700';
       default:
-        return {
-          bgColor: 'bg-gray-50',
-          borderColor: 'border-gray-200',
-          textColor: 'text-gray-800',
-          progressColor: 'bg-gray-600',
-          progressBg: 'bg-gray-200',
-          icon: '📊',
-        };
+        return 'text-gray-700';
     }
   };
 
-  const styling = getGroupStyling(groupType);
+  const groupColor = getGroupColor(groupType);
+
+  const handleStartEdit = (category: Category) => {
+    setEditingCategoryId(category.categoryId);
+    setEditAmount(category.plannedAmount.toString());
+  };
+
+  const handleSaveEdit = (category: Category) => {
+    const amount = parseFloat(editAmount) || 0;
+    onUpdateCategory(category, amount);
+    setEditingCategoryId(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCategoryId(null);
+    setEditAmount('');
+  };
+
+  const handleStartNameEdit = (category: Category) => {
+    setEditingNameId(category.categoryId);
+    setEditName(category.categoryName);
+  };
+
+  const handleSaveName = (category: Category) => {
+    if (editName.trim()) {
+      // Update category name - we'll need to extend onUpdateCategory or create a new handler
+      console.log('Update category name:', category.categoryId, editName);
+    }
+    setEditingNameId(null);
+    setEditName('');
+  };
+
+  const handleCancelNameEdit = () => {
+    setEditingNameId(null);
+    setEditName('');
+  };
 
   // ============================================================================
-  // Render Group Card
+  // Render Group Card - EveryDollar Style
   // ============================================================================
 
   return (
-    <div className={`bg-white shadow rounded-lg border ${styling.borderColor}`}>
-      {/* Group Header */}
+    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      {/* Group Header - Simplified */}
       <div
-        className={`${styling.bgColor} px-6 py-4 cursor-pointer`}
+        className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100"
         onClick={onToggle}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <span className="text-2xl">{styling.icon}</span>
-            <div>
-              <h3 className={`text-lg font-medium ${styling.textColor}`}>
-                {group.groupName}
-              </h3>
-              <p className={`text-sm ${styling.textColor} opacity-75`}>
-                {group.categories.length} {group.categories.length === 1 ? 'category' : 'categories'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <p className={`text-lg font-bold ${styling.textColor}`}>
-                ${group.totalSpent.toLocaleString()} / ${group.totalPlanned.toLocaleString()}
-              </p>
-              <p className={`text-sm ${styling.textColor} opacity-75`}>
-                ${group.totalRemaining.toLocaleString()} remaining
-              </p>
-            </div>
-            <div className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
-              <svg className={`w-5 h-5 ${styling.textColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
+        <div className="flex items-center space-x-2">
+          <svg
+            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+          <h3 className={`text-base font-semibold ${groupColor}`}>
+            {group.groupName}
+          </h3>
         </div>
-
-        {/* Progress Bar */}
-        <div className="mt-4">
-          <div className={`${styling.progressBg} rounded-full h-2`}>
-            <div
-              className={`${styling.progressColor} h-2 rounded-full transition-all duration-300`}
-              style={{ width: `${Math.min(progressPercentage, 100)}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between mt-1">
-            <span className={`text-xs ${styling.textColor} opacity-75`}>
-              {progressPercentage.toFixed(1)}% used
-            </span>
-            {isOverBudget && (
-              <span className="text-xs text-red-600 font-medium">
-                Over budget by ${(group.totalSpent - group.totalPlanned).toLocaleString()}
-              </span>
-            )}
-          </div>
+        <div className="flex items-center space-x-6 text-sm">
+          <span className="text-gray-600 font-medium">Planned</span>
+          <span className="text-gray-600 font-medium w-24 text-right">Remaining</span>
         </div>
       </div>
 
-      {/* Expanded Categories */}
+      {/* Categories List - Table Style */}
       {isExpanded && (
-        <div className="px-6 py-4 border-t border-gray-200">
+        <div>
           {group.categories.length > 0 ? (
-            <div className="space-y-3">
+            <div className="divide-y divide-gray-100">
               {group.categories.map((category) => (
-                <div key={category.categoryId} className="flex items-center justify-between py-2">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-lg">{category.icon || '📊'}</span>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
+                <div
+                  key={category.categoryId}
+                  className="flex items-center justify-between px-4 py-3 hover:bg-gray-50"
+                >
+                  <div className="flex-1">
+                    {editingNameId === category.categoryId ? (
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="text-sm border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveName(category);
+                          if (e.key === 'Escape') handleCancelNameEdit();
+                        }}
+                        onBlur={() => handleSaveName(category)}
+                      />
+                    ) : (
+                      <button
+                        onClick={() => handleStartNameEdit(category)}
+                        className="text-sm text-gray-900 hover:text-blue-600 text-left"
+                      >
                         {category.categoryName}
-                      </p>
-                      {category.isCustom && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                          Custom
-                        </span>
-                      )}
-                    </div>
+                      </button>
+                    )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">
-                      ${category.spentAmount.toLocaleString()} / ${category.plannedAmount.toLocaleString()}
-                    </p>
-                    <p className={`text-xs ${category.remainingAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ${Math.abs(category.remainingAmount).toLocaleString()} {category.remainingAmount >= 0 ? 'left' : 'over'}
-                    </p>
+                  <div className="flex items-center space-x-6">
+                    {editingCategoryId === category.categoryId ? (
+                      <>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-500">$</span>
+                          <input
+                            type="number"
+                            value={editAmount}
+                            onChange={(e) => setEditAmount(e.target.value)}
+                            className="w-24 px-2 py-1 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveEdit(category);
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
+                          />
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={() => handleSaveEdit(category)}
+                            className="p-1 text-green-600 hover:text-green-800"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="p-1 text-gray-400 hover:text-gray-600"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleStartEdit(category)}
+                          className="text-sm font-medium text-gray-900 hover:text-blue-600 w-24 text-right"
+                        >
+                          ${category.plannedAmount.toLocaleString()}
+                        </button>
+                        <span className={`text-sm font-medium w-24 text-right ${category.remainingAmount >= 0 ? 'text-blue-600' : 'text-red-600'
+                          }`}>
+                          ${category.remainingAmount.toLocaleString()}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-sm text-gray-500">
-                No categories in this group yet.
-              </p>
-              <button className="mt-2 inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-blue-600 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                Add Category
-              </button>
-            </div>
-          )}
+          ) : null}
+
+          {/* Add Category Link - EveryDollar Style */}
+          <div className="px-4 py-3 border-t border-gray-200">
+            <button
+              onClick={onAddCategory}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              + Add {groupType === 'income' ? 'Income' : groupType === 'savings' ? 'Savings' : 'Expense'}
+            </button>
+          </div>
         </div>
       )}
     </div>
