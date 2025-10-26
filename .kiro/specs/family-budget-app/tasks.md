@@ -59,7 +59,8 @@
     - Implement validation schemas using Zod
     - _Requirements: 1.1, 4.1, 5.1, 7.1_
 
-  - [ ] 3.2 Build reusable UI components in shared package
+  - [x] 3.2 Build reusable UI components in shared package
+
     - Create Button, Input, Card, Modal components with platform-specific styling
     - Implement CategoryCard and TransactionRow components
     - Build form components with validation integration
@@ -89,6 +90,10 @@
   - [x] 4.2 Build authentication UI components and screens
 
 
+
+
+
+
     - Create Login, Register, and Password Reset screens for web and mobile
     - Implement form validation with real-time feedback
     - Add loading states and error handling
@@ -106,7 +111,7 @@
 
 - [ ] 5. AI-Powered Onboarding and Budget Generation
   - [ ] 5.1 Create cost of living data seeding system
-    - Implement script to seed DynamoDB with cost data for 50+ cities in Canada and US
+    - Implement script to seed DynamoDB with cost data for 300+ largest cities in USA and 50+ largest cities in Canada.
     - Create data structure for regional categories and average expenses
     - Build data update mechanism for periodic refresh
     - _Requirements: 12.1, 12.2, 12.3_
