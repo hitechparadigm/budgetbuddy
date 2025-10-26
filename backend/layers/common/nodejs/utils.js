@@ -1,6 +1,6 @@
 /**
  * Common utilities for BudgetBuddy Lambda functions
- * 
+ *
  * This file contains shared utility functions used across all Lambda handlers
  * to ensure consistency and reduce code duplication. Includes response formatting,
  * error handling, validation, and AWS service helpers.
@@ -52,7 +52,7 @@ const getDynamoClient = () => {
 /**
  * Standard API response formatter
  * Ensures consistent response structure across all Lambda functions
- * 
+ *
  * @param {number} statusCode - HTTP status code
  * @param {any} data - Response data (optional)
  * @param {string} message - Success/error message (optional)
@@ -151,7 +151,7 @@ const parseRequestBody = (body) => {
  * @returns {Object} User information from token
  */
 const getUserFromEvent = (event) => {
-    const claims = event.requestContext ? .authorizer ? .claims;
+    const claims = event.requestContext && event.requestContext.authorizer && event.requestContext.authorizer.claims;
 
     if (!claims) {
         throw new Error('No user claims found in request');
