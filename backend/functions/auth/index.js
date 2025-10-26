@@ -82,8 +82,8 @@ exports.handler = async (event, _context) => {
                 email,
                 password,
                 firstName,
-                lastName,
-                country
+                lastName
+                // country // TODO: Will be used when implementing full Cognito registration
             } = requestBody;
             if (!email || !password || !firstName || !lastName) {
                 console.log('Missing required fields');
@@ -102,12 +102,15 @@ exports.handler = async (event, _context) => {
 
             // Try Cognito registration
             try {
-                console.log('Initializing AWS SDK...');
-                const AWS = require('aws-sdk');
-                console.log('AWS SDK loaded successfully');
-
-                const cognito = new AWS.CognitoIdentityServiceProvider();
-                console.log('Cognito client created successfully');
+                console.log('Testing AWS SDK availability...');
+                try {
+                    require('aws-sdk');
+                    console.log('AWS SDK is available');
+                } catch (sdkError) {
+                    console.error('AWS SDK not available:', sdkError);
+                    throw sdkError;
+                }
+                console.log('AWS SDK test completed successfully');
 
                 // Test mode - return success without actually calling Cognito
                 return {
@@ -121,61 +124,6 @@ exports.handler = async (event, _context) => {
                         testMode: true,
                         clientId: CLIENT_ID ? 'configured' : 'not configured',
                         userEmail: email
-                    })
-                };
-
-                const params = {
-                    ClientId: CLIENT_ID,
-                    Username: email,
-                    Password: password,
-                    UserAttributes: [{
-                            Name: 'email',
-                            Value: email
-                        },
-                        {
-                            Name: 'given_name',
-                            Value: firstName
-                        },
-                        {
-                            Name: 'family_name',
-                            Value: lastName
-                        },
-                        {
-                            Name: 'custom:accountType',
-                            Value: 'single'
-                        },
-                        {
-                            Name: 'custom:subscriptionTier',
-                            Value: 'free'
-                        },
-                        {
-                            Name: 'custom:onboardingCompleted',
-                            Value: 'false'
-                        }
-                    ]
-                };
-
-                if (country) {
-                    params.UserAttributes.push({
-                        Name: 'custom:country',
-                        Value: country
-                    });
-                }
-
-                console.log('Calling Cognito signUp...');
-                const result = await cognito.signUp(params).promise();
-                console.log('Cognito signUp successful:', result.UserSub);
-
-                return {
-                    statusCode: 201,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    body: JSON.stringify({
-                        message: 'User registered successfully',
-                        userId: result.UserSub,
-                        confirmationRequired: !result.UserConfirmed
                     })
                 };
 
