@@ -140,6 +140,7 @@
   - [x] 6.1 Implement budget CRUD operations
 
 
+
     - Create Lambda functions for budget creation, reading, updating, and deletion
     - Build zero-based budgeting calculation engine
     - Implement real-time balance calculations (planned vs spent vs remaining)
