@@ -6,6 +6,12 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual deployment'
+        required: false
+        default: 'Manual deployment trigger'
 
 env:
   NODE_VERSION: '20'
@@ -16,31 +22,31 @@ jobs:
   pre-deployment-checks:
     name: Pre-deployment Validation
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-        
+
       - name: Install dependencies
         run: npm install
-        
+
       - name: Run linting
         run: npm run lint
-        
+
       - name: Run unit tests
         run: npm run test:unit
-        
+
       - name: Build infrastructure
         working-directory: infrastructure
         run: |
           npm install
           npm run build
-          
+
       - name: CDK synthesis validation
         working-directory: infrastructure
         run: npx cdk synth --all --context environment=${{ env.ENVIRONMENT }}
@@ -50,44 +56,44 @@ jobs:
     runs-on: ubuntu-latest
     needs: pre-deployment-checks
     environment: development
-    
+
     outputs:
       api-url: ${{ steps.get-outputs.outputs.api-url }}
       user-pool-id: ${{ steps.get-outputs.outputs.user-pool-id }}
-      
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-        
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.HITECHPARADIGM_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.HITECHPARADIGM_AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-          
+
       - name: Install dependencies
         run: npm install
-        
+
       - name: Install infrastructure dependencies
         working-directory: infrastructure
         run: npm install
-        
+
       - name: Install Lambda layer dependencies
         run: |
           cd backend/layers/common/nodejs
           npm install --production
-          
+
       - name: Build infrastructure
         working-directory: infrastructure
         run: npm run build
-        
+
       - name: Bootstrap CDK (if needed)
         working-directory: infrastructure
         run: |
@@ -97,7 +103,7 @@ jobs:
           else
             echo "CDK already bootstrapped"
           fi
-          
+
       - name: Deploy infrastructure stacks
         working-directory: infrastructure
         run: |
@@ -106,7 +112,7 @@ jobs:
             --require-approval never \
             --context environment=${{ env.ENVIRONMENT }} \
             --outputs-file cdk-outputs.json
-            
+
       - name: Get deployment outputs
         id: get-outputs
         working-directory: infrastructure
@@ -114,10 +120,10 @@ jobs:
           if [ -f cdk-outputs.json ]; then
             API_URL=$(jq -r '.["budgetbuddy-dev-api"].ApiUrl // empty' cdk-outputs.json)
             USER_POOL_ID=$(jq -r '.["budgetbuddy-dev-auth"].UserPoolId // empty' cdk-outputs.json)
-            
+
             echo "api-url=$API_URL" >> $GITHUB_OUTPUT
             echo "user-pool-id=$USER_POOL_ID" >> $GITHUB_OUTPUT
-            
+
             echo "## Deployment Outputs" >> $GITHUB_STEP_SUMMARY
             echo "- **API URL**: $API_URL" >> $GITHUB_STEP_SUMMARY
             echo "- **User Pool ID**: $USER_POOL_ID" >> $GITHUB_STEP_SUMMARY
@@ -129,21 +135,21 @@ jobs:
     name: Post-deployment Health Checks
     runs-on: ubuntu-latest
     needs: deploy-infrastructure
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.HITECHPARADIGM_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.HITECHPARADIGM_AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-          
+
       - name: Wait for deployment to stabilize
         run: sleep 30
-        
+
       - name: Check CloudFormation stacks
         run: |
           echo "Checking CloudFormation stacks..."
@@ -154,7 +160,7 @@ jobs:
             "budgetbuddy-${{ env.ENVIRONMENT }}-hosting"
             "budgetbuddy-${{ env.ENVIRONMENT }}-monitoring"
           )
-          
+
           for stack in "${stacks[@]}"; do
             status=$(aws cloudformation describe-stacks --stack-name "$stack" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "NOT_FOUND")
             if [[ "$status" == "CREATE_COMPLETE" || "$status" == "UPDATE_COMPLETE" ]]; then
@@ -164,13 +170,13 @@ jobs:
               exit 1
             fi
           done
-          
+
       - name: Test API endpoints
         if: needs.deploy-infrastructure.outputs.api-url != ''
         run: |
           API_URL="${{ needs.deploy-infrastructure.outputs.api-url }}"
           echo "Testing API endpoints at: $API_URL"
-          
+
           # Test health endpoint
           if curl -f -s "$API_URL/health" > /dev/null; then
             echo "✅ Health endpoint responding"
@@ -178,7 +184,7 @@ jobs:
             echo "❌ Health endpoint failed"
             exit 1
           fi
-          
+
           # Test auth health endpoint
           if curl -f -s "$API_URL/auth/health" > /dev/null; then
             echo "✅ Auth service responding"
@@ -186,7 +192,7 @@ jobs:
             echo "❌ Auth service failed"
             exit 1
           fi
-          
+
           # Test budget health endpoint
           if curl -f -s "$API_URL/budget/health" > /dev/null; then
             echo "✅ Budget service responding"
@@ -194,7 +200,7 @@ jobs:
             echo "❌ Budget service failed"
             exit 1
           fi
-          
+
       - name: Run deployment health check script
         run: |
           chmod +x scripts/check-deployment.sh
@@ -205,7 +211,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-infrastructure, health-checks]
     if: always()
-    
+
     steps:
       - name: Deployment Summary
         run: |
@@ -215,7 +221,7 @@ jobs:
           echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "**Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [[ "${{ needs.deploy-infrastructure.result }}" == "success" && "${{ needs.health-checks.result }}" == "success" ]]; then
             echo "✅ **Deployment Status**: SUCCESS" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
