@@ -3,9 +3,9 @@
  */
 
 // Environment variables
-const USER_POOL_ID = process.env.USER_POOL_ID;
+// const USER_POOL_ID = process.env.USER_POOL_ID; // TODO: Will be used for additional validation
 const CLIENT_ID = process.env.CLIENT_ID;
-const TABLE_NAME = process.env.TABLE_NAME;
+// const TABLE_NAME = process.env.TABLE_NAME; // TODO: Will be used for user profile storage
 
 /**
  * Main Lambda handler function
@@ -206,7 +206,7 @@ exports.handler = async (event, _context) => {
                 },
                 body: JSON.stringify({
                     message: 'POST endpoint working',
-                    path: path,
+                    path,
                     note: 'This endpoint is not yet implemented'
                 })
             };
