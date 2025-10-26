@@ -1,10 +1,10 @@
 /**
  * Authentication Stack for BudgetBuddy Application
- * 
+ *
  * Creates Amazon Cognito User Pool and User Pool Client for handling
  * user authentication, registration, and authorization. Configured with
  * custom attributes for family relationships and account types.
- * 
+ *
  * Key Features:
  * - Email-based authentication with verification
  * - Custom attributes for family and subscription data
@@ -36,7 +36,7 @@ export class AuthStack extends cdk.Stack {
 
     /**
      * Main User Pool for BudgetBuddy application
-     * 
+     *
      * Handles user registration, authentication, and profile management
      * with custom attributes specific to budgeting application needs.
      */
@@ -80,13 +80,20 @@ export class AuthStack extends cdk.Stack {
 
       // Custom attributes specific to BudgetBuddy
       customAttributes: {
+        // Unique user identifier for DynamoDB integration
+        userId: new cognito.StringAttribute({
+          minLen: 0,
+          maxLen: 50,
+          mutable: false, // User ID should not change once set
+        }),
+
         // Family account association
         familyId: new cognito.StringAttribute({
           minLen: 0,
           maxLen: 50,
           mutable: true,
         }),
-        
+
         // User role within family (primary, spouse, viewer)
         familyRole: new cognito.StringAttribute({
           minLen: 0,
@@ -164,7 +171,7 @@ export class AuthStack extends cdk.Stack {
 
     /**
      * User Pool Client for web and mobile applications
-     * 
+     *
      * Configures authentication flows and token settings for the
      * BudgetBuddy client applications (web, iOS, Android).
      */
@@ -219,7 +226,7 @@ export class AuthStack extends cdk.Stack {
         })
         .withCustomAttributes(
           'familyId',
-          'familyRole', 
+          'familyRole',
           'accountType',
           'subscriptionTier',
           'onboardingCompleted',
@@ -236,7 +243,7 @@ export class AuthStack extends cdk.Stack {
         .withCustomAttributes(
           'familyId',
           'familyRole',
-          'accountType', 
+          'accountType',
           'subscriptionTier',
           'onboardingCompleted',
           'country'

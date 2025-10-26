@@ -8,9 +8,6 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-export const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+// Email validation moved to validation.ts for consistency
 
 // Placeholder utilities - will be expanded in future tasks
