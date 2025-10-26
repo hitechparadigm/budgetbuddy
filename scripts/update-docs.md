@@ -62,19 +62,36 @@
 - **Overall MVP Progress**: X% (change from previous)
 ```
 
-## Automation Opportunities
+## Automation Tools
 
-### Future Improvements
-1. **Git Hooks**: Automatically prompt for documentation updates on commit
-2. **Template Scripts**: Generate session templates with current date/context
-3. **Progress Tracking**: Automated progress calculation based on completed tasks
-4. **Link Validation**: Verify all documentation links are working
+### 🚀 Interactive Documentation Assistant
+```powershell
+# Run before every git push
+./scripts/update-docs-interactive.ps1
+```
+This script will:
+- Check if documentation files exist and are recent
+- Show interactive checklist for all required updates
+- Prevent proceeding until all documentation is confirmed updated
 
-### Manual Process (Current)
-1. Complete development work
-2. Update all four documentation files
-3. Commit changes with descriptive message
-4. Push to repository
+### 🔧 Git Hooks (Optional)
+```powershell
+# One-time setup
+./scripts/setup-git-hooks.ps1
+```
+This will automatically run documentation checks before every `git push`
+
+### 📋 Quick Reference
+See `scripts/DOCUMENTATION_CHECKLIST.md` for:
+- Complete checklist of all documentation requirements
+- Templates for issues and lessons learned
+- Categories and formatting standards
+
+### Recommended Process
+1. **Complete development work**
+2. **Run documentation assistant**: `./scripts/update-docs-interactive.ps1`
+3. **Update all flagged documentation files**
+4. **Commit and push**: Git hooks will verify documentation is current
 
 ## Benefits of This Approach
 
