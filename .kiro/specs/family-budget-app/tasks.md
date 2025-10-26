@@ -149,13 +149,19 @@
   - [x] 6.2 Build budget dashboard and visualization
 
 
+
     - Create budget dashboard showing income, savings, expenses with progress bars
     - Implement expandable/collapsible budget groups
     - Build monthly budget overview with remaining balance display
     - Add visual indicators for over-budget categories
     - _Requirements: 5.2_
 
-  - [ ] 6.3 Create category management system
+
+
+
+  - [x] 6.3 Create category management system
+
+
     - Implement Lambda functions for category CRUD operations
     - Build category management UI with drag-and-drop reordering
     - Create add/edit category modals with icon and color selection

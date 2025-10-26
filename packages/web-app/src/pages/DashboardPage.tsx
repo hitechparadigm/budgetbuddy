@@ -24,6 +24,7 @@ export const DashboardPage: React.FC = () => {
     error: budgetError,
     setSelectedMonth,
     createBudget,
+    updateBudget,
     clearError
   } = useBudget();
 
@@ -53,6 +54,15 @@ export const DashboardPage: React.FC = () => {
 
   const handleClearError = () => {
     clearError();
+  };
+
+  const handleUpdateGroups = async (updatedGroups: any) => {
+    if (!currentBudget) return;
+    try {
+      await updateBudget(selectedMonth, { groups: updatedGroups });
+    } catch (error) {
+      console.error('Update groups error:', error);
+    }
   };
 
   // ============================================================================
@@ -140,6 +150,7 @@ export const DashboardPage: React.FC = () => {
               <BudgetGroups
                 groups={currentBudget.groups}
                 loading={budgetLoading}
+                onUpdateGroups={handleUpdateGroups}
               />
             </div>
           )}
