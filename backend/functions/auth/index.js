@@ -109,6 +109,21 @@ exports.handler = async (event, _context) => {
                 const cognito = new AWS.CognitoIdentityServiceProvider();
                 console.log('Cognito client created successfully');
 
+                // Test mode - return success without actually calling Cognito
+                return {
+                    statusCode: 200,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    body: JSON.stringify({
+                        message: 'AWS SDK and Cognito client initialized successfully',
+                        testMode: true,
+                        clientId: CLIENT_ID ? 'configured' : 'not configured',
+                        userEmail: email
+                    })
+                };
+
                 const params = {
                     ClientId: CLIENT_ID,
                     Username: email,
