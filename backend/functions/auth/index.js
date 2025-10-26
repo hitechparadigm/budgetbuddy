@@ -52,11 +52,152 @@ exports.handler = async (event, _context) => {
             };
         }
 
-        // For POST requests, return a simple success response for now
-        if (httpMethod === 'POST') {
-            console.log('POST request received for path:', path);
+        // Handle registration endpoint
+        if (httpMethod === 'POST' && path === '/auth/register') {
+            console.log('Registration request received');
             console.log('Request body:', event.body);
 
+            // Parse request body
+            let requestBody;
+            try {
+                requestBody = JSON.parse(event.body);
+                console.log('Parsed body:', requestBody);
+            } catch (error) {
+                console.error('JSON parse error:', error);
+                return {
+                    statusCode: 400,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    body: JSON.stringify({
+                        error: 'Bad Request',
+                        message: 'Invalid JSON in request body'
+                    })
+                };
+            }
+
+            // Validate required fields
+            const {
+                email,
+                password,
+                firstName,
+                lastName,
+                country
+            } = requestBody;
+            if (!email || !password || !firstName || !lastName) {
+                console.log('Missing required fields');
+                return {
+                    statusCode: 400,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    body: JSON.stringify({
+                        error: 'Bad Request',
+                        message: 'Email, password, firstName, and lastName are required'
+                    })
+                };
+            }
+
+            // Try Cognito registration
+            try {
+                console.log('Initializing AWS SDK...');
+                const AWS = require('aws-sdk');
+                console.log('AWS SDK loaded successfully');
+
+                const cognito = new AWS.CognitoIdentityServiceProvider();
+                console.log('Cognito client created successfully');
+
+                const params = {
+                    ClientId: CLIENT_ID,
+                    Username: email,
+                    Password: password,
+                    UserAttributes: [{
+                            Name: 'email',
+                            Value: email
+                        },
+                        {
+                            Name: 'given_name',
+                            Value: firstName
+                        },
+                        {
+                            Name: 'family_name',
+                            Value: lastName
+                        },
+                        {
+                            Name: 'custom:accountType',
+                            Value: 'single'
+                        },
+                        {
+                            Name: 'custom:subscriptionTier',
+                            Value: 'free'
+                        },
+                        {
+                            Name: 'custom:onboardingCompleted',
+                            Value: 'false'
+                        }
+                    ]
+                };
+
+                if (country) {
+                    params.UserAttributes.push({
+                        Name: 'custom:country',
+                        Value: country
+                    });
+                }
+
+                console.log('Calling Cognito signUp...');
+                const result = await cognito.signUp(params).promise();
+                console.log('Cognito signUp successful:', result.UserSub);
+
+                return {
+                    statusCode: 201,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    body: JSON.stringify({
+                        message: 'User registered successfully',
+                        userId: result.UserSub,
+                        confirmationRequired: !result.UserConfirmed
+                    })
+                };
+
+            } catch (error) {
+                console.error('Registration error:', error);
+
+                if (error.code === 'UsernameExistsException') {
+                    return {
+                        statusCode: 409,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        body: JSON.stringify({
+                            error: 'Conflict',
+                            message: 'User with this email already exists'
+                        })
+                    };
+                }
+
+                return {
+                    statusCode: 400,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    body: JSON.stringify({
+                        error: 'Registration Failed',
+                        message: error.message
+                    })
+                };
+            }
+        }
+
+        // For other POST requests, return a simple success response
+        if (httpMethod === 'POST') {
+            console.log('Other POST request received for path:', path);
             return {
                 statusCode: 200,
                 headers: {
@@ -66,12 +207,7 @@ exports.handler = async (event, _context) => {
                 body: JSON.stringify({
                     message: 'POST endpoint working',
                     path: path,
-                    receivedBody: event.body,
-                    environment: {
-                        USER_POOL_ID: USER_POOL_ID ? 'configured' : 'not configured',
-                        CLIENT_ID: CLIENT_ID ? 'configured' : 'not configured',
-                        TABLE_NAME: TABLE_NAME ? 'configured' : 'not configured'
-                    }
+                    note: 'This endpoint is not yet implemented'
                 })
             };
         }
