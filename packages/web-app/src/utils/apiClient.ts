@@ -98,6 +98,33 @@ class SimpleApiClient {
     this.clearTokens();
   }
 
+  // Budget endpoints
+  async get(endpoint: string) {
+    return this.request(endpoint, {
+      method: 'GET',
+    });
+  }
+
+  async post(endpoint: string, data: any) {
+    return this.request(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async put(endpoint: string, data: any) {
+    return this.request(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async delete(endpoint: string) {
+    return this.request(endpoint, {
+      method: 'DELETE',
+    });
+  }
+
   setTokens(tokens: AuthTokens): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('budgetbuddy_access_token', tokens.accessToken);

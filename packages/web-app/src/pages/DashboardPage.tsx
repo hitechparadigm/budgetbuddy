@@ -1,17 +1,31 @@
 /**
  * Dashboard Page
- * Main application dashboard for authenticated users
+ * Main application dashboard for authenticated users with budget management
  */
 
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useBudget } from '../contexts/BudgetContext';
+import { BudgetOverview } from '../components/budget/BudgetOverview';
+import { BudgetGroups } from '../components/budget/BudgetGroups';
+import { MonthSelector } from '../components/budget/MonthSelector';
 
 // ============================================================================
 // Dashboard Page Component
 // ============================================================================
 
 export const DashboardPage: React.FC = () => {
-  const { user, logout, loading } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
+  const {
+    currentBudget,
+    budgets,
+    selectedMonth,
+    loading: budgetLoading,
+    error: budgetError,
+    setSelectedMonth,
+    createBudget,
+    clearError
+  } = useBudget();
 
   // ============================================================================
   // Event Handlers
@@ -23,6 +37,22 @@ export const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('Logout error:', error);
     }
+  };
+
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month);
+  };
+
+  const handleCreateBudget = async (month: string) => {
+    try {
+      await createBudget(month);
+    } catch (error) {
+      console.error('Create budget error:', error);
+    }
+  };
+
+  const handleClearError = () => {
+    clearError();
   };
 
   // ============================================================================
@@ -48,13 +78,13 @@ export const DashboardPage: React.FC = () => {
               )}
               <button
                 onClick={handleLogout}
-                disabled={loading}
-                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${loading
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'
+                disabled={authLoading}
+                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${authLoading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'
                   }`}
               >
-                {loading ? 'Signing Out...' : 'Sign Out'}
+                {authLoading ? 'Signing Out...' : 'Sign Out'}
               </button>
             </div>
           </div>
@@ -64,66 +94,67 @@ export const DashboardPage: React.FC = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg p-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                🎉 Authentication Successful!
-              </h2>
-              <p className="text-lg text-gray-600 mb-8">
-                You have successfully logged into BudgetBuddy. The authentication system is working perfectly!
-              </p>
-
-              {/* User Information Card */}
-              {user && (
-                <div className="bg-white shadow rounded-lg p-6 max-w-md mx-auto mb-8">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">
-                    Your Account Information
-                  </h3>
-                  <div className="space-y-2 text-left">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Name:</span>
-                      <span className="text-gray-900">{user.firstName} {user.lastName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Email:</span>
-                      <span className="text-gray-900">{user.email}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Account Type:</span>
-                      <span className="text-gray-900 capitalize">{user.accountType}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Subscription:</span>
-                      <span className="text-gray-900 capitalize">{user.subscriptionTier}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">User ID:</span>
-                      <span className="text-gray-900 font-mono text-xs">{user.userId}</span>
-                    </div>
-                  </div>
+          {/* Error Display */}
+          {budgetError && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-red-800">{budgetError}</p>
                 </div>
-              )}
-
-              {/* Next Steps */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-2xl mx-auto">
-                <h3 className="text-lg font-medium text-blue-900 mb-4">
-                  🚀 What's Next?
-                </h3>
-                <div className="text-left space-y-2 text-blue-800">
-                  <p>✅ Authentication system is complete and working</p>
-                  <p>✅ User registration and login functionality implemented</p>
-                  <p>✅ Protected routes and session management active</p>
-                  <p>🔄 Next: Implement budget management features</p>
-                  <p>🔄 Next: Add AI-powered budget generation</p>
-                  <p>🔄 Next: Build transaction management system</p>
-                </div>
+                <button
+                  onClick={handleClearError}
+                  className="text-red-400 hover:text-red-600"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
+            </div>
+          )}
 
-              {/* API Status */}
-              <div className="mt-8 text-sm text-gray-500">
-                <p>Connected to: https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/</p>
-                <p>Authentication: JWT tokens managed automatically</p>
-              </div>
+          {/* Month Selector */}
+          <div className="mb-6">
+            <MonthSelector
+              selectedMonth={selectedMonth}
+              availableMonths={budgets.map(b => b.month)}
+              onMonthChange={handleMonthChange}
+              onCreateBudget={handleCreateBudget}
+            />
+          </div>
+
+          {/* Budget Overview */}
+          <div className="mb-6">
+            <BudgetOverview
+              budget={currentBudget}
+              loading={budgetLoading}
+            />
+          </div>
+
+          {/* Budget Groups */}
+          {currentBudget && (
+            <div className="mb-6">
+              <BudgetGroups
+                groups={currentBudget.groups}
+                loading={budgetLoading}
+              />
+            </div>
+          )}
+
+          {/* Development Info */}
+          <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-blue-900 mb-2">
+              Development Status
+            </h3>
+            <div className="text-xs text-blue-800 space-y-1">
+              <p>✓ Authentication system complete</p>
+              <p>✓ Budget CRUD operations implemented</p>
+              <p>🔄 Budget dashboard and visualization (current)</p>
+              <p>⏳ AI-powered budget generation (next)</p>
+              <p>⏳ Transaction management system</p>
             </div>
           </div>
         </div>
