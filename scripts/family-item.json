@@ -1,0 +1,37 @@
+{
+    "PK": {
+        "S": "FAMILY#family_test_20251026"
+    },
+    "SK": {
+        "S": "METADATA"
+    },
+    "entityType": {
+        "S": "FAMILY"
+    },
+    "familyId": {
+        "S": "family_test_20251026"
+    },
+    "familyName": {
+        "S": "Test User Family"
+    },
+    "primaryUserId": {
+        "S": "user_test_20251026"
+    },
+    "memberIds": {
+        "L": [{
+            "S": "user_test_20251026"
+        }]
+    },
+    "familyStatus": {
+        "S": "single"
+    },
+    "adults": {
+        "N": "1"
+    },
+    "children": {
+        "L": []
+    },
+    "createdAt": {
+        "S": "2025-10-26T20:25:33.110Z"
+    }
+}

@@ -92,18 +92,23 @@
    - Register → Login → Access protected area via UI
    - Token management and session persistence working
 
-### Phase 2: Core Budget Features (2-3 days)
+### Phase 2: Core Budget Features ✅ IN PROGRESS
 **Goal**: Users can create and manage basic budgets
 
-1. **Budget Backend Implementation**
-   - Budget CRUD Lambda functions
-   - Category management endpoints
+1. **Budget Backend Implementation** ✅ COMPLETED
+   - Budget CRUD Lambda functions with DynamoDB integration
+   - API Gateway routes: `/budget`, `/budget/current`, `/budget/{budgetId}`
    - Zero-based budgeting calculations
+   - Category management within budget groups
+   - Fixed DynamoDB query issues in utils layer
 
-2. **Budget Frontend Components**
-   - Budget dashboard with income/expenses
-   - Category management interface
-   - Budget creation and editing forms
+2. **Budget Frontend Components** ✅ COMPLETED
+   - Budget dashboard with EveryDollar-style interface
+   - Month selector with budget creation
+   - Category management with templates (36+ categories)
+   - Inline editing for amounts and category names
+   - Budget groups (Income, Savings, Expenses)
+   - Real-time balance calculations
 
 ### Phase 3: AI-Powered Onboarding (2-3 days)
 **Goal**: New users get personalized budget recommendations
@@ -150,12 +155,13 @@
 
 ### Completion Status
 - **Infrastructure**: 100% ✅
-- **Authentication System**: 95% ✅ (complete frontend + backend working)
-- **Shared Foundation**: 90% ✅ (types + validation + API client + UI components)
-- **Core Budget Features**: 0%
+- **Authentication System**: 100% ✅ (complete frontend + backend working)
+- **Shared Foundation**: 95% ✅ (types + validation + API client + UI components)
+- **Core Budget Features**: 85% ✅ (backend complete, frontend dashboard complete, category management complete)
+- **Transaction Management**: 0%
 - **AI Features**: 0%
 
-### Overall MVP Progress: ~35%
+### Overall MVP Progress: ~65%
 
 ### Estimated Time to MVP
 - **Authentication System**: ✅ COMPLETED
@@ -165,5 +171,12 @@
 - **Total Estimated**: 4-8 days (reduced from 5-9)
 
 ---
-*Last Updated: October 26, 2025*
-*Next Focus: Complete Authentication System*
+*Last Updated: October 27, 2025*
+*Next Focus: Transaction Management System*
+
+## 🔧 Recent Fixes (October 27, 2025)
+- Fixed API Gateway routes for `/budget/current` endpoint (CORS issues resolved)
+- Fixed DynamoDB queryByPK function to properly merge ExpressionAttributeValues
+- Added proper response parsing for backend API responses
+- Implemented EveryDollar-style budget interface with inline editing
+- Created comprehensive category management system with 36+ templates

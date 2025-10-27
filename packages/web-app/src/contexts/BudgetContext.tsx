@@ -115,7 +115,8 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
 
     try {
       const response = await apiClient.get('/budget');
-      const budgets = response.budgets || [];
+      // Handle both {budgets: [...]} and {data: {budgets: [...]}} formats
+      const budgets = response.budgets || response.data?.budgets || [];
 
       setBudgetState(prev => {
         const currentMonthBudget = budgets.find((b: Budget) => b.month === prev.selectedMonth);
@@ -145,9 +146,12 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     try {
       const response = await apiClient.get(`/budget/current?month=${month}`);
 
+      // Extract budget from response (backend returns {success, data, message})
+      const budget = response.data || response;
+
       setBudgetState(prev => ({
         ...prev,
-        currentBudget: response,
+        currentBudget: budget,
         selectedMonth: month,
         loading: false,
       }));
@@ -213,10 +217,13 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       const response = await apiClient.post('/budget', requestData);
       console.log('Budget created successfully:', response);
 
+      // Extract budget from response (backend returns {success, data, message})
+      const budget = response.data || response;
+
       setBudgetState(prev => ({
         ...prev,
-        currentBudget: response,
-        budgets: [...prev.budgets, response],
+        currentBudget: budget,
+        budgets: [...prev.budgets, budget],
         selectedMonth: month,
         loading: false,
       }));
@@ -239,19 +246,26 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
 
     try {
       // First, get the budget for this month to find its budgetId
-      const budgets = await apiClient.get('/budget');
-      const budget = budgets.budgets?.find((b: Budget) => b.month === month);
+      const budgetsResponse = await apiClient.get('/budget');
+      const budgetsData = budgetsResponse.data || budgetsResponse;
+      const budget = budgetsData.budgets?.find((b: Budget) => b.month === month);
 
       if (!budget) {
         throw new Error(`No budget found for ${month}`);
       }
 
-      const response = await apiClient.put(`/budget/${budget.budgetId}`, updates);
+      const response = await apiClient.put(`/budget/${budget.budgetId}`, {
+        ...updates,
+        month // Include month in the request body
+      });
+
+      // Extract budget from response (backend returns {success, data, message})
+      const updatedBudget = response.data || response;
 
       setBudgetState(prev => ({
         ...prev,
-        currentBudget: response,
-        budgets: prev.budgets.map((b: Budget) => b.month === month ? response : b),
+        currentBudget: updatedBudget,
+        budgets: prev.budgets.map((b: Budget) => b.month === month ? updatedBudget : b),
         loading: false,
       }));
     } catch (error) {

@@ -73,6 +73,10 @@ exports.handler = async (event, context) => {
             return await getBudgets(event, user);
         }
 
+        if (httpMethod === 'GET' && path === '/budget/current') {
+            return await getCurrentBudget(event, user);
+        }
+
         if (httpMethod === 'GET' && pathParameters && pathParameters.budgetId) {
             return await getBudget(event, user, pathParameters.budgetId);
         }
@@ -250,6 +254,55 @@ async function getBudgets(event, user) {
 }
 
 /**
+ * Get current budget by month
+ * GET /budget/current?month=YYYY-MM
+ */
+async function getCurrentBudget(event, user) {
+    logger.info('Getting current budget', {
+        userId: user.userId,
+        familyId: user.familyId
+    });
+
+    const familyId = user.familyId || `family_${user.userId}`;
+
+    // Extract month from query parameter
+    const queryParams = event.queryStringParameters || {};
+    const month = queryParams.month;
+
+    if (!month) {
+        return errorResponse.badRequest('Month parameter is required (format: YYYY-MM)');
+    }
+
+    const budget = await dynamoHelpers.getItem(
+        `FAMILY#${familyId}`,
+        `BUDGET#${month}`
+    );
+
+    if (!budget) {
+        return errorResponse.notFound(`Budget not found for ${month}`);
+    }
+
+    logger.info('Budget retrieved successfully', {
+        familyId,
+        month
+    });
+
+    return successResponse({
+        budgetId: budget.budgetId,
+        familyId: budget.familyId,
+        month: budget.month,
+        totalIncome: budget.totalIncome,
+        totalSavings: budget.totalSavings,
+        totalExpenses: budget.totalExpenses,
+        remainingBalance: budget.remainingBalance,
+        groups: budget.groups,
+        isAIGenerated: budget.isAIGenerated,
+        createdAt: budget.createdAt,
+        updatedAt: budget.updatedAt
+    }, 'Budget retrieved successfully');
+}
+
+/**
  * Get a specific budget by ID
  * GET /budget/{budgetId}
  */
@@ -315,10 +368,24 @@ async function updateBudget(event, user, budgetId) {
     const familyId = user.familyId || `family_${user.userId}`;
 
     // Extract month from request body or query parameter
-    const month = requestBody.month || (event.queryStringParameters && event.queryStringParameters.month);
+    let month = requestBody.month || (event.queryStringParameters && event.queryStringParameters.month);
 
+    // If no month provided, try to find the budget by budgetId
     if (!month) {
-        return errorResponse.badRequest('Month is required (format: YYYY-MM)');
+        // Query all budgets to find the one with this budgetId
+        const budgets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+            FilterExpression: 'entityType = :entityType AND budgetId = :budgetId',
+            ExpressionAttributeValues: {
+                ':entityType': 'BUDGET',
+                ':budgetId': budgetId
+            }
+        });
+
+        if (budgets.length === 0) {
+            return errorResponse.notFound(`Budget not found with ID ${budgetId}`);
+        }
+
+        month = budgets[0].month;
     }
 
     // Check if budget exists

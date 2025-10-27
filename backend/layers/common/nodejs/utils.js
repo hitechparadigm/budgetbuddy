@@ -237,6 +237,7 @@ const dynamoHelpers = {
             KeyConditionExpression: 'PK = :pk',
             ExpressionAttributeValues: {
                 ':pk': pk,
+                ...(options.ExpressionAttributeValues || {}),
             },
             ...options,
         });
