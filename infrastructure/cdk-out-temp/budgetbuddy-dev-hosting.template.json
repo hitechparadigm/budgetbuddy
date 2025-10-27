@@ -1,0 +1,869 @@
+{
+ "Description": "BudgetBuddy hosting infrastructure with S3 static hosting and CloudFront CDN for global performance",
+ "Resources": {
+  "WebBucket12880F5B": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketName": "budgetbuddy-web-app",
+    "LifecycleConfiguration": {
+     "Rules": [
+      {
+       "Id": "DeleteOldVersions",
+       "NoncurrentVersionExpiration": {
+        "NoncurrentDays": 30
+       },
+       "Status": "Enabled"
+      }
+     ]
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    },
+    "Tags": [
+     {
+      "Key": "Application",
+      "Value": "budgetbuddy"
+     },
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     },
+     {
+      "Key": "BackupRequired",
+      "Value": "No"
+     },
+     {
+      "Key": "Component",
+      "Value": "WebHosting"
+     },
+     {
+      "Key": "ContentType",
+      "Value": "Static-Website"
+     },
+     {
+      "Key": "CostCenter",
+      "Value": "BudgetBuddy-Frontend"
+     },
+     {
+      "Key": "Environment",
+      "Value": "dev"
+     },
+     {
+      "Key": "ManagedBy",
+      "Value": "CDK"
+     },
+     {
+      "Key": "Owner",
+      "Value": "BudgetBuddy-Team"
+     },
+     {
+      "Key": "Project",
+      "Value": "BudgetBuddy"
+     },
+     {
+      "Key": "Purpose",
+      "Value": "Family-Budgeting-Application"
+     },
+     {
+      "Key": "Service",
+      "Value": "S3"
+     }
+    ],
+    "VersioningConfiguration": {
+     "Status": "Enabled"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/WebBucket/Resource"
+   }
+  },
+  "WebBucketPolicy95D08FAA": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "WebBucket12880F5B"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:List*",
+        "s3:PutBucketPolicy"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "WebBucket12880F5B",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "WebBucket12880F5B",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Principal": {
+        "CanonicalUser": [
+         {
+          "Fn::GetAtt": [
+           "WebDistributionOrigin1S3Origin242B188A",
+           "S3CanonicalUserId"
+          ]
+         },
+         {
+          "Fn::GetAtt": [
+           "WebDistributionOrigin2S3Origin9210B142",
+           "S3CanonicalUserId"
+          ]
+         }
+        ]
+       },
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          {
+           "Fn::GetAtt": [
+            "WebBucket12880F5B",
+            "Arn"
+           ]
+          },
+          "/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/WebBucket/Policy/Resource"
+   }
+  },
+  "WebBucketAutoDeleteObjectsCustomResource9C1A079F": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "WebBucket12880F5B"
+    }
+   },
+   "DependsOn": [
+    "WebBucketPolicy95D08FAA"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/WebBucket/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-786673323159-us-east-1",
+     "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs22.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "WebBucket12880F5B"
+       },
+       " S3 bucket."
+      ]
+     ]
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+    "aws:asset:path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+    "aws:asset:property": "Code"
+   }
+  },
+  "AdminBucketB0A70AB7": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketName": "budgetbuddy-admin-dashboard",
+    "LifecycleConfiguration": {
+     "Rules": [
+      {
+       "Id": "DeleteOldVersions",
+       "NoncurrentVersionExpiration": {
+        "NoncurrentDays": 30
+       },
+       "Status": "Enabled"
+      }
+     ]
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    },
+    "Tags": [
+     {
+      "Key": "Application",
+      "Value": "budgetbuddy"
+     },
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     },
+     {
+      "Key": "BackupRequired",
+      "Value": "No"
+     },
+     {
+      "Key": "Component",
+      "Value": "AdminHosting"
+     },
+     {
+      "Key": "ContentType",
+      "Value": "Admin-Dashboard"
+     },
+     {
+      "Key": "CostCenter",
+      "Value": "BudgetBuddy-Admin"
+     },
+     {
+      "Key": "Environment",
+      "Value": "dev"
+     },
+     {
+      "Key": "ManagedBy",
+      "Value": "CDK"
+     },
+     {
+      "Key": "Owner",
+      "Value": "BudgetBuddy-Team"
+     },
+     {
+      "Key": "Project",
+      "Value": "BudgetBuddy"
+     },
+     {
+      "Key": "Purpose",
+      "Value": "Family-Budgeting-Application"
+     },
+     {
+      "Key": "Service",
+      "Value": "S3"
+     }
+    ],
+    "VersioningConfiguration": {
+     "Status": "Enabled"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/AdminBucket/Resource"
+   }
+  },
+  "AdminBucketPolicy712E7130": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "AdminBucketB0A70AB7"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:DeleteObject*",
+        "s3:GetBucket*",
+        "s3:List*",
+        "s3:PutBucketPolicy"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "AdminBucketB0A70AB7",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "AdminBucketB0A70AB7",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Principal": {
+        "CanonicalUser": {
+         "Fn::GetAtt": [
+          "AdminDistributionOrigin1S3Origin84D4B327",
+          "S3CanonicalUserId"
+         ]
+        }
+       },
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          {
+           "Fn::GetAtt": [
+            "AdminBucketB0A70AB7",
+            "Arn"
+           ]
+          },
+          "/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/AdminBucket/Policy/Resource"
+   }
+  },
+  "AdminBucketAutoDeleteObjectsCustomResourceF24DCD22": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "AdminBucketB0A70AB7"
+    }
+   },
+   "DependsOn": [
+    "AdminBucketPolicy712E7130"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/AdminBucket/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "WebDistributionOrigin1S3Origin242B188A": {
+   "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+   "Properties": {
+    "CloudFrontOriginAccessIdentityConfig": {
+     "Comment": "Identity for budgetbuddydevhostingWebDistributionOrigin1FB45C380"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/WebDistribution/Origin1/S3Origin/Resource"
+   }
+  },
+  "WebDistributionOrigin2S3Origin9210B142": {
+   "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+   "Properties": {
+    "CloudFrontOriginAccessIdentityConfig": {
+     "Comment": "Identity for budgetbuddydevhostingWebDistributionOrigin2E14564D7"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/WebDistribution/Origin2/S3Origin/Resource"
+   }
+  },
+  "WebDistribution59C46482": {
+   "Type": "AWS::CloudFront::Distribution",
+   "Properties": {
+    "DistributionConfig": {
+     "CacheBehaviors": [
+      {
+       "AllowedMethods": [
+        "GET",
+        "HEAD",
+        "OPTIONS",
+        "PUT",
+        "PATCH",
+        "POST",
+        "DELETE"
+       ],
+       "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+       "Compress": true,
+       "PathPattern": "/api/*",
+       "TargetOriginId": "budgetbuddydevhostingWebDistributionOrigin2E14564D7",
+       "ViewerProtocolPolicy": "redirect-to-https"
+      }
+     ],
+     "Comment": "budgetbuddy-web - Global CDN for React web application with SPA routing support",
+     "CustomErrorResponses": [
+      {
+       "ErrorCachingMinTTL": 300,
+       "ErrorCode": 404,
+       "ResponseCode": 200,
+       "ResponsePagePath": "/index.html"
+      },
+      {
+       "ErrorCachingMinTTL": 300,
+       "ErrorCode": 403,
+       "ResponseCode": 200,
+       "ResponsePagePath": "/index.html"
+      }
+     ],
+     "DefaultCacheBehavior": {
+      "AllowedMethods": [
+       "GET",
+       "HEAD",
+       "OPTIONS"
+      ],
+      "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+      "Compress": true,
+      "TargetOriginId": "budgetbuddydevhostingWebDistributionOrigin1FB45C380",
+      "ViewerProtocolPolicy": "redirect-to-https"
+     },
+     "DefaultRootObject": "index.html",
+     "Enabled": true,
+     "HttpVersion": "http2",
+     "IPV6Enabled": true,
+     "Origins": [
+      {
+       "DomainName": {
+        "Fn::GetAtt": [
+         "WebBucket12880F5B",
+         "RegionalDomainName"
+        ]
+       },
+       "Id": "budgetbuddydevhostingWebDistributionOrigin1FB45C380",
+       "S3OriginConfig": {
+        "OriginAccessIdentity": {
+         "Fn::Join": [
+          "",
+          [
+           "origin-access-identity/cloudfront/",
+           {
+            "Ref": "WebDistributionOrigin1S3Origin242B188A"
+           }
+          ]
+         ]
+        }
+       }
+      },
+      {
+       "DomainName": {
+        "Fn::GetAtt": [
+         "WebBucket12880F5B",
+         "RegionalDomainName"
+        ]
+       },
+       "Id": "budgetbuddydevhostingWebDistributionOrigin2E14564D7",
+       "S3OriginConfig": {
+        "OriginAccessIdentity": {
+         "Fn::Join": [
+          "",
+          [
+           "origin-access-identity/cloudfront/",
+           {
+            "Ref": "WebDistributionOrigin2S3Origin9210B142"
+           }
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "PriceClass": "PriceClass_100"
+    },
+    "Tags": [
+     {
+      "Key": "Application",
+      "Value": "budgetbuddy"
+     },
+     {
+      "Key": "CachingEnabled",
+      "Value": "Yes"
+     },
+     {
+      "Key": "Component",
+      "Value": "WebCDN"
+     },
+     {
+      "Key": "CostCenter",
+      "Value": "BudgetBuddy-CDN"
+     },
+     {
+      "Key": "Environment",
+      "Value": "dev"
+     },
+     {
+      "Key": "ManagedBy",
+      "Value": "CDK"
+     },
+     {
+      "Key": "Owner",
+      "Value": "BudgetBuddy-Team"
+     },
+     {
+      "Key": "PriceClass",
+      "Value": "US-Canada-Europe"
+     },
+     {
+      "Key": "Project",
+      "Value": "BudgetBuddy"
+     },
+     {
+      "Key": "Purpose",
+      "Value": "Family-Budgeting-Application"
+     },
+     {
+      "Key": "Service",
+      "Value": "CloudFront"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/WebDistribution/Resource"
+   }
+  },
+  "AdminDistributionOrigin1S3Origin84D4B327": {
+   "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+   "Properties": {
+    "CloudFrontOriginAccessIdentityConfig": {
+     "Comment": "Identity for budgetbuddydevhostingAdminDistributionOrigin1B11D7E3C"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/AdminDistribution/Origin1/S3Origin/Resource"
+   }
+  },
+  "AdminDistribution4E89F8C0": {
+   "Type": "AWS::CloudFront::Distribution",
+   "Properties": {
+    "DistributionConfig": {
+     "Comment": "budgetbuddy-admin - Global CDN for admin dashboard with security isolation",
+     "CustomErrorResponses": [
+      {
+       "ErrorCachingMinTTL": 300,
+       "ErrorCode": 404,
+       "ResponseCode": 200,
+       "ResponsePagePath": "/index.html"
+      },
+      {
+       "ErrorCachingMinTTL": 300,
+       "ErrorCode": 403,
+       "ResponseCode": 200,
+       "ResponsePagePath": "/index.html"
+      }
+     ],
+     "DefaultCacheBehavior": {
+      "AllowedMethods": [
+       "GET",
+       "HEAD",
+       "OPTIONS"
+      ],
+      "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+      "Compress": true,
+      "TargetOriginId": "budgetbuddydevhostingAdminDistributionOrigin1B11D7E3C",
+      "ViewerProtocolPolicy": "redirect-to-https"
+     },
+     "DefaultRootObject": "index.html",
+     "Enabled": true,
+     "HttpVersion": "http2",
+     "IPV6Enabled": true,
+     "Origins": [
+      {
+       "DomainName": {
+        "Fn::GetAtt": [
+         "AdminBucketB0A70AB7",
+         "RegionalDomainName"
+        ]
+       },
+       "Id": "budgetbuddydevhostingAdminDistributionOrigin1B11D7E3C",
+       "S3OriginConfig": {
+        "OriginAccessIdentity": {
+         "Fn::Join": [
+          "",
+          [
+           "origin-access-identity/cloudfront/",
+           {
+            "Ref": "AdminDistributionOrigin1S3Origin84D4B327"
+           }
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "PriceClass": "PriceClass_100"
+    },
+    "Tags": [
+     {
+      "Key": "Application",
+      "Value": "budgetbuddy"
+     },
+     {
+      "Key": "CachingEnabled",
+      "Value": "Yes"
+     },
+     {
+      "Key": "Component",
+      "Value": "AdminCDN"
+     },
+     {
+      "Key": "CostCenter",
+      "Value": "BudgetBuddy-CDN"
+     },
+     {
+      "Key": "Environment",
+      "Value": "dev"
+     },
+     {
+      "Key": "ManagedBy",
+      "Value": "CDK"
+     },
+     {
+      "Key": "Owner",
+      "Value": "BudgetBuddy-Team"
+     },
+     {
+      "Key": "PriceClass",
+      "Value": "US-Canada-Europe"
+     },
+     {
+      "Key": "Project",
+      "Value": "BudgetBuddy"
+     },
+     {
+      "Key": "Purpose",
+      "Value": "Family-Budgeting-Application"
+     },
+     {
+      "Key": "Service",
+      "Value": "CloudFront"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/AdminDistribution/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/3WMwQ6CMBBEv8V7WQH9AcWYeNLoB5jSrmQBW9PdSgzh3w1ioh48zczuvMkhzzNIZ7rjxNgmaamE/iTaNEp3fO55Af06mgZFFRf3dpMcfEvm8TlPeVCm9dFegncC/YZYApVRyDu1D1SRWxmDzDuLTkheeDEC2xH41/ieGQZVRBZ/PSL7GAyOhY//eR2Cv5PFsNaMasWMchJdkatGZh/lFmVQzluEmuf3fAlZCumsZqIkRCd0RThO+gRRxWORKAEAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-hosting/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "WebBucketName": {
+   "Description": "S3 bucket name for BudgetBuddy web application static hosting",
+   "Value": {
+    "Ref": "WebBucket12880F5B"
+   },
+   "Export": {
+    "Name": "budgetbuddy-web-bucket-name"
+   }
+  },
+  "WebBucketArn": {
+   "Description": "S3 bucket ARN for BudgetBuddy web application IAM policies and deployment",
+   "Value": {
+    "Fn::GetAtt": [
+     "WebBucket12880F5B",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "budgetbuddy-web-bucket-arn"
+   }
+  },
+  "AdminBucketName": {
+   "Description": "S3 bucket name for BudgetBuddy admin dashboard static hosting",
+   "Value": {
+    "Ref": "AdminBucketB0A70AB7"
+   },
+   "Export": {
+    "Name": "budgetbuddy-admin-bucket-name"
+   }
+  },
+  "AdminBucketArn": {
+   "Description": "S3 bucket ARN for BudgetBuddy admin dashboard IAM policies and deployment",
+   "Value": {
+    "Fn::GetAtt": [
+     "AdminBucketB0A70AB7",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "budgetbuddy-admin-bucket-arn"
+   }
+  },
+  "WebDistributionId": {
+   "Description": "CloudFront distribution ID for BudgetBuddy web application cache invalidation",
+   "Value": {
+    "Ref": "WebDistribution59C46482"
+   },
+   "Export": {
+    "Name": "budgetbuddy-web-distribution-id"
+   }
+  },
+  "WebDistributionDomainName": {
+   "Description": "CloudFront domain name for BudgetBuddy web application public access",
+   "Value": {
+    "Fn::GetAtt": [
+     "WebDistribution59C46482",
+     "DomainName"
+    ]
+   },
+   "Export": {
+    "Name": "budgetbuddy-web-distribution-domain"
+   }
+  },
+  "AdminDistributionId": {
+   "Description": "CloudFront distribution ID for BudgetBuddy admin dashboard cache invalidation",
+   "Value": {
+    "Ref": "AdminDistribution4E89F8C0"
+   },
+   "Export": {
+    "Name": "budgetbuddy-admin-distribution-id"
+   }
+  },
+  "AdminDistributionDomainName": {
+   "Description": "CloudFront domain name for BudgetBuddy admin dashboard public access",
+   "Value": {
+    "Fn::GetAtt": [
+     "AdminDistribution4E89F8C0",
+     "DomainName"
+    ]
+   },
+   "Export": {
+    "Name": "budgetbuddy-admin-distribution-domain"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

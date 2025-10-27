@@ -1,0 +1,15 @@
+{
+    "_comment": "Budget management Lambda function package.json - Handles budget CRUD, categories, and zero-based calculations",
+    "name": "budgetbuddy-budget-function",
+    "version": "1.0.0",
+    "description": "BudgetBuddy budget management Lambda function for budget operations and category management",
+    "main": "index.js",
+    "scripts": {
+        "test": "jest",
+        "local": "sam local start-api"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "jest": "^29.0.0"
+    }
+}

@@ -1,0 +1,36 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6": {
+      "displayName": "budgetbuddy-dev-hosting/Custom::S3AutoDeleteObjectsCustomResourceProvider Code",
+      "source": {
+        "path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "786673323159-us-east-1-eade2412": {
+          "bucketName": "cdk-hnb659fds-assets-786673323159-us-east-1",
+          "objectKey": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-file-publishing-role-786673323159-us-east-1"
+        }
+      }
+    },
+    "c775f07f2ebd2445d5ca15ed55bfd0f127132eb5bbede712ca3ad002ab712931": {
+      "displayName": "budgetbuddy-dev-hosting Template",
+      "source": {
+        "path": "budgetbuddy-dev-hosting.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "786673323159-us-east-1-b0a1dc29": {
+          "bucketName": "cdk-hnb659fds-assets-786673323159-us-east-1",
+          "objectKey": "c775f07f2ebd2445d5ca15ed55bfd0f127132eb5bbede712ca3ad002ab712931.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-file-publishing-role-786673323159-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

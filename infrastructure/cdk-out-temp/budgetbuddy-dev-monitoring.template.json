@@ -1,0 +1,404 @@
+{
+ "Description": "BudgetBuddy monitoring and alerting infrastructure with CloudWatch dashboards and cost tracking",
+ "Resources": {
+  "AlertTopic2720D535": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "BudgetBuddy Critical Infrastructure Alerts",
+    "Tags": [
+     {
+      "Key": "AlertType",
+      "Value": "Critical"
+     },
+     {
+      "Key": "Application",
+      "Value": "budgetbuddy"
+     },
+     {
+      "Key": "Component",
+      "Value": "Monitoring"
+     },
+     {
+      "Key": "CostCenter",
+      "Value": "BudgetBuddy-Operations"
+     },
+     {
+      "Key": "Environment",
+      "Value": "dev"
+     },
+     {
+      "Key": "ManagedBy",
+      "Value": "CDK"
+     },
+     {
+      "Key": "NotificationMethod",
+      "Value": "Email-SMS"
+     },
+     {
+      "Key": "Owner",
+      "Value": "BudgetBuddy-Team"
+     },
+     {
+      "Key": "Project",
+      "Value": "BudgetBuddy"
+     },
+     {
+      "Key": "Purpose",
+      "Value": "Family-Budgeting-Application"
+     },
+     {
+      "Key": "Service",
+      "Value": "SNS"
+     }
+    ],
+    "TopicName": "budgetbuddy-alerts"
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-monitoring/AlertTopic/Resource"
+   }
+  },
+  "ApplicationDashboardC88CB43D": {
+   "Type": "AWS::CloudWatch::Dashboard",
+   "Properties": {
+    "DashboardBody": {
+     "Fn::Join": [
+      "",
+      [
+       "{\"widgets\":[{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":0,\"y\":0,\"properties\":{\"view\":\"timeSeries\",\"title\":\"API Gateway Metrics\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/ApiGateway\",\"Count\",\"ApiName\",\"budgetbuddy-api\",{\"stat\":\"Sum\"}],[\"AWS/ApiGateway\",\"4XXError\",\"ApiName\",\"budgetbuddy-api\",{\"stat\":\"Sum\"}],[\"AWS/ApiGateway\",\"5XXError\",\"ApiName\",\"budgetbuddy-api\",{\"stat\":\"Sum\"}],[\"AWS/ApiGateway\",\"Latency\",\"ApiName\",\"budgetbuddy-api\",{\"yAxis\":\"right\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":12,\"y\":0,\"properties\":{\"view\":\"timeSeries\",\"title\":\"DynamoDB Metrics\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/DynamoDB\",\"ConsumedReadCapacityUnits\",\"TableName\",\"",
+       {
+        "Fn::ImportValue": "budgetbuddy-dev-database:ExportsOutputRefBudgetBuddyTable45BAD1428138E5DC"
+       },
+       "\",{\"stat\":\"Sum\"}],[\"AWS/DynamoDB\",\"ConsumedWriteCapacityUnits\",\"TableName\",\"",
+       {
+        "Fn::ImportValue": "budgetbuddy-dev-database:ExportsOutputRefBudgetBuddyTable45BAD1428138E5DC"
+       },
+       "\",{\"stat\":\"Sum\"}],[\"AWS/DynamoDB\",\"SuccessfulRequestLatency\",\"Operation\",\"Query\",\"TableName\",\"",
+       {
+        "Fn::ImportValue": "budgetbuddy-dev-database:ExportsOutputRefBudgetBuddyTable45BAD1428138E5DC"
+       },
+       "\",{\"yAxis\":\"right\"}],[\"AWS/DynamoDB\",\"ThrottledRequests\",\"TableName\",\"",
+       {
+        "Fn::ImportValue": "budgetbuddy-dev-database:ExportsOutputRefBudgetBuddyTable45BAD1428138E5DC"
+       },
+       "\",{\"stat\":\"Sum\",\"yAxis\":\"right\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":0,\"y\":6,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Authentication Metrics\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/Cognito\",\"SignUpSuccesses\",\"UserPool\",\"",
+       {
+        "Fn::ImportValue": "budgetbuddy-dev-auth:ExportsOutputRefBudgetBuddyUserPool11A5D7DB6B23C3BD"
+       },
+       "\",{\"period\":3600,\"stat\":\"Sum\"}],[\"AWS/Cognito\",\"SignInSuccesses\",\"UserPool\",\"",
+       {
+        "Fn::ImportValue": "budgetbuddy-dev-auth:ExportsOutputRefBudgetBuddyUserPool11A5D7DB6B23C3BD"
+       },
+       "\",{\"period\":3600,\"stat\":\"Sum\"}],[\"AWS/Cognito\",\"SignUpThrottles\",\"UserPool\",\"",
+       {
+        "Fn::ImportValue": "budgetbuddy-dev-auth:ExportsOutputRefBudgetBuddyUserPool11A5D7DB6B23C3BD"
+       },
+       "\",{\"period\":3600,\"stat\":\"Sum\",\"yAxis\":\"right\"}],[\"AWS/Cognito\",\"SignInThrottles\",\"UserPool\",\"",
+       {
+        "Fn::ImportValue": "budgetbuddy-dev-auth:ExportsOutputRefBudgetBuddyUserPool11A5D7DB6B23C3BD"
+       },
+       "\",{\"period\":3600,\"stat\":\"Sum\",\"yAxis\":\"right\"}]],\"yAxis\":{}}},{\"type\":\"metric\",\"width\":12,\"height\":6,\"x\":0,\"y\":12,\"properties\":{\"view\":\"timeSeries\",\"title\":\"Estimated AWS Costs\",\"region\":\"",
+       {
+        "Ref": "AWS::Region"
+       },
+       "\",\"metrics\":[[\"AWS/Billing\",\"EstimatedCharges\",\"Currency\",\"USD\",{\"period\":21600,\"stat\":\"Maximum\"}]],\"yAxis\":{}}}]}"
+      ]
+     ]
+    },
+    "DashboardName": "budgetbuddy-application-metrics"
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-monitoring/ApplicationDashboard/Resource"
+   }
+  },
+  "ApiErrorRateAlarm309C54E5": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlertTopic2720D535"
+     }
+    ],
+    "AlarmDescription": "BudgetBuddy API Gateway 5XX error rate exceeds threshold - indicates backend issues",
+    "AlarmName": "budgetbuddy-api-high-error-rate",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ApiName",
+      "Value": "budgetbuddy-api"
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "5XXError",
+    "Namespace": "AWS/ApiGateway",
+    "Period": 300,
+    "Statistic": "Sum",
+    "Tags": [
+     {
+      "Key": "Application",
+      "Value": "budgetbuddy"
+     },
+     {
+      "Key": "CostCenter",
+      "Value": "BudgetBuddy-Infrastructure"
+     },
+     {
+      "Key": "Environment",
+      "Value": "dev"
+     },
+     {
+      "Key": "ManagedBy",
+      "Value": "CDK"
+     },
+     {
+      "Key": "Owner",
+      "Value": "BudgetBuddy-Team"
+     },
+     {
+      "Key": "Project",
+      "Value": "BudgetBuddy"
+     },
+     {
+      "Key": "Purpose",
+      "Value": "Family-Budgeting-Application"
+     }
+    ],
+    "Threshold": 10,
+    "TreatMissingData": "notBreaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-monitoring/ApiErrorRateAlarm/Resource"
+   }
+  },
+  "ApiLatencyAlarm453002C0": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlertTopic2720D535"
+     }
+    ],
+    "AlarmDescription": "BudgetBuddy API Gateway response latency exceeds 5 seconds - performance degradation",
+    "AlarmName": "budgetbuddy-api-high-latency",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ApiName",
+      "Value": "budgetbuddy-api"
+     }
+    ],
+    "EvaluationPeriods": 3,
+    "MetricName": "Latency",
+    "Namespace": "AWS/ApiGateway",
+    "Period": 300,
+    "Statistic": "Average",
+    "Tags": [
+     {
+      "Key": "Application",
+      "Value": "budgetbuddy"
+     },
+     {
+      "Key": "CostCenter",
+      "Value": "BudgetBuddy-Infrastructure"
+     },
+     {
+      "Key": "Environment",
+      "Value": "dev"
+     },
+     {
+      "Key": "ManagedBy",
+      "Value": "CDK"
+     },
+     {
+      "Key": "Owner",
+      "Value": "BudgetBuddy-Team"
+     },
+     {
+      "Key": "Project",
+      "Value": "BudgetBuddy"
+     },
+     {
+      "Key": "Purpose",
+      "Value": "Family-Budgeting-Application"
+     }
+    ],
+    "Threshold": 5000
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-monitoring/ApiLatencyAlarm/Resource"
+   }
+  },
+  "DynamoThrottleAlarmF7D162EF": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlertTopic2720D535"
+     }
+    ],
+    "AlarmDescription": "BudgetBuddy DynamoDB requests are being throttled - capacity exceeded",
+    "AlarmName": "budgetbuddy-dynamodb-throttling",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "TableName",
+      "Value": {
+       "Fn::ImportValue": "budgetbuddy-dev-database:ExportsOutputRefBudgetBuddyTable45BAD1428138E5DC"
+      }
+     }
+    ],
+    "EvaluationPeriods": 1,
+    "MetricName": "ThrottledRequests",
+    "Namespace": "AWS/DynamoDB",
+    "Period": 300,
+    "Statistic": "Sum",
+    "Tags": [
+     {
+      "Key": "Application",
+      "Value": "budgetbuddy"
+     },
+     {
+      "Key": "CostCenter",
+      "Value": "BudgetBuddy-Infrastructure"
+     },
+     {
+      "Key": "Environment",
+      "Value": "dev"
+     },
+     {
+      "Key": "ManagedBy",
+      "Value": "CDK"
+     },
+     {
+      "Key": "Owner",
+      "Value": "BudgetBuddy-Team"
+     },
+     {
+      "Key": "Project",
+      "Value": "BudgetBuddy"
+     },
+     {
+      "Key": "Purpose",
+      "Value": "Family-Budgeting-Application"
+     }
+    ],
+    "Threshold": 0
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-monitoring/DynamoThrottleAlarm/Resource"
+   }
+  },
+  "CostAlarm97D2533C": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlertTopic2720D535"
+     }
+    ],
+    "AlarmDescription": "BudgetBuddy AWS monthly costs exceed $200 budget threshold - review usage",
+    "AlarmName": "budgetbuddy-high-costs",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "Currency",
+      "Value": "USD"
+     }
+    ],
+    "EvaluationPeriods": 1,
+    "MetricName": "EstimatedCharges",
+    "Namespace": "AWS/Billing",
+    "Period": 21600,
+    "Statistic": "Maximum",
+    "Tags": [
+     {
+      "Key": "Application",
+      "Value": "budgetbuddy"
+     },
+     {
+      "Key": "CostCenter",
+      "Value": "BudgetBuddy-Infrastructure"
+     },
+     {
+      "Key": "Environment",
+      "Value": "dev"
+     },
+     {
+      "Key": "ManagedBy",
+      "Value": "CDK"
+     },
+     {
+      "Key": "Owner",
+      "Value": "BudgetBuddy-Team"
+     },
+     {
+      "Key": "Project",
+      "Value": "BudgetBuddy"
+     },
+     {
+      "Key": "Purpose",
+      "Value": "Family-Budgeting-Application"
+     }
+    ],
+    "Threshold": 200
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-monitoring/CostAlarm/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/0WJQQ6DIBBFz+Iepkh6gaY9Qdu9GcHGUYSGwbIg3N2oi67ee/9r0LoF1WBmaewsHfVQXgnNLDBzV9gzlHf4khH3jz+kCuPCajMmM0J5II99wGj3/x83h3HZp0NqrcIHO8DEl5++QqtANRMTybj6RMsAz5MbsnEnFI8AAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-monitoring/CDKMetadata/Default"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

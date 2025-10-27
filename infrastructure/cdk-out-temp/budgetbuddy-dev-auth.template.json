@@ -1,0 +1,336 @@
+{
+ "Description": "BudgetBuddy authentication infrastructure with Cognito User Pools for secure user management",
+ "Resources": {
+  "BudgetBuddyUserPool11A5D7DB": {
+   "Type": "AWS::Cognito::UserPool",
+   "Properties": {
+    "AccountRecoverySetting": {
+     "RecoveryMechanisms": [
+      {
+       "Name": "verified_email",
+       "Priority": 1
+      }
+     ]
+    },
+    "AdminCreateUserConfig": {
+     "AllowAdminCreateUserOnly": false,
+     "InviteMessageTemplate": {
+      "EmailMessage": "Hello {username}, you have been invited to join BudgetBuddy. Your temporary password is {####}",
+      "EmailSubject": "Welcome to BudgetBuddy"
+     }
+    },
+    "AutoVerifiedAttributes": [
+     "email"
+    ],
+    "DeviceConfiguration": {
+     "ChallengeRequiredOnNewDevice": false,
+     "DeviceOnlyRememberedOnUserPrompt": true
+    },
+    "EmailConfiguration": {
+     "EmailSendingAccount": "COGNITO_DEFAULT",
+     "ReplyToEmailAddress": "noreply@budgetbuddy.com"
+    },
+    "Policies": {
+     "PasswordPolicy": {
+      "MinimumLength": 8,
+      "RequireLowercase": true,
+      "RequireNumbers": true,
+      "RequireSymbols": false,
+      "RequireUppercase": true
+     }
+    },
+    "Schema": [
+     {
+      "Mutable": true,
+      "Name": "email",
+      "Required": true
+     },
+     {
+      "Mutable": true,
+      "Name": "given_name",
+      "Required": true
+     },
+     {
+      "Mutable": true,
+      "Name": "family_name",
+      "Required": true
+     },
+     {
+      "Mutable": true,
+      "Name": "birthdate",
+      "Required": false
+     },
+     {
+      "Mutable": true,
+      "Name": "address",
+      "Required": false
+     },
+     {
+      "AttributeDataType": "String",
+      "Mutable": false,
+      "Name": "userId",
+      "StringAttributeConstraints": {
+       "MaxLength": "50",
+       "MinLength": "0"
+      }
+     },
+     {
+      "AttributeDataType": "String",
+      "Mutable": true,
+      "Name": "familyId",
+      "StringAttributeConstraints": {
+       "MaxLength": "50",
+       "MinLength": "0"
+      }
+     },
+     {
+      "AttributeDataType": "String",
+      "Mutable": true,
+      "Name": "familyRole",
+      "StringAttributeConstraints": {
+       "MaxLength": "20",
+       "MinLength": "0"
+      }
+     },
+     {
+      "AttributeDataType": "String",
+      "Mutable": true,
+      "Name": "accountType",
+      "StringAttributeConstraints": {
+       "MaxLength": "20",
+       "MinLength": "0"
+      }
+     },
+     {
+      "AttributeDataType": "String",
+      "Mutable": true,
+      "Name": "subscriptionTier",
+      "StringAttributeConstraints": {
+       "MaxLength": "20",
+       "MinLength": "0"
+      }
+     },
+     {
+      "AttributeDataType": "String",
+      "Mutable": true,
+      "Name": "onboardingCompleted",
+      "StringAttributeConstraints": {
+       "MaxLength": "10",
+       "MinLength": "0"
+      }
+     },
+     {
+      "AttributeDataType": "String",
+      "Mutable": true,
+      "Name": "country",
+      "StringAttributeConstraints": {
+       "MaxLength": "10",
+       "MinLength": "0"
+      }
+     }
+    ],
+    "SmsVerificationMessage": "The verification code to your new account is {####}",
+    "UserPoolName": "budgetbuddy-users",
+    "UserPoolTags": {
+     "Application": "budgetbuddy",
+     "Component": "Authentication",
+     "CostCenter": "BudgetBuddy-Auth",
+     "Environment": "dev",
+     "ManagedBy": "CDK",
+     "Owner": "BudgetBuddy-Team",
+     "Project": "BudgetBuddy",
+     "Purpose": "Family-Budgeting-Application",
+     "SecurityLevel": "High",
+     "Service": "Cognito",
+     "UserType": "Application-Users"
+    },
+    "UsernameAttributes": [
+     "email"
+    ],
+    "VerificationMessageTemplate": {
+     "DefaultEmailOption": "CONFIRM_WITH_LINK",
+     "EmailMessageByLink": "Welcome to BudgetBuddy! Please click the link below to verify your email address: {##Verify Email##}",
+     "EmailSubjectByLink": "Welcome to BudgetBuddy - Verify your email",
+     "SmsMessage": "The verification code to your new account is {####}"
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-auth/BudgetBuddyUserPool/Resource"
+   }
+  },
+  "BudgetBuddyUserPoolClient1D948EA1": {
+   "Type": "AWS::Cognito::UserPoolClient",
+   "Properties": {
+    "AccessTokenValidity": 60,
+    "AllowedOAuthFlows": [
+     "code"
+    ],
+    "AllowedOAuthFlowsUserPoolClient": true,
+    "AllowedOAuthScopes": [
+     "email",
+     "openid",
+     "profile"
+    ],
+    "CallbackURLs": [
+     "http://localhost:3000/auth/callback",
+     "https://app.budgetbuddy.com/auth/callback"
+    ],
+    "ClientName": "budgetbuddy-client",
+    "ExplicitAuthFlows": [
+     "ALLOW_USER_PASSWORD_AUTH",
+     "ALLOW_USER_SRP_AUTH",
+     "ALLOW_REFRESH_TOKEN_AUTH"
+    ],
+    "IdTokenValidity": 60,
+    "LogoutURLs": [
+     "http://localhost:3000/auth/logout",
+     "https://app.budgetbuddy.com/auth/logout"
+    ],
+    "PreventUserExistenceErrors": "ENABLED",
+    "ReadAttributes": [
+     "address",
+     "custom:accountType",
+     "custom:country",
+     "custom:familyId",
+     "custom:familyRole",
+     "custom:onboardingCompleted",
+     "custom:subscriptionTier",
+     "email",
+     "family_name",
+     "given_name"
+    ],
+    "RefreshTokenValidity": 43200,
+    "SupportedIdentityProviders": [
+     "COGNITO"
+    ],
+    "TokenValidityUnits": {
+     "AccessToken": "minutes",
+     "IdToken": "minutes",
+     "RefreshToken": "minutes"
+    },
+    "UserPoolId": {
+     "Ref": "BudgetBuddyUserPool11A5D7DB"
+    },
+    "WriteAttributes": [
+     "address",
+     "custom:accountType",
+     "custom:country",
+     "custom:familyId",
+     "custom:familyRole",
+     "custom:onboardingCompleted",
+     "custom:subscriptionTier",
+     "email",
+     "family_name",
+     "given_name"
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-auth/BudgetBuddyUserPoolClient/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/02JQQ6CMBAA38K9XUvDD3iARuOZ1FLNQt017FYOhL8TQzSeZjLjwfsaXBVmsbEfbcYbLBcNcTRhli7yg1AZlquk6cScTXunn3+lzZhI/9de1k86Fn0VXQ1xn2CQw9s3UDtw1SCIdiqk+Exw3rkB1ShJWo8AAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-auth/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "UserPoolId": {
+   "Description": "Cognito User Pool ID for BudgetBuddy client authentication configuration",
+   "Value": {
+    "Ref": "BudgetBuddyUserPool11A5D7DB"
+   },
+   "Export": {
+    "Name": "budgetbuddy-user-pool-id"
+   }
+  },
+  "UserPoolClientId": {
+   "Description": "Cognito User Pool Client ID for BudgetBuddy web and mobile applications",
+   "Value": {
+    "Ref": "BudgetBuddyUserPoolClient1D948EA1"
+   },
+   "Export": {
+    "Name": "budgetbuddy-user-pool-client-id"
+   }
+  },
+  "UserPoolArn": {
+   "Description": "Cognito User Pool ARN for BudgetBuddy IAM policy configuration",
+   "Value": {
+    "Fn::GetAtt": [
+     "BudgetBuddyUserPool11A5D7DB",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "budgetbuddy-user-pool-arn"
+   }
+  },
+  "ExportsOutputRefBudgetBuddyUserPool11A5D7DB6B23C3BD": {
+   "Value": {
+    "Ref": "BudgetBuddyUserPool11A5D7DB"
+   },
+   "Export": {
+    "Name": "budgetbuddy-dev-auth:ExportsOutputRefBudgetBuddyUserPool11A5D7DB6B23C3BD"
+   }
+  },
+  "ExportsOutputRefBudgetBuddyUserPoolClient1D948EA1DAC37AC1": {
+   "Value": {
+    "Ref": "BudgetBuddyUserPoolClient1D948EA1"
+   },
+   "Export": {
+    "Name": "budgetbuddy-dev-auth:ExportsOutputRefBudgetBuddyUserPoolClient1D948EA1DAC37AC1"
+   }
+  },
+  "ExportsOutputFnGetAttBudgetBuddyUserPool11A5D7DBArn35E51E8B": {
+   "Value": {
+    "Fn::GetAtt": [
+     "BudgetBuddyUserPool11A5D7DB",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "budgetbuddy-dev-auth:ExportsOutputFnGetAttBudgetBuddyUserPool11A5D7DBArn35E51E8B"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

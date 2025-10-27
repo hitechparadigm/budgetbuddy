@@ -1,0 +1,248 @@
+{
+ "Description": "BudgetBuddy database infrastructure with DynamoDB single-table design for cost-optimized data storage",
+ "Resources": {
+  "BudgetBuddyTable45BAD142": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "PK",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "SK",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "GSI1PK",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "GSI1SK",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "GSI2PK",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "GSI2SK",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "GSI3PK",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "GSI3SK",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "GSI1",
+      "KeySchema": [
+       {
+        "AttributeName": "GSI1PK",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "GSI1SK",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     },
+     {
+      "IndexName": "GSI2",
+      "KeySchema": [
+       {
+        "AttributeName": "GSI2PK",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "GSI2SK",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     },
+     {
+      "IndexName": "GSI3",
+      "KeySchema": [
+       {
+        "AttributeName": "GSI3PK",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "GSI3SK",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "PK",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "SK",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "budgetbuddy-main",
+    "Tags": [
+     {
+      "Key": "Application",
+      "Value": "budgetbuddy"
+     },
+     {
+      "Key": "BackupRequired",
+      "Value": "Yes"
+     },
+     {
+      "Key": "Component",
+      "Value": "Database"
+     },
+     {
+      "Key": "CostCenter",
+      "Value": "BudgetBuddy-Core"
+     },
+     {
+      "Key": "DataType",
+      "Value": "Application-Data"
+     },
+     {
+      "Key": "Environment",
+      "Value": "dev"
+     },
+     {
+      "Key": "ManagedBy",
+      "Value": "CDK"
+     },
+     {
+      "Key": "Owner",
+      "Value": "BudgetBuddy-Team"
+     },
+     {
+      "Key": "Project",
+      "Value": "BudgetBuddy"
+     },
+     {
+      "Key": "Purpose",
+      "Value": "Family-Budgeting-Application"
+     },
+     {
+      "Key": "Service",
+      "Value": "DynamoDB"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-database/BudgetBuddyTable/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/yXISwqAIBRA0bU015dJO2gBQTWP5yewj0ZPk4j2HtToHq4EKSsQBWbi2ix8dQruPqJeGGYazeVxC0bBPaBaLWsm/+FhnaWQDv2tNsU9xYf5YCzMVJ6yhkqAKGZyjh/JR7dZ6P6+w+I77XIAAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "budgetbuddy-dev-database/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "TableName": {
+   "Description": "DynamoDB table name for BudgetBuddy application data storage",
+   "Value": {
+    "Ref": "BudgetBuddyTable45BAD142"
+   },
+   "Export": {
+    "Name": "budgetbuddy-table-name"
+   }
+  },
+  "TableArn": {
+   "Description": "DynamoDB table ARN for BudgetBuddy application IAM policies",
+   "Value": {
+    "Fn::GetAtt": [
+     "BudgetBuddyTable45BAD142",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "budgetbuddy-table-arn"
+   }
+  },
+  "ExportsOutputFnGetAttBudgetBuddyTable45BAD142Arn6EC0DC0B": {
+   "Value": {
+    "Fn::GetAtt": [
+     "BudgetBuddyTable45BAD142",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "budgetbuddy-dev-database:ExportsOutputFnGetAttBudgetBuddyTable45BAD142Arn6EC0DC0B"
+   }
+  },
+  "ExportsOutputRefBudgetBuddyTable45BAD1428138E5DC": {
+   "Value": {
+    "Ref": "BudgetBuddyTable45BAD142"
+   },
+   "Export": {
+    "Name": "budgetbuddy-dev-database:ExportsOutputRefBudgetBuddyTable45BAD1428138E5DC"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

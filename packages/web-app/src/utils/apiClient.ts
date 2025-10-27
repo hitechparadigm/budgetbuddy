@@ -66,7 +66,8 @@ class SimpleApiClient {
       if (error instanceof ApiClientError) {
         throw error;
       }
-      throw new ApiClientError('Network error', 0);
+      console.error('Network error details:', error);
+      throw new ApiClientError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`, 0);
     }
   }
 
@@ -179,7 +180,8 @@ class SimpleApiClient {
 
   getAccessToken(): string | null {
     const tokens = this.getTokens();
-    return tokens?.accessToken || null;
+    // Use ID token for API Gateway Cognito authorizer
+    return tokens?.idToken || null;
   }
 }
 

@@ -181,14 +181,37 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       const requestData = {
         month,
         groups: budgetData?.groups || {
-          income: [],
-          savings: [],
-          expenses: []
+          income: [{
+            groupName: 'Income',
+            groupType: 'income',
+            categories: [],
+            totalPlanned: 0,
+            totalSpent: 0,
+            totalRemaining: 0,
+          }],
+          savings: [{
+            groupName: 'Savings',
+            groupType: 'saving',
+            categories: [],
+            totalPlanned: 0,
+            totalSpent: 0,
+            totalRemaining: 0,
+          }],
+          expenses: [{
+            groupName: 'Expenses',
+            groupType: 'expense',
+            categories: [],
+            totalPlanned: 0,
+            totalSpent: 0,
+            totalRemaining: 0,
+          }]
         },
         isAIGenerated: budgetData?.isAIGenerated || false,
       };
 
+      console.log('Creating budget with data:', requestData);
       const response = await apiClient.post('/budget', requestData);
+      console.log('Budget created successfully:', response);
 
       setBudgetState(prev => ({
         ...prev,
@@ -215,7 +238,15 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     setBudgetState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await apiClient.put(`/budget/current?month=${month}`, updates);
+      // First, get the budget for this month to find its budgetId
+      const budgets = await apiClient.get('/budget');
+      const budget = budgets.budgets?.find((b: Budget) => b.month === month);
+
+      if (!budget) {
+        throw new Error(`No budget found for ${month}`);
+      }
+
+      const response = await apiClient.put(`/budget/${budget.budgetId}`, updates);
 
       setBudgetState(prev => ({
         ...prev,

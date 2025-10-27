@@ -1,0 +1,2430 @@
+{
+  "version": "48.0.0",
+  "artifacts": {
+    "budgetbuddy-dev-database.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "budgetbuddy-dev-database.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "budgetbuddy-dev-database": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://786673323159/us-east-1",
+      "properties": {
+        "templateFile": "budgetbuddy-dev-database.template.json",
+        "terminationProtection": false,
+        "tags": {
+          "Application": "budgetbuddy",
+          "CostCenter": "BudgetBuddy-Infrastructure",
+          "Environment": "dev",
+          "ManagedBy": "CDK",
+          "Owner": "BudgetBuddy-Team",
+          "Project": "BudgetBuddy",
+          "Purpose": "Family-Budgeting-Application"
+        },
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-deploy-role-786673323159-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-cfn-exec-role-786673323159-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-786673323159-us-east-1/f79d0ecec1aaebb5439081d904f2589fa6c379c5f5db2a862ab18b3f66488309.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "budgetbuddy-dev-database.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-lookup-role-786673323159-us-east-1",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "budgetbuddy-dev-database.assets"
+      ],
+      "metadata": {
+        "/budgetbuddy-dev-database": [
+          {
+            "type": "aws:cdk:stack-tags",
+            "data": [
+              {
+                "Key": "Application",
+                "Value": "budgetbuddy"
+              },
+              {
+                "Key": "CostCenter",
+                "Value": "BudgetBuddy-Infrastructure"
+              },
+              {
+                "Key": "Environment",
+                "Value": "dev"
+              },
+              {
+                "Key": "ManagedBy",
+                "Value": "CDK"
+              },
+              {
+                "Key": "Owner",
+                "Value": "BudgetBuddy-Team"
+              },
+              {
+                "Key": "Project",
+                "Value": "BudgetBuddy"
+              },
+              {
+                "Key": "Purpose",
+                "Value": "Family-Budgeting-Application"
+              }
+            ]
+          }
+        ],
+        "/budgetbuddy-dev-database/BudgetBuddyTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "BudgetBuddyTable45BAD142"
+            }
+          }
+        ],
+        "/budgetbuddy-dev-database/BudgetBuddyTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyTable45BAD142"
+          }
+        ],
+        "/budgetbuddy-dev-database/TableName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TableName"
+          }
+        ],
+        "/budgetbuddy-dev-database/TableArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TableArn"
+          }
+        ],
+        "/budgetbuddy-dev-database/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/budgetbuddy-dev-database/Exports/Output{\"Fn::GetAtt\":[\"BudgetBuddyTable45BAD142\",\"Arn\"]}": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportsOutputFnGetAttBudgetBuddyTable45BAD142Arn6EC0DC0B"
+          }
+        ],
+        "/budgetbuddy-dev-database/Exports/Output{\"Ref\":\"BudgetBuddyTable45BAD142\"}": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportsOutputRefBudgetBuddyTable45BAD1428138E5DC"
+          }
+        ],
+        "/budgetbuddy-dev-database/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/budgetbuddy-dev-database/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "budgetbuddy-dev-database"
+    },
+    "budgetbuddy-dev-auth.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "budgetbuddy-dev-auth.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "budgetbuddy-dev-auth": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://786673323159/us-east-1",
+      "properties": {
+        "templateFile": "budgetbuddy-dev-auth.template.json",
+        "terminationProtection": false,
+        "tags": {
+          "Application": "budgetbuddy",
+          "CostCenter": "BudgetBuddy-Infrastructure",
+          "Environment": "dev",
+          "ManagedBy": "CDK",
+          "Owner": "BudgetBuddy-Team",
+          "Project": "BudgetBuddy",
+          "Purpose": "Family-Budgeting-Application"
+        },
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-deploy-role-786673323159-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-cfn-exec-role-786673323159-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-786673323159-us-east-1/5ee89a50e20c5fc1b065770cadbe18acc512ad5e3185480f5668bddd3d8474f1.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "budgetbuddy-dev-auth.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-lookup-role-786673323159-us-east-1",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "budgetbuddy-dev-auth.assets"
+      ],
+      "metadata": {
+        "/budgetbuddy-dev-auth": [
+          {
+            "type": "aws:cdk:stack-tags",
+            "data": [
+              {
+                "Key": "Application",
+                "Value": "budgetbuddy"
+              },
+              {
+                "Key": "CostCenter",
+                "Value": "BudgetBuddy-Infrastructure"
+              },
+              {
+                "Key": "Environment",
+                "Value": "dev"
+              },
+              {
+                "Key": "ManagedBy",
+                "Value": "CDK"
+              },
+              {
+                "Key": "Owner",
+                "Value": "BudgetBuddy-Team"
+              },
+              {
+                "Key": "Project",
+                "Value": "BudgetBuddy"
+              },
+              {
+                "Key": "Purpose",
+                "Value": "Family-Budgeting-Application"
+              }
+            ]
+          }
+        ],
+        "/budgetbuddy-dev-auth/BudgetBuddyUserPool/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyUserPool11A5D7DB"
+          }
+        ],
+        "/budgetbuddy-dev-auth/BudgetBuddyUserPoolClient/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyUserPoolClient1D948EA1"
+          }
+        ],
+        "/budgetbuddy-dev-auth/UserPoolId": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UserPoolId"
+          }
+        ],
+        "/budgetbuddy-dev-auth/UserPoolClientId": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UserPoolClientId"
+          }
+        ],
+        "/budgetbuddy-dev-auth/UserPoolArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UserPoolArn"
+          }
+        ],
+        "/budgetbuddy-dev-auth/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/budgetbuddy-dev-auth/Exports/Output{\"Ref\":\"BudgetBuddyUserPool11A5D7DB\"}": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportsOutputRefBudgetBuddyUserPool11A5D7DB6B23C3BD"
+          }
+        ],
+        "/budgetbuddy-dev-auth/Exports/Output{\"Ref\":\"BudgetBuddyUserPoolClient1D948EA1\"}": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportsOutputRefBudgetBuddyUserPoolClient1D948EA1DAC37AC1"
+          }
+        ],
+        "/budgetbuddy-dev-auth/Exports/Output{\"Fn::GetAtt\":[\"BudgetBuddyUserPool11A5D7DB\",\"Arn\"]}": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportsOutputFnGetAttBudgetBuddyUserPool11A5D7DBArn35E51E8B"
+          }
+        ],
+        "/budgetbuddy-dev-auth/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/budgetbuddy-dev-auth/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "budgetbuddy-dev-auth"
+    },
+    "budgetbuddy-dev-api.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "budgetbuddy-dev-api.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "budgetbuddy-dev-api": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://786673323159/us-east-1",
+      "properties": {
+        "templateFile": "budgetbuddy-dev-api.template.json",
+        "terminationProtection": false,
+        "tags": {
+          "Application": "budgetbuddy",
+          "CostCenter": "BudgetBuddy-Infrastructure",
+          "Environment": "dev",
+          "ManagedBy": "CDK",
+          "Owner": "BudgetBuddy-Team",
+          "Project": "BudgetBuddy",
+          "Purpose": "Family-Budgeting-Application"
+        },
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-deploy-role-786673323159-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-cfn-exec-role-786673323159-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-786673323159-us-east-1/067c09151923def1666e9913f13f0fb403da86194dc374cf53c3fb562aa44f8f.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "budgetbuddy-dev-api.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-lookup-role-786673323159-us-east-1",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "budgetbuddy-dev-database",
+        "budgetbuddy-dev-auth",
+        "budgetbuddy-dev-api.assets"
+      ],
+      "metadata": {
+        "/budgetbuddy-dev-api": [
+          {
+            "type": "aws:cdk:stack-tags",
+            "data": [
+              {
+                "Key": "Application",
+                "Value": "budgetbuddy"
+              },
+              {
+                "Key": "CostCenter",
+                "Value": "BudgetBuddy-Infrastructure"
+              },
+              {
+                "Key": "Environment",
+                "Value": "dev"
+              },
+              {
+                "Key": "ManagedBy",
+                "Value": "CDK"
+              },
+              {
+                "Key": "Owner",
+                "Value": "BudgetBuddy-Team"
+              },
+              {
+                "Key": "Project",
+                "Value": "BudgetBuddy"
+              },
+              {
+                "Key": "Purpose",
+                "Value": "Family-Budgeting-Application"
+              }
+            ]
+          }
+        ],
+        "/budgetbuddy-dev-api/CommonLayer/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CommonLayer306767A0"
+          }
+        ],
+        "/budgetbuddy-dev-api/AuthHandler/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AuthHandlerServiceRoleD970A3A9"
+          }
+        ],
+        "/budgetbuddy-dev-api/AuthHandler/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AuthHandlerServiceRoleDefaultPolicy77B239DC"
+          }
+        ],
+        "/budgetbuddy-dev-api/AuthHandler/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AuthHandler9DC767B7"
+          }
+        ],
+        "/budgetbuddy-dev-api/AuthHandler/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AuthHandlerLogRetentionF53669B2"
+          }
+        ],
+        "/budgetbuddy-dev-api/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+          }
+        ],
+        "/budgetbuddy-dev-api/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB"
+          }
+        ],
+        "/budgetbuddy-dev-api/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetHandler/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetHandlerServiceRoleEA18C3AB"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetHandler/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetHandlerServiceRoleDefaultPolicy8060A06C"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetHandler/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetHandler4B24984A"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetHandler/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetHandlerLogRetention99B9143F"
+          }
+        ],
+        "/budgetbuddy-dev-api/TransactionHandler/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TransactionHandlerServiceRoleC805A83E"
+          }
+        ],
+        "/budgetbuddy-dev-api/TransactionHandler/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TransactionHandlerServiceRoleDefaultPolicyA1B22C24"
+          }
+        ],
+        "/budgetbuddy-dev-api/TransactionHandler/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TransactionHandler51128574"
+          }
+        ],
+        "/budgetbuddy-dev-api/TransactionHandler/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TransactionHandlerLogRetentionAD89227E"
+          }
+        ],
+        "/budgetbuddy-dev-api/AIHandler/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AIHandlerServiceRoleBE6AA9D7"
+          }
+        ],
+        "/budgetbuddy-dev-api/AIHandler/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AIHandlerServiceRoleDefaultPolicy16378EA4"
+          }
+        ],
+        "/budgetbuddy-dev-api/AIHandler/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AIHandler5D68B6F1"
+          }
+        ],
+        "/budgetbuddy-dev-api/AIHandler/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AIHandlerLogRetentionEAE835AF"
+          }
+        ],
+        "/budgetbuddy-dev-api/FamilyHandler/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "FamilyHandlerServiceRole3573E807"
+          }
+        ],
+        "/budgetbuddy-dev-api/FamilyHandler/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "FamilyHandlerServiceRoleDefaultPolicyA49B5964"
+          }
+        ],
+        "/budgetbuddy-dev-api/FamilyHandler/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "FamilyHandlerB720DBEF"
+          }
+        ],
+        "/budgetbuddy-dev-api/FamilyHandler/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "FamilyHandlerLogRetentionB180384A"
+          }
+        ],
+        "/budgetbuddy-dev-api/PaymentHandler/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "PaymentHandlerServiceRole3E592AC7"
+          }
+        ],
+        "/budgetbuddy-dev-api/PaymentHandler/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "PaymentHandlerServiceRoleDefaultPolicy79856866"
+          }
+        ],
+        "/budgetbuddy-dev-api/PaymentHandler/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "PaymentHandler5B1365B9"
+          }
+        ],
+        "/budgetbuddy-dev-api/PaymentHandler/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "PaymentHandlerLogRetentionE46B10F7"
+          }
+        ],
+        "/budgetbuddy-dev-api/EmailHandler/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EmailHandlerServiceRole5532AF63"
+          }
+        ],
+        "/budgetbuddy-dev-api/EmailHandler/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EmailHandlerServiceRoleDefaultPolicy897B1A65"
+          }
+        ],
+        "/budgetbuddy-dev-api/EmailHandler/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EmailHandler7CB4CA8F"
+          }
+        ],
+        "/budgetbuddy-dev-api/EmailHandler/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "EmailHandlerLogRetention85F73761"
+          }
+        ],
+        "/budgetbuddy-dev-api/AdminHandler/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminHandlerServiceRole211AB64E"
+          }
+        ],
+        "/budgetbuddy-dev-api/AdminHandler/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminHandlerServiceRoleDefaultPolicy0CFC93F2"
+          }
+        ],
+        "/budgetbuddy-dev-api/AdminHandler/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminHandler935B2997"
+          }
+        ],
+        "/budgetbuddy-dev-api/AdminHandler/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminHandlerLogRetentionA7542ED5"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyAuthorizer/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyAuthorizer1380591F"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApi70CDB9F2"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/CloudWatchRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiCloudWatchRole08E3149E"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Account": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiAccount45072D08"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Deployment/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiDeployment1A1554D58a5d5b3e05402c666b166a17c740f3dc"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/DeploymentStage.v1/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiDeploymentStagev142A521F3"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Endpoint": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiEndpoint99B3E09C"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiOPTIONS24E6CB64"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/health/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApihealth40D568AA"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/health/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApihealthOPTIONSE1C59EA3"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/health/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApihealthGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GEThealthB159CF11"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/health/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApihealthGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GEThealth0F74ACCA"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/health/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApihealthGET238F10C4"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauth84945B04"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthOPTIONS645211F9"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/register/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthregister88386B3F"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/register/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthregisterOPTIONSDA4E22F4"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/register/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..auth.register": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthregisterPOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTauthregister5415BD4F"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/register/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..auth.register": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthregisterPOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTauthregister56396AD8"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/register/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthregisterPOST032F9BB4"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/login/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthlogin4FDF55FB"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/login/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthloginOPTIONS97848C93"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/login/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..auth.login": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthloginPOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTauthlogin0282AE8D"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/login/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..auth.login": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthloginPOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTauthlogin3207DDFF"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/login/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthloginPOSTD0F3F712"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/confirm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthconfirm5217E9A7"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/confirm/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthconfirmOPTIONS233777BA"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/confirm/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..auth.confirm": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthconfirmPOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTauthconfirmBE3EF726"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/confirm/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..auth.confirm": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthconfirmPOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTauthconfirm4237DB45"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/confirm/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthconfirmPOST7ADF2E15"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/forgot-password/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthforgotpassword0A9D487D"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/forgot-password/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthforgotpasswordOPTIONSCA69ED24"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/forgot-password/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..auth.forgot-password": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthforgotpasswordPOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTauthforgotpasswordFB555D7B"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/forgot-password/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..auth.forgot-password": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthforgotpasswordPOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTauthforgotpassword03567982"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/forgot-password/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthforgotpasswordPOST775181FB"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/reset-password/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthresetpassword8155D186"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/reset-password/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthresetpasswordOPTIONS2B19959D"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/reset-password/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..auth.reset-password": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthresetpasswordPOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTauthresetpasswordDD93989C"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/reset-password/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..auth.reset-password": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthresetpasswordPOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTauthresetpasswordD56A3226"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/reset-password/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthresetpasswordPOSTD971CD4D"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/profile/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthprofileFB0B3B35"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/profile/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthprofileOPTIONS34FF000A"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/profile/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..auth.profile": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthprofileGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETauthprofile9848E621"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/profile/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..auth.profile": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthprofileGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETauthprofile65D67405"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/profile/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthprofileGET4E34FE31"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/profile/PUT/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.PUT..auth.profile": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthprofilePUTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702PUTauthprofile0D261B87"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/profile/PUT/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.PUT..auth.profile": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthprofilePUTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702PUTauthprofileAF44C1D4"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/profile/PUT/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthprofilePUT2EFA7139"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/health/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthhealthB778FFB9"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/health/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthhealthOPTIONSC56AC935"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/health/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..auth.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthhealthGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETauthhealth756110DF"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/health/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..auth.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthhealthGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETauthhealth48525CEF"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/auth/health/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiauthhealthGET8AC60396"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/users/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiusers9BE052AC"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/users/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiusersOPTIONS0FF64DF9"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/users/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..users": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiusersGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETusers681F5A7A"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/users/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..users": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiusersGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETusers00F113E3"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/users/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiusersGET9A1DB287"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/users/PUT/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.PUT..users": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiusersPUTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702PUTusers40DF9CAC"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/users/PUT/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.PUT..users": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiusersPUTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702PUTusersFA560D46"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/users/PUT/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiusersPUT8D10C395"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetDFC1BB6F"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetOPTIONS957157DA"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..budget": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETbudget3C82FCDC"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..budget": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETbudget3ACB567A"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetGETDA7F6ACF"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..budget": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetPOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTbudget1E7C4D67"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..budget": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetPOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTbudgetAFA554CF"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetPOST2BBD798D"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/PUT/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.PUT..budget": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetPUTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702PUTbudget3334BAA5"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/PUT/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.PUT..budget": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetPUTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702PUTbudget7BBBEDF7"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/PUT/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetPUT4B38885F"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/health/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgethealth3CE951F9"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/health/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgethealthOPTIONS23C75652"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/health/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..budget.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgethealthGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETbudgethealth94236E91"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/health/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..budget.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgethealthGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETbudgethealth93022082"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/health/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgethealthGETAAB88B54"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/categories/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetcategoriesBD297BB5"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/categories/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetcategoriesOPTIONSB3428CEA"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/categories/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..budget.categories": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetcategoriesGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETbudgetcategoriesDBFBA58B"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/categories/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..budget.categories": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetcategoriesGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETbudgetcategories9F99C6D0"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/categories/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetcategoriesGET26BDBFDF"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/categories/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..budget.categories": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetcategoriesPOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTbudgetcategories42651B74"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/categories/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..budget.categories": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetcategoriesPOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTbudgetcategories9B207E5A"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/categories/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetcategoriesPOST1C30DA17"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/ai-generate/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetaigenerate688E9FD0"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/ai-generate/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetaigenerateOPTIONS9F3954D8"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/ai-generate/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..budget.ai-generate": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetaigeneratePOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTbudgetaigenerate2CE27FA6"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/ai-generate/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..budget.ai-generate": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetaigeneratePOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTbudgetaigenerate25E9AA71"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/budget/ai-generate/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApibudgetaigeneratePOST3DC7A43E"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactions21520748"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionsOPTIONSFC6EA04A"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..transactions": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionsGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETtransactions3EFBF79E"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..transactions": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionsGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETtransactions200FA05D"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionsGET62DA9A92"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..transactions": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionsPOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTtransactions0C9D656F"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..transactions": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionsPOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTtransactions3DA18363"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionsPOSTFF507851"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/health/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionshealthAEF4D513"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/health/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionshealthOPTIONS12908465"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/health/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..transactions.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionshealthGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETtransactionshealth46F0CE00"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/health/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..transactions.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionshealthGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETtransactionshealthD098B593"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/transactions/health/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApitransactionshealthGETD196648A"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyC5DE2598"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyOPTIONS04C0A88E"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..family": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETfamilyDE241B98"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..family": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETfamily7899EAF8"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyGET950C902C"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..family": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyPOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTfamilyD34C68B3"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..family": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyPOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTfamily8502AF7A"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyPOSTFB5B1120"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/health/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyhealth9C592B48"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/health/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyhealthOPTIONSF5379FDA"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/health/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..family.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyhealthGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETfamilyhealthB74C5D03"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/health/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..family.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyhealthGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETfamilyhealth3610717F"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/family/health/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApifamilyhealthGETB3235D24"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/payments/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApipayments963DA218"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/payments/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApipaymentsOPTIONS9460B3C9"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/payments/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..payments": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApipaymentsPOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTpayments612E3B69"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/payments/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..payments": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApipaymentsPOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTpayments8F0CCDF8"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/payments/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApipaymentsPOST5644E779"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/payments/health/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApipaymentshealthFDFD0D38"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/payments/health/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApipaymentshealthOPTIONSF8A917E1"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/payments/health/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..payments.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApipaymentshealthGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETpaymentshealth65D39066"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/payments/health/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..payments.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApipaymentshealthGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETpaymentshealthBE64D3FE"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/payments/health/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApipaymentshealthGET9407629A"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/webhooks/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiwebhooksCC236A2E"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/webhooks/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiwebhooksOPTIONSF33D973B"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/webhooks/stripe/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiwebhooksstripe7BE37A09"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/webhooks/stripe/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiwebhooksstripeOPTIONSF5487BD5"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/webhooks/stripe/POST/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..webhooks.stripe": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiwebhooksstripePOSTApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702POSTwebhooksstripeBB21F91A"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/webhooks/stripe/POST/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.POST..webhooks.stripe": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiwebhooksstripePOSTApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702POSTwebhooksstripe296BC28B"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/webhooks/stripe/POST/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiwebhooksstripePOSTBF908DBB"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/admin/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiadmin2624AEC3"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/admin/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiadminOPTIONSBC8C1407"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/admin/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..admin": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiadminGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETadmin9BCD18FF"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/admin/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..admin": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiadminGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETadmin0773A9FA"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/admin/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiadminGETA08B4577"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/admin/health/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiadminhealth0EDD1332"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/admin/health/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiadminhealthOPTIONS2559F0A6"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/admin/health/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..admin.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiadminhealthGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETadminhealth24ED1124"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/admin/health/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..admin.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiadminhealthGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETadminhealth9DAA2B2E"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/admin/health/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiadminhealthGETB3EF4097"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/email/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiemail97C44F9E"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/email/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiemailOPTIONSCBC1FA38"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/email/health/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiemailhealthC43132C3"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/email/health/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiemailhealthOPTIONSD4FD4411"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/email/health/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..email.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiemailhealthGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETemailhealth2C5A5AFD"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/email/health/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..email.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiemailhealthGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETemailhealth686BA3DE"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/email/health/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiemailhealthGET7F5EF3FF"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/ai/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiai5B08D763"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/ai/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiaiOPTIONSFC698926"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/ai/health/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiaihealth31981699"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/ai/health/OPTIONS/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiaihealthOPTIONSC6BE3A61"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/ai/health/GET/ApiPermission.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..ai.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiaihealthGETApiPermissionbudgetbuddydevapiBudgetBuddyApiAEA78702GETaihealth5452967F"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/ai/health/GET/ApiPermission.Test.budgetbuddydevapiBudgetBuddyApiAEA78702.GET..ai.health": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiaihealthGETApiPermissionTestbudgetbuddydevapiBudgetBuddyApiAEA78702GETaihealth243483A4"
+          }
+        ],
+        "/budgetbuddy-dev-api/BudgetBuddyApi/Default/ai/health/GET/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BudgetBuddyApiaihealthGETF1619D08"
+          }
+        ],
+        "/budgetbuddy-dev-api/ApiUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiUrl"
+          }
+        ],
+        "/budgetbuddy-dev-api/ApiId": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiId"
+          }
+        ],
+        "/budgetbuddy-dev-api/authHandlerArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "authHandlerArn"
+          }
+        ],
+        "/budgetbuddy-dev-api/budgetHandlerArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "budgetHandlerArn"
+          }
+        ],
+        "/budgetbuddy-dev-api/transactionHandlerArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "transactionHandlerArn"
+          }
+        ],
+        "/budgetbuddy-dev-api/aiHandlerArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "aiHandlerArn"
+          }
+        ],
+        "/budgetbuddy-dev-api/familyHandlerArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "familyHandlerArn"
+          }
+        ],
+        "/budgetbuddy-dev-api/paymentHandlerArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "paymentHandlerArn"
+          }
+        ],
+        "/budgetbuddy-dev-api/emailHandlerArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "emailHandlerArn"
+          }
+        ],
+        "/budgetbuddy-dev-api/adminHandlerArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "adminHandlerArn"
+          }
+        ],
+        "/budgetbuddy-dev-api/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/budgetbuddy-dev-api/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/budgetbuddy-dev-api/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "budgetbuddy-dev-api"
+    },
+    "budgetbuddy-dev-hosting.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "budgetbuddy-dev-hosting.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "budgetbuddy-dev-hosting": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://786673323159/us-east-1",
+      "properties": {
+        "templateFile": "budgetbuddy-dev-hosting.template.json",
+        "terminationProtection": false,
+        "tags": {
+          "Application": "budgetbuddy",
+          "CostCenter": "BudgetBuddy-Infrastructure",
+          "Environment": "dev",
+          "ManagedBy": "CDK",
+          "Owner": "BudgetBuddy-Team",
+          "Project": "BudgetBuddy",
+          "Purpose": "Family-Budgeting-Application"
+        },
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-deploy-role-786673323159-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-cfn-exec-role-786673323159-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-786673323159-us-east-1/c775f07f2ebd2445d5ca15ed55bfd0f127132eb5bbede712ca3ad002ab712931.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "budgetbuddy-dev-hosting.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-lookup-role-786673323159-us-east-1",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "budgetbuddy-dev-hosting.assets"
+      ],
+      "metadata": {
+        "/budgetbuddy-dev-hosting": [
+          {
+            "type": "aws:cdk:stack-tags",
+            "data": [
+              {
+                "Key": "Application",
+                "Value": "budgetbuddy"
+              },
+              {
+                "Key": "CostCenter",
+                "Value": "BudgetBuddy-Infrastructure"
+              },
+              {
+                "Key": "Environment",
+                "Value": "dev"
+              },
+              {
+                "Key": "ManagedBy",
+                "Value": "CDK"
+              },
+              {
+                "Key": "Owner",
+                "Value": "BudgetBuddy-Team"
+              },
+              {
+                "Key": "Project",
+                "Value": "BudgetBuddy"
+              },
+              {
+                "Key": "Purpose",
+                "Value": "Family-Budgeting-Application"
+              }
+            ]
+          }
+        ],
+        "/budgetbuddy-dev-hosting/WebBucket/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WebBucket12880F5B"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/WebBucket/Policy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WebBucketPolicy95D08FAA"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/WebBucket/AutoDeleteObjectsCustomResource/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WebBucketAutoDeleteObjectsCustomResource9C1A079F"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/Custom::S3AutoDeleteObjectsCustomResourceProvider": [
+          {
+            "type": "aws:cdk:is-custom-resource-handler-customResourceProvider",
+            "data": true
+          }
+        ],
+        "/budgetbuddy-dev-hosting/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/AdminBucket/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminBucketB0A70AB7"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/AdminBucket/Policy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminBucketPolicy712E7130"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/AdminBucket/AutoDeleteObjectsCustomResource/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminBucketAutoDeleteObjectsCustomResourceF24DCD22"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/WebDistribution/Origin1/S3Origin/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WebDistributionOrigin1S3Origin242B188A"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/WebDistribution/Origin2/S3Origin/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WebDistributionOrigin2S3Origin9210B142"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/WebDistribution/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WebDistribution59C46482"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/AdminDistribution/Origin1/S3Origin/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminDistributionOrigin1S3Origin84D4B327"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/AdminDistribution/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminDistribution4E89F8C0"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/WebBucketName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WebBucketName"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/WebBucketArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WebBucketArn"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/AdminBucketName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminBucketName"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/AdminBucketArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminBucketArn"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/WebDistributionId": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WebDistributionId"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/WebDistributionDomainName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "WebDistributionDomainName"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/AdminDistributionId": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminDistributionId"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/AdminDistributionDomainName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminDistributionDomainName"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/budgetbuddy-dev-hosting/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "budgetbuddy-dev-hosting"
+    },
+    "budgetbuddy-dev-monitoring.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "budgetbuddy-dev-monitoring.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "budgetbuddy-dev-monitoring": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://786673323159/us-east-1",
+      "properties": {
+        "templateFile": "budgetbuddy-dev-monitoring.template.json",
+        "terminationProtection": false,
+        "tags": {
+          "Application": "budgetbuddy",
+          "CostCenter": "BudgetBuddy-Infrastructure",
+          "Environment": "dev",
+          "ManagedBy": "CDK",
+          "Owner": "BudgetBuddy-Team",
+          "Project": "BudgetBuddy",
+          "Purpose": "Family-Budgeting-Application"
+        },
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-deploy-role-786673323159-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-cfn-exec-role-786673323159-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-786673323159-us-east-1/62348e56d800df9cb66991325da05604c3d54ad0179aceaec0696d9f52d5326a.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "budgetbuddy-dev-monitoring.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-lookup-role-786673323159-us-east-1",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "budgetbuddy-dev-database",
+        "budgetbuddy-dev-auth",
+        "budgetbuddy-dev-api",
+        "budgetbuddy-dev-monitoring.assets"
+      ],
+      "metadata": {
+        "/budgetbuddy-dev-monitoring": [
+          {
+            "type": "aws:cdk:stack-tags",
+            "data": [
+              {
+                "Key": "Application",
+                "Value": "budgetbuddy"
+              },
+              {
+                "Key": "CostCenter",
+                "Value": "BudgetBuddy-Infrastructure"
+              },
+              {
+                "Key": "Environment",
+                "Value": "dev"
+              },
+              {
+                "Key": "ManagedBy",
+                "Value": "CDK"
+              },
+              {
+                "Key": "Owner",
+                "Value": "BudgetBuddy-Team"
+              },
+              {
+                "Key": "Project",
+                "Value": "BudgetBuddy"
+              },
+              {
+                "Key": "Purpose",
+                "Value": "Family-Budgeting-Application"
+              }
+            ]
+          }
+        ],
+        "/budgetbuddy-dev-monitoring/AlertTopic/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AlertTopic2720D535"
+          }
+        ],
+        "/budgetbuddy-dev-monitoring/ApplicationDashboard/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApplicationDashboardC88CB43D"
+          }
+        ],
+        "/budgetbuddy-dev-monitoring/ApiErrorRateAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiErrorRateAlarm309C54E5"
+          }
+        ],
+        "/budgetbuddy-dev-monitoring/ApiLatencyAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ApiLatencyAlarm453002C0"
+          }
+        ],
+        "/budgetbuddy-dev-monitoring/DynamoThrottleAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "DynamoThrottleAlarmF7D162EF"
+          }
+        ],
+        "/budgetbuddy-dev-monitoring/CostAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CostAlarm97D2533C"
+          }
+        ],
+        "/budgetbuddy-dev-monitoring/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/budgetbuddy-dev-monitoring/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/budgetbuddy-dev-monitoring/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "budgetbuddy-dev-monitoring"
+    },
+    "Tree": {
+      "type": "cdk:tree",
+      "properties": {
+        "file": "tree.json"
+      }
+    },
+    "aws-cdk-lib/feature-flag-report": {
+      "type": "cdk:feature-flag-report",
+      "properties": {
+        "module": "aws-cdk-lib",
+        "flags": {
+          "@aws-cdk/aws-signer:signingProfileNamePassedToCfn": {
+            "recommendedValue": true,
+            "explanation": "Pass signingProfileName to CfnSigningProfile"
+          },
+          "@aws-cdk/core:newStyleStackSynthesis": {
+            "recommendedValue": true,
+            "explanation": "Switch to new stack synthesis method which enables CI/CD",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/core:stackRelativeExports": {
+            "recommendedValue": true,
+            "explanation": "Name exports based on the construct paths relative to the stack, rather than the global construct path",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-ecs-patterns:secGroupsDisablesImplicitOpenListener": {
+            "recommendedValue": true,
+            "explanation": "Disable implicit openListener when custom security groups are provided"
+          },
+          "@aws-cdk/aws-rds:lowercaseDbIdentifier": {
+            "recommendedValue": true,
+            "explanation": "Force lowercasing of RDS Cluster names in CDK",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-apigateway:usagePlanKeyOrderInsensitiveId": {
+            "recommendedValue": true,
+            "explanation": "Allow adding/removing multiple UsagePlanKeys independently",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-lambda:recognizeVersionProps": {
+            "recommendedValue": true,
+            "explanation": "Enable this feature flag to opt in to the updated logical id calculation for Lambda Version created using the  `fn.currentVersion`.",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-lambda:recognizeLayerVersion": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Enable this feature flag to opt in to the updated logical id calculation for Lambda Version created using the `fn.currentVersion`."
+          },
+          "@aws-cdk/aws-cloudfront:defaultSecurityPolicyTLSv1.2_2021": {
+            "recommendedValue": true,
+            "explanation": "Enable this feature flag to have cloudfront distributions use the security policy TLSv1.2_2021 by default.",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/core:checkSecretUsage": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Enable this flag to make it impossible to accidentally use SecretValues in unsafe locations"
+          },
+          "@aws-cdk/core:target-partitions": {
+            "userValue": [
+              "aws",
+              "aws-cn"
+            ],
+            "recommendedValue": [
+              "aws",
+              "aws-cn"
+            ],
+            "explanation": "What regions to include in lookup tables of environment agnostic stacks"
+          },
+          "@aws-cdk-containers/ecs-service-extensions:enableDefaultLogDriver": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "ECS extensions will automatically add an `awslogs` driver if no logging is specified"
+          },
+          "@aws-cdk/aws-ec2:uniqueImdsv2TemplateName": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Enable this feature flag to have Launch Templates generated by the `InstanceRequireImdsv2Aspect` use unique names."
+          },
+          "@aws-cdk/aws-ecs:arnFormatIncludesClusterName": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "ARN format used by ECS. In the new ARN format, the cluster name is part of the resource ID."
+          },
+          "@aws-cdk/aws-iam:minimizePolicies": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Minimize IAM policies by combining Statements"
+          },
+          "@aws-cdk/core:validateSnapshotRemovalPolicy": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Error on snapshot removal policies on resources that do not support it."
+          },
+          "@aws-cdk/aws-codepipeline:crossAccountKeyAliasStackSafeResourceName": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Generate key aliases that include the stack name"
+          },
+          "@aws-cdk/aws-s3:createDefaultLoggingPolicy": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Enable this feature flag to create an S3 bucket policy by default in cases where an AWS service would automatically create the Policy if one does not exist."
+          },
+          "@aws-cdk/aws-sns-subscriptions:restrictSqsDescryption": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Restrict KMS key policy for encrypted Queues a bit more"
+          },
+          "@aws-cdk/aws-apigateway:disableCloudWatchRole": {
+            "userValue": false,
+            "recommendedValue": true,
+            "explanation": "Make default CloudWatch Role behavior safe for multiple API Gateways in one environment"
+          },
+          "@aws-cdk/core:enablePartitionLiterals": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Make ARNs concrete if AWS partition is known"
+          },
+          "@aws-cdk/aws-events:eventsTargetQueueSameAccount": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Event Rules may only push to encrypted SQS queues in the same account"
+          },
+          "@aws-cdk/aws-ecs:disableExplicitDeploymentControllerForCircuitBreaker": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Avoid setting the \"ECS\" deployment controller when adding a circuit breaker"
+          },
+          "@aws-cdk/aws-iam:importedRoleStackSafeDefaultPolicyName": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Enable this feature to by default create default policy names for imported roles that depend on the stack the role is in."
+          },
+          "@aws-cdk/aws-s3:serverAccessLogsUseBucketPolicy": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Use S3 Bucket Policy instead of ACLs for Server Access Logging"
+          },
+          "@aws-cdk/aws-route53-patters:useCertificate": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Use the official `Certificate` resource instead of `DnsValidatedCertificate`"
+          },
+          "@aws-cdk/customresources:installLatestAwsSdkDefault": {
+            "userValue": false,
+            "recommendedValue": false,
+            "explanation": "Whether to install the latest SDK by default in AwsCustomResource"
+          },
+          "@aws-cdk/aws-rds:databaseProxyUniqueResourceName": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Use unique resource name for Database Proxy"
+          },
+          "@aws-cdk/aws-codedeploy:removeAlarmsFromDeploymentGroup": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Remove CloudWatch alarms from deployment group"
+          },
+          "@aws-cdk/aws-apigateway:authorizerChangeDeploymentLogicalId": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Include authorizer configuration in the calculation of the API deployment logical ID."
+          },
+          "@aws-cdk/aws-ec2:launchTemplateDefaultUserData": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Define user data for a launch template by default when a machine image is provided."
+          },
+          "@aws-cdk/aws-secretsmanager:useAttachedSecretResourcePolicyForSecretTargetAttachments": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "SecretTargetAttachments uses the ResourcePolicy of the attached Secret."
+          },
+          "@aws-cdk/aws-redshift:columnId": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Whether to use an ID to track Redshift column changes"
+          },
+          "@aws-cdk/aws-stepfunctions-tasks:enableEmrServicePolicyV2": {
+            "recommendedValue": true,
+            "explanation": "Enable AmazonEMRServicePolicy_v2 managed policies"
+          },
+          "@aws-cdk/aws-ec2:restrictDefaultSecurityGroup": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Restrict access to the VPC default security group"
+          },
+          "@aws-cdk/aws-apigateway:requestValidatorUniqueId": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Generate a unique id for each RequestValidator added to a method"
+          },
+          "@aws-cdk/aws-kms:aliasNameRef": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "KMS Alias name and keyArn will have implicit reference to KMS Key"
+          },
+          "@aws-cdk/aws-kms:applyImportedAliasPermissionsToPrincipal": {
+            "recommendedValue": true,
+            "explanation": "Enable grant methods on Aliases imported by name to use kms:ResourceAliases condition"
+          },
+          "@aws-cdk/aws-autoscaling:generateLaunchTemplateInsteadOfLaunchConfig": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Generate a launch template when creating an AutoScalingGroup"
+          },
+          "@aws-cdk/core:includePrefixInUniqueNameGeneration": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "Include the stack prefix in the stack name generation process"
+          },
+          "@aws-cdk/aws-efs:denyAnonymousAccess": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "EFS denies anonymous clients accesses"
+          },
+          "@aws-cdk/aws-opensearchservice:enableOpensearchMultiAzWithStandby": {
+            "recommendedValue": true,
+            "explanation": "Enables support for Multi-AZ with Standby deployment for opensearch domains"
+          },
+          "@aws-cdk/aws-lambda-nodejs:useLatestRuntimeVersion": {
+            "recommendedValue": true,
+            "explanation": "Enables aws-lambda-nodejs.Function to use the latest available NodeJs runtime as the default"
+          },
+          "@aws-cdk/aws-efs:mountTargetOrderInsensitiveLogicalId": {
+            "recommendedValue": true,
+            "explanation": "When enabled, mount targets will have a stable logicalId that is linked to the associated subnet."
+          },
+          "@aws-cdk/aws-rds:auroraClusterChangeScopeOfInstanceParameterGroupWithEachParameters": {
+            "recommendedValue": true,
+            "explanation": "When enabled, a scope of InstanceParameterGroup for AuroraClusterInstance with each parameters will change."
+          },
+          "@aws-cdk/aws-appsync:useArnForSourceApiAssociationIdentifier": {
+            "recommendedValue": true,
+            "explanation": "When enabled, will always use the arn for identifiers for CfnSourceApiAssociation in the GraphqlApi construct rather than id."
+          },
+          "@aws-cdk/aws-rds:preventRenderingDeprecatedCredentials": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "When enabled, creating an RDS database cluster from a snapshot will only render credentials for snapshot credentials."
+          },
+          "@aws-cdk/aws-codepipeline-actions:useNewDefaultBranchForCodeCommitSource": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the CodeCommit source action is using the default branch name 'main'."
+          },
+          "@aws-cdk/aws-cloudwatch-actions:changeLambdaPermissionLogicalIdForLambdaAction": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the logical ID of a Lambda permission for a Lambda action includes an alarm ID."
+          },
+          "@aws-cdk/aws-codepipeline:crossAccountKeysDefaultValueToFalse": {
+            "recommendedValue": true,
+            "explanation": "Enables Pipeline to set the default value for crossAccountKeys to false."
+          },
+          "@aws-cdk/aws-codepipeline:defaultPipelineTypeToV2": {
+            "recommendedValue": true,
+            "explanation": "Enables Pipeline to set the default pipeline type to V2."
+          },
+          "@aws-cdk/aws-kms:reduceCrossAccountRegionPolicyScope": {
+            "recommendedValue": true,
+            "explanation": "When enabled, IAM Policy created from KMS key grant will reduce the resource scope to this key only."
+          },
+          "@aws-cdk/pipelines:reduceAssetRoleTrustScope": {
+            "recommendedValue": true,
+            "explanation": "Remove the root account principal from PipelineAssetsFileRole trust policy",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-eks:nodegroupNameAttribute": {
+            "recommendedValue": true,
+            "explanation": "When enabled, nodegroupName attribute of the provisioned EKS NodeGroup will not have the cluster name prefix."
+          },
+          "@aws-cdk/aws-ec2:ebsDefaultGp3Volume": {
+            "userValue": true,
+            "recommendedValue": true,
+            "explanation": "When enabled, the default volume type of the EBS volume will be GP3"
+          },
+          "@aws-cdk/aws-ecs:removeDefaultDeploymentAlarm": {
+            "recommendedValue": true,
+            "explanation": "When enabled, remove default deployment alarm settings"
+          },
+          "@aws-cdk/custom-resources:logApiResponseDataPropertyTrueDefault": {
+            "recommendedValue": false,
+            "explanation": "When enabled, the custom resource used for `AwsCustomResource` will configure the `logApiResponseData` property as true by default"
+          },
+          "@aws-cdk/aws-s3:keepNotificationInImportedBucket": {
+            "recommendedValue": false,
+            "explanation": "When enabled, Adding notifications to a bucket in the current stack will not remove notification from imported stack."
+          },
+          "@aws-cdk/aws-stepfunctions-tasks:useNewS3UriParametersForBedrockInvokeModelTask": {
+            "recommendedValue": true,
+            "explanation": "When enabled, use new props for S3 URI field in task definition of state machine for bedrock invoke model.",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/core:explicitStackTags": {
+            "recommendedValue": true,
+            "explanation": "When enabled, stack tags need to be assigned explicitly on a Stack."
+          },
+          "@aws-cdk/aws-ecs:enableImdsBlockingDeprecatedFeature": {
+            "recommendedValue": false,
+            "explanation": "When set to true along with canContainersAccessInstanceRole=false in ECS cluster, new updated commands will be added to UserData to block container accessing IMDS. **Applicable to Linux only. IMPORTANT: See [details.](#aws-cdkaws-ecsenableImdsBlockingDeprecatedFeature)**"
+          },
+          "@aws-cdk/aws-ecs:disableEcsImdsBlocking": {
+            "recommendedValue": true,
+            "explanation": "When set to true, CDK synth will throw exception if canContainersAccessInstanceRole is false. **IMPORTANT: See [details.](#aws-cdkaws-ecsdisableEcsImdsBlocking)**"
+          },
+          "@aws-cdk/aws-ecs:reduceEc2FargateCloudWatchPermissions": {
+            "recommendedValue": true,
+            "explanation": "When enabled, we will only grant the necessary permissions when users specify cloudwatch log group through logConfiguration"
+          },
+          "@aws-cdk/aws-dynamodb:resourcePolicyPerReplica": {
+            "recommendedValue": true,
+            "explanation": "When enabled will allow you to specify a resource policy per replica, and not copy the source table policy to all replicas"
+          },
+          "@aws-cdk/aws-ec2:ec2SumTImeoutEnabled": {
+            "recommendedValue": true,
+            "explanation": "When enabled, initOptions.timeout and resourceSignalTimeout values will be summed together."
+          },
+          "@aws-cdk/aws-appsync:appSyncGraphQLAPIScopeLambdaPermission": {
+            "recommendedValue": true,
+            "explanation": "When enabled, a Lambda authorizer Permission created when using GraphqlApi will be properly scoped with a SourceArn."
+          },
+          "@aws-cdk/aws-rds:setCorrectValueForDatabaseInstanceReadReplicaInstanceResourceId": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the value of property `instanceResourceId` in construct `DatabaseInstanceReadReplica` will be set to the correct value which is `DbiResourceId` instead of currently `DbInstanceArn`"
+          },
+          "@aws-cdk/core:cfnIncludeRejectComplexResourceUpdateCreatePolicyIntrinsics": {
+            "recommendedValue": true,
+            "explanation": "When enabled, CFN templates added with `cfn-include` will error if the template contains Resource Update or Create policies with CFN Intrinsics that include non-primitive values."
+          },
+          "@aws-cdk/aws-lambda-nodejs:sdkV3ExcludeSmithyPackages": {
+            "recommendedValue": true,
+            "explanation": "When enabled, both `@aws-sdk` and `@smithy` packages will be excluded from the Lambda Node.js 18.x runtime to prevent version mismatches in bundled applications."
+          },
+          "@aws-cdk/aws-stepfunctions-tasks:fixRunEcsTaskPolicy": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the resource of IAM Run Ecs policy generated by SFN EcsRunTask will reference the definition, instead of constructing ARN."
+          },
+          "@aws-cdk/aws-ec2:bastionHostUseAmazonLinux2023ByDefault": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the BastionHost construct will use the latest Amazon Linux 2023 AMI, instead of Amazon Linux 2."
+          },
+          "@aws-cdk/core:aspectStabilization": {
+            "recommendedValue": true,
+            "explanation": "When enabled, a stabilization loop will be run when invoking Aspects during synthesis.",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-route53-targets:userPoolDomainNameMethodWithoutCustomResource": {
+            "recommendedValue": true,
+            "explanation": "When enabled, use a new method for DNS Name of user pool domain target without creating a custom resource."
+          },
+          "@aws-cdk/aws-elasticloadbalancingV2:albDualstackWithoutPublicIpv4SecurityGroupRulesDefault": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the default security group ingress rules will allow IPv6 ingress from anywhere"
+          },
+          "@aws-cdk/aws-iam:oidcRejectUnauthorizedConnections": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the default behaviour of OIDC provider will reject unauthorized connections"
+          },
+          "@aws-cdk/core:enableAdditionalMetadataCollection": {
+            "recommendedValue": true,
+            "explanation": "When enabled, CDK will expand the scope of usage data collected to better inform CDK development and improve communication for security concerns and emerging issues."
+          },
+          "@aws-cdk/aws-lambda:createNewPoliciesWithAddToRolePolicy": {
+            "recommendedValue": false,
+            "explanation": "[Deprecated] When enabled, Lambda will create new inline policies with AddToRolePolicy instead of adding to the Default Policy Statement"
+          },
+          "@aws-cdk/aws-s3:setUniqueReplicationRoleName": {
+            "recommendedValue": true,
+            "explanation": "When enabled, CDK will automatically generate a unique role name that is used for s3 object replication."
+          },
+          "@aws-cdk/pipelines:reduceStageRoleTrustScope": {
+            "recommendedValue": true,
+            "explanation": "Remove the root account principal from Stage addActions trust policy",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-events:requireEventBusPolicySid": {
+            "recommendedValue": true,
+            "explanation": "When enabled, grantPutEventsTo() will use resource policies with Statement IDs for service principals."
+          },
+          "@aws-cdk/core:aspectPrioritiesMutating": {
+            "recommendedValue": true,
+            "explanation": "When set to true, Aspects added by the construct library on your behalf will be given a priority of MUTATING."
+          },
+          "@aws-cdk/aws-dynamodb:retainTableReplica": {
+            "recommendedValue": true,
+            "explanation": "When enabled, table replica will be default to the removal policy of source table unless specified otherwise."
+          },
+          "@aws-cdk/cognito:logUserPoolClientSecretValue": {
+            "recommendedValue": false,
+            "explanation": "When disabled, the value of the user pool client secret will not be logged in the custom resource lambda function logs."
+          },
+          "@aws-cdk/pipelines:reduceCrossAccountActionRoleTrustScope": {
+            "recommendedValue": true,
+            "explanation": "When enabled, scopes down the trust policy for the cross-account action role",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-stepfunctions:useDistributedMapResultWriterV2": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the resultWriterV2 property of DistributedMap will be used insted of resultWriter"
+          },
+          "@aws-cdk/s3-notifications:addS3TrustKeyPolicyForSnsSubscriptions": {
+            "recommendedValue": true,
+            "explanation": "Add an S3 trust policy to a KMS key resource policy for SNS subscriptions."
+          },
+          "@aws-cdk/aws-ec2:requirePrivateSubnetsForEgressOnlyInternetGateway": {
+            "recommendedValue": true,
+            "explanation": "When enabled, the EgressOnlyGateway resource is only created if private subnets are defined in the dual-stack VPC."
+          },
+          "@aws-cdk/aws-ec2-alpha:useResourceIdForVpcV2Migration": {
+            "recommendedValue": false,
+            "explanation": "When enabled, use resource IDs for VPC V2 migration"
+          },
+          "@aws-cdk/aws-s3:publicAccessBlockedByDefault": {
+            "recommendedValue": true,
+            "explanation": "When enabled, setting any combination of options for BlockPublicAccess will automatically set true for any options not defined."
+          },
+          "@aws-cdk/aws-lambda:useCdkManagedLogGroup": {
+            "recommendedValue": true,
+            "explanation": "When enabled, CDK creates and manages loggroup for the lambda function"
+          },
+          "@aws-cdk/aws-stepfunctions-tasks:httpInvokeDynamicJsonPathEndpoint": {
+            "recommendedValue": true,
+            "explanation": "When enabled, allows using a dynamic apiEndpoint with JSONPath format in HttpInvoke tasks.",
+            "unconfiguredBehavesLike": {
+              "v2": true
+            }
+          },
+          "@aws-cdk/aws-ecs-patterns:uniqueTargetGroupId": {
+            "recommendedValue": true,
+            "explanation": "When enabled, ECS patterns will generate unique target group IDs to prevent conflicts during load balancer replacement"
+          }
+        }
+      }
+    }
+  },
+  "minimumCliVersion": "2.1031.0"
+}

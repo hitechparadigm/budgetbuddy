@@ -1,0 +1,15 @@
+{
+    "_comment": "Transaction management Lambda function package.json - Handles transaction CRUD and budget updates",
+    "name": "budgetbuddy-transaction-function",
+    "version": "1.0.0",
+    "description": "BudgetBuddy transaction management Lambda function for expense/income tracking and automatic budget updates",
+    "main": "index.js",
+    "scripts": {
+        "test": "jest",
+        "local": "sam local start-api"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "jest": "^29.0.0"
+    }
+}

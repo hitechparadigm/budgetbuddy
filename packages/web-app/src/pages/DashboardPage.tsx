@@ -57,11 +57,24 @@ export const DashboardPage: React.FC = () => {
   };
 
   const handleUpdateGroups = async (updatedGroups: any) => {
-    if (!currentBudget) return;
+    console.log('Updating groups:', updatedGroups);
+
+    // Always try to update first, since budget might exist even if GET failed
     try {
       await updateBudget(selectedMonth, { groups: updatedGroups });
-    } catch (error) {
-      console.error('Update groups error:', error);
+      console.log('Budget updated successfully');
+    } catch (error: any) {
+      // If update fails because budget doesn't exist, try creating
+      if (error?.statusCode === 404) {
+        console.log('Budget not found, creating new budget with groups');
+        try {
+          await createBudget(selectedMonth, { groups: updatedGroups });
+        } catch (createError) {
+          console.error('Create budget with groups error:', createError);
+        }
+      } else {
+        console.error('Update groups error:', error);
+      }
     }
   };
 
@@ -145,15 +158,38 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* Budget Groups */}
-          {currentBudget && (
-            <div className="mb-6">
-              <BudgetGroups
-                groups={currentBudget.groups}
-                loading={budgetLoading}
-                onUpdateGroups={handleUpdateGroups}
-              />
-            </div>
-          )}
+          <div className="mb-6">
+            <BudgetGroups
+              groups={currentBudget?.groups || {
+                income: [{
+                  groupName: 'Income',
+                  groupType: 'income',
+                  categories: [],
+                  totalPlanned: 0,
+                  totalSpent: 0,
+                  totalRemaining: 0,
+                }],
+                savings: [{
+                  groupName: 'Savings',
+                  groupType: 'saving',
+                  categories: [],
+                  totalPlanned: 0,
+                  totalSpent: 0,
+                  totalRemaining: 0,
+                }],
+                expenses: [{
+                  groupName: 'Expenses',
+                  groupType: 'expense',
+                  categories: [],
+                  totalPlanned: 0,
+                  totalSpent: 0,
+                  totalRemaining: 0,
+                }]
+              }}
+              loading={budgetLoading}
+              onUpdateGroups={handleUpdateGroups}
+            />
+          </div>
 
           {/* Development Info */}
           <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">

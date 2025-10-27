@@ -1,0 +1,21 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "f79d0ecec1aaebb5439081d904f2589fa6c379c5f5db2a862ab18b3f66488309": {
+      "displayName": "budgetbuddy-dev-database Template",
+      "source": {
+        "path": "budgetbuddy-dev-database.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "786673323159-us-east-1-c80c0ebe": {
+          "bucketName": "cdk-hnb659fds-assets-786673323159-us-east-1",
+          "objectKey": "f79d0ecec1aaebb5439081d904f2589fa6c379c5f5db2a862ab18b3f66488309.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::786673323159:role/cdk-hnb659fds-file-publishing-role-786673323159-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

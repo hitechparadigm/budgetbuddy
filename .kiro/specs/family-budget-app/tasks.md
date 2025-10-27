@@ -162,6 +162,7 @@
   - [x] 6.3 Create category management system
 
 
+
     - Implement Lambda functions for category CRUD operations
     - Build category management UI with drag-and-drop reordering
     - Create add/edit category modals with icon and color selection
