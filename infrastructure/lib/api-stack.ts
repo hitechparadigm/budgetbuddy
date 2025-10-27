@@ -410,7 +410,7 @@ export class ApiStack extends cdk.Stack {
     const budgetResource = this.api.root.addResource('budget');
     budgetResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
       authorizer,
-      operationName: 'GetBudget',
+      operationName: 'GetBudgets',
     });
     budgetResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
       authorizer,
@@ -419,6 +419,28 @@ export class ApiStack extends cdk.Stack {
     budgetResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
       authorizer,
       operationName: 'UpdateBudget',
+    });
+
+    // Budget current month endpoint
+    const budgetCurrentResource = budgetResource.addResource('current');
+    budgetCurrentResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
+      authorizer,
+      operationName: 'GetCurrentBudget',
+    });
+
+    // Budget by ID endpoint
+    const budgetIdResource = budgetResource.addResource('{budgetId}');
+    budgetIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
+      authorizer,
+      operationName: 'GetBudgetById',
+    });
+    budgetIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
+      authorizer,
+      operationName: 'UpdateBudgetById',
+    });
+    budgetIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
+      authorizer,
+      operationName: 'DeleteBudget',
     });
 
     // Budget health endpoint

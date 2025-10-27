@@ -240,7 +240,8 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
 // Utility Functions
 // ============================================================================
 
-function formatMonth(monthString: string): string {
+function formatMonth(monthString: string | undefined): string {
+  if (!monthString) return 'Unknown Month';
   const [year, month] = monthString.split('-');
   const date = new Date(parseInt(year), parseInt(month) - 1);
   return date.toLocaleDateString('en-US', {
