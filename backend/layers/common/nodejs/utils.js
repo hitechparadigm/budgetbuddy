@@ -157,14 +157,15 @@ const getUserFromEvent = (event) => {
         throw new Error('No user claims found in request');
     }
 
+    // Handle missing custom attributes gracefully
     return {
         userId: claims.sub,
         email: claims.email,
-        firstName: claims.given_name,
-        lastName: claims.family_name,
-        familyId: claims['custom:familyId'],
-        role: claims['custom:familyRole'],
-        subscriptionTier: claims['custom:subscriptionTier'],
+        firstName: claims.given_name || claims['cognito:username'],
+        lastName: claims.family_name || 'User',
+        familyId: claims['custom:familyId'] || null,
+        role: claims['custom:familyRole'] || 'primary',
+        subscriptionTier: claims['custom:subscriptionTier'] || 'free',
     };
 };
 
