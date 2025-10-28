@@ -232,14 +232,21 @@ const dynamoHelpers = {
      */
     async queryByPK(pk, options = {}) {
         const client = getDynamoClient();
+
+        // Extract ExpressionAttributeValues from options to prevent overwriting
+        const {
+            ExpressionAttributeValues: optionValues,
+            ...otherOptions
+        } = options;
+
         const command = new QueryCommand({
             TableName: process.env.TABLE_NAME,
             KeyConditionExpression: 'PK = :pk',
             ExpressionAttributeValues: {
                 ':pk': pk,
-                ...(options.ExpressionAttributeValues || {}),
+                ...(optionValues || {}),
             },
-            ...options,
+            ...otherOptions,
         });
 
         const result = await client.send(command);
@@ -343,3 +350,7 @@ module.exports = {
     dynamoHelpers,
     logger,
 };
+
+// Force rebuild timestamp: 2025-10-28T01:00:00Z
+
+

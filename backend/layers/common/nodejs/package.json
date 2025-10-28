@@ -1,8 +1,7 @@
 {
-    "_comment": "Lambda Layer package.json - Contains shared dependencies for all BudgetBuddy Lambda functions",
     "name": "budgetbuddy-common-layer",
-    "version": "1.0.0",
-    "description": "Common dependencies and utilities for BudgetBuddy Lambda functions to reduce cold start times and deployment sizes",
+    "version": "1.0.4",
+    "description": "Common dependencies for BudgetBuddy Lambda functions",
     "dependencies": {
         "@aws-sdk/client-dynamodb": "^3.450.0",
         "@aws-sdk/lib-dynamodb": "^3.450.0",

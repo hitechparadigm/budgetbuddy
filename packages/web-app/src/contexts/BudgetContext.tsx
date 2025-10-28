@@ -34,6 +34,12 @@ interface Category {
   isCustom: boolean;
   isActive: boolean;
   createdAt: string;
+  // New recurring fields
+  isRecurring?: boolean;
+  frequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'annually';
+  startDate?: string;
+  endDate?: string;
+  nextDueDate?: string;
 }
 
 interface Budget {
@@ -70,6 +76,7 @@ interface BudgetContextType extends BudgetState {
   deleteBudget: (month: string) => Promise<void>;
   setSelectedMonth: (month: string) => void;
   clearError: () => void;
+  addBudgetItem: (month: string, groupType: 'income' | 'saving' | 'expense', item: Partial<Category>) => Promise<void>;
 }
 
 interface BudgetProviderProps {
@@ -317,6 +324,94 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     setBudgetState(prev => ({ ...prev, error: null }));
   };
 
+  // New seamless budget item management functions
+  const addBudgetItem = async (month: string, groupType: 'income' | 'saving' | 'expense', item: Partial<Category>): Promise<void> => {
+    setBudgetState(prev => ({ ...prev, loading: true, error: null }));
+
+    try {
+      // Check if budget exists for this month
+      let currentBudget = budgetState.currentBudget;
+
+      if (!currentBudget || currentBudget.month !== month) {
+        // Try to load existing budget
+        try {
+          const response = await apiClient.get(`/budget/current?month=${month}`);
+          currentBudget = response.data || response;
+        } catch (error) {
+          // Budget doesn't exist, create it automatically
+          if (error instanceof ApiClientError && error.statusCode === 404) {
+            await createBudget(month);
+            currentBudget = budgetState.currentBudget;
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (!currentBudget) {
+        throw new Error('Failed to create or load budget');
+      }
+
+      // Generate new category ID and add required fields
+      const newCategory: Category = {
+        categoryId: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        categoryName: item.categoryName || '',
+        parentGroup: groupType === 'saving' ? 'Savings' : groupType === 'income' ? 'Income' : 'Expenses',
+        groupType,
+        categoryOrder: 0,
+        icon: item.icon || '💰',
+        colorCode: item.colorCode || '#3B82F6',
+        plannedAmount: item.plannedAmount || 0,
+        spentAmount: 0,
+        remainingAmount: item.plannedAmount || 0,
+        isCustom: true,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        isRecurring: item.isRecurring || false,
+        frequency: item.frequency,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        nextDueDate: item.startDate, // Set initial next due date
+      };
+
+      // Add the category to the appropriate group
+      const updatedGroups = { ...currentBudget.groups };
+      const groupKey = groupType === 'saving' ? 'savings' : groupType === 'income' ? 'income' : 'expenses';
+
+      if (!updatedGroups[groupKey] || updatedGroups[groupKey].length === 0) {
+        // Create default group if it doesn't exist
+        updatedGroups[groupKey] = [{
+          groupName: groupType === 'saving' ? 'Savings' : groupType === 'income' ? 'Income' : 'Expenses',
+          groupType,
+          categories: [newCategory],
+          totalPlanned: newCategory.plannedAmount,
+          totalSpent: 0,
+          totalRemaining: newCategory.plannedAmount,
+        }];
+      } else {
+        // Add to existing group
+        updatedGroups[groupKey][0].categories.push(newCategory);
+        updatedGroups[groupKey][0].totalPlanned += newCategory.plannedAmount;
+        updatedGroups[groupKey][0].totalRemaining += newCategory.plannedAmount;
+      }
+
+      // Update the budget
+      await updateBudget(month, { groups: updatedGroups });
+
+    } catch (error) {
+      const errorMessage = error instanceof ApiClientError
+        ? error.message
+        : 'Failed to add budget item';
+
+      setBudgetState(prev => ({
+        ...prev,
+        loading: false,
+        error: errorMessage,
+      }));
+      throw error;
+    }
+  };
+
   // ============================================================================
   // Context Value
   // ============================================================================
@@ -330,6 +425,7 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     deleteBudget,
     setSelectedMonth,
     clearError,
+    addBudgetItem,
   };
 
   return (

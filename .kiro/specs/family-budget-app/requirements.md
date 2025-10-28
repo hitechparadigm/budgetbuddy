@@ -74,7 +74,20 @@ BudgetBuddy is a comprehensive family budgeting application similar to EveryDoll
 7. WHERE a user initially chooses single-user account, THE BudgetBuddy SHALL allow them to convert to family account later through account settings
 8. WHEN converting from single to family account, THE BudgetBuddy SHALL preserve all existing budget data and transactions
 
-### Requirement 5: Transaction Management
+### Requirement 5: Seamless Budget Item Management
+
+**User Story:** As a user, I want to directly add income, savings, and expense items to any month without creating a budget first, so that I can quickly start managing my finances.
+
+#### Acceptance Criteria
+
+1. WHEN a user navigates to any month, THE BudgetBuddy SHALL allow immediate addition of income, savings, or expense items without requiring budget creation
+2. WHEN a user adds the first item to a month, THE Budget_Engine SHALL automatically create a budget structure for that month
+3. THE BudgetBuddy SHALL allow users to add recurring items with frequency options of weekly, bi-weekly, monthly, or annually
+4. WHEN a user creates a recurring item, THE Budget_Engine SHALL automatically calculate and display future occurrences within the selected month
+5. THE BudgetBuddy SHALL allow users to set specific dates for each budget item
+6. THE BudgetBuddy SHALL provide seamless month switching while preserving unsaved changes with user confirmation
+
+### Requirement 6: Transaction Management
 
 **User Story:** As a user, I want to manually enter income and expense transactions, so that I can track my actual spending against my planned budget.
 
@@ -86,7 +99,7 @@ BudgetBuddy is a comprehensive family budgeting application similar to EveryDoll
 4. THE BudgetBuddy SHALL allow users to edit and delete transactions with automatic budget recalculation
 5. THE BudgetBuddy SHALL maintain transaction history with search functionality
 
-### Requirement 6: Freemium Subscription Model
+### Requirement 7: Freemium Subscription Model
 
 **User Story:** As a user, I want to choose between free and premium subscription tiers, so that I can access features appropriate to my needs and budget.
 
@@ -161,7 +174,7 @@ BudgetBuddy is a comprehensive family budgeting application similar to EveryDoll
 5. THE BudgetBuddy SHALL inquire about specific regional financial products and investment preferences
 6. WHEN user indicates children participation in sports or arts, THE AI_Budget_Generator SHALL include appropriate expense categories with realistic amounts
 7. WHEN user indicates specific lifestyle choices such as "Walmart lifestyle" or organic preferences, THE AI_Budget_Generator SHALL adjust grocery and shopping category amounts accordingly
-### 
+###
 Requirement 12: Cost of Living Data Management
 
 **User Story:** As a system administrator, I want to maintain accurate cost of living data for major cities, so that the AI can generate realistic budget recommendations without incurring excessive API costs.

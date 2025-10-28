@@ -25,6 +25,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **[Complete Documentation](./docs/README.md)** - Technical documentation index
 - **[Development Status](./docs/development-status.md)** - Detailed current status and next steps
 - **[API Endpoints](./docs/api-endpoints.md)** - Complete API documentation
+- **[API Troubleshooting](./docs/api-troubleshooting.md)** - Common API issues and solutions
 - **[Development Log](./DEVELOPMENT_LOG.md)** - Detailed development history
 
 ## Current Status & Quick Start

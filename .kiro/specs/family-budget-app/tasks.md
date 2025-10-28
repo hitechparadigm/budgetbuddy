@@ -169,6 +169,25 @@
     - Implement custom category creation within existing groups
     - _Requirements: 7.1, 7.2, 7.6_
 
+  - [x] 6.4 Implement seamless budget item management
+
+
+
+
+    - Update frontend to allow direct addition of income, savings, expenses without budget creation
+    - Implement auto-budget creation when first item is added to a month
+    - Add recurring item support with frequency options (weekly, bi-weekly, monthly, annually)
+    - Create date picker integration for budget item scheduling
+    - Build recurring item calculation engine for monthly totals
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.6_
+
+  - [ ] 6.5 Enhance budget data model for recurring items
+    - Update TypeScript types to include recurring fields (frequency, startDate, endDate, nextDueDate)
+    - Modify backend Lambda functions to handle recurring item calculations
+    - Implement recurring item expansion logic for monthly budget display
+    - Add validation for recurring item date ranges and frequencies
+    - _Requirements: 5.1, 5.4_
+
 - [ ] 7. Transaction Management System
   - [ ] 7.1 Create transaction CRUD Lambda functions
     - Implement transaction creation with automatic budget updates
