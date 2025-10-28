@@ -533,6 +533,65 @@ feat: Add fully automated documentation system with 45% progress
 - Session Date: 2025-10-26 18:51:44
 
 
+### 🎯 Session: 2025-10-28 - API Troubleshooting Resolution & Budget System Completion
+
+#### ✅ Accomplishments
+- **CRITICAL FIX**: Resolved ValidationException error causing 500 Internal Server Error responses
+- **Budget System**: Completed full budget management system (backend + frontend + API resolution)
+- **API Troubleshooting Spec**: Created comprehensive troubleshooting specification with requirements, design, and implementation plan
+- **Documentation**: Updated all project documentation with progress and resolution details
+- **Testing**: Verified end-to-end budget operations working successfully
+
+#### 🔧 Issues Resolved
+1. **Infrastructure - ValidationException in DynamoDB Queries**
+   - **Issue**: "Invalid KeyConditionExpression: An expression attribute value used in expression is not defined; attribute value: :pk" causing 500 errors
+   - **Root Cause**: Lambda layer using stale version of utils.js despite correct fix being present in source code
+   - **Resolution**: Force rebuilt Lambda layer by triggering CDK change detection, clearing cache, and deploying with --force flag
+   - **Lesson**: Lambda layers may not update automatically even when source code changes - force rebuild required
+   - **Prevention**: Use CDK cache clearing and --force deployment when layer changes aren't detected
+   - **Time Impact**: 2 hours to diagnose and resolve
+
+2. **Development - CDK Deployment Cache Issues**
+   - **Issue**: CDK not detecting changes in Lambda layer files, preventing deployment of fixes
+   - **Root Cause**: CDK deployment cache (cdk.out directory) containing stale build artifacts
+   - **Resolution**: Removed cdk.out directory and used --force flag in deployment command
+   - **Lesson**: CDK cache can prevent proper deployments when files are modified
+   - **Prevention**: Clear CDK cache when experiencing deployment issues
+   - **Time Impact**: 30 minutes to identify and resolve
+
+3. **Backend - DynamoDB Query Function Bug**
+   - **Issue**: queryByPK function not properly merging ExpressionAttributeValues, overwriting :pk parameter
+   - **Root Cause**: Incorrect spread operator usage in query command construction
+   - **Resolution**: Fixed ExpressionAttributeValues merging to preserve :pk parameter while adding additional values
+   - **Lesson**: DynamoDB query parameter merging requires careful handling of ExpressionAttributeValues
+   - **Prevention**: Always test DynamoDB queries with additional parameters to ensure proper merging
+   - **Time Impact**: 1 hour to identify correct fix (fix was already in code but not deployed)
+
+#### 📚 Lessons Learned
+1. **Infrastructure - Lambda Layer Deployment Strategy**
+   - **Context**: Attempting to deploy corrected Lambda layer with DynamoDB query fixes
+   - **Discovery**: CDK may not detect changes in layer files, requiring forced rebuild
+   - **Application**: Always verify layer version updates after deployment and use --force when needed
+   - **Impact**: Prevents wasted time debugging code that's already fixed but not deployed
+
+2. **Debugging - CloudWatch Log Analysis**
+   - **Context**: Diagnosing 500 Internal Server Error responses from budget API
+   - **Discovery**: CloudWatch logs provide exact error messages and stack traces for Lambda failures
+   - **Application**: Always check CloudWatch logs first when investigating API errors
+   - **Impact**: Enables rapid identification of root cause instead of guessing
+
+3. **Development Process - Spec-Driven Troubleshooting**
+   - **Context**: Complex API issue requiring systematic diagnosis and resolution
+   - **Discovery**: Creating formal spec with requirements, design, and tasks improves troubleshooting efficiency
+   - **Application**: Use structured approach for complex technical issues
+   - **Impact**: Ensures comprehensive resolution and prevents missing steps
+
+#### 📊 Progress Metrics
+- **Budget Management System**: 100% complete (increased from 85%)
+- **Authentication System**: 100% complete
+- **Shared Foundation**: 100% complete
+- **Overall MVP Progress**: 75% (increased from 65%)
+
 ### Development Session - 2025-10-26
 
 #### Summary
@@ -544,7 +603,6 @@ docs: Add encoding guidelines to prevent future Unicode issues
 fix: Resolve encoding issues in documentation and remove problematic Unicode characters
 fix: Apply code formatting and finalize budget CRUD implementation
 feat: Implement budget CRUD operations with zero-based budgeting calculations - 50% progress
-
 
 #### Progress Update
 - Overall Progress: 60% complete
