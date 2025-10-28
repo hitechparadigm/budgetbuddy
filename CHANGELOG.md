@@ -6,6 +6,56 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.4.0] - 2025-10-28 - API Troubleshooting Resolution & Budget System Complete
+
+### 🚨 Critical Issue Resolution
+- **FIXED**: ValidationException error in DynamoDB queryByPK function causing 500 Internal Server Error responses
+- **RESOLVED**: Lambda layer deployment issues preventing fixes from taking effect despite correct source code
+- **DEPLOYED**: Force rebuilt Lambda layer version 25 with corrected utils.js file
+
+### ✅ Budget System Completion
+- **Backend**: Complete budget CRUD operations working end-to-end without errors
+- **Frontend**: EveryDollar-style dashboard with real-time budget management fully functional
+- **Testing**: Verified "Budget updated successfully" messages and eliminated "ApiClientError" responses
+
+### 📋 API Troubleshooting Specification
+- **Requirements**: Comprehensive analysis of ValidationException root cause and Lambda layer issues
+- **Design**: Systematic approach to Lambda layer rebuild, CDK cache clearing, and forced deployment
+- **Implementation**: All troubleshooting tasks completed successfully with full verification
+
+### 🛠️ Technical Changes
+- Force triggered CDK change detection by modifying utils.js file
+- Cleared CDK deployment cache by removing infrastructure/cdk.out directory
+- Updated Lambda layer with proper ExpressionAttributeValues merging in queryByPK function
+- Enhanced development status documentation with updated progress metrics
+- Added comprehensive API troubleshooting documentation and prevention guides
+
+### 📊 Progress Update
+- Overall MVP Progress: 75% (increased from 65%)
+- Budget Management System: 100% complete (backend + frontend + API resolution)
+- Authentication System: 100% complete
+- Next Priority: Transaction Management System
+
+### Issues Resolved
+- **ValidationException**: "Invalid KeyConditionExpression: attribute value: :pk not defined" in DynamoDB queries
+- **Lambda Layer Stale Deployment**: Layer not updating despite source code changes
+- **CDK Cache Issues**: Deployment cache preventing fresh layer builds
+- **Frontend API Errors**: 500 Internal Server Error responses eliminated
+
+### Lessons Learned
+- **Lambda Layer Deployment**: Force rebuild required when CDK doesn't detect changes properly
+- **CDK Cache Management**: Clear cache directory when experiencing deployment issues
+- **DynamoDB Query Debugging**: CloudWatch logs provide exact error details for troubleshooting
+- **Systematic Troubleshooting**: Follow spec-driven approach for complex API issues
+
+### Testing Results
+- ✅ Budget health endpoint returns 200 OK: "Budget service is healthy"
+- ✅ Budget CRUD endpoints properly handle authentication (401 without JWT)
+- ✅ Frontend budget operations working: "Budget updated successfully"
+- ✅ Category management and budget group updates functional
+- ✅ No more "ApiClientError: An error occurred processing your request" messages
+
 ## [Development Update] - 2025-10-26
 
 ### Session Summary
@@ -17,7 +67,6 @@ docs: Add encoding guidelines to prevent future Unicode issues
 fix: Resolve encoding issues in documentation and remove problematic Unicode characters
 fix: Apply code formatting and finalize budget CRUD implementation
 feat: Implement budget CRUD operations with zero-based budgeting calculations - 50% progress
-
 
 ### Progress
 - Overall Progress: 60% complete

@@ -1,20 +1,24 @@
 #!/bin/bash
 
-# BudgetBuddy Pre-Push Documentation Check
-# This hook ensures documentation is updated before pushing to GitHub
+# BudgetBuddy MANDATORY Pre-Push Documentation Check
+# This hook ENFORCES comprehensive documentation updates before ANY push to GitHub
+# NO EXCEPTIONS - ALL documentation must be current and complete
 
-echo "🔍 BudgetBuddy Pre-Push Documentation Check..."
+echo "🚨 BudgetBuddy MANDATORY Documentation Enforcement..."
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
 NC='\033[0m' # No Color
 
-# Check if documentation files exist
-REQUIRED_DOCS=("CHANGELOG.md" "DEVELOPMENT_LOG.md" "README.md" "docs/development-status.md")
+# MANDATORY documentation files - ALL must exist and be current
+REQUIRED_DOCS=("CHANGELOG.md" "DEVELOPMENT_LOG.md" "README.md" "docs/development-status.md" "docs/api-endpoints.md")
 MISSING_DOCS=()
+
+echo -e "${PURPLE}📋 Checking required documentation files...${NC}"
 
 for doc in "${REQUIRED_DOCS[@]}"; do
     if [ ! -f "$doc" ]; then
@@ -23,22 +27,22 @@ for doc in "${REQUIRED_DOCS[@]}"; do
 done
 
 if [ ${#MISSING_DOCS[@]} -ne 0 ]; then
-    echo -e "${RED}❌ Missing required documentation files:${NC}"
-    printf '%s\n' "${MISSING_DOCS[@]}"
-    echo -e "${YELLOW}Please create these files before pushing.${NC}"
+    echo -e "${RED}❌ CRITICAL: Missing required documentation files:${NC}"
+    printf '  - %s\n' "${MISSING_DOCS[@]}"
+    echo -e "${RED}🚫 PUSH BLOCKED: Create these files before pushing.${NC}"
     exit 1
 fi
 
-# Check if documentation was updated recently (within last 24 hours)
+# Check if documentation was updated recently (within last 2 hours for stricter enforcement)
 CURRENT_TIME=$(date +%s)
-TWENTY_FOUR_HOURS=86400
+TWO_HOURS=7200
 
 check_file_age() {
     local file=$1
     local file_time=$(stat -c %Y "$file" 2>/dev/null || stat -f %m "$file" 2>/dev/null)
     local age=$((CURRENT_TIME - file_time))
 
-    if [ $age -gt $TWENTY_FOUR_HOURS ]; then
+    if [ $age -gt $TWO_HOURS ]; then
         return 1
     fi
     return 0
@@ -51,52 +55,111 @@ for doc in "${REQUIRED_DOCS[@]}"; do
     fi
 done
 
-# Interactive documentation update prompt
-if [ ${#OLD_DOCS[@]} -ne 0 ] || [ "$1" = "--force-check" ]; then
-    echo -e "${YELLOW}📋 Documentation Update Required${NC}"
-    echo -e "${BLUE}The following documentation should be updated:${NC}"
+# MANDATORY documentation update enforcement
+echo -e "${YELLOW}🔍 Checking documentation freshness (must be updated within 2 hours)...${NC}"
 
-    if [ ${#OLD_DOCS[@]} -ne 0 ]; then
-        echo -e "${YELLOW}Files not updated in last 24 hours:${NC}"
-        printf '  - %s\n' "${OLD_DOCS[@]}"
-    fi
-
+if [ ${#OLD_DOCS[@]} -ne 0 ]; then
+    echo -e "${RED}❌ OUTDATED DOCUMENTATION DETECTED:${NC}"
+    printf '  - %s\n' "${OLD_DOCS[@]}"
     echo ""
-    echo -e "${BLUE}📝 Documentation Update Checklist:${NC}"
-    echo ""
-    echo -e "${GREEN}CHANGELOG.md Updates:${NC}"
-    echo "  □ Add new version entry with today's date"
-    echo "  □ List all features added in this session"
-    echo "  □ Document all issues fixed with root cause and resolution"
-    echo "  □ Record lessons learned with application guidance"
-    echo "  □ Update progress metrics"
-    echo ""
-    echo -e "${GREEN}DEVELOPMENT_LOG.md Updates:${NC}"
-    echo "  □ Add session accomplishments"
-    echo "  □ Document all issues encountered with detailed resolution steps"
-    echo "  □ Record lessons learned with context and application"
-    echo "  □ Update progress metrics"
-    echo ""
-    echo -e "${GREEN}README.md Updates:${NC}"
-    echo "  □ Update project status phase"
-    echo "  □ Update overall progress percentage"
-    echo "  □ Update recent achievements section"
-    echo "  □ Verify all links and commands work"
-    echo ""
-    echo -e "${GREEN}Task Status Updates:${NC}"
-    echo "  □ Mark completed tasks in tasks.md"
-    echo "  □ Update task progress in development-status.md"
-    echo ""
-
-    read -p "Have you updated all documentation? (y/n): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${RED}❌ Push cancelled. Please update documentation first.${NC}"
-        echo -e "${BLUE}💡 Use the checklist above to ensure all documentation is current.${NC}"
-        exit 1
-    fi
 fi
 
-echo -e "${GREEN}✅ Documentation check passed!${NC}"
-echo -e "${BLUE}🚀 Proceeding with push...${NC}"
+# ALWAYS show the mandatory checklist - no exceptions
+echo -e "${RED}🚨 MANDATORY DOCUMENTATION UPDATE CHECKLIST${NC}"
+echo -e "${BLUE}ALL items must be completed before push:${NC}"
+echo ""
+
+echo -e "${GREEN}1. CHANGELOG.md - MANDATORY UPDATES:${NC}"
+echo "  ✓ Add new version entry with today's date (YYYY-MM-DD format)"
+echo "  ✓ List ALL features added in this session with detailed descriptions"
+echo "  ✓ Document ALL issues fixed with root cause and complete resolution steps"
+echo "  ✓ Record lessons learned with specific application guidance"
+echo "  ✓ Update progress metrics with exact percentages"
+echo "  ✓ Include testing results and verification steps"
+echo ""
+
+echo -e "${GREEN}2. DEVELOPMENT_LOG.md - MANDATORY UPDATES:${NC}"
+echo "  ✓ Add complete session accomplishments with timestamps"
+echo "  ✓ Document ALL issues encountered with detailed resolution steps"
+echo "  ✓ Record lessons learned with context and future application"
+echo "  ✓ Update progress metrics for all components"
+echo "  ✓ Include time impact analysis for major issues"
+echo ""
+
+echo -e "${GREEN}3. README.md - MANDATORY UPDATES:${NC}"
+echo "  ✓ Update project status phase and current focus"
+echo "  ✓ Update overall progress percentage (must match other docs)"
+echo "  ✓ Update recent achievements section with latest accomplishments"
+echo "  ✓ Verify ALL links and commands work correctly"
+echo "  ✓ Update 'What's Working' section with completed features"
+echo ""
+
+echo -e "${GREEN}4. docs/development-status.md - MANDATORY UPDATES:${NC}"
+echo "  ✓ Mark completed tasks and update task progress"
+echo "  ✓ Update completion percentages for all components"
+echo "  ✓ Update 'What's Working' vs 'What's Missing' sections"
+echo "  ✓ Add recent fixes and accomplishments"
+echo "  ✓ Update next priority and estimated time to MVP"
+echo ""
+
+echo -e "${GREEN}5. DUPLICATION & OBSOLETE CONTENT REVIEW - MANDATORY:${NC}"
+echo "  ✓ Review ALL documentation files for duplicate information"
+echo "  ✓ Remove or consolidate redundant content across files"
+echo "  ✓ Update obsolete information (old progress, completed tasks, etc.)"
+echo "  ✓ Ensure consistency between README, CHANGELOG, and DEVELOPMENT_LOG"
+echo "  ✓ Verify all status indicators match across documents"
+echo ""
+
+echo -e "${GREEN}6. CODEBASE DOCUMENTATION REVIEW - MANDATORY:${NC}"
+echo "  ✓ Review code comments for accuracy and completeness"
+echo "  ✓ Update JSDoc comments for modified functions"
+echo "  ✓ Remove obsolete TODO comments and outdated documentation"
+echo "  ✓ Ensure API documentation matches actual implementation"
+echo "  ✓ Update configuration file comments and documentation"
+echo ""
+
+echo -e "${PURPLE}📊 VERIFICATION REQUIREMENTS:${NC}"
+echo "  ✓ All progress percentages must be consistent across all documents"
+echo "  ✓ All dates must be current (today's date)"
+echo "  ✓ All 'What's Working' sections must reflect actual current state"
+echo "  ✓ All links must be tested and functional"
+echo "  ✓ All code examples must be current and accurate"
+echo ""
+
+# NO BYPASS OPTION - Documentation update is MANDATORY
+echo -e "${RED}⚠️  MANDATORY COMPLIANCE REQUIRED ⚠️${NC}"
+echo -e "${YELLOW}This is not optional. ALL documentation must be updated before ANY push.${NC}"
+echo ""
+
+read -p "🔒 CONFIRM: Have you completed ALL mandatory documentation updates listed above? (y/n): " -n 1 -r
+echo
+
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${RED}❌ PUSH BLOCKED: Documentation update is MANDATORY${NC}"
+    echo -e "${RED}🚫 Complete ALL checklist items above before attempting to push.${NC}"
+    echo -e "${BLUE}💡 No exceptions. This ensures project documentation remains accurate and complete.${NC}"
+    exit 1
+fi
+
+# Additional verification - check if files were actually modified
+echo -e "${PURPLE}🔍 Verifying documentation was actually updated...${NC}"
+
+RECENT_DOCS=()
+for doc in "${REQUIRED_DOCS[@]}"; do
+    if check_file_age "$doc"; then
+        RECENT_DOCS+=("$doc")
+    fi
+done
+
+if [ ${#RECENT_DOCS[@]} -lt 3 ]; then
+    echo -e "${RED}❌ VERIFICATION FAILED: Insufficient documentation updates detected${NC}"
+    echo -e "${RED}At least 3 documentation files must be updated within the last 2 hours${NC}"
+    echo -e "${YELLOW}Updated files: ${#RECENT_DOCS[@]}/5 required${NC}"
+    echo -e "${RED}🚫 PUSH BLOCKED: Update documentation files and try again${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ MANDATORY DOCUMENTATION CHECK PASSED${NC}"
+echo -e "${GREEN}📝 Verified: ${#RECENT_DOCS[@]}/5 documentation files updated${NC}"
+echo -e "${BLUE}🚀 Documentation compliance confirmed - proceeding with push...${NC}"
 exit 0
