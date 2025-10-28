@@ -3,12 +3,13 @@
  * Main application dashboard for authenticated users with budget management
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useBudget } from '../contexts/BudgetContext';
 import { BudgetOverview } from '../components/budget/BudgetOverview';
 import { BudgetGroups } from '../components/budget/BudgetGroups';
 import { MonthSelector } from '../components/budget/MonthSelector';
+import { AddBudgetItem } from '../components/budget/AddBudgetItem';
 
 // ============================================================================
 // Dashboard Page Component
@@ -25,8 +26,18 @@ export const DashboardPage: React.FC = () => {
     setSelectedMonth,
     createBudget,
     updateBudget,
-    clearError
+    clearError,
+    addBudgetItem
   } = useBudget();
+
+  // Local state for add item modal
+  const [addItemModal, setAddItemModal] = useState<{
+    isOpen: boolean;
+    groupType: 'income' | 'saving' | 'expense';
+  }>({
+    isOpen: false,
+    groupType: 'income'
+  });
 
   // ============================================================================
   // Event Handlers
@@ -44,13 +55,7 @@ export const DashboardPage: React.FC = () => {
     setSelectedMonth(month);
   };
 
-  const handleCreateBudget = async (month: string) => {
-    try {
-      await createBudget(month);
-    } catch (error) {
-      console.error('Create budget error:', error);
-    }
-  };
+  // Removed handleCreateBudget - using seamless UX with direct item addition
 
   const handleClearError = () => {
     clearError();
@@ -76,6 +81,32 @@ export const DashboardPage: React.FC = () => {
         console.error('Update groups error:', error);
       }
     }
+  };
+
+  // New seamless budget item handlers
+  const handleAddIncome = () => {
+    setAddItemModal({ isOpen: true, groupType: 'income' });
+  };
+
+  const handleAddSavings = () => {
+    setAddItemModal({ isOpen: true, groupType: 'saving' });
+  };
+
+  const handleAddExpense = () => {
+    setAddItemModal({ isOpen: true, groupType: 'expense' });
+  };
+
+  const handleAddItem = async (item: any) => {
+    try {
+      await addBudgetItem(selectedMonth, addItemModal.groupType, item);
+      setAddItemModal({ isOpen: false, groupType: 'income' });
+    } catch (error) {
+      console.error('Add budget item error:', error);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setAddItemModal({ isOpen: false, groupType: 'income' });
   };
 
   // ============================================================================
@@ -145,7 +176,6 @@ export const DashboardPage: React.FC = () => {
               selectedMonth={selectedMonth}
               availableMonths={budgets.map(b => b.month)}
               onMonthChange={handleMonthChange}
-              onCreateBudget={handleCreateBudget}
             />
           </div>
 
@@ -155,6 +185,44 @@ export const DashboardPage: React.FC = () => {
               budget={currentBudget}
               loading={budgetLoading}
             />
+          </div>
+
+          {/* Seamless Action Buttons */}
+          <div className="mb-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Quick Actions for {selectedMonth}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button
+                  onClick={handleAddIncome}
+                  className="flex items-center justify-center px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Income
+                </button>
+                <button
+                  onClick={handleAddSavings}
+                  className="flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Savings
+                </button>
+                <button
+                  onClick={handleAddExpense}
+                  className="flex items-center justify-center px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Expense
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Budget Groups */}
@@ -206,6 +274,15 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Add Budget Item Modal */}
+      <AddBudgetItem
+        isOpen={addItemModal.isOpen}
+        onClose={handleCloseModal}
+        onAdd={handleAddItem}
+        groupType={addItemModal.groupType}
+        month={selectedMonth}
+      />
     </div>
   );
 };

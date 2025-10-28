@@ -14,6 +14,12 @@ export const CategorySchema = z.object({
   isCustom: z.boolean(),
   isActive: z.boolean(),
   createdAt: z.string(),
+  // New fields for recurring and date support
+  isRecurring: z.boolean().optional(),
+  frequency: z.enum(['weekly', 'bi-weekly', 'monthly', 'annually']).optional(),
+  startDate: z.string().optional(), // ISO date string
+  endDate: z.string().optional(), // ISO date string for recurring items
+  nextDueDate: z.string().optional(), // Next occurrence for recurring items
 });
 
 export type Category = z.infer<typeof CategorySchema>;

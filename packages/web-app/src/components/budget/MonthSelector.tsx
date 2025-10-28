@@ -13,7 +13,6 @@ interface MonthSelectorProps {
   selectedMonth: string;
   availableMonths: string[];
   onMonthChange: (month: string) => void;
-  onCreateBudget?: (month: string) => void;
 }
 
 // ============================================================================
@@ -24,7 +23,6 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
   selectedMonth,
   availableMonths,
   onMonthChange,
-  onCreateBudget,
 }) => {
   // ============================================================================
   // Generate Month Options
@@ -66,11 +64,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
     onMonthChange(event.target.value);
   };
 
-  const handleCreateBudget = () => {
-    if (onCreateBudget) {
-      onCreateBudget(selectedMonth);
-    }
-  };
+  // Removed handleCreateBudget - using seamless UX instead
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     const currentIndex = monthOptions.findIndex(option => option.value === selectedMonth);
@@ -152,18 +146,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
             )}
           </div>
 
-          {/* Action Buttons */}
-          {!hasBudgetForSelectedMonth && onCreateBudget && (
-            <button
-              onClick={handleCreateBudget}
-              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Create Budget
-            </button>
-          )}
+          {/* Action Buttons - Removed Create Budget button for seamless UX */}
 
           {selectedOption?.isCurrent && (
             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
