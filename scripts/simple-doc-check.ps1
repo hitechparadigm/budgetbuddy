@@ -30,16 +30,35 @@ foreach ($file in $DocFiles) {
     }
 }
 
-# Check for progress consistency
-Write-Host "Checking progress consistency..." -ForegroundColor Blue
+# Check for current progress consistency (only check main progress indicators)
+Write-Host "Checking current progress consistency..." -ForegroundColor Blue
 
-$ProgressValues = @()
+$CurrentProgressValues = @()
 foreach ($file in $DocFiles) {
     if (Test-Path $file) {
         $content = Get-Content $file -Raw
-        $matches = [regex]::Matches($content, "(\d+)%\s+complete")
+
+        # Only check main progress indicators, not historical ones
+        if ($file -eq "README.md") {
+            $matches = [regex]::Matches($content, "Overall Progress.*?(\d+)%\s+complete")
+        } elseif ($file -eq "docs/development-status.md") {
+            $matches = [regex]::Matches($content, "Overall MVP Progress.*?(\d+)%")
+        } elseif ($file -eq "CHANGELOG.md") {
+            # Only check the first (most recent) progress entry
+            $matches = [regex]::Matches($content, "Overall MVP Progress.*?(\d+)%")
+            if ($matches.Count -gt 0) {
+                $matches = @($matches[0])  # Only take the first match
+            }
+        } elseif ($file -eq "DEVELOPMENT_LOG.md") {
+            # Only check the most recent session entry
+            $matches = [regex]::Matches($content, "Overall MVP Progress.*?(\d+)%")
+            if ($matches.Count -gt 0) {
+                $matches = @($matches[0])  # Only take the first match
+            }
+        }
+
         foreach ($match in $matches) {
-            $ProgressValues += @{
+            $CurrentProgressValues += @{
                 File = $file
                 Progress = $match.Groups[1].Value
             }
@@ -47,7 +66,7 @@ foreach ($file in $DocFiles) {
     }
 }
 
-$UniqueProgress = $ProgressValues | Group-Object Progress
+$UniqueProgress = $CurrentProgressValues | Group-Object Progress
 if ($UniqueProgress.Count -gt 1) {
     Write-Host "INCONSISTENT PROGRESS VALUES:" -ForegroundColor Red
     foreach ($group in $UniqueProgress) {

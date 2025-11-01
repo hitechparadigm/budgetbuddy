@@ -1,15 +1,21 @@
 {
-    "_comment": "Transaction management Lambda function package.json - Handles transaction CRUD and budget updates",
-    "name": "budgetbuddy-transaction-function",
-    "version": "1.0.0",
-    "description": "BudgetBuddy transaction management Lambda function for expense/income tracking and automatic budget updates",
-    "main": "index.js",
-    "scripts": {
-        "test": "jest",
-        "local": "sam local start-api"
-    },
-    "dependencies": {},
-    "devDependencies": {
-        "jest": "^29.0.0"
-    }
+  "name": "budgetbuddy-transactions",
+  "version": "1.0.0",
+  "description": "BudgetBuddy transaction handler with CRUD operations",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "*.js",
+      "!*.test.js"
+    ]
+  }
 }

@@ -10,6 +10,7 @@ import { BudgetProvider } from './contexts/BudgetContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AuthPage } from './pages/AuthPage';
 import { DashboardPage } from './pages/DashboardPage';
+import TransactionTest from './pages/TransactionTest';
 
 const App: React.FC = () => {
   return (
@@ -30,6 +31,9 @@ const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               />
+
+              {/* Test Routes (for development) */}
+              <Route path="/test/transactions" element={<TransactionTest />} />
 
               {/* Default redirect to dashboard */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -188,7 +188,10 @@
     - Add validation for recurring item date ranges and frequencies
     - _Requirements: 5.1, 5.4_
 
-- [ ] 7. Transaction Management System
+- [-] 7. Transaction Management System
+
+
+
   - [ ] 7.1 Create transaction CRUD Lambda functions
     - Implement transaction creation with automatic budget updates
     - Build transaction editing and deletion with budget recalculation
