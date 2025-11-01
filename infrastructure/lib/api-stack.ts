@@ -479,6 +479,21 @@ export class ApiStack extends cdk.Stack {
       operationName: 'CreateTransaction',
     });
 
+    // Individual transaction routes (protected)
+    const transactionResource = transactionsResource.addResource('{transactionId}');
+    transactionResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.transactionHandler), {
+      authorizer,
+      operationName: 'GetTransaction',
+    });
+    transactionResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.transactionHandler), {
+      authorizer,
+      operationName: 'UpdateTransaction',
+    });
+    transactionResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.transactionHandler), {
+      authorizer,
+      operationName: 'DeleteTransaction',
+    });
+
     // Transactions health endpoint
     const transactionsHealthResource = transactionsResource.addResource('health');
     transactionsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.transactionHandler), {
