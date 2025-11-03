@@ -1,87 +1,189 @@
-import { z } from 'zod';
+/**
+ * Budget Management Types
+ *
+ * Defines the structure for budgets that integrate with transactions
+ * and provide budget vs actual tracking.
+ */
 
-export const CategorySchema = z.object({
-  categoryId: z.string(),
-  categoryName: z.string(),
-  parentGroup: z.string(),
-  groupType: z.enum(['income', 'saving', 'expense']),
-  categoryOrder: z.number(),
-  icon: z.string(),
-  colorCode: z.string(),
-  plannedAmount: z.number(),
-  spentAmount: z.number(),
-  remainingAmount: z.number(),
-  isCustom: z.boolean(),
-  isActive: z.boolean(),
-  createdAt: z.string(),
-  // New fields for recurring and date support
-  isRecurring: z.boolean().optional(),
-  frequency: z.enum(['weekly', 'bi-weekly', 'monthly', 'annually']).optional(),
-  startDate: z.string().optional(), // ISO date string
-  endDate: z.string().optional(), // ISO date string for recurring items
-  nextDueDate: z.string().optional(), // Next occurrence for recurring items
-});
+import { Category } from './categories';
 
-export type Category = z.infer<typeof CategorySchema>;
+export interface BudgetCategory {
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string;
+  categoryColor: string;
 
-export const BudgetGroupSchema = z.object({
-  groupName: z.string(),
-  groupType: z.enum(['income', 'saving', 'expense']),
-  categories: z.array(CategorySchema),
-  totalPlanned: z.number(),
-  totalSpent: z.number(),
-  totalRemaining: z.number(),
-});
+  // Budget amounts
+  plannedAmount: number;
+  actualAmount: number;
+  remainingAmount: number;
 
-export type BudgetGroup = z.infer<typeof BudgetGroupSchema>;
+  // Progress tracking
+  percentageUsed: number;
+  isOverBudget: boolean;
 
-export const BudgetSchema = z.object({
-  budgetId: z.string(),
-  familyId: z.string(),
-  month: z.string(), // YYYY-MM format
-  totalIncome: z.number(),
-  totalSavings: z.number(),
-  totalExpenses: z.number(),
-  remainingBalance: z.number(),
-  groups: z.object({
-    income: z.array(BudgetGroupSchema),
-    savings: z.array(BudgetGroupSchema),
-    expenses: z.array(BudgetGroupSchema),
-  }),
-  isAIGenerated: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
+  // Metadata
+  lastTransactionDate?: string;
+  transactionCount: number;
+}
 
-export type Budget = z.infer<typeof BudgetSchema>;
+export interface BudgetGroup {
+  groupId: string;
+  groupName: string;
+  groupType: 'income' | 'savings' | 'expense';
+  groupColor: string;
 
-export const AIBudgetRequestSchema = z.object({
-  userId: z.string(),
-  onboardingData: z.object({
-    location: z.object({
-      country: z.string(),
-      province: z.string(),
-      city: z.string(),
-      postalCode: z.string(),
-    }),
-    familyStatus: z.string(),
-    adults: z.number(),
-    children: z.array(z.object({ age: z.number() })),
-    housing: z.object({
-      type: z.string(),
-      monthlyPayment: z.number(),
-    }),
-    transportation: z.array(z.string()),
-    lifestyle: z.object({
-      shoppingPreference: z.string(),
-      diningOut: z.string(),
-      entertainment: z.string(),
-    }),
-    income: z.object({
-      range: z.string(),
-      frequency: z.string(),
-    }),
-  }),
-});
+  // Group totals
+  totalPlanned: number;
+  totalActual: number;
+  totalRemaining: number;
 
-export type AIBudgetRequest = z.infer<typeof AIBudgetRequestSchema>;
+  // Categories in this group
+  categories: BudgetCategory[];
+
+  // Group metadata
+  order: number;
+  isCollapsed: boolean;
+}
+
+export interface MonthlyBudget {
+  budgetId: string;
+  familyId: string;
+  month: string; // YYYY-MM format
+  year: number;
+
+  // Budget status
+  status: 'draft' | 'active' | 'completed';
+  isZeroBasedBudget: boolean;
+
+  // Overall totals
+  totalIncome: {
+    planned: number;
+    actual: number;
+    remaining: number;
+  };
+
+  totalSavings: {
+    planned: number;
+    actual: number;
+    remaining: number;
+  };
+
+  totalExpenses: {
+    planned: number;
+    actual: number;
+    remaining: number;
+  };
+
+  // Zero-based budget calculation
+  netBalance: {
+    planned: number; // Should be 0 for zero-based budget
+    actual: number;
+    variance: number;
+  };
+
+  // Budget groups
+  groups: BudgetGroup[];
+
+  // Metadata
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  lastModifiedBy: string;
+
+  // AI and automation
+  isAIGenerated: boolean;
+  aiConfidence?: number;
+  autoUpdateFromTransactions: boolean;
+}
+
+export interface BudgetSummary {
+  budgetId: string;
+  month: string;
+  year: number;
+
+  // Quick stats
+  totalPlanned: number;
+  totalActual: number;
+  percentageUsed: number;
+
+  // Status indicators
+  isOnTrack: boolean;
+  overBudgetCategories: number;
+  underBudgetCategories: number;
+
+  // Alerts
+  hasOverspending: boolean;
+  hasUnallocatedIncome: boolean;
+  needsAttention: boolean;
+}
+
+export interface BudgetTemplate {
+  templateId: string;
+  templateName: string;
+  description: string;
+
+  // Template categories with default amounts
+  categories: {
+    categoryId: string;
+    defaultAmount: number;
+    isPercentageOfIncome: boolean;
+    percentage?: number;
+  }[];
+
+  // Template metadata
+  isDefault: boolean;
+  createdBy: string;
+  usageCount: number;
+}
+
+// Budget creation and update interfaces
+export interface CreateBudgetRequest {
+  month: string;
+  year: number;
+  templateId?: string;
+  categories: {
+    categoryId: string;
+    plannedAmount: number;
+  }[];
+  autoUpdateFromTransactions?: boolean;
+}
+
+export interface UpdateBudgetCategoryRequest {
+  categoryId: string;
+  plannedAmount: number;
+}
+
+export interface BudgetProgress {
+  categoryId: string;
+  categoryName: string;
+  planned: number;
+  actual: number;
+  remaining: number;
+  percentageUsed: number;
+  trend: 'increasing' | 'decreasing' | 'stable';
+  projectedMonthEnd: number;
+}
+
+// Helper types for budget calculations
+export interface BudgetCalculation {
+  totalIncome: number;
+  totalSavings: number;
+  totalExpenses: number;
+  netBalance: number;
+  isBalanced: boolean;
+  unallocatedIncome: number;
+}
+
+export interface BudgetAlert {
+  alertId: string;
+  budgetId: string;
+  categoryId: string;
+  alertType: 'overspending' | 'approaching_limit' | 'no_activity' | 'unusual_spending';
+  severity: 'low' | 'medium' | 'high';
+  message: string;
+  threshold: number;
+  currentAmount: number;
+  createdAt: string;
+  isRead: boolean;
+}

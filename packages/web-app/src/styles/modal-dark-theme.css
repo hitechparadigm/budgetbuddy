@@ -1,0 +1,82 @@
+/* Dark Theme Override for Transaction Modal */
+.transaction-modal-dark {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+}
+
+.transaction-modal-dark *,
+.transaction-modal-dark *:before,
+.transaction-modal-dark *:after {
+  color: inherit !important;
+}
+
+.transaction-modal-dark .modal-content {
+  background-color: #111827 !important;
+}
+
+.transaction-modal-dark input,
+.transaction-modal-dark select,
+.transaction-modal-dark textarea {
+  background-color: #1f2937 !important;
+  color: #ffffff !important;
+  border-color: #4b5563 !important;
+}
+
+.transaction-modal-dark input::placeholder {
+  color: #9ca3af !important;
+}
+
+.transaction-modal-dark button {
+  color: #ffffff !important;
+}
+
+.transaction-modal-dark .form-input,
+.transaction-modal-dark .form-select {
+  background-color: #1f2937 !important;
+  color: #ffffff !important;
+  border-color: #4b5563 !important;
+}
+
+/* Override any white backgrounds */
+.transaction-modal-dark .bg-white {
+  background-color: #111827 !important;
+}
+
+.transaction-modal-dark .text-black {
+  color: #ffffff !important;
+}
+
+/* Force dark theme on all elements */
+.transaction-modal-dark div,
+.transaction-modal-dark span,
+.transaction-modal-dark label,
+.transaction-modal-dark p,
+.transaction-modal-dark h1,
+.transaction-modal-dark h2,
+.transaction-modal-dark h3,
+.transaction-modal-dark h4,
+.transaction-modal-dark h5,
+.transaction-modal-dark h6 {
+  color: #ffffff !important;
+}
+
+/* Specific overrides for form elements */
+.transaction-modal-dark .text-gray-300 {
+  color: #d1d5db !important;
+}
+
+.transaction-modal-dark .text-gray-400 {
+  color: #9ca3af !important;
+}
+
+.transaction-modal-dark .border-gray-600 {
+  border-color: #4b5563 !important;
+}
+
+.transaction-modal-dark .bg-gray-800 {
+  background-color: #1f2937 !important;
+}
+
+.transaction-modal-dark .bg-gray-700 {
+  background-color: #374151 !important;
+}
