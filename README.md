@@ -14,6 +14,15 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Overall Progress**: ~85% complete (core transaction system fully operational)
 
 ### Recent Achievements
+- 🎯 **Unified Budget & Transaction System**: Complete integration between budget planning and transaction tracking
+- 📊 **Real-time Budget vs Actual Tracking**: Live progress bars showing spending against planned amounts
+- 🎨 **Consistent Category System**: Same categories (Salary 💰, Groceries 🛒, Entertainment 🎬) across all interfaces
+- 📈 **Zero-based Budget Planning**: Visual validation ensuring Income - Savings - Expenses = 0
+- 🌙 **Enhanced Dark Theme Modal**: Fixed white theme visibility issues in transaction planning
+- 🔄 **Automatic Budget Updates**: Transaction entries automatically update budget progress
+- 📱 **Professional UI Components**: Progress bars, category selectors, and visual indicators
+
+### Previous Achievements
 - âœ“ **Budget CRUD Operations**: Complete backend implementation with zero-based budgeting
 - âœ“ **Authentication System**: Full frontend and backend authentication working
 - âœ“ **API Endpoints**: Budget creation, reading, updating, and deletion
