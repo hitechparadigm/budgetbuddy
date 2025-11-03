@@ -28,10 +28,12 @@ interface BudgetGroupsProps {
 interface BudgetGroupCardProps {
   group: BudgetGroup;
   groupType: 'income' | 'savings' | 'expenses';
+  groupIndex: number;
   isExpanded: boolean;
   onToggle: () => void;
   onAddCategory: () => void;
   onUpdateCategory: (category: Category, plannedAmount: number) => void;
+  onUpdateCategoryName: (category: Category, newName: string, groupType: 'income' | 'savings' | 'expenses', groupIndex: number) => void;
 }
 
 // ============================================================================
@@ -116,6 +118,25 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
     onUpdateGroups(updatedGroups);
   };
 
+  const handleUpdateCategoryName = (category: Category, newName: string, groupType: 'income' | 'savings' | 'expenses', groupIndex: number) => {
+    if (!onUpdateGroups || !newName.trim()) return;
+
+    // Create updated groups with the new category name
+    const updatedGroups = { ...groups };
+    const targetGroup = updatedGroups[groupType][groupIndex];
+
+    if (targetGroup && targetGroup.categories) {
+      targetGroup.categories = targetGroup.categories.map(cat =>
+        cat.categoryId === category.categoryId
+          ? { ...cat, categoryName: newName.trim() }
+          : cat
+      );
+    }
+
+    console.log('Update category name:', category.categoryId, newName);
+    onUpdateGroups(updatedGroups);
+  };
+
   // ============================================================================
   // Render Loading State
   // ============================================================================
@@ -148,10 +169,12 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
           key={`income-${index}`}
           group={group}
           groupType="income"
+          groupIndex={index}
           isExpanded={expandedGroups.has(`income-${index}`)}
           onToggle={() => toggleGroup(`income-${index}`)}
           onAddCategory={() => handleAddCategory(`income-${index}`)}
           onUpdateCategory={(cat, amount) => handleUpdateCategory(`income-${index}`, cat, amount)}
+          onUpdateCategoryName={handleUpdateCategoryName}
         />
       ))}
 
@@ -161,10 +184,12 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
           key={`savings-${index}`}
           group={group}
           groupType="savings"
+          groupIndex={index}
           isExpanded={expandedGroups.has(`savings-${index}`)}
           onToggle={() => toggleGroup(`savings-${index}`)}
           onAddCategory={() => handleAddCategory(`savings-${index}`)}
           onUpdateCategory={(cat, amount) => handleUpdateCategory(`savings-${index}`, cat, amount)}
+          onUpdateCategoryName={handleUpdateCategoryName}
         />
       ))}
 
@@ -174,10 +199,12 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
           key={`expenses-${index}`}
           group={group}
           groupType="expenses"
+          groupIndex={index}
           isExpanded={expandedGroups.has(`expenses-${index}`)}
           onToggle={() => toggleGroup(`expenses-${index}`)}
           onAddCategory={() => handleAddCategory(`expenses-${index}`)}
           onUpdateCategory={(cat, amount) => handleUpdateCategory(`expenses-${index}`, cat, amount)}
+          onUpdateCategoryName={handleUpdateCategoryName}
         />
       ))}
 
@@ -209,10 +236,12 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
 const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
   group,
   groupType,
+  groupIndex,
   isExpanded,
   onToggle,
   onAddCategory,
   onUpdateCategory,
+  onUpdateCategoryName,
 }) => {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState<string>('');
@@ -261,8 +290,7 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
 
   const handleSaveName = (category: Category) => {
     if (editName.trim()) {
-      // Update category name - we'll need to extend onUpdateCategory or create a new handler
-      console.log('Update category name:', category.categoryId, editName);
+      onUpdateCategoryName(category, editName.trim(), groupType, groupIndex);
     }
     setEditingNameId(null);
     setEditName('');

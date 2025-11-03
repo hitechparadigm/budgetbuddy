@@ -3,7 +3,7 @@
  * Main application component with routing and authentication
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { BudgetProvider } from './contexts/BudgetContext';
@@ -11,8 +11,26 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AuthPage } from './pages/AuthPage';
 import { DashboardPage } from './pages/DashboardPage';
 import TransactionTest from './pages/TransactionTest';
+import TransactionsPage from './pages/TransactionsPage';
+import BudgetPage from './pages/BudgetPage';
+import Layout from './components/layout/Layout';
+import DevHelper from './components/dev/DevHelper';
+import { initMockAuth } from './utils/mockAuth';
+import './styles/layout.css';
+import './styles/navigation.css';
+import './styles/transactions.css';
+import './styles/budget.css';
+import './styles/modal-dark-theme.css';
 
 const App: React.FC = () => {
+  // Initialize mock authentication for development
+  useEffect(() => {
+    // Only initialize mock auth in development
+    if (import.meta.env.DEV) {
+      initMockAuth();
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <BudgetProvider>
@@ -27,7 +45,33 @@ const App: React.FC = () => {
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <DashboardPage />
+                    <Layout>
+                      <DashboardPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Budget Management */}
+              <Route
+                path="/budget"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <BudgetPage />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Transaction Management */}
+              <Route
+                path="/transactions"
+                element={
+                  <ProtectedRoute>
+                    <Layout>
+                      <TransactionsPage />
+                    </Layout>
                   </ProtectedRoute>
                 }
               />
@@ -41,6 +85,9 @@ const App: React.FC = () => {
               {/* Catch all - redirect to dashboard */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
+
+            {/* Development Helper */}
+            <DevHelper />
           </div>
         </Router>
       </BudgetProvider>
