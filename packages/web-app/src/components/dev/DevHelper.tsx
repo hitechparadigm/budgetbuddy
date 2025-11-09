@@ -8,11 +8,14 @@ import React, { useState } from 'react';
 import { initMockAuth, clearMockAuth, isMockAuthActive, getMockUser } from '../../utils/mockAuth';
 import { enableMockData, disableMockData, shouldUseMockData } from '../../utils/devApiConfig';
 import { authApi } from '../../services/api';
+import { useTheme } from '../../contexts/ThemeContext';
+import ThemeToggle from '../layout/ThemeToggle';
 
 export const DevHelper: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [mockAuthActive, setMockAuthActive] = useState(isMockAuthActive());
   const [mockDataActive, setMockDataActive] = useState(shouldUseMockData());
+  const { theme } = useTheme();
 
   // Only show in development
   if (!import.meta.env.DEV) {
@@ -93,6 +96,18 @@ export const DevHelper: React.FC = () => {
                   <div>Family: {mockUser.familyId}</div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Theme Mode */}
+          <div className="mb-4">
+            <h4 className="font-semibold mb-2">Theme</h4>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Current Theme:</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-gray-300">{theme}</span>
+                <ThemeToggle />
+              </div>
             </div>
           </div>
 

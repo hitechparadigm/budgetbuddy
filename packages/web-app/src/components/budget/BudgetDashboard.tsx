@@ -6,9 +6,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { MonthlyBudget, BudgetGroup, BudgetCategory } from '../../../../shared/src/types/budget';
+import { MonthlyBudget } from '../../../../shared/src/types/budget';
 import { DEFAULT_CATEGORIES, getCategoryById } from '../../../../shared/src/types/categories';
 import BudgetPlanningModal from './BudgetPlanningModal';
+import { saveBudgetToStorage, getBudgetFromStorage } from '../../utils/budgetStorage';
 
 interface BudgetDashboardProps {
   currentMonth: number;
@@ -25,8 +26,18 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
   const [showPlanningModal, setShowPlanningModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Mock budget data for development
-  const mockBudget: MonthlyBudget = {
+  // Load budget from storage on mount or month change
+  useEffect(() => {
+    const storedBudget = getBudgetFromStorage(currentMonth, currentYear);
+    if (storedBudget) {
+      setBudget(storedBudget);
+    } else {
+      setBudget(getDefaultBudget());
+    }
+  }, [currentMonth, currentYear]);
+
+  // Create default budget structure
+  const getDefaultBudget = (): MonthlyBudget => ({
     budgetId: 'budget_001',
     familyId: 'family_123',
     month: `${currentYear}-${currentMonth.toString().padStart(2, '0')}`,
@@ -223,17 +234,12 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
     lastModifiedBy: 'user_123',
     isAIGenerated: false,
     autoUpdateFromTransactions: true
-  };
+  });
 
-  useEffect(() => {
-    // Load budget for current month
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setBudget(mockBudget);
-      setLoading(false);
-    }, 500);
-  }, [currentMonth, currentYear]);
+  const handleBudgetUpdate = (updatedBudget: MonthlyBudget) => {
+    setBudget(updatedBudget);
+    saveBudgetToStorage(updatedBudget);
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-CA', {
@@ -254,7 +260,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
   };
 
   const handleBudgetCreated = (newBudget: MonthlyBudget) => {
-    setBudget(newBudget);
+    handleBudgetUpdate(newBudget);
     setShowPlanningModal(false);
   };
 
@@ -310,41 +316,41 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-green-900 bg-opacity-30 border border-green-700 rounded-lg p-4">
             <div className="text-green-400 text-sm font-medium">Total Income</div>
-            <div className="text-2xl font-bold text-white">{formatCurrency(budget.totalIncome.actual)}</div>
+            <div className="text-2xl font-bold text-white">{formatCurrency(budget.totalIncome.planned)}</div>
             <div className="text-sm text-gray-400">
-              of {formatCurrency(budget.totalIncome.planned)} planned
+              {formatCurrency(budget.totalIncome.actual)} actual
             </div>
           </div>
 
           <div className="bg-blue-900 bg-opacity-30 border border-blue-700 rounded-lg p-4">
             <div className="text-blue-400 text-sm font-medium">Total Savings</div>
-            <div className="text-2xl font-bold text-white">{formatCurrency(budget.totalSavings.actual)}</div>
+            <div className="text-2xl font-bold text-white">{formatCurrency(budget.totalSavings.planned)}</div>
             <div className="text-sm text-gray-400">
-              of {formatCurrency(budget.totalSavings.planned)} planned
+              {formatCurrency(budget.totalSavings.actual)} actual
             </div>
           </div>
 
           <div className="bg-red-900 bg-opacity-30 border border-red-700 rounded-lg p-4">
             <div className="text-red-400 text-sm font-medium">Total Expenses</div>
-            <div className="text-2xl font-bold text-white">{formatCurrency(budget.totalExpenses.actual)}</div>
+            <div className="text-2xl font-bold text-white">{formatCurrency(budget.totalExpenses.planned)}</div>
             <div className="text-sm text-gray-400">
-              of {formatCurrency(budget.totalExpenses.planned)} planned
+              {formatCurrency(budget.totalExpenses.actual)} actual
             </div>
           </div>
 
           <div className={`rounded-lg p-4 ${
-            budget.netBalance.actual >= 0
+            budget.netBalance.planned >= 0
               ? 'bg-green-900 bg-opacity-30 border border-green-700'
               : 'bg-red-900 bg-opacity-30 border border-red-700'
           }`}>
             <div className={`text-sm font-medium ${
-              budget.netBalance.actual >= 0 ? 'text-green-400' : 'text-red-400'
+              budget.netBalance.planned >= 0 ? 'text-green-400' : 'text-red-400'
             }`}>
               Net Balance
             </div>
-            <div className="text-2xl font-bold text-white">{formatCurrency(budget.netBalance.actual)}</div>
+            <div className="text-2xl font-bold text-white">{formatCurrency(budget.netBalance.planned)}</div>
             <div className="text-sm text-gray-400">
-              {budget.netBalance.actual >= 0 ? 'Surplus' : 'Deficit'}
+              {budget.netBalance.planned >= 0 ? 'Surplus' : 'Deficit'}
             </div>
           </div>
         </div>
@@ -461,7 +467,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
       <BudgetPlanningModal
         isOpen={showPlanningModal}
         onClose={() => setShowPlanningModal(false)}
-        onSubmit={handleBudgetCreated}
+        onSubmit={handleBudgetUpdate}
         currentMonth={currentMonth}
         currentYear={currentYear}
         existingBudget={budget}

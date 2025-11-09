@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CategorySelector } from './CategorySelector';
 import { RecurringOptions } from './RecurringOptions';
-import '../../styles/modal-dark-theme.css';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface TransactionPlanData {
   type: 'income' | 'expense';
@@ -34,6 +34,7 @@ export const TransactionPlanningModal: React.FC<TransactionPlanningModalProps> =
   onSubmit,
   loading = false
 }) => {
+  const { theme } = useTheme();
   const [formData, setFormData] = useState<TransactionPlanData>({
     type,
     amount: 0,
@@ -109,24 +110,59 @@ export const TransactionPlanningModal: React.FC<TransactionPlanningModalProps> =
   const title = type === 'income' ? 'Plan an income' : 'Plan an outcome';
   const titleColor = type === 'income' ? 'text-green-600' : 'text-red-600';
 
+  // TEMPORARY FIX: Force dark theme for transaction modal to ensure visibility
+  // This ensures the modal is always visible regardless of theme context issues
+  const effectiveTheme = 'dark'; // Force dark theme until theme context is fixed
+
+  console.log('TransactionModal theme:', effectiveTheme); // Debug log
+
+  const getThemeStyles = () => {
+    if (effectiveTheme === 'dark') {
+      return {
+        modal: { backgroundColor: '#111827 !important', color: '#ffffff !important', border: 'none' },
+        label: { color: '#d1d5db !important' },
+        input: { backgroundColor: '#1f2937 !important', color: '#ffffff !important', borderColor: '#4b5563 !important' },
+        button: { color: '#ffffff !important' },
+        border: '#374151'
+      };
+    } else {
+      return {
+        modal: { backgroundColor: '#ffffff !important', color: '#1f2937 !important', border: 'none' },
+        label: { color: '#374151 !important' },
+        input: { backgroundColor: '#ffffff !important', color: '#1f2937 !important', borderColor: '#d1d5db !important' },
+        button: { color: '#1f2937 !important' },
+        border: '#e5e7eb'
+      };
+    }
+  };
+
+  const styles = getThemeStyles();
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div
-        className="transaction-modal-dark bg-gray-900 rounded-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
+        className="rounded-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
         style={{
-          backgroundColor: '#111827',
-          color: '#ffffff'
+          ...styles.modal,
+          backgroundColor: effectiveTheme === 'dark' ? '#111827' : '#ffffff',
+          color: effectiveTheme === 'dark' ? '#ffffff' : '#1f2937',
+          border: 'none',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div
+          className="flex items-center justify-between p-4 border-b"
+          style={{ borderColor: styles.border }}
+        >
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white"
+            style={styles.button}
+            className="hover:opacity-75"
           >
             ←
           </button>
-          <h2 className={`text-lg font-semibold ${titleColor}`}>
+          <h2 className={`text-lg font-semibold ${titleColor}`} style={styles.label}>
             {title}
           </h2>
           <div className="w-6" /> {/* Spacer */}
@@ -135,7 +171,7 @@ export const TransactionPlanningModal: React.FC<TransactionPlanningModalProps> =
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Category Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium mb-2" style={styles.label}>
               Category
             </label>
             <CategorySelector
@@ -143,12 +179,13 @@ export const TransactionPlanningModal: React.FC<TransactionPlanningModalProps> =
               selectedCategoryId={formData.categoryId}
               onCategorySelect={handleCategorySelect}
               error={errors.categoryId}
+              theme={effectiveTheme}
             />
           </div>
 
           {/* Amount Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium mb-2" style={styles.label}>
               Amount
             </label>
             <div className="flex items-center space-x-2">
@@ -159,16 +196,19 @@ export const TransactionPlanningModal: React.FC<TransactionPlanningModalProps> =
                   min="0"
                   value={formData.amount || ''}
                   onChange={(e) => handleInputChange('amount', parseFloat(e.target.value) || 0)}
-                  className={`w-full bg-gray-800 border ${
-                    errors.amount ? 'border-red-500' : 'border-gray-600'
-                  } rounded-lg px-4 py-3 text-white text-lg font-semibold focus:outline-none focus:border-blue-500`}
+                  className="w-full rounded-lg px-4 py-3 text-lg font-semibold focus:outline-none border"
+                  style={{
+                    ...styles.input,
+                    borderColor: errors.amount ? '#ef4444' : styles.input.borderColor
+                  }}
                   placeholder="8800"
                 />
               </div>
               <select
                 value={formData.currency}
                 onChange={(e) => handleInputChange('currency', e.target.value as 'CAD' | 'USD')}
-                className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-3 text-white focus:outline-none focus:border-blue-500"
+                className="rounded-lg px-3 py-3 focus:outline-none border"
+                style={styles.input}
               >
                 <option value="CAD">CAD</option>
                 <option value="USD">USD</option>
@@ -180,28 +220,31 @@ export const TransactionPlanningModal: React.FC<TransactionPlanningModalProps> =
           {/* Date and Time */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium mb-2" style={styles.label}>
                 Date
               </label>
               <input
                 type="date"
                 value={formData.date}
                 onChange={(e) => handleInputChange('date', e.target.value)}
-                className={`w-full bg-gray-800 border ${
-                  errors.date ? 'border-red-500' : 'border-gray-600'
-                } rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500`}
+                className="w-full rounded-lg px-3 py-2 focus:outline-none border"
+                style={{
+                  ...styles.input,
+                  borderColor: errors.date ? '#ef4444' : styles.input.borderColor
+                }}
               />
               {errors.date && <span className="text-red-500 text-sm mt-1">{errors.date}</span>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium mb-2" style={styles.label}>
                 Time
               </label>
               <input
                 type="time"
                 value={formData.time}
                 onChange={(e) => handleInputChange('time', e.target.value)}
-                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                className="w-full rounded-lg px-3 py-2 focus:outline-none border"
+                style={styles.input}
               />
             </div>
           </div>
@@ -233,13 +276,14 @@ export const TransactionPlanningModal: React.FC<TransactionPlanningModalProps> =
               <div className="space-y-4 mt-4">
                 {/* Notes */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium mb-2" style={styles.label}>
                     Notes
                   </label>
                   <textarea
                     value={formData.notes || ''}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    className="w-full rounded-lg px-3 py-2 focus:outline-none border"
+                    style={styles.input}
                     rows={3}
                     placeholder="Add any additional notes..."
                   />

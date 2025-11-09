@@ -26,9 +26,14 @@ export const AuthPage: React.FC = () => {
   // Event Handlers
   // ============================================================================
 
-  const handleAuthSuccess = () => {
-    // Redirect to dashboard after successful authentication
-    navigate('/dashboard');
+  const handleAuthSuccess = (isNewUser: boolean = false) => {
+    if (isNewUser) {
+      // Redirect to onboarding for new users
+      navigate('/onboarding');
+    } else {
+      // Redirect to dashboard for existing users
+      navigate('/dashboard');
+    }
   };
 
   const switchToLogin = () => {

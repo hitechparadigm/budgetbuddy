@@ -19,6 +19,7 @@
     "test:coverage": "echo 'Running coverage tests...'",
     "test:lambda": "cd backend/functions/auth && npm run test && cd ../budget && npm run test && cd ../transactions && npm run test",
     "test:transactions": "node scripts/test-transactions.js",
+    "test:journey": "node scripts/test-user-journey.js",
     "test:unit": "cd backend/functions/transactions && npm test",
     "create-test-user": "node scripts/create-test-user.js",
     "clean": "echo 'Cleaning build artifacts...'",

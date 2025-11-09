@@ -7,91 +7,58 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { BudgetProvider } from './contexts/BudgetContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AuthPage } from './pages/AuthPage';
-import { DashboardPage } from './pages/DashboardPage';
-import TransactionTest from './pages/TransactionTest';
-import TransactionsPage from './pages/TransactionsPage';
-import BudgetPage from './pages/BudgetPage';
-import Layout from './components/layout/Layout';
-import DevHelper from './components/dev/DevHelper';
+import { BudgetPage } from './pages/BudgetPage';
+import { OnboardingPage } from './pages/OnboardingPage';
+import { AIBudgetGenerationPage } from './pages/AIBudgetGenerationPage';
 import { initMockAuth } from './utils/mockAuth';
-import './styles/layout.css';
-import './styles/navigation.css';
-import './styles/transactions.css';
-import './styles/budget.css';
-import './styles/modal-dark-theme.css';
 
 const App: React.FC = () => {
   // Initialize mock authentication for development
   useEffect(() => {
     // Only initialize mock auth in development
-    if (import.meta.env.DEV) {
+    if (process.env.NODE_ENV === 'development') {
       initMockAuth();
     }
   }, []);
 
   return (
-    <AuthProvider>
-      <BudgetProvider>
-        <Router>
+    <ThemeProvider>
+      <AuthProvider>
+        <BudgetProvider>
+          <Router>
           <div className="App">
             <Routes>
               {/* Public Routes */}
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/ai-budget-generation" element={<AIBudgetGenerationPage />} />
 
-              {/* Protected Routes */}
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <DashboardPage />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Budget Management */}
+              {/* Main Budget App - No Layout wrapper for clean, focused experience */}
               <Route
                 path="/budget"
                 element={
                   <ProtectedRoute>
-                    <Layout>
-                      <BudgetPage />
-                    </Layout>
+                    <BudgetPage />
                   </ProtectedRoute>
                 }
               />
 
-              {/* Transaction Management */}
-              <Route
-                path="/transactions"
-                element={
-                  <ProtectedRoute>
-                    <Layout>
-                      <TransactionsPage />
-                    </Layout>
-                  </ProtectedRoute>
-                }
-              />
+              {/* Default redirect to budget (main app) */}
+              <Route path="/" element={<Navigate to="/budget" replace />} />
 
-              {/* Test Routes (for development) */}
-              <Route path="/test/transactions" element={<TransactionTest />} />
-
-              {/* Default redirect to dashboard */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-
-              {/* Catch all - redirect to dashboard */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              {/* Catch all - redirect to budget */}
+              <Route path="*" element={<Navigate to="/budget" replace />} />
             </Routes>
 
-            {/* Development Helper */}
-            <DevHelper />
+
           </div>
-        </Router>
-      </BudgetProvider>
-    </AuthProvider>
+          </Router>
+        </BudgetProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 

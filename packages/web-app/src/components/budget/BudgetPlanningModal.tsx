@@ -59,9 +59,12 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
   if (!isOpen) return null;
 
   const handleAmountChange = (categoryId: string, amount: number) => {
+    // Ensure the amount is properly rounded to avoid floating point precision issues
+    const roundedAmount = Math.round(amount * 100) / 100;
+
     setBudgetCategories(prev => ({
       ...prev,
-      [categoryId]: amount
+      [categoryId]: roundedAmount
     }));
 
     // Clear error when user starts typing
@@ -109,8 +112,42 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
       return;
     }
 
-    // Create mock budget data for now
-    const mockBudget: MonthlyBudget = {
+    // Build budget groups with category data
+    const budgetGroups: BudgetGroup[] = DEFAULT_CATEGORIES.map(categoryGroup => {
+      const categories: BudgetCategory[] = categoryGroup.categories.map(category => {
+        const plannedAmount = budgetCategories[category.id] || 0;
+        return {
+          categoryId: category.id,
+          categoryName: category.name,
+          categoryIcon: category.icon,
+          categoryColor: category.color,
+          plannedAmount: plannedAmount,
+          actualAmount: 0, // Will be updated by transactions
+          remainingAmount: plannedAmount,
+          percentageUsed: 0,
+          isOverBudget: false,
+          transactionCount: 0
+        };
+      });
+
+      const groupTotal = categories.reduce((sum, cat) => sum + cat.plannedAmount, 0);
+
+      return {
+        groupId: categoryGroup.id,
+        groupName: categoryGroup.name,
+        groupType: categoryGroup.type,
+        groupColor: categoryGroup.color,
+        totalPlanned: groupTotal,
+        totalActual: 0,
+        totalRemaining: groupTotal,
+        categories: categories,
+        order: categoryGroup.order,
+        isCollapsed: false
+      };
+    });
+
+    // Create complete budget data
+    const budgetData: MonthlyBudget = {
       budgetId: existingBudget?.budgetId || `budget_${Date.now()}`,
       familyId: 'family_123',
       month: `${currentYear}-${currentMonth.toString().padStart(2, '0')}`,
@@ -121,17 +158,17 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
       totalSavings: { planned: totals.savings, actual: 0, remaining: totals.savings },
       totalExpenses: { planned: totals.expense, actual: 0, remaining: totals.expense },
       netBalance: { planned: totals.netBalance, actual: 0, variance: 0 },
-      groups: [],
-      createdAt: new Date().toISOString(),
+      groups: budgetGroups,
+      createdAt: existingBudget?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      createdBy: 'user_123',
+      createdBy: existingBudget?.createdBy || 'user_123',
       lastModifiedBy: 'user_123',
       isAIGenerated: false,
       autoUpdateFromTransactions: true
     };
 
     try {
-      onSubmit(mockBudget);
+      onSubmit(budgetData);
     } catch (error) {
       console.error('Error saving budget:', error);
     }
@@ -267,9 +304,22 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
                 <input
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="any"
                   value={budgetCategories[category.id] || ''}
-                  onChange={(e) => handleAmountChange(category.id, parseFloat(e.target.value) || 0)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '') {
+                      handleAmountChange(category.id, 0);
+                    } else {
+                      // Convert to number and handle precision properly
+                      const numValue = parseFloat(value);
+                      if (!isNaN(numValue)) {
+                        // Round to 2 decimal places to avoid floating point precision issues
+                        const roundedValue = Math.round(numValue * 100) / 100;
+                        handleAmountChange(category.id, roundedValue);
+                      }
+                    }
+                  }}
                   className={`w-32 bg-gray-700 border ${
                     errors[category.id] ? 'border-red-500' : 'border-gray-600'
                   } rounded px-3 py-2 text-white text-right focus:outline-none focus:border-blue-500`}
