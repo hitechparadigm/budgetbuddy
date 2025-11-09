@@ -273,13 +273,19 @@ async function getCurrentBudget(event, user) {
         return errorResponse.badRequest('Month parameter is required (format: YYYY-MM)');
     }
 
-    const budget = await dynamoHelpers.getItem(
+    let budget = await dynamoHelpers.getItem(
         `FAMILY#${familyId}`,
         `BUDGET#${month}`
     );
 
+    // If no budget exists for this month, create one with recurring items from previous month
     if (!budget) {
-        return errorResponse.notFound(`Budget not found for ${month}`);
+        logger.info('No budget found for month, creating with recurring items', {
+            familyId,
+            month
+        });
+
+        budget = await createBudgetWithRecurringItems(familyId, month);
     }
 
     logger.info('Budget retrieved successfully', {
@@ -526,4 +532,116 @@ function calculateBudgetTotals(groups) {
         totalExpenses,
         remainingBalance
     };
+}
+
+/**
+ * Create a new budget with recurring items from the previous month
+ */
+async function createBudgetWithRecurringItems(familyId, month) {
+    try {
+        // Get the previous month's budget to copy recurring items
+        const previousMonth = getPreviousMonth(month);
+        const previousBudget = await dynamoHelpers.getItem(
+            `FAMILY#${familyId}`,
+            `BUDGET#${previousMonth}`
+        );
+
+        // Create base budget structure
+        const newBudget = {
+            PK: `FAMILY#${familyId}`,
+            SK: `BUDGET#${month}`,
+            GSI1PK: `FAMILY#${familyId}`,
+            GSI1SK: `BUDGET#${month}`,
+
+            entityType: 'BUDGET',
+            budgetId: month,
+            familyId,
+            month,
+
+            groups: {
+                income: [],
+                savings: [],
+                expenses: []
+            },
+
+            totalIncome: 0,
+            totalSavings: 0,
+            totalExpenses: 0,
+            remainingBalance: 0,
+
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        // If previous budget exists, copy all items (they become recurring by default)
+        if (previousBudget && previousBudget.groups) {
+            logger.info('Copying items from previous month as recurring', {
+                familyId,
+                previousMonth,
+                currentMonth: month
+            });
+
+            // Copy items from each group
+            ['income', 'savings', 'expenses'].forEach(groupType => {
+                if (previousBudget.groups[groupType]) {
+                    newBudget.groups[groupType] = previousBudget.groups[groupType].map(group => ({
+                        ...group,
+                        // Reset spent amounts for new month
+                        totalSpent: 0,
+                        categories: group.categories ? group.categories.map(category => ({
+                            ...category,
+                            // Keep planned amount but reset spent amount
+                            spentAmount: 0,
+                            remainingAmount: category.plannedAmount || 0
+                        })) : []
+                    }));
+                }
+            });
+
+            // Recalculate totals based on planned amounts
+            const totals = calculateBudgetTotals(newBudget.groups);
+            newBudget.totalIncome = totals.totalIncome;
+            newBudget.totalSavings = totals.totalSavings;
+            newBudget.totalExpenses = totals.totalExpenses;
+            newBudget.remainingBalance = totals.remainingBalance;
+
+            logger.info('Recurring items copied successfully', {
+                familyId,
+                month,
+                totalIncome: newBudget.totalIncome,
+                totalExpenses: newBudget.totalExpenses
+            });
+        } else {
+            logger.info('No previous budget found, creating empty budget', {
+                familyId,
+                month
+            });
+        }
+
+        // Save the new budget
+        await dynamoHelpers.putItem(newBudget);
+
+        return newBudget;
+
+    } catch (error) {
+        logger.error('Error creating budget with recurring items', {
+            error: {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            },
+            familyId,
+            month
+        });
+        throw error;
+    }
+}
+
+/**
+ * Get the previous month in YYYY-MM format
+ */
+function getPreviousMonth(month) {
+    const date = new Date(month + '-01');
+    date.setMonth(date.getMonth() - 1);
+    return date.toISOString().substring(0, 7);
 }

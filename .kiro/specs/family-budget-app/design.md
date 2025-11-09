@@ -155,6 +155,34 @@ budget-buddy/
 - **Search and Filtering**: By category, date range, family member, and amount
 - **History Tracking**: Complete audit trail with edit/delete capabilities
 
+#### 6. Enhanced Transaction Planning System
+- **Visual Transaction Planner**: Intuitive interface for planning income and expenses with separate workflows
+- **Smart Category Selection**: Icon-based category picker with professional visual indicators
+- **Advanced Scheduling**: Date/time picker integration with recurring transaction support
+- **Currency Management**: Multi-currency support with proper formatting (CAD, USD)
+- **Expandable Details**: "MORE" section for additional transaction metadata and notes
+
+#### 7. Advanced Recurring Transaction Engine
+- **Flexible Frequency Options**: Weekly, bi-weekly, monthly, and custom interval support
+- **End Date Management**: "Never" option for indefinite recurring and specific end dates
+- **Month-End Scheduling**: "On last day of month" option for month-end transactions
+- **Automatic Generation**: Future transaction instance creation based on configured patterns
+- **Series Management**: Modify or cancel recurring series with granular control options
+
+#### 8. Visual Balance and Navigation System
+- **Real-Time Balance Display**: Prominent monthly balance with currency formatting
+- **Income/Expense Breakdown**: Color-coded totals with visual indicators
+- **Calendar Navigation**: Month-by-month timeline with smooth transitions
+- **Period Indicators**: Weekly and date range breakdowns within months
+- **Quick Navigation**: "Today" button and visual month indicators
+
+#### 9. Enhanced Category Management System
+- **Professional Icon Library**: Comprehensive set of recognizable category icons
+- **Visual Organization**: Intuitive grouping of income and expense categories
+- **Drag-and-Drop Reordering**: User-customizable category organization
+- **Premium Customization**: Custom icon upload and extended icon library for premium users
+- **Cross-Platform Consistency**: Uniform styling across web, iOS, and Android platforms
+
 ### User Interface Design
 
 #### Seamless Budget Management UX
@@ -168,29 +196,45 @@ budget-buddy/
 4. **Date Flexibility**: Users can assign specific dates to budget items
 5. **Month Navigation**: Seamless switching between months with change preservation
 
-#### Web Interface Components
+#### Enhanced Web Interface Components
 
-**Month Selector**:
-- Dropdown or navigation arrows for month selection
-- Visual indicators for months with existing budgets
-- Quick access to current month and next/previous months
+**Transaction Planning Interface**:
+- Separate "Plan an income" and "Plan an outcome" modal interfaces
+- Visual category selection with professional icons (Salary, Investment, Rewards, Gifts, Business, Other)
+- Expense categories with intuitive icons (Supermarket, Clothing, House, Entertainment, Transport, etc.)
+- Amount entry with currency selection dropdown (CAD, USD)
+- Date and time picker integration for precise scheduling
+- Expandable "MORE" section for notes and additional details
+- "Create" and "Cancel" action buttons with confirmation flows
 
-**Budget Item Addition**:
-- Three primary action buttons: "Add Income", "Add Savings", "Add Expense"
-- Modal or inline forms for item creation
-- Fields: Name, Amount, Category, Date, Recurring (Yes/No), Frequency (if recurring)
+**Advanced Recurring Configuration**:
+- Enhanced frequency options: "Every month", "Every week", "Every two weeks", custom intervals
+- "On last day of month" checkbox for month-end transactions
+- "Repeats every [X]" with customizable interval numbers
+- End date options including "Never" for indefinite recurring
+- Visual preview of next occurrence and projected monthly amounts
+- Series modification options (future instances only vs. entire series)
 
-**Recurring Item Configuration**:
-- Frequency options: Weekly, Bi-weekly, Monthly, Annually
-- Start date picker
-- End date picker (optional, for finite recurring items)
-- Preview of calculated occurrences within the selected month
+**Visual Balance Dashboard**:
+- Prominent monthly balance display with currency formatting (e.g., "+CAS 4,360.00")
+- Color-coded Income and Expenses totals (green for income, red for expenses)
+- Real-time net balance calculation (Income minus Expenses)
+- Weekly date range breakdowns (e.g., "Nov 01 - 02", "Nov 02 - 09")
 
-**Budget Overview**:
-- Real-time totals for Income, Savings, Expenses
-- Remaining balance calculation (Income - Savings - Expenses)
-- Visual progress indicators for budget allocation
-- List view of all items with inline editing capabilities
+**Enhanced Calendar Navigation**:
+- Month-by-month timeline with clear labels (NOV 25, DEC 25, JAN 26)
+- Current month highlighting with visual indicators
+- Smooth transitions between months with animation
+- Visual indicators for months with existing budget data
+- Quick "Today" navigation button
+
+**Streamlined Transaction Entry**:
+- Floating action buttons for quick "Expense" and "Income" entry
+- Smart category suggestions based on user history
+- Auto-populated current date/time with easy modification
+- Real-time input validation and error feedback
+- Batch entry mode for multiple similar transactions
+- Confirmation screens before final submission
 
 ## Data Models
 
@@ -207,6 +251,11 @@ budget-buddy/
 6. Get cost of living data by location
 7. Get subscriptions by status
 8. Get financial tips by publication date
+9. Get planned transactions by familyId and date range
+10. Get recurring transactions by familyId and next occurrence date
+11. Get categories by usage frequency for smart suggestions
+12. Get monthly balance summary by familyId and month
+13. Get category icons by type and premium status
 
 #### Entity Schemas
 
@@ -281,7 +330,7 @@ budget-buddy/
   updatedAt: string
 }
 
-// Category Entity (Updated for Recurring Support)
+// Category Entity (Enhanced with Visual and Recurring Support)
 {
   PK: "FAMILY#<familyId>",
   SK: "CATEGORY#<groupName>#<categoryName>",
@@ -295,6 +344,7 @@ budget-buddy/
   groupType: "income" | "saving" | "expense",
   categoryOrder: number,
   icon: string,
+  iconType: "default" | "custom" | "premium", // Enhanced icon management
   colorCode: string,
   plannedAmount: number,
   spentAmount: number,
@@ -303,12 +353,54 @@ budget-buddy/
   isActive: boolean,
   createdAt: string,
 
-  // New recurring fields
+  // Enhanced recurring fields
   isRecurring?: boolean,
-  frequency?: "weekly" | "bi-weekly" | "monthly" | "annually",
+  frequency?: "weekly" | "bi-weekly" | "monthly" | "annually" | "custom",
+  customInterval?: number, // For "every X weeks/months" patterns
   startDate?: string, // ISO date string
-  endDate?: string, // ISO date string for recurring items
-  nextDueDate?: string // Next occurrence for recurring items
+  endDate?: string, // ISO date string for recurring items, null for "never"
+  nextDueDate?: string, // Next occurrence for recurring items
+  onLastDayOfMonth?: boolean, // For month-end recurring transactions
+
+  // Visual enhancement fields
+  displayOrder: number, // User-customizable display order
+  lastUsed?: string, // For smart category suggestions
+  usageCount: number // For popularity-based suggestions
+}
+
+// Planned Transaction Entity (For Transaction Planning Interface)
+{
+  PK: "FAMILY#<familyId>",
+  SK: "PLANNED_TXN#<date>#<planId>",
+  GSI2PK: "FAMILY#<familyId>#PLANNED",
+  GSI2SK: "DATE#<scheduledDate>",
+
+  entityType: "PLANNED_TRANSACTION",
+  planId: string,
+  familyId: string,
+  transactionType: "income" | "expense",
+  amount: number,
+  currency: "CAD" | "USD",
+  categoryId: string,
+  categoryName: string,
+  scheduledDate: string,
+  scheduledTime?: string,
+  notes?: string,
+
+  // Enhanced recurring fields
+  isRecurring: boolean,
+  frequency?: "weekly" | "bi-weekly" | "monthly" | "annually" | "custom",
+  customInterval?: number,
+  onLastDayOfMonth?: boolean,
+  endDate?: string, // null for "never"
+  nextOccurrence?: string,
+
+  // Planning metadata
+  isExecuted: boolean,
+  executedTransactionId?: string,
+  createdBy: string,
+  createdAt: string,
+  updatedAt: string
 }
 
 // Transaction Entity

@@ -111,7 +111,8 @@
     - _Requirements: 10.3_
 
 - [ ] 5. AI-Powered Onboarding and Budget Generation
-  - [ ] 5.1 Create cost of living data seeding system
+  - [-] 5.1 Create cost of living data seeding system
+
     - Implement script to seed DynamoDB with cost data for 300+ largest cities in USA and 50+ largest cities in Canada.
     - Create data structure for regional categories and average expenses
     - Build data update mechanism for periodic refresh
@@ -147,6 +148,8 @@
     - _Requirements: 5.2, 7.1_
 
   - [x] 6.2 Build budget dashboard and visualization
+
+
 
 
 
@@ -192,13 +195,18 @@
 
 
 
-  - [ ] 7.1 Create transaction CRUD Lambda functions
+  - [x] 7.1 Create transaction CRUD Lambda functions
+
     - Implement transaction creation with automatic budget updates
     - Build transaction editing and deletion with budget recalculation
     - Create transaction listing with pagination and filtering
     - _Requirements: 5.1, 5.2, 5.4_
 
-  - [ ] 7.2 Build transaction entry and management UI
+
+
+  - [x] 7.2 Build transaction entry and management UI
+
+
     - Create transaction entry form with category selection and validation
     - Implement transaction list view with search and filtering capabilities
     - Build transaction editing interface with confirmation dialogs
@@ -391,3 +399,135 @@
     - Implement account deletion with complete data removal
     - Build privacy policy and terms of service acceptance flow
     - _Requirements: 10.4, 10.5_
+
+- [ ] 16. Enhanced Transaction Planning Interface Implementation
+  - [ ] 16.1 Create visual transaction planning components
+    - Build separate "Plan an income" and "Plan an outcome" modal interfaces
+    - Implement visual category selection with professional icons for income (Salary, Investment, Rewards, Gifts, Business, Other)
+    - Create expense category selection with icons (Supermarket, Clothing, House, Entertainment, Transport, Travel, Education, Food, Work, Electronics)
+    - Add currency selection dropdown supporting CAD and USD with proper formatting
+    - _Requirements: 22.1, 22.2, 22.3, 22.4_
+
+  - [ ] 16.2 Implement enhanced transaction scheduling
+    - Integrate date and time picker components for precise transaction scheduling
+    - Create expandable "MORE" section for additional transaction details and notes field
+    - Build "Create" and "Cancel" action buttons with appropriate confirmation flows
+    - Implement visual feedback and selection state management for category selection
+    - _Requirements: 22.5, 22.6, 22.7, 22.8_
+
+  - [ ] 16.3 Build transaction planning backend services
+    - Create Lambda functions for planned transaction CRUD operations
+    - Implement DynamoDB schema for Planned Transaction Entity with GSI indexes
+    - Build API endpoints for transaction planning with validation and error handling
+    - Create data transformation services for converting planned transactions to actual transactions
+    - _Requirements: 22.1, 22.2, 22.3, 22.4_
+
+- [ ] 17. Advanced Recurring Transaction System
+  - [ ] 17.1 Implement flexible recurring transaction engine
+    - Create recurring transaction configuration UI with frequency options (Every month, Every week, Every two weeks)
+    - Build custom interval support with "Repeats every [X]" input fields
+    - Implement "On last day of month" checkbox option for month-end transactions
+    - Add end date management with "Never" option for indefinite recurring transactions
+    - _Requirements: 23.1, 23.2, 23.3, 23.4_
+
+  - [ ] 17.2 Build recurring transaction automation
+    - Create Lambda function for automatic future transaction generation based on recurring patterns
+    - Implement next occurrence date calculation and scheduling system
+    - Build recurring series management allowing modification of future instances vs entire series
+    - Create budget integration for incorporating projected recurring amounts into monthly calculations
+    - _Requirements: 23.5, 23.6, 23.7, 23.8_
+
+  - [ ] 17.3 Enhance data model for advanced recurring support
+    - Update Category Entity schema with enhanced recurring fields (customInterval, onLastDayOfMonth)
+    - Modify backend Lambda functions to handle new recurring transaction patterns
+    - Implement recurring transaction expansion logic for monthly budget display
+    - Add validation for recurring transaction date ranges and custom frequencies
+    - _Requirements: 23.1, 23.2, 23.3, 23.4_
+
+- [ ] 18. Visual Balance and Calendar Navigation System
+  - [ ] 18.1 Create enhanced balance visualization dashboard
+    - Build prominent monthly balance display with currency formatting (e.g., "+CAS 4,360.00")
+    - Implement separate Income and Expenses totals with color-coded indicators (green for income, red for expenses)
+    - Create real-time net balance calculation (Income minus Expenses) with automatic updates
+    - Add weekly and date range breakdowns within each month (e.g., "Nov 01 - 02", "Nov 02 - 09")
+    - _Requirements: 24.1, 24.2, 24.5, 24.7_
+
+  - [ ] 18.2 Implement advanced calendar navigation
+    - Create month-by-month timeline navigation with clear month/year labels (NOV 25, DEC 25, JAN 26)
+    - Build current month highlighting and smooth transition animations between months
+    - Implement visual indicators for months with existing budget data versus empty months
+    - Add quick "Today" navigation button and support for keyboard navigation
+    - _Requirements: 24.3, 24.4, 24.6, 24.8_
+
+  - [ ] 18.3 Build balance calculation backend services
+    - Create Lambda functions for real-time balance calculations across multiple time periods
+    - Implement caching strategy for balance data to improve performance
+    - Build API endpoints for balance summary data with date range filtering
+    - Create automated balance recalculation triggers when transactions are modified
+    - _Requirements: 24.1, 24.2, 24.5, 24.7_
+
+- [ ] 19. Enhanced Category Icon and Visual Management
+  - [ ] 19.1 Implement professional icon library system
+    - Create comprehensive icon library with professional, recognizable symbols for each category type
+    - Build icon management system supporting default, custom, and premium icon types
+    - Implement consistent icon sizing and styling across web, iOS, and Android platforms
+    - Create icon selection interface with search and filtering capabilities
+    - _Requirements: 25.1, 25.2, 25.6, 25.7_
+
+  - [ ] 19.2 Build advanced category management features
+    - Implement drag-and-drop category reordering functionality within each group
+    - Create visual feedback system for category selection with highlighting and state changes
+    - Build color customization interface for categories while maintaining accessibility standards
+    - Add Premium_Tier custom icon upload functionality with validation and storage
+    - _Requirements: 25.4, 25.5, 25.7, 25.8_
+
+  - [ ] 19.3 Create smart category suggestion system
+    - Implement usage tracking for categories (lastUsed, usageCount fields)
+    - Build smart category suggestion algorithm based on user history and frequency
+    - Create category popularity analytics for improving default suggestions
+    - Add machine learning integration for intelligent category recommendations
+    - _Requirements: 25.1, 25.2, 25.3_
+
+- [ ] 20. Streamlined Transaction Entry Workflow
+  - [ ] 20.1 Build quick transaction entry interface
+    - Create floating action buttons for quick "Expense" and "Income" entry from main dashboard
+    - Implement smart category suggestions based on user preferences and history
+    - Build auto-populated current date/time with easy modification capabilities
+    - Create smart amount formatting with automatic decimal placement and currency symbols
+    - _Requirements: 26.1, 26.2, 26.3, 26.4_
+
+  - [ ] 20.2 Implement advanced transaction entry features
+    - Build quick entry mode with minimal required fields and optional detailed mode toggle
+    - Create real-time input validation with immediate feedback for errors or missing information
+    - Implement batch entry functionality for multiple transactions with similar properties
+    - Add confirmation screens showing transaction details before final submission
+    - _Requirements: 26.5, 26.6, 26.7, 26.8_
+
+  - [ ] 20.3 Create transaction entry backend optimization
+    - Optimize Lambda functions for fast transaction creation and validation
+    - Implement transaction batching API for efficient bulk operations
+    - Create smart defaults service based on user behavior patterns
+    - Build transaction template system for frequently used transaction types
+    - _Requirements: 26.1, 26.2, 26.5, 26.7_
+
+- [ ]* 21. Enhanced Testing for New Features
+  - [ ]* 21.1 Write unit tests for new transaction planning components
+    - Create unit tests for transaction planning modal components and category selection
+    - Test recurring transaction calculation logic and date generation algorithms
+    - Write tests for balance calculation functions and currency formatting
+    - Test category management and icon selection functionality
+    - _Requirements: 22.1, 23.1, 24.1, 25.1_
+
+  - [ ]* 21.2 Create integration tests for enhanced features
+    - Build integration tests for transaction planning API endpoints
+    - Test recurring transaction automation and scheduling workflows
+    - Create end-to-end tests for balance visualization and calendar navigation
+    - Test category management and smart suggestion systems
+    - _Requirements: 22.3, 23.6, 24.5, 25.3_
+
+  - [ ]* 21.3 Implement mobile-specific testing for new UI components
+    - Create mobile UI tests for transaction planning interface on iOS and Android
+    - Test touch interactions for category selection and drag-and-drop reordering
+    - Validate responsive design for balance visualization on different screen sizes
+    - Test calendar navigation gestures and animations on mobile devices
+    - _Requirements: 22.8, 24.8, 25.4, 26.1_

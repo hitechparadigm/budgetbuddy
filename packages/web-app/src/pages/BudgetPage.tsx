@@ -1,41 +1,1009 @@
-import React, { useState } from 'react';
-import BudgetDashboard from '../components/budget/BudgetDashboard';
-import CalendarNavigation from '../components/budget/CalendarNavigation';
+/**
+ * Budget Page - EveryDollar Style Layout
+ *
+ * Three-column layout matching the EveryDollar screenshot:
+ * - Left sidebar with navigation
+ * - Center column with budget categories
+ * - Right sidebar with transactions
+ */
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+// Data models
+interface BudgetCategory {
+  id: string;
+  name: string;
+  icon: string;
+  plannedAmount: number;
+  spentAmount: number;
+  transactions: Transaction[];
+  order: number;
+  isRecurring: boolean;
+  recurringFrequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'annually';
+  nextDueDate?: string;
+}
+
+interface BudgetGroup {
+  id: string;
+  name: string;
+  type: 'income' | 'savings' | 'expense';
+  icon: string;
+  categories: BudgetCategory[];
+  isCollapsed: boolean;
+  order: number;
+}
+
+interface Transaction {
+  id: string;
+  categoryId: string;
+  amount: number;
+  description: string;
+  date: string;
+  createdAt: string;
+}
+
+interface Budget {
+  id: string;
+  userId: string;
+  month: string;
+  groups: BudgetGroup[];
+  isAIGenerated: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export const BudgetPage: React.FC = () => {
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const navigate = useNavigate();
+  const [budget, setBudget] = useState<Budget | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [transactionType, setTransactionType] = useState<'income' | 'expense' | null>(null);
+  const [showFAB, setShowFAB] = useState(false);
+  const [transactionForm, setTransactionForm] = useState({
+    amount: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+    categoryId: ''
+  });
 
-  const handleMonthChange = (month: number, year: number) => {
-    setCurrentMonth(month);
-    setCurrentYear(year);
+  // Budget item management
+  const [showBudgetItemModal, setShowBudgetItemModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(null);
+  const [selectedGroupType, setSelectedGroupType] = useState<'income' | 'savings' | 'expense' | null>(null);
+  const [budgetItemForm, setBudgetItemForm] = useState({
+    name: '',
+    icon: '💰',
+    plannedAmount: '',
+    isRecurring: false,
+    recurringFrequency: 'monthly' as 'weekly' | 'bi-weekly' | 'monthly' | 'annually'
+  });
+
+  // Handle responsive behavior
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const mobile = window.innerWidth < 1024; // lg breakpoint
+      setIsMobile(mobile);
+      if (mobile) {
+        setSidebarCollapsed(true);
+      }
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  useEffect(() => {
+    loadBudget();
+  }, []);
+
+  const loadBudget = async () => {
+    try {
+      // First check for existing budget data
+      const existingBudget = localStorage.getItem('budget-data');
+      if (existingBudget) {
+        setBudget(JSON.parse(existingBudget));
+        return;
+      }
+
+      // Fall back to AI generated budget
+      const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
+
+      if (aiGeneratedBudget) {
+        const parsedBudget = JSON.parse(aiGeneratedBudget);
+
+        const budget: Budget = {
+          id: `budget_${Date.now()}`,
+          userId: 'mock_user_id',
+          month: new Date().toISOString().slice(0, 7),
+          groups: [
+            {
+              id: 'income-group',
+              name: 'Income',
+              type: 'income',
+              icon: '💰',
+              isCollapsed: false,
+              order: 1,
+              categories: parsedBudget.income?.map((cat: any, index: number) => ({
+                ...cat,
+                spentAmount: 0,
+                transactions: [],
+                order: index + 1,
+                isRecurring: false
+              })) || []
+            },
+            {
+              id: 'savings-group',
+              name: 'Savings',
+              type: 'savings',
+              icon: '💾',
+              isCollapsed: false,
+              order: 2,
+              categories: parsedBudget.savings?.map((cat: any, index: number) => ({
+                ...cat,
+                spentAmount: 0,
+                transactions: [],
+                order: index + 1,
+                isRecurring: false
+              })) || []
+            },
+            {
+              id: 'expenses-group',
+              name: 'Expenses',
+              type: 'expense',
+              icon: '💸',
+              isCollapsed: false,
+              order: 3,
+              categories: parsedBudget.expenses?.map((cat: any, index: number) => ({
+                ...cat,
+                spentAmount: 0,
+                transactions: [],
+                order: index + 1,
+                isRecurring: false
+              })) || []
+            }
+          ],
+          isAIGenerated: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        setBudget(budget);
+      } else {
+        navigate('/onboarding');
+      }
+    } catch (error) {
+      console.error('Error loading budget:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Mock months with data for calendar navigation
-  const monthsWithData = [
-    '2025-10',
-    '2025-11',
-    '2025-12'
-  ];
+  const calculateTotals = () => {
+    if (!budget) return { income: 0, planned: 0, spent: 0, remaining: 0 };
+
+    const incomeGroup = budget.groups.find(g => g.type === 'income');
+    const income = incomeGroup?.categories.reduce((sum, cat) => sum + cat.spentAmount, 0) || 0;
+
+    const nonIncomeGroups = budget.groups.filter(g => g.type !== 'income');
+    const planned = nonIncomeGroups.reduce((sum, group) =>
+      sum + group.categories.reduce((catSum, cat) => catSum + cat.plannedAmount, 0), 0
+    );
+
+    const spent = nonIncomeGroups.reduce((sum, group) =>
+      sum + group.categories.reduce((catSum, cat) => catSum + cat.spentAmount, 0), 0
+    );
+
+    return {
+      income,
+      planned,
+      spent,
+      remaining: income - spent
+    };
+  };
+
+  const openTransactionModal = (type: 'income' | 'expense') => {
+    setTransactionType(type);
+    setTransactionForm({
+      amount: '',
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+      categoryId: ''
+    });
+    setShowTransactionModal(true);
+    setShowFAB(false);
+  };
+
+  const closeTransactionModal = () => {
+    setShowTransactionModal(false);
+    setTransactionType(null);
+    setTransactionForm({
+      amount: '',
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+      categoryId: ''
+    });
+  };
+
+  const handleTransactionSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!budget || !transactionForm.amount || !transactionForm.categoryId) return;
+
+    const amount = parseFloat(transactionForm.amount);
+    if (isNaN(amount)) return;
+
+    // Create new transaction
+    const newTransaction: Transaction = {
+      id: `transaction_${Date.now()}`,
+      categoryId: transactionForm.categoryId,
+      amount: amount,
+      description: transactionForm.description || 'Transaction',
+      date: transactionForm.date,
+      createdAt: new Date().toISOString()
+    };
+
+    // Update budget with new transaction
+    const updatedBudget = { ...budget };
+    updatedBudget.groups = updatedBudget.groups.map(group => ({
+      ...group,
+      categories: group.categories.map(cat => {
+        if (cat.id === transactionForm.categoryId) {
+          return {
+            ...cat,
+            spentAmount: cat.spentAmount + amount,
+            transactions: [...cat.transactions, newTransaction]
+          };
+        }
+        return cat;
+      })
+    }));
+
+    setBudget(updatedBudget);
+
+    // Save to localStorage
+    localStorage.setItem('budget-data', JSON.stringify(updatedBudget));
+
+    closeTransactionModal();
+  };
+
+  const getAvailableCategories = () => {
+    if (!budget || !transactionType) return [];
+
+    if (transactionType === 'income') {
+      return budget.groups.find(g => g.type === 'income')?.categories || [];
+    } else {
+      return budget.groups
+        .filter(g => g.type === 'expense' || g.type === 'savings')
+        .flatMap(g => g.categories);
+    }
+  };
+
+  // Budget item management functions
+  const openBudgetItemModal = (groupType: 'income' | 'savings' | 'expense', category?: BudgetCategory) => {
+    setSelectedGroupType(groupType);
+    if (category) {
+      setEditingCategory(category);
+      setBudgetItemForm({
+        name: category.name,
+        icon: category.icon,
+        plannedAmount: category.plannedAmount.toString(),
+        isRecurring: category.isRecurring,
+        recurringFrequency: category.recurringFrequency || 'monthly'
+      });
+    } else {
+      setEditingCategory(null);
+      setBudgetItemForm({
+        name: '',
+        icon: groupType === 'income' ? '💰' : groupType === 'savings' ? '💾' : '💸',
+        plannedAmount: '',
+        isRecurring: false,
+        recurringFrequency: 'monthly'
+      });
+    }
+    setShowBudgetItemModal(true);
+  };
+
+  const closeBudgetItemModal = () => {
+    setShowBudgetItemModal(false);
+    setEditingCategory(null);
+    setSelectedGroupType(null);
+    setBudgetItemForm({
+      name: '',
+      icon: '💰',
+      plannedAmount: '',
+      isRecurring: false,
+      recurringFrequency: 'monthly'
+    });
+  };
+
+  const handleBudgetItemSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!budget || !selectedGroupType || !budgetItemForm.name || !budgetItemForm.plannedAmount) return;
+
+    const amount = parseFloat(budgetItemForm.plannedAmount);
+    if (isNaN(amount)) return;
+
+    const updatedBudget = { ...budget };
+
+    if (editingCategory) {
+      // Edit existing category
+      updatedBudget.groups = updatedBudget.groups.map(group => ({
+        ...group,
+        categories: group.categories.map(cat => {
+          if (cat.id === editingCategory.id) {
+            return {
+              ...cat,
+              name: budgetItemForm.name,
+              icon: budgetItemForm.icon,
+              plannedAmount: amount,
+              isRecurring: budgetItemForm.isRecurring,
+              recurringFrequency: budgetItemForm.isRecurring ? budgetItemForm.recurringFrequency : undefined
+            };
+          }
+          return cat;
+        })
+      }));
+    } else {
+      // Add new category
+      const newCategory: BudgetCategory = {
+        id: `category_${Date.now()}`,
+        name: budgetItemForm.name,
+        icon: budgetItemForm.icon,
+        plannedAmount: amount,
+        spentAmount: 0,
+        transactions: [],
+        order: 999,
+        isRecurring: budgetItemForm.isRecurring,
+        recurringFrequency: budgetItemForm.isRecurring ? budgetItemForm.recurringFrequency : undefined
+      };
+
+      updatedBudget.groups = updatedBudget.groups.map(group => {
+        if (group.type === selectedGroupType) {
+          return {
+            ...group,
+            categories: [...group.categories, newCategory]
+          };
+        }
+        return group;
+      });
+    }
+
+    setBudget(updatedBudget);
+    localStorage.setItem('budget-data', JSON.stringify(updatedBudget));
+    closeBudgetItemModal();
+  };
+
+  const handleDeleteCategory = (categoryId: string) => {
+    if (!budget) return;
+    if (!confirm('Are you sure you want to delete this budget item?')) return;
+
+    const updatedBudget = { ...budget };
+    updatedBudget.groups = updatedBudget.groups.map(group => ({
+      ...group,
+      categories: group.categories.filter(cat => cat.id !== categoryId)
+    }));
+
+    setBudget(updatedBudget);
+    localStorage.setItem('budget-data', JSON.stringify(updatedBudget));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your budget...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!budget) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Budget Found</h2>
+          <p className="text-gray-600 mb-6">Let's create your first budget with AI assistance!</p>
+          <button
+            onClick={() => navigate('/onboarding')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+          >
+            Create Budget
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const totals = calculateTotals();
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Calendar Navigation */}
-        <CalendarNavigation
-          currentMonth={currentMonth}
-          currentYear={currentYear}
-          onMonthChange={handleMonthChange}
-          monthsWithData={monthsWithData}
-        />
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Left Sidebar - Responsive EveryDollar Style Navigation */}
+      <div className={`
+        ${isMobile
+          ? (sidebarCollapsed ? 'w-0 -translate-x-full' : 'w-64 translate-x-0 fixed inset-y-0 z-50')
+          : (sidebarCollapsed ? 'w-16' : 'w-64')
+        }
+        bg-white border-r border-gray-200 flex flex-col transition-all duration-300
+      `}>
+        {/* Logo/Header */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-green-500 rounded flex items-center justify-center">
+                <span className="text-white font-bold text-sm">$</span>
+              </div>
+              {!sidebarCollapsed && (
+                <span className="font-semibold text-gray-900">BudgetBuddy</span>
+              )}
+            </div>
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="text-gray-400 hover:text-gray-600 lg:hidden"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {sidebarCollapsed ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                )}
+              </svg>
+            </button>
+          </div>
+          {!sidebarCollapsed && (
+            <div className="mt-2 text-sm text-gray-600">
+              ${totals.remaining >= 0 ? totals.remaining.toLocaleString() : '0.00'} left to budget
+            </div>
+          )}
+        </div>
 
-        {/* Budget Dashboard */}
-        <BudgetDashboard
-          currentMonth={currentMonth}
-          currentYear={currentYear}
-          onMonthChange={handleMonthChange}
-        />
+        {/* Navigation Menu */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            <li>
+              <a href="#" className={`flex items-center ${sidebarCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3 px-3'} text-blue-600 bg-blue-50 py-2 rounded-lg`}>
+                <span>📊</span>
+                {(!sidebarCollapsed || isMobile) && <span className="font-medium">Budget</span>}
+              </a>
+            </li>
+            <li>
+              <a href="#" className={`flex items-center ${sidebarCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3 px-3'} text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50`}>
+                <span>🏦</span>
+                {(!sidebarCollapsed || isMobile) && (
+                  <>
+                    <span>Accounts</span>
+                    <span className="ml-auto bg-blue-500 text-white text-xs px-2 py-1 rounded-full">New</span>
+                  </>
+                )}
+              </a>
+            </li>
+            <li>
+              <a href="#" className={`flex items-center ${sidebarCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3 px-3'} text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50`}>
+                <span>🗺️</span>
+                {(!sidebarCollapsed || isMobile) && <span>Roadmap</span>}
+              </a>
+            </li>
+            <li>
+              <a href="#" className={`flex items-center ${sidebarCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3 px-3'} text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50`}>
+                <span>💳</span>
+                {(!sidebarCollapsed || isMobile) && <span>Paycheck Planning</span>}
+              </a>
+            </li>
+            <li>
+              <a href="#" className={`flex items-center ${sidebarCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3 px-3'} text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50`}>
+                <span>🎯</span>
+                {(!sidebarCollapsed || isMobile) && <span>Goals</span>}
+              </a>
+            </li>
+            <li>
+              <a href="#" className={`flex items-center ${sidebarCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3 px-3'} text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50`}>
+                <span>📈</span>
+                {(!sidebarCollapsed || isMobile) && <span>Insights</span>}
+              </a>
+            </li>
+          </ul>
+        </nav>
+
+        {/* Bottom Section */}
+        <div className="p-4 border-t border-gray-200">
+          <button className={`w-full text-left text-gray-600 hover:text-gray-900 text-sm ${sidebarCollapsed && !isMobile ? 'text-center' : ''}`}>
+            {sidebarCollapsed && !isMobile ? '⚙️' : '⚙️ Settings'}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile Overlay */}
+      {isMobile && !sidebarCollapsed && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setSidebarCollapsed(true)}
+        />
+      )}
+
+      {/* Main Content Area */}
+      <div className={`flex-1 flex ${isMobile && !sidebarCollapsed ? 'lg:ml-0' : ''}`}>
+        {/* Center Column - Budget Categories */}
+        <div className="flex-1 bg-white">
+          {/* Mobile Header */}
+          {isMobile && (
+            <div className="lg:hidden p-4 border-b border-gray-200 bg-white">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setSidebarCollapsed(false)}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <h1 className="text-lg font-semibold text-gray-900">
+                  {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </h1>
+                <div className="w-6"></div> {/* Spacer for centering */}
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Header */}
+          <div className={`p-6 border-b border-gray-200 ${isMobile ? 'hidden lg:block' : ''}`}>
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-semibold text-gray-900">
+                {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </h1>
+              <div className="flex items-center space-x-4">
+                <button className="text-gray-400 hover:text-gray-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button className="text-gray-400 hover:text-gray-600">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Budget Categories */}
+          <div className="p-4 lg:p-6 space-y-6 lg:space-y-8">
+            {budget.groups.map(group => (
+              <div key={group.id} className="space-y-4">
+                {/* Group Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-green-500 text-sm">●</span>
+                    <h2 className="text-lg font-semibold text-gray-900">{group.name}</h2>
+                    <span className="text-sm text-gray-500">for {new Date().toLocaleDateString('en-US', { month: 'long' })}</span>
+                    <button className="text-gray-400 hover:text-gray-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="hidden lg:flex items-center space-x-6 text-sm">
+                    <div className="text-center">
+                      <div className="text-gray-500">Planned</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-gray-500">Received</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Categories */}
+                <div className="space-y-2">
+                  {group.categories.map(category => (
+                    <div key={category.id} className="group/item flex flex-col lg:flex-row lg:items-center justify-between py-3 px-4 hover:bg-gray-50 rounded-lg space-y-2 lg:space-y-0">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2">
+                          <span>{category.icon}</span>
+                          <div className="font-medium text-gray-900">{category.name}</div>
+                        </div>
+                        {category.isRecurring && (
+                          <div className="text-xs text-green-600 ml-6">
+                            {category.recurringFrequency} • Next: {category.nextDueDate && new Date(category.nextDueDate).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between lg:space-x-4">
+                        <div className="text-left lg:text-right lg:w-20">
+                          <div className="text-xs lg:hidden text-gray-500">Planned</div>
+                          <div className="font-medium">${category.plannedAmount.toLocaleString()}</div>
+                        </div>
+                        <div className="text-right lg:w-20">
+                          <div className="text-xs lg:hidden text-gray-500">
+                            {group.type === 'income' ? 'Received' : 'Spent'}
+                          </div>
+                          <div className={`font-medium ${category.spentAmount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                            ${category.spentAmount.toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => openBudgetItemModal(group.type, category)}
+                            className="p-1 text-gray-400 hover:text-blue-600 rounded"
+                            title="Edit"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(category.id)}
+                            className="p-1 text-gray-400 hover:text-red-600 rounded"
+                            title="Delete"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Add Item Button */}
+                  <button
+                    onClick={() => openBudgetItemModal(group.type)}
+                    className="w-full text-left py-3 px-4 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    + Add Item
+                  </button>
+                </div>
+
+                {/* Group Total */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between py-3 px-4 bg-gray-50 rounded-lg font-semibold space-y-2 lg:space-y-0">
+                  <div className="text-gray-900">Total {group.name}</div>
+                  <div className="flex items-center justify-between lg:space-x-8">
+                    <div className="text-left lg:text-right lg:w-20">
+                      <div className="text-xs lg:hidden text-gray-500 font-normal">Planned</div>
+                      <div>${group.categories.reduce((sum, cat) => sum + cat.plannedAmount, 0).toLocaleString()}</div>
+                    </div>
+                    <div className="text-right lg:w-20">
+                      <div className="text-xs lg:hidden text-gray-500 font-normal">Received</div>
+                      <div>${group.categories.reduce((sum, cat) => sum + cat.spentAmount, 0).toLocaleString()}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Sidebar - Transactions */}
+        <div className="hidden lg:block w-80 bg-white border-l border-gray-200">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-medium text-gray-500">Summary</h3>
+              <h3 className="text-lg font-semibold text-blue-600">Transactions</h3>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex space-x-6 mb-6 border-b border-gray-200">
+              <button className="pb-2 text-sm font-medium text-gray-500">New</button>
+              <button className="pb-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">Tracked</button>
+              <button className="pb-2 text-sm font-medium text-gray-500">Deleted</button>
+            </div>
+
+            {/* Search */}
+            <div className="mb-6">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Recent Transactions */}
+            <div className="space-y-4">
+              <div className="text-sm text-gray-500 mb-4">{new Date().toLocaleDateString('en-US', { month: 'long' })}</div>
+
+              {/* Real transactions from budget data */}
+              <div className="space-y-3">
+                {budget.groups.flatMap(group =>
+                  group.categories.flatMap(cat =>
+                    cat.transactions.map(transaction => {
+                      const isIncome = group.type === 'income';
+                      return (
+                        <div key={transaction.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <div className={`w-8 h-8 ${isIncome ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center`}>
+                            <span className={`${isIncome ? 'text-green-600' : 'text-red-600'} text-xs`}>$</span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">{transaction.description}</div>
+                            <div className="text-xs text-gray-500">{cat.name}</div>
+                          </div>
+                          <div className={`text-sm font-medium ${isIncome ? 'text-green-600' : 'text-red-600'}`}>
+                            {isIncome ? '+' : '-'}${transaction.amount.toLocaleString()}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )
+                ).sort((a, b) => new Date(b.key as string).getTime() - new Date(a.key as string).getTime())}
+
+                {budget.groups.every(g => g.categories.every(c => c.transactions.length === 0)) && (
+                  <div className="text-center py-8 text-gray-400">
+                    <p className="text-sm">No transactions yet</p>
+                    <p className="text-xs mt-1">Use the + button to add your first transaction</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Connect Bank Button */}
+              <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">🏦</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-blue-900">Connect Your Bank</div>
+                    <div className="text-xs text-blue-700">Try the premium version of EveryDollar</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Action Button */}
+      <div className="fixed bottom-6 right-6 z-40">
+        {showFAB && (
+          <div className="mb-4 space-y-2">
+            <button
+              onClick={() => openTransactionModal('income')}
+              className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-full shadow-lg transition-all"
+            >
+              <span className="text-lg">+</span>
+              <span className="font-medium">Income</span>
+            </button>
+            <button
+              onClick={() => openTransactionModal('expense')}
+              className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-full shadow-lg transition-all"
+            >
+              <span className="text-lg">-</span>
+              <span className="font-medium">Expense</span>
+            </button>
+          </div>
+        )}
+        <button
+          onClick={() => setShowFAB(!showFAB)}
+          className="w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all"
+        >
+          <svg className={`w-6 h-6 transition-transform ${showFAB ? 'rotate-45' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Transaction Modal */}
+      {showTransactionModal && transactionType && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {transactionType === 'income' ? 'Plan an Income' : 'Plan an Expense'}
+              </h3>
+              <button
+                onClick={closeTransactionModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleTransactionSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category
+                </label>
+                <select
+                  value={transactionForm.categoryId}
+                  onChange={(e) => setTransactionForm(prev => ({ ...prev, categoryId: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select a category...</option>
+                  {getAvailableCategories().map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Amount
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={transactionForm.amount}
+                    onChange={(e) => setTransactionForm(prev => ({ ...prev, amount: e.target.value }))}
+                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  value={transactionForm.description}
+                  onChange={(e) => setTransactionForm(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter description..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={transactionForm.date}
+                  onChange={(e) => setTransactionForm(prev => ({ ...prev, date: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeTransactionModal}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Add Transaction
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Budget Item Modal */}
+      {showBudgetItemModal && selectedGroupType && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {editingCategory ? 'Edit' : 'Add'} {selectedGroupType === 'income' ? 'Income' : selectedGroupType === 'savings' ? 'Savings' : 'Expense'} Item
+              </h3>
+              <button
+                onClick={closeBudgetItemModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleBudgetItemSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={budgetItemForm.name}
+                  onChange={(e) => setBudgetItemForm(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., Groceries, Rent, Salary..."
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Icon
+                </label>
+                <input
+                  type="text"
+                  value={budgetItemForm.icon}
+                  onChange={(e) => setBudgetItemForm(prev => ({ ...prev, icon: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g., 💰 🏠 🚗 🍔"
+                  maxLength={2}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Planned Amount
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={budgetItemForm.plannedAmount}
+                    onChange={(e) => setBudgetItemForm(prev => ({ ...prev, plannedAmount: e.target.value }))}
+                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="isRecurring"
+                  checked={budgetItemForm.isRecurring}
+                  onChange={(e) => setBudgetItemForm(prev => ({ ...prev, isRecurring: e.target.checked }))}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="isRecurring" className="text-sm font-medium text-gray-700">
+                  Recurring
+                </label>
+              </div>
+
+              {budgetItemForm.isRecurring && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Frequency
+                  </label>
+                  <select
+                    value={budgetItemForm.recurringFrequency}
+                    onChange={(e) => setBudgetItemForm(prev => ({ ...prev, recurringFrequency: e.target.value as any }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="weekly">Weekly</option>
+                    <option value="bi-weekly">Bi-weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="annually">Annually</option>
+                  </select>
+                </div>
+              )}
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeBudgetItemModal}
+                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {editingCategory ? 'Save Changes' : 'Add Item'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

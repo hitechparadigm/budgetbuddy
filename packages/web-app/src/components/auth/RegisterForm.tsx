@@ -16,7 +16,7 @@ import { ApiClientError } from '../../utils/apiClient';
 // ============================================================================
 
 interface RegisterFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (isNewUser?: boolean) => void;
   onSwitchToLogin?: () => void;
 }
 
@@ -60,8 +60,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       // Reset form on success
       reset();
 
-      // Call success callback
-      onSuccess?.();
+      // Call success callback with isNewUser flag
+      onSuccess?.(true);
     } catch (error) {
       console.error('Registration error:', error);
 

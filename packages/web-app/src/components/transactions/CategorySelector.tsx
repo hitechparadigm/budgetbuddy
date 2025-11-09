@@ -6,13 +6,15 @@ interface CategorySelectorProps {
   selectedCategoryId: string;
   onCategorySelect: (categoryId: string, categoryName: string) => void;
   error?: string;
+  theme?: 'light' | 'dark';
 }
 
 export const CategorySelector: React.FC<CategorySelectorProps> = ({
   type,
   selectedCategoryId,
   onCategorySelect,
-  error
+  error,
+  theme = 'dark'
 }) => {
   const [showCategories, setShowCategories] = useState(false);
 
@@ -25,15 +27,33 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
     setShowCategories(false);
   };
 
+  // TEMPORARY FIX: Force dark theme for category selector to ensure visibility
+  const effectiveTheme = 'dark'; // Force dark theme until theme context is fixed
+
+  console.log('CategorySelector theme:', effectiveTheme); // Debug log
+
+  // Theme-aware styles with forced contrast
+  const buttonStyle = {
+    backgroundColor: effectiveTheme === 'dark' ? '#1f2937' : '#ffffff',
+    color: effectiveTheme === 'dark' ? '#ffffff' : '#1f2937',
+    borderColor: error ? '#ef4444' : (effectiveTheme === 'dark' ? '#4b5563' : '#d1d5db'),
+    border: '2px solid'
+  };
+
+  const dropdownStyle = {
+    backgroundColor: effectiveTheme === 'dark' ? '#1f2937' : '#ffffff',
+    borderColor: effectiveTheme === 'dark' ? '#4b5563' : '#d1d5db',
+    border: '2px solid'
+  };
+
   return (
     <div className="relative">
       {/* Selected Category Display */}
       <button
         type="button"
         onClick={() => setShowCategories(!showCategories)}
-        className={`w-full flex items-center justify-between p-3 rounded-lg border ${
-          error ? 'border-red-500' : 'border-gray-600'
-        } bg-gray-800 text-white hover:bg-gray-700 transition-colors`}
+        className="w-full flex items-center justify-between p-3 rounded-lg border hover:opacity-90 transition-colors"
+        style={buttonStyle}
       >
         {selectedCategory ? (
           <div className="flex items-center space-x-3">
@@ -43,9 +63,9 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
             <span className="font-medium">{selectedCategory.name}</span>
           </div>
         ) : (
-          <span className="text-gray-400">Select a category</span>
+          <span style={{ color: effectiveTheme === 'dark' ? '#9ca3af' : '#6b7280' }}>Select a category</span>
         )}
-        <span className="text-gray-400">
+        <span style={{ color: effectiveTheme === 'dark' ? '#9ca3af' : '#6b7280' }}>
           {showCategories ? '▲' : '▼'}
         </span>
       </button>
@@ -54,36 +74,52 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
 
       {/* Category Grid */}
       {showCategories && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto">
+        <div
+          className="absolute top-full left-0 right-0 mt-2 border rounded-lg shadow-lg z-10 max-h-80 overflow-y-auto"
+          style={dropdownStyle}
+        >
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-medium">Category</h3>
+              <h3
+                className="font-medium"
+                style={{ color: effectiveTheme === 'dark' ? '#ffffff' : '#1f2937' }}
+              >
+                Category
+              </h3>
               <button
                 onClick={() => setShowCategories(false)}
-                className="text-gray-400 hover:text-white"
+                style={{ color: effectiveTheme === 'dark' ? '#9ca3af' : '#6b7280' }}
+                className="hover:opacity-75"
               >
                 ✕
               </button>
             </div>
 
             <div className="grid grid-cols-1 gap-2">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => handleCategoryClick(category)}
-                  className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                    selectedCategoryId === category.id
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 hover:bg-gray-600 text-white'
-                  }`}
-                >
+              {categories.map((category) => {
+                const isSelected = selectedCategoryId === category.id;
+                const buttonBg = isSelected
+                  ? '#2563eb'
+                  : (effectiveTheme === 'dark' ? '#374151' : '#f3f4f6');
+                const buttonColor = isSelected
+                  ? '#ffffff'
+                  : (effectiveTheme === 'dark' ? '#ffffff' : '#1f2937');
+
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => handleCategoryClick(category)}
+                    className="flex items-center space-x-3 p-3 rounded-lg transition-colors hover:opacity-90"
+                    style={{ backgroundColor: buttonBg, color: buttonColor }}
+                  >
                   <div className={`w-8 h-8 rounded-full ${category.color} flex items-center justify-center text-white text-sm`}>
                     {category.icon}
                   </div>
-                  <span className="font-medium">{category.name}</span>
-                </button>
-              ))}
+                    <span className="font-medium">{category.name}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

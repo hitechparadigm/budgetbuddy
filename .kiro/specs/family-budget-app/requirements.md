@@ -15,6 +15,11 @@ BudgetBuddy is a comprehensive family budgeting application similar to EveryDoll
 - **Admin_Dashboard**: Administrative interface for user management and analytics
 - **Cost_Of_Living_Data**: Regional economic data used for budget recommendations
 - **Multi_Platform_Client**: Applications running on web browsers, iOS, and Android devices
+- **Transaction_Planner**: The interface system for creating and scheduling income and expense transactions
+- **Recurring_Engine**: The system that manages recurring transactions with various frequency options
+- **Category_Manager**: The visual category selection and management system with icons and colors
+- **Balance_Visualizer**: The dashboard component displaying monthly income, expenses, and remaining balance
+- **Calendar_Navigator**: The month-by-month navigation system for budget and transaction management
 
 ## Requirements
 
@@ -99,32 +104,42 @@ BudgetBuddy is a comprehensive family budgeting application similar to EveryDoll
 4. THE BudgetBuddy SHALL allow users to edit and delete transactions with automatic budget recalculation
 5. THE BudgetBuddy SHALL maintain transaction history with search functionality
 
-### Requirement 7: Freemium Subscription Model
+### Requirement 7: Enhanced Premium Subscription Model
 
-**User Story:** As a user, I want to choose between free and premium subscription tiers, so that I can access features appropriate to my needs and budget.
-
-#### Acceptance Criteria
-
-1. THE BudgetBuddy SHALL provide Free_Tier access with Google AdSense advertisements
-2. THE BudgetBuddy SHALL offer Premium_Tier subscription with ad-free experience and advanced features
-3. WHEN a user subscribes to Premium_Tier, THE BudgetBuddy SHALL remove all advertisements immediately
-4. THE Premium_Tier SHALL include weekly financial tips via email and advanced reporting features
-5. THE BudgetBuddy SHALL integrate with Stripe for secure payment processing and subscription management
-
-### Requirement 7: Dynamic Budget Category Management
-
-**User Story:** As a user, I want to easily add, edit, and organize budget groups and categories, so that I can customize my budget structure to match my specific financial needs.
+**User Story:** As a user, I want to choose between free and premium subscription tiers with comprehensive features, so that I can access advanced budgeting tools, AI assistance, and enhanced functionality.
 
 #### Acceptance Criteria
 
-1. THE BudgetBuddy SHALL allow users to create custom income, savings, and expense groups
-2. THE BudgetBuddy SHALL allow users to add, edit, and delete categories within any group
-3. THE BudgetBuddy SHALL provide region-specific default categories based on user location during onboarding
-4. WHERE user location is Canada, THE BudgetBuddy SHALL include RRSP, TFSA, and RESP savings categories by default using pre-seeded data for approximately 25 major Canadian cities
-5. WHERE user location is United States, THE BudgetBuddy SHALL include 401k, IRA, and HSA categories by default using pre-seeded data for approximately 25 major US cities
-6. THE BudgetBuddy SHALL allow users to reorder categories within groups through drag-and-drop functionality
-7. THE Cost_Of_Living_Data SHALL inform budget recommendations based on user's specific city and region
-8. THE BudgetBuddy SHALL support multiple currencies and regional formatting
+1. THE BudgetBuddy SHALL provide Free_Tier access with Google AdSense advertisements and basic features
+2. THE BudgetBuddy SHALL offer Premium_Tier subscription with three pricing options: Monthly ($1.39), Annual ($6.99), and Lifetime ($9.99)
+3. THE BudgetBuddy SHALL provide a 3-day free trial for all premium features
+4. WHEN trial period expires, THE BudgetBuddy SHALL automatically convert to paid subscription unless cancelled
+5. THE Premium_Tier SHALL include AI chat financial assistant with personalized recommendations
+6. THE Premium_Tier SHALL provide unlimited custom categories with icon and color customization
+7. THE Premium_Tier SHALL include detailed analytics and spending pattern analysis
+8. THE Premium_Tier SHALL offer unlimited financial goals and account management
+9. THE Premium_Tier SHALL provide passcode protection and enhanced security features
+10. THE Premium_Tier SHALL include data export capabilities in CSV and PDF formats
+11. THE Premium_Tier SHALL remove all advertisements for ad-free experience
+12. THE BudgetBuddy SHALL integrate with Stripe for secure payment processing and subscription management
+
+### Requirement 8: Enhanced Category Management System
+
+**User Story:** As a user, I want to customize budget categories with icons, colors, and advanced organization, so that I can create a personalized and visually appealing budget structure.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide predefined categories with professional icons (Home, Food, Health, Restaurants, Sport, Car, Entertainment)
+2. THE BudgetBuddy SHALL allow Free_Tier users to use predefined categories with limited customization
+3. THE BudgetBuddy SHALL allow Premium_Tier users to create unlimited custom categories with full customization
+4. WHEN creating categories, THE BudgetBuddy SHALL provide icon library selection with 50+ professional icons
+5. THE BudgetBuddy SHALL support color customization for categories with predefined color palette
+6. THE BudgetBuddy SHALL allow users to edit category names with inline editing functionality
+7. THE BudgetBuddy SHALL provide region-specific default categories based on user location during onboarding
+8. WHERE user location is Canada, THE BudgetBuddy SHALL include RRSP, TFSA, and RESP savings categories by default
+9. WHERE user location is United States, THE BudgetBuddy SHALL include 401k, IRA, and HSA categories by default
+10. THE BudgetBuddy SHALL allow users to reorder categories within groups through drag-and-drop functionality
+11. THE BudgetBuddy SHALL support multiple currencies (CAD, USD) and regional formatting
 
 ### Requirement 8: Administrative Management
 
@@ -217,7 +232,109 @@ rement 13: Code Documentation and Maintainability (MANDATORY)
 9. THE BudgetBuddy SHALL implement infrastructure as code validation before deployment
 10. THE BudgetBuddy SHALL include post-deployment health checks and monitoring
 
-### Requirement 15: AWS Resource Management and Documentation Standards (MANDATORY)
+### Requirement 15: Advanced Budget Creation and Management
+
+**User Story:** As a user, I want to create budgets with advanced settings including frequency, notifications, and limits, so that I can automate my budget management and receive timely alerts.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL support budget types: Inflow (income) and Expense with clear visual distinction
+2. WHEN creating budgets, THE BudgetBuddy SHALL offer frequency options: Weekly, Bi-weekly, Monthly, and Custom
+3. THE BudgetBuddy SHALL allow users to set Target amounts for Inflow budgets and Limit amounts for Expense budgets
+4. THE BudgetBuddy SHALL provide notification threshold settings (1%, 25%, 50%, 75%, 100%) for expense budgets
+5. WHEN expense spending reaches configured thresholds, THE BudgetBuddy SHALL send notifications to users
+6. THE BudgetBuddy SHALL support multiple currencies (CAD, USD) with proper formatting and conversion
+7. THE BudgetBuddy SHALL provide budget summary view showing progress and remaining amounts
+8. THE BudgetBuddy SHALL allow users to edit budget settings after creation
+9. THE BudgetBuddy SHALL calculate and display projected monthly amounts based on frequency settings
+10. THE BudgetBuddy SHALL provide visual progress indicators for budget utilization
+
+### Requirement 16: AI Financial Assistant and Chat System
+
+**User Story:** As a premium user, I want an AI-powered financial assistant, so that I can receive personalized advice and smart recommendations based on my spending patterns and financial goals.
+
+#### Acceptance Criteria
+
+1. THE AI_Assistant SHALL be available exclusively to Premium_Tier users
+2. THE AI_Assistant SHALL analyze user income, expenses, and spending patterns to provide personalized recommendations
+3. WHEN users ask financial questions, THE AI_Assistant SHALL provide contextual advice based on their specific budget data
+4. THE AI_Assistant SHALL suggest budget optimizations and identify potential savings opportunities
+5. THE AI_Assistant SHALL provide spending pattern insights and trend analysis
+6. THE AI_Assistant SHALL offer goal-setting recommendations based on user financial capacity
+7. THE AI_Assistant SHALL integrate with AWS Bedrock for natural language processing and financial expertise
+8. THE AI_Assistant SHALL maintain conversation history for context-aware responses
+9. THE AI_Assistant SHALL provide proactive notifications for unusual spending patterns or budget concerns
+10. THE AI_Assistant SHALL respect user privacy and not store sensitive financial details beyond session context
+
+### Requirement 17: Enhanced Analytics and Reporting
+
+**User Story:** As a premium user, I want detailed analytics of my financial data, so that I can understand spending patterns, track progress, and make informed financial decisions.
+
+#### Acceptance Criteria
+
+1. THE Analytics_Engine SHALL provide comprehensive income and expense analysis by category
+2. THE Analytics_Engine SHALL generate spending trend charts and graphs over time periods
+3. THE Analytics_Engine SHALL show percentage breakdowns of spending by category with visual representations
+4. THE Analytics_Engine SHALL provide month-over-month and year-over-year comparisons
+5. THE Analytics_Engine SHALL identify spending patterns and seasonal variations
+6. THE Analytics_Engine SHALL generate budget variance reports showing planned vs actual spending
+7. THE Analytics_Engine SHALL provide goal progress tracking with visual indicators
+8. THE Analytics_Engine SHALL offer export functionality for reports in PDF and CSV formats
+9. THE Analytics_Engine SHALL be available exclusively to Premium_Tier users
+10. THE Analytics_Engine SHALL provide predictive insights for future spending based on historical data
+
+### Requirement 18: Goal Management and Account Tracking
+
+**User Story:** As a user, I want to set financial goals and manage multiple accounts, so that I can track progress toward objectives and organize finances across different institutions.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL allow Free_Tier users to create up to 3 financial goals
+2. THE BudgetBuddy SHALL allow Premium_Tier users to create unlimited financial goals
+3. WHEN creating goals, THE BudgetBuddy SHALL support goal types: savings, debt payoff, and spending targets
+4. THE BudgetBuddy SHALL link goals to specific transactions and budget categories for automatic progress tracking
+5. THE BudgetBuddy SHALL provide visual progress indicators and milestone notifications for goals
+6. THE BudgetBuddy SHALL allow Free_Tier users to manage up to 2 financial accounts
+7. THE BudgetBuddy SHALL allow Premium_Tier users to manage unlimited financial accounts
+8. THE BudgetBuddy SHALL support account types: checking, savings, credit cards, and investment accounts
+9. THE BudgetBuddy SHALL provide account-specific budget allocation and tracking
+10. THE BudgetBuddy SHALL generate per-account financial summaries and balance tracking
+
+### Requirement 19: Enhanced Security and Privacy Features
+
+**User Story:** As a premium user, I want advanced security features including passcode protection and data export, so that my financial information remains secure and accessible when needed.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide 4-digit passcode protection for Premium_Tier users
+2. THE BudgetBuddy SHALL support biometric authentication (fingerprint, face recognition) where available
+3. THE BudgetBuddy SHALL encrypt all financial data at rest and in transit using industry-standard encryption
+4. THE BudgetBuddy SHALL provide data export functionality in CSV and PDF formats for Premium_Tier users
+5. THE BudgetBuddy SHALL allow users to download complete financial history and reports
+6. THE BudgetBuddy SHALL implement session timeout and automatic logout for security
+7. THE BudgetBuddy SHALL provide audit logs for account access and changes
+8. THE BudgetBuddy SHALL ensure Premium_Tier users experience no advertisements
+9. THE BudgetBuddy SHALL comply with financial data protection regulations (PCI DSS, GDPR)
+10. THE BudgetBuddy SHALL provide secure data deletion upon account closure
+
+### Requirement 20: Mobile-First Responsive Design
+
+**User Story:** As a user, I want a mobile-optimized interface with dark theme, so that I can effectively manage my budget on any device with a modern, professional appearance.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL implement a dark theme as the primary interface design
+2. THE BudgetBuddy SHALL provide fully responsive design optimized for mobile, tablet, and desktop devices
+3. WHEN accessing on mobile devices, THE BudgetBuddy SHALL provide touch-optimized controls and gestures
+4. THE BudgetBuddy SHALL maintain feature parity across all device sizes and orientations
+5. THE BudgetBuddy SHALL implement progressive web app (PWA) capabilities for mobile installation
+6. THE BudgetBuddy SHALL provide offline capability for viewing budget data when connectivity is limited
+7. THE BudgetBuddy SHALL use modern UI components with smooth animations and transitions
+8. THE BudgetBuddy SHALL implement swipe gestures for navigation and quick actions on mobile
+9. THE BudgetBuddy SHALL provide haptic feedback for user interactions where supported
+10. THE BudgetBuddy SHALL optimize loading performance for mobile networks
+
+### Requirement 21: AWS Resource Management and Documentation Standards (MANDATORY)
 
 **User Story:** As a DevOps engineer and cost manager, I want all AWS resources to follow consistent naming, tagging, and documentation standards, so that I can easily identify, manage, and track costs for BudgetBuddy infrastructure.
 
@@ -231,3 +348,78 @@ rement 13: Code Documentation and Maintainability (MANDATORY)
 6. THE BudgetBuddy SHALL tag resources with appropriate cost allocation tags for expense tracking and budgeting
 7. THE BudgetBuddy SHALL include service-specific tags (e.g., Runtime, Handler, DataType) for operational management
 8. THE BudgetBuddy SHALL maintain documentation explaining the tagging strategy and naming conventions
+
+### Requirement 22: Enhanced Transaction Planning Interface
+
+**User Story:** As a user, I want an intuitive transaction planning interface with visual category selection and comprehensive scheduling options, so that I can efficiently plan and organize my income and expenses.
+
+#### Acceptance Criteria
+
+1. THE Transaction_Planner SHALL provide separate "Plan an income" and "Plan an outcome" interfaces with distinct visual styling
+2. WHEN planning transactions, THE Category_Manager SHALL display categories with professional icons including Salary, Investment, Rewards, Gifts, Business, and Other for income
+3. THE Category_Manager SHALL provide expense categories with icons including Supermarket, Clothing, House, Entertainment, Transport, Travel, Education, Food, Work, and Electronics
+4. THE Transaction_Planner SHALL support amount entry with currency selection (CAD, USD) and proper formatting
+5. THE Transaction_Planner SHALL include date and time picker integration for precise transaction scheduling
+6. THE Transaction_Planner SHALL provide a "MORE" expandable section for additional transaction details including Notes field
+7. THE Transaction_Planner SHALL include "Create" and "Cancel" action buttons with appropriate confirmation flows
+8. WHEN users select categories, THE Category_Manager SHALL provide visual feedback and maintain selection state
+
+### Requirement 23: Advanced Recurring Transaction System
+
+**User Story:** As a user, I want comprehensive recurring transaction management with flexible frequency options and end date controls, so that I can automate my regular income and expenses efficiently.
+
+#### Acceptance Criteria
+
+1. THE Recurring_Engine SHALL provide frequency options including "Every month", "Every week", "Every two weeks", and custom intervals
+2. WHEN setting up recurring transactions, THE Recurring_Engine SHALL offer "On last day of month" checkbox option for month-end transactions
+3. THE Recurring_Engine SHALL support "Repeats every [X]" with customizable interval numbers for flexible scheduling
+4. THE Recurring_Engine SHALL provide end date options including "Never" for indefinite recurring transactions and specific end dates
+5. THE Recurring_Engine SHALL calculate and display the next occurrence date for all recurring transactions
+6. THE Recurring_Engine SHALL automatically generate future transaction instances based on the configured frequency
+7. WHEN recurring transactions are created, THE Budget_Engine SHALL incorporate projected amounts into monthly budget calculations
+8. THE Recurring_Engine SHALL allow users to modify or cancel recurring transaction series with options to affect future instances only or entire series
+
+### Requirement 24: Visual Balance and Calendar Navigation System
+
+**User Story:** As a user, I want a clear visual representation of my monthly financial balance with intuitive calendar navigation, so that I can quickly understand my financial position and navigate between different time periods.
+
+#### Acceptance Criteria
+
+1. THE Balance_Visualizer SHALL display monthly balance prominently with currency formatting (e.g., "+CAS 4,360.00")
+2. THE Balance_Visualizer SHALL show separate totals for Income and Expenses with color-coded indicators (green for income, red for expenses)
+3. THE Calendar_Navigator SHALL provide month-by-month timeline navigation with clear month/year labels (NOV 25, DEC 25, JAN 26)
+4. THE Calendar_Navigator SHALL highlight the current month and allow easy navigation to previous and future months
+5. THE Balance_Visualizer SHALL calculate and display the net balance (Income minus Expenses) in real-time
+6. THE Calendar_Navigator SHALL show visual indicators for months with existing budget data versus empty months
+7. THE Balance_Visualizer SHALL provide weekly or date range breakdowns within each month (e.g., "Nov 01 - 02", "Nov 02 - 09")
+8. THE Calendar_Navigator SHALL support quick navigation to "Today" and provide smooth transitions between months
+
+### Requirement 25: Enhanced Category Icon and Visual Management
+
+**User Story:** As a user, I want visually appealing category management with professional icons and intuitive organization, so that I can easily identify and manage my budget categories.
+
+#### Acceptance Criteria
+
+1. THE Category_Manager SHALL provide a comprehensive icon library with professional, recognizable symbols for each category type
+2. THE Category_Manager SHALL organize income categories with appropriate icons: dollar sign for Salary, trending chart for Investment, medal for Rewards, gift box for Gifts, briefcase for Business, and dots for Other
+3. THE Category_Manager SHALL organize expense categories with intuitive icons: shopping cart for Supermarket, shirt for Clothing, house for House, entertainment symbol for Entertainment, car for Transport, plane for Travel, graduation cap for Education, apple for Food, laptop for Work, and plug for Electronics
+4. THE Category_Manager SHALL support category reordering through drag-and-drop functionality within each group
+5. THE Category_Manager SHALL provide visual feedback when categories are selected, including highlighting and state changes
+6. THE Category_Manager SHALL maintain consistent icon sizing and styling across all platforms (web, iOS, Android)
+7. THE Category_Manager SHALL allow Premium_Tier users to upload custom icons or select from an extended icon library
+8. THE Category_Manager SHALL support color customization for categories while maintaining accessibility standards
+
+### Requirement 26: Streamlined Transaction Entry Workflow
+
+**User Story:** As a user, I want a streamlined workflow for entering transactions with smart defaults and minimal friction, so that I can quickly record my financial activities without interrupting my daily routine.
+
+#### Acceptance Criteria
+
+1. THE Transaction_Planner SHALL provide floating action buttons for quick access to "Expense" and "Income" entry from the main dashboard
+2. THE Transaction_Planner SHALL remember user preferences for frequently used categories and suggest them first
+3. THE Transaction_Planner SHALL auto-populate the current date and time while allowing easy modification
+4. THE Transaction_Planner SHALL provide smart amount formatting with automatic decimal placement and currency symbols
+5. THE Transaction_Planner SHALL support quick entry mode with minimal required fields (amount, category) and optional detailed mode
+6. THE Transaction_Planner SHALL validate input in real-time and provide immediate feedback for errors or missing information
+7. THE Transaction_Planner SHALL support batch entry for multiple transactions with similar properties
+8. THE Transaction_Planner SHALL provide confirmation screens showing transaction details before final submission
