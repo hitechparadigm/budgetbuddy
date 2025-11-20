@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Monitor CI/CD Pipeline",
+  "description": "Automatically check GitHub Actions status and fix failures by executing the check-cicd-status.js script",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "node scripts/check-cicd-status.js"
+  }
+}

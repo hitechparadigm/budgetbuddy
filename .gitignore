@@ -113,3 +113,7 @@ dist/
 
 # Turborepo
 .turbo/
+
+#
+ Kiro CI/CD status files
+.kiro/cicd-status/*.json
