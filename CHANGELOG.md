@@ -1,5 +1,78 @@
 # Changelog
 
+## [1.7.0] - 2025-11-19
+
+### Added
+- 📊 **Summary View** - Visual budget overview in right sidebar
+  - Circular progress chart showing total income
+  - Three-column stats display (Planned/Spent/Remaining)
+  - Color-coded category breakdown with percentages
+  - Tab system to switch between Summary and Transactions
+- 🎨 **Responsive Layout Improvements** - Better tablet/desktop experience
+  - Fixed column alignment for Planned/Received amounts
+  - Proper sidebar toggle behavior on tablet sizes (768px+)
+  - Hamburger menu for sidebar access on smaller screens
+  - Transaction panel visible on tablet (768px+) instead of only desktop
+- 📱 **Design Scope Clarification** - Updated specs for web app focus
+  - Desktop (1024px+): Full three-column layout
+  - Tablet (768px-1024px): Collapsible sidebar with responsive columns
+  - Mobile landscape: Workable layout for horizontal viewing
+  - Native mobile app: Separate future project (not in current scope)
+
+### Fixed
+- 🐛 **Column Alignment Issue** - Fixed Planned/Received columns not aligning vertically
+  - Root cause: Edit/delete buttons taking up space even when invisible
+  - Solution: Added fixed widths (w-24) and flex-shrink-0 to prevent column shifting
+  - Added spacer (w-16) for button container to maintain consistent alignment
+- 🐛 **Responsive Breakpoint Issues** - Changed from lg (1024px) to md (768px)
+  - Column headers now visible on tablet
+  - Side-by-side layout works on tablet sizes
+  - Proper responsive behavior across all breakpoints
+- 🐛 **Sidebar Visibility** - Fixed sidebar completely hidden on tablet
+  - Added hamburger menu button in header
+  - Sidebar now toggles as overlay on tablet/mobile
+  - Dark overlay when sidebar is open
+
+### Updated Documentation
+- 📚 **design.md** - Updated responsive design section to focus on web app
+  - Removed mobile portrait specifications (bottom tabs, single-view)
+  - Added note about separate native mobile app project
+  - Clarified tablet and landscape mobile behavior
+- 📚 **requirements.md** - Updated Requirement 4 acceptance criteria
+  - Removed mobile-specific requirements
+  - Added tablet responsive requirements
+  - Clarified desktop/tablet/landscape scope
+
+### Technical Improvements
+- 🏗️ **Tab System** - Added state management for Summary/Transactions toggle
+- 🎯 **Fixed-Width Columns** - Implemented consistent column widths across all rows
+  - Column headers: w-24 (96px) for each amount column
+  - Category rows: w-24 with flex-shrink-0
+  - Total rows: w-24 with matching spacers
+  - Button container: w-16 (64px) fixed width
+- 🎨 **Visual Calculations** - Dynamic percentage calculations for category breakdown
+- 📦 **Color System** - Automatic color assignment for category indicators
+
+### Progress Metrics
+- Overall completion: 97% (up from 95%)
+- Responsive Design: 100% complete (web app scope)
+- Summary View: 100% complete
+- Column Alignment: 100% complete
+- Documentation: 100% complete
+
+### Lessons Learned
+- **Invisible Elements Take Space** - Elements with opacity-0 still affect layout
+  - Solution: Use fixed widths and flex-shrink-0 to prevent shifting
+  - Alternative: Position buttons absolutely or use visibility:hidden
+- **Responsive Breakpoints** - Tailwind's md (768px) vs lg (1024px) matters
+  - md: Tablets and larger
+  - lg: Desktop and larger
+  - Choose breakpoint based on when layout should change
+- **Scope Management** - Separating web app from mobile app improves focus
+  - Web app can optimize for desktop/tablet without mobile compromises
+  - Native mobile app can use platform-specific patterns
+  - Clearer requirements and design decisions
+
 ## [1.6.0] - 2025-11-09
 
 ### Added
