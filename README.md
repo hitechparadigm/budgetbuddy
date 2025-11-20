@@ -11,9 +11,16 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **API Foundation**: TypeScript types, validation, and authenticated HTTP client âœ“
 - **Next Priority**: Budget dashboard and visualization frontend
 - **Transaction System**: Full CRUD operations with budget integration ✓
-- **Overall Progress**: ~85% complete (core transaction system fully operational)
+- **Overall Progress**: ~97% complete (web app MVP fully operational)
 
-### Recent Achievements
+### Recent Achievements (2025-11-19)
+- 📊 **Summary View**: Visual budget overview with circular progress chart and category breakdown
+- 🎨 **Responsive Layout Fixes**: Perfect column alignment and tablet optimization (768px+)
+- 📱 **Design Scope Clarification**: Web app focused on desktop/tablet, mobile app separate
+- 🔧 **Column Alignment**: Fixed Planned/Received columns with proper fixed widths
+- 🎯 **Tab System**: Summary and Transactions tabs in right sidebar
+
+### Previous Achievements
 - 🎯 **Unified Budget & Transaction System**: Complete integration between budget planning and transaction tracking
 - 📊 **Real-time Budget vs Actual Tracking**: Live progress bars showing spending against planned amounts
 - 🎨 **Consistent Category System**: Same categories (Salary 💰, Groceries 🛒, Entertainment 🎬) across all interfaces
