@@ -494,11 +494,7 @@ export const BudgetPage: React.FC = () => {
               </svg>
             </button>
           </div>
-          {!sidebarCollapsed && (
-            <div className="mt-2 text-sm text-gray-600">
-              ${totals.remaining >= 0 ? totals.remaining.toLocaleString() : '0.00'} left to budget
-            </div>
-          )}
+
         </div>
 
         {/* Navigation Menu */}
@@ -576,7 +572,7 @@ export const BudgetPage: React.FC = () => {
                   <h1 className="text-lg font-semibold text-gray-900">
                     {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </h1>
-                  <p className="text-sm text-green-600 font-medium">
+                  <p className={`text-sm font-medium ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
                     ${totals.remaining.toLocaleString()} left to budget
                   </p>
                 </div>
@@ -604,7 +600,7 @@ export const BudgetPage: React.FC = () => {
                   <h1 className="text-2xl font-semibold text-gray-900">
                     {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </h1>
-                  <p className="text-sm text-green-600 font-medium mt-1">
+                  <p className={`text-sm font-medium mt-1 ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
                     ${totals.remaining.toLocaleString()} left to budget
                   </p>
                 </div>
