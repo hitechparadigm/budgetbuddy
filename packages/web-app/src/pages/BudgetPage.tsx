@@ -84,6 +84,42 @@ export const BudgetPage: React.FC = () => {
   // Right sidebar tab state
   const [activeTab, setActiveTab] = useState<'summary' | 'transactions'>('transactions');
 
+  // Right sidebar width state
+  const [sidebarWidth, setSidebarWidth] = useState(400); // Default 400px (larger than w-80 which is 320px)
+  const [isResizing, setIsResizing] = useState(false);
+
+  // Handle sidebar resize
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsResizing(true);
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+
+      const newWidth = window.innerWidth - e.clientX;
+      // Min width: 320px, Max width: 600px
+      if (newWidth >= 320 && newWidth <= 600) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
   // Handle responsive behavior
   useEffect(() => {
     const checkScreenSize = () => {
@@ -739,7 +775,18 @@ export const BudgetPage: React.FC = () => {
         </div>
 
         {/* Right Sidebar - Summary/Transactions */}
-        <div className="hidden md:block w-80 bg-white border-l border-gray-200">
+        <div
+          className="hidden md:block bg-white border-l border-gray-200 relative"
+          style={{ width: `${sidebarWidth}px` }}
+        >
+          {/* Resize Handle */}
+          <div
+            className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 transition-colors group"
+            onMouseDown={handleMouseDown}
+            style={{ marginLeft: '-2px' }}
+          >
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-12 bg-gray-300 rounded-full group-hover:bg-blue-500 transition-colors"></div>
+          </div>
           <div className="p-6">
             {/* Main Tabs - Summary / Transactions */}
             <div className="flex items-center justify-center space-x-8 mb-6">
