@@ -908,7 +908,7 @@ export const BudgetPage: React.FC = () => {
                     </div>
                     <div>
                       <div className="text-sm font-medium text-blue-900">Connect Your Bank</div>
-                      <div className="text-xs text-blue-700">Try the premium version of EveryDollar</div>
+                      <div className="text-xs text-blue-700">Try the premium version of BudgetBuddy</div>
                     </div>
                   </div>
                 </div>
