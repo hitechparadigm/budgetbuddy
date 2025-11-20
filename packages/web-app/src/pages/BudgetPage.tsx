@@ -644,7 +644,11 @@ export const BudgetPage: React.FC = () => {
                 {/* Categories */}
                 <div className="space-y-2">
                   {group.categories.map(category => (
-                    <div key={category.id} className="group/item flex flex-col md:flex-row md:items-center justify-between py-3 px-4 hover:bg-gray-50 rounded-lg space-y-2 md:space-y-0">
+                    <div key={category.id} className={`group/item flex flex-col md:flex-row md:items-center justify-between py-3 px-4 rounded-lg space-y-2 md:space-y-0 ${
+                      category.spentAmount > category.plannedAmount
+                        ? 'bg-red-50 border-l-4 border-red-500 hover:bg-red-100'
+                        : 'hover:bg-gray-50'
+                    }`}>
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <span>{category.icon}</span>
@@ -665,7 +669,13 @@ export const BudgetPage: React.FC = () => {
                           <div className="text-xs md:hidden text-gray-500">
                             {group.type === 'income' ? 'Received' : 'Spent'}
                           </div>
-                          <div className={`font-medium ${category.spentAmount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                          <div className={`font-medium ${
+                            category.spentAmount > category.plannedAmount
+                              ? 'text-red-600'
+                              : category.spentAmount > 0
+                                ? 'text-green-600'
+                                : 'text-gray-400'
+                          }`}>
                             ${category.spentAmount.toLocaleString()}
                           </div>
                         </div>
