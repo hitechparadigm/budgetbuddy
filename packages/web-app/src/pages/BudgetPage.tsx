@@ -821,7 +821,7 @@ export const BudgetPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Category Breakdown */}
+                {/* Category Breakdown by Group */}
                 <div className="space-y-3">
                   {budget.groups.filter(g => g.type !== 'income').map((group, index) => {
                     const groupTotal = group.categories.reduce((sum, cat) => sum + cat.plannedAmount, 0);
@@ -842,6 +842,47 @@ export const BudgetPage: React.FC = () => {
                       </div>
                     );
                   })}
+                </div>
+
+                {/* Individual Category Details */}
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Category Details</h3>
+                  <div className="space-y-4">
+                    {budget.groups.filter(g => g.type !== 'income').map((group) => (
+                      <div key={group.id}>
+                        <div className="text-xs font-semibold text-gray-500 uppercase mb-2">{group.name}</div>
+                        <div className="space-y-2">
+                          {group.categories.map((category) => {
+                            const spent = category.spentAmount;
+                            const planned = category.plannedAmount;
+                            const remaining = planned - spent;
+                            const percentSpent = planned > 0 ? Math.round((spent / planned) * 100) : 0;
+                            const isOverspent = spent > planned;
+
+                            return (
+                              <div key={category.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-2 flex-1">
+                                  <span className="text-sm">{category.icon}</span>
+                                  <span className="text-sm font-medium text-gray-900">{category.name}</span>
+                                </div>
+                                <div className="flex items-center space-x-4 text-xs">
+                                  <div className="text-right">
+                                    <div className={`font-semibold ${isOverspent ? 'text-red-600' : 'text-gray-900'}`}>
+                                      ${spent.toLocaleString()}
+                                    </div>
+                                    <div className="text-gray-500">of ${planned.toLocaleString()}</div>
+                                  </div>
+                                  <div className={`font-medium ${isOverspent ? 'text-red-600' : remaining === 0 ? 'text-gray-400' : 'text-green-600'}`}>
+                                    ({percentSpent}%)
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
