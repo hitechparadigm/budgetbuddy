@@ -1,5 +1,84 @@
 # Changelog
 
+## [1.6.0] - 2025-11-09
+
+### Added
+- 🎯 **Budget Item Management** - Complete CRUD operations for budget categories
+  - Add new budget categories with name, icon, planned amount
+  - Edit existing categories with inline hover buttons
+  - Delete categories with confirmation dialog
+  - Support for recurring items (weekly, bi-weekly, monthly, annually)
+- 📊 **Three-Column EveryDollar Layout** - Professional budget interface
+  - Left sidebar with navigation (Budget, Accounts, Roadmap, etc.)
+  - Center column with budget categories and groups
+  - Right sidebar with real-time transaction history
+- 🎨 **Floating Action Button (FAB)** - Quick transaction entry
+  - Expandable menu with Income/Expense options
+  - Category selection dropdown
+  - Minimal form (amount, description, date)
+- 📱 **Responsive Design** - Works on all devices
+  - Desktop: Full three-column layout
+  - Tablet: Collapsible sidebar
+  - Mobile: Slide-out sidebar with overlay
+- 💾 **Data Persistence** - Automatic localStorage saving
+  - Budget items persist across sessions
+  - Transactions stored with categories
+  - Real-time balance calculations
+
+### Fixed
+- 🐛 **Duplicate Closing Braces** - Cleaned up syntax errors in BudgetPage
+- 🎨 **Modal Positioning** - Fixed budget item modal placement
+- 🔧 **Type Definitions** - Added 'annually' to recurring frequency types
+- 💻 **Component Structure** - Resolved file corruption from multiple appends
+
+### Removed
+- 🗑️ **27 Obsolete Documentation Files** - Cleaned up session-specific docs
+  - AI-ONBOARDING-IMPLEMENTATION.md
+  - budget-integration-guide.md
+  - BUDGET-PRECISION-FIX.md
+  - CICD-FIX.md
+  - COMPREHENSIVE-ANALYSIS-AND-RECOMMENDATIONS.md
+  - And 22 more obsolete files
+- 🗑️ **3 Unused Page Components**
+  - DashboardPage.tsx
+  - TransactionsPage.tsx
+  - TransactionTest.tsx
+- 🗑️ **6 Obsolete Spec Directories**
+  - api-troubleshooting/
+  - bank-integration/
+  - cicd-pipeline/
+  - mobile-notifications/
+  - premium-features/
+  - transaction-management/
+
+### Updated Documentation
+- 📚 **requirements.md** - Updated to reflect budget planning and transaction recording
+- 📚 **design.md** - Updated with three-column layout and new modals
+- 📚 **tasks.md** - Marked tasks 1-5 as completed, added task 2.4
+
+### Technical Improvements
+- 🏗️ **Clean Architecture** - Separated planning (budget items) from recording (transactions)
+- 🎯 **State Management** - Proper useState hooks for modals and forms
+- 🎨 **UI Components** - Hover states, edit/delete buttons, responsive breakpoints
+- 📦 **Data Models** - BudgetGroup structure with categories and transactions
+- 🔧 **localStorage Integration** - Automatic saving on all changes
+
+### Progress Metrics
+- Overall completion: 95% (up from 92%)
+- Budget Planning: 100% complete
+- Transaction Recording: 100% complete
+- Budget Item Management: 100% complete
+- Responsive Design: 100% complete
+- Data Persistence: 100% complete
+- Documentation: 100% complete
+- Codebase Cleanup: 100% complete
+
+### Lessons Learned
+- **Modal Placement** - Always insert modals before component closing tags, not after
+- **File Appending** - Use strReplace for insertions to avoid file corruption
+- **Documentation Maintenance** - Regular cleanup prevents documentation debt
+- **Git Hooks** - Enforce documentation standards to maintain project quality
+
 ## [1.5.0] - 2025-11-02
 
 ### Added

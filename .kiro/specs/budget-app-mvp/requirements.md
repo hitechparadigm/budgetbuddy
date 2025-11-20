@@ -66,7 +66,10 @@ A simple, focused budget application that helps users create and manage their mo
 2. THE Budget_App SHALL use a light theme similar to EveryDollar with clean typography
 3. THE Budget_App SHALL display only essential information without clutter
 4. THE Budget_App SHALL use consistent visual hierarchy and spacing
-5. THE Budget_App SHALL be responsive and work well on desktop and mobile devices
+5. WHEN viewed on desktop (1024px+), THE Budget_App SHALL display a three-column layout with sidebar, budget categories, and transactions
+6. WHEN viewed on tablet (768px-1024px), THE Budget_App SHALL provide a collapsible sidebar and responsive two-column layout
+7. WHEN the sidebar is collapsed, THE Budget_App SHALL show a hamburger menu icon to toggle sidebar visibility
+8. THE Budget_App SHALL be optimized for desktop, tablet, and landscape mobile viewing
 
 ### Requirement 5: Data Persistence and State Management
 
