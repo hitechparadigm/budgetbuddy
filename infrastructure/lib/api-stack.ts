@@ -298,8 +298,10 @@ export class ApiStack extends cdk.Stack {
         allowOrigins: [
           'http://localhost:3000', // Local development
           'http://localhost:5173', // Vite dev server
-          'https://app.budgetbuddy.com', // Production web app
-          'https://admin.budgetbuddy.com', // Admin dashboard
+          'https://d1ueeugn9zcx7n.cloudfront.net', // CloudFront web app
+          'https://d2ubhx2a13s7gc.cloudfront.net', // CloudFront admin dashboard
+          'https://app.budgetbuddy.com', // Production web app (custom domain)
+          'https://admin.budgetbuddy.com', // Admin dashboard (custom domain)
         ],
         allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowHeaders: [
