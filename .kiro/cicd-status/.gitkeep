@@ -1,0 +1,7 @@
+# CI/CD Status Directory
+
+This directory stores the latest CI/CD pipeline status from GitHub Actions.
+
+Files:
+- `latest.json` - Current status of the most recent workflow run
+- Generated automatically by `scripts/check-cicd-status.js`

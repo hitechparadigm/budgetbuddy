@@ -89,3 +89,87 @@ All features tested and working with no compilation errors. Ready for production
 ✅ Summary view implemented and functional
 ✅ Tab switching working correctly
 ✅ All calculations accurate
+
+
+## 2025-11-19 - Deployment to AWS via CI/CD
+
+### Deployment Details
+- **Branch**: develop
+- **Commits**: 3 commits pushed
+  1. feat: Add responsive layout fixes and Summary view (70528d8)
+  2. docs: Update documentation for v1.7.0 release (49e8ea7)
+  3. docs: Update api-endpoints.md timestamp (a8c249e)
+- **Deployment Method**: GitHub Actions CI/CD pipeline
+- **Target**: AWS (Lambda + S3 + CloudFront)
+
+### Changes Deployed
+- Summary view with circular progress chart
+- Responsive layout fixes for tablet/desktop
+- Column alignment improvements
+- Tab system for Summary/Transactions
+- Updated documentation (CHANGELOG, README, development-status)
+
+### CI/CD Pipeline
+- Automatically triggered on push to develop branch
+- Builds and tests web application
+- Deploys Lambda functions to AWS
+- Updates S3 static assets
+- Invalidates CloudFront cache
+
+### Status
+✅ Code pushed to GitHub successfully
+⏳ CI/CD pipeline running (check GitHub Actions for status)
+📦 Deployment will complete automatically if all tests pass
+
+
+## 2025-11-19 - Fixed CI/CD Pipeline ESLint Error
+
+### Issue
+- CI/CD pipeline failed during lint step
+- ESLint error: `'user' is defined but never used` in transaction-planning/index.js:592
+- Error code: `no-unused-vars`
+
+### Root Cause
+- Function `createRecurringOccurrence` had a `user` parameter that wasn't being used
+- ESLint rule requires unused parameters to be prefixed with underscore
+
+### Solution
+- Changed parameter name from `user` to `_user`
+- Underscore prefix indicates intentionally unused parameter
+- Follows ESLint convention for allowed unused args
+
+### Files Modified
+- `backend/functions/transaction-planning/index.js` - Line 592
+
+### Status
+✅ ESLint error fixed
+✅ Code pushed to develop branch
+⏳ CI/CD pipeline re-running
+📦 Deployment should complete successfully now
+
+
+## 2025-11-19 - Fixed CI/CD Unit Test Dependency Issue
+
+### Issue
+- CI/CD pipeline failed during pre-deployment validation
+- Error: `jest: not found` when running unit tests
+- Command: `npm run test:unit` → `cd backend/functions/transactions && npm test`
+
+### Root Cause
+- The test:unit script changed directory to transactions folder
+- But npm dependencies (including jest) were not installed in that directory
+- Jest is in devDependencies but `npm install` was never run there
+
+### Solution
+- Updated test:unit script to install dependencies before running tests
+- Changed from: `cd backend/functions/transactions && npm test`
+- Changed to: `cd backend/functions/transactions && npm install && npm test`
+
+### Files Modified
+- `package.json` - Updated test:unit script
+
+### Status
+✅ Dependency installation added to test script
+✅ Code pushed to develop branch
+⏳ CI/CD pipeline re-running (3rd attempt)
+📦 Should complete successfully now
