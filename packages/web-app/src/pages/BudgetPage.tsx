@@ -81,13 +81,20 @@ export const BudgetPage: React.FC = () => {
     recurringFrequency: 'monthly' as 'weekly' | 'bi-weekly' | 'monthly' | 'annually'
   });
 
+  // Right sidebar tab state
+  const [activeTab, setActiveTab] = useState<'summary' | 'transactions'>('summary');
+
   // Handle responsive behavior
   useEffect(() => {
     const checkScreenSize = () => {
-      const mobile = window.innerWidth < 1024; // lg breakpoint
-      setIsMobile(mobile);
-      if (mobile) {
+      const isTabletOrSmaller = window.innerWidth < 1024; // lg breakpoint
+      setIsMobile(isTabletOrSmaller);
+      // On tablet/mobile, start with sidebar collapsed
+      if (isTabletOrSmaller) {
         setSidebarCollapsed(true);
+      } else {
+        // On desktop, show sidebar by default
+        setSidebarCollapsed(false);
       }
     };
 
@@ -390,6 +397,32 @@ export const BudgetPage: React.FC = () => {
     localStorage.setItem('budget-data', JSON.stringify(updatedBudget));
   };
 
+  const handleDeleteTransaction = (transactionId: string, categoryId: string) => {
+    if (!budget) return;
+    if (!confirm('Are you sure you want to delete this transaction?')) return;
+
+    const updatedBudget = { ...budget };
+    updatedBudget.groups = updatedBudget.groups.map(group => ({
+      ...group,
+      categories: group.categories.map(cat => {
+        if (cat.id === categoryId) {
+          const transaction = cat.transactions.find(t => t.id === transactionId);
+          if (transaction) {
+            return {
+              ...cat,
+              spentAmount: cat.spentAmount - transaction.amount,
+              transactions: cat.transactions.filter(t => t.id !== transactionId)
+            };
+          }
+        }
+        return cat;
+      })
+    }));
+
+    setBudget(updatedBudget);
+    localStorage.setItem('budget-data', JSON.stringify(updatedBudget));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -422,12 +455,19 @@ export const BudgetPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Left Sidebar - Responsive EveryDollar Style Navigation */}
+      {/* Left Sidebar - Responsive Navigation */}
+      {!sidebarCollapsed && isMobile && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setSidebarCollapsed(true)}
+        />
+      )}
+
       <div className={`
-        ${isMobile
-          ? (sidebarCollapsed ? 'w-0 -translate-x-full' : 'w-64 translate-x-0 fixed inset-y-0 z-50')
-          : (sidebarCollapsed ? 'w-16' : 'w-64')
-        }
+        ${isMobile && sidebarCollapsed ? 'hidden' : ''}
+        ${isMobile && !sidebarCollapsed ? 'fixed inset-y-0 left-0 z-50 w-64' : ''}
+        ${!isMobile && sidebarCollapsed ? 'w-16' : ''}
+        ${!isMobile && !sidebarCollapsed ? 'w-64' : ''}
         bg-white border-r border-gray-200 flex flex-col transition-all duration-300
       `}>
         {/* Logo/Header */}
@@ -516,16 +556,8 @@ export const BudgetPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Overlay */}
-      {isMobile && !sidebarCollapsed && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setSidebarCollapsed(true)}
-        />
-      )}
-
       {/* Main Content Area */}
-      <div className={`flex-1 flex ${isMobile && !sidebarCollapsed ? 'lg:ml-0' : ''}`}>
+      <div className="flex-1 flex">
         {/* Center Column - Budget Categories */}
         <div className="flex-1 bg-white">
           {/* Mobile Header */}
@@ -548,12 +580,25 @@ export const BudgetPage: React.FC = () => {
             </div>
           )}
 
-          {/* Desktop Header */}
+          {/* Desktop/Tablet Header */}
           <div className={`p-6 border-b border-gray-200 ${isMobile ? 'hidden lg:block' : ''}`}>
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-semibold text-gray-900">
-                {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </h1>
+              <div className="flex items-center space-x-4">
+                {/* Hamburger menu for tablet */}
+                {isMobile && (
+                  <button
+                    onClick={() => setSidebarCollapsed(false)}
+                    className="text-gray-600 hover:text-gray-900 lg:hidden"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
+                )}
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </h1>
+              </div>
               <div className="flex items-center space-x-4">
                 <button className="text-gray-400 hover:text-gray-600">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -585,20 +630,21 @@ export const BudgetPage: React.FC = () => {
                       </svg>
                     </button>
                   </div>
-                  <div className="hidden lg:flex items-center space-x-6 text-sm">
-                    <div className="text-center">
+                  <div className="hidden md:flex items-center space-x-4 text-sm">
+                    <div className="text-right w-24 flex-shrink-0">
                       <div className="text-gray-500">Planned</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-gray-500">Received</div>
+                    <div className="text-right w-24 flex-shrink-0">
+                      <div className="text-gray-500">{group.type === 'income' ? 'Received' : 'Spent'}</div>
                     </div>
+                    <div className="w-16 flex-shrink-0"></div>
                   </div>
                 </div>
 
                 {/* Categories */}
                 <div className="space-y-2">
                   {group.categories.map(category => (
-                    <div key={category.id} className="group/item flex flex-col lg:flex-row lg:items-center justify-between py-3 px-4 hover:bg-gray-50 rounded-lg space-y-2 lg:space-y-0">
+                    <div key={category.id} className="group/item flex flex-col md:flex-row md:items-center justify-between py-3 px-4 hover:bg-gray-50 rounded-lg space-y-2 md:space-y-0">
                       <div className="flex-1">
                         <div className="flex items-center space-x-2">
                           <span>{category.icon}</span>
@@ -610,20 +656,20 @@ export const BudgetPage: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center justify-between lg:space-x-4">
-                        <div className="text-left lg:text-right lg:w-20">
-                          <div className="text-xs lg:hidden text-gray-500">Planned</div>
+                      <div className="flex items-center md:space-x-4">
+                        <div className="text-left md:text-right md:w-24 flex-shrink-0">
+                          <div className="text-xs md:hidden text-gray-500">Planned</div>
                           <div className="font-medium">${category.plannedAmount.toLocaleString()}</div>
                         </div>
-                        <div className="text-right lg:w-20">
-                          <div className="text-xs lg:hidden text-gray-500">
+                        <div className="text-right md:w-24 flex-shrink-0">
+                          <div className="text-xs md:hidden text-gray-500">
                             {group.type === 'income' ? 'Received' : 'Spent'}
                           </div>
                           <div className={`font-medium ${category.spentAmount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
                             ${category.spentAmount.toLocaleString()}
                           </div>
                         </div>
-                        <div className="flex items-center space-x-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                        <div className="flex items-center space-x-1 w-16 justify-end opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0">
                           <button
                             onClick={() => openBudgetItemModal(group.type, category)}
                             className="p-1 text-gray-400 hover:text-blue-600 rounded"
@@ -657,17 +703,18 @@ export const BudgetPage: React.FC = () => {
                 </div>
 
                 {/* Group Total */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between py-3 px-4 bg-gray-50 rounded-lg font-semibold space-y-2 lg:space-y-0">
+                <div className="flex flex-col md:flex-row md:items-center justify-between py-3 px-4 bg-gray-50 rounded-lg font-semibold space-y-2 md:space-y-0">
                   <div className="text-gray-900">Total {group.name}</div>
-                  <div className="flex items-center justify-between lg:space-x-8">
-                    <div className="text-left lg:text-right lg:w-20">
-                      <div className="text-xs lg:hidden text-gray-500 font-normal">Planned</div>
+                  <div className="flex items-center md:space-x-4">
+                    <div className="text-left md:text-right md:w-24 flex-shrink-0">
+                      <div className="text-xs md:hidden text-gray-500 font-normal">Planned</div>
                       <div>${group.categories.reduce((sum, cat) => sum + cat.plannedAmount, 0).toLocaleString()}</div>
                     </div>
-                    <div className="text-right lg:w-20">
-                      <div className="text-xs lg:hidden text-gray-500 font-normal">Received</div>
+                    <div className="text-right md:w-24 flex-shrink-0">
+                      <div className="text-xs md:hidden text-gray-500 font-normal">Received</div>
                       <div>${group.categories.reduce((sum, cat) => sum + cat.spentAmount, 0).toLocaleString()}</div>
                     </div>
+                    <div className="w-16 flex-shrink-0 hidden md:block"></div>
                   </div>
                 </div>
               </div>
@@ -675,84 +722,198 @@ export const BudgetPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Sidebar - Transactions */}
-        <div className="hidden lg:block w-80 bg-white border-l border-gray-200">
+        {/* Right Sidebar - Summary/Transactions */}
+        <div className="hidden md:block w-80 bg-white border-l border-gray-200">
           <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-gray-500">Summary</h3>
-              <h3 className="text-lg font-semibold text-blue-600">Transactions</h3>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex space-x-6 mb-6 border-b border-gray-200">
-              <button className="pb-2 text-sm font-medium text-gray-500">New</button>
-              <button className="pb-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">Tracked</button>
-              <button className="pb-2 text-sm font-medium text-gray-500">Deleted</button>
-            </div>
-
-            {/* Search */}
-            <div className="mb-6">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-                <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            {/* Main Tabs - Summary / Transactions */}
+            <div className="flex items-center justify-center space-x-8 mb-6">
+              <button
+                onClick={() => setActiveTab('summary')}
+                className={`flex flex-col items-center space-y-1 pb-2 ${
+                  activeTab === 'summary' ? 'border-b-2 border-blue-600' : ''
+                }`}
+              >
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
-              </div>
+                <span className={`text-sm font-medium ${activeTab === 'summary' ? 'text-blue-600' : 'text-gray-500'}`}>
+                  Summary
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveTab('transactions')}
+                className={`flex flex-col items-center space-y-1 pb-2 ${
+                  activeTab === 'transactions' ? 'border-b-2 border-blue-600' : ''
+                }`}
+              >
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className={`text-sm font-medium ${activeTab === 'transactions' ? 'text-blue-600' : 'text-gray-500'}`}>
+                  Transactions
+                </span>
+              </button>
             </div>
 
-            {/* Recent Transactions */}
-            <div className="space-y-4">
-              <div className="text-sm text-gray-500 mb-4">{new Date().toLocaleDateString('en-US', { month: 'long' })}</div>
+            {/* Summary View */}
+            {activeTab === 'summary' && (
+              <div className="space-y-6">
+                {/* Circular Progress Chart */}
+                <div className="flex flex-col items-center">
+                  <div className="relative w-48 h-48">
+                    <svg className="w-full h-full transform -rotate-90">
+                      <circle
+                        cx="96"
+                        cy="96"
+                        r="80"
+                        fill="none"
+                        stroke="#e5e7eb"
+                        strokeWidth="16"
+                      />
+                      {/* Income segment (blue) */}
+                      <circle
+                        cx="96"
+                        cy="96"
+                        r="80"
+                        fill="none"
+                        stroke="#3b82f6"
+                        strokeWidth="16"
+                        strokeDasharray={`${(totals.income / totals.planned) * 502} 502`}
+                        strokeDashoffset="0"
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="text-xs text-gray-500 uppercase">Income</div>
+                      <div className="text-2xl font-bold text-gray-900">${totals.income.toLocaleString()}</div>
+                    </div>
+                  </div>
+                </div>
 
-              {/* Real transactions from budget data */}
-              <div className="space-y-3">
+                {/* Stats Row */}
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div>
+                    <div className="text-gray-500 uppercase mb-1">Planned</div>
+                    <div className="font-semibold text-gray-900">${totals.planned.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 uppercase mb-1">Spent</div>
+                    <div className="font-semibold text-gray-900">${totals.spent.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 uppercase mb-1">Remaining</div>
+                    <div className="font-semibold text-gray-900">${totals.remaining.toLocaleString()}</div>
+                  </div>
+                </div>
+
+                {/* Category Breakdown */}
+                <div className="space-y-3">
+                  {budget.groups.filter(g => g.type !== 'income').map((group, index) => {
+                    const groupTotal = group.categories.reduce((sum, cat) => sum + cat.plannedAmount, 0);
+                    const percentage = totals.planned > 0 ? Math.round((groupTotal / totals.planned) * 100) : 0;
+                    const colors = ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+                    const color = colors[index % colors.length];
+
+                    return (
+                      <div key={group.id} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></div>
+                          <span className="text-sm font-medium" style={{ color }}>{group.name}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-semibold text-gray-900">${groupTotal.toLocaleString()}</span>
+                          <span className="text-xs text-gray-500">({percentage}%)</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Transactions View */}
+            {activeTab === 'transactions' && (
+              <>
+                {/* Transaction Tabs */}
+                <div className="flex space-x-6 mb-6 border-b border-gray-200">
+                  <button className="pb-2 text-sm font-medium text-gray-500">New</button>
+                  <button className="pb-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">Tracked</button>
+                  <button className="pb-2 text-sm font-medium text-gray-500">Deleted</button>
+                </div>
+
+                {/* Search */}
+                <div className="mb-6">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Recent Transactions */}
+                <div className="space-y-4">
+                  <div className="text-sm text-gray-500 mb-4">{new Date().toLocaleDateString('en-US', { month: 'long' })}</div>
+
+                  {/* Real transactions from budget data */}
+                  <div className="space-y-3">
                 {budget.groups.flatMap(group =>
                   group.categories.flatMap(cat =>
                     cat.transactions.map(transaction => {
                       const isIncome = group.type === 'income';
                       return (
-                        <div key={transaction.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div key={transaction.id} className="group/transaction flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
                           <div className={`w-8 h-8 ${isIncome ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center`}>
                             <span className={`${isIncome ? 'text-green-600' : 'text-red-600'} text-xs`}>$</span>
                           </div>
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-gray-900">{transaction.description}</div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-gray-900 truncate">{transaction.description}</div>
                             <div className="text-xs text-gray-500">{cat.name}</div>
                           </div>
                           <div className={`text-sm font-medium ${isIncome ? 'text-green-600' : 'text-red-600'}`}>
                             {isIncome ? '+' : '-'}${transaction.amount.toLocaleString()}
                           </div>
+                          <button
+                            onClick={() => handleDeleteTransaction(transaction.id, cat.id)}
+                            className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors flex-shrink-0"
+                            title="Delete transaction"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         </div>
                       );
                     })
                   )
-                ).sort((a, b) => new Date(b.key as string).getTime() - new Date(a.key as string).getTime())}
-
-                {budget.groups.every(g => g.categories.every(c => c.transactions.length === 0)) && (
-                  <div className="text-center py-8 text-gray-400">
-                    <p className="text-sm">No transactions yet</p>
-                    <p className="text-xs mt-1">Use the + button to add your first transaction</p>
-                  </div>
                 )}
-              </div>
 
-              {/* Connect Bank Button */}
-              <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <span className="text-white text-xs">🏦</span>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-blue-900">Connect Your Bank</div>
-                    <div className="text-xs text-blue-700">Try the premium version of EveryDollar</div>
+                    {budget.groups.every(g => g.categories.every(c => c.transactions.length === 0)) && (
+                      <div className="text-center py-8 text-gray-400">
+                        <p className="text-sm">No transactions yet</p>
+                        <p className="text-xs mt-1">Use the + button to add your first transaction</p>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </div>
+
+                {/* Connect Bank Button */}
+                <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">🏦</span>
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-blue-900">Connect Your Bank</div>
+                      <div className="text-xs text-blue-700">Try the premium version of EveryDollar</div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

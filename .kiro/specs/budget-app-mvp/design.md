@@ -38,7 +38,7 @@ const routes = [
 
 ### 2. Main Budget Screen Layout
 
-Following EveryDollar's three-column layout design:
+**Desktop View** - Following EveryDollar's three-column layout design:
 
 ```
 ┌──────────────┬─────────────────────────────────────┬──────────────────┐
@@ -73,6 +73,33 @@ Following EveryDollar's three-column layout design:
 │              │ Total Expenses   $4,500  $0         │                  │
 │              │                                     │         [+]      │
 └──────────────┴─────────────────────────────────────┴──────────────────┘
+```
+
+**Tablet/Landscape View** - Responsive layout with collapsible sidebar:
+
+```
+┌────┬────────────────────────────────────┬──────────────────┐
+│ ☰  │ November 2025                 < >  │ Summary | Trans  │
+├────┼────────────────────────────────────┼──────────────────┤
+│    │                                    │ [Search...]      │
+│    │ ● Income for November          ▼  │                  │
+│    │   Planned    Received              │ November         │
+│    │                                    │                  │
+│    │ 💰 Salary 1      $4,400  $4,400   │ + Salary 1       │
+│    │ 💰 Salary 2      $1,600  $1,600   │   $4,400.00      │
+│    │ + Add Item                         │                  │
+│    │                                    │ + Salary 2       │
+│    │ Total Income     $6,000  $6,000   │   $1,600.00      │
+│    │                                    │                  │
+│    │ ● Savings for November         ▼  │ - Investment     │
+│    │   Planned    Spent                 │   $2,000.00      │
+│    │                                    │                  │
+│    │ 💾 Emergency     $0      $0        │ [Connect Bank]   │
+│    │ 💾 Investments   $2,000  $2,000   │                  │
+│    │ + Add Item                         │                  │
+│    │                                    │                  │
+│    │ Total Savings    $2,000  $2,000   │         [+]      │
+└────┴────────────────────────────────────┴──────────────────┘
 ```
 
 ### 3. Transaction Modal (via FAB)
@@ -234,24 +261,43 @@ interface OnboardingData {
 
 ### 3. Responsive Design
 
+**Note:** This web application is optimized for desktop, tablet, and landscape mobile viewing. A separate native mobile app with portrait-optimized UI will be developed as a future project.
+
 **Desktop (1024px+):**
 - Three-column layout (sidebar, budget, transactions)
 - Full navigation sidebar (256px width)
 - Hover states for edit/delete buttons
 - Right sidebar shows transaction history
+- All three panels visible simultaneously
+- Optimal viewing experience
 
 **Tablet (768px-1024px):**
-- Collapsible sidebar (64px width when collapsed)
-- Hide right transaction sidebar
+- Collapsible sidebar (hamburger menu icon)
+- Two-column layout (budget + transactions)
+- Sidebar slides in as overlay when opened
 - Touch-optimized interactions
-- Mobile header with hamburger menu
+- Responsive column widths
+- Transaction panel remains visible
 
-**Mobile (320px-768px):**
-- Slide-out sidebar (fixed overlay)
-- Single column budget view
-- Hide transaction sidebar
-- Floating action button for transactions
-- Mobile-optimized category rows
+**Mobile Landscape (if users choose):**
+- Similar to tablet layout
+- Collapsible sidebar via hamburger menu
+- Budget and transaction panels adapt to available width
+- Touch-friendly targets (minimum 44px)
+- Horizontal scrolling where needed
+
+**Responsive Breakpoints:**
+- Large screens (1280px+): Full three-column with generous spacing
+- Desktop (1024px-1280px): Three-column with standard spacing
+- Tablet (768px-1024px): Collapsible sidebar + two columns
+- Small screens (below 768px): Optimized for landscape orientation only
+
+**Responsive Behaviors:**
+- Sidebar collapses to hamburger menu on tablet and smaller
+- Transaction panel hides on very small screens (can be toggled)
+- Category rows stack vertically on narrow screens
+- Touch targets increase on touch devices
+- Modals become full-screen on small devices
 
 ## Error Handling
 
