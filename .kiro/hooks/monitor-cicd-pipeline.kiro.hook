@@ -4,7 +4,7 @@
   "description": "Automatically check GitHub Actions status and fix failures by executing the check-cicd-status.js script",
   "version": "1",
   "when": {
-    "type": "userTriggered"
+    "type": "onAgentComplete"
   },
   "then": {
     "type": "runCommand",
