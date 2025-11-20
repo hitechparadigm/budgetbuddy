@@ -82,7 +82,7 @@ export const BudgetPage: React.FC = () => {
   });
 
   // Right sidebar tab state
-  const [activeTab, setActiveTab] = useState<'summary' | 'transactions'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'transactions'>('transactions');
 
   // Handle responsive behavior
   useEffect(() => {
@@ -572,9 +572,14 @@ export const BudgetPage: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
-                <h1 className="text-lg font-semibold text-gray-900">
-                  {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </h1>
+                <div className="text-center">
+                  <h1 className="text-lg font-semibold text-gray-900">
+                    {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h1>
+                  <p className="text-sm text-green-600 font-medium">
+                    ${totals.remaining.toLocaleString()} left to budget
+                  </p>
+                </div>
                 <div className="w-6"></div> {/* Spacer for centering */}
               </div>
             </div>
@@ -595,9 +600,14 @@ export const BudgetPage: React.FC = () => {
                     </svg>
                   </button>
                 )}
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </h1>
+                <div>
+                  <h1 className="text-2xl font-semibold text-gray-900">
+                    {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h1>
+                  <p className="text-sm text-green-600 font-medium mt-1">
+                    ${totals.remaining.toLocaleString()} left to budget
+                  </p>
+                </div>
               </div>
               <div className="flex items-center space-x-4">
                 <button className="text-gray-400 hover:text-gray-600">
