@@ -193,7 +193,7 @@ export const BudgetPage: React.FC = () => {
     if (!budget) return { income: 0, planned: 0, spent: 0, remaining: 0 };
 
     const incomeGroup = budget.groups.find(g => g.type === 'income');
-    const income = incomeGroup?.categories.reduce((sum, cat) => sum + cat.spentAmount, 0) || 0;
+    const income = incomeGroup?.categories.reduce((sum, cat) => sum + cat.plannedAmount, 0) || 0;
 
     const nonIncomeGroups = budget.groups.filter(g => g.type !== 'income');
     const planned = nonIncomeGroups.reduce((sum, group) =>
