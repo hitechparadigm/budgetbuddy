@@ -240,11 +240,15 @@ export const BudgetPage: React.FC = () => {
       sum + group.categories.reduce((catSum, cat) => catSum + cat.spentAmount, 0), 0
     );
 
+    // Remaining = money left to budget (income - planned allocations)
+    // This shows how much income hasn't been allocated to categories yet
+    const remaining = income - planned;
+
     return {
       income,
       planned,
       spent,
-      remaining: income - spent
+      remaining
     };
   };
 
