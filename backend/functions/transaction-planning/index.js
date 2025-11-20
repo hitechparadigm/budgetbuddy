@@ -589,7 +589,7 @@ async function checkExistingOccurrence(familyId, originalPlanId, scheduledDate) 
 /**
  * Helper function to create recurring occurrence
  */
-async function createRecurringOccurrence(originalTransaction, occurrenceDate, user) {
+async function createRecurringOccurrence(originalTransaction, occurrenceDate, _user) {
     const planId = generateId.plannedTransaction();
     const currentTime = new Date().toISOString();
     const scheduledDate = occurrenceDate.toISOString().split('T')[0];
