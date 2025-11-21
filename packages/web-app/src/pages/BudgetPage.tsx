@@ -10,6 +10,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const API_BASE_URL = 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
+
 // Data models
 interface BudgetCategory {
   id: string;
@@ -145,14 +147,26 @@ export const BudgetPage: React.FC = () => {
 
   const loadBudget = async () => {
     try {
-      // First check for existing budget data
-      const existingBudget = localStorage.getItem('budget-data');
-      if (existingBudget) {
-        setBudget(JSON.parse(existingBudget));
-        return;
+      // Try to fetch budget from backend first
+      const response = await fetch(`${API_BASE_URL}/budget`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('budgetbuddy_id_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.budgets && data.budgets.length > 0) {
+          // Use the most recent budget
+          const latestBudget = data.budgets[0];
+          setBudget(latestBudget);
+          setLoading(false);
+          return;
+        }
       }
 
-      // Fall back to AI generated budget
+      // If no backend budget, check localStorage for AI generated budget
       const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
 
       if (aiGeneratedBudget) {
@@ -215,6 +229,8 @@ export const BudgetPage: React.FC = () => {
         };
 
         setBudget(budget);
+        // Save the AI-generated budget to backend
+        await saveBudgetToBackend(budget);
       } else {
         navigate('/onboarding');
       }
@@ -222,6 +238,41 @@ export const BudgetPage: React.FC = () => {
       console.error('Error loading budget:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const saveBudgetToBackend = async (budgetData: Budget) => {
+    try {
+      const token = localStorage.getItem('budgetbuddy_id_token');
+      if (!token) {
+        console.error('No auth token found');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/budget`, {
+        method: budgetData.id ? 'PUT' : 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          month: budgetData.month,
+          groups: budgetData.groups,
+          isAIGenerated: budgetData.isAIGenerated
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save budget:', await response.text());
+      } else {
+        const savedBudget = await response.json();
+        // Update local state with the saved budget (includes server-generated ID)
+        if (savedBudget.budget) {
+          setBudget(savedBudget.budget);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving budget:', error);
     }
   };
 
@@ -275,7 +326,7 @@ export const BudgetPage: React.FC = () => {
     });
   };
 
-  const handleTransactionSubmit = (e: React.FormEvent) => {
+  const handleTransactionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!budget || !transactionForm.amount || !transactionForm.categoryId) return;
 
@@ -310,8 +361,8 @@ export const BudgetPage: React.FC = () => {
 
     setBudget(updatedBudget);
 
-    // Save to localStorage
-    localStorage.setItem('budget-data', JSON.stringify(updatedBudget));
+    // Save to backend
+    await saveBudgetToBackend(updatedBudget);
 
     closeTransactionModal();
   };
@@ -366,7 +417,7 @@ export const BudgetPage: React.FC = () => {
     });
   };
 
-  const handleBudgetItemSubmit = (e: React.FormEvent) => {
+  const handleBudgetItemSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!budget || !selectedGroupType || !budgetItemForm.name || !budgetItemForm.plannedAmount) return;
 
@@ -419,11 +470,11 @@ export const BudgetPage: React.FC = () => {
     }
 
     setBudget(updatedBudget);
-    localStorage.setItem('budget-data', JSON.stringify(updatedBudget));
+    await saveBudgetToBackend(updatedBudget);
     closeBudgetItemModal();
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
+  const handleDeleteCategory = async (categoryId: string) => {
     if (!budget) return;
     if (!confirm('Are you sure you want to delete this budget item?')) return;
 
@@ -434,10 +485,10 @@ export const BudgetPage: React.FC = () => {
     }));
 
     setBudget(updatedBudget);
-    localStorage.setItem('budget-data', JSON.stringify(updatedBudget));
+    await saveBudgetToBackend(updatedBudget);
   };
 
-  const handleDeleteTransaction = (transactionId: string, categoryId: string) => {
+  const handleDeleteTransaction = async (transactionId: string, categoryId: string) => {
     if (!budget) return;
     if (!confirm('Are you sure you want to delete this transaction?')) return;
 
@@ -460,7 +511,7 @@ export const BudgetPage: React.FC = () => {
     }));
 
     setBudget(updatedBudget);
-    localStorage.setItem('budget-data', JSON.stringify(updatedBudget));
+    await saveBudgetToBackend(updatedBudget);
   };
 
   if (loading) {
