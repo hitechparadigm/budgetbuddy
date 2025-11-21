@@ -11,6 +11,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AuthPage } from './pages/AuthPage';
 import { BudgetPage } from './pages/BudgetPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { AIBudgetGenerationPage } from './pages/AIBudgetGenerationPage';
 import { initMockAuth } from './utils/mockAuth';
@@ -42,6 +43,16 @@ const App: React.FC = () => {
                 element={
                   <ProtectedRoute>
                     <BudgetPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Settings Page */}
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <SettingsPage />
                   </ProtectedRoute>
                 }
               />
