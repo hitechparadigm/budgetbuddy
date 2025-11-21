@@ -488,6 +488,17 @@ export const BudgetPage: React.FC = () => {
     await saveBudgetToBackend(updatedBudget);
   };
 
+  const handleLogout = () => {
+    // Clear all auth tokens
+    localStorage.removeItem('budgetbuddy_access_token');
+    localStorage.removeItem('budgetbuddy_refresh_token');
+    localStorage.removeItem('budgetbuddy_id_token');
+    localStorage.removeItem('budgetbuddy_expires_at');
+
+    // Navigate to login
+    navigate('/auth');
+  };
+
   const handleDeleteTransaction = async (transactionId: string, categoryId: string) => {
     if (!budget) return;
     if (!confirm('Are you sure you want to delete this transaction?')) return;
@@ -635,11 +646,53 @@ export const BudgetPage: React.FC = () => {
           </ul>
         </nav>
 
-        {/* Bottom Section */}
-        <div className="p-4 border-t border-gray-200">
-          <button className={`w-full text-left text-gray-600 hover:text-gray-900 text-sm ${sidebarCollapsed && !isMobile ? 'text-center' : ''}`}>
-            {sidebarCollapsed && !isMobile ? '⚙️' : '⚙️ Settings'}
-          </button>
+        {/* Bottom Section - Account Management */}
+        <div className="mt-auto">
+          <div className="p-4 border-t border-gray-200">
+            <div className="space-y-2">
+              {/* Account Section */}
+              {!sidebarCollapsed && (
+                <div className="mb-3">
+                  <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Account</div>
+                  <ul className="space-y-1">
+                    <li>
+                      <a href="#" className="flex items-center space-x-3 px-3 text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50 text-sm">
+                        <span>👤</span>
+                        <span>Personal Info</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="flex items-center space-x-3 px-3 text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50 text-sm">
+                        <span>📧</span>
+                        <span>Email Address</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="flex items-center space-x-3 px-3 text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50 text-sm">
+                        <span>🔒</span>
+                        <span>Password</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="flex items-center space-x-3 px-3 text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50 text-sm">
+                        <span>🔐</span>
+                        <span>Two-Factor Auth</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              )}
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className={`w-full flex items-center ${sidebarCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3 px-3'} text-red-600 hover:text-red-700 py-2 rounded-lg hover:bg-red-50 text-sm font-medium`}
+              >
+                <span>🚪</span>
+                {(!sidebarCollapsed || isMobile) && <span>Sign Out</span>}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
