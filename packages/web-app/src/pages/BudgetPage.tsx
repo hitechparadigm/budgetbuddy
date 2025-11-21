@@ -643,56 +643,58 @@ export const BudgetPage: React.FC = () => {
                 {(!sidebarCollapsed || isMobile) && <span>Insights</span>}
               </a>
             </li>
+            <li>
+              <a href="#" className={`flex items-center ${sidebarCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3 px-3'} text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50`}>
+                <span>📰</span>
+                {(!sidebarCollapsed || isMobile) && <span>My Feed</span>}
+              </a>
+            </li>
+            <li>
+              <a href="#" className={`flex items-center ${sidebarCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3 px-3'} text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50`}>
+                <span>❓</span>
+                {(!sidebarCollapsed || isMobile) && <span>Help Center</span>}
+              </a>
+            </li>
+            <li>
+              <a href="#" className={`flex items-center ${sidebarCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3 px-3'} text-blue-600 hover:text-blue-700 py-2 rounded-lg hover:bg-blue-50 font-medium`}>
+                <span>⚙️</span>
+                {(!sidebarCollapsed || isMobile) && <span>Settings</span>}
+              </a>
+            </li>
           </ul>
         </nav>
 
-        {/* Bottom Section - Account Management */}
-        <div className="mt-auto">
-          <div className="p-4 border-t border-gray-200">
-            <div className="space-y-2">
-              {/* Account Section */}
-              {!sidebarCollapsed && (
-                <div className="mb-3">
-                  <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Account</div>
-                  <ul className="space-y-1">
-                    <li>
-                      <a href="#" className="flex items-center space-x-3 px-3 text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50 text-sm">
-                        <span>👤</span>
-                        <span>Personal Info</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="flex items-center space-x-3 px-3 text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50 text-sm">
-                        <span>📧</span>
-                        <span>Email Address</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="flex items-center space-x-3 px-3 text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50 text-sm">
-                        <span>🔒</span>
-                        <span>Password</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="flex items-center space-x-3 px-3 text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50 text-sm">
-                        <span>🔐</span>
-                        <span>Two-Factor Auth</span>
-                      </a>
-                    </li>
-                  </ul>
+        {/* Bottom Section - User Profile */}
+        <div className="mt-auto border-t border-gray-200">
+          {!sidebarCollapsed && (
+            <div className="p-4">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
+                  DM
                 </div>
-              )}
-
-              {/* Logout Button */}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">dmytro.malyk@g...</div>
+                </div>
+              </div>
               <button
                 onClick={handleLogout}
-                className={`w-full flex items-center ${sidebarCollapsed && !isMobile ? 'justify-center px-2' : 'space-x-3 px-3'} text-red-600 hover:text-red-700 py-2 rounded-lg hover:bg-red-50 text-sm font-medium`}
+                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
               >
-                <span>🚪</span>
-                {(!sidebarCollapsed || isMobile) && <span>Sign Out</span>}
+                Sign out
               </button>
             </div>
-          </div>
+          )}
+          {sidebarCollapsed && !isMobile && (
+            <div className="p-2 flex justify-center">
+              <button
+                onClick={handleLogout}
+                className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold hover:bg-blue-600"
+                title="Sign out"
+              >
+                DM
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
