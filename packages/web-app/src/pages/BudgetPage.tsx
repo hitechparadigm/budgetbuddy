@@ -88,6 +88,9 @@ export const BudgetPage: React.FC = () => {
 
   // Right sidebar width state
   const [sidebarWidth, setSidebarWidth] = useState(400); // Default 400px (larger than w-80 which is 320px)
+
+  // Current month state
+  const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7)); // Format: YYYY-MM
   const [isResizing, setIsResizing] = useState(false);
 
   // Handle sidebar resize
@@ -499,6 +502,33 @@ export const BudgetPage: React.FC = () => {
     navigate('/auth');
   };
 
+  const changeMonth = (direction: 'prev' | 'next') => {
+    const date = new Date(currentMonth + '-01');
+    if (direction === 'prev') {
+      date.setMonth(date.getMonth() - 1);
+    } else {
+      date.setMonth(date.getMonth() + 1);
+    }
+    setCurrentMonth(date.toISOString().slice(0, 7));
+  };
+
+  const getMonthName = (monthStr: string) => {
+    const date = new Date(monthStr + '-01');
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const getMonthShortName = (offset: number) => {
+    const date = new Date(currentMonth + '-01');
+    date.setMonth(date.getMonth() + offset);
+    return date.toLocaleDateString('en-US', { month: 'short' });
+  };
+
+  const selectMonth = (offset: number) => {
+    const date = new Date(currentMonth + '-01');
+    date.setMonth(date.getMonth() + offset);
+    setCurrentMonth(date.toISOString().slice(0, 7));
+  };
+
   const handleDeleteTransaction = async (transactionId: string, categoryId: string) => {
     if (!budget) return;
     if (!confirm('Are you sure you want to delete this transaction?')) return;
@@ -717,10 +747,28 @@ export const BudgetPage: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
-                <div className="text-center">
-                  <h1 className="text-lg font-semibold text-gray-900">
-                    {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                  </h1>
+                <div className="text-center flex-1">
+                  <div className="flex items-center justify-center space-x-2 mb-1">
+                    <button
+                      onClick={() => changeMonth('prev')}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <h1 className="text-lg font-semibold text-gray-900">
+                      {getMonthName(currentMonth)}
+                    </h1>
+                    <button
+                      onClick={() => changeMonth('next')}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
                   <p className={`text-sm font-medium ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
                     ${totals.remaining.toLocaleString()} left to budget
                   </p>
@@ -746,25 +794,59 @@ export const BudgetPage: React.FC = () => {
                   </button>
                 )}
                 <div>
-                  <h1 className="text-2xl font-semibold text-gray-900">
-                    {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                  </h1>
-                  <p className={`text-sm font-medium mt-1 ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    ${totals.remaining.toLocaleString()} left to budget
-                  </p>
+                  <div className="flex items-center space-x-4">
+                    {/* Month Navigation */}
+                    <div className="flex items-center space-x-2 bg-white border border-gray-300 rounded-lg px-3 py-2">
+                      <button
+                        onClick={() => changeMonth('prev')}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+
+                      {/* Month Pills */}
+                      <div className="flex items-center space-x-1">
+                        {[-2, -1, 0, 1, 2].map((offset) => (
+                          <button
+                            key={offset}
+                            onClick={() => selectMonth(offset)}
+                            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                              offset === 0
+                                ? 'bg-blue-600 text-white'
+                                : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            {getMonthShortName(offset)}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => changeMonth('next')}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* Current Month Display */}
+                    <div>
+                      <h1 className="text-2xl font-semibold text-gray-900">
+                        {getMonthName(currentMonth)}
+                      </h1>
+                      <p className={`text-sm font-medium ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        ${totals.remaining.toLocaleString()} left to budget
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <button className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+                {/* Placeholder for future actions */}
               </div>
             </div>
           </div>
