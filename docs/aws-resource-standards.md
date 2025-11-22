@@ -1,5 +1,8 @@
 # AWS Resource Management Standards for BudgetBuddy
 
+**Last Updated**: 2025-11-21
+**Scope**: Web Application MVP
+
 This document defines the mandatory standards for naming, tagging, and documenting all AWS resources in the BudgetBuddy application.
 
 ## Resource Naming Convention
@@ -53,20 +56,20 @@ All AWS resources MUST include these tags:
 }
 ```
 
-### Component-Specific Tags
+### Component-Specific Tags (MVP)
 ```json
 {
-  "Component": "Database|Authentication|API|WebHosting|AdminHosting|WebCDN|AdminCDN|Monitoring",
-  "Service": "DynamoDB|Cognito|Lambda|S3|CloudFront|SNS|CloudWatch"
+  "Component": "Database|Authentication|API|WebHosting|WebCDN|Monitoring",
+  "Service": "DynamoDB|Cognito|Lambda|S3|CloudFront|CloudWatch"
 }
 ```
 
 ### Service-Specific Tags
 
-#### Lambda Functions
+#### Lambda Functions (MVP)
 ```json
 {
-  "Handler": "auth|budget|transaction|ai|family|payment|email|admin",
+  "Handler": "auth|budget|transaction",
   "Runtime": "NodeJS-20",
   "CostCenter": "BudgetBuddy-Compute"
 }
@@ -161,12 +164,11 @@ All AWS resources MUST include detailed descriptions that explain:
 
 ## Cost Center Allocation
 
-### Cost Centers by Component
+### Cost Centers by Component (MVP)
 - **BudgetBuddy-Core**: Database, core infrastructure
 - **BudgetBuddy-Compute**: Lambda functions, processing
 - **BudgetBuddy-Auth**: Authentication services
 - **BudgetBuddy-Frontend**: Web application hosting
-- **BudgetBuddy-Admin**: Admin dashboard hosting
 - **BudgetBuddy-CDN**: Content delivery network
 - **BudgetBuddy-Operations**: Monitoring, alerts, logging
 

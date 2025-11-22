@@ -1,5 +1,8 @@
 # BudgetBuddy AWS Stack Architecture Documentation
 
+**Last Updated**: 2025-11-21
+**Scope**: Web Application MVP
+
 ## 🏗️ Stack Overview
 
 BudgetBuddy is deployed using AWS CDK with a modular stack architecture. Each stack is responsible for specific functionality and can be deployed independently.
@@ -34,13 +37,13 @@ Manages user authentication, registration, and authorization using Amazon Cognit
 - **User Pool Client**: Web and mobile app client
 - **User Pool Domain**: Custom authentication domain (optional)
 
-### Key Features
+### Key Features (MVP)
 - Email-based user registration
 - Password reset functionality
 - JWT token management
-- Multi-factor authentication support
-- Custom user attributes for family relationships### C
-onfiguration
+- Email verification
+
+### Configuration
 ```json
 {
   "passwordPolicy": {
@@ -50,13 +53,7 @@ onfiguration
     "requireNumbers": true,
     "requireSymbols": false
   },
-  "emailVerification": true,
-  "mfaConfiguration": "OPTIONAL",
-  "customAttributes": [
-    "family_id",
-    "account_type",
-    "subscription_tier"
-  ]
+  "emailVerification": true
 }
 ```
 
@@ -80,7 +77,7 @@ Provides scalable NoSQL data storage using DynamoDB with single-table design for
 - **DynamoDB Table**: `budgetbuddy-dev-main`
 - **Global Secondary Indexes (GSI)**:
   - **GSI1**: Family-based queries (`GSI1PK`, `GSI1SK`)
-  - **GSI2**: Date-based queries (`GSI2PK`, `GSI2SK`) 
+  - **GSI2**: Date-based queries (`GSI2PK`, `GSI2SK`)
   - **GSI3**: Category analytics (`GSI3PK`, `GSI3SK`)
 
 ### Table Schema
@@ -89,15 +86,13 @@ Primary Key: PK (Partition Key), SK (Sort Key)
 Billing Mode: On-demand (pay per request)
 Encryption: AWS managed keys (AES-256)
 Point-in-time Recovery: Enabled
-```###
- Data Entities Supported
-- **Users**: Profile information, preferences, family relationships
-- **Families**: Family account metadata, member relationships
-- **Budgets**: Monthly budgets, categories, planned amounts
-- **Transactions**: Income/expense records, categorization
-- **Categories**: Budget categories, custom user categories
-- **Subscriptions**: Payment information, subscription status
-- **Cost Data**: Regional cost of living data for AI recommendations
+```
+
+### Data Entities Supported (MVP)
+- **Users**: Profile information (email, name)
+- **Budgets**: Monthly budgets with income, savings, and expense categories
+- **Transactions**: Income/expense records linked to budget categories
+- **Categories**: Budget categories with planned and spent amounts
 
 ### Access Patterns
 1. Get user profile by userId
@@ -213,7 +208,7 @@ Provides comprehensive observability, alerting, and performance monitoring for t
 
 ### Resources Created
 - **CloudWatch Dashboard**: `budgetbuddy-dev-application-metrics`
-- **SNS Topic**: `budgetbuddy-dev-alerts` 
+- **SNS Topic**: `budgetbuddy-dev-alerts`
 - **CloudWatch Alarms**:
   - API Gateway 5XX error rate > 5%
   - Lambda function errors > 10/hour

@@ -1,5 +1,8 @@
 # BudgetBuddy Stack Management Guide
 
+**Last Updated**: 2025-11-21
+**Scope**: Web Application MVP
+
 ## 📋 Stack Overview & Dependencies
 
 ### Deployment Order
@@ -37,7 +40,7 @@ MFA_CONFIGURATION=OPTIONAL
 EMAIL_VERIFICATION_REQUIRED=true
 ```
 
-#### Database Stack  
+#### Database Stack
 ```bash
 # DynamoDB Configuration
 TABLE_NAME=budgetbuddy-dev-main
@@ -67,12 +70,12 @@ oss-Stack References
 ```typescript
 // API Stack references Auth Stack
 const userPool = UserPool.fromUserPoolId(
-  this, 
-  'ImportedUserPool', 
+  this,
+  'ImportedUserPool',
   Fn.importValue('budgetbuddy-dev-user-pool-id')
 );
 
-// API Stack references Database Stack  
+// API Stack references Database Stack
 const table = Table.fromTableName(
   this,
   'ImportedTable',
@@ -82,7 +85,7 @@ const table = Table.fromTableName(
 // Monitoring Stack references API Stack
 const api = RestApi.fromRestApiId(
   this,
-  'ImportedApi', 
+  'ImportedApi',
   Fn.importValue('budgetbuddy-dev-api-id')
 );
 ```
@@ -96,7 +99,7 @@ cd infrastructure
 
 # 1. Deploy independent stacks first
 npx cdk deploy budgetbuddy-dev-auth --context environment=dev
-npx cdk deploy budgetbuddy-dev-database --context environment=dev  
+npx cdk deploy budgetbuddy-dev-database --context environment=dev
 npx cdk deploy budgetbuddy-dev-hosting --context environment=dev
 
 # 2. Deploy dependent stacks

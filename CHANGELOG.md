@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.9.0] - 2025-11-21
+
+### Fixed
+- 🐛 **Month Navigation Date Bug** - Resolved duplicate months and missing November
+  - **Root Cause**: JavaScript Date object mutation when using `setMonth()` on string-constructed dates
+  - **Solution**: Changed to `new Date(year, month - 1 + offset, 1)` constructor pattern
+  - **Impact**: All 7 months now display correctly and consecutively
+  - Applied fix to `changeMonth`, `selectMonth`, and `getMonthShortName` functions
+- 🎨 **Month Navigation Layout Jumping** - Eliminated visual shifting when switching months
+  - **Root Cause**: Variable button heights and widths causing layout reflow
+  - **Solution**: Added fixed dimensions (`min-h-[60px]`, `min-w-[140px]`/`min-w-[70px]`)
+  - **Impact**: Smooth transitions without any layout jumping
+- 🎯 **Multiple Month Selection** - Fixed ability to select multiple months simultaneously
+  - **Root Cause**: Selection logic comparing month strings instead of offset position
+  - **Solution**: Changed to `offset === 0` for center month selection only
+  - **Impact**: Only one month can be selected at a time
+
+### Improved
+- 🎨 **Month Navigation UX/UI** - Better visual hierarchy and user experience
+  - Centered navigation on page with `justify-center` layout
+  - Reduced selected month size from `text-lg` to `text-base` for better proportions
+  - Added responsive horizontal scroll with hidden scrollbar for mobile
+  - Improved spacing with `gap-1.5` for more compact appearance
+  - Better hover states with subtle gray borders
+- 🧹 **Code Cleanup** - Removed obsolete and unused code
+  - Removed unused `getMonthShortName` function
+  - Cleaned up redundant date calculation logic
+  - Improved code comments and documentation
+
+### Technical Details
+- **Date Calculation Fix**: Changed from mutable Date operations to immutable constructor pattern
+- **Layout Stability**: Used CSS `min-h` and `min-w` properties with flexbox centering
+- **Selection Logic**: Simplified to position-based (offset) instead of value-based (monthKey)
+- **Responsive Design**: Added `overflow-x-auto` with `scrollbar-hide` utility class
+
+### Lessons Learned
+- **JavaScript Date Pitfalls**: String-based Date construction with `setMonth()` can cause month boundary issues
+- **Layout Stability**: Fixed dimensions prevent layout jumping during dynamic content changes
+- **UX Best Practices**: Centered navigation with consistent sizing improves user experience
+- **Code Quality**: Regular cleanup of unused functions prevents technical debt accumulation
+
 ## [1.8.0] - 2025-11-19
 
 ### Added
