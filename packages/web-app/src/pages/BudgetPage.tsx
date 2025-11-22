@@ -520,7 +520,11 @@ export const BudgetPage: React.FC = () => {
   const getMonthShortName = (offset: number) => {
     const date = new Date(currentMonth + '-01');
     date.setMonth(date.getMonth() + offset);
-    return date.toLocaleDateString('en-US', { month: 'short' });
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    const currentYear = new Date(currentMonth + '-01').getFullYear();
+    // Show year if different from current month's year
+    return year !== currentYear ? `${month} ${year}` : month;
   };
 
   const selectMonth = (offset: number) => {
@@ -794,48 +798,61 @@ export const BudgetPage: React.FC = () => {
                   </button>
                 )}
                 <div>
-                  {/* Month Navigation */}
-                  <div className="flex items-center space-x-2">
+                  {/* Month Navigation - Optimized UX */}
+                  <div className="flex items-center space-x-3">
+                    {/* Previous Button */}
                     <button
                       onClick={() => changeMonth('prev')}
-                      className="text-gray-400 hover:text-gray-600 p-1"
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      aria-label="Previous month"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
 
-                    {/* Month Pills - Current in Center */}
+                    {/* Month Pills - 3 before, current, 2 after (optimal for planning) */}
                     <div className="flex items-center space-x-2">
-                      {[-2, -1, 0, 1, 2].map((offset) => (
-                        <button
-                          key={offset}
-                          onClick={() => selectMonth(offset)}
-                          className={`rounded transition-all ${
-                            offset === 0
-                              ? 'border-2 border-gray-300 px-6 py-3 bg-white'
-                              : 'px-3 py-1 hover:bg-gray-100'
-                          }`}
-                        >
-                          <div className={offset === 0 ? 'text-center' : ''}>
-                            <div className={`font-bold ${offset === 0 ? 'text-lg text-gray-900' : 'text-xs text-gray-600'}`}>
-                              {offset === 0 ? getMonthName(currentMonth) : getMonthShortName(offset)}
+                      {[-3, -2, -1, 0, 1, 2].map((offset) => {
+                        const isSelected = offset === 0;
+                        return (
+                          <button
+                            key={offset}
+                            onClick={() => selectMonth(offset)}
+                            className={`rounded-lg transition-all duration-200 ${
+                              isSelected
+                                ? 'border-2 border-green-400 bg-green-50 px-8 py-4 shadow-md'
+                                : 'border border-gray-200 bg-white px-5 py-2.5 hover:border-gray-300 hover:shadow-sm'
+                            }`}
+                            aria-label={`Switch to ${getMonthShortName(offset)}`}
+                            aria-current={isSelected ? 'true' : 'false'}
+                          >
+                            <div className="text-center">
+                              <div className={`font-semibold whitespace-nowrap ${
+                                isSelected ? 'text-xl text-gray-900' : 'text-sm text-gray-700'
+                              }`}>
+                                {isSelected ? getMonthName(currentMonth) : getMonthShortName(offset)}
+                              </div>
+                              {isSelected && (
+                                <p className={`text-sm font-medium mt-1 whitespace-nowrap ${
+                                  totals.remaining < 0 ? 'text-red-600' : 'text-green-600'
+                                }`}>
+                                  ${totals.remaining.toLocaleString()} left to budget
+                                </p>
+                              )}
                             </div>
-                            {offset === 0 && (
-                              <p className={`text-sm font-medium mt-1 ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                ${totals.remaining.toLocaleString()} left to budget
-                              </p>
-                            )}
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        );
+                      })}
                     </div>
 
+                    {/* Next Button */}
                     <button
                       onClick={() => changeMonth('next')}
-                      className="text-gray-400 hover:text-gray-600 p-1"
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                      aria-label="Next month"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
