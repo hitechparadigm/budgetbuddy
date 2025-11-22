@@ -793,52 +793,48 @@ export const BudgetPage: React.FC = () => {
                     </svg>
                   </button>
                 )}
-                <div>
-                  <div className="flex items-center space-x-4">
-                    {/* Month Navigation */}
-                    <div className="flex items-center space-x-2 bg-white border border-gray-300 rounded-lg px-3 py-2">
-                      <button
-                        onClick={() => changeMonth('prev')}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
+                <div className="flex items-center space-x-4">
+                  {/* Month Navigation Pills */}
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => changeMonth('prev')}
+                      className="text-gray-400 hover:text-gray-600 p-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
 
-                      {/* Month Pills */}
-                      <div className="flex items-center space-x-1">
-                        {[-2, -1, 0, 1, 2].map((offset) => (
-                          <button
-                            key={offset}
-                            onClick={() => selectMonth(offset)}
-                            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                              offset === 0
-                                ? 'bg-blue-600 text-white'
-                                : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                          >
-                            {getMonthShortName(offset)}
-                          </button>
-                        ))}
-                      </div>
-
-                      <button
-                        onClick={() => changeMonth('next')}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
+                    {/* Small Month Pills */}
+                    <div className="flex items-center space-x-1">
+                      {[-2, -1, 1, 2].map((offset) => (
+                        <button
+                          key={offset}
+                          onClick={() => selectMonth(offset)}
+                          className="px-3 py-1 rounded text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                        >
+                          {getMonthShortName(offset)}
+                        </button>
+                      ))}
                     </div>
 
-                    {/* Current Month Display */}
-                    <div>
-                      <h1 className="text-2xl font-semibold text-gray-900">
+                    <button
+                      onClick={() => changeMonth('next')}
+                      className="text-gray-400 hover:text-gray-600 p-1"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Current Month - Large Display */}
+                  <div className="border-2 border-gray-300 rounded-lg px-6 py-3 bg-white">
+                    <div className="text-center">
+                      <h1 className="text-xl font-bold text-gray-900">
                         {getMonthName(currentMonth)}
                       </h1>
-                      <p className={`text-sm font-medium ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      <p className={`text-sm font-medium mt-1 ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
                         ${totals.remaining.toLocaleString()} left to budget
                       </p>
                     </div>
