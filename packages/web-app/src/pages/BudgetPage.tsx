@@ -814,10 +814,11 @@ export const BudgetPage: React.FC = () => {
                     {/* Month Pills - 3 before, current, 3 after (symmetrical) */}
                     <div className="flex items-center space-x-2">
                       {[-3, -2, -1, 0, 1, 2, 3].map((offset) => {
-                        const isSelected = offset === 0;
                         const date = new Date(currentMonth + '-01');
                         date.setMonth(date.getMonth() + offset);
                         const monthKey = date.toISOString().slice(0, 7);
+                        const isSelected = monthKey === currentMonth; // Explicit check against current month
+
                         return (
                           <button
                             key={monthKey}
