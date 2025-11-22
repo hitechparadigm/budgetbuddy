@@ -1,24 +1,28 @@
 # BudgetBuddy Documentation
 
+**Last Updated**: 2025-11-21
+
 ## 📚 Documentation Index
+
+### Core Documentation
+- **[Development Status](./development-status.md)** - Current progress (99% complete), next steps, and roadmap
+- **[API Endpoints](./api-endpoints.md)** - Complete API documentation with examples
+- **[API Troubleshooting](./api-troubleshooting.md)** - Common API issues and solutions
 
 ### Architecture & Infrastructure
 - **[AWS Stack Architecture](./aws-stack-architecture.md)** - Complete overview of all AWS stacks and their responsibilities
 - **[Stack Management Guide](./stack-management-guide.md)** - How to manage, deploy, and maintain the stacks
-- **[Deployment Management](./deployment-management.md)** - Deployment commands, monitoring, and troubleshooting
-
-### Development & Status
-- **[Development Status](./development-status.md)** - Current progress, next steps, and roadmap
-- **[API Endpoints](./api-endpoints.md)** - Complete API documentation with examples
+- **[AWS Resource Standards](./aws-resource-standards.md)** - Naming conventions and tagging standards
 
 ### Configuration & Setup
 - **[Configuration Guide](./configuration-guide.md)** - Environment variables, frontend config, and AWS resource tags
-- **[AWS Resource Standards](./aws-resource-standards.md)** - Naming conventions and tagging standards
-
-### CI/CD & Deployment
 - **[GitHub Secrets Setup](./github-secrets-setup.md)** - How to configure GitHub Actions with AWS credentials
-- **[Quick Deploy Guide](../QUICK-DEPLOY.md)** - Step-by-step deployment instructions
-- **[CI/CD Fix Documentation](../CICD-FIX.md)** - Troubleshooting CI/CD pipeline issues
+
+### CI/CD & Automation
+- **[CI/CD Automation Guide](./cicd-automation-guide.md)** - Complete guide to automated monitoring and documentation enforcement
+
+### Development Guidelines
+- **[Development Best Practices](./DEVELOPMENT_BEST_PRACTICES.md)** - Consolidated best practices, lessons learned, and common pitfalls
 
 ## 🏗️ Current Infrastructure Status
 

@@ -1,7 +1,7 @@
 # API Endpoints Documentation
 
 **Base URL**: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1`
-**Last Updated**: 2025-11-19
+**Last Updated**: 2025-11-21
 **API Version**: 1.0
 
 ## Authentication
