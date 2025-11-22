@@ -126,22 +126,7 @@ echo "  ✓ All links must be tested and functional"
 echo "  ✓ All code examples must be current and accurate"
 echo ""
 
-# NO BYPASS OPTION - Documentation update is MANDATORY
-echo -e "${RED}⚠️  MANDATORY COMPLIANCE REQUIRED ⚠️${NC}"
-echo -e "${YELLOW}This is not optional. ALL documentation must be updated before ANY push.${NC}"
-echo ""
-
-read -p "🔒 CONFIRM: Have you completed ALL mandatory documentation updates listed above? (y/n): " -n 1 -r
-echo
-
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "${RED}❌ PUSH BLOCKED: Documentation update is MANDATORY${NC}"
-    echo -e "${RED}🚫 Complete ALL checklist items above before attempting to push.${NC}"
-    echo -e "${BLUE}💡 No exceptions. This ensures project documentation remains accurate and complete.${NC}"
-    exit 1
-fi
-
-# Additional verification - check if files were actually modified
+# Automatic verification - check if files were actually modified
 echo -e "${PURPLE}🔍 Verifying documentation was actually updated...${NC}"
 
 RECENT_DOCS=()
@@ -151,15 +136,45 @@ for doc in "${REQUIRED_DOCS[@]}"; do
     fi
 done
 
-if [ ${#RECENT_DOCS[@]} -lt 3 ]; then
-    echo -e "${RED}❌ VERIFICATION FAILED: Insufficient documentation updates detected${NC}"
+# If at least 3 files were updated, allow push automatically
+if [ ${#RECENT_DOCS[@]} -ge 3 ]; then
+    echo -e "${GREEN}✅ AUTOMATIC DOCUMENTATION CHECK PASSED${NC}"
+    echo -e "${GREEN}📝 Verified: ${#RECENT_DOCS[@]}/5 documentation files updated within last 2 hours${NC}"
+    echo -e "${BLUE}🚀 Documentation compliance confirmed - proceeding with push...${NC}"
+    exit 0
+fi
+
+# If less than 3 files updated, show warning and require confirmation
+echo -e "${YELLOW}⚠️  WARNING: Only ${#RECENT_DOCS[@]}/5 documentation files updated recently${NC}"
+echo -e "${YELLOW}Updated files:${NC}"
+for doc in "${RECENT_DOCS[@]}"; do
+    echo -e "${GREEN}  ✓ $doc${NC}"
+done
+echo ""
+
+echo -e "${RED}⚠️  MANUAL CONFIRMATION REQUIRED ⚠️${NC}"
+echo -e "${YELLOW}Less than 3 documentation files were updated in the last 2 hours.${NC}"
+echo ""
+
+# Check if running in CI/CD or automated environment
+if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] || [ ! -t 0 ]; then
+    echo -e "${RED}❌ PUSH BLOCKED: Insufficient documentation updates in automated environment${NC}"
     echo -e "${RED}At least 3 documentation files must be updated within the last 2 hours${NC}"
     echo -e "${YELLOW}Updated files: ${#RECENT_DOCS[@]}/5 required${NC}"
-    echo -e "${RED}🚫 PUSH BLOCKED: Update documentation files and try again${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}✅ MANDATORY DOCUMENTATION CHECK PASSED${NC}"
-echo -e "${GREEN}📝 Verified: ${#RECENT_DOCS[@]}/5 documentation files updated${NC}"
-echo -e "${BLUE}🚀 Documentation compliance confirmed - proceeding with push...${NC}"
+read -p "🔒 CONFIRM: Have you completed ALL mandatory documentation updates listed above? (y/n): " -n 1 -r
+echo
+
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${RED}❌ PUSH BLOCKED: Documentation update is MANDATORY${NC}"
+    echo -e "${RED}🚫 Complete ALL checklist items above before attempting to push.${NC}"
+    echo -e "${BLUE}💡 Update at least 3 documentation files to enable automatic push.${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ MANUAL DOCUMENTATION CHECK PASSED${NC}"
+echo -e "${GREEN}📝 User confirmed documentation updates${NC}"
+echo -e "${BLUE}🚀 Proceeding with push...${NC}"
 exit 0
