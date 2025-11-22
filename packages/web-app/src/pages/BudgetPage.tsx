@@ -793,8 +793,8 @@ export const BudgetPage: React.FC = () => {
                     </svg>
                   </button>
                 )}
-                <div className="flex items-center space-x-4">
-                  {/* Month Navigation Pills */}
+                <div>
+                  {/* Month Navigation */}
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => changeMonth('prev')}
@@ -805,15 +805,28 @@ export const BudgetPage: React.FC = () => {
                       </svg>
                     </button>
 
-                    {/* Small Month Pills */}
-                    <div className="flex items-center space-x-1">
-                      {[-2, -1, 1, 2].map((offset) => (
+                    {/* Month Pills - Current in Center */}
+                    <div className="flex items-center space-x-2">
+                      {[-2, -1, 0, 1, 2].map((offset) => (
                         <button
                           key={offset}
                           onClick={() => selectMonth(offset)}
-                          className="px-3 py-1 rounded text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                          className={`rounded transition-all ${
+                            offset === 0
+                              ? 'border-2 border-gray-300 px-6 py-3 bg-white'
+                              : 'px-3 py-1 hover:bg-gray-100'
+                          }`}
                         >
-                          {getMonthShortName(offset)}
+                          <div className={offset === 0 ? 'text-center' : ''}>
+                            <div className={`font-bold ${offset === 0 ? 'text-lg text-gray-900' : 'text-xs text-gray-600'}`}>
+                              {offset === 0 ? getMonthName(currentMonth) : getMonthShortName(offset)}
+                            </div>
+                            {offset === 0 && (
+                              <p className={`text-sm font-medium mt-1 ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                ${totals.remaining.toLocaleString()} left to budget
+                              </p>
+                            )}
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -826,18 +839,6 @@ export const BudgetPage: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
-                  </div>
-
-                  {/* Current Month - Large Display */}
-                  <div className="border-2 border-gray-300 rounded-lg px-6 py-3 bg-white">
-                    <div className="text-center">
-                      <h1 className="text-xl font-bold text-gray-900">
-                        {getMonthName(currentMonth)}
-                      </h1>
-                      <p className={`text-sm font-medium mt-1 ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        ${totals.remaining.toLocaleString()} left to budget
-                      </p>
-                    </div>
                   </div>
                 </div>
               </div>
