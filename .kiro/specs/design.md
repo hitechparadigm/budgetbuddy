@@ -170,6 +170,151 @@ interface Transaction {
 }
 ```
 
+## Database Design (DynamoDB)
+
+### Single-Table Design
+
+BudgetBuddy uses a single DynamoDB table with a single-table design pattern for cost optimization and performance.
+
+**Table Name**: `budgetbuddy-dev-main`
+
+**Primary Key**:
+- **Partition Key (PK)**: String - Entity identifier
+- **Sort Key (SK)**: String - Entity type or relationship
+
+**Billing Mode**: On-demand (pay per request)
+
+**Features**:
+- Point-in-time recovery enabled
+- Encryption at rest with AWS managed keys
+- CloudWatch metrics enabled
+
+### Access Patterns
+
+#### 1. User Data
+```
+PK: USER#<userId>
+SK: METADATA
+Attributes: email, firstName, lastName, createdAt, updatedAt
+```
+
+#### 2. Budget Data
+```
+PK: USER#<userId>
+SK: BUDGET#<month>
+Attributes: budgetId, month, groups (JSON), isAIGenerated, createdAt, updatedAt
+```
+
+**Example**:
+```json
+{
+  "PK": "USER#abc123",
+  "SK": "BUDGET#2025-11",
+  "budgetId": "budget_1732147200000",
+  "month": "2025-11",
+  "groups": [
+    {
+      "id": "income-group",
+      "name": "Income",
+      "type": "income",
+      "categories": [...]
+    }
+  ],
+  "isAIGenerated": false,
+  "createdAt": "2025-11-21T10:00:00Z",
+  "updatedAt": "2025-11-21T15:30:00Z"
+}
+```
+
+### Query Patterns
+
+#### Get User Profile
+```typescript
+const params = {
+  TableName: 'budgetbuddy-dev-main',
+  Key: {
+    PK: `USER#${userId}`,
+    SK: 'METADATA'
+  }
+};
+```
+
+#### Get All Budgets for User
+```typescript
+const params = {
+  TableName: 'budgetbuddy-dev-main',
+  KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+  ExpressionAttributeValues: {
+    ':pk': `USER#${userId}`,
+    ':sk': 'BUDGET#'
+  }
+};
+```
+
+#### Get Specific Month Budget
+```typescript
+const params = {
+  TableName: 'budgetbuddy-dev-main',
+  Key: {
+    PK: `USER#${userId}`,
+    SK: `BUDGET#${month}`  // e.g., "BUDGET#2025-11"
+  }
+};
+```
+
+#### Create/Update Budget
+```typescript
+const params = {
+  TableName: 'budgetbuddy-dev-main',
+  Item: {
+    PK: `USER#${userId}`,
+    SK: `BUDGET#${month}`,
+    budgetId: `budget_${Date.now()}`,
+    month: month,
+    groups: budgetGroups,
+    isAIGenerated: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+};
+```
+
+### Data Storage Strategy
+
+**Embedded Documents**: Budget groups, categories, and transactions are stored as nested JSON within the budget item. This approach:
+- Reduces query complexity (single read for entire budget)
+- Minimizes DynamoDB costs (fewer read/write operations)
+- Simplifies data consistency (atomic updates)
+- Matches the application's access patterns (always fetch complete budget)
+
+**Trade-offs**:
+- Item size limit: 400KB (sufficient for typical monthly budgets)
+- No individual transaction queries (acceptable for MVP)
+- Updates require full budget item replacement (acceptable for MVP)
+
+### Performance Characteristics
+
+**Read Operations**:
+- Get user profile: 1 read unit
+- Get single month budget: 1 read unit
+- Get all user budgets: 1 read unit per month
+
+**Write Operations**:
+- Create budget: 1 write unit
+- Update budget: 1 write unit
+- Delete budget: 1 write unit
+
+**Cost Optimization**:
+- On-demand billing: Pay only for actual usage
+- Single-table design: Reduced table management overhead
+- Embedded documents: Fewer operations per user action
+
+### Backup and Recovery
+
+- **Point-in-time Recovery**: Enabled for 35-day retention
+- **On-demand Backups**: Manual backups before major changes
+- **Disaster Recovery**: Cross-region replication (future enhancement)
+
 ## User Interface Design
 
 ### Main Budget Screen Layout
