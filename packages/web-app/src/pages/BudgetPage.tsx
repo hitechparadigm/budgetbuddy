@@ -815,9 +815,12 @@ export const BudgetPage: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       {[-3, -2, -1, 0, 1, 2, 3].map((offset) => {
                         const isSelected = offset === 0;
+                        const date = new Date(currentMonth + '-01');
+                        date.setMonth(date.getMonth() + offset);
+                        const monthKey = date.toISOString().slice(0, 7);
                         return (
                           <button
-                            key={offset}
+                            key={monthKey}
                             onClick={() => selectMonth(offset)}
                             className={`rounded-lg transition-all duration-200 ${
                               isSelected
