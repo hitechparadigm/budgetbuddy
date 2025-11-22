@@ -811,9 +811,9 @@ export const BudgetPage: React.FC = () => {
                       </svg>
                     </button>
 
-                    {/* Month Pills - 3 before, current, 2 after (optimal for planning) */}
+                    {/* Month Pills - 3 before, current, 3 after (symmetrical) */}
                     <div className="flex items-center space-x-2">
-                      {[-3, -2, -1, 0, 1, 2].map((offset) => {
+                      {[-3, -2, -1, 0, 1, 2, 3].map((offset) => {
                         const isSelected = offset === 0;
                         return (
                           <button
