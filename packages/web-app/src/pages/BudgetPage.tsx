@@ -146,7 +146,7 @@ export const BudgetPage: React.FC = () => {
 
   useEffect(() => {
     loadBudget();
-  }, []);
+  }, [currentMonth]); // Reload budget when month changes
 
   const loadBudget = async () => {
     try {
@@ -161,9 +161,15 @@ export const BudgetPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.budgets && data.budgets.length > 0) {
-          // Use the most recent budget
-          const latestBudget = data.budgets[0];
-          setBudget(latestBudget);
+          // Find budget for the selected month
+          const monthBudget = data.budgets.find((b: Budget) => b.month === currentMonth);
+          if (monthBudget) {
+            setBudget(monthBudget);
+            setLoading(false);
+            return;
+          }
+          // If no budget for selected month, create a new empty one
+          setBudget(null);
           setLoading(false);
           return;
         }
@@ -178,7 +184,7 @@ export const BudgetPage: React.FC = () => {
         const budget: Budget = {
           id: `budget_${Date.now()}`,
           userId: 'mock_user_id',
-          month: new Date().toISOString().slice(0, 7),
+          month: currentMonth,
           groups: [
             {
               id: 'income-group',
