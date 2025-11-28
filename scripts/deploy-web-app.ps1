@@ -115,5 +115,5 @@ Write-Host ""
 Write-Host "🌐 Your app is live at:" -ForegroundColor White
 Write-Host "  $CLOUDFRONT_URL" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "⏱️  Note: CloudFront cache invalidation may take 5-10 minutes" -ForegroundColor Yellow
+Write-Host "Note: CloudFront cache invalidation may take 5-10 minutes" -ForegroundColor Yellow
 Write-Host ""
