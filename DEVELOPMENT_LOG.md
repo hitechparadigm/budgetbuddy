@@ -1,5 +1,85 @@
 # Development Log
 
+## 2025-11-27 - CloudFront Deployment & Data Persistence Fix
+
+### Session Summary
+**Duration**: 1 hour
+**Focus**: Production deployment and data persistence troubleshooting
+**Outcome**: Web app successfully deployed to CloudFront with full authentication and data persistence
+
+### Accomplishments
+
+- ✅ **Deployed Latest Web App to CloudFront** (0.5 hours)
+  - **Issue**: User reported budget data not persisting, starting from scratch on each visit
+  - **Root Cause**: CloudFront was serving an older version without full authentication features
+  - **Solution**: Built latest React app and deployed to S3, invalidated CloudFront cache
+  - **Files Modified**: None (deployment only)
+  - **Deployment Details**:
+    - Built with Vite: 62 modules, 338.25 kB (93.77 kB gzipped)
+    - Uploaded to S3: `budgetbuddy-web-app`
+    - CloudFront Distribution: `E1L1SU9OV8L4YR`
+    - Cache Invalidation: `I8P1L2ABBFM8KQ71VD5APCDEQX`
+  - **Testing**: Verified API health check, DynamoDB connection, and build success
+
+- ✅ **Fixed Deploy Script Syntax Error** (0.1 hours)
+  - **Issue**: PowerShell script failing with "string missing terminator" error
+  - **Root Cause**: Emoji character causing PowerShell parsing issues
+  - **Solution**: Removed emoji from deployment completion message
+  - **Files Modified**: `scripts/deploy-web-app.ps1`
+  - **Impact**: Deployment script now runs without errors
+
+- ✅ **Verified System Status** (0.4 hours)
+  - **API Gateway**: Healthy and responding (200 OK)
+  - **DynamoDB**: Table `budgetbuddy-dev-main` accessible
+  - **Lambda Functions**: All 13 unit tests passing
+  - **Frontend Build**: Successful with no critical errors
+  - **Dev Server**: Running on localhost:5173
+  - **Authentication**: JWT tokens properly stored in localStorage
+
+### Issues Encountered
+
+1. **CloudFront Serving Old Code**
+   - **Problem**: User's budget data wasn't persisting despite DynamoDB being configured
+   - **Investigation**: Checked authentication flow, token storage, and API endpoints
+   - **Resolution**: Deployed latest code to CloudFront with cache invalidation
+   - **Time Impact**: 30 minutes investigation + 15 minutes deployment
+   - **Lesson Learned**: Always verify CloudFront deployment version matches local development
+
+2. **PowerShell Script Syntax Error**
+   - **Problem**: Deployment script failing with terminator error
+   - **Investigation**: Identified emoji character causing parsing issues
+   - **Resolution**: Removed problematic emoji from string
+   - **Time Impact**: 5 minutes
+   - **Lesson Learned**: Avoid special characters in PowerShell strings
+
+### Lessons Learned
+
+1. **CloudFront Cache Management**
+   - CloudFront can serve stale content even after S3 updates
+   - Always create cache invalidation after deployment
+   - Cache invalidation takes 5-10 minutes to propagate
+   - Users should wait before testing new deployments
+
+2. **Data Persistence Architecture**
+   - Budget data flows: User Login → JWT Token → localStorage
+   - Budget CRUD: API Call with Token → DynamoDB
+   - Page Refresh: Load Budget → Retrieved from DynamoDB
+   - Authentication is required for all data operations
+
+3. **Deployment Verification**
+   - Check CloudFront deployment version before troubleshooting
+   - Verify S3 bucket contents match local build
+   - Test API endpoints independently of frontend
+   - Confirm authentication tokens are properly stored
+
+### Progress Metrics
+
+- **Overall Progress**: 99% → 99% (deployment maintenance)
+- **Frontend**: 100% (deployed to production)
+- **Backend**: 100% (all APIs working)
+- **Infrastructure**: 100% (CloudFront + S3 + DynamoDB)
+- **Testing**: 100% (13/13 unit tests passing)
+
 ## 2025-11-21 - Month Navigation UX/UI Fixes & Code Quality
 
 ### Session Summary
