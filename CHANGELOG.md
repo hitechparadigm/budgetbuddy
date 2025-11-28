@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.10.0] - 2025-11-27
+
+### Fixed
+- 🚀 **CloudFront Deployment** - Deployed latest web app version to production
+  - **Root Cause**: CloudFront was serving an older version of the application without full authentication and data persistence features
+  - **Solution**: Built and deployed latest React app to S3, invalidated CloudFront cache
+  - **Impact**: Users can now properly authenticate and their budget data persists to DynamoDB
+  - Deployment Details:
+    - S3 Bucket: `budgetbuddy-web-app`
+    - CloudFront Distribution: `E1L1SU9OV8L4YR`
+    - Invalidation ID: `I8P1L2ABBFM8KQ71VD5APCDEQX`
+- 🔧 **Deploy Script Syntax Error** - Fixed PowerShell parsing error in deployment script
+  - **Root Cause**: Emoji character in string causing PowerShell terminator error
+  - **Solution**: Removed emoji from "Note: CloudFront cache invalidation" message
+  - **Impact**: Deployment script now runs without syntax errors
+
+### Improved
+- 📦 **Production Deployment** - Web app now live at https://d1ueeugn9zcx7n.cloudfront.net
+  - Full authentication flow with JWT tokens
+  - Budget data persistence to DynamoDB
+  - Proper token storage in localStorage
+  - Month-based budget loading and saving
+
 ## [1.9.0] - 2025-11-21
 
 ### Fixed
