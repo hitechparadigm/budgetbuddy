@@ -394,3 +394,75 @@ None - all critical bugs have been resolved.
 8. Receipt scanning with OCR
 9. Export functionality (PDF/CSV)
 10. Premium subscription features
+
+
+---
+
+## Enhanced Month Navigation UI Implementation
+
+- [x] 8. Implement Enhanced Month Navigation UI
+
+  - Replace horizontal month scroll with header-based navigation
+  - Add "Today" button, arrow controls, and future month handling
+  - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.9, 8.10_
+
+- [x] 8.1 Add helper functions for month navigation
+
+
+  - Implement `goToToday()` function
+  - Implement `isFutureMonth()` function
+  - Implement `copyPreviousMonthBudget()` function
+  - _Requirements: 8.3, 8.5, 8.7_
+
+
+
+- [ ] 8.2 Update desktop/tablet header UI
+  - Replace month pills with large month heading
+  - Add budget remaining display below heading
+  - Add "Today" button with blue outline styling
+  - Add left/right arrow buttons for navigation
+
+  - Remove horizontal scroll month navigation
+  - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.9_
+
+- [ ] 8.3 Add future month warning badge
+  - Display orange warning badge when viewing future month
+
+
+  - Position badge in top-right of header
+  - Show text: "You are viewing a future month"
+  - _Requirements: 8.5_
+
+- [x] 8.4 Implement empty state for future months
+
+  - Create empty state component with circular icon
+  - Add heading: "Hey there, looks like you need a budget for [Month]"
+  - Add subtext about copying previous month
+  - Add "Start Planning for [Month]" button
+  - _Requirements: 8.6_
+
+- [ ] 8.5 Implement copy previous month functionality
+  - Fetch previous month's budget from API
+
+  - Copy budget structure (categories, planned amounts)
+  - Reset spent amounts and transactions to zero
+  - Generate new IDs for budget and categories
+  - Save new budget to DynamoDB via API
+  - Update UI to display new budget
+
+  - _Requirements: 8.7, 8.8_
+
+- [ ] 8.6 Update mobile header UI
+  - Adapt new header design for mobile view
+  - Ensure "Today" button and arrows work on mobile
+  - Test responsive layout
+  - _Requirements: 8.1, 8.2, 8.3, 8.4_
+
+- [ ] 8.7 Test month navigation functionality
+  - Test "Today" button navigates to current month
+  - Test arrow buttons navigate prev/next months
+  - Test future month warning appears correctly
+  - Test empty state displays for future months
+  - Test copy budget creates new budget correctly
+  - Test budget data persists across month changes
+  - _Requirements: 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.10_

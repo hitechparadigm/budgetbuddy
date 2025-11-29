@@ -210,3 +210,33 @@ The following features are not included in the current MVP:
 - 99.9% API uptime
 - < 1% error rate on API calls
 - Zero data loss incidents
+
+
+---
+
+### Requirement 8: Enhanced Month Navigation UI
+
+**User Story:** As a user, I want a cleaner month navigation interface with a dropdown, "Today" button, and arrow controls, so that I can quickly navigate to any month and easily return to the current month.
+
+#### Acceptance Criteria
+
+1. WHEN viewing the budget page, THE BudgetBuddy SHALL display the current month name and year as a large heading (e.g., "December 2025")
+2. THE BudgetBuddy SHALL display the remaining budget amount below the month heading (e.g., "$5,700.00 left to budget")
+3. THE BudgetBuddy SHALL provide a "Today" button that navigates to the current month
+4. THE BudgetBuddy SHALL provide left and right arrow buttons for navigating to previous and next months
+5. WHEN viewing a future month, THE BudgetBuddy SHALL display an orange warning badge stating "You are viewing a future month"
+6. WHEN viewing a future month with no budget, THE BudgetBuddy SHALL display an empty state with:
+   - A circular icon illustration
+   - Message: "Hey there, looks like you need a budget for [Month]"
+   - Subtext: "We'll copy [Previous Month]'s budget to get you started"
+   - Action button: "Start Planning for [Month]"
+7. WHEN clicking "Start Planning for [Month]", THE BudgetBuddy SHALL copy the previous month's budget structure (categories and planned amounts) but reset all spent amounts and transactions to zero
+8. THE BudgetBuddy SHALL automatically save the new budget to DynamoDB when created
+9. THE BudgetBuddy SHALL remove the horizontal month scroll navigation (replaced by dropdown + arrows)
+10. THE BudgetBuddy SHALL maintain the current month selection when navigating between months
+
+**Implementation Notes:**
+- Replace horizontal month pills with cleaner header design
+- Add month dropdown for quick access to any month
+- Implement copy-previous-month functionality for future months
+- Ensure budget data persists across month changes

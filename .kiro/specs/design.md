@@ -601,3 +601,168 @@ Response: { message }
 6. **Goals**: Savings goals and debt payoff tracking
 7. **Notifications**: Bill reminders and budget alerts
 8. **Export**: PDF/CSV export functionality
+
+
+---
+
+## Enhanced Month Navigation UI Design
+
+### Overview
+
+Redesign the month navigation interface to match the EveryDollar style with a cleaner header layout, "Today" button, arrow navigation, and future month handling with budget copying functionality.
+
+### Components
+
+#### 1. Month Header Component
+
+**Location**: Top of budget page (desktop/tablet view)
+
+**Layout**:
+```
+[Month Year]                    [Today] [<] [>]
+$X,XXX.XX left to budget
+                    [⚠️ You are viewing a future month]
+```
+
+**Elements**:
+- **Month Title**: Large heading (text-3xl) showing "Month YYYY" (e.g., "December 2025")
+- **Budget Remaining**: Subtitle showing amount left to budget with color coding:
+  - Green: Positive remaining
+  - Red: Negative (over budget)
+- **Today Button**: Blue outlined button that navigates to current month
+- **Arrow Buttons**: Left/right arrows for prev/next month navigation
+- **Future Month Badge**: Orange warning badge (only shown for future months)
+
+#### 2. Empty State Component
+
+**Trigger**: When viewing a future month with no existing budget
+
+**Layout**:
+```
+        [Circular Icon]
+
+Hey there, looks like you need a budget for December.
+
+We'll copy November's budget to get you started.
+
+    [Start Planning for December]
+```
+
+**Elements**:
+- **Icon**: Large circular border with document/arrow icon (w-48 h-48)
+- **Heading**: "Hey there, looks like you need a budget for [Month]"
+- **Subtext**: "We'll copy [Previous Month]'s budget to get you started"
+- **Action Button**: Blue button "Start Planning for [Month]"
+
+### Data Flow
+
+#### Month Navigation Flow
+```
+User clicks arrow/Today
+  ↓
+Update currentMonth state
+  ↓
+loadBudget() called
+  ↓
+Check if budget exists for month
+  ↓
+If exists: Display budget
+If not + future: Show empty state
+If not + past: Show empty budget
+```
+
+#### Copy Previous Month Flow
+```
+User clicks "Start Planning"
+  ↓
+Fetch previous month's budget from API
+  ↓
+Copy budget structure:
+  - Keep: categories, planned amounts, icons
+  - Reset: spent amounts = 0, transactions = []
+  - New: budget ID, month, timestamps
+  ↓
+Save new budget to DynamoDB
+  ↓
+Display new budget
+```
+
+### API Integration
+
+**Endpoints Used**:
+- `GET /budget` - Fetch all budgets for user
+- `POST /budget` - Create new budget
+- `PUT /budget/{id}` - Update existing budget
+
+**Budget Copy Logic**:
+```typescript
+const copyPreviousMonthBudget = async () => {
+  // 1. Calculate previous month
+  const prevMonth = getPreviousMonth(currentMonth);
+
+  // 2. Fetch previous budget
+  const prevBudget = await fetchBudget(prevMonth);
+
+  // 3. Create new budget with copied structure
+  const newBudget = {
+    ...prevBudget,
+    id: generateId(),
+    month: currentMonth,
+    groups: prevBudget.groups.map(group => ({
+      ...group,
+      categories: group.categories.map(cat => ({
+        ...cat,
+        id: generateId(),
+        spentAmount: 0,
+        transactions: []
+      }))
+    })),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  // 4. Save to backend
+  await saveBudgetToBackend(newBudget);
+
+  // 5. Update UI
+  setBudget(newBudget);
+};
+```
+
+### State Management
+
+**New State Variables**:
+- None (uses existing `currentMonth` state)
+
+**New Functions**:
+- `goToToday()` - Navigate to current month
+- `isFutureMonth()` - Check if viewing future month
+- `copyPreviousMonthBudget()` - Copy previous month's budget
+
+### UI/UX Considerations
+
+1. **Visual Hierarchy**: Month name is prominent, controls are secondary
+2. **Color Coding**:
+   - Green: Positive budget remaining
+   - Red: Over budget
+   - Orange: Future month warning
+   - Blue: Action buttons
+3. **Responsive**: Header adapts to mobile with simplified layout
+4. **Loading States**: Show loading indicator while copying budget
+5. **Error Handling**: Display error if previous month has no budget
+
+### Testing Strategy
+
+**Unit Tests**:
+- Test `isFutureMonth()` with various dates
+- Test `copyPreviousMonthBudget()` with mock data
+- Test month navigation state updates
+
+**Integration Tests**:
+- Test full flow: navigate to future month → copy budget → verify data saved
+- Test "Today" button returns to current month
+- Test arrow navigation updates month correctly
+
+**Property-Based Tests**:
+- Property 1: For any future month, copying previous month should create valid budget
+- Property 2: For any month navigation, budget data should persist correctly
