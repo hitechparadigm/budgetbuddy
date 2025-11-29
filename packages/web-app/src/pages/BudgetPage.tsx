@@ -526,6 +526,68 @@ export const BudgetPage: React.FC = () => {
     setCurrentMonth(date.toISOString().slice(0, 7));
   };
 
+  // Navigate to current month
+  const goToToday = () => {
+    setCurrentMonth(new Date().toISOString().slice(0, 7));
+  };
+
+  // Check if viewing a future month
+  const isFutureMonth = () => {
+    const today = new Date();
+    const currentMonthDate = new Date(currentMonth + '-01');
+    return currentMonthDate > new Date(today.getFullYear(), today.getMonth(), 1);
+  };
+
+  // Copy previous month's budget for future month
+  const copyPreviousMonthBudget = async () => {
+    try {
+      // Calculate previous month
+      const [year, month] = currentMonth.split('-').map(Number);
+      const prevMonthDate = new Date(year, month - 2, 1);
+      const prevMonth = prevMonthDate.toISOString().slice(0, 7);
+
+      // Fetch previous month's budget
+      const response = await fetch(`${API_BASE_URL}/budget`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('budgetbuddy_id_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const prevBudget = data.budgets?.find((b: Budget) => b.month === prevMonth);
+
+        if (prevBudget) {
+          // Copy budget structure but reset spent amounts and transactions
+          const newBudget: Budget = {
+            ...prevBudget,
+            id: `budget_${Date.now()}`,
+            month: currentMonth,
+            groups: prevBudget.groups.map((group: BudgetGroup) => ({
+              ...group,
+              categories: group.categories.map((cat: BudgetCategory) => ({
+                ...cat,
+                id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                spentAmount: 0,
+                transactions: []
+              }))
+            })),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          setBudget(newBudget);
+          await saveBudgetToBackend(newBudget);
+        } else {
+          console.warn('No previous month budget found to copy');
+        }
+      }
+    } catch (error) {
+      console.error('Error copying previous month budget:', error);
+    }
+  };
+
   const handleDeleteTransaction = async (transactionId: string, categoryId: string) => {
     if (!budget) return;
     if (!confirm('Are you sure you want to delete this transaction?')) return;
@@ -776,7 +838,7 @@ export const BudgetPage: React.FC = () => {
           )}
 
           {/* Desktop/Tablet Header */}
-          <div className={`p-6 border-b border-gray-200 ${isMobile ? 'hidden lg:block' : ''}`}>
+          <div className={`p-6 border-b border-gray-200 bg-gray-50 ${isMobile ? 'hidden lg:block' : ''}`}>
             {/* Hamburger menu for tablet */}
             {isMobile && (
               <button
@@ -789,79 +851,109 @@ export const BudgetPage: React.FC = () => {
               </button>
             )}
 
-            {/* Month Navigation - Centered */}
-            <div className="flex items-center justify-center">
-              <div className="flex items-center space-x-2 max-w-5xl">
-                    {/* Previous Button */}
-                    <button
-                      onClick={() => changeMonth('prev')}
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-                      aria-label="Previous month"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
+            {/* New Header Design */}
+            <div className="flex items-center justify-between">
+              {/* Left: Month Title and Budget Remaining */}
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                  {getMonthName(currentMonth)}
+                </h1>
+                {budget && (
+                  <p className="text-lg text-gray-600">
+                    <span className={`font-semibold ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      ${Math.abs(totals.remaining).toLocaleString()}
+                    </span>
+                    {' '}left to budget
+                  </p>
+                )}
+              </div>
 
-                    {/* Month Pills Container */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 justify-center px-2">
-                      {[-3, -2, -1, 0, 1, 2, 3].map((offset) => {
-                        // Parse current month and calculate target month
-                        const [year, month] = currentMonth.split('-').map(Number);
-                        const targetDate = new Date(year, month - 1 + offset, 1);
-                        const monthStr = targetDate.toISOString().slice(0, 7);
+              {/* Right: Navigation Controls */}
+              <div className="flex items-center space-x-2">
+                {/* Today Button */}
+                <button
+                  onClick={goToToday}
+                  className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                >
+                  Today
+                </button>
 
-                        // Format month display
-                        const monthName = targetDate.toLocaleDateString('en-US', { month: 'short' });
-                        const yearNum = targetDate.getFullYear();
-                        const showYear = yearNum !== year;
+                {/* Previous Month Button */}
+                <button
+                  onClick={() => changeMonth('prev')}
+                  className="p-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                  aria-label="Previous month"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
 
-                        const isSelected = offset === 0;
-
-                        return (
-                          <button
-                            key={`month-${monthStr}`}
-                            type="button"
-                            onClick={() => selectMonth(offset)}
-                            className={`
-                              flex-shrink-0 rounded-lg transition-all duration-200 min-h-[60px] flex items-center justify-center
-                              ${isSelected
-                                ? 'border-2 border-green-500 bg-green-50 px-5 shadow-md min-w-[140px]'
-                                : 'border border-gray-200 bg-white px-4 hover:border-gray-400 hover:bg-gray-50 min-w-[70px]'
-                              }
-                            `}
-                          >
-                            <div className="text-center py-1">
-                              <div className={`font-semibold whitespace-nowrap ${isSelected ? 'text-base text-gray-900' : 'text-xs text-gray-600'}`}>
-                                {isSelected ? `${monthName} ${yearNum}` : monthName}
-                                {!isSelected && showYear && <span className="text-[10px] ml-0.5">{yearNum}</span>}
-                              </div>
-                              {isSelected && (
-                                <p className={`text-xs font-medium mt-0.5 whitespace-nowrap ${totals.remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                  ${Math.abs(totals.remaining).toLocaleString()} {totals.remaining < 0 ? 'over' : 'left'}
-                                </p>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Next Button */}
-                    <button
-                      onClick={() => changeMonth('next')}
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0"
-                      aria-label="Next month"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
+                {/* Next Month Button */}
+                <button
+                  onClick={() => changeMonth('next')}
+                  className="p-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                  aria-label="Next month"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                     </button>
               </div>
             </div>
+
+            {/* Future Month Warning */}
+            {isFutureMonth() && (
+              <div className="mt-4 flex items-center justify-end">
+                <div className="inline-flex items-center px-3 py-1.5 bg-yellow-100 border border-yellow-300 rounded-full">
+                  <svg className="w-4 h-4 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm font-medium text-yellow-800">You are viewing a future month.</span>
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* Empty State for Future Months */}
+          {!budget && isFutureMonth() && (
+            <div className="flex items-center justify-center min-h-[500px] p-8">
+              <div className="text-center max-w-md">
+                {/* Icon */}
+                <div className="mb-6 flex justify-center">
+                  <div className="w-48 h-48 rounded-full border-4 border-gray-200 flex items-center justify-center">
+                    <svg className="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 3v6h6" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Message */}
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                  Hey there, looks like you need a budget for {getMonthName(currentMonth).split(' ')[0]}.
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  We'll copy {(() => {
+                    const [year, month] = currentMonth.split('-').map(Number);
+                    const prevDate = new Date(year, month - 2, 1);
+                    return getMonthName(prevDate.toISOString().slice(0, 7)).split(' ')[0];
+                  })()} budget to get you started.
+                </p>
+
+                {/* Action Button */}
+                <button
+                  onClick={copyPreviousMonthBudget}
+                  className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Start Planning for {getMonthName(currentMonth).split(' ')[0]}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Budget Categories */}
+          {budget && (
           <div className="p-4 lg:p-6 space-y-6 lg:space-y-8">
             {budget.groups.map(group => (
               <div key={group.id} className="space-y-4">
@@ -977,6 +1069,7 @@ export const BudgetPage: React.FC = () => {
               </div>
             ))}
           </div>
+          )}
         </div>
 
         {/* Right Sidebar - Summary/Transactions */}
