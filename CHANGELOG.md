@@ -1,5 +1,41 @@
 # Changelog
 
+## [1.11.0] - 2025-11-28
+
+### Added
+- 🎨 **Enhanced Month Navigation UI** - Redesigned month navigation interface
+  - Large month heading with year (e.g., "December 2025")
+  - Budget remaining display below heading with color coding
+  - "Today" button for quick navigation to current month
+  - Left/right arrow buttons for prev/next month navigation
+  - Yellow warning badge when viewing future months
+  - Orange warning badge when viewing past months
+  - Empty state for future months with budget copy functionality
+  - "Start Planning for [Month]" button to copy previous month's budget
+  - Automatic budget creation and saving to DynamoDB
+
+### Fixed
+- 🐛 **Timezone Issues** - Fixed month display showing wrong month due to UTC/local timezone conversion
+  - Changed `getMonthName()` to create dates in local timezone
+  - Changed `isFutureMonth()` to compare year/month directly without date objects
+  - October now correctly displays as "October" instead of "September"
+  - November now correctly displays as "November" instead of "October"
+
+### Improved
+- 📱 **Cleaner Header Design** - Removed horizontal month scroll, replaced with header-based navigation
+- 💾 **Future Month Handling** - Smart budget copying that preserves structure but resets transactions
+- 🎯 **User Experience** - Easier month navigation with prominent controls
+- 📅 **Month Context Awareness** - Clear visual indicators for past, current, and future months
+
+### Technical
+- Added `goToToday()` function for current month navigation
+- Added `isFutureMonth()` function to detect future month viewing
+- Added `isPastMonth()` function to detect past month viewing
+- Added `copyPreviousMonthBudget()` function to copy budget structure
+- Fixed timezone bugs in date handling throughout the application
+- Budget copying resets spent amounts and transactions to zero
+- New budgets automatically saved to DynamoDB via API
+
 ## [1.10.0] - 2025-11-27
 
 ### Fixed

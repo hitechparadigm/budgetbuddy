@@ -1,5 +1,85 @@
 # Development Log
 
+## 2025-11-28 - Enhanced Month Navigation UI & Timezone Fixes
+
+### Session Summary
+**Duration**: 2 hours
+**Focus**: UI redesign for month navigation and critical timezone bug fixes
+**Outcome**: Clean header design with proper month display and past/future month warnings
+
+### Accomplishments
+
+- ✅ **Redesigned Month Navigation Header** (1 hour)
+  - Replaced horizontal month scroll with clean header layout
+  - Added large month heading (text-3xl) with budget remaining
+  - Added "Today" button for quick navigation to current month
+  - Added left/right arrow buttons for prev/next month
+  - Implemented yellow warning badge for future months
+  - Implemented orange warning badge for past months
+  - **Files Modified**: `packages/web-app/src/pages/BudgetPage.tsx`
+
+- ✅ **Fixed Critical Timezone Bugs** (0.5 hours)
+  - **Issue**: Months displaying incorrectly (November showing as October)
+  - **Root Cause**: UTC vs local timezone conversion in date handling
+  - **Solution**: Changed date creation to use local timezone constructor
+  - **Impact**: All months now display correctly regardless of timezone
+  - **Functions Fixed**: `getMonthName()`, `isFutureMonth()`
+
+- ✅ **Implemented Future Month Handling** (0.3 hours)
+  - Added empty state for future months with copy budget functionality
+  - "Start Planning for [Month]" button copies previous month's budget
+  - Budget structure preserved, spent amounts and transactions reset
+  - Automatic save to DynamoDB when new budget created
+
+- ✅ **Added Helper Functions** (0.2 hours)
+  - `goToToday()` - Navigate to current month
+  - `isFutureMonth()` - Check if viewing future month
+  - `isPastMonth()` - Check if viewing past month
+  - `copyPreviousMonthBudget()` - Copy previous month's budget structure
+
+### Issues Encountered
+
+1. **Timezone Display Bug**
+   - **Problem**: November 2025 displaying as "October 2025" in header
+   - **Investigation**: Found `new Date('2025-11-01')` creates UTC date, but `toLocaleDateString()` converts to local timezone (UTC-4), causing October 31st to display
+   - **Resolution**: Changed to `new Date(year, month - 1, 1)` to create in local timezone
+   - **Time Impact**: 30 minutes debugging
+   - **Lesson Learned**: Always use local timezone constructor for display dates
+
+2. **Timezone Comparison Bug**
+   - **Problem**: `isFutureMonth()` incorrectly identifying current month as future
+   - **Investigation**: Date comparison had 4-hour offset due to timezone differences
+   - **Resolution**: Compare year and month numbers directly instead of date objects
+   - **Time Impact**: 15 minutes
+   - **Lesson Learned**: Avoid date object comparisons when only year/month matters
+
+### Lessons Learned
+
+1. **JavaScript Date Timezone Pitfalls**
+   - `new Date('YYYY-MM-DD')` creates UTC date
+   - `new Date(year, month, day)` creates local timezone date
+   - `toLocaleDateString()` converts to local timezone
+   - Always be explicit about timezone when working with dates
+
+2. **Month Navigation UX**
+   - Large, prominent month heading improves clarity
+   - "Today" button is essential for quick navigation back to current month
+   - Visual warnings (badges) help users understand context (past/future)
+   - Arrow buttons are more intuitive than horizontal scroll
+
+3. **State Management**
+   - Console logging state changes helps debug UI update issues
+   - Hard refresh may be needed after code changes in dev mode
+   - State updates trigger re-renders, but timezone bugs can mask this
+
+### Progress Metrics
+
+- **Overall Progress**: 99% → 99% (UI polish)
+- **Frontend**: 100% (enhanced navigation)
+- **Backend**: 100% (all APIs working)
+- **Infrastructure**: 100% (CloudFront + S3 + DynamoDB)
+- **Testing**: 100% (13/13 unit tests passing)
+
 ## 2025-11-27 - CloudFront Deployment & Data Persistence Fix
 
 ### Session Summary
