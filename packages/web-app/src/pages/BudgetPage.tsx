@@ -90,7 +90,11 @@ export const BudgetPage: React.FC = () => {
   const [sidebarWidth, setSidebarWidth] = useState(400); // Default 400px (larger than w-80 which is 320px)
 
   // Current month state
-  const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7)); // Format: YYYY-MM
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const today = new Date().toISOString().slice(0, 7);
+    console.log('Initial currentMonth state:', today);
+    return today;
+  }); // Format: YYYY-MM
   const [isResizing, setIsResizing] = useState(false);
 
   // Handle sidebar resize
@@ -145,6 +149,7 @@ export const BudgetPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    console.log('currentMonth changed to:', currentMonth);
     loadBudget();
   }, [currentMonth]); // Reload budget when month changes
 
@@ -516,7 +521,8 @@ export const BudgetPage: React.FC = () => {
   };
 
   const getMonthName = (monthStr: string) => {
-    const date = new Date(monthStr + '-01');
+    const [year, month] = monthStr.split('-').map(Number);
+    const date = new Date(year, month - 1, 1); // Create in local timezone
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
@@ -528,14 +534,37 @@ export const BudgetPage: React.FC = () => {
 
   // Navigate to current month
   const goToToday = () => {
-    setCurrentMonth(new Date().toISOString().slice(0, 7));
+    const today = new Date().toISOString().slice(0, 7);
+    console.log('goToToday called, setting month to:', today);
+    setCurrentMonth(today);
   };
 
   // Check if viewing a future month
   const isFutureMonth = () => {
     const today = new Date();
-    const currentMonthDate = new Date(currentMonth + '-01');
-    return currentMonthDate > new Date(today.getFullYear(), today.getMonth(), 1);
+    const [year, month] = currentMonth.split('-').map(Number);
+
+    // Compare year and month directly to avoid timezone issues
+    const currentYear = today.getFullYear();
+    const currentMonthNum = today.getMonth() + 1; // getMonth() is 0-indexed
+
+    if (year > currentYear) return true;
+    if (year === currentYear && month > currentMonthNum) return true;
+    return false;
+  };
+
+  // Check if viewing a past month
+  const isPastMonth = () => {
+    const today = new Date();
+    const [year, month] = currentMonth.split('-').map(Number);
+
+    // Compare year and month directly to avoid timezone issues
+    const currentYear = today.getFullYear();
+    const currentMonthNum = today.getMonth() + 1; // getMonth() is 0-indexed
+
+    if (year < currentYear) return true;
+    if (year === currentYear && month < currentMonthNum) return true;
+    return false;
   };
 
   // Copy previous month's budget for future month
@@ -913,6 +942,18 @@ export const BudgetPage: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Past Month Warning */}
+            {isPastMonth() && (
+              <div className="mt-4 flex items-center justify-end">
+                <div className="inline-flex items-center px-3 py-1.5 bg-orange-100 border border-orange-300 rounded-full">
+                  <svg className="w-4 h-4 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm font-medium text-orange-800">You are viewing a past month.</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Empty State for Future Months */}
@@ -962,7 +1003,7 @@ export const BudgetPage: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <span className="text-green-500 text-sm">●</span>
                     <h2 className="text-lg font-semibold text-gray-900">{group.name}</h2>
-                    <span className="text-sm text-gray-500">for {new Date().toLocaleDateString('en-US', { month: 'long' })}</span>
+                    <span className="text-sm text-gray-500">for {getMonthName(currentMonth).split(' ')[0]}</span>
                     <button className="text-gray-400 hover:text-gray-600">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
