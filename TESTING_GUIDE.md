@@ -1,352 +1,287 @@
-# BudgetBuddy Testing Guide
+# Testing Guide - Timezone Fix & UX Improvements
 
-## **🚀 Quick Start - Test in 5 Minutes**
+## 🧪 Local Testing
 
-### **Step 1: Verify Everything is Running**
-```bash
-npm run test:journey
-```
-This checks that all services are healthy and ready.
+### 1. Start the Development Server
 
-### **Step 2: Open Your Browser**
-Visit: **http://localhost:5173/**
+```powershell
+# Navigate to web app directory
+cd packages/web-app
 
-You should see the BudgetBuddy application!
+# Install dependencies (if needed)
+npm install
 
----
-
-## **🧪 What You Can Test Right Now**
-
-### **1. Test Page (No Authentication Required)**
-
-**URL**: http://localhost:5173/test/transactions
-
-**What to test:**
-- ✅ Health check status (should show green)
-- ✅ Create transaction form
-- ✅ Transaction list view
-- ✅ Summary calculations
-- ✅ Delete transactions
-
-**Expected behavior:**
-- Health check shows "✅ transactions service is healthy"
-- Creating transactions will fail with auth error (this is correct!)
-- Form validation works (try submitting empty form)
-
----
-
-### **2. Navigation & Layout**
-
-**URL**: http://localhost:5173/dashboard (or any protected route)
-
-**What to test:**
-- ✅ Navigation bar appears at top
-- ✅ Navigation links: Dashboard, Transactions, Budget, Test
-- ✅ Active page is highlighted in navigation
-- ✅ Responsive design (resize browser window)
-- ✅ Clean, professional styling
-
----
-
-### **3. Transaction Management Page**
-
-**URL**: http://localhost:5173/transactions
-
-**What to test:**
-- ✅ Summary cards showing totals
-- ✅ "Add Transaction" button
-- ✅ Filter controls (type, date range)
-- ✅ Transaction list view
-- ✅ Edit/Delete buttons on transactions
-
-**Note**: You'll need to be authenticated to see data. Without auth, you'll see the login page.
-
----
-
-### **4. Budget Dashboard**
-
-**URL**: http://localhost:5173/budget
-
-**What to test:**
-- ✅ Budget overview cards (income, expenses, savings, balance)
-- ✅ Month selector dropdown
-- ✅ Category progress bars
-- ✅ Color-coded progress (green/yellow/red)
-- ✅ Remaining amounts for each category
-
-**Note**: Requires authentication and existing budget data.
-
----
-
-## **🔐 Testing with Authentication**
-
-### **Option A: Create a Test User**
-
-```bash
-npm run create-test-user
+# Start development server
+npm run dev
 ```
 
-This creates a test user with:
-- **Email**: testuser@example.com
-- **Password**: TempPassword123!
-- **Family ID**: family_test_001
+The app will be available at: `http://localhost:5173/`
 
-### **Option B: Use Existing Test User**
+### 2. Test Timezone Fix
 
-If you already have a test user, use those credentials.
+**Scenario 1: Current Month Display**
+1. Open the app at `http://localhost:5173/`
+2. Log in with your credentials
+3. **Expected**: You should see the correct current month (November 2025 if testing on Nov 30)
+4. **Before the fix**: Would show December on Nov 30 at 7:22 PM EST
+5. **After the fix**: Shows November correctly
 
-### **Login Flow Test:**
+**Scenario 2: "Today" Button**
+1. Navigate to a different month using arrow buttons
+2. Click the "Today" button
+3. **Expected**: Should navigate back to the current month (November)
 
-1. Visit: http://localhost:5173/auth
-2. Enter credentials
-3. Click "Login"
-4. Should redirect to dashboard
-5. Navigation should appear
-6. All pages should be accessible
+**Scenario 3: Check Console Logs**
+1. Open browser DevTools (F12)
+2. Go to Console tab
+3. Look for: `"Initial currentMonth state (timezone-aware): 2025-11"`
+4. **Expected**: Should show correct month in YYYY-MM format
 
----
+### 3. Test Transaction Date Validation
 
-## **💳 Testing Transaction Features**
+**Scenario 1: Add Transaction with Future Date**
+1. Click the FAB (Floating Action Button) at bottom right
+2. Select "Expense"
+3. Fill in the form
+4. Change the date to December 1, 2025
+5. **Expected**: Yellow warning banner appears
+6. **Expected**: Three buttons: "Continue with November 2025", "Switch to December 2025", "Cancel"
 
-### **Create Transaction Test:**
+**Scenario 2: Add Transaction with Past Date**
+1. Click FAB → Expense
+2. Change date to October 31, 2025
+3. **Expected**: Warning banner appears for past month
 
-1. Go to: http://localhost:5173/transactions
-2. Click "Add Transaction"
-3. Fill in the form:
-   - **Type**: Choose Income or Expense
-   - **Amount**: Enter any positive number (e.g., 50.00)
-   - **Category**: Select from dropdown
-   - **Description**: Enter description
-   - **Merchant**: (Optional) Enter merchant name
-   - **Date**: Select date
-4. Click "Add Transaction"
-5. Transaction should appear in the list
-6. Summary cards should update
+### 4. Test Transaction Editing
 
-### **Edit Transaction Test:**
+**Scenario 1: Edit Existing Transaction**
+1. Look at the transactions list in the right sidebar
+2. **Double-click** on any transaction
+3. **Expected**: Transaction form opens with pre-filled data
+4. **Expected**: Modal title says "Edit Transaction"
+5. Change the amount or description
+6. Click "Update Transaction"
+7. **Expected**: Transaction updates, category spent amount updates
 
-1. Find a transaction in the list
-2. Click "Edit" button
-3. Modify any field
-4. Click "Update Transaction"
-5. Changes should be reflected immediately
+**Scenario 2: Visual Feedback**
+1. Hover over transactions in the list
+2. **Expected**: Cursor changes to pointer
+3. **Expected**: Background color changes slightly
 
-### **Delete Transaction Test:**
+### 5. Test Clear Labels
 
-1. Find a transaction in the list
-2. Click "Delete" button
-3. Confirm deletion
-4. Transaction should disappear
-5. Summary should update
+**Scenario 1: Transaction Modal**
+1. Click FAB → Income
+2. **Expected**: Modal title says "Record Actual Income"
+3. **Expected**: Submit button says "Record Transaction"
 
-### **Filter Transactions Test:**
+**Scenario 2: Budget Item Modal**
+1. Click "+ Add Item" under any budget group
+2. **Expected**: Modal title says "Add Planned [Type] Item"
+3. **Expected**: Submit button says "Add [Type] Item"
 
-1. Use the filter controls:
-   - **Type**: Select "Income" or "Expense"
-   - **From Date**: Select start date
-   - **To Date**: Select end date
-2. Click "Clear Filters" to reset
+### 6. Test Settings Page
 
----
+**Scenario 1: View Timezone**
+1. Click "Settings" in the left sidebar
+2. **Expected**: Settings page opens
+3. **Expected**: Current timezone displayed (e.g., "America/New_York (EST)")
+4. **Expected**: Current local time displayed
 
-## **💰 Testing Budget Features**
-
-### **View Budget Test:**
-
-1. Go to: http://localhost:5173/budget
-2. Should see:
-   - Budget overview cards at top
-   - Income, Savings, Expenses sections
-   - Progress bars for each category
-   - Remaining amounts
-
-### **Month Navigation Test:**
-
-1. Use the month selector dropdown
-2. Select different months
-3. Budget data should update
-
-### **Progress Indicators Test:**
-
-1. Look at category progress bars
-2. Colors should indicate status:
-   - **Green**: Under 50% spent
-   - **Yellow**: 50-80% spent
-   - **Red**: Over 80% spent
+**Scenario 2: Location Form**
+1. Fill in Country, City, Zip Code
+2. Click "Update Location"
+3. **Expected**: Success message appears
+4. **Note**: Backend integration pending, so timezone won't actually update yet
 
 ---
 
-## **🎨 Testing UI/UX Features**
+## ☁️ AWS Testing
 
-### **Responsive Design Test:**
+### 1. Deploy to AWS
 
-1. Resize browser window
-2. Test on different screen sizes:
-   - Desktop (1200px+)
-   - Tablet (768px-1200px)
-   - Mobile (< 768px)
-3. Navigation should adapt
-4. Cards should reflow
-5. Forms should remain usable
+```powershell
+# Navigate to project root
+cd C:\Users\dimam\Documents\Projects\budgetbuddy
 
-### **Error Handling Test:**
-
-1. Try creating transaction with invalid data:
-   - Negative amount
-   - Empty description
-   - No category selected
-2. Should see field-specific error messages
-3. Form should not submit
-
-### **Loading States Test:**
-
-1. Watch for loading indicators when:
-   - Fetching transactions
-   - Creating/updating transactions
-   - Loading budget data
-2. Buttons should show "Loading..." or "Saving..."
-
----
-
-## **🔧 Backend API Testing**
-
-### **Test API Health:**
-
-```bash
-# Test all services
-npm run test:journey
-
-# Test specific endpoints
-curl http://localhost:5173/test/transactions
+# Deploy web app to S3 and CloudFront
+.\scripts\deploy-web-app.ps1
 ```
 
-### **Test Transaction API:**
-
-```bash
-# Health check (no auth required)
-curl https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/transactions/health
-
-# Get transactions (requires auth)
-# You'll get 401 Unauthorized - this is correct!
-curl https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/transactions
+**Expected Output**:
+```
+Building React app...
+Uploading to S3...
+Invalidating CloudFront cache...
+✅ Deployment complete!
+Live at: https://d1ueeugn9zcx7n.cloudfront.net
 ```
 
-### **Test Budget API:**
+### 2. Test on CloudFront
 
-```bash
-# Health check
-curl https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/health
+**URL**: `https://d1ueeugn9zcx7n.cloudfront.net`
 
-# Get budgets (requires auth)
-curl https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget
-```
+1. Open the CloudFront URL in your browser
+2. Log in with your credentials
+3. Run all the same tests as local testing above
+
+### 3. Test from Different Timezones (Optional)
+
+**Method 1: Change Browser Timezone**
+1. Open Chrome DevTools (F12)
+2. Press Ctrl+Shift+P (Command Palette)
+3. Type "sensors"
+4. Select "Show Sensors"
+5. Change "Location" to different cities
+6. Reload the page
+7. **Expected**: Month should still be correct for that timezone
+
+**Method 2: Change System Timezone**
+1. Windows Settings → Time & Language → Date & Time
+2. Change timezone to Pacific (PST)
+3. Reload the app
+4. **Expected**: Month calculation should use PST
 
 ---
 
-## **📊 Visual Testing Checklist**
+## 🐛 Known Issues to Watch For
 
-### **Navigation Bar:**
-- [ ] Logo/brand name visible
-- [ ] All navigation links present
-- [ ] Active page highlighted
-- [ ] User menu button visible
-- [ ] Responsive on mobile
-
-### **Transaction Page:**
-- [ ] Summary cards display correctly
-- [ ] "Add Transaction" button works
-- [ ] Filter controls functional
-- [ ] Transaction list displays
-- [ ] Edit/Delete buttons work
-- [ ] Modal form appears correctly
-
-### **Budget Page:**
-- [ ] Overview cards show totals
-- [ ] Month selector works
-- [ ] Progress bars display
-- [ ] Colors are correct
-- [ ] Categories are organized
-- [ ] Amounts are formatted
-
-### **Forms:**
-- [ ] All fields render correctly
-- [ ] Validation works
-- [ ] Error messages display
-- [ ] Submit buttons work
-- [ ] Cancel buttons work
-- [ ] Loading states show
-
----
-
-## **🐛 Common Issues & Solutions**
-
-### **Issue: "Cannot connect to localhost:5173"**
+### Issue 1: Cache Problems
+**Symptom**: Old version of app loads
 **Solution**:
-```bash
-# Start the frontend
-npm run dev:web
+```powershell
+# Clear browser cache (Ctrl+Shift+Delete)
+# Or hard reload (Ctrl+F5)
+# Or wait 5-10 minutes for CloudFront cache to invalidate
 ```
 
-### **Issue: "401 Unauthorized" errors**
-**Solution**: This is expected! Protected endpoints require authentication.
-1. Create a test user: `npm run create-test-user`
-2. Login through the UI
-3. Try again
-
-### **Issue: "No transactions found"**
-**Solution**: You need to create transactions first!
-1. Go to http://localhost:5173/transactions
-2. Click "Add Transaction"
-3. Fill in the form and submit
-
-### **Issue: "No budget found"**
-**Solution**: You need to create a budget first!
-1. Use the budget API or
-2. Create through the UI (if implemented)
-
-### **Issue: Frontend not updating**
+### Issue 2: Authentication Tokens
+**Symptom**: "Unauthorized" errors
 **Solution**:
-```bash
-# Restart the frontend
-# Stop current process (Ctrl+C)
-npm run dev:web
+```powershell
+# Clear localStorage
+# In browser console:
+localStorage.clear()
+# Then log in again
 ```
 
----
-
-## **✅ Success Criteria**
-
-You've successfully tested the application when:
-
-- [ ] All health checks pass
-- [ ] Frontend loads without errors
-- [ ] Navigation works between pages
-- [ ] Forms validate input correctly
-- [ ] Transactions can be created/edited/deleted
-- [ ] Budget displays with progress bars
-- [ ] Summary calculations are correct
-- [ ] Responsive design works on mobile
-- [ ] Error messages are user-friendly
-- [ ] Loading states display properly
+### Issue 3: Month Not Updating
+**Symptom**: Still shows wrong month
+**Solution**:
+1. Check browser console for errors
+2. Verify timezone detection: `Intl.DateTimeFormat().resolvedOptions().timeZone`
+3. Check that `getCurrentMonthString()` is being called
 
 ---
 
-## **🎯 Next Steps After Testing**
+## ✅ Success Criteria
 
-1. **Report Issues**: Note any bugs or unexpected behavior
-2. **Suggest Improvements**: UI/UX enhancements
-3. **Test Edge Cases**: Try unusual inputs or workflows
-4. **Performance Testing**: Test with many transactions
-5. **Browser Testing**: Test in Chrome, Firefox, Safari, Edge
+### Timezone Fix
+- [ ] On Nov 30, 2025 at 7:22 PM EST → Shows November (not December)
+- [ ] "Today" button navigates to correct current month
+- [ ] Console log shows correct month in timezone-aware format
+- [ ] Works in different timezones (PST, CST, EST)
+
+### Date Validation
+- [ ] Warning appears when date is outside current month
+- [ ] Three action buttons appear
+- [ ] Yellow border on date field
+- [ ] Warning message is clear and accurate
+
+### Transaction Editing
+- [ ] Double-click opens edit form
+- [ ] Form pre-populates with existing data
+- [ ] Modal title says "Edit Transaction"
+- [ ] Updates save correctly
+- [ ] Category spent amounts update correctly
+
+### Clear Labels
+- [ ] Transaction modal: "Record Actual Income/Expense"
+- [ ] Budget item modal: "Add Planned [Type] Item"
+- [ ] Submit buttons have correct labels
+- [ ] Terminology is consistent throughout
+
+### Settings Page
+- [ ] Settings page loads at /settings
+- [ ] Timezone displays correctly
+- [ ] Local time displays correctly
+- [ ] Location form is functional
 
 ---
 
-## **📞 Need Help?**
+## 📊 Testing Checklist
+
+### Local Testing
+- [ ] Start dev server successfully
+- [ ] App loads at localhost:5173
+- [ ] Login works
+- [ ] Current month displays correctly
+- [ ] Date validation warning works
+- [ ] Transaction editing works
+- [ ] Clear labels everywhere
+- [ ] Settings page loads
+- [ ] No console errors
+
+### AWS Testing
+- [ ] Deploy script runs successfully
+- [ ] CloudFront URL loads
+- [ ] Login works on production
+- [ ] All features work same as local
+- [ ] No CORS errors
+- [ ] Data persists to DynamoDB
+
+### Cross-Browser Testing
+- [ ] Chrome
+- [ ] Firefox
+- [ ] Edge
+- [ ] Safari (if available)
+
+### Timezone Testing
+- [ ] EST timezone
+- [ ] PST timezone
+- [ ] UTC timezone
+- [ ] Month boundaries (Nov 30 → Dec 1)
+
+---
+
+## 🆘 Troubleshooting
+
+### Problem: Wrong month still showing
+**Check**:
+1. Browser console for errors
+2. `getCurrentMonthString()` is being called
+3. Timezone detection: `Intl.DateTimeFormat().resolvedOptions().timeZone`
+4. Clear cache and hard reload
+
+### Problem: Date validation not working
+**Check**:
+1. `currentBudgetMonth` prop is passed to TransactionForm
+2. `onMonthSwitch` callback is provided
+3. Check console for validation logs
+
+### Problem: Transaction editing not working
+**Check**:
+1. `onEdit` callback is wired up
+2. Double-click event is firing (check console)
+3. Transaction data is being passed correctly
+
+### Problem: Settings page not loading
+**Check**:
+1. Route is configured in App.tsx
+2. SettingsPage.tsx exists
+3. No import errors in console
+
+---
+
+## 📞 Support
 
 If you encounter issues:
-1. Check the browser console for errors (F12)
-2. Check the terminal for backend errors
-3. Run `npm run test:journey` to verify services
-4. Review the DEVELOPMENT_QUICK_START.md guide
+1. Check browser console for errors
+2. Check network tab for failed API calls
+3. Verify timezone detection in console
+4. Clear cache and try again
+5. Check that all files were deployed
 
-**Happy Testing! 🚀**
+---
+
+**Happy Testing!** 🚀

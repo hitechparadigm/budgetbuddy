@@ -57,6 +57,8 @@ export const getTodayString = (timezone?: string): string => {
  * @returns true if the month is in the future
  */
 export const isFutureMonth = (monthString: string, timezone?: string): boolean => {
+  if (!monthString) return false; // Safety check
+
   const tz = timezone || detectUserTimezone();
   const { month: currentMonth, year: currentYear } = getCurrentMonthInTimezone(tz);
   const [year, month] = monthString.split('-').map(Number);
@@ -73,6 +75,8 @@ export const isFutureMonth = (monthString: string, timezone?: string): boolean =
  * @returns true if the month is in the past
  */
 export const isPastMonth = (monthString: string, timezone?: string): boolean => {
+  if (!monthString) return false; // Safety check
+
   const tz = timezone || detectUserTimezone();
   const { month: currentMonth, year: currentYear } = getCurrentMonthInTimezone(tz);
   const [year, month] = monthString.split('-').map(Number);
@@ -89,6 +93,8 @@ export const isPastMonth = (monthString: string, timezone?: string): boolean => 
  * @returns true if the month is the current month
  */
 export const isCurrentMonth = (monthString: string, timezone?: string): boolean => {
+  if (!monthString) return false; // Safety check
+
   const currentMonthStr = getCurrentMonthString(timezone);
   return monthString === currentMonthStr;
 };
