@@ -157,6 +157,12 @@ export const BudgetPage: React.FC = () => {
 
   const loadBudget = async () => {
     try {
+      // CRITICAL FIX: Clear budget state immediately to prevent showing wrong month's data
+      setBudget(null);
+      setLoading(true);
+
+      console.log('[loadBudget] Loading budget for month:', currentMonth);
+
       // Try to fetch budget from backend first
       const response = await fetch(`${API_BASE_URL}/budget`, {
         headers: {
@@ -168,14 +174,24 @@ export const BudgetPage: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.budgets && data.budgets.length > 0) {
-          // Find budget for the selected month
+          // Find budget for the EXACT month being viewed
           const monthBudget = data.budgets.find((b: Budget) => b.month === currentMonth);
+
           if (monthBudget) {
-            setBudget(monthBudget);
+            // CRITICAL FIX: Double-check that budget month matches current month
+            if (monthBudget.month === currentMonth) {
+              console.log('[loadBudget] Found budget for', currentMonth, '- Budget ID:', monthBudget.id);
+              setBudget(monthBudget);
+            } else {
+              console.error('[loadBudget] Budget month mismatch! Expected:', currentMonth, 'Got:', monthBudget.month);
+              setBudget(null);
+            }
             setLoading(false);
             return;
           }
-          // If no budget for selected month, create a new empty one
+
+          // If no budget for selected month, keep budget as null
+          console.log('[loadBudget] No budget found for', currentMonth);
           setBudget(null);
           setLoading(false);
           return;
@@ -516,10 +532,16 @@ export const BudgetPage: React.FC = () => {
   };
 
   const changeMonth = (direction: 'prev' | 'next') => {
+    // CRITICAL FIX: Clear budget immediately when changing months
+    setBudget(null);
+
     const [year, month] = currentMonth.split('-').map(Number);
     const offset = direction === 'prev' ? -1 : 1;
     const date = new Date(year, month - 1 + offset, 1);
-    setCurrentMonth(date.toISOString().slice(0, 7));
+    const newMonth = date.toISOString().slice(0, 7);
+
+    console.log('[changeMonth] Switching from', currentMonth, 'to', newMonth);
+    setCurrentMonth(newMonth);
   };
 
   const getMonthName = (monthStr: string) => {
@@ -653,21 +675,33 @@ export const BudgetPage: React.FC = () => {
     );
   }
 
+  // CRITICAL FIX: Differentiate between future months and past/current months without budgets
   if (!budget) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Budget Found</h2>
-          <p className="text-gray-600 mb-6">Let's create your first budget with AI assistance!</p>
-          <button
-            onClick={() => navigate('/onboarding')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
-          >
-            Create Budget
-          </button>
+    // Future month without budget - show "Start Planning" state
+    if (isFutureMonthCheck()) {
+      // This empty state is already rendered in the main layout below
+      // So we continue to render the full layout
+    } else {
+      // Past or current month without budget - show "No Budget Found" state
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center max-w-md">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              No budget found for {getMonthName(currentMonth)}
+            </h2>
+            <p className="text-gray-600 mb-6">
+              You haven't created a budget for this month yet.
+            </p>
+            <button
+              onClick={() => navigate('/onboarding')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+            >
+              Create Budget
+            </button>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   const totals = calculateTotals();
@@ -941,7 +975,7 @@ export const BudgetPage: React.FC = () => {
             </div>
 
             {/* Future Month Warning */}
-            {isFutureMonth() && (
+            {isFutureMonthCheck() && (
               <div className="mt-4 flex items-center justify-end">
                 <div className="inline-flex items-center px-3 py-1.5 bg-yellow-100 border border-yellow-300 rounded-full">
                   <svg className="w-4 h-4 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -953,7 +987,7 @@ export const BudgetPage: React.FC = () => {
             )}
 
             {/* Past Month Warning */}
-            {isPastMonth() && (
+            {isPastMonthCheck() && (
               <div className="mt-4 flex items-center justify-end">
                 <div className="inline-flex items-center px-3 py-1.5 bg-orange-100 border border-orange-300 rounded-full">
                   <svg className="w-4 h-4 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -966,7 +1000,7 @@ export const BudgetPage: React.FC = () => {
           </div>
 
           {/* Empty State for Future Months */}
-          {!budget && isFutureMonth() && (
+          {!budget && isFutureMonthCheck() && (
             <div className="flex items-center justify-center min-h-[500px] p-8">
               <div className="text-center max-w-md">
                 {/* Icon */}
