@@ -682,36 +682,33 @@ export const BudgetPage: React.FC = () => {
     );
   }
 
-  // CRITICAL FIX: Differentiate between future months and past/current months without budgets
-  if (!budget) {
-    // Future month without budget - show "Start Planning" state
-    if (isFutureMonthCheck()) {
-      // This empty state is already rendered in the main layout below
-      // So we continue to render the full layout
-    } else {
-      // Past or current month without budget - show "No Budget Found" state
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center max-w-md">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              No budget found for {getMonthName(currentMonth)}
-            </h2>
-            <p className="text-gray-600 mb-6">
-              You haven't created a budget for this month yet.
-            </p>
-            <button
-              onClick={() => navigate('/onboarding')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
-            >
-              Create Budget
-            </button>
-          </div>
+  // CRITICAL FIX: Only show "No Budget Found" for past/current months
+  // Future months will render the full layout with the "Start Planning" empty state inside
+  if (!budget && !isFutureMonthCheck()) {
+    // Past or current month without budget - show "No Budget Found" state
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            No budget found for {getMonthName(currentMonth)}
+          </h2>
+          <p className="text-gray-600 mb-6">
+            You haven't created a budget for this month yet.
+          </p>
+          <button
+            onClick={() => navigate('/onboarding')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+          >
+            Create Budget
+          </button>
         </div>
-      );
-    }
+      </div>
+    );
   }
 
-  const totals = calculateTotals();
+  // For future months without budget, we continue to render the full layout
+  // The "Start Planning" empty state is rendered in the center column below
+  const totals = budget ? calculateTotals() : { income: 0, planned: 0, spent: 0, remaining: 0 };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
