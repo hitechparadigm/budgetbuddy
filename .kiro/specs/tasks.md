@@ -467,3 +467,451 @@ None - all critical bugs have been resolved.
   - Test copy budget creates new budget correctly
   - Test budget data persists across month changes
   - _Requirements: 8.3, 8.4, 8.5, 8.6, 8.7, 8.8, 8.10_
+
+
+---
+
+## Budget Reset and Recurring Category Settings Implementation
+
+- [ ] 9. Implement Budget Reset and Recurring Category Settings
+  - Add reset button, confirmation modal, and recurring category functionality
+  - Update budget copying to preserve recurring settings
+  - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.9, 9.10_
+
+- [x] 9.1 Add Reset Budget button to header
+
+
+
+  - Add "Reset" button near month navigation controls
+  - Style as secondary button (gray/red)
+  - Position between month title and "Today" button
+  - _Requirements: 9.1_
+
+- [x] 9.2 Create reset confirmation modal
+
+
+
+  - Create modal component with warning message
+  - Add "Cancel" and "Reset Budget" buttons
+  - Show current month name in confirmation text
+  - Handle modal open/close state
+  - _Requirements: 9.2_
+
+- [x] 9.3 Implement reset budget functionality
+
+
+
+  - Create `handleResetBudget()` function
+  - Delete current month's budget via API
+  - Clear budget state
+  - Navigate to AI budget generation page (/onboarding or /ai-budget)
+  - _Requirements: 9.3_
+
+- [ ] 9.4 Update category data model for recurring settings
+  - Ensure `isRecurring` field exists in BudgetCategory interface
+  - Ensure `recurringFrequency` field exists
+  - Ensure `nextDueDate` field exists
+  - Update TypeScript types
+  - _Requirements: 9.4_
+
+- [ ] 9.5 Add recurring settings to category form
+  - Add "Make this recurring" checkbox to budget item modal
+  - Add frequency dropdown (weekly, bi-weekly, monthly, annually)
+  - Show/hide frequency dropdown based on checkbox
+  - Save recurring settings when creating/editing categories
+  - _Requirements: 9.4, 9.5_
+
+- [ ] 9.6 Display recurring badge on categories
+  - Show recurring indicator (e.g., "🔄 Bi-weekly") on category items
+  - Display next due date if available
+  - Style badge to be subtle but visible
+  - _Requirements: 9.4_
+
+- [ ] 9.7 Update copyPreviousMonthBudget to filter recurring categories
+  - Modify function to only copy categories where `isRecurring === true`
+  - Preserve recurring settings (frequency, isRecurring)
+  - Reset spent amounts and transactions
+  - Calculate next due date based on frequency
+  - Generate new category IDs
+  - _Requirements: 9.5, 9.6, 9.9, 9.10_
+
+- [ ] 9.8 Add calculateNextDueDate helper function
+  - Implement date calculation for weekly frequency
+  - Implement date calculation for bi-weekly frequency
+  - Implement date calculation for monthly frequency
+  - Implement date calculation for annually frequency
+  - Return ISO date string
+  - _Requirements: 9.10_
+
+- [ ] 9.9 Test reset and recurring functionality
+  - Test reset button opens modal
+  - Test reset deletes budget and navigates to AI page
+  - Test recurring checkbox and dropdown work
+  - Test recurring categories are copied to future months
+  - Test non-recurring categories are NOT copied
+  - Test recurring settings are preserved
+  - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.9_
+
+
+---
+
+## Phase 11: Transaction and Budget Item UX Improvements
+
+### 11.1 Implement Transaction and Budget Item Clarity
+- [x] 11. Update UI labels to distinguish transactions from budget items
+
+
+  - Update modal titles and button labels throughout the application
+  - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
+
+
+
+- [ ] 11.1 Update TransactionForm component labels
+  - Change modal title to "Record Actual Income" or "Record Actual Expense"
+  - Update submit button text to "Record Transaction"
+  - Ensure "Edit Transaction" title shows when editing
+
+
+  - _Requirements: 10.1, 10.4_
+
+- [ ] 11.2 Update BudgetItemModal component labels
+  - Change modal title to "Add Planned [Type] Item" based on group type
+
+  - Update submit button text to "Add Budget Item"
+  - Ensure "Edit Budget Item" title shows when editing
+  - _Requirements: 10.2, 10.5_
+
+- [x] 11.3 Update terminology throughout the application
+
+  - Review all components for consistent use of "Transaction" vs "Budget Item"
+  - Update labels in BudgetDashboard to use "Planned" vs "Actual"
+  - Update TransactionList to consistently use "Transactions" label
+  - _Requirements: 10.3_
+
+
+
+- [ ] 11.4 Test label clarity improvements
+  - Verify all modal titles are correct
+  - Test both add and edit modes
+
+
+  - Verify terminology is consistent across all views
+  - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5_
+
+### 11.2 Implement Transaction Date Validation
+
+
+- [ ] 12. Add date validation and warnings for transactions
+  - Warn users when adding transactions outside current budget month
+  - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7_
+
+
+- [ ] 12.1 Create date validation helper function
+  - Implement `validateTransactionDate()` function
+  - Compare transaction date to current budget month
+  - Return validation result with warning message and suggested month
+  - _Requirements: 11.1, 11.2, 11.3_
+
+
+- [ ] 12.2 Add date validation to TransactionForm
+  - Call validation function when date changes
+  - Store validation result in component state
+  - Trigger warning display when date is outside current month
+  - _Requirements: 11.1, 11.2_
+
+
+- [ ] 12.3 Create date warning UI component
+  - Design warning banner with orange/yellow styling
+  - Display warning message with current and transaction months
+  - Add three action buttons: Continue, Switch, Cancel
+  - Position below date input field
+
+  - _Requirements: 11.3, 11.4_
+
+- [ ] 12.4 Implement warning action handlers
+  - "Continue" button: Dismiss warning, allow submission to current month
+  - "Switch" button: Navigate to correct month, preserve form data
+  - "Cancel" button: Close warning, allow user to change date
+  - Disable form submission until user makes a choice
+  - _Requirements: 11.4, 11.6, 11.7_
+
+
+
+- [ ] 12.5 Add visual feedback for date field
+  - Highlight date input with warning color when outside current month
+
+
+  - Add warning icon next to date field
+  - Remove highlighting when date is valid or warning dismissed
+  - _Requirements: 11.5_
+
+- [x] 12.6 Test date validation functionality
+
+  - Test with dates in current month (no warning)
+  - Test with dates in past months (show warning)
+  - Test with dates in future months (show warning)
+  - Test all three action buttons work correctly
+  - Test form submission is blocked until choice made
+  - Test month switching preserves form data
+
+
+  - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7_
+
+### 11.3 Implement Transaction Editing
+- [ ] 13. Enable transaction editing via double-click
+  - Allow users to edit transactions by double-clicking them
+
+  - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9, 12.10_
+
+- [ ] 13.1 Add double-click handler to TransactionList
+  - Add `onDoubleClick` event to transaction items
+  - Add hover cursor styling (`cursor-pointer`)
+  - Add hover background effect for visual feedback
+
+  - Call `onEdit` callback with transaction data
+  - _Requirements: 12.1, 12.8_
+
+- [ ] 13.2 Update TransactionForm to support edit mode
+  - Accept optional `transaction` prop for edit mode
+  - Pre-populate form fields with transaction data when editing
+  - Change modal title to "Edit Transaction" in edit mode
+  - Change submit button to "Update Transaction" in edit mode
+
+  - _Requirements: 12.2, 12.3, 12.4_
+
+- [ ] 13.3 Implement category spent amount update logic
+  - Create helper function to calculate spent amount changes
+  - Handle scenario: amount changed, same category
+  - Handle scenario: category changed, same amount
+  - Handle scenario: both amount and category changed
+
+  - _Requirements: 12.6, 12.7_
+
+- [ ] 13.4 Implement transaction update API call
+  - Create `updateTransaction` API function
+  - Send updated transaction data to backend
+  - Handle API errors gracefully
+  - Return updated transaction on success
+  - _Requirements: 12.5_
+
+- [x] 13.5 Wire up edit flow in parent component
+
+
+  - Add state for `editingTransaction`
+  - Implement `handleEditTransaction` to open form in edit mode
+  - Implement `handleUpdateTransaction` to save changes
+  - Update affected categories' spent amounts
+
+  - Refresh budget data after successful update
+  - Close modal after successful update
+  - _Requirements: 12.5, 12.6, 12.7_
+
+- [ ] 13.6 Add error handling for edit operations
+  - Show validation errors inline in form
+  - Keep modal open on validation errors
+
+  - Show error notification on API failures
+  - Allow retry or cancel on errors
+  - Implement optimistic updates with rollback on failure
+  - _Requirements: 12.10_
+
+- [x] 13.7 Test transaction editing functionality
+
+  - Test double-click opens form in edit mode
+  - Test form pre-populates with transaction data
+  - Test editing amount updates category spent correctly
+  - Test changing category updates both categories correctly
+  - Test editing both amount and category works correctly
+  - Test delete button still works alongside edit
+
+  - Test error handling and rollback
+  - Test with transactions in different categories
+  - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8, 12.9, 12.10_
+
+### 11.4 Integration Testing and Polish
+- [ ] 14. Test all UX improvements together
+  - Comprehensive testing of all three features
+  - _Requirements: 10.1-10.5, 11.1-11.7, 12.1-12.10_
+
+- [ ] 14.1 End-to-end testing
+  - Test adding transaction with clear labels
+  - Test adding budget item with clear labels
+  - Test date validation warning appears correctly
+  - Test editing transaction via double-click
+  - Test all features work together seamlessly
+  - _Requirements: All from Requirements 10, 11, 12_
+
+- [ ] 14.2 Cross-browser testing
+  - Test in Chrome, Firefox, Safari, Edge
+  - Verify double-click works on all browsers
+  - Verify date validation works on all browsers
+  - Verify modal labels display correctly
+  - _Requirements: All from Requirements 10, 11, 12_
+
+- [ ] 14.3 Responsive testing
+  - Test on desktop, tablet, mobile
+  - Verify date warning displays correctly on small screens
+  - Verify edit functionality works on touch devices
+  - Verify modal titles are readable on all screen sizes
+  - _Requirements: All from Requirements 10, 11, 12_
+
+- [ ] 14.4 Accessibility testing
+  - Verify keyboard navigation works for editing
+  - Verify screen readers announce modal titles correctly
+  - Verify date warning is accessible
+  - Verify focus management in edit mode
+  - _Requirements: All from Requirements 10, 11, 12_
+
+
+---
+
+## Phase 12: User Timezone and Location Management (Bug Fix)
+
+**Priority**: HIGH - Fixes critical bug where wrong month is displayed
+
+### 12.1 Implement Timezone Detection and Storage
+- [ ] 15. Fix timezone bug and implement user location management
+  - Detect user timezone on registration and use it for all date calculations
+  - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8, 13.9, 13.10, 13.11_
+
+- [ ] 15.1 Create timezone utility functions
+  - Create `timezoneHelpers.ts` with timezone utility functions
+  - Implement `getCurrentDateInTimezone()`
+  - Implement `getCurrentMonthInTimezone()`
+  - Implement `formatDateInTimezone()`
+  - Implement `isTodayInTimezone()`
+  - Implement `detectUserTimezone()` using browser API
+  - _Requirements: 13.1, 13.2, 13.3, 13.4_
+
+- [ ] 15.2 Update User data model
+  - Add `timezone` field to User interface
+  - Add `location` object with country, city, zipCode fields
+  - Update TypeScript types
+  - _Requirements: 13.5, 13.6, 13.7_
+
+- [ ] 15.3 Implement timezone detection on registration
+  - Detect timezone using `Intl.DateTimeFormat().resolvedOptions().timeZone`
+  - Store detected timezone in user profile during registration
+  - Add timezone to registration API call
+  - _Requirements: 13.1, 13.5_
+
+- [ ] 15.4 Update login flow to load user timezone
+  - Fetch user timezone from profile on login
+  - Store timezone in application state/context
+  - Use timezone for all date calculations
+  - _Requirements: 13.2, 13.3_
+
+- [ ] 15.5 Fix current month calculation
+  - Replace all `new Date().getUTCMonth()` with timezone-aware calculation
+  - Use `getCurrentMonthInTimezone()` throughout the application
+  - Update month navigation to use user's timezone
+  - Update "Today" button to use user's timezone
+  - _Requirements: 13.3, 13.4_
+
+- [ ] 15.6 Update date displays to use user timezone
+  - Update transaction date displays
+  - Update budget month displays
+  - Update all date formatting to use user's timezone
+  - _Requirements: 13.3, 13.4_
+
+### 12.2 Implement Location Settings
+- [ ] 16. Add location management to Settings page
+  - Allow users to update their location and timezone
+  - _Requirements: 13.6, 13.7, 13.8, 13.9, 13.10_
+
+- [ ] 16.1 Create Settings page component
+  - Create Settings page route
+  - Add navigation link to Settings
+  - Create basic Settings page layout
+  - _Requirements: 13.6_
+
+- [ ] 16.2 Add location form to Settings
+  - Add Country dropdown/input
+  - Add City input field
+  - Add Zip/Postal Code input field
+  - Display current detected timezone
+  - Display current local time
+  - Add "Update Location" button
+  - _Requirements: 13.6, 13.7_
+
+- [ ] 16.3 Implement location to timezone mapping
+  - Create location-to-timezone lookup function
+  - Use geocoding API or lookup table
+  - Handle invalid/ambiguous locations
+  - _Requirements: 13.8, 13.11_
+
+- [ ] 16.4 Implement location update functionality
+  - Handle form submission
+  - Determine timezone from location
+  - Update user profile via API
+  - Update application state with new timezone
+  - Refresh all date displays
+  - _Requirements: 13.8, 13.9, 13.10_
+
+- [ ] 16.5 Update API endpoints
+  - Add timezone field to user profile endpoints
+  - Add location fields to user profile endpoints
+  - Update GET /user/profile response
+  - Update PUT /user/profile request
+  - _Requirements: 13.5, 13.10_
+
+### 12.3 Testing and Edge Cases
+- [ ] 17. Test timezone functionality thoroughly
+  - Test all edge cases and scenarios
+  - _Requirements: 13.11_
+
+- [ ] 17.1 Test current month calculation
+  - Test on Nov 30, 2025 7:22 PM EST → Should show November
+  - Test on Nov 30, 2025 11:59 PM EST → Should show November
+  - Test on Dec 1, 2025 12:00 AM EST → Should show December
+  - Test with different timezones (PST, CST, EST, UTC)
+  - _Requirements: 13.3, 13.4_
+
+- [ ] 17.2 Test timezone detection
+  - Test timezone detection on registration
+  - Test with different browser timezones
+  - Test fallback when detection fails
+  - _Requirements: 13.1, 13.11_
+
+- [ ] 17.3 Test location updates
+  - Test location form submission
+  - Test timezone change updates UI immediately
+  - Test with various locations (US, Canada, etc.)
+  - Test invalid location handling
+  - _Requirements: 13.8, 13.9, 13.11_
+
+- [ ] 17.4 Test edge cases
+  - Test Daylight Saving Time transitions
+  - Test users traveling across timezones
+  - Test month boundaries (last day of month)
+  - Test year boundaries (Dec 31 → Jan 1)
+  - _Requirements: 13.11_
+
+- [ ] 17.5 Test existing users migration
+  - Test users without timezone in profile
+  - Test timezone detection on next login
+  - Test default behavior when detection fails
+  - _Requirements: 13.2, 13.11_
+
+### 12.4 Documentation and Deployment
+- [ ] 18. Document timezone implementation
+  - Update documentation with timezone handling
+  - _Requirements: All_
+
+- [ ] 18.1 Update user documentation
+  - Document how timezone is detected
+  - Document how to change location in Settings
+  - Add FAQ about timezone handling
+  - _Requirements: 13.1, 13.6, 13.7_
+
+- [ ] 18.2 Update developer documentation
+  - Document timezone utility functions
+  - Document best practices for date handling
+  - Add examples of timezone-aware code
+  - _Requirements: 13.3, 13.4_
+
+- [ ] 18.3 Create migration plan for existing users
+  - Document migration strategy
+  - Create script to detect and update timezones for existing users
+  - Plan rollout and communication
+  - _Requirements: 13.2, 13.5_

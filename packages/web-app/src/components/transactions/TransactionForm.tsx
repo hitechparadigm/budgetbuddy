@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { validateTransactionDate, DateValidationResult } from '../../utils/dateValidation';
 
 interface Transaction {
   transactionId: string;
@@ -24,13 +25,17 @@ interface TransactionFormProps {
   onSubmit: (data: TransactionFormData) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
+  currentBudgetMonth?: string; // Format: YYYY-MM
+  onMonthSwitch?: (month: string) => void; // Callback to switch to a different month
 }
 
 export const TransactionForm: React.FC<TransactionFormProps> = ({
   transaction,
   onSubmit,
   onCancel,
-  loading = false
+  loading = false,
+  currentBudgetMonth,
+  onMonthSwitch
 }) => {
   const [formData, setFormData] = useState<TransactionFormData>({
     amount: 0,
@@ -42,6 +47,9 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dateValidation, setDateValidation] = useState<DateValidationResult>({ isValid: true });
+  const [showDateWarning, setShowDateWarning] = useState(false);
+  const [userDateChoice, setUserDateChoice] = useState<'continue' | 'switch' | null>(null);
 
   // Categories - in production this would come from an API
   const categories = {
@@ -128,14 +136,46 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
         setErrors(prev => ({ ...prev, categoryId: '' }));
       }
     }
+
+    // Validate date when it changes
+    if (field === 'date' && currentBudgetMonth) {
+      const validation = validateTransactionDate(value, currentBudgetMonth);
+      setDateValidation(validation);
+      setShowDateWarning(!validation.isValid);
+      setUserDateChoice(null); // Reset user choice when date changes
+    }
+  };
+
+  const handleDateWarningAction = (action: 'continue' | 'switch' | 'cancel') => {
+    setUserDateChoice(action);
+
+    if (action === 'continue') {
+      setShowDateWarning(false);
+    } else if (action === 'switch' && dateValidation.suggestedMonth && onMonthSwitch) {
+      onMonthSwitch(dateValidation.suggestedMonth);
+      onCancel(); // Close the form after switching months
+    } else if (action === 'cancel') {
+      setShowDateWarning(false);
+    }
   };
 
   const currentCategories = categories[formData.type];
 
+  const getModalTitle = () => {
+    if (transaction) return 'Edit Transaction';
+    return formData.type === 'income' ? 'Record Actual Income' : 'Record Actual Expense';
+  };
+
+  const getSubmitButtonText = () => {
+    if (loading) return 'Saving...';
+    if (transaction) return 'Update Transaction';
+    return 'Record Transaction';
+  };
+
   return (
     <div className="transaction-form">
       <div className="transaction-form-header">
-        <h2>{transaction ? 'Edit Transaction' : 'Add New Transaction'}</h2>
+        <h2>{getModalTitle()}</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="transaction-form-content">
@@ -235,9 +275,49 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             type="date"
             value={formData.date}
             onChange={(e) => handleInputChange('date', e.target.value)}
-            className={`form-input ${errors.date ? 'error' : ''}`}
+            className={`form-input ${errors.date ? 'error' : ''} ${showDateWarning ? 'border-yellow-500 border-2' : ''}`}
           />
           {errors.date && <span className="form-error">{errors.date}</span>}
+
+          {/* Date Warning */}
+          {showDateWarning && dateValidation.warning && (
+            <div className="mt-3 p-4 bg-yellow-900 bg-opacity-30 border border-yellow-600 rounded-lg">
+              <div className="flex items-start space-x-2 mb-3">
+                <span className="text-yellow-500 text-xl">⚠️</span>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-yellow-400 mb-1">Warning: Date Outside Current Month</h4>
+                  <p className="text-sm text-gray-300">{dateValidation.warning}</p>
+                  <p className="text-sm text-gray-400 mt-2">What would you like to do?</p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDateWarningAction('continue')}
+                  className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-sm transition-colors"
+                >
+                  Continue with {dateValidation.currentMonthName}
+                </button>
+                {onMonthSwitch && (
+                  <button
+                    type="button"
+                    onClick={() => handleDateWarningAction('switch')}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition-colors"
+                  >
+                    Switch to {dateValidation.transactionMonthName}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleDateWarningAction('cancel')}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-md text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Form Actions */}
@@ -255,7 +335,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
             className="button button-primary"
             disabled={loading}
           >
-            {loading ? 'Saving...' : (transaction ? 'Update Transaction' : 'Add Transaction')}
+            {getSubmitButtonText()}
           </button>
         </div>
       </form>

@@ -240,3 +240,133 @@ The following features are not included in the current MVP:
 - Add month dropdown for quick access to any month
 - Implement copy-previous-month functionality for future months
 - Ensure budget data persists across month changes
+
+
+---
+
+### Requirement 9: Budget Reset and Recurring Category Settings
+
+**User Story:** As a user, I want to reset my current budget and restart the AI setup process, and I want recurring category settings (like bi-weekly salary) to be preserved when creating future month budgets, so that I don't have to reconfigure recurring items every month.
+
+#### Acceptance Criteria
+
+1. WHEN viewing a budget, THE BudgetBuddy SHALL display a "Reset Budget" button in the header or settings area
+2. WHEN clicking "Reset Budget", THE BudgetBuddy SHALL prompt for confirmation before proceeding
+3. WHEN confirmed, THE BudgetBuddy SHALL delete the current month's budget and navigate to the AI budget generation flow
+4. WHEN a category is marked as recurring (bi-weekly, monthly, etc.), THE BudgetBuddy SHALL store this setting with the category
+5. WHEN copying a budget to a future month, THE BudgetBuddy SHALL preserve all recurring settings (frequency, next due date)
+6. WHEN copying a budget to a future month, THE BudgetBuddy SHALL only copy categories marked as recurring or manually selected
+7. THE BudgetBuddy SHALL NOT automatically create budgets for all future months
+8. THE BudgetBuddy SHALL only create a new month's budget when the user clicks "Start Planning for [Month]"
+9. WHEN creating a future month budget, THE BudgetBuddy SHALL copy recurring categories from the most recent past month
+10. THE BudgetBuddy SHALL calculate the next due date for recurring categories based on their frequency
+
+**Implementation Notes:**
+- Add "Reset Budget" button to budget page header
+- Store `isRecurring` and `recurringFrequency` fields with each category
+- Update `copyPreviousMonthBudget()` to preserve recurring settings
+- Add confirmation modal for budget reset
+- Navigate to AI budget generation page after reset
+
+
+---
+
+### Requirement 10: Transaction and Budget Item Clarity
+
+**User Story:** As a user, I want clear distinction between actual transactions and planned budget items, so that I understand whether I'm recording real expenses/income or planning future allocations.
+
+#### Acceptance Criteria
+
+1. WHEN a user adds a transaction via the FAB, THE BudgetBuddy SHALL display a modal title that clearly indicates "Add Actual [Income/Expense]" based on the transaction type
+2. WHEN a user clicks "Add Item" in a budget group, THE BudgetBuddy SHALL display a modal title that clearly indicates "Add Planned [Income/Expense] Item"
+3. THE BudgetBuddy SHALL use distinct terminology throughout the UI to differentiate between:
+   - "Transactions" or "Actual" for recorded income/expenses
+   - "Budget Items" or "Planned" for budgeted allocations
+4. WHEN displaying the transaction form, THE BudgetBuddy SHALL show "Record Transaction" or similar language indicating actual activity
+5. WHEN displaying the budget item form, THE BudgetBuddy SHALL show "Plan Budget Item" or similar language indicating future planning
+
+**Implementation Status**: Not started
+
+---
+
+### Requirement 11: Transaction Date Validation and Warnings
+
+**User Story:** As a user, I want to be warned when adding transactions outside the current budget month, so that I don't accidentally record transactions in the wrong month's budget.
+
+#### Acceptance Criteria
+
+1. WHEN a user selects a transaction date, THE BudgetBuddy SHALL compare it to the currently selected budget month
+2. WHEN the selected transaction date is outside the current budget month, THE BudgetBuddy SHALL display a warning message
+3. THE warning message SHALL clearly state: "This transaction date ([Date]) is outside the current budget month ([Month Year])"
+4. THE BudgetBuddy SHALL provide options to:
+   - Continue with the current month (record transaction in current budget)
+   - Switch to the correct month (navigate to the month matching the transaction date)
+   - Cancel and change the date
+5. THE BudgetBuddy SHALL highlight the date field with a warning color (orange/yellow) when the date is outside the current month
+6. WHEN a user confirms recording a transaction outside the current month, THE BudgetBuddy SHALL record it in the currently selected budget month
+7. THE BudgetBuddy SHALL allow users to dismiss the warning and proceed with their choice
+
+**Implementation Status**: Not started
+
+---
+
+### Requirement 12: Transaction Editing
+
+**User Story:** As a user, I want to edit transactions after I've added them, so that I can correct mistakes or update transaction details without deleting and re-adding.
+
+#### Acceptance Criteria
+
+1. WHEN a user double-clicks on a transaction in the transaction list, THE BudgetBuddy SHALL open the transaction form in edit mode
+2. THE BudgetBuddy SHALL pre-populate the transaction form with the existing transaction data
+3. THE transaction form title SHALL indicate "Edit Transaction" when in edit mode
+4. THE BudgetBuddy SHALL allow users to modify all transaction fields: amount, category, description, merchant, and date
+5. WHEN a user saves an edited transaction, THE BudgetBuddy SHALL update the transaction in the database
+6. WHEN a transaction's amount or category changes, THE BudgetBuddy SHALL update the affected category's spent amount accordingly
+7. WHEN a transaction's category changes, THE BudgetBuddy SHALL:
+   - Subtract the amount from the old category's spent amount
+   - Add the amount to the new category's spent amount
+8. THE BudgetBuddy SHALL provide visual feedback (cursor change) on hover to indicate transactions are clickable
+9. THE BudgetBuddy SHALL maintain the existing "Delete" button functionality alongside the double-click edit feature
+10. WHEN editing fails, THE BudgetBuddy SHALL display an error message and keep the form open with the user's changes
+
+**Implementation Status**: Not started
+
+
+---
+
+### Requirement 13: User Timezone and Location Management
+
+**User Story:** As a user, I want the application to use my local timezone so that I see the correct current month and dates, and I want to be able to update my location in settings to adjust my timezone.
+
+#### Acceptance Criteria
+
+1. WHEN a user registers for the first time, THE BudgetBuddy SHALL detect the user's timezone using browser geolocation or timezone API
+2. WHEN a user logs in, THE BudgetBuddy SHALL load the user's saved timezone from their profile
+3. THE BudgetBuddy SHALL use the user's timezone for all date calculations including:
+   - Determining the current month for budget display
+   - Displaying transaction dates
+   - Calculating month boundaries
+   - Showing "Today" in month navigation
+4. WHEN determining the current month, THE BudgetBuddy SHALL use the user's local date/time, not UTC or server time
+5. THE BudgetBuddy SHALL store the user's timezone in their profile (e.g., "America/New_York", "America/Toronto")
+6. THE BudgetBuddy SHALL provide a Settings page where users can update their location
+7. WHEN a user updates their location in Settings, THE BudgetBuddy SHALL allow input of:
+   - Country
+   - City
+   - Zip Code or Postal Code
+8. WHEN a user updates their location, THE BudgetBuddy SHALL automatically determine and update the timezone based on the location
+9. WHEN the timezone changes, THE BudgetBuddy SHALL immediately update all date displays and recalculate the current month
+10. THE BudgetBuddy SHALL persist timezone changes to the user's profile in DynamoDB
+11. THE BudgetBuddy SHALL handle edge cases such as:
+    - Users traveling across timezones
+    - Daylight saving time transitions
+    - Invalid or ambiguous location data
+
+**Implementation Status**: Not started
+
+**Priority**: High (Bug Fix)
+
+**Notes**:
+- Current bug: Application shows December budget on November 30, 2025 at 7:22 PM EST
+- Root cause: Application likely using UTC time instead of user's local timezone
+- Impact: Users see wrong month, leading to confusion and incorrect budget tracking

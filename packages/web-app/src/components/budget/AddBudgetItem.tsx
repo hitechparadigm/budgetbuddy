@@ -95,6 +95,16 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
     }
   };
 
+  const getModalTitle = () => {
+    const typeLabel = getGroupTypeLabel();
+    return `Add Planned ${typeLabel} Item`;
+  };
+
+  const getSubmitButtonText = () => {
+    const typeLabel = getGroupTypeLabel();
+    return `Add ${typeLabel} Item`;
+  };
+
   const getDefaultIcon = () => {
     switch (groupType) {
       case 'income': return '💰';
@@ -117,7 +127,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Add {getGroupTypeLabel()}</h2>
+          <h2 className="text-xl font-semibold">{getModalTitle()}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
@@ -260,7 +270,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
               type="submit"
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              Add {getGroupTypeLabel()}
+              {getSubmitButtonText()}
             </button>
           </div>
         </form>
