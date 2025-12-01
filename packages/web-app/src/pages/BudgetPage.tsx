@@ -701,22 +701,87 @@ export const BudgetPage: React.FC = () => {
   // CRITICAL FIX: Only show "No Budget Found" for past/current months
   // Future months will render the full layout with the "Start Planning" empty state inside
   if (!budget && !isFutureMonthCheck()) {
-    // Past or current month without budget - show "No Budget Found" state
+    // Past or current month without budget - show "No Budget Found" state with choice
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md">
+        <div className="text-center max-w-lg px-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
             No budget found for {getMonthName(currentMonth)}
           </h2>
-          <p className="text-gray-600 mb-6">
-            You haven't created a budget for this month yet.
+          <p className="text-gray-600 mb-8">
+            Choose how you'd like to create your budget:
           </p>
-          <button
-            onClick={() => navigate('/onboarding')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
-          >
-            Create Budget
-          </button>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* AI-Generated Budget Option */}
+            <button
+              onClick={() => navigate('/onboarding')}
+              className="p-6 bg-white border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-left"
+            >
+              <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mb-4 mx-auto">
+                <span className="text-2xl">🤖</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">AI-Generated</h3>
+              <p className="text-sm text-gray-600 text-center">
+                Let AI create a personalized budget based on your income and goals
+              </p>
+            </button>
+
+            {/* Manual Budget Option */}
+            <button
+              onClick={() => {
+                // Create an empty budget structure for manual entry
+                const emptyBudget: Budget = {
+                  id: `budget_${Date.now()}`,
+                  userId: 'mock_user_id',
+                  month: currentMonth,
+                  groups: [
+                    {
+                      id: 'income-group',
+                      name: 'Income',
+                      type: 'income',
+                      icon: '💰',
+                      isCollapsed: false,
+                      order: 1,
+                      categories: []
+                    },
+                    {
+                      id: 'savings-group',
+                      name: 'Savings',
+                      type: 'savings',
+                      icon: '💾',
+                      isCollapsed: false,
+                      order: 2,
+                      categories: []
+                    },
+                    {
+                      id: 'expenses-group',
+                      name: 'Expenses',
+                      type: 'expense',
+                      icon: '💸',
+                      isCollapsed: false,
+                      order: 3,
+                      categories: []
+                    }
+                  ],
+                  isAIGenerated: false,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString()
+                };
+                setBudget(emptyBudget);
+                saveBudgetToBackend(emptyBudget);
+              }}
+              className="p-6 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-600 hover:bg-blue-50 transition-colors text-left"
+            >
+              <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-lg mb-4 mx-auto">
+                <span className="text-2xl">✏️</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">Start from Scratch</h3>
+              <p className="text-sm text-gray-600 text-center">
+                Create your budget manually by adding categories yourself
+              </p>
+            </button>
+          </div>
         </div>
       </div>
     );
