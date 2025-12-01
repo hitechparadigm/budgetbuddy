@@ -190,84 +190,91 @@ export const BudgetPage: React.FC = () => {
             return;
           }
 
-          // If no budget for selected month, keep budget as null
-          console.log('[loadBudget] No budget found for', currentMonth);
+          // CRITICAL FIX: If no budget for selected month but OTHER budgets exist,
+          // don't create a new one - just show empty state
+          console.log('[loadBudget] No budget found for', currentMonth, 'but other budgets exist');
           setBudget(null);
           setLoading(false);
           return;
-        }
-      }
+        } else {
+          // CRITICAL FIX: Only use AI-generated budget if NO budgets exist at all (first time setup)
+          console.log('[loadBudget] No budgets exist in backend, checking for AI-generated budget');
+          const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
 
-      // If no backend budget, check localStorage for AI generated budget
-      const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
+          if (aiGeneratedBudget) {
+            const parsedBudget = JSON.parse(aiGeneratedBudget);
 
-      if (aiGeneratedBudget) {
-        const parsedBudget = JSON.parse(aiGeneratedBudget);
-
-        const budget: Budget = {
+            const budget: Budget = {
           id: `budget_${Date.now()}`,
           userId: 'mock_user_id',
           month: currentMonth,
           groups: [
             {
-              id: 'income-group',
-              name: 'Income',
-              type: 'income',
-              icon: '💰',
-              isCollapsed: false,
-              order: 1,
-              categories: parsedBudget.income?.map((cat: any, index: number) => ({
-                ...cat,
-                spentAmount: 0,
-                transactions: [],
-                order: index + 1,
-                isRecurring: false
-              })) || []
-            },
-            {
-              id: 'savings-group',
-              name: 'Savings',
-              type: 'savings',
-              icon: '💾',
-              isCollapsed: false,
-              order: 2,
-              categories: parsedBudget.savings?.map((cat: any, index: number) => ({
-                ...cat,
-                spentAmount: 0,
-                transactions: [],
-                order: index + 1,
-                isRecurring: false
-              })) || []
-            },
-            {
-              id: 'expenses-group',
-              name: 'Expenses',
-              type: 'expense',
-              icon: '💸',
-              isCollapsed: false,
-              order: 3,
-              categories: parsedBudget.expenses?.map((cat: any, index: number) => ({
-                ...cat,
-                spentAmount: 0,
-                transactions: [],
-                order: index + 1,
-                isRecurring: false
-              })) || []
-            }
-          ],
-          isAIGenerated: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
+                id: 'income-group',
+                name: 'Income',
+                type: 'income',
+                icon: '💰',
+                isCollapsed: false,
+                order: 1,
+                categories: parsedBudget.income?.map((cat: any, index: number) => ({
+                  ...cat,
+                  spentAmount: 0,
+                  transactions: [],
+                  order: index + 1,
+                  isRecurring: false
+                })) || []
+              },
+              {
+                id: 'savings-group',
+                name: 'Savings',
+                type: 'savings',
+                icon: '💾',
+                isCollapsed: false,
+                order: 2,
+                categories: parsedBudget.savings?.map((cat: any, index: number) => ({
+                  ...cat,
+                  spentAmount: 0,
+                  transactions: [],
+                  order: index + 1,
+                  isRecurring: false
+                })) || []
+              },
+              {
+                id: 'expenses-group',
+                name: 'Expenses',
+                type: 'expense',
+                icon: '💸',
+                isCollapsed: false,
+                order: 3,
+                categories: parsedBudget.expenses?.map((cat: any, index: number) => ({
+                  ...cat,
+                  spentAmount: 0,
+                  transactions: [],
+                  order: index + 1,
+                  isRecurring: false
+                })) || []
+              }
+            ],
+            isAIGenerated: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
 
-        setBudget(budget);
-        // Save the AI-generated budget to backend
-        await saveBudgetToBackend(budget);
-      } else {
-        navigate('/onboarding');
+            setBudget(budget);
+            // Save the AI-generated budget to backend
+            await saveBudgetToBackend(budget);
+            setLoading(false);
+            return;
+          } else {
+            // No AI-generated budget either - navigate to onboarding
+            navigate('/onboarding');
+            return;
+          }
+        }
       }
     } catch (error) {
       console.error('Error loading budget:', error);
+      setBudget(null);
     } finally {
       setLoading(false);
     }
