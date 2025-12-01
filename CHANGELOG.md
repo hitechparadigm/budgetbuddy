@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.12.1] - 2025-11-30
+
+### Documentation & Cleanup
+- 📚 **Documentation Update** - Updated all documentation to reflect current project status
+  - Updated README.md with accurate phase completion status
+  - Updated docs/README.md with latest date (2025-11-30)
+  - Updated progress metrics to 99.5% complete
+  - Marked Phase 3 as "COMPLETE"
+  - Updated Phase 4 and Phase 5 with accurate status
+- 🧹 **Package.json Cleanup** - Removed duplicate and obsolete scripts
+  - Removed duplicate `test:unit` script definition
+  - Removed obsolete `format` and `format:check` placeholder scripts
+  - Consolidated test scripts for clarity
+  - Removed duplicate `deploy:dev` script
+- ✅ **Code Quality** - Verified codebase follows best practices
+  - No console.log statements in production code
+  - All TODO comments are intentional and documented
+  - No obsolete spec directories
+  - Clean and maintainable codebase
+
+### Technical Improvements
+- 🏗️ **Script Consolidation** - Simplified npm scripts for better developer experience
+- 📖 **Documentation Accuracy** - All documentation now reflects actual implementation status
+- 🎯 **Project Status** - Clear roadmap with completed vs future features
+
 ## [1.12.0] - 2025-11-30
 
 ### 🚨 CRITICAL FIX
