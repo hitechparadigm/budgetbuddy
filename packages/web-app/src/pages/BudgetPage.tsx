@@ -190,6 +190,80 @@ export const BudgetPage: React.FC = () => {
             return;
           }
 
+          // CRITICAL FIX: Check if there's an AI-generated budget waiting to be used
+          // This handles the case where user just completed AI onboarding
+          const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
+          if (aiGeneratedBudget && currentMonth === getCurrentMonthString()) {
+            console.log('[loadBudget] Found AI-generated budget waiting to be used for current month');
+            const parsedBudget = JSON.parse(aiGeneratedBudget);
+
+            const budget: Budget = {
+              id: `budget_${Date.now()}`,
+              userId: 'mock_user_id',
+              month: currentMonth,
+              groups: [
+                {
+                  id: 'income-group',
+                  name: 'Income',
+                  type: 'income',
+                  icon: '💰',
+                  isCollapsed: false,
+                  order: 1,
+                  categories: parsedBudget.income?.map((cat: any, index: number) => ({
+                    ...cat,
+                    spentAmount: 0,
+                    transactions: [],
+                    order: index + 1,
+                    isRecurring: false
+                  })) || []
+                },
+                {
+                  id: 'savings-group',
+                  name: 'Savings',
+                  type: 'savings',
+                  icon: '💾',
+                  isCollapsed: false,
+                  order: 2,
+                  categories: parsedBudget.savings?.map((cat: any, index: number) => ({
+                    ...cat,
+                    spentAmount: 0,
+                    transactions: [],
+                    order: index + 1,
+                    isRecurring: false
+                  })) || []
+                },
+                {
+                  id: 'expenses-group',
+                  name: 'Expenses',
+                  type: 'expense',
+                  icon: '💸',
+                  isCollapsed: false,
+                  order: 3,
+                  categories: parsedBudget.expenses?.map((cat: any, index: number) => ({
+                    ...cat,
+                    spentAmount: 0,
+                    transactions: [],
+                    order: index + 1,
+                    isRecurring: false
+                  })) || []
+                }
+              ],
+              isAIGenerated: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+
+            setBudget(budget);
+            await saveBudgetToBackend(budget);
+
+            // Clear the AI-generated budget from localStorage after using it
+            localStorage.removeItem('ai-generated-budget');
+            console.log('[loadBudget] AI-generated budget used and cleared from localStorage');
+
+            setLoading(false);
+            return;
+          }
+
           // CRITICAL FIX: If no budget for selected month but OTHER budgets exist,
           // don't create a new one - just show empty state
           console.log('[loadBudget] No budget found for', currentMonth, 'but other budgets exist');
@@ -202,12 +276,7 @@ export const BudgetPage: React.FC = () => {
           const isCurrentMonth = currentMonth === getCurrentMonthString();
           console.log('[loadBudget] No budgets exist in backend. Current month?', isCurrentMonth);
 
-          // Check if we already created a budget for this month
-          const createdMonths = JSON.parse(localStorage.getItem('created-budget-months') || '[]');
-          const alreadyCreated = createdMonths.includes(currentMonth);
-          console.log('[loadBudget] Budget already created for this month?', alreadyCreated);
-
-          if (isCurrentMonth && !alreadyCreated) {
+          if (isCurrentMonth) {
             const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
 
             if (aiGeneratedBudget) {
@@ -271,19 +340,12 @@ export const BudgetPage: React.FC = () => {
           };
 
               setBudget(budget);
-              // Save the AI-generated budget to backend
               await saveBudgetToBackend(budget);
 
-              // WORKAROUND: Don't clear AI-generated budget yet
-              // The backend GET /budget is returning 404 even after saving
-              // So we need to keep the AI budget in localStorage as a fallback
-              // Mark this month as having a budget created
-              const createdMonths = JSON.parse(localStorage.getItem('created-budget-months') || '[]');
-              if (!createdMonths.includes(currentMonth)) {
-                createdMonths.push(currentMonth);
-                localStorage.setItem('created-budget-months', JSON.stringify(createdMonths));
-              }
-              console.log('[loadBudget] Marked month as having budget created:', currentMonth);
+              // Clear the AI-generated budget from localStorage after using it
+              localStorage.removeItem('ai-generated-budget');
+              console.log('[loadBudget] AI-generated budget used and cleared from localStorage');
+
               setLoading(false);
               return;
             } else {
