@@ -2,6 +2,16 @@
  * Inline types for web app (temporary until workspace dependencies work)
  */
 
+export interface UserLocation {
+  country: string;
+  city: string;
+  zipCode: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
 export interface User {
   userId: string;
   email: string;
@@ -10,6 +20,8 @@ export interface User {
   accountType: 'single' | 'family';
   subscriptionTier: 'free' | 'premium';
   onboardingCompleted: boolean;
+  timezone: string; // IANA timezone (e.g., "America/New_York")
+  location?: UserLocation;
   createdAt: string;
   updatedAt: string;
 }

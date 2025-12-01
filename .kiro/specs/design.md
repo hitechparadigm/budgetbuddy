@@ -766,3 +766,868 @@ const copyPreviousMonthBudget = async () => {
 **Property-Based Tests**:
 - Property 1: For any future month, copying previous month should create valid budget
 - Property 2: For any month navigation, budget data should persist correctly
+
+
+---
+
+## Budget Reset and Recurring Category Settings Design
+
+### Overview
+
+Add functionality to reset the current budget and restart the AI setup process, plus preserve recurring category settings (like bi-weekly salary) when copying budgets to future months. This ensures users don't have to reconfigure recurring items every month.
+
+### Components
+
+#### 1. Reset Budget Button
+
+**Location**: Budget page header, near the month navigation controls
+
+**UI Design**:
+```
+[Month Year]  $X left to budget    [Reset] [Today] [<] [>]
+```
+
+**Behavior**:
+- Clicking "Reset" opens a confirmation modal
+- Modal asks: "Are you sure you want to reset this budget? This will delete all categories and transactions for [Month]."
+- Options: "Cancel" (gray) and "Reset Budget" (red)
+- On confirm: Delete budget, navigate to AI budget generation page
+
+#### 2. Recurring Category Settings
+
+**Data Model Updates**:
+```typescript
+interface BudgetCategory {
+  id: string;
+  name: string;
+  icon: string;
+  plannedAmount: number;
+  spentAmount: number;
+  transactions: Transaction[];
+  order: number;
+  isRecurring: boolean;  // NEW
+  recurringFrequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'annually';  // NEW
+  nextDueDate?: string;  // NEW - ISO date string
+}
+```
+
+**UI Updates**:
+- Add checkbox "Make this recurring" when adding/editing categories
+- Add dropdown for frequency (weekly, bi-weekly, monthly, annually)
+- Show recurring badge on category items (e.g., "🔄 Bi-weekly")
+
+#### 3. Smart Budget Copying
+
+**Logic Flow**:
+```
+User clicks "Start Planning for [Month]"
+  ↓
+Find most recent past month with budget
+  ↓
+Copy ONLY recurring categories
+  ↓
+For each recurring category:
+  - Copy: name, icon, plannedAmount, isRecurring, recurringFrequency
+  - Reset: spentAmount = 0, transactions = []
+  - Calculate: nextDueDate based on frequency
+  - Generate: new category ID
+  ↓
+Save new budget to DynamoDB
+  ↓
+Display new budget
+```
+
+### API Integration
+
+**No new endpoints needed** - uses existing:
+- `GET /budget` - Fetch budgets
+- `POST /budget` - Create new budget
+- `PUT /budget/{id}` - Update budget
+- `DELETE /budget/{id}` - Delete budget (for reset)
+
+### State Management
+
+**New State Variables**:
+- `showResetModal: boolean` - Control reset confirmation modal
+- None for recurring settings (stored in category data)
+
+**Updated Functions**:
+- `copyPreviousMonthBudget()` - Filter to only recurring categories
+- `handleBudgetItemSubmit()` - Save recurring settings
+- `handleResetBudget()` - Delete budget and navigate to AI flow
+
+### Recurring Frequency Calculations
+
+**Next Due Date Logic**:
+```typescript
+const calculateNextDueDate = (
+  currentDate: Date,
+  frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'annually'
+): string => {
+  const next = new Date(currentDate);
+
+  switch (frequency) {
+    case 'weekly':
+      next.setDate(next.getDate() + 7);
+      break;
+    case 'bi-weekly':
+      next.setDate(next.getDate() + 14);
+      break;
+    case 'monthly':
+      next.setMonth(next.getMonth() + 1);
+      break;
+    case 'annually':
+      next.setFullYear(next.getFullYear() + 1);
+      break;
+  }
+
+  return next.toISOString();
+};
+```
+
+### UI/UX Considerations
+
+1. **Reset Button Placement**: Near month navigation for easy access
+2. **Confirmation Modal**: Prevent accidental budget deletion
+3. **Recurring Badge**: Visual indicator on recurring categories
+4. **Smart Copying**: Only copy recurring items to reduce clutter
+5. **Frequency Options**: Common patterns (weekly, bi-weekly, monthly, annually)
+
+### Testing Strategy
+
+**Unit Tests**:
+- Test `calculateNextDueDate()` with various frequencies
+- Test `copyPreviousMonthBudget()` filters recurring categories
+- Test reset confirmation modal shows/hides correctly
+
+**Integration Tests**:
+- Test full reset flow: click → confirm → navigate to AI page
+- Test recurring category creation and copying
+- Test budget copy preserves recurring settings
+
+**Manual Testing**:
+- Create budget with recurring salary (bi-weekly)
+- Navigate to future month and create budget
+- Verify salary is copied with bi-weekly setting
+- Test reset button deletes budget and restarts AI flow
+
+
+---
+
+## Transaction and Budget Item Clarity Design
+
+### Overview
+
+Improve UI clarity by distinguishing between actual transactions (recorded income/expenses) and planned budget items (future allocations). This prevents user confusion about whether they're recording real activity or planning future spending.
+
+### UI Label Updates
+
+#### Transaction Form (FAB)
+**Current**: "Plan an Expense" / "Plan an Income"
+**New**: "Record Actual Expense" / "Record Actual Income"
+
+**Modal Title Logic**:
+```typescript
+const getTransactionModalTitle = (type: 'income' | 'expense', isEdit: boolean) => {
+  if (isEdit) return 'Edit Transaction';
+  return type === 'income' ? 'Record Actual Income' : 'Record Actual Expense';
+};
+```
+
+#### Budget Item Form (Add Item Button)
+**Current**: Generic "Add Item"
+**New**: "Add Planned Income Item" / "Add Planned Expense Item" / "Add Planned Savings Item"
+
+**Modal Title Logic**:
+```typescript
+const getBudgetItemModalTitle = (groupType: 'income' | 'savings' | 'expense', isEdit: boolean) => {
+  if (isEdit) return 'Edit Budget Item';
+
+  const typeLabel = {
+    income: 'Income',
+    savings: 'Savings',
+    expense: 'Expense'
+  }[groupType];
+
+  return `Add Planned ${typeLabel} Item`;
+};
+```
+
+### Terminology Consistency
+
+**Throughout the application**:
+- Use "Transaction" or "Actual" for recorded activity
+- Use "Budget Item" or "Planned" for future allocations
+- Use "Spent" for actual amounts in categories
+- Use "Planned" for budgeted amounts in categories
+
+### Component Updates
+
+1. **TransactionForm.tsx**: Update header to show "Record Actual [Type]"
+2. **BudgetItemModal.tsx**: Update header to show "Add Planned [Type] Item"
+3. **TransactionList.tsx**: Ensure "Transactions" label is used consistently
+4. **BudgetDashboard.tsx**: Use "Planned" vs "Actual" labels in summaries
+
+---
+
+## Transaction Date Validation and Warnings Design
+
+### Overview
+
+Prevent users from accidentally adding transactions to the wrong month by validating transaction dates against the currently selected budget month and providing clear warnings with actionable options.
+
+### Validation Logic
+
+```typescript
+interface DateValidationResult {
+  isValid: boolean;
+  warning?: string;
+  suggestedMonth?: string;
+}
+
+const validateTransactionDate = (
+  transactionDate: string,
+  currentBudgetMonth: string // Format: "YYYY-MM"
+): DateValidationResult => {
+  const txDate = new Date(transactionDate);
+  const txMonth = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+
+  if (txMonth === currentBudgetMonth) {
+    return { isValid: true };
+  }
+
+  const txMonthName = txDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const currentMonthName = new Date(currentBudgetMonth + '-01').toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric'
+  });
+
+  return {
+    isValid: false,
+    warning: `This transaction date (${txMonthName}) is outside the current budget month (${currentMonthName})`,
+    suggestedMonth: txMonth
+  };
+};
+```
+
+### Warning UI Component
+
+**Location**: Below date input field in TransactionForm
+
+**Design**:
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ⚠️ Warning: Date Outside Current Month                      │
+│                                                              │
+│ This transaction date (December 2025) is outside the        │
+│ current budget month (November 2025).                       │
+│                                                              │
+│ What would you like to do?                                  │
+│                                                              │
+│ [Continue with Nov 2025]  [Switch to Dec 2025]  [Cancel]   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Styling**:
+- Background: Orange/yellow warning color (`bg-yellow-900 bg-opacity-30`)
+- Border: Orange (`border-yellow-600`)
+- Icon: Warning emoji or icon
+- Buttons: Primary action (Switch), Secondary (Continue), Tertiary (Cancel)
+
+### User Flow
+
+```
+User selects date in transaction form
+  ↓
+Date validation runs on change
+  ↓
+If date outside current month:
+  - Show warning banner
+  - Highlight date field with warning color
+  - Disable submit until user makes choice
+  ↓
+User chooses action:
+  - Continue: Record in current month (dismiss warning)
+  - Switch: Navigate to correct month, keep form data
+  - Cancel: Close warning, allow date change
+```
+
+### State Management
+
+```typescript
+interface TransactionFormState {
+  formData: TransactionFormData;
+  dateValidation: DateValidationResult;
+  showDateWarning: boolean;
+  userDateChoice: 'continue' | 'switch' | null;
+}
+```
+
+### API Integration
+
+No API changes needed - validation is client-side only. Transaction is recorded in the currently selected budget month regardless of transaction date.
+
+---
+
+## Transaction Editing Design
+
+### Overview
+
+Enable users to edit existing transactions by double-clicking on them in the transaction list. This provides a seamless way to correct mistakes without deleting and re-adding transactions.
+
+### UI Interaction
+
+**Transaction List Item**:
+- Add `cursor-pointer` class on hover
+- Add `onDoubleClick` event handler
+- Show visual feedback (slight background change) on hover
+- Maintain existing delete button functionality
+
+**CSS Updates**:
+```css
+.transaction-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.transaction-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+```
+
+### Edit Flow
+
+```
+User double-clicks transaction
+  ↓
+Open TransactionForm in edit mode
+  ↓
+Pre-populate form with transaction data
+  ↓
+User modifies fields
+  ↓
+User clicks "Update Transaction"
+  ↓
+Validate form
+  ↓
+Calculate category spent amount changes
+  ↓
+Update transaction in database
+  ↓
+Update affected categories' spent amounts
+  ↓
+Refresh UI
+  ↓
+Close modal
+```
+
+### Category Spent Amount Updates
+
+When editing a transaction, we need to handle three scenarios:
+
+**1. Amount Changed (same category)**:
+```typescript
+const oldSpent = category.spentAmount;
+const newSpent = oldSpent - oldTransaction.amount + newTransaction.amount;
+```
+
+**2. Category Changed (same amount)**:
+```typescript
+// Old category
+oldCategory.spentAmount -= transaction.amount;
+
+// New category
+newCategory.spentAmount += transaction.amount;
+```
+
+**3. Both Amount and Category Changed**:
+```typescript
+// Old category
+oldCategory.spentAmount -= oldTransaction.amount;
+
+// New category
+newCategory.spentAmount += newTransaction.amount;
+```
+
+### Component Updates
+
+**TransactionList.tsx**:
+```typescript
+<div
+  className="transaction-item"
+  onDoubleClick={() => onEdit(transaction)}
+  style={{ cursor: 'pointer' }}
+>
+  {/* Transaction content */}
+</div>
+```
+
+**TransactionForm.tsx**:
+```typescript
+interface TransactionFormProps {
+  transaction?: Transaction;  // If provided, form is in edit mode
+  onSubmit: (data: TransactionFormData) => Promise<void>;
+  onCancel: () => void;
+  loading?: boolean;
+}
+
+// In component
+const isEditMode = !!transaction;
+const modalTitle = isEditMode ? 'Edit Transaction' : getTransactionModalTitle(formData.type);
+const submitButtonText = isEditMode ? 'Update Transaction' : 'Add Transaction';
+```
+
+**BudgetDashboard.tsx** (or parent component):
+```typescript
+const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+
+const handleEditTransaction = (transaction: Transaction) => {
+  setEditingTransaction(transaction);
+  setShowTransactionModal(true);
+};
+
+const handleUpdateTransaction = async (data: TransactionFormData) => {
+  if (!editingTransaction) return;
+
+  // Calculate category changes
+  const oldCategoryId = editingTransaction.categoryId;
+  const newCategoryId = data.categoryId;
+  const oldAmount = editingTransaction.amount;
+  const newAmount = data.amount;
+
+  // Update transaction
+  const updatedTransaction = {
+    ...editingTransaction,
+    ...data,
+    updatedAt: new Date().toISOString()
+  };
+
+  // Update categories
+  if (oldCategoryId === newCategoryId) {
+    // Same category, just update amount
+    updateCategorySpent(oldCategoryId, -oldAmount + newAmount);
+  } else {
+    // Different category, update both
+    updateCategorySpent(oldCategoryId, -oldAmount);
+    updateCategorySpent(newCategoryId, newAmount);
+  }
+
+  // Save to backend
+  await updateTransactionAPI(updatedTransaction);
+
+  // Refresh UI
+  loadBudget();
+  setEditingTransaction(null);
+  setShowTransactionModal(false);
+};
+```
+
+### Error Handling
+
+**Validation Errors**:
+- Show inline errors for invalid fields
+- Keep modal open with user's changes
+- Highlight problematic fields
+
+**API Errors**:
+- Show error toast/notification
+- Keep modal open with user's changes
+- Allow retry or cancel
+
+**Optimistic Updates**:
+- Update UI immediately
+- Revert if API call fails
+- Show error message
+
+### Testing Strategy
+
+**Unit Tests**:
+- Test category spent amount calculations for all scenarios
+- Test form validation in edit mode
+- Test double-click event handler
+
+**Integration Tests**:
+- Test full edit flow: double-click → edit → save → verify
+- Test category changes update spent amounts correctly
+- Test error handling and rollback
+
+**Manual Testing**:
+- Double-click various transactions
+- Edit amount, category, description, date
+- Verify spent amounts update correctly
+- Test with transactions in different categories
+- Test error scenarios (network failure, validation errors)
+
+
+---
+
+## User Timezone and Location Management Design
+
+### Overview
+
+Implement proper timezone handling to ensure users see the correct current month and dates based on their local timezone, not UTC or server time. This fixes the critical bug where users see the wrong month (e.g., December instead of November on Nov 30 at 7:22 PM EST).
+
+### Problem Analysis
+
+**Current Bug**:
+- Date: November 30, 2025, 7:22 PM EST
+- Expected: Show November budget
+- Actual: Shows December budget
+- Root Cause: Application using UTC time (which is already December 1, 2025 at 00:22 UTC)
+
+**UTC vs EST Conversion**:
+```
+November 30, 2025, 7:22 PM EST = November 30, 2025, 19:22 EST
+November 30, 2025, 19:22 EST = December 1, 2025, 00:22 UTC (5 hours ahead)
+```
+
+### Data Model Updates
+
+#### User Profile Extension
+
+```typescript
+interface User {
+  userId: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  timezone: string;           // NEW: IANA timezone (e.g., "America/New_York")
+  location?: {                // NEW: User's location
+    country: string;
+    city: string;
+    zipCode: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### Timezone Detection on Registration
+
+**Flow**:
+```
+User registers
+  ↓
+Detect timezone using browser API
+  ↓
+Optionally: Request geolocation for more accuracy
+  ↓
+Store timezone in user profile
+  ↓
+Use timezone for all date operations
+```
+
+**Implementation**:
+```typescript
+const detectUserTimezone = (): string => {
+  // Use Intl API to get IANA timezone
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // Returns: "America/New_York", "America/Toronto", etc.
+};
+
+const detectUserLocation = async (): Promise<Location | null> => {
+  if (!navigator.geolocation) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        // Use reverse geocoding API to get location details
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        });
+      },
+      () => resolve(null)
+    );
+  });
+};
+```
+
+### Current Month Calculation
+
+**Problem**: Current implementation likely uses:
+```typescript
+// WRONG - Uses UTC
+const currentMonth = new Date().getUTCMonth();
+const currentYear = new Date().getUTCFullYear();
+```
+
+**Solution**: Use user's timezone:
+```typescript
+// CORRECT - Uses user's local timezone
+const getCurrentMonthInTimezone = (timezone: string): { month: number; year: number } => {
+  const now = new Date();
+
+  // Format date in user's timezone
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric'
+  });
+
+  const parts = formatter.formatToParts(now);
+  const year = parseInt(parts.find(p => p.type === 'year')?.value || '0');
+  const month = parseInt(parts.find(p => p.type === 'month')?.value || '0');
+
+  return { month, year };
+};
+
+// Usage
+const userTimezone = 'America/New_York';
+const { month, year } = getCurrentMonthInTimezone(userTimezone);
+// On Nov 30, 2025 7:22 PM EST: month = 11, year = 2025 ✓
+```
+
+### Timezone Utility Functions
+
+Create `packages/web-app/src/utils/timezoneHelpers.ts`:
+
+```typescript
+/**
+ * Gets the current date/time in a specific timezone
+ */
+export const getCurrentDateInTimezone = (timezone: string): Date => {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false
+  });
+
+  const parts = formatter.formatToParts(now);
+  const year = parseInt(parts.find(p => p.type === 'year')?.value || '0');
+  const month = parseInt(parts.find(p => p.type === 'month')?.value || '1') - 1;
+  const day = parseInt(parts.find(p => p.type === 'day')?.value || '1');
+  const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
+  const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
+  const second = parseInt(parts.find(p => p.type === 'second')?.value || '0');
+
+  return new Date(year, month, day, hour, minute, second);
+};
+
+/**
+ * Gets the current month and year in a specific timezone
+ */
+export const getCurrentMonthInTimezone = (timezone: string): { month: number; year: number } => {
+  const date = getCurrentDateInTimezone(timezone);
+  return {
+    month: date.getMonth() + 1, // 1-12
+    year: date.getFullYear()
+  };
+};
+
+/**
+ * Formats a date in a specific timezone
+ */
+export const formatDateInTimezone = (
+  date: Date,
+  timezone: string,
+  format: Intl.DateTimeFormatOptions
+): string => {
+  return new Intl.DateTimeFormat('en-US', {
+    ...format,
+    timeZone: timezone
+  }).format(date);
+};
+
+/**
+ * Checks if a date is "today" in a specific timezone
+ */
+export const isTodayInTimezone = (date: Date, timezone: string): boolean => {
+  const today = getCurrentDateInTimezone(timezone);
+  const checkDate = new Date(date);
+
+  return (
+    checkDate.getFullYear() === today.getFullYear() &&
+    checkDate.getMonth() === today.getMonth() &&
+    checkDate.getDate() === today.getDate()
+  );
+};
+```
+
+### Settings Page - Location Update
+
+**UI Design**:
+```
+┌─────────────────────────────────────────────────────────┐
+│ Settings                                                 │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│ Location & Timezone                                      │
+│                                                          │
+│ Country:        [United States          ▼]              │
+│ City:           [New York                ]              │
+│ Zip/Postal:     [10001                   ]              │
+│                                                          │
+│ Detected Timezone: America/New_York (EST)               │
+│ Current Local Time: Nov 30, 2025 7:22 PM                │
+│                                                          │
+│ [Update Location]                                        │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Location to Timezone Mapping**:
+- Use a timezone lookup library (e.g., `geo-tz` or `tzlookup`)
+- Or use a geocoding API (Google Maps, OpenStreetMap)
+- Store mapping of zip codes to timezones
+
+```typescript
+const getTimezoneFromLocation = async (
+  country: string,
+  city: string,
+  zipCode: string
+): Promise<string> => {
+  // Option 1: Use a library
+  // import { find } from 'geo-tz';
+  // const timezone = find(latitude, longitude)[0];
+
+  // Option 2: Use a lookup table for common locations
+  const locationTimezoneMap: Record<string, string> = {
+    'US-10001': 'America/New_York',
+    'US-90001': 'America/Los_Angeles',
+    'CA-M5H': 'America/Toronto',
+    // ... more mappings
+  };
+
+  const key = `${country}-${zipCode}`;
+  return locationTimezoneMap[key] || 'America/New_York'; // Default fallback
+};
+```
+
+### State Management
+
+**User Context**:
+```typescript
+interface UserContext {
+  user: User;
+  timezone: string;
+  updateLocation: (location: Location) => Promise<void>;
+  getCurrentMonth: () => { month: number; year: number };
+}
+
+const UserProvider: React.FC = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [timezone, setTimezone] = useState<string>('America/New_York');
+
+  useEffect(() => {
+    // Load user profile with timezone
+    loadUserProfile().then(profile => {
+      setUser(profile);
+      setTimezone(profile.timezone || detectUserTimezone());
+    });
+  }, []);
+
+  const updateLocation = async (location: Location) => {
+    const newTimezone = await getTimezoneFromLocation(
+      location.country,
+      location.city,
+      location.zipCode
+    );
+
+    // Update user profile
+    await updateUserProfile({
+      ...user,
+      location,
+      timezone: newTimezone
+    });
+
+    setTimezone(newTimezone);
+  };
+
+  const getCurrentMonth = () => {
+    return getCurrentMonthInTimezone(timezone);
+  };
+
+  return (
+    <UserContext.Provider value={{ user, timezone, updateLocation, getCurrentMonth }}>
+      {children}
+    </UserContext.Provider>
+  );
+};
+```
+
+### API Updates
+
+**User Profile Endpoint**:
+```typescript
+// GET /user/profile
+Response: {
+  userId: string;
+  email: string;
+  timezone: string;
+  location?: {
+    country: string;
+    city: string;
+    zipCode: string;
+  };
+}
+
+// PUT /user/profile
+Request: {
+  timezone?: string;
+  location?: {
+    country: string;
+    city: string;
+    zipCode: string;
+  };
+}
+```
+
+### Migration Strategy
+
+**For Existing Users**:
+1. Detect timezone on next login
+2. Prompt user to confirm/update location
+3. Store timezone in profile
+4. Use detected timezone going forward
+
+**Default Behavior**:
+- If no timezone stored: Detect from browser
+- If detection fails: Use UTC with warning
+- Prompt user to set location in settings
+
+### Testing Strategy
+
+**Unit Tests**:
+- Test `getCurrentMonthInTimezone()` with various timezones
+- Test edge cases: midnight, month boundaries, DST transitions
+- Test timezone detection
+
+**Integration Tests**:
+- Test full flow: register → detect timezone → show correct month
+- Test location update → timezone change → UI updates
+- Test with different timezones (EST, PST, UTC, etc.)
+
+**Manual Testing**:
+- Test on Nov 30, 2025 at 7:22 PM EST → Should show November
+- Test on Nov 30, 2025 at 11:59 PM EST → Should show November
+- Test on Dec 1, 2025 at 12:00 AM EST → Should show December
+- Test timezone change → Verify month updates immediately
+
+### Edge Cases
+
+1. **Daylight Saving Time**: Use IANA timezones which handle DST automatically
+2. **Traveling Users**: Allow manual timezone override in settings
+3. **Invalid Locations**: Fallback to browser-detected timezone
+4. **No Geolocation Permission**: Use browser timezone API only
+5. **Ambiguous Zip Codes**: Prompt user to select from multiple options
+
+### Performance Considerations
+
+- Cache timezone calculations
+- Avoid repeated timezone conversions
+- Store formatted dates when possible
+- Use memoization for expensive operations

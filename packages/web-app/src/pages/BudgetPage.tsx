@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCurrentMonthString, getTodayString, isFutureMonth, isPastMonth } from '../utils/monthHelpers';
 
 const API_BASE_URL = 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
 
@@ -67,7 +68,7 @@ export const BudgetPage: React.FC = () => {
   const [transactionForm, setTransactionForm] = useState({
     amount: '',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayString(),
     categoryId: ''
   });
 
@@ -75,6 +76,7 @@ export const BudgetPage: React.FC = () => {
   const [showBudgetItemModal, setShowBudgetItemModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(null);
   const [selectedGroupType, setSelectedGroupType] = useState<'income' | 'savings' | 'expense' | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
   const [budgetItemForm, setBudgetItemForm] = useState({
     name: '',
     icon: '💰',
@@ -89,10 +91,10 @@ export const BudgetPage: React.FC = () => {
   // Right sidebar width state
   const [sidebarWidth, setSidebarWidth] = useState(400); // Default 400px (larger than w-80 which is 320px)
 
-  // Current month state
+  // Current month state - FIXED: Now uses user's local timezone instead of UTC
   const [currentMonth, setCurrentMonth] = useState(() => {
-    const today = new Date().toISOString().slice(0, 7);
-    console.log('Initial currentMonth state:', today);
+    const today = getCurrentMonthString();
+    console.log('Initial currentMonth state (timezone-aware):', today);
     return today;
   }); // Format: YYYY-MM
   const [isResizing, setIsResizing] = useState(false);
@@ -322,7 +324,7 @@ export const BudgetPage: React.FC = () => {
     setTransactionForm({
       amount: '',
       description: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayString(),
       categoryId: ''
     });
     setShowTransactionModal(true);
@@ -335,7 +337,7 @@ export const BudgetPage: React.FC = () => {
     setTransactionForm({
       amount: '',
       description: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayString(),
       categoryId: ''
     });
   };
@@ -532,39 +534,21 @@ export const BudgetPage: React.FC = () => {
     setCurrentMonth(date.toISOString().slice(0, 7));
   };
 
-  // Navigate to current month
+  // Navigate to current month - FIXED: Now uses user's local timezone
   const goToToday = () => {
-    const today = new Date().toISOString().slice(0, 7);
-    console.log('goToToday called, setting month to:', today);
+    const today = getCurrentMonthString();
+    console.log('goToToday called (timezone-aware), setting month to:', today);
     setCurrentMonth(today);
   };
 
-  // Check if viewing a future month
-  const isFutureMonth = () => {
-    const today = new Date();
-    const [year, month] = currentMonth.split('-').map(Number);
-
-    // Compare year and month directly to avoid timezone issues
-    const currentYear = today.getFullYear();
-    const currentMonthNum = today.getMonth() + 1; // getMonth() is 0-indexed
-
-    if (year > currentYear) return true;
-    if (year === currentYear && month > currentMonthNum) return true;
-    return false;
+  // Check if viewing a future month - FIXED: Now uses timezone-aware helper
+  const isFutureMonthCheck = () => {
+    return isFutureMonth(currentMonth);
   };
 
-  // Check if viewing a past month
-  const isPastMonth = () => {
-    const today = new Date();
-    const [year, month] = currentMonth.split('-').map(Number);
-
-    // Compare year and month directly to avoid timezone issues
-    const currentYear = today.getFullYear();
-    const currentMonthNum = today.getMonth() + 1; // getMonth() is 0-indexed
-
-    if (year < currentYear) return true;
-    if (year === currentYear && month < currentMonthNum) return true;
-    return false;
+  // Check if viewing a past month - FIXED: Now uses timezone-aware helper
+  const isPastMonthCheck = () => {
+    return isPastMonth(currentMonth);
   };
 
   // Copy previous month's budget for future month
@@ -615,6 +599,21 @@ export const BudgetPage: React.FC = () => {
     } catch (error) {
       console.error('Error copying previous month budget:', error);
     }
+  };
+
+  // Reset budget and navigate to AI setup
+  const handleResetBudget = () => {
+    if (!budget) return;
+
+    // Clear budget state
+    setBudget(null);
+
+    // Clear AI-generated budget from localStorage if it exists
+    localStorage.removeItem('ai-generated-budget');
+
+    // Navigate to AI budget generation page
+    // The new budget will overwrite the old one when saved
+    navigate('/onboarding');
   };
 
   const handleDeleteTransaction = async (transactionId: string, categoryId: string) => {
@@ -899,6 +898,16 @@ export const BudgetPage: React.FC = () => {
 
               {/* Right: Navigation Controls */}
               <div className="flex items-center space-x-2">
+                {/* Reset Button - Only show if budget exists */}
+                {budget && (
+                  <button
+                    onClick={() => setShowResetModal(true)}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                  >
+                    Reset
+                  </button>
+                )}
+
                 {/* Today Button */}
                 <button
                   onClick={goToToday}
@@ -1605,6 +1614,49 @@ export const BudgetPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Budget Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            {/* Warning Icon */}
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+              Reset Budget for {getMonthName(currentMonth).split(' ')[0]}?
+            </h3>
+
+            {/* Warning Message */}
+            <p className="text-gray-600 text-center mb-6">
+              This will permanently delete all categories and transactions for {getMonthName(currentMonth)}. This action cannot be undone.
+            </p>
+
+            {/* Buttons */}
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowResetModal(false);
+                  handleResetBudget();
+                }}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Reset Budget
+              </button>
+            </div>
           </div>
         </div>
       )}

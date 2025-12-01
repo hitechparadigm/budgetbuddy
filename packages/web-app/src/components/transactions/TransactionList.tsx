@@ -85,7 +85,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
       <div className="transaction-items">
         {transactions.map((transaction) => (
-          <div key={transaction.transactionId} className="transaction-item">
+          <div
+            key={transaction.transactionId}
+            className="transaction-item cursor-pointer hover:bg-gray-800 hover:bg-opacity-50 transition-colors"
+            onDoubleClick={() => onEdit(transaction)}
+            title="Double-click to edit"
+          >
             <div className="transaction-main">
               <div className="transaction-info">
                 <div className="transaction-description">
