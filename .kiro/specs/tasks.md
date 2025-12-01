@@ -915,3 +915,172 @@ None - all critical bugs have been resolved.
   - Create script to detect and update timezones for existing users
   - Plan rollout and communication
   - _Requirements: 13.2, 13.5_
+
+
+---
+
+## Phase 13: Critical Bug Fixes (HIGH PRIORITY)
+
+**Priority**: CRITICAL - These bugs significantly impact core functionality
+
+### 13.1 Fix Empty Month Budget Display Bug
+- [ ] 19. Fix budget loading to only show data for the correct month
+  - Prevent displaying budget data from other months
+  - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8, 15.9, 15.10_
+
+- [ ] 19.1 Update loadBudget function
+  - Clear budget state immediately when loading starts (setBudget(null))
+  - Filter budgets to find exact month match (b.month === currentMonth)
+  - Verify loaded budget month matches current month (double-check)
+  - Set budget to null if no match found
+  - Add console logging for debugging month mismatches
+  - _Requirements: 15.2, 15.5, 15.6, 15.7, 15.8_
+
+- [ ] 19.2 Update changeMonth function
+  - Clear budget state immediately when month changes (setBudget(null))
+  - Ensure month state update triggers budget reload
+  - Add console logging to track month changes
+  - _Requirements: 15.6, 15.7_
+
+- [ ] 19.3 Add empty state for past months without budgets
+  - Create empty state component for past/current months
+  - Display message: "No budget found for [Month Year]"
+  - Add "Create Budget" button that navigates to onboarding
+  - Style consistently with future month empty state
+  - _Requirements: 15.1, 15.3, 15.8_
+
+- [ ] 19.4 Update budget display conditional logic
+  - Only render budget UI when budget exists AND budget.month === currentMonth
+  - Show loading state while fetching
+  - Show appropriate empty state when budget is null
+  - Differentiate between future month and past/current month empty states
+  - _Requirements: 15.1, 15.2, 15.4, 15.8_
+
+- [ ] 19.5 Test empty month fix thoroughly
+  - Test navigating to month with budget (should display budget)
+  - Test navigating to month without budget (should show empty state)
+  - Test switching from month with budget to month without (should clear data)
+  - Test creating first budget in November (past months should be empty)
+  - Test future month without budget (should show "Start Planning" state)
+  - Test rapid month switching (should not show wrong month's data)
+  - Verify budget.month matches currentMonth in console
+  - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8, 15.9, 15.10_
+
+### 13.2 Implement Transaction Date Validation
+- [ ] 20. Add date validation to transaction modal
+  - Warn users when transaction date is outside current budget month
+  - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7, 14.8, 14.9, 14.10_
+
+- [ ] 20.1 Create date validation utility function
+  - Create validateTransactionDate() function in dateValidation.ts
+  - Compare transaction date month to current budget month
+  - Return validation result with warning message
+  - Format month names for display
+  - Handle edge cases (empty dates, invalid dates)
+  - _Requirements: 14.1, 14.2, 14.3, 14.9_
+
+- [ ] 20.2 Add validation state to transaction modal
+  - Add dateValidation state variable
+  - Add showDateWarning state variable
+  - Call validation function when date changes
+  - Update validation state in real-time
+  - _Requirements: 14.1, 14.10_
+
+- [ ] 20.3 Create date warning banner component
+  - Design warning banner with orange/yellow styling
+  - Display warning message with month names
+  - Add three action buttons: "Add to Current Month", "Switch to [Month]", "Change Date"
+  - Position below date input field
+  - Show/hide based on validation state
+  - _Requirements: 14.2, 14.3, 14.4_
+
+- [ ] 20.4 Implement warning action handlers
+  - "Add to Current Month": Dismiss warning, allow submission to current month
+  - "Switch to [Month]": Navigate to correct month, preserve form data
+  - "Change Date": Dismiss warning, allow user to modify date
+  - Disable form submission until user selects an action
+  - _Requirements: 14.4, 14.6, 14.7, 14.8_
+
+- [ ] 20.5 Add visual feedback to date input
+  - Highlight date input with orange border when invalid
+  - Add warning icon next to date field
+  - Remove highlighting when date is valid or warning dismissed
+  - _Requirements: 14.5_
+
+- [ ] 20.6 Integrate validation with transaction modal
+  - Pass currentBudgetMonth prop to transaction modal
+  - Pass onMonthSwitch callback to handle month switching
+  - Update date input handler to trigger validation
+  - Block form submission when warning is active
+  - _Requirements: 14.1, 14.7, 14.8_
+
+- [ ] 20.7 Test date validation functionality
+  - Test with date in current month (no warning)
+  - Test with date in past month (show warning)
+  - Test with date in future month (show warning)
+  - Test "Add to Current Month" button (records in current month)
+  - Test "Switch to [Month]" button (navigates and preserves form)
+  - Test "Change Date" button (dismisses warning)
+  - Test form submission is blocked until action selected
+  - Test real-time validation as user types
+  - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7, 14.8, 14.9, 14.10_
+
+### 13.3 Integration Testing for Bug Fixes
+- [ ] 21. Test both bug fixes together
+  - Comprehensive testing of empty month and date validation fixes
+  - _Requirements: 14.1-14.10, 15.1-15.10_
+
+- [ ] 21.1 End-to-end testing
+  - Create budget in November
+  - Navigate to past months (should be empty)
+  - Navigate to future months (should show "Start Planning")
+  - Add transaction with date in current month (no warning)
+  - Add transaction with date in different month (show warning)
+  - Test all warning actions work correctly
+  - Verify budget data is never shown for wrong months
+  - _Requirements: All from Requirements 14, 15_
+
+- [ ] 21.2 Edge case testing
+  - Test month boundaries (last day of month)
+  - Test year boundaries (Dec 31 → Jan 1)
+  - Test rapid month switching
+  - Test with empty budget state
+  - Test with multiple budgets across different months
+  - _Requirements: All from Requirements 14, 15_
+
+- [ ] 21.3 User acceptance testing
+  - Verify user can't accidentally add transactions to wrong month
+  - Verify empty months display correctly
+  - Verify warning messages are clear and actionable
+  - Verify all actions work as expected
+  - _Requirements: All from Requirements 14, 15_
+
+---
+
+## Summary Statistics (Updated)
+
+### Overall Progress
+- **Total Tasks**: 70 (updated)
+- **Completed**: 48 (69%)
+- **In Progress**: 0 (0%)
+- **Remaining**: 22 (31%)
+- **Critical Priority**: 6 tasks (Phase 13)
+
+### Phase Completion
+- Phase 1-9: 100% ✅
+- Phase 10: 80% 🚧
+- Phase 11: 0% ⏳
+- Phase 12: 0% ⏳
+- **Phase 13: 0% ⏳ (CRITICAL PRIORITY)**
+
+### Next Immediate Steps
+
+**CRITICAL (Do First)**:
+1. Fix empty month budget display bug (Task 19)
+2. Implement transaction date validation (Task 20)
+3. Test both fixes together (Task 21)
+
+**After Critical Fixes**:
+4. Complete timezone implementation (Phase 12)
+5. Complete UX improvements (Phase 11)
+6. Final testing and production deployment (Phase 10)

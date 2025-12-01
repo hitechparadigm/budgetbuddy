@@ -1631,3 +1631,298 @@ Request: {
 - Avoid repeated timezone conversions
 - Store formatted dates when possible
 - Use memoization for expensive operations
+
+
+---
+
+## Transaction Date Validation Design (Critical Bug Fix)
+
+### Overview
+
+Implement real-time date validation in the transaction modal to prevent users from accidentally adding transactions to the wrong month's budget. This addresses a critical bug where transactions with dates outside the current month are added without warning.
+
+### Validation Logic
+
+```typescript
+interface DateValidationResult {
+  isValid: boolean;
+  warning?: string;
+  transactionMonth?: string;
+  transactionMonthName?: string;
+  currentMonthName?: string;
+}
+
+const validateTransactionDate = (
+  transactionDate: string,  // YYYY-MM-DD format
+  currentBudgetMonth: string // YYYY-MM format
+): DateValidationResult => {
+  if (!transactionDate || !currentBudgetMonth) {
+    return { isValid: true };
+  }
+
+  // Extract month from transaction date
+  const txDate = new Date(transactionDate);
+  const txMonth = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+
+  // Check if transaction month matches current budget month
+  if (txMonth === currentBudgetMonth) {
+    return { isValid: true };
+  }
+
+  // Format month names for display
+  const txMonthName = txDate.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric'
+  });
+
+  const currentMonthName = new Date(currentBudgetMonth + '-01').toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric'
+  });
+
+  return {
+    isValid: false,
+    warning: `This transaction date (${txMonthName}) is outside the current budget month (${currentMonthName})`,
+    transactionMonth: txMonth,
+    transactionMonthName: txMonthName,
+    currentMonthName: currentMonthName
+  };
+};
+```
+
+### UI Components
+
+#### Warning Banner Component
+
+**Location**: Below date input field in transaction modal
+
+**Layout**:
+```
+┌─────────────────────────────────────────────────────────────┐
+│ ⚠️ This transaction date (December 2025) is outside the    │
+│    current budget month (November 2025)                     │
+│                                                             │
+│ [Add to Current Month] [Switch to December] [Change Date]  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Styling**:
+- Background: Orange/yellow (`bg-yellow-50`)
+- Border: Orange (`border-yellow-300`)
+- Icon: Warning icon in orange
+- Buttons: Three action buttons with distinct styling
+
+#### Date Input Highlighting
+
+**When date is outside current month**:
+- Border color: Orange (`border-yellow-500`)
+- Border width: 2px
+- Add warning icon next to input
+
+**When date is valid**:
+- Normal border color: Gray (`border-gray-300`)
+- No warning icon
+
+### User Flow
+
+```
+User enters transaction date
+  ↓
+Validate date against current month
+  ↓
+If date outside current month:
+  ↓
+  Display warning banner
+  ↓
+  Disable submit button
+  ↓
+  User selects action:
+    ├─ "Add to Current Month" → Record in current month, close modal
+    ├─ "Switch to [Month]" → Navigate to correct month, preserve form data
+    └─ "Change Date" → Dismiss warning, allow date modification
+  ↓
+If date within current month:
+  ↓
+  No warning, allow submission
+```
+
+### State Management
+
+**New State Variables**:
+```typescript
+const [dateValidation, setDateValidation] = useState<DateValidationResult>({ isValid: true });
+const [showDateWarning, setShowDateWarning] = useState(false);
+```
+
+**Validation Trigger**:
+- On date input change (real-time validation)
+- On form mount (if editing existing transaction)
+- On month change (if modal is open)
+
+### Integration Points
+
+1. **Transaction Modal**: Add validation logic to date input handler
+2. **Month Navigation**: Pass current month to transaction modal
+3. **Form Submission**: Block submission if date warning is active
+4. **Month Switching**: Implement callback to switch months from modal
+
+---
+
+## Empty Month Budget Display Fix (Critical Bug Fix)
+
+### Overview
+
+Fix the critical bug where budget data from other months is incorrectly displayed when viewing months without budgets. This ensures users only see budget data for months where they explicitly created budgets.
+
+### Root Cause Analysis
+
+**Current Issue**:
+- User navigates to a month without a budget
+- Budget state is not properly cleared
+- Previous month's budget data remains displayed
+- OR: Budget loading logic is not filtering by month correctly
+
+**Expected Behavior**:
+- When no budget exists for a month, display empty state
+- Only show budget data that matches the exact month being viewed
+- Clear previous budget data when switching months
+
+### Fix Implementation
+
+#### 1. Budget Loading Logic
+
+```typescript
+const loadBudget = async () => {
+  try {
+    setLoading(true);
+
+    // Clear previous budget data immediately
+    setBudget(null);
+
+    // Fetch all budgets for user
+    const response = await fetch(`${API_BASE_URL}/budget`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('budgetbuddy_id_token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data.budgets && data.budgets.length > 0) {
+        // Find budget for the EXACT month being viewed
+        const monthBudget = data.budgets.find((b: Budget) => b.month === currentMonth);
+
+        if (monthBudget) {
+          // Verify the budget month matches (double-check)
+          if (monthBudget.month === currentMonth) {
+            setBudget(monthBudget);
+          } else {
+            console.error('Budget month mismatch:', monthBudget.month, currentMonth);
+            setBudget(null);
+          }
+        } else {
+          // No budget found for this month - set to null
+          setBudget(null);
+        }
+      } else {
+        // No budgets at all
+        setBudget(null);
+      }
+    } else {
+      // API error
+      setBudget(null);
+    }
+  } catch (error) {
+    console.error('Error loading budget:', error);
+    setBudget(null);
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+#### 2. Month Change Handler
+
+```typescript
+const changeMonth = (direction: 'prev' | 'next') => {
+  // Clear current budget immediately
+  setBudget(null);
+
+  // Calculate new month
+  const [year, month] = currentMonth.split('-').map(Number);
+  const offset = direction === 'prev' ? -1 : 1;
+  const date = new Date(year, month - 1 + offset, 1);
+  const newMonth = date.toISOString().slice(0, 7);
+
+  // Update month state (triggers useEffect to load budget)
+  setCurrentMonth(newMonth);
+};
+```
+
+#### 3. Empty State Display Logic
+
+```typescript
+// In render logic
+if (loading) {
+  return <LoadingSpinner />;
+}
+
+if (!budget) {
+  // Check if future month
+  if (isFutureMonth(currentMonth)) {
+    return <FutureMonthEmptyState />;
+  }
+
+  // Past or current month with no budget
+  return (
+    <div className="text-center py-12">
+      <h2 className="text-xl font-semibold text-gray-700 mb-2">
+        No budget found for {getMonthName(currentMonth)}
+      </h2>
+      <p className="text-gray-500 mb-6">
+        You haven't created a budget for this month yet.
+      </p>
+      <button
+        onClick={() => navigate('/onboarding')}
+        className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+      >
+        Create Budget
+      </button>
+    </div>
+  );
+}
+
+// Only render budget UI if budget exists
+return <BudgetDisplay budget={budget} />;
+```
+
+### Testing Strategy
+
+**Test Cases**:
+1. Navigate to month with budget → Should display budget
+2. Navigate to month without budget → Should display empty state
+3. Navigate from month with budget to month without → Should clear previous budget
+4. Create first budget in November → Past months should be empty
+5. Navigate to future month without budget → Should show "Start Planning" state
+6. Switch rapidly between months → Should not show wrong month's data
+
+**Verification**:
+- Check `budget.month` matches `currentMonth` in console
+- Verify budget state is null when no budget exists
+- Confirm no budget data from other months is displayed
+
+---
+
+## Implementation Priority
+
+**Critical Bug Fixes** (Implement immediately):
+1. Empty Month Budget Display Fix (Requirement 15)
+2. Transaction Date Validation (Requirement 14)
+
+**Rationale**:
+- Empty month bug causes data integrity issues and user confusion
+- Date validation bug causes transactions to be added to wrong months
+- Both bugs significantly impact core functionality
+- Both are relatively quick fixes with high impact
