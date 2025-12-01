@@ -12,6 +12,7 @@
     "syntax-check": "powershell -ExecutionPolicy Bypass -File scripts/check-syntax.ps1",
     "type-check": "cd infrastructure && npm run typecheck",
     "test": "cd backend/functions/transactions && npm install && npm test",
+    "test:unit": "cd backend/functions/transactions && npm install && npm test",
     "test:lambda": "cd backend/functions/auth && npm run test && cd ../budget && npm run test && cd ../transactions && npm run test",
     "test:transactions": "node scripts/test-transactions.js",
     "test:journey": "node scripts/test-user-journey.js",
