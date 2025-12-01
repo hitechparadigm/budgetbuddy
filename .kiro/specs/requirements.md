@@ -370,3 +370,64 @@ The following features are not included in the current MVP:
 - Current bug: Application shows December budget on November 30, 2025 at 7:22 PM EST
 - Root cause: Application likely using UTC time instead of user's local timezone
 - Impact: Users see wrong month, leading to confusion and incorrect budget tracking
+
+
+---
+
+### Requirement 14: Transaction Date Validation (Critical Bug Fix)
+
+**User Story:** As a user, I want to be warned when adding transactions with dates outside the current budget month, so that I don't accidentally record transactions in the wrong month's budget.
+
+#### Acceptance Criteria
+
+1. WHEN a user enters a transaction date in the transaction modal, THE BudgetBuddy SHALL validate the date against the currently selected budget month
+2. WHEN the transaction date is outside the current budget month, THE BudgetBuddy SHALL display a warning message immediately
+3. THE warning message SHALL clearly state: "This transaction date ([Month Year]) is outside the current budget month ([Month Year])"
+4. THE BudgetBuddy SHALL provide three action options:
+   - "Add to Current Month" - Record transaction in currently selected budget month
+   - "Switch to [Month]" - Navigate to the month matching the transaction date
+   - "Change Date" - Dismiss warning and allow user to modify the date
+5. THE BudgetBuddy SHALL highlight the date field with a warning color (orange/yellow border) when the date is outside the current month
+6. WHEN a user confirms "Add to Current Month", THE BudgetBuddy SHALL record the transaction in the currently selected budget month
+7. WHEN a user selects "Switch to [Month]", THE BudgetBuddy SHALL navigate to the correct month and preserve the transaction form data
+8. THE BudgetBuddy SHALL prevent form submission until the user acknowledges the warning by selecting one of the three options
+9. WHEN the transaction date is within the current budget month, THE BudgetBuddy SHALL not display any warning
+10. THE BudgetBuddy SHALL validate the date in real-time as the user types or selects a date
+
+**Implementation Status**: Not started
+
+**Priority**: Critical (Bug Fix)
+
+**Notes**:
+- Current bug: User can add transaction with Dec 2 date while viewing Nov budget, no warning appears
+- Impact: Transactions are added to wrong months, causing budget tracking errors
+- Root cause: No date validation in transaction modal
+
+---
+
+### Requirement 15: Empty Month Budget Display (Critical Bug Fix)
+
+**User Story:** As a user, I want to see empty budget screens for months where I haven't created budgets, so that I don't see incorrect budget data from other months.
+
+#### Acceptance Criteria
+
+1. WHEN a user navigates to a month without an existing budget, THE BudgetBuddy SHALL display an empty state
+2. THE BudgetBuddy SHALL NOT display budget data from other months when viewing a month without a budget
+3. WHEN viewing a past month without a budget, THE BudgetBuddy SHALL display a message: "No budget found for [Month Year]"
+4. WHEN viewing a future month without a budget, THE BudgetBuddy SHALL display the "Start Planning" empty state with copy previous month option
+5. THE BudgetBuddy SHALL only load budget data that matches the exact month being viewed (YYYY-MM format)
+6. WHEN switching between months, THE BudgetBuddy SHALL clear the previous month's budget data before loading the new month
+7. THE BudgetBuddy SHALL verify that the loaded budget's month field matches the currently selected month
+8. WHEN no budget exists for a month, THE BudgetBuddy SHALL set the budget state to null
+9. THE BudgetBuddy SHALL NOT automatically create budgets for months that don't have them
+10. THE BudgetBuddy SHALL only create a new budget when the user explicitly clicks "Start Planning for [Month]" or adds their first budget item
+
+**Implementation Status**: Not started
+
+**Priority**: Critical (Bug Fix)
+
+**Notes**:
+- Current bug: User sees budget data in months where they never created budgets (e.g., seeing budgets in past months before they started using the app)
+- Impact: Confusing user experience, incorrect budget tracking, data integrity issues
+- Root cause: Budget loading logic not properly filtering by month or showing cached data from other months
+- User started budget in November but sees budgets in all past/future months
