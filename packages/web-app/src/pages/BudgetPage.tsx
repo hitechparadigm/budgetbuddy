@@ -197,12 +197,17 @@ export const BudgetPage: React.FC = () => {
           setLoading(false);
           return;
         } else {
-          // CRITICAL FIX: Only use AI-generated budget if NO budgets exist at all (first time setup)
-          console.log('[loadBudget] No budgets exist in backend, checking for AI-generated budget');
-          const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
+          // CRITICAL FIX: Only use AI-generated budget for CURRENT month on first load
+          // Don't create budgets for past/future months
+          const isCurrentMonth = currentMonth === getCurrentMonthString();
+          console.log('[loadBudget] No budgets exist in backend. Current month?', isCurrentMonth);
 
-          if (aiGeneratedBudget) {
-            const parsedBudget = JSON.parse(aiGeneratedBudget);
+          if (isCurrentMonth) {
+            const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
+
+            if (aiGeneratedBudget) {
+              console.log('[loadBudget] Using AI-generated budget for current month only');
+              const parsedBudget = JSON.parse(aiGeneratedBudget);
 
             const budget: Budget = {
           id: `budget_${Date.now()}`,
@@ -260,14 +265,25 @@ export const BudgetPage: React.FC = () => {
             updatedAt: new Date().toISOString()
           };
 
-            setBudget(budget);
-            // Save the AI-generated budget to backend
-            await saveBudgetToBackend(budget);
-            setLoading(false);
-            return;
+              setBudget(budget);
+              // Save the AI-generated budget to backend
+              await saveBudgetToBackend(budget);
+              // CRITICAL FIX: Clear AI-generated budget from localStorage after using it
+              // This prevents it from being used for other months
+              localStorage.removeItem('ai-generated-budget');
+              console.log('[loadBudget] Cleared AI-generated budget from localStorage');
+              setLoading(false);
+              return;
+            } else {
+              // No AI-generated budget either - navigate to onboarding
+              navigate('/onboarding');
+              return;
+            }
           } else {
-            // No AI-generated budget either - navigate to onboarding
-            navigate('/onboarding');
+            // Not current month and no budgets exist - show empty state
+            console.log('[loadBudget] Not current month, showing empty state');
+            setBudget(null);
+            setLoading(false);
             return;
           }
         }
