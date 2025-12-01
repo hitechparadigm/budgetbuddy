@@ -202,11 +202,16 @@ export const BudgetPage: React.FC = () => {
           const isCurrentMonth = currentMonth === getCurrentMonthString();
           console.log('[loadBudget] No budgets exist in backend. Current month?', isCurrentMonth);
 
-          if (isCurrentMonth) {
+          // Check if we already created a budget for this month
+          const createdMonths = JSON.parse(localStorage.getItem('created-budget-months') || '[]');
+          const alreadyCreated = createdMonths.includes(currentMonth);
+          console.log('[loadBudget] Budget already created for this month?', alreadyCreated);
+
+          if (isCurrentMonth && !alreadyCreated) {
             const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
 
             if (aiGeneratedBudget) {
-              console.log('[loadBudget] Using AI-generated budget for current month only');
+              console.log('[loadBudget] Using AI-generated budget for current month (first time)');
               const parsedBudget = JSON.parse(aiGeneratedBudget);
 
             const budget: Budget = {
@@ -268,10 +273,17 @@ export const BudgetPage: React.FC = () => {
               setBudget(budget);
               // Save the AI-generated budget to backend
               await saveBudgetToBackend(budget);
-              // CRITICAL FIX: Clear AI-generated budget from localStorage after using it
-              // This prevents it from being used for other months
-              localStorage.removeItem('ai-generated-budget');
-              console.log('[loadBudget] Cleared AI-generated budget from localStorage');
+
+              // WORKAROUND: Don't clear AI-generated budget yet
+              // The backend GET /budget is returning 404 even after saving
+              // So we need to keep the AI budget in localStorage as a fallback
+              // Mark this month as having a budget created
+              const createdMonths = JSON.parse(localStorage.getItem('created-budget-months') || '[]');
+              if (!createdMonths.includes(currentMonth)) {
+                createdMonths.push(currentMonth);
+                localStorage.setItem('created-budget-months', JSON.stringify(createdMonths));
+              }
+              console.log('[loadBudget] Marked month as having budget created:', currentMonth);
               setLoading(false);
               return;
             } else {
