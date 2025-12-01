@@ -1,5 +1,100 @@
 # Changelog
 
+## [1.12.0] - 2025-11-30
+
+### 🚨 CRITICAL FIX
+- **Timezone Bug** - Fixed critical bug where December budget was shown on November 30, 2025 at 7:22 PM EST
+  - **Root Cause**: Application was using UTC time (`new Date().toISOString()`) instead of user's local timezone
+  - **Impact**: All users were seeing the wrong current month when their local time was late in the day
+  - **Solution**: Created comprehensive timezone utility functions and updated all date calculations to use user's local timezone
+  - **Technical Details**:
+    - Nov 30, 2025 7:22 PM EST = Nov 30, 2025 19:22 EST
+    - Nov 30, 2025 19:22 EST = Dec 1, 2025 00:22 UTC (5 hours ahead)
+    - Old code: `new Date().toISOString().slice(0, 7)` returned "2025-12" ❌
+    - New code: `getCurrentMonthString()` returns "2025-11" ✅
+  - **Files Fixed**: BudgetPage.tsx (6 locations), TransactionForm.tsx (3 locations)
+
+### Added
+- 🌍 **Timezone Management System** (Requirement 13)
+  - Created `timezoneHelpers.ts` with comprehensive timezone utilities
+  - Created `monthHelpers.ts` for timezone-aware month calculations
+  - Added timezone detection using browser's `Intl.DateTimeFormat` API
+  - Added timezone and location fields to User model
+  - Created Settings page for future timezone/location management
+  - Functions: `detectUserTimezone()`, `getCurrentDateInTimezone()`, `getCurrentMonthInTimezone()`, `formatDateInTimezone()`, `isTodayInTimezone()`
+
+- 🏷️ **Transaction & Budget Item Clarity** (Requirement 10)
+  - Updated TransactionForm modal title: "Record Actual Income" / "Record Actual Expense"
+  - Updated AddBudgetItem modal title: "Add Planned Income/Expense/Savings Item"
+  - Clear distinction between actual transactions and planned budget items
+  - Updated submit button labels: "Record Transaction" vs "Add Budget Item"
+
+- ⚠️ **Transaction Date Validation** (Requirement 11)
+  - Created `dateValidation.ts` with date validation utilities
+  - Warning banner when transaction date is outside current budget month
+  - Three action options: Continue with current month, Switch to correct month, or Cancel
+  - Visual feedback: Yellow border on date field when outside current month
+  - Clear warning message: "This transaction date ([Date]) is outside the current budget month ([Month Year])"
+
+- ✏️ **Transaction Editing** (Requirement 12)
+  - Created `transactionHelpers.ts` for transaction operations
+  - Double-click any transaction in the list to edit it
+  - Form pre-populates with existing transaction data
+  - Smart category spent amount updates when amount or category changes
+  - Maintains existing delete button functionality
+  - Hover effect shows transactions are clickable
+
+- ⚙️ **Settings Page**
+  - New Settings page at `/settings` route
+  - Displays current timezone and local time
+  - Location form with Country, City, Zip/Postal Code fields
+  - Prepared for future location-to-timezone lookup integration
+  - Clean, user-friendly interface
+
+### Fixed
+- 🐛 **All Date Calculations** - Updated to use user's local timezone instead of UTC
+  - Fixed `currentMonth` state initialization in BudgetPage
+  - Fixed `goToToday()` function to use local timezone
+  - Fixed `isFutureMonth()` function to use timezone-aware helper
+  - Fixed `isPastMonth()` function to use timezone-aware helper
+  - Fixed transaction form date initialization
+  - Fixed all date displays throughout the application
+
+### Improved
+- 📝 **UI Labels** - Clear, consistent terminology throughout the application
+  - "Transaction" or "Actual" for recorded activity
+  - "Budget Item" or "Planned" for future allocations
+  - "Spent" for actual amounts in categories
+  - "Planned" for budgeted amounts in categories
+
+### Technical
+- Created 4 new utility files with comprehensive helper functions
+- Updated User interface with timezone and location fields
+- Zero TypeScript errors across all modified files
+- All date calculations now timezone-aware
+- Prepared for backend API integration
+
+### Documentation
+- Added Requirements 10, 11, 12, 13 to requirements.md
+- Added comprehensive design details to design.md
+- Created TIMEZONE_BUG_FIX.md with detailed bug analysis
+- Created IMPLEMENTATION_SUMMARY.md with complete feature summary
+- Updated tasks.md with implementation tasks
+
+### Testing
+- ✅ Nov 30, 2025 7:22 PM EST → Shows November (not December)
+- ✅ Transaction date validation warning appears correctly
+- ✅ Double-click transaction editing works
+- ✅ Clear labels distinguish transactions from budget items
+- ✅ Settings page displays timezone correctly
+- ✅ Zero TypeScript diagnostics errors
+
+### Next Steps
+- Backend API integration for timezone storage
+- Location-to-timezone lookup service
+- Transaction update API endpoint
+- Timezone context provider for React
+
 ## [1.11.0] - 2025-11-28
 
 ### Added
