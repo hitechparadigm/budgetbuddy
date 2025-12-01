@@ -1457,7 +1457,7 @@ export const BudgetPage: React.FC = () => {
 
                 {/* Category Breakdown by Group */}
                 <div className="space-y-3">
-                  {budget.groups.filter(g => g.type !== 'income').map((group, index) => {
+                  {budget && budget.groups.filter(g => g.type !== 'income').map((group, index) => {
                     const groupTotal = group.categories.reduce((sum, cat) => sum + cat.plannedAmount, 0);
                     const percentage = totals.planned > 0 ? Math.round((groupTotal / totals.planned) * 100) : 0;
                     const colors = ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
@@ -1482,7 +1482,7 @@ export const BudgetPage: React.FC = () => {
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <h3 className="text-sm font-semibold text-gray-700 mb-4">Category Details</h3>
                   <div className="space-y-4">
-                    {budget.groups.filter(g => g.type !== 'income').map((group) => (
+                    {budget && budget.groups.filter(g => g.type !== 'income').map((group) => (
                       <div key={group.id}>
                         <div className="text-xs font-semibold text-gray-500 uppercase mb-2">{group.name}</div>
                         <div className="space-y-2">
@@ -1551,7 +1551,7 @@ export const BudgetPage: React.FC = () => {
 
                   {/* Real transactions from budget data */}
                   <div className="space-y-3">
-                {budget.groups.flatMap(group =>
+                {budget && budget.groups.flatMap(group =>
                   group.categories.flatMap(cat =>
                     cat.transactions.map(transaction => {
                       const isIncome = group.type === 'income';
@@ -1582,7 +1582,7 @@ export const BudgetPage: React.FC = () => {
                   )
                 )}
 
-                    {budget.groups.every(g => g.categories.every(c => c.transactions.length === 0)) && (
+                    {budget && budget.groups.every(g => g.categories.every(c => c.transactions.length === 0)) && (
                       <div className="text-center py-8 text-gray-400">
                         <p className="text-sm">No transactions yet</p>
                         <p className="text-xs mt-1">Use the + button to add your first transaction</p>
