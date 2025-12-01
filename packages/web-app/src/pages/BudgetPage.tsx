@@ -300,12 +300,15 @@ export const BudgetPage: React.FC = () => {
     try {
       const token = localStorage.getItem('budgetbuddy_id_token');
       if (!token) {
-        console.error('No auth token found');
+        console.error('[saveBudgetToBackend] No auth token found');
         return;
       }
 
+      console.log('[saveBudgetToBackend] Saving budget for month:', budgetData.month);
+
+      // CRITICAL FIX: Always use POST - the API doesn't support PUT
       const response = await fetch(`${API_BASE_URL}/budget`, {
-        method: budgetData.id ? 'PUT' : 'POST',
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -318,16 +321,21 @@ export const BudgetPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        console.error('Failed to save budget:', await response.text());
+        const errorText = await response.text();
+        console.error('[saveBudgetToBackend] Failed to save budget:', errorText);
+        // Don't throw - just log the error and continue
       } else {
         const savedBudget = await response.json();
+        console.log('[saveBudgetToBackend] Budget saved successfully:', savedBudget);
         // Update local state with the saved budget (includes server-generated ID)
         if (savedBudget.budget) {
+          console.log('[saveBudgetToBackend] Updating local state with saved budget');
           setBudget(savedBudget.budget);
         }
       }
     } catch (error) {
-      console.error('Error saving budget:', error);
+      console.error('[saveBudgetToBackend] Error saving budget:', error);
+      // Don't throw - just log the error and continue
     }
   };
 
