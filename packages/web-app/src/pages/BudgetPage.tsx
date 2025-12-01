@@ -1645,7 +1645,7 @@ export const BudgetPage: React.FC = () => {
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                {transactionType === 'income' ? 'Plan an Income' : 'Plan an Expense'}
+                {transactionType === 'income' ? 'Add Income Transaction' : 'Add Expense Transaction'}
               </h3>
               <button
                 onClick={closeTransactionModal}
@@ -1747,7 +1747,7 @@ export const BudgetPage: React.FC = () => {
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                {editingCategory ? 'Edit' : 'Add'} {selectedGroupType === 'income' ? 'Income' : selectedGroupType === 'savings' ? 'Savings' : 'Expense'} Item
+                {editingCategory ? 'Edit' : 'Plan'} {selectedGroupType === 'income' ? 'Income' : selectedGroupType === 'savings' ? 'Savings' : 'Expense'} Item
               </h3>
               <button
                 onClick={closeBudgetItemModal}
@@ -1849,7 +1849,7 @@ export const BudgetPage: React.FC = () => {
                   type="submit"
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  {editingCategory ? 'Save Changes' : 'Add Item'}
+                  {editingCategory ? 'Save Changes' : 'Plan Item'}
                 </button>
               </div>
             </form>
