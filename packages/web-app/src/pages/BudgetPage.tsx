@@ -703,14 +703,51 @@ export const BudgetPage: React.FC = () => {
   if (!budget && !isFutureMonthCheck()) {
     // Past or current month without budget - show "No Budget Found" state with choice
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-lg px-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            No budget found for {getMonthName(currentMonth)}
-          </h2>
-          <p className="text-gray-600 mb-8">
-            Choose how you'd like to create your budget:
-          </p>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Navigation Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between max-w-4xl mx-auto">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {getMonthName(currentMonth)}
+            </h1>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={goToToday}
+                className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+              >
+                Today
+              </button>
+              <button
+                onClick={() => changeMonth('prev')}
+                className="p-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                aria-label="Previous month"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => changeMonth('next')}
+                className="p-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                aria-label="Next month"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Empty State Content */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-lg px-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              No budget found for {getMonthName(currentMonth)}
+            </h2>
+            <p className="text-gray-600 mb-8">
+              Choose how you'd like to create your budget:
+            </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* AI-Generated Budget Option */}
@@ -781,6 +818,7 @@ export const BudgetPage: React.FC = () => {
                 Create your budget manually by adding categories yourself
               </p>
             </button>
+          </div>
           </div>
         </div>
       </div>
