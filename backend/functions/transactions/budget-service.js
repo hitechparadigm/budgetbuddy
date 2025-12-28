@@ -110,22 +110,22 @@ function calculateBudgetTotals(groups) {
 
   // Calculate income total
   if (groups.income) {
-    totalIncome = groups.income.reduce((sum, group) => {
-      return sum + (group.totalPlanned || 0);
+    totalIncome = groups.income.reduce((sum, category) => {
+      return sum + (category.plannedAmount || 0);
     }, 0);
   }
 
   // Calculate savings total
   if (groups.savings) {
-    totalSavings = groups.savings.reduce((sum, group) => {
-      return sum + (group.totalPlanned || 0);
+    totalSavings = groups.savings.reduce((sum, category) => {
+      return sum + (category.plannedAmount || 0);
     }, 0);
   }
 
   // Calculate expenses total
   if (groups.expenses) {
-    totalExpenses = groups.expenses.reduce((sum, group) => {
-      return sum + (group.totalPlanned || 0);
+    totalExpenses = groups.expenses.reduce((sum, category) => {
+      return sum + (category.plannedAmount || 0);
     }, 0);
   }
 
