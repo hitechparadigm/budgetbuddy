@@ -431,3 +431,33 @@ The following features are not included in the current MVP:
 - Impact: Confusing user experience, incorrect budget tracking, data integrity issues
 - Root cause: Budget loading logic not properly filtering by month or showing cached data from other months
 - User started budget in November but sees budgets in all past/future months
+
+---
+
+### Requirement 16: AI Budget Persistence After Month Navigation (Critical Bug Fix)
+
+**User Story:** As a user who created an AI budget, I want to see my saved budget when I navigate back to that month, so that I don't have to recreate it every time.
+
+#### Acceptance Criteria
+
+1. WHEN a user creates an AI budget for a month THEN THE BudgetBuddy SHALL save it to DynamoDB with correct PK and SK keys
+2. WHEN a user navigates away from a month with a saved budget and returns THEN THE BudgetBuddy SHALL retrieve the budget from DynamoDB
+3. WHEN the GET /budget endpoint is called THEN THE BudgetBuddy SHALL return all budgets matching the user's ID
+4. WHEN a specific month is requested via GET /budget?month=YYYY-MM THEN THE BudgetBuddy SHALL return only that month's budget
+5. WHEN a budget exists in DynamoDB THEN THE BudgetBuddy SHALL NOT return "No budgets exist in backend"
+6. WHEN the backend returns a 409 conflict on POST THEN THE BudgetBuddy SHALL treat this as success (budget already exists)
+7. WHEN switching months THEN THE BudgetBuddy SHALL clear previous month's budget data before loading new month
+8. WHEN loading a budget THEN THE BudgetBuddy SHALL verify the budget's month field matches the requested month
+9. WHEN an AI budget is saved successfully THEN THE BudgetBuddy SHALL clear it from localStorage to prevent duplicate saves
+10. WHEN the backend GET returns empty array THEN THE BudgetBuddy SHALL check if the response structure is correct before assuming no budgets exist
+
+**Implementation Status**: Not started
+
+**Priority**: Critical (P0 Bug Fix)
+
+**Notes**:
+- Current bug: User creates AI budget for November → switches to October → returns to November → gets redirected to onboarding
+- Symptom: Budget saves successfully (409 conflict confirms it exists), but GET /budget returns "No budgets exist"
+- Impact: Users cannot access their saved AI budgets after navigating between months
+- Root cause: Backend GET endpoint not returning saved budgets OR frontend not correctly processing the response
+- Expected: User should see their saved budget when returning to the month
