@@ -718,10 +718,14 @@ export const BudgetPage: React.FC = () => {
   // Copy previous month's budget for future month
   const copyPreviousMonthBudget = async () => {
     try {
+      setLoading(true);
+      console.log('[copyPreviousMonthBudget] Starting budget copy for month:', currentMonth);
+
       // Calculate previous month
       const [year, month] = currentMonth.split('-').map(Number);
       const prevMonthDate = new Date(year, month - 2, 1);
       const prevMonth = prevMonthDate.toISOString().slice(0, 7);
+      console.log('[copyPreviousMonthBudget] Looking for previous month budget:', prevMonth);
 
       // Fetch previous month's budget
       const response = await fetch(`${API_BASE_URL}/budget`, {
@@ -731,37 +735,106 @@ export const BudgetPage: React.FC = () => {
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const prevBudget = data.budgets?.find((b: Budget) => b.month === prevMonth);
-
-        if (prevBudget) {
-          // Copy budget structure but reset spent amounts and transactions
-          const newBudget: Budget = {
-            ...prevBudget,
-            id: `budget_${Date.now()}`,
-            month: currentMonth,
-            groups: prevBudget.groups.map((group: BudgetGroup) => ({
-              ...group,
-              categories: group.categories.map((cat: BudgetCategory) => ({
-                ...cat,
-                id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                spentAmount: 0,
-                transactions: []
-              }))
-            })),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-
-          setBudget(newBudget);
-          await saveBudgetToBackend(newBudget);
-        } else {
-          console.warn('No previous month budget found to copy');
-        }
+      if (!response.ok) {
+        console.error('[copyPreviousMonthBudget] Failed to fetch budgets. Status:', response.status);
+        alert('Failed to fetch budgets. Please try again.');
+        setLoading(false);
+        return;
       }
+
+      const data = await response.json();
+      console.log('[copyPreviousMonthBudget] API response:', data);
+
+      // CRITICAL FIX: Handle both response formats (data.budgets and data.data.budgets)
+      const budgets = data.data?.budgets || data.budgets || [];
+      console.log('[copyPreviousMonthBudget] Found budgets:', budgets.length);
+
+      const prevBudget = budgets.find((b: any) => b.month === prevMonth);
+
+      if (prevBudget) {
+        console.log('[copyPreviousMonthBudget] Found previous month budget, copying...');
+
+        // Transform backend budget to frontend format first
+        const transformedPrevBudget = transformBackendBudget(prevBudget);
+
+        // Copy budget structure but reset spent amounts and transactions
+        const newBudget: Budget = {
+          ...transformedPrevBudget,
+          id: `budget_${Date.now()}`,
+          month: currentMonth,
+          groups: transformedPrevBudget.groups.map((group: BudgetGroup) => ({
+            ...group,
+            categories: group.categories.map((cat: BudgetCategory) => ({
+              ...cat,
+              id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+              spentAmount: 0,
+              transactions: []
+            }))
+          })),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        console.log('[copyPreviousMonthBudget] Created new budget:', newBudget);
+        setBudget(newBudget);
+        await saveBudgetToBackend(newBudget);
+        console.log('[copyPreviousMonthBudget] Budget copied successfully');
+      } else {
+        console.warn('[copyPreviousMonthBudget] No previous month budget found to copy');
+
+        // Create empty budget structure for future month
+        const mockUser = getMockUser();
+        const emptyBudget: Budget = {
+          id: `budget_${Date.now()}`,
+          userId: mockUser?.userId || 'mock_user_id',
+          month: currentMonth,
+          groups: [
+            {
+              id: 'income-group',
+              name: 'Income',
+              type: 'income',
+              icon: '💰',
+              isCollapsed: false,
+              order: 1,
+              categories: []
+            },
+            {
+              id: 'savings-group',
+              name: 'Savings',
+              type: 'savings',
+              icon: '💾',
+              isCollapsed: false,
+              order: 2,
+              categories: []
+            },
+            {
+              id: 'expenses-group',
+              name: 'Expenses',
+              type: 'expense',
+              icon: '💸',
+              isCollapsed: false,
+              order: 3,
+              categories: []
+            }
+          ],
+          isAIGenerated: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        console.log('[copyPreviousMonthBudget] Created empty budget structure');
+        setBudget(emptyBudget);
+        await saveBudgetToBackend(emptyBudget);
+
+        // Show user feedback
+        alert(`No budget found for ${getMonthName(prevMonth)}. Created empty budget structure for ${getMonthName(currentMonth).split(' ')[0]}. You can now add your income and expense categories.`);
+      }
+
+      setLoading(false);
     } catch (error) {
-      console.error('Error copying previous month budget:', error);
+      console.error('[copyPreviousMonthBudget] Error copying previous month budget:', error);
+      alert('Failed to create budget. Please try again.');
+      setLoading(false);
     }
   };
 
