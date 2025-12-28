@@ -461,3 +461,36 @@ The following features are not included in the current MVP:
 - Impact: Users cannot access their saved AI budgets after navigating between months
 - Root cause: Backend GET endpoint not returning saved budgets OR frontend not correctly processing the response
 - Expected: User should see their saved budget when returning to the month
+
+---
+
+### Requirement 17: Family Management and Auto-Creation 🔧 IN PROGRESS
+
+**User Story:** As a user, I want to have a family automatically created when I register so that I can create budgets immediately, and I want to be able to invite my partner to share the family budget later.
+
+#### Acceptance Criteria
+
+1. ✅ WHEN a user registers, THE BudgetBuddy SHALL automatically create a single-person family with familyId `family_${userId}`
+2. ✅ THE BudgetBuddy SHALL assign the user as the primary family member with role 'primary'
+3. ✅ THE BudgetBuddy SHALL create a family metadata record with the user's name and member count of 1
+4. ✅ THE BudgetBuddy SHALL ensure all new users have a familyId to prevent budget access issues
+5. 🔄 WHEN a user wants to invite a partner, THE BudgetBuddy SHALL provide a family invitation system
+6. 🔄 WHEN a partner accepts an invitation, THE BudgetBuddy SHALL add them to the existing family
+7. 🔄 THE BudgetBuddy SHALL allow both family members to access and modify the shared budget
+8. 🔄 THE BudgetBuddy SHALL provide basic family management (view members, transfer ownership, leave family)
+
+**Implementation Status**:
+- ✅ **Phase 1 Complete**: Auto-family creation during registration implemented
+- 🔄 **Phase 2 Planned**: Partner invitation and family sharing system
+
+**Technical Notes**:
+- Family model supports adult users only (no child accounts)
+- Maximum 2 adults per family (couples)
+- Children are managed within the family budget but don't get separate accounts
+- Existing users without families are handled via manual assignment or migration script
+
+**Root Cause of Original Issue**:
+- Users registered without familyId assignment
+- Budget/transaction APIs require familyId to function
+- Users got stuck in onboarding loop unable to create or access budgets
+- Solution: Auto-create single-person family during registration process

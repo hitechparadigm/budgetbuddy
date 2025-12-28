@@ -11,7 +11,8 @@ const {
 } = require('@aws-sdk/client-cognito-identity-provider');
 const {
     DynamoDBClient,
-    PutItemCommand
+    PutItemCommand,
+    TransactWriteItemsCommand
 } = require('@aws-sdk/client-dynamodb');
 
 // Environment variables
@@ -205,7 +206,45 @@ exports.handler = async (event, _context) => {
                 await cognitoClient.send(setPasswordCommand);
                 console.log('Password set as permanent');
 
-                // Create user profile in DynamoDB
+                // Generate family ID for single-person family
+                const familyId = `family_${userId}`;
+                const currentTime = new Date().toISOString();
+
+                // Create family metadata record
+                const familyProfile = {
+                    PK: {
+                        S: `FAMILY#${familyId}`
+                    },
+                    SK: {
+                        S: 'METADATA'
+                    },
+                    entityType: {
+                        S: 'FAMILY'
+                    },
+                    familyId: {
+                        S: familyId
+                    },
+                    familyName: {
+                        S: `${requestBody.firstName}'s Budget`
+                    },
+                    primaryUserId: {
+                        S: userId
+                    },
+                    memberCount: {
+                        N: '1'
+                    },
+                    accountType: {
+                        S: 'single'
+                    },
+                    createdAt: {
+                        S: currentTime
+                    },
+                    updatedAt: {
+                        S: currentTime
+                    }
+                };
+
+                // Create user profile in DynamoDB with family assignment
                 const userProfile = {
                     PK: {
                         S: `USER#${userId}`
@@ -228,6 +267,12 @@ exports.handler = async (event, _context) => {
                     lastName: {
                         S: requestBody.lastName
                     },
+                    familyId: {
+                        S: familyId
+                    },
+                    familyRole: {
+                        S: 'primary'
+                    },
                     accountType: {
                         S: 'single'
                     },
@@ -238,21 +283,37 @@ exports.handler = async (event, _context) => {
                         BOOL: false
                     },
                     createdAt: {
-                        S: new Date().toISOString()
+                        S: currentTime
                     },
                     updatedAt: {
-                        S: new Date().toISOString()
+                        S: currentTime
                     }
                 };
 
-                const putItemCommand = new PutItemCommand({
-                    TableName: TABLE_NAME,
-                    Item: userProfile,
-                    ConditionExpression: 'attribute_not_exists(PK)' // Prevent duplicate users
+                // Create both user and family records in a transaction
+                const transactItems = [
+                    {
+                        Put: {
+                            TableName: TABLE_NAME,
+                            Item: familyProfile,
+                            ConditionExpression: 'attribute_not_exists(PK)'
+                        }
+                    },
+                    {
+                        Put: {
+                            TableName: TABLE_NAME,
+                            Item: userProfile,
+                            ConditionExpression: 'attribute_not_exists(PK)'
+                        }
+                    }
+                ];
+
+                const transactCommand = new TransactWriteItemsCommand({
+                    TransactItems: transactItems
                 });
 
-                await dynamoClient.send(putItemCommand);
-                console.log('User profile created in DynamoDB');
+                await dynamoClient.send(transactCommand);
+                console.log('User profile and family created in DynamoDB');
 
                 return {
                     statusCode: 201,
@@ -263,6 +324,7 @@ exports.handler = async (event, _context) => {
                     body: JSON.stringify({
                         message: 'User registered successfully',
                         userId: userId,
+                        familyId: familyId,
                         email: requestBody.email,
                         firstName: requestBody.firstName,
                         lastName: requestBody.lastName,
