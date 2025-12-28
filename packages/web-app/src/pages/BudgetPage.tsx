@@ -593,14 +593,32 @@ export const BudgetPage: React.FC = () => {
 
   const handleBudgetItemSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!budget || !selectedGroupType || !budgetItemForm.name || !budgetItemForm.plannedAmount) return;
+    console.log('[handleBudgetItemSubmit] Form submitted');
+    console.log('[handleBudgetItemSubmit] Budget exists:', !!budget);
+    console.log('[handleBudgetItemSubmit] Selected group type:', selectedGroupType);
+    console.log('[handleBudgetItemSubmit] Form data:', budgetItemForm);
+
+    if (!budget || !selectedGroupType || !budgetItemForm.name || !budgetItemForm.plannedAmount) {
+      console.log('[handleBudgetItemSubmit] Validation failed:', {
+        budget: !!budget,
+        selectedGroupType,
+        name: budgetItemForm.name,
+        plannedAmount: budgetItemForm.plannedAmount
+      });
+      return;
+    }
 
     const amount = parseFloat(budgetItemForm.plannedAmount);
-    if (isNaN(amount)) return;
+    if (isNaN(amount)) {
+      console.log('[handleBudgetItemSubmit] Invalid amount:', budgetItemForm.plannedAmount);
+      return;
+    }
 
+    console.log('[handleBudgetItemSubmit] Creating new category with amount:', amount);
     const updatedBudget = { ...budget };
 
     if (editingCategory) {
+      console.log('[handleBudgetItemSubmit] Editing existing category:', editingCategory.id);
       // Edit existing category
       updatedBudget.groups = updatedBudget.groups.map(group => ({
         ...group,
@@ -619,6 +637,7 @@ export const BudgetPage: React.FC = () => {
         })
       }));
     } else {
+      console.log('[handleBudgetItemSubmit] Adding new category to group type:', selectedGroupType);
       // Add new category
       const newCategory: BudgetCategory = {
         id: `category_${Date.now()}`,
@@ -632,19 +651,27 @@ export const BudgetPage: React.FC = () => {
         recurringFrequency: budgetItemForm.isRecurring ? budgetItemForm.recurringFrequency : undefined
       };
 
+      console.log('[handleBudgetItemSubmit] New category created:', newCategory);
+
       updatedBudget.groups = updatedBudget.groups.map(group => {
         if (group.type === selectedGroupType) {
-          return {
+          console.log('[handleBudgetItemSubmit] Found matching group, adding category. Group before:', group.categories.length);
+          const updatedGroup = {
             ...group,
             categories: [...group.categories, newCategory]
           };
+          console.log('[handleBudgetItemSubmit] Group after:', updatedGroup.categories.length);
+          return updatedGroup;
         }
         return group;
       });
     }
 
+    console.log('[handleBudgetItemSubmit] Updated budget:', updatedBudget);
     setBudget(updatedBudget);
+    console.log('[handleBudgetItemSubmit] Budget state updated, saving to backend...');
     await saveBudgetToBackend(updatedBudget);
+    console.log('[handleBudgetItemSubmit] Saved to backend, closing modal...');
     closeBudgetItemModal();
   };
 
