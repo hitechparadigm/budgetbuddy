@@ -165,14 +165,32 @@ export const BudgetPage: React.FC = () => {
       return { ...backendBudget, groups: [] };
     }
 
-    // If groups is already an array, use it as-is
+    // If groups is already an array, use it as-is but ensure data integrity
     if (Array.isArray(backendBudget.groups)) {
       console.log('[transformBackendBudget] Groups already array format');
-      return backendBudget as Budget;
+      const validatedBudget = { ...backendBudget };
+      validatedBudget.groups = backendBudget.groups.map((group: any) => ({
+        ...group,
+        categories: (group.categories || []).map((cat: any) => ({
+          ...cat,
+          plannedAmount: Number(cat.plannedAmount) || 0,
+          spentAmount: Number(cat.spentAmount) || 0,
+          transactions: cat.transactions || []
+        }))
+      }));
+      return validatedBudget as Budget;
     }
 
     // Transform object format to array format
     const groups: BudgetGroup[] = [];
+
+    // Helper function to ensure category data integrity
+    const validateCategory = (cat: any) => ({
+      ...cat,
+      plannedAmount: Number(cat.plannedAmount) || 0,
+      spentAmount: Number(cat.spentAmount) || 0,
+      transactions: cat.transactions || []
+    });
 
     if (backendBudget.groups.income) {
       groups.push({
@@ -182,7 +200,7 @@ export const BudgetPage: React.FC = () => {
         icon: '💰',
         isCollapsed: false,
         order: 1,
-        categories: backendBudget.groups.income
+        categories: backendBudget.groups.income.map(validateCategory)
       });
     }
 
@@ -194,7 +212,7 @@ export const BudgetPage: React.FC = () => {
         icon: '💾',
         isCollapsed: false,
         order: 2,
-        categories: backendBudget.groups.savings
+        categories: backendBudget.groups.savings.map(validateCategory)
       });
     }
 
@@ -206,7 +224,7 @@ export const BudgetPage: React.FC = () => {
         icon: '💸',
         isCollapsed: false,
         order: 3,
-        categories: backendBudget.groups.expenses
+        categories: backendBudget.groups.expenses.map(validateCategory)
       });
     }
 
