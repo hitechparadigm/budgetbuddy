@@ -277,10 +277,13 @@ const dynamoHelpers = {
             expressionAttributeValues[valueKey] = value;
         });
 
-        // Always update the updatedAt timestamp
-        updateExpressions.push('#updatedAt = :updatedAt');
-        expressionAttributeNames['#updatedAt'] = 'updatedAt';
-        expressionAttributeValues[':updatedAt'] = new Date().toISOString();
+        // Only add updatedAt timestamp if it's not already in the updates
+        if (!updates.hasOwnProperty('updatedAt')) {
+            const updatedAtIndex = Object.keys(updates).length;
+            updateExpressions.push(`#updatedAt${updatedAtIndex} = :updatedAt${updatedAtIndex}`);
+            expressionAttributeNames[`#updatedAt${updatedAtIndex}`] = 'updatedAt';
+            expressionAttributeValues[`:updatedAt${updatedAtIndex}`] = new Date().toISOString();
+        }
 
         const command = new UpdateCommand({
             TableName: process.env.TABLE_NAME,
