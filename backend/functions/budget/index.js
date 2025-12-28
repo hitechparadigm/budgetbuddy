@@ -144,7 +144,52 @@ async function createBudget(event, user) {
     );
 
     if (existingBudget) {
-        return errorResponse.conflict(`Budget already exists for ${requestBody.month}`);
+        // Budget exists - update it instead of returning conflict
+        logger.info('Budget already exists, updating existing budget', {
+            familyId,
+            month: requestBody.month
+        });
+
+        // Prepare updates
+        const updates = {
+            updatedAt: currentTime
+        };
+
+        if (requestBody.groups) {
+            updates.groups = requestBody.groups;
+            const totals = calculateBudgetTotals(requestBody.groups);
+            updates.totalIncome = totals.totalIncome;
+            updates.totalSavings = totals.totalSavings;
+            updates.totalExpenses = totals.totalExpenses;
+            updates.remainingBalance = totals.remainingBalance;
+        }
+
+        // Update the existing budget
+        const updatedBudget = await dynamoHelpers.updateItem(
+            `FAMILY#${familyId}`,
+            `BUDGET#${requestBody.month}`,
+            updates
+        );
+
+        logger.info('Budget updated successfully', {
+            budgetId: updatedBudget.budgetId,
+            familyId,
+            month: requestBody.month
+        });
+
+        return successResponse({
+            budgetId: updatedBudget.budgetId,
+            familyId: updatedBudget.familyId,
+            month: updatedBudget.month,
+            totalIncome: updatedBudget.totalIncome,
+            totalSavings: updatedBudget.totalSavings,
+            totalExpenses: updatedBudget.totalExpenses,
+            remainingBalance: updatedBudget.remainingBalance,
+            groups: updatedBudget.groups,
+            isAIGenerated: updatedBudget.isAIGenerated,
+            createdAt: updatedBudget.createdAt,
+            updatedAt: updatedBudget.updatedAt
+        }, 'Budget updated successfully');
     }
 
     // Initialize default budget structure
