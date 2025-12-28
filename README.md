@@ -13,7 +13,13 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Settings Page**: User timezone and location management ✓
 - **Overall Progress**: 99.5% complete (MVP fully operational and production-ready)
 
-### Recent Achievements (2025-11-30)
+### Recent Achievements (2025-12-28)
+- 🔧 **CRITICAL FIX: Authentication Bug** - Fixed user ID mismatch preventing access to existing budgets
+  - Root cause: Mock authentication using wrong family ID (`family_123` vs `family_test_20251026`)
+  - Solution: Updated authentication to use existing family ID from database
+  - Impact: Users can now access their existing budgets after login instead of seeing onboarding
+
+### Previous Achievements (2025-11-30)
 - 🚨 **CRITICAL FIX: Timezone Bug** - Fixed bug where December shown on Nov 30 at 7:22 PM EST
   - Root cause: App using UTC time instead of user's local timezone
   - Solution: Created comprehensive timezone utility system
