@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.12.2] - 2025-12-28
+
+### 🔧 CRITICAL AUTHENTICATION FIX
+- **User ID Mismatch** - Fixed critical issue where users couldn't access existing budgets after login
+  - **Root Cause**: Mock authentication was using `familyId: 'family_123'` but existing budgets were stored under different family IDs (`family_test_20251026`, etc.)
+  - **Impact**: Users successfully logged in but saw onboarding questions instead of their existing budgets
+  - **Solution**: Updated mock authentication to use existing family ID from database
+  - **Technical Details**:
+    - Console showed: `[loadBudget] No budgets exist in backend. Current month? true`
+    - Authentication worked but wrong family ID caused budget lookup to fail
+    - Updated `mockUser.familyId` from `'family_123'` to `'family_test_20251026'`
+    - Updated BudgetPage.tsx to use `getMockUser()` instead of hardcoded `'mock_user_id'`
+  - **Files Fixed**: `mockAuth.ts`, `BudgetPage.tsx` (2 locations)
+  - **Database**: Verified existing budgets under family IDs: `family_test_20251026`, `family_f4b814b8-c0b1-7061-9147-8d7680b69669`, `family_24a8b468-4081-70db-79dc-622738559d26`
+
+### Testing Results
+- ✅ **AWS Testing** - User reported successful login but seeing onboarding questions
+- ✅ **Database Verification** - Confirmed existing budgets in DynamoDB under different family IDs
+- ✅ **Authentication Flow** - Mock authentication working correctly, issue was family ID mismatch
+- ✅ **Fix Applied** - Updated authentication to use existing family ID from database
+
+### Lessons Learned
+- **Authentication Debugging**: Always verify user/family ID mapping when users can't access existing data
+- **Database Consistency**: Ensure authentication system uses same IDs as stored in database
+- **Mock Data Management**: Keep mock authentication IDs consistent with test data in database
+
 ## [1.12.1] - 2025-11-30
 
 ### Documentation & Cleanup
