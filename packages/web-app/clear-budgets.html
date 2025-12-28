@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Budget Data</title>
+</head>
+<body>
+    <h1>Clear Budget Data</h1>
+    <button onclick="clearData()">Clear LocalStorage & Reload</button>
+    <pre id="output"></pre>
+
+    <script>
+        function clearData() {
+            const output = document.getElementById('output');
+            output.textContent = 'Clearing localStorage...\n';
+
+            // Clear all localStorage
+            localStorage.clear();
+            output.textContent += 'LocalStorage cleared!\n';
+            output.textContent += 'Reloading page in 2 seconds...\n';
+
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

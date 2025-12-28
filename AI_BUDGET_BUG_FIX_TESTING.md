@@ -268,3 +268,141 @@ aws cloudfront get-invalidation --distribution-id E1L1SU9OV8L4YR --id <INVALIDAT
 ---
 
 **Happy Testing!** 🎉
+
+
+---
+
+## 🔧 Issue 2: AI Budget Not Persisting After Month Navigation
+
+### Problem Description
+After creating an AI budget for November:
+1. Budget saves successfully (409 conflict confirms it exists)
+2. User switches to October (empty state - correct)
+3. User switches back to November
+4. Gets redirected to onboarding instead of seeing saved budget
+
+### Root Cause
+- Backend GET /budget IS working correctly
+- Frontend not handling 409 conflict as success
+- Frontend not parsing response structure correctly
+- localStorage not being cleared after successful save
+
+### Fixes Applied (2025-12-01)
+
+#### 1. ✅ Created Helper Function
+- Added `createBudgetFromAIData()` to eliminate duplicate code
+- Ensures consistent budget structure
+
+#### 2. ✅ Fixed 409 Conflict Handling
+- `saveBudgetToBackend()` now treats 409 as success
+- Clears localStorage after save OR 409
+- Reloads budget from backend when 409 occurs
+
+#### 3. ✅ Fixed Response Parsing
+- `loadBudget()` handles both `data.data.budgets` and `data.budgets`
+- Improved logging for debugging
+
+#### 4. ✅ Improved Logging
+- Clear distinction between "no budgets" vs "no budget for this month"
+- Shows budget count and response structure
+
+### Testing Steps for Issue 2
+
+1. **Create AI Budget**
+   - Complete onboarding for November
+   - Click "Use This Budget"
+   - Verify budget displays
+
+2. **Navigate Away**
+   - Click left arrow to go to October
+   - Verify empty state (no budget for October)
+
+3. **Navigate Back** ✅ **KEY TEST**
+   - Click right arrow to return to November
+   - **Expected**: November budget loads from backend
+   - **Bug (before fix)**: Redirects to onboarding
+   - **Success**: Budget displays correctly
+
+4. **Check Console Logs**
+   - Should see: `[loadBudget] Found 1 budget(s) in backend`
+   - Should see: `[loadBudget] Found budget for 2025-11`
+   - Should NOT see: `[loadBudget] No budgets exist in backend`
+
+5. **Verify 409 Handling**
+   - Budget should save without errors
+   - localStorage should be cleared
+   - No duplicate budgets created
+
+### Additional Fix: Data Structure Transformation
+
+#### Issue Found During Testing
+- Backend returns `groups` as object: `{income: [], savings: [], expenses: []}`
+- Frontend expects `groups` as array: `[{type: 'income', ...}, ...]`
+- This caused `budget.groups.find is not a function` error
+
+#### Solution Applied
+- Added `transformBackendBudget()` function to convert backend format to frontend format
+- Updated `saveBudgetToBackend()` to convert frontend format to backend format
+- Both directions now work correctly
+
+### Status
+🔧 **READY FOR TESTING** - Code changes complete (including data structure fix)
+
+### Expected Console Logs
+```
+[loadBudget] Loading budget for month: 2025-11
+[loadBudget] Backend response: {success: true, data: {budgets: [...], count: 1}}
+[loadBudget] Found 1 budget(s) in backend
+[loadBudget] Found budget for 2025-11
+```
+
+### Success Criteria
+- ✅ Budget persists after month navigation
+- ✅ No redirect to onboarding when budget exists
+- ✅ 409 conflicts handled gracefully
+- ✅ localStorage cleared after save
+- ✅ Accurate console logging
+
+
+---
+
+## 🚨 CRITICAL: Data Structure Fix Required
+
+### If You're Seeing Blank Screen or Errors
+
+If you see `budget.groups.find is not a function` or blank screen, you have corrupted data.
+
+### Complete Fix Steps:
+
+#### 1. Clear Browser Data
+Open browser console (F12) and run:
+```javascript
+localStorage.clear();
+location.reload();
+```
+
+#### 2. Delete Corrupted Budgets from Database
+Run the PowerShell script:
+```powershell
+.\scripts\delete-corrupted-budgets.ps1
+```
+
+Or see `scripts/DELETE_BUDGETS_README.md` for other options.
+
+#### 3. Create Fresh Budget
+1. Go to app
+2. Complete onboarding
+3. Create new AI budget
+4. Should work correctly now!
+
+### What Was Fixed
+- Added `transformBackendBudget()` to convert object format to array format
+- Added transformation in `saveBudgetToBackend()` to convert array to object
+- Added safety check in `calculateTotals()` to prevent crashes
+- Both data formats now supported
+
+### Why This Happened
+- Backend stores groups as: `{income: [], savings: [], expenses: []}`
+- Frontend expects: `[{type: 'income', ...}, {type: 'savings', ...}]`
+- Old budgets in database have object format
+- New code handles both formats correctly

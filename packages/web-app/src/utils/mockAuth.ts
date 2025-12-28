@@ -20,7 +20,7 @@ export interface MockUser {
 
 export const mockUser: MockUser = {
   userId: 'user_123',
-  familyId: 'family_123',
+  familyId: 'family_test_20251026', // Updated to match existing budgets in database
   firstName: 'John',
   lastName: 'Doe',
   email: 'test@example.com'

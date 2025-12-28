@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentMonthString, getTodayString, isFutureMonth, isPastMonth } from '../utils/monthHelpers';
+import { getMockUser } from '../utils/mockAuth';
 
 const API_BASE_URL = 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
 
@@ -155,15 +156,133 @@ export const BudgetPage: React.FC = () => {
     loadBudget();
   }, [currentMonth]); // Reload budget when month changes
 
+  // Helper function to transform backend budget format to frontend format
+  const transformBackendBudget = (backendBudget: any): Budget => {
+    console.log('[transformBackendBudget] Input groups:', backendBudget.groups);
+
+    if (!backendBudget.groups) {
+      console.error('[transformBackendBudget] No groups found');
+      return { ...backendBudget, groups: [] };
+    }
+
+    // If groups is already an array, use it as-is
+    if (Array.isArray(backendBudget.groups)) {
+      console.log('[transformBackendBudget] Groups already array format');
+      return backendBudget as Budget;
+    }
+
+    // Transform object format to array format
+    const groups: BudgetGroup[] = [];
+
+    if (backendBudget.groups.income) {
+      groups.push({
+        id: 'income-group',
+        name: 'Income',
+        type: 'income',
+        icon: '💰',
+        isCollapsed: false,
+        order: 1,
+        categories: backendBudget.groups.income
+      });
+    }
+
+    if (backendBudget.groups.savings) {
+      groups.push({
+        id: 'savings-group',
+        name: 'Savings',
+        type: 'savings',
+        icon: '💾',
+        isCollapsed: false,
+        order: 2,
+        categories: backendBudget.groups.savings
+      });
+    }
+
+    if (backendBudget.groups.expenses) {
+      groups.push({
+        id: 'expenses-group',
+        name: 'Expenses',
+        type: 'expense',
+        icon: '💸',
+        isCollapsed: false,
+        order: 3,
+        categories: backendBudget.groups.expenses
+      });
+    }
+
+    console.log('[transformBackendBudget] Transformed to', groups.length, 'groups');
+    return { ...backendBudget, groups };
+  };
+
+  // Helper function to create budget from AI-generated data
+  const createBudgetFromAIData = (parsedBudget: any, month: string): Budget => {
+    const mockUser = getMockUser();
+    return {
+      id: `budget_${Date.now()}`,
+      userId: mockUser?.userId || 'mock_user_id',
+      month: month,
+      groups: [
+        {
+          id: 'income-group',
+          name: 'Income',
+          type: 'income',
+          icon: '💰',
+          isCollapsed: false,
+          order: 1,
+          categories: parsedBudget.income?.map((cat: any, index: number) => ({
+            ...cat,
+            spentAmount: 0,
+            transactions: [],
+            order: index + 1,
+            isRecurring: false
+          })) || []
+        },
+        {
+          id: 'savings-group',
+          name: 'Savings',
+          type: 'savings',
+          icon: '💾',
+          isCollapsed: false,
+          order: 2,
+          categories: parsedBudget.savings?.map((cat: any, index: number) => ({
+            ...cat,
+            spentAmount: 0,
+            transactions: [],
+            order: index + 1,
+            isRecurring: false
+          })) || []
+        },
+        {
+          id: 'expenses-group',
+          name: 'Expenses',
+          type: 'expense',
+          icon: '💸',
+          isCollapsed: false,
+          order: 3,
+          categories: parsedBudget.expenses?.map((cat: any, index: number) => ({
+            ...cat,
+            spentAmount: 0,
+            transactions: [],
+            order: index + 1,
+            isRecurring: false
+          })) || []
+        }
+      ],
+      isAIGenerated: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  };
+
   const loadBudget = async () => {
     try {
-      // CRITICAL FIX: Clear budget state immediately to prevent showing wrong month's data
+      // Clear budget state immediately to prevent showing wrong month's data
       setBudget(null);
       setLoading(true);
 
       console.log('[loadBudget] Loading budget for month:', currentMonth);
 
-      // Try to fetch budget from backend first
+      // Fetch all budgets from backend
       const response = await fetch(`${API_BASE_URL}/budget`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('budgetbuddy_id_token')}`,
@@ -171,201 +290,77 @@ export const BudgetPage: React.FC = () => {
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.budgets && data.budgets.length > 0) {
-          // Find budget for the EXACT month being viewed
-          const monthBudget = data.budgets.find((b: Budget) => b.month === currentMonth);
+      if (!response.ok) {
+        console.error('[loadBudget] Failed to fetch budgets. Status:', response.status);
+        setLoading(false);
+        return;
+      }
 
-          if (monthBudget) {
-            // CRITICAL FIX: Double-check that budget month matches current month
-            if (monthBudget.month === currentMonth) {
-              console.log('[loadBudget] Found budget for', currentMonth, '- Budget ID:', monthBudget.id);
-              setBudget(monthBudget);
-            } else {
-              console.error('[loadBudget] Budget month mismatch! Expected:', currentMonth, 'Got:', monthBudget.month);
-              setBudget(null);
-            }
-            setLoading(false);
-            return;
-          }
+      const data = await response.json();
+      console.log('[loadBudget] Backend response:', data);
 
-          // CRITICAL FIX: Check if there's an AI-generated budget waiting to be used
-          // This handles the case where user just completed AI onboarding
-          const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
-          if (aiGeneratedBudget && currentMonth === getCurrentMonthString()) {
-            console.log('[loadBudget] Found AI-generated budget waiting to be used for current month');
-            const parsedBudget = JSON.parse(aiGeneratedBudget);
+      // CRITICAL FIX: Handle both response formats (data.budgets and data.data.budgets)
+      const budgets = data.data?.budgets || data.budgets || [];
+      const budgetCount = budgets.length;
 
-            const budget: Budget = {
-              id: `budget_${Date.now()}`,
-              userId: 'mock_user_id',
-              month: currentMonth,
-              groups: [
-                {
-                  id: 'income-group',
-                  name: 'Income',
-                  type: 'income',
-                  icon: '💰',
-                  isCollapsed: false,
-                  order: 1,
-                  categories: parsedBudget.income?.map((cat: any, index: number) => ({
-                    ...cat,
-                    spentAmount: 0,
-                    transactions: [],
-                    order: index + 1,
-                    isRecurring: false
-                  })) || []
-                },
-                {
-                  id: 'savings-group',
-                  name: 'Savings',
-                  type: 'savings',
-                  icon: '💾',
-                  isCollapsed: false,
-                  order: 2,
-                  categories: parsedBudget.savings?.map((cat: any, index: number) => ({
-                    ...cat,
-                    spentAmount: 0,
-                    transactions: [],
-                    order: index + 1,
-                    isRecurring: false
-                  })) || []
-                },
-                {
-                  id: 'expenses-group',
-                  name: 'Expenses',
-                  type: 'expense',
-                  icon: '💸',
-                  isCollapsed: false,
-                  order: 3,
-                  categories: parsedBudget.expenses?.map((cat: any, index: number) => ({
-                    ...cat,
-                    spentAmount: 0,
-                    transactions: [],
-                    order: index + 1,
-                    isRecurring: false
-                  })) || []
-                }
-              ],
-              isAIGenerated: true,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            };
+      console.log('[loadBudget] Found', budgetCount, 'budget(s) in backend');
 
-            setBudget(budget);
-            await saveBudgetToBackend(budget);
+      if (budgetCount > 0) {
+        // Find budget for the EXACT month being viewed
+        const monthBudget = budgets.find((b: any) => b.month === currentMonth);
 
-            // Clear the AI-generated budget from localStorage after using it
-            localStorage.removeItem('ai-generated-budget');
-            console.log('[loadBudget] AI-generated budget used and cleared from localStorage');
+        if (monthBudget) {
+          console.log('[loadBudget] Found budget for', currentMonth);
+          // Transform backend format to frontend format
+          const transformedBudget = transformBackendBudget(monthBudget);
+          console.log('[loadBudget] Transformed budget:', transformedBudget);
+          setBudget(transformedBudget);
+          setLoading(false);
+          return;
+        }
 
-            setLoading(false);
-            return;
-          }
+        // No budget for this specific month, but other budgets exist
+        console.log('[loadBudget] No budget found for', currentMonth, '(other months have budgets)');
+        setBudget(null);
+        setLoading(false);
+        return;
+      }
 
-          // CRITICAL FIX: If no budget for selected month but OTHER budgets exist,
-          // don't create a new one - just show empty state
-          console.log('[loadBudget] No budget found for', currentMonth, 'but other budgets exist');
-          setBudget(null);
+      // No budgets exist at all in backend
+      console.log('[loadBudget] No budgets exist in backend');
+
+      // Only check for AI budget if this is the current month
+      const isCurrentMonth = currentMonth === getCurrentMonthString();
+      console.log('[loadBudget] Is current month?', isCurrentMonth);
+
+      if (isCurrentMonth) {
+        const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
+
+        if (aiGeneratedBudget) {
+          console.log('[loadBudget] Using AI-generated budget for current month');
+          const parsedBudget = JSON.parse(aiGeneratedBudget);
+          const budget = createBudgetFromAIData(parsedBudget, currentMonth);
+
+          setBudget(budget);
+          await saveBudgetToBackend(budget);
           setLoading(false);
           return;
         } else {
-          // CRITICAL FIX: Only use AI-generated budget for CURRENT month on first load
-          // Don't create budgets for past/future months
-          const isCurrentMonth = currentMonth === getCurrentMonthString();
-          console.log('[loadBudget] No budgets exist in backend. Current month?', isCurrentMonth);
-
-          if (isCurrentMonth) {
-            const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
-
-            if (aiGeneratedBudget) {
-              console.log('[loadBudget] Using AI-generated budget for current month (first time)');
-              const parsedBudget = JSON.parse(aiGeneratedBudget);
-
-            const budget: Budget = {
-          id: `budget_${Date.now()}`,
-          userId: 'mock_user_id',
-          month: currentMonth,
-          groups: [
-            {
-                id: 'income-group',
-                name: 'Income',
-                type: 'income',
-                icon: '💰',
-                isCollapsed: false,
-                order: 1,
-                categories: parsedBudget.income?.map((cat: any, index: number) => ({
-                  ...cat,
-                  spentAmount: 0,
-                  transactions: [],
-                  order: index + 1,
-                  isRecurring: false
-                })) || []
-              },
-              {
-                id: 'savings-group',
-                name: 'Savings',
-                type: 'savings',
-                icon: '💾',
-                isCollapsed: false,
-                order: 2,
-                categories: parsedBudget.savings?.map((cat: any, index: number) => ({
-                  ...cat,
-                  spentAmount: 0,
-                  transactions: [],
-                  order: index + 1,
-                  isRecurring: false
-                })) || []
-              },
-              {
-                id: 'expenses-group',
-                name: 'Expenses',
-                type: 'expense',
-                icon: '💸',
-                isCollapsed: false,
-                order: 3,
-                categories: parsedBudget.expenses?.map((cat: any, index: number) => ({
-                  ...cat,
-                  spentAmount: 0,
-                  transactions: [],
-                  order: index + 1,
-                  isRecurring: false
-                })) || []
-              }
-            ],
-            isAIGenerated: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-
-              setBudget(budget);
-              await saveBudgetToBackend(budget);
-
-              // Clear the AI-generated budget from localStorage after using it
-              localStorage.removeItem('ai-generated-budget');
-              console.log('[loadBudget] AI-generated budget used and cleared from localStorage');
-
-              setLoading(false);
-              return;
-            } else {
-              // No AI-generated budget either - navigate to onboarding
-              navigate('/onboarding');
-              return;
-            }
-          } else {
-            // Not current month and no budgets exist - show empty state
-            console.log('[loadBudget] Not current month, showing empty state');
-            setBudget(null);
-            setLoading(false);
-            return;
-          }
+          // No AI budget - redirect to onboarding
+          console.log('[loadBudget] No AI budget found, redirecting to onboarding');
+          navigate('/onboarding');
+          return;
         }
       }
-    } catch (error) {
-      console.error('Error loading budget:', error);
+
+      // Not current month and no budgets exist - show empty state
+      console.log('[loadBudget] Not current month, showing empty state');
       setBudget(null);
-    } finally {
+      setLoading(false);
+
+    } catch (error) {
+      console.error('[loadBudget] Error loading budget:', error);
+      setBudget(null);
       setLoading(false);
     }
   };
@@ -380,7 +375,13 @@ export const BudgetPage: React.FC = () => {
 
       console.log('[saveBudgetToBackend] Saving budget for month:', budgetData.month);
 
-      // CRITICAL FIX: Always use POST - the API doesn't support PUT
+      // Transform groups array to object format for backend
+      const groupsForBackend = {
+        income: budgetData.groups.find(g => g.type === 'income')?.categories || [],
+        savings: budgetData.groups.find(g => g.type === 'savings')?.categories || [],
+        expenses: budgetData.groups.find(g => g.type === 'expense')?.categories || []
+      };
+
       const response = await fetch(`${API_BASE_URL}/budget`, {
         method: 'POST',
         headers: {
@@ -389,32 +390,50 @@ export const BudgetPage: React.FC = () => {
         },
         body: JSON.stringify({
           month: budgetData.month,
-          groups: budgetData.groups,
+          groups: groupsForBackend,
           isAIGenerated: budgetData.isAIGenerated
         })
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[saveBudgetToBackend] Failed to save budget:', errorText);
-        // Don't throw - just log the error and continue
-      } else {
-        const savedBudget = await response.json();
-        console.log('[saveBudgetToBackend] Budget saved successfully:', savedBudget);
-        // Update local state with the saved budget (includes server-generated ID)
-        if (savedBudget.budget) {
-          console.log('[saveBudgetToBackend] Updating local state with saved budget');
-          setBudget(savedBudget.budget);
+      // CRITICAL FIX: Treat 409 conflict as success (budget already exists)
+      if (response.ok || response.status === 409) {
+        console.log('[saveBudgetToBackend] Budget saved or already exists (status:', response.status, ')');
+
+        // Clear AI budget from localStorage after successful save
+        localStorage.removeItem('ai-generated-budget');
+        console.log('[saveBudgetToBackend] Cleared AI budget from localStorage');
+
+        if (response.status === 409) {
+          // Budget already exists - reload from backend to get the existing one
+          console.log('[saveBudgetToBackend] Budget already exists (409), reloading from backend');
+          await loadBudget();
+        } else {
+          // Successfully created - update local state
+          const savedBudget = await response.json();
+          console.log('[saveBudgetToBackend] Budget saved successfully:', savedBudget);
+          if (savedBudget.data) {
+            console.log('[saveBudgetToBackend] Updating local state with saved budget');
+            const transformedBudget = transformBackendBudget(savedBudget.data);
+            setBudget(transformedBudget);
+          }
         }
+      } else {
+        const errorText = await response.text();
+        console.error('[saveBudgetToBackend] Failed to save budget (status:', response.status, '):', errorText);
       }
     } catch (error) {
       console.error('[saveBudgetToBackend] Error saving budget:', error);
-      // Don't throw - just log the error and continue
     }
   };
 
   const calculateTotals = () => {
     if (!budget) return { income: 0, planned: 0, spent: 0, remaining: 0 };
+
+    // Safety check: ensure groups is an array
+    if (!Array.isArray(budget.groups)) {
+      console.error('[calculateTotals] budget.groups is not an array:', budget.groups);
+      return { income: 0, planned: 0, spent: 0, remaining: 0 };
+    }
 
     const incomeGroup = budget.groups.find(g => g.type === 'income');
     const income = incomeGroup?.categories.reduce((sum, cat) => sum + cat.plannedAmount, 0) || 0;
@@ -850,9 +869,10 @@ export const BudgetPage: React.FC = () => {
             <button
               onClick={() => {
                 // Create an empty budget structure for manual entry
+                const mockUser = getMockUser();
                 const emptyBudget: Budget = {
                   id: `budget_${Date.now()}`,
-                  userId: 'mock_user_id',
+                  userId: mockUser?.userId || 'mock_user_id',
                   month: currentMonth,
                   groups: [
                     {

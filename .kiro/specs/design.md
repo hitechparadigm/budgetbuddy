@@ -1926,3 +1926,331 @@ return <BudgetDisplay budget={budget} />;
 - Date validation bug causes transactions to be added to wrong months
 - Both bugs significantly impact core functionality
 - Both are relatively quick fixes with high impact
+
+
+---
+
+## AI Budget Persistence After Month Navigation Fix (Requirement 16)
+
+### Problem Analysis
+
+**Current Bug Symptoms**:
+1. User completes AI onboarding for November
+2. Budget saves successfully (409 conflict = already exists)
+3. User switches to October (empty state - correct)
+4. User switches back to November
+5. `loadBudget()` calls GET /budget
+6. Backend returns "No budgets exist in backend"
+7. Frontend redirects to onboarding (incorrect)
+
+**Root Cause**:
+The backend `getBudgets` function IS working correctly and returning budgets. The issue is in the frontend logic:
+
+1. **Backend is correct**: The `getBudgets` function queries DynamoDB with `FAMILY#${familyId}` and returns all budgets
+2. **Frontend issue**: After the AI budget is saved and localStorage is cleared, when the user navigates back to November, the frontend checks:
+   - Backend returns budgets ✓
+   - Finds budget for November ✓
+   - BUT the console shows "No budgets exist in backend" - this is a logging issue
+3. **Actual problem**: The 409 conflict response is not being handled properly - the frontend treats it as an error instead of success
+
+### Solution Design
+
+#### Backend Changes
+**No changes needed** - the backend is working correctly:
+- `POST /budget` returns 409 when budget exists (correct behavior)
+- `GET /budget` returns all budgets for the family (working)
+- DynamoDB queries are correct
+
+#### Frontend Changes
+
+**1. Handle 409 Conflict as Success**
+
+In `saveBudgetToBackend()`:
+```typescript
+const saveBudgetToBackend = async (budgetData: Budget) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/budget`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        month: budgetData.month,
+        groups: budgetData.groups,
+        isAIGenerated: budgetData.isAIGenerated
+      })
+    });
+
+    // CRITICAL FIX: Treat 409 conflict as success (budget already exists)
+    if (response.ok || response.status === 409) {
+      console.log('[saveBudgetToBackend] Budget saved or already exists');
+
+      // Clear AI budget from localStorage after successful save
+      localStorage.removeItem('ai-generated-budget');
+
+      // If 409, fetch the existing budget to update local state
+      if (response.status === 409) {
+        console.log('[saveBudgetToBackend] Budget already exists, fetching from backend');
+        await loadBudget(); // Reload to get the existing budget
+      } else {
+        const savedBudget = await response.json();
+        if (savedBudget.data) {
+          setBudget(savedBudget.data);
+        }
+      }
+    } else {
+      const errorText = await response.text();
+      console.error('[saveBudgetToBackend] Failed to save budget:', errorText);
+    }
+  } catch (error) {
+    console.error('[saveBudgetToBackend] Error saving budget:', error);
+  }
+};
+```
+
+**2. Improve Budget Loading Logic**
+
+In `loadBudget()`:
+```typescript
+const loadBudget = async () => {
+  try {
+    // Clear budget state immediately
+    setBudget(null);
+    setLoading(true);
+
+    console.log('[loadBudget] Loading budget for month:', currentMonth);
+
+    // Fetch all budgets from backend
+    const response = await fetch(`${API_BASE_URL}/budget`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('budgetbuddy_id_token')}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      console.error('[loadBudget] Failed to fetch budgets:', response.status);
+      setLoading(false);
+      return;
+    }
+
+    const data = await response.json();
+    console.log('[loadBudget] Backend response:', data);
+
+    // Check if we have budgets
+    if (data.data && data.data.budgets && data.data.budgets.length > 0) {
+      console.log('[loadBudget] Found', data.data.budgets.length, 'budgets');
+
+      // Find budget for the EXACT month being viewed
+      const monthBudget = data.data.budgets.find((b: Budget) => b.month === currentMonth);
+
+      if (monthBudget) {
+        console.log('[loadBudget] Found budget for', currentMonth);
+        setBudget(monthBudget);
+        setLoading(false);
+        return;
+      }
+
+      // No budget for this month - show empty state
+      console.log('[loadBudget] No budget found for', currentMonth);
+      setBudget(null);
+      setLoading(false);
+      return;
+    }
+
+    // No budgets exist at all
+    console.log('[loadBudget] No budgets exist in backend');
+
+    // Only check for AI budget if this is the current month
+    const isCurrentMonth = currentMonth === getCurrentMonthString();
+    if (isCurrentMonth) {
+      const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
+
+      if (aiGeneratedBudget) {
+        console.log('[loadBudget] Using AI-generated budget for current month');
+        const parsedBudget = JSON.parse(aiGeneratedBudget);
+        const budget = createBudgetFromAIData(parsedBudget, currentMonth);
+
+        setBudget(budget);
+        await saveBudgetToBackend(budget);
+        setLoading(false);
+        return;
+      } else {
+        // No AI budget - redirect to onboarding
+        navigate('/onboarding');
+        return;
+      }
+    }
+
+    // Not current month and no budgets - show empty state
+    setBudget(null);
+    setLoading(false);
+
+  } catch (error) {
+    console.error('[loadBudget] Error loading budget:', error);
+    setBudget(null);
+    setLoading(false);
+  }
+};
+```
+
+**3. Add Helper Function**
+
+```typescript
+const createBudgetFromAIData = (parsedBudget: any, month: string): Budget => {
+  return {
+    id: `budget_${Date.now()}`,
+    userId: 'mock_user_id',
+    month: month,
+    groups: [
+      {
+        id: 'income-group',
+        name: 'Income',
+        type: 'income',
+        icon: '💰',
+        isCollapsed: false,
+        order: 1,
+        categories: parsedBudget.income?.map((cat: any, index: number) => ({
+          ...cat,
+          spentAmount: 0,
+          transactions: [],
+          order: index + 1,
+          isRecurring: false
+        })) || []
+      },
+      {
+        id: 'savings-group',
+        name: 'Savings',
+        type: 'savings',
+        icon: '💾',
+        isCollapsed: false,
+        order: 2,
+        categories: parsedBudget.savings?.map((cat: any, index: number) => ({
+          ...cat,
+          spentAmount: 0,
+          transactions: [],
+          order: index + 1,
+          isRecurring: false
+        })) || []
+      },
+      {
+        id: 'expenses-group',
+        name: 'Expenses',
+        type: 'expense',
+        icon: '💸',
+        isCollapsed: false,
+        order: 3,
+        categories: parsedBudget.expenses?.map((cat: any, index: number) => ({
+          ...cat,
+          spentAmount: 0,
+          transactions: [],
+          order: index + 1,
+          isRecurring: false
+        })) || []
+      }
+    ],
+    isAIGenerated: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+};
+```
+
+### Data Flow
+
+**Correct Flow**:
+```
+1. User completes AI onboarding
+   ↓
+2. AI budget saved to localStorage
+   ↓
+3. Navigate to /budget
+   ↓
+4. loadBudget() called
+   ↓
+5. Backend returns empty (no budgets yet)
+   ↓
+6. Check localStorage for AI budget
+   ↓
+7. Create budget from AI data
+   ↓
+8. POST to backend (saves successfully)
+   ↓
+9. Clear localStorage
+   ↓
+10. User switches to October
+   ↓
+11. loadBudget() called
+   ↓
+12. Backend returns 1 budget (November)
+   ↓
+13. No match for October → show empty state
+   ↓
+14. User switches back to November
+   ↓
+15. loadBudget() called
+   ↓
+16. Backend returns 1 budget (November)
+   ↓
+17. Match found → display budget ✓
+```
+
+### API Response Structure
+
+**Backend Response Format**:
+```json
+{
+  "success": true,
+  "data": {
+    "budgets": [
+      {
+        "budgetId": "budget_1732147200000",
+        "familyId": "family_user123",
+        "month": "2025-11",
+        "totalIncome": 4000,
+        "totalSavings": 800,
+        "totalExpenses": 3200,
+        "remainingBalance": 0,
+        "groups": { ... },
+        "isAIGenerated": true,
+        "createdAt": "2025-11-21T10:00:00Z",
+        "updatedAt": "2025-11-21T10:00:00Z"
+      }
+    ],
+    "count": 1
+  },
+  "message": "Budgets retrieved successfully",
+  "timestamp": "2025-12-01T03:24:35.057Z"
+}
+```
+
+**Frontend Must Access**: `data.data.budgets` (not `data.budgets`)
+
+### Testing Strategy
+
+**Unit Tests**:
+- Test `saveBudgetToBackend()` handles 409 as success
+- Test `loadBudget()` correctly parses backend response structure
+- Test `createBudgetFromAIData()` creates valid budget object
+
+**Integration Tests**:
+- Test full flow: AI onboarding → save → navigate away → navigate back
+- Test 409 conflict handling when budget already exists
+- Test localStorage clearing after successful save
+
+**Manual Testing**:
+1. Complete AI onboarding for November
+2. Verify budget displays correctly
+3. Switch to October (should be empty)
+4. Switch back to November (should show saved budget)
+5. Refresh page (should still show November budget)
+6. Check console for "No budgets exist" - should NOT appear when budgets exist
+
+### Success Criteria
+
+- User creates AI budget → navigates away → returns → sees saved budget
+- No "No budgets exist in backend" logs when budgets actually exist
+- 409 conflicts handled gracefully without errors
+- localStorage AI budget cleared after successful save
+- Budget persists across page refreshes and month navigation
