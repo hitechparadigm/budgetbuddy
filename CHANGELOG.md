@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.12.3] - 2025-12-28
+
+### 🔧 CRITICAL BUG FIXES
+- **Blank Page After Login** - Fixed JavaScript error causing blank page after successful login
+  - **Root Cause**: Budget data from backend had undefined `plannedAmount`/`spentAmount` values
+  - **Error**: `Cannot read properties of undefined (reading 'toLocaleString')`
+  - **Impact**: Users could login but saw blank page instead of budget interface
+  - **Solution**: Added data validation in `transformBackendBudget()` to ensure all amounts are numbers with 0 defaults
+  - **Files Fixed**: `BudgetPage.tsx` - added `validateCategory` helper function
+
+- **Family Auto-Creation** - Implemented automatic family creation during user registration
+  - **Root Cause**: New users registered without `familyId`, preventing budget access
+  - **Solution**: Auto-create single-person family (`family_${userId}`) during registration
+  - **Technical**: Added `TransactWriteItemsCommand` for atomic user+family creation
+  - **Files Fixed**: `backend/functions/auth/index.js` - registration function updated
+
+### 🚀 NEW FEATURES
+- **Phase 1: Family Management** - Auto-family creation system implemented
+  - New users automatically get assigned to single-person family
+  - Family metadata includes `familyName`, `primaryUserId`, `memberCount`
+  - Prevents future "no family" issues that block budget access
+  - Documented Phase 2 (partner invitation) in requirements
+
+### 🐛 BUG FIXES
+- **ESLint Error**: Removed unused `PutItemCommand` import causing pipeline failure
+- **User Access**: Fixed `dmytro.malyk@gmail.com` by assigning to existing family `family_test_20251026`
+- **Data Validation**: Added number validation for all budget amounts to prevent undefined errors
+
+### 📚 DOCUMENTATION
+- **Requirements**: Added Requirement 17 for Family Management system
+- **Phase Planning**: Documented simple family model (adults only, no child accounts)
+
 ## [1.12.2] - 2025-12-28
 
 ### 🔧 CRITICAL AUTHENTICATION FIX
