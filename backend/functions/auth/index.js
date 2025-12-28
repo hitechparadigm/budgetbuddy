@@ -11,7 +11,6 @@ const {
 } = require('@aws-sdk/client-cognito-identity-provider');
 const {
     DynamoDBClient,
-    PutItemCommand,
     TransactWriteItemsCommand
 } = require('@aws-sdk/client-dynamodb');
 
