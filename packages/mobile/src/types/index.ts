@@ -147,6 +147,29 @@ export interface ApiError {
   timestamp: string;
 }
 
+// Transaction request types
+export interface CreateTransactionRequest {
+  categoryId: string;
+  amount: number;
+  description: string;
+  merchant?: string;
+  date: string; // YYYY-MM-DD
+  currency?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
+  tags?: string[];
+  receiptUrl?: string;
+  isRecurring?: boolean;
+  recurringTemplateId?: string;
+}
+
+export interface UpdateTransactionRequest extends CreateTransactionRequest {
+  id: string;
+}
+
 // Offline sync types
 export interface LocalBudget {
   id: string;

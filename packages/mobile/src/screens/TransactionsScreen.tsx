@@ -32,13 +32,11 @@ export default function TransactionsScreen() {
   const {
     data: transactions = [],
     isLoading: transactionsLoading,
-    error: transactionsError,
     refetch: refetchTransactions,
   } = useTransactions();
 
   const {
     data: budgets = [],
-    isLoading: budgetsLoading,
   } = useBudgets();
 
   const createTransactionMutation = useCreateTransaction();
@@ -294,9 +292,16 @@ export default function TransactionsScreen() {
       </View>
 
       <FloatingActionButton
-        onPress={() => handleAddTransaction()}
-        icon="add"
-        color={colors.primary}
+        actions={[
+          {
+            icon: 'add',
+            label: 'Add Transaction',
+            onPress: () => handleAddTransaction(),
+            color: colors.primary,
+          },
+        ]}
+        mainIcon="add"
+        mainColor={colors.primary}
       />
 
       <TransactionForm
