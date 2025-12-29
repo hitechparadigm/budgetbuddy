@@ -1,13 +1,41 @@
-const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
-const config = getDefaultConfig(__dirname);
+// Custom Metro config that bypasses all workspace detection
+module.exports = {
+  projectRoot: __dirname,
+  watchFolders: [],
 
-// Disable workspace detection to avoid JSON parsing issues
-config.watchFolders = [];
-config.resolver.platforms = ['ios', 'android', 'native', 'web'];
+  resolver: {
+    platforms: ['ios', 'android', 'native', 'web'],
+    nodeModulesPaths: [
+      path.resolve(__dirname, 'node_modules'),
+    ],
+    resolverMainFields: ['react-native', 'browser', 'main'],
+    blockList: [
+      /.*\/\.git\/.*/,
+      /.*\/node_modules\/.*\/node_modules\/.*/,
+    ],
+    sourceExts: ['js', 'json', 'ts', 'tsx', 'jsx'],
+    assetExts: ['glb', 'gltf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'mp4', 'webm', 'wav', 'mp3', 'm4a', 'aac', 'oga', 'ttf', 'otf', 'woff', 'woff2'],
+  },
 
-// Ensure we're not trying to resolve outside the mobile package
-config.projectRoot = __dirname;
+  transformer: {
+    getTransformOptions: async () => ({
+      transform: {
+        experimentalImportSupport: false,
+        inlineRequires: true,
+      },
+    }),
+    babelTransformerPath: require.resolve('metro-react-native-babel-transformer'),
+  },
 
-module.exports = config;
+  serializer: {
+    getModulesRunBeforeMainModule: () => [
+      require.resolve('react-native/Libraries/Core/InitializeCore'),
+    ],
+  },
+
+  server: {
+    port: 8081,
+  },
+};

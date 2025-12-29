@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "BudgetBuddy",
-    "slug": "budgetbuddy",
+    "slug": "budgetbuddy-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,7 +16,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.budgetbuddy.app",
+      "bundleIdentifier": "com.budgetbuddy.mobile",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Location is used to provide personalized budget suggestions and track transaction locations"
       }
@@ -26,23 +26,23 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
       },
-      "package": "com.budgetbuddy.app",
+      "package": "com.budgetbuddy.mobile",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-secure-store",
-      "expo-notifications"
+      "expo-location",
+      "expo-file-system",
+      "expo-sharing",
+      "expo-document-picker"
     ],
-    "extra": {
-      "eas": {
-        "projectId": "budgetbuddy-mobile"
-      }
-    }
+    "scheme": "budgetbuddy"
   }
 }
