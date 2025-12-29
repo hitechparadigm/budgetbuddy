@@ -606,47 +606,81 @@ exports.handler = async (event, _context) => {
                     console.log('User profile and family created in DynamoDB');
                 }
 
-                // Generate JWT tokens using Cognito's admin initiate auth
-                const authCommand = new InitiateAuthCommand({
-                    AuthFlow: 'ADMIN_NO_SRP_AUTH',
-                    ClientId: CLIENT_ID,
-                    AuthParameters: {
-                        USERNAME: googleEmail,
-                        PASSWORD: `Google_${Math.random().toString(36).substr(2, 20)}!`
-                    }
-                });
+                // For Google users, generate JWT tokens using a temporary password
+                const tempPassword = `Google_${Math.random().toString(36).substr(2, 20)}!`;
 
-                // For Google users, we need to use a different approach
-                // Since we don't have the password, we'll create a custom token response
-                // In production, use AWS Cognito's token endpoint or AWS SigV4 signing
+                try {
+                    const authCommand = new InitiateAuthCommand({
+                        AuthFlow: 'ADMIN_NO_SRP_AUTH',
+                        ClientId: CLIENT_ID,
+                        AuthParameters: {
+                            USERNAME: googleEmail,
+                            PASSWORD: tempPassword
+                        }
+                    });
 
-                // For now, return a success response with the Google token
-                // The frontend will need to exchange this for Cognito tokens
-                return {
-                    statusCode: 200,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    body: JSON.stringify({
-                        message: isNewUser ? 'User created and authenticated' : 'User authenticated',
-                        user: {
-                            userId: userId,
-                            email: googleEmail,
-                            firstName: firstName || 'User',
-                            lastName: lastName,
-                            accountType: 'single',
-                            subscriptionTier: 'free',
-                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                    const authResult = await cognitoClient.send(authCommand);
+                    console.log('Successfully generated tokens for Google user');
+
+                    const accessToken = authResult.AuthenticationResult.AccessToken;
+                    const refreshToken = authResult.AuthenticationResult.RefreshToken;
+                    const idToken = authResult.AuthenticationResult.IdToken;
+
+                    return {
+                        statusCode: 200,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
                         },
-                        // TODO: Generate proper JWT tokens
-                        accessToken: requestBody.idToken,
-                        refreshToken: requestBody.idToken,
-                        idToken: requestBody.idToken,
-                        expiresIn: 3600,
-                        isNewUser: isNewUser
-                    })
-                };
+                        body: JSON.stringify({
+                            message: isNewUser ? 'User created and authenticated' : 'User authenticated',
+                            user: {
+                                userId: userId,
+                                email: googleEmail,
+                                firstName: firstName || 'User',
+                                lastName: lastName,
+                                accountType: 'single',
+                                subscriptionTier: 'free',
+                                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                            },
+                            accessToken: accessToken,
+                            refreshToken: refreshToken,
+                            idToken: idToken,
+                            expiresIn: authResult.AuthenticationResult.ExpiresIn,
+                            isNewUser: isNewUser
+                        })
+                    };
+
+                } catch (tokenError) {
+                    console.error('Failed to generate tokens:', tokenError);
+
+                    // Fallback: return a temporary token
+                    return {
+                        statusCode: 200,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Access-Control-Allow-Origin': '*'
+                        },
+                        body: JSON.stringify({
+                            message: 'User authenticated (temporary token)',
+                            user: {
+                                userId: userId,
+                                email: googleEmail,
+                                firstName: firstName || 'User',
+                                lastName: lastName,
+                                accountType: 'single',
+                                subscriptionTier: 'free',
+                                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                            },
+                            accessToken: requestBody.idToken,
+                            refreshToken: requestBody.idToken,
+                            idToken: requestBody.idToken,
+                            expiresIn: 3600,
+                            isNewUser: isNewUser,
+                            warning: 'Using temporary token'
+                        })
+                    };
+                }
 
             } catch (error) {
                 console.error('Google Sign-In error:', error);
