@@ -4,8 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Button } from '../components/ui';
 import { ExportModal } from '../components/ExportModal';
 import { BackupModal } from '../components/BackupModal';
+import NotificationSettings from '../components/NotificationSettings';
+import CurrencySelector, { CurrencyDisplay } from '../components/CurrencySelector';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../contexts/AuthContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useBudgets } from '../services/budget';
 import { useTransactions } from '../services/transaction';
 import { backupService } from '../services/backup';
@@ -24,6 +27,7 @@ interface SettingsItem {
 export default function SettingsScreen() {
   const { colors, isDark } = useTheme();
   const { signOut, user } = useAuth();
+  const { selectedCurrency, setSelectedCurrency } = useCurrency();
   const { data: budgets = [] } = useBudgets();
   const { data: transactions = [] } = useTransactions();
 
@@ -34,6 +38,8 @@ export default function SettingsScreen() {
   const [exportType, setExportType] = useState<'budgets' | 'transactions' | 'report'>('budgets');
   const [backupModalVisible, setBackupModalVisible] = useState(false);
   const [backupMode, setBackupMode] = useState<'backup' | 'restore' | 'settings'>('backup');
+  const [notificationSettingsVisible, setNotificationSettingsVisible] = useState(false);
+  const [currencySelectorVisible, setCurrencySelectorVisible] = useState(false);
 
   const handleSignOut = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -57,11 +63,14 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleExportData = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Show export modal instead of placeholder alert
-    setExportModalVisible(true);
-    setExportType('budgets');
+  const handleCurrencyChange = async (currency: any) => {
+    try {
+      await setSelectedCurrency(currency);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.error('Failed to change currency:', error);
+      Alert.alert('Error', 'Failed to change currency. Please try again.');
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -126,22 +135,24 @@ export default function SettingsScreen() {
     {
       id: 'currency',
       title: 'Currency',
-      subtitle: 'USD - United States Dollar',
+      subtitle: `${selectedCurrency.code} - ${selectedCurrency.name}`,
       type: 'navigation',
-      onPress: () => Alert.alert('Currency', 'Currency selection will be implemented soon.'),
+      onPress: async () => {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setCurrencySelectorVisible(true);
+      },
     },
   ];
 
   const securitySettings: SettingsItem[] = [
     {
       id: 'notifications',
-      title: 'Push Notifications',
-      subtitle: 'Receive budget alerts and reminders',
-      type: 'toggle',
-      value: notificationsEnabled,
-      onToggle: async (value) => {
+      title: 'Notification Settings',
+      subtitle: 'Manage alerts and reminders',
+      type: 'navigation',
+      onPress: async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setNotificationsEnabled(value);
+        setNotificationSettingsVisible(true);
       },
     },
     {
@@ -362,6 +373,17 @@ export default function SettingsScreen() {
         transactions={transactions}
         userId={user?.userId || 'unknown'}
         mode={backupMode}
+      />
+      <NotificationSettings
+        visible={notificationSettingsVisible}
+        onClose={() => setNotificationSettingsVisible(false)}
+      />
+
+      <CurrencySelector
+        visible={currencySelectorVisible}
+        onClose={() => setCurrencySelectorVisible(false)}
+        onCurrencySelect={handleCurrencyChange}
+        selectedCurrency={selectedCurrency}
       />
     </SafeAreaView>
   );

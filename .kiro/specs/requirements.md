@@ -753,6 +753,9 @@ The following features are not included in the current MVP:
 8. THE BudgetBuddy SHALL notify users of large transactions (user-defined threshold)
 9. THE BudgetBuddy SHALL provide weekly spending summary notifications
 10. THE BudgetBuddy SHALL allow users to disable specific notification types
+11. THE BudgetBuddy SHALL send daily expense reminder notifications at user-configurable times
+12. THE BudgetBuddy SHALL allow users to set custom daily reminder times (default 7:00 PM)
+13. THE BudgetBuddy SHALL respect quiet hours settings for daily expense reminders
 
 **Implementation Status**: Not started
 **Priority**: High (Critical for engagement)

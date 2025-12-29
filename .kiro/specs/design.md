@@ -175,6 +175,8 @@ interface NotificationPreferences {
   budgetAlerts: boolean;
   overspendingAlerts: boolean;
   billReminders: boolean;
+  dailyExpenseReminder: boolean;
+  dailyReminderTime: string; // HH:MM format
   weeklyReports: boolean;
   monthlyReports: boolean;
 }
