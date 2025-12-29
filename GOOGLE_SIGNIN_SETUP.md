@@ -5,8 +5,8 @@ This guide explains how to set up Google Sign-In for BudgetBuddy on web, iOS, an
 ## Current Status
 
 ✅ **Web**: Configured and working
-- Client ID: `25096939086-7mii5nkunrtkui0fibv0d5k93mtinrhk.apps.googleusercontent.com`
-- Client Secret: `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`
+- Client ID: Stored in AWS Secrets Manager
+- Client Secret: Stored in AWS Secrets Manager (never commit to code)
 
 ⏳ **iOS**: Needs platform-specific client ID
 ⏳ **Android**: Needs platform-specific client ID
@@ -61,8 +61,8 @@ This will:
 Create a `.env.local` file in `packages/mobile/`:
 
 ```env
-EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=25096939086-7mii5nkunrtkui0fibv0d5k93mtinrhk.apps.googleusercontent.com
-EXPO_PUBLIC_GOOGLE_WEB_CLIENT_SECRET=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
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your-web-client-id-here
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_SECRET=your-web-client-secret-here
 EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=your-ios-client-id-here
 EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=your-android-client-id-here
 ```

@@ -27,18 +27,19 @@ export interface GoogleConfig {
 
 // Google OAuth Client IDs
 // All platforms now have dedicated client IDs from Google Cloud Console
+// IMPORTANT: Never hardcode credentials! Use environment variables only.
 const GOOGLE_CONFIG: Record<string, GoogleConfig> = {
   web: {
-    clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '25096939086-7mii5nkunrtkui0fibv0d5k93mtinrhk.apps.googleusercontent.com',
-    clientSecret: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_SECRET || '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',
+    clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+    clientSecret: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_SECRET || '',
   },
   ios: {
     // iOS OAuth client ID from Google Cloud Console
-    clientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '25096939086-2g3q3399qa177vhhl9fdb0oh9e939n1o.apps.googleusercontent.com',
+    clientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || '',
   },
   android: {
     // Android OAuth client ID from Google Cloud Console
-    clientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '25096939086-u76379vfuc6keu4enn1d749fuajk1vfq.apps.googleusercontent.com',
+    clientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '',
   },
 };
 
