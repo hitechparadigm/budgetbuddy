@@ -11,6 +11,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentMonthString, getTodayString, isFutureMonth, isPastMonth } from '../utils/monthHelpers';
 import { getMockUser } from '../utils/mockAuth';
+import { calculatePlannedMonthlyAmount, getOccurrenceDatesInMonth } from '@budget-buddy/shared';
 
 const API_BASE_URL = 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
 
@@ -20,11 +21,13 @@ interface BudgetCategory {
   name: string;
   icon: string;
   plannedAmount: number;
+  baseAmount?: number; // Per-occurrence amount for recurring items
   spentAmount: number;
   transactions: Transaction[];
   order: number;
   isRecurring: boolean;
   recurringFrequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'annually';
+  startDate?: string; // First occurrence date for recurring items
   nextDueDate?: string;
 }
 
@@ -83,7 +86,8 @@ export const BudgetPage: React.FC = () => {
     icon: '💰',
     plannedAmount: '',
     isRecurring: false,
-    recurringFrequency: 'monthly' as 'weekly' | 'bi-weekly' | 'monthly' | 'annually'
+    recurringFrequency: 'monthly' as 'weekly' | 'bi-weekly' | 'monthly' | 'annually',
+    startDate: getTodayString() // First occurrence date
   });
 
   // Right sidebar tab state
@@ -561,9 +565,10 @@ export const BudgetPage: React.FC = () => {
       setBudgetItemForm({
         name: category.name,
         icon: category.icon,
-        plannedAmount: category.plannedAmount.toString(),
+        plannedAmount: (category.baseAmount || category.plannedAmount).toString(),
         isRecurring: category.isRecurring,
-        recurringFrequency: category.recurringFrequency || 'monthly'
+        recurringFrequency: category.recurringFrequency || 'monthly',
+        startDate: category.startDate || getTodayString()
       });
     } else {
       setEditingCategory(null);
@@ -572,7 +577,8 @@ export const BudgetPage: React.FC = () => {
         icon: groupType === 'income' ? '💰' : groupType === 'savings' ? '💾' : '💸',
         plannedAmount: '',
         isRecurring: false,
-        recurringFrequency: 'monthly'
+        recurringFrequency: 'monthly',
+        startDate: getTodayString()
       });
     }
     setShowBudgetItemModal(true);
@@ -587,7 +593,8 @@ export const BudgetPage: React.FC = () => {
       icon: '💰',
       plannedAmount: '',
       isRecurring: false,
-      recurringFrequency: 'monthly'
+      recurringFrequency: 'monthly',
+      startDate: getTodayString()
     });
   };
 
@@ -608,13 +615,39 @@ export const BudgetPage: React.FC = () => {
       return;
     }
 
-    const amount = parseFloat(budgetItemForm.plannedAmount);
-    if (isNaN(amount)) {
+    const baseAmount = parseFloat(budgetItemForm.plannedAmount);
+    if (isNaN(baseAmount)) {
       console.log('[handleBudgetItemSubmit] Invalid amount:', budgetItemForm.plannedAmount);
       return;
     }
 
-    console.log('[handleBudgetItemSubmit] Creating new category with amount:', amount);
+    // Calculate planned amount for recurring items
+    let plannedAmount = baseAmount;
+    let startDate = budgetItemForm.startDate || getTodayString();
+    let occurrenceDates: string[] = [];
+
+    if (budgetItemForm.isRecurring) {
+      plannedAmount = calculatePlannedMonthlyAmount(
+        baseAmount,
+        budgetItemForm.recurringFrequency,
+        startDate,
+        budget.month
+      );
+      occurrenceDates = getOccurrenceDatesInMonth(
+        budgetItemForm.recurringFrequency,
+        startDate,
+        budget.month
+      );
+      console.log('[handleBudgetItemSubmit] Recurring item calculated:', {
+        baseAmount,
+        frequency: budgetItemForm.recurringFrequency,
+        startDate,
+        plannedAmount,
+        occurrenceDates
+      });
+    }
+
+    console.log('[handleBudgetItemSubmit] Creating new category with baseAmount:', baseAmount, 'plannedAmount:', plannedAmount);
     const updatedBudget = { ...budget };
 
     if (editingCategory) {
@@ -628,7 +661,9 @@ export const BudgetPage: React.FC = () => {
               ...cat,
               name: budgetItemForm.name,
               icon: budgetItemForm.icon,
-              plannedAmount: amount,
+              baseAmount: budgetItemForm.isRecurring ? baseAmount : undefined,
+              plannedAmount,
+              startDate: budgetItemForm.isRecurring ? startDate : undefined,
               isRecurring: budgetItemForm.isRecurring,
               recurringFrequency: budgetItemForm.isRecurring ? budgetItemForm.recurringFrequency : undefined
             };
@@ -643,7 +678,9 @@ export const BudgetPage: React.FC = () => {
         id: `category_${Date.now()}`,
         name: budgetItemForm.name,
         icon: budgetItemForm.icon,
-        plannedAmount: amount,
+        baseAmount: budgetItemForm.isRecurring ? baseAmount : undefined,
+        plannedAmount,
+        startDate: budgetItemForm.isRecurring ? startDate : undefined,
         spentAmount: 0,
         transactions: [],
         order: 999,
@@ -1422,7 +1459,8 @@ export const BudgetPage: React.FC = () => {
                         </div>
                         {category.isRecurring && (
                           <div className="text-xs text-green-600 ml-6">
-                            {category.recurringFrequency} • Next: {category.nextDueDate && new Date(category.nextDueDate).toLocaleDateString()}
+                            {category.recurringFrequency} • {category.baseAmount && `$${category.baseAmount.toLocaleString()} per occurrence`}
+                            {category.startDate && ` • Starts: ${new Date(category.startDate).toLocaleDateString()}`}
                           </div>
                         )}
                       </div>
@@ -1928,7 +1966,7 @@ export const BudgetPage: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Planned Amount
+                  {budgetItemForm.isRecurring ? 'Amount per Occurrence' : 'Planned Amount'}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-gray-500">$</span>
@@ -1942,6 +1980,11 @@ export const BudgetPage: React.FC = () => {
                     required
                   />
                 </div>
+                {budgetItemForm.isRecurring && budgetItemForm.plannedAmount && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Monthly total will be calculated based on frequency
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center space-x-2">
@@ -1958,21 +2001,39 @@ export const BudgetPage: React.FC = () => {
               </div>
 
               {budgetItemForm.isRecurring && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Frequency
-                  </label>
-                  <select
-                    value={budgetItemForm.recurringFrequency}
-                    onChange={(e) => setBudgetItemForm(prev => ({ ...prev, recurringFrequency: e.target.value as any }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="weekly">Weekly</option>
-                    <option value="bi-weekly">Bi-weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="annually">Annually</option>
-                  </select>
-                </div>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Frequency
+                    </label>
+                    <select
+                      value={budgetItemForm.recurringFrequency}
+                      onChange={(e) => setBudgetItemForm(prev => ({ ...prev, recurringFrequency: e.target.value as any }))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="weekly">Weekly</option>
+                      <option value="bi-weekly">Bi-weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="annually">Annually</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Occurrence Date
+                    </label>
+                    <input
+                      type="date"
+                      value={budgetItemForm.startDate}
+                      onChange={(e) => setBudgetItemForm(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      This determines how many times the item occurs in {getMonthName(budget?.month || currentMonth)}
+                    </p>
+                  </div>
+                </>
               )}
 
               <div className="flex space-x-3 pt-4">
