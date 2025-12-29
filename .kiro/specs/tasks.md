@@ -33,7 +33,7 @@ This implementation plan transforms BudgetBuddy from a web-only application into
     - **Security**: JWT tokens stored securely in Expo SecureStore (iOS Keychain/Android Keystore)
     - _Requirements: 25.1, 25.2, 25.4_
 
-  - [ ]* 2.3 Write property tests for authentication
+  - [-]* 2.3 Write property tests for authentication
     - **Property 4: Device Security Integration**
     - **Property 5: Secure Token Storage**
     - **Validates: Requirements 25.2, 25.3, 25.5**
