@@ -101,7 +101,11 @@ Thumbs.db
 
 # AWS CDK
 cdk.out/
+cdk-out-temp/
 cdk.context.json
+infrastructure/lib/*.d.ts
+infrastructure/lib/*.js
+infrastructure/lib/*.js.map
 
 # Expo
 .expo/
