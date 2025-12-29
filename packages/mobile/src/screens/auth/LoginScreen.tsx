@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthError } from '../../services/auth';
 import { AuthScreenProps } from '../../navigation/AuthNavigator';
+import { GoogleSignInButton } from '../../components/GoogleSignInButton';
 
 type LoginScreenProps = AuthScreenProps<'Login'>;
 
@@ -31,6 +32,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   /**
    * Validate form inputs
@@ -101,6 +103,23 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
    */
   const handleForgotPasswordPress = (): void => {
     navigation.navigate('ForgotPassword');
+  };
+
+  /**
+   * Handle Google Sign-In
+   */
+  const handleGoogleSignIn = async (): Promise<void> => {
+    setGoogleLoading(true);
+    try {
+      // TODO: Implement Google Sign-In integration
+      // This will call authService.signInWithGoogle() and handle the response
+      Alert.alert('Coming Soon', 'Google Sign-In will be available soon');
+    } catch (error) {
+      const authError = error as AuthError;
+      Alert.alert('Google Sign-In Failed', authError.message);
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
@@ -185,6 +204,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 <Text style={styles.loginButtonText}>Sign In</Text>
               )}
             </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.divider} />
+              <Text style={styles.dividerText}>or</Text>
+              <View style={styles.divider} />
+            </View>
+
+            {/* Google Sign-In Button */}
+            <GoogleSignInButton
+              onPress={handleGoogleSignIn}
+              loading={googleLoading}
+              disabled={isLoading || googleLoading}
+              variant="signin"
+            />
 
             {/* Sign Up Link */}
             <View style={styles.signUpContainer}>
@@ -306,6 +340,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  divider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    color: '#999',
+    fontSize: 14,
   },
   signUpContainer: {
     flexDirection: 'row',

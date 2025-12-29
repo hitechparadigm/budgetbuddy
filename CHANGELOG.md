@@ -1,5 +1,55 @@
 # Changelog
 
+## [1.15.0] - 2025-12-29
+
+### 🚀 GOOGLE SIGN-IN AUTHENTICATION - COMPLETE IMPLEMENTATION
+- **Google OAuth 2.0 Integration** - Full cross-platform authentication
+  - **Web Platform**: Google OAuth 2.0 with client ID and secret configured
+  - **iOS Platform**: Platform-specific OAuth client ID from Google Cloud Console
+  - **Android Platform**: Platform-specific OAuth client ID with SHA-1 fingerprint support
+  - **PKCE Flow**: Secure authorization code flow with code challenge/verifier for mobile
+  - **Token Management**: Secure token storage using Expo SecureStore (iOS Keychain/Android Keystore)
+
+- **UI Components & Integration**
+  - **GoogleSignInButton**: Reusable component with loading states and platform variants
+  - **LoginScreen Integration**: Google Sign-In button added to login flow with divider
+  - **Auth Service Methods**: signInWithGoogle, linkGoogleAccount, unlinkGoogleAccount
+  - **Token Storage**: Separate storage for Google tokens with platform-specific handling
+
+- **Configuration & Security**
+  - **Environment Variables**: EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID, EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID
+  - **AWS Secrets Manager**: All credentials stored in budgetbuddy-dev/google-oauth secret
+  - **Setup Documentation**: Comprehensive GOOGLE_SIGNIN_SETUP.md with troubleshooting guide
+  - **Production Ready**: Credentials properly managed with fallback support
+
+### 🔧 TECHNICAL ACHIEVEMENTS
+- **Expo Auth Session v7 Compatibility**: Fixed deprecated startAsync API, using openAuthSessionAsync
+- **PKCE Implementation**: Proper code verifier generation and base64url encoding
+- **Cross-Platform Support**: Single codebase works on web, iOS, and Android
+- **Error Handling**: Comprehensive error messages for authentication failures
+- **Type Safety**: All TypeScript errors resolved, full type coverage
+
+### 📋 DOCUMENTATION
+- **GOOGLE_SIGNIN_SETUP.md**: Complete setup guide with development and production instructions
+- **Environment Configuration**: .env.local template with all required variables
+- **AWS Integration**: Instructions for storing credentials in Secrets Manager
+- **Troubleshooting**: Common issues and solutions documented
+
+### ✅ REQUIREMENTS COVERAGE
+- Requirement 40.1: Google Sign-In button on login screen ✓
+- Requirement 40.2: Cross-platform OAuth support (web, iOS, Android) ✓
+- Requirement 40.3: Secure token storage ✓
+- Requirement 40.4: Account linking capability ✓
+- Requirement 40.9: Production-ready implementation ✓
+
+### 🔐 SECURITY NOTES
+- Credentials stored in AWS Secrets Manager (not in code)
+- .env.local excluded from version control
+- PKCE flow prevents authorization code interception
+- Tokens stored in platform-specific secure storage
+
+---
+
 ## [1.14.0] - 2025-12-29
 
 ### 🚀 MAJOR FEATURES - COMPLETE BUDGET MANAGEMENT SYSTEM

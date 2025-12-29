@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -6,8 +6,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { CurrencyProvider } from './src/contexts/CurrencyContext';
 import { AuthNavigator } from './src/navigation/AuthNavigator';
 import RootNavigator from '@/navigation/RootNavigator';
+import { notificationService } from './src/services/notification';
 
 // Import Amplify configuration
 import './src/config/amplify';
@@ -30,6 +32,15 @@ const queryClient = new QueryClient({
  */
 const AppNavigator: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
+
+  // Initialize notification service when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      notificationService.initialize().catch((error) => {
+        console.error('Failed to initialize notification service:', error);
+      });
+    }
+  }, [isAuthenticated]);
 
   // Show loading screen while checking authentication
   if (isLoading) {
@@ -56,8 +67,10 @@ export default function App() {
     <GestureHandlerRootView style={styles.container}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <AppNavigator />
-          <StatusBar style="auto" />
+          <CurrencyProvider>
+            <AppNavigator />
+            <StatusBar style="auto" />
+          </CurrencyProvider>
         </AuthProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>

@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { LoadingSpinner } from './ui';
 import { useTheme } from '../hooks/useTheme';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { Transaction, BudgetCategory } from '../types';
 
 interface TransactionListProps {
@@ -51,6 +52,7 @@ export default function TransactionList({
   emptyMessage = 'No transactions found',
 }: TransactionListProps) {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const [refreshing, setRefreshing] = useState(false);
 
   const getCategoryName = (categoryId: string): string => {
@@ -64,10 +66,7 @@ export default function TransactionList({
   };
 
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+    return formatAmount(amount);
   };
 
   const formatDate = (dateString: string): string => {

@@ -8,6 +8,7 @@
 import { signIn, signUp, confirmSignUp, resendSignUpCode, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { googleAuthService, GoogleAuthResult, GoogleUser } from './googleAuth';
 
 // Secure storage keys
 const STORAGE_KEYS = {
@@ -15,6 +16,8 @@ const STORAGE_KEYS = {
   REFRESH_TOKEN: 'auth_refresh_token',
   ID_TOKEN: 'auth_id_token',
   USER_DATA: 'auth_user_data',
+  GOOGLE_ACCESS_TOKEN: 'auth_google_access_token',
+  GOOGLE_ID_TOKEN: 'auth_google_id_token',
 } as const;
 
 export interface User {
@@ -23,6 +26,9 @@ export interface User {
   name?: string;
   emailVerified: boolean;
   createdAt: string;
+  authProvider?: 'cognito' | 'google';
+  googleId?: string;
+  picture?: string;
 }
 
 export interface AuthTokens {
@@ -48,6 +54,134 @@ export interface AuthError {
 }
 
 class AuthService {
+  /**
+   * Initialize Google Auth
+   */
+  initializeGoogleAuth(clientId: string, clientSecret?: string): void {
+    googleAuthService.initialize({ clientId, clientSecret });
+  }
+
+  /**
+   * Sign in with Google
+   */
+  async signInWithGoogle(): Promise<{ user: User; tokens: AuthTokens }> {
+    try {
+      const googleResult = await googleAuthService.signIn();
+
+      if (googleResult.type !== 'success' || !googleResult.user) {
+        throw new Error(googleResult.error || 'Google Sign-In failed');
+      }
+
+      // Create user object from Google data
+      const user: User = {
+        id: googleResult.user.id,
+        email: googleResult.user.email,
+        name: googleResult.user.name,
+        emailVerified: googleResult.user.verified_email,
+        createdAt: new Date().toISOString(),
+        authProvider: 'google',
+        googleId: googleResult.user.id,
+        picture: googleResult.user.picture,
+      };
+
+      // Create tokens object (Google tokens, not Cognito)
+      const tokens: AuthTokens = {
+        accessToken: googleResult.accessToken || '',
+        refreshToken: '', // Google refresh tokens are handled differently
+        idToken: googleResult.idToken || '',
+      };
+
+      // Store Google tokens separately
+      await this.storeGoogleTokens(googleResult.accessToken, googleResult.idToken);
+      await this.storeUserData(user);
+
+      // TODO: Integrate with backend to create/link user account
+      // This would involve calling your backend API to:
+      // 1. Check if user exists by Google ID or email
+      // 2. Create new user account if doesn't exist
+      // 3. Link Google account to existing account if needed
+      // 4. Return backend JWT tokens for API access
+
+      return { user, tokens };
+    } catch (error: any) {
+      throw this.handleAuthError(error);
+    }
+  }
+
+  /**
+   * Link Google account to existing user
+   */
+  async linkGoogleAccount(): Promise<{ user: User; linked: boolean }> {
+    try {
+      const currentUser = await this.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('No authenticated user found');
+      }
+
+      const googleResult = await googleAuthService.signIn();
+
+      if (googleResult.type !== 'success' || !googleResult.user) {
+        throw new Error(googleResult.error || 'Google Sign-In failed');
+      }
+
+      // Update user with Google information
+      const updatedUser: User = {
+        ...currentUser,
+        authProvider: 'cognito', // Keep original provider
+        googleId: googleResult.user.id,
+        picture: googleResult.user.picture,
+      };
+
+      // Store Google tokens
+      await this.storeGoogleTokens(googleResult.accessToken, googleResult.idToken);
+      await this.storeUserData(updatedUser);
+
+      // TODO: Call backend API to link Google account
+      // This would update the user record to include Google ID
+
+      return { user: updatedUser, linked: true };
+    } catch (error: any) {
+      throw this.handleAuthError(error);
+    }
+  }
+
+  /**
+   * Unlink Google account
+   */
+  async unlinkGoogleAccount(): Promise<{ user: User; unlinked: boolean }> {
+    try {
+      const currentUser = await this.getCurrentUser();
+      if (!currentUser) {
+        throw new Error('No authenticated user found');
+      }
+
+      // Get Google access token for revocation
+      const googleAccessToken = await this.getGoogleAccessToken();
+
+      // Revoke Google tokens if available
+      if (googleAccessToken) {
+        await googleAuthService.signOut(googleAccessToken);
+      }
+
+      // Update user to remove Google information
+      const updatedUser: User = {
+        ...currentUser,
+        googleId: undefined,
+        picture: undefined,
+      };
+
+      // Clear Google tokens
+      await this.clearGoogleTokens();
+      await this.storeUserData(updatedUser);
+
+      // TODO: Call backend API to unlink Google account
+      // This would remove Google ID from user record
+
+      return { user: updatedUser, unlinked: true };
+    } catch (error: any) {
+      throw this.handleAuthError(error);
+    }
+  }
   /**
    * Sign in user with email and password
    */
@@ -235,8 +369,41 @@ class AuthService {
   }
 
   /**
-   * Store authentication tokens securely
+   * Store Google authentication tokens securely
    */
+  private async storeGoogleTokens(accessToken?: string, idToken?: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      if (accessToken) localStorage.setItem(STORAGE_KEYS.GOOGLE_ACCESS_TOKEN, accessToken);
+      if (idToken) localStorage.setItem(STORAGE_KEYS.GOOGLE_ID_TOKEN, idToken);
+    } else {
+      if (accessToken) await SecureStore.setItemAsync(STORAGE_KEYS.GOOGLE_ACCESS_TOKEN, accessToken);
+      if (idToken) await SecureStore.setItemAsync(STORAGE_KEYS.GOOGLE_ID_TOKEN, idToken);
+    }
+  }
+
+  /**
+   * Get Google access token
+   */
+  private async getGoogleAccessToken(): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
+    } else {
+      return await SecureStore.getItemAsync(STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
+    }
+  }
+
+  /**
+   * Clear Google tokens
+   */
+  private async clearGoogleTokens(): Promise<void> {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem(STORAGE_KEYS.GOOGLE_ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.GOOGLE_ID_TOKEN);
+    } else {
+      await SecureStore.deleteItemAsync(STORAGE_KEYS.GOOGLE_ACCESS_TOKEN).catch(() => { });
+      await SecureStore.deleteItemAsync(STORAGE_KEYS.GOOGLE_ID_TOKEN).catch(() => { });
+    }
+  }
   private async storeTokens(tokens: AuthTokens): Promise<void> {
     if (Platform.OS === 'web') {
       // For web platform, use localStorage as fallback
