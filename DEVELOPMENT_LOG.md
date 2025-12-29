@@ -48,9 +48,9 @@
 ### Technical Details
 
 **Credentials Configured:**
-- Web: 25096939086-7mii5nkunrtkui0fibv0d5k93mtinrhk.apps.googleusercontent.com
-- iOS: 25096939086-2g3q3399qa177vhhl9fdb0oh9e939n1o.apps.googleusercontent.com
-- Android: 25096939086-u76379vfuc6keu4enn1d749fuajk1vfq.apps.googleusercontent.com
+- Web: Stored in AWS Secrets Manager (never commit to code)
+- iOS: Stored in AWS Secrets Manager (never commit to code)
+- Android: Stored in AWS Secrets Manager (never commit to code)
 
 **AWS Secrets Manager:**
 - Secret Name: budgetbuddy-dev/google-oauth
