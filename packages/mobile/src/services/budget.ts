@@ -19,6 +19,8 @@ import {
   UpdateBudgetRequest,
   BudgetFilters,
   BudgetFrequency,
+  UpcomingOccurrence,
+  RecurringBudgetOverview,
 } from '../types/budget';
 
 /**
@@ -29,31 +31,216 @@ const generateBudgetId = (): string => {
 };
 
 /**
- * Calculate monthly occurrences for recurring budgets
+ * Calculate next occurrence date for a recurring budget
  */
-export const calculateMonthlyOccurrences = (
-  frequency: BudgetFrequency,
-  startDate: string,
+export const calculateNextOccurrence = (
+  budget: Budget,
+  fromDate?: Date
+): Date | null => {
+  const start = new Date(budget.startDate);
+  const from = fromDate || new Date();
+  const config = budget.recurringConfig;
+
+  // For one-time budgets, return null if already past
+  if (budget.frequency === 'one-time') {
+    return start > from ? start : null;
+  }
+
+  let nextDate = new Date(Math.max(start.getTime(), from.getTime()));
+
+  switch (budget.frequency) {
+    case 'weekly':
+      const targetDayOfWeek = config?.dayOfWeek ?? start.getDay();
+      const daysUntilTarget = (targetDayOfWeek - nextDate.getDay() + 7) % 7;
+      nextDate.setDate(nextDate.getDate() + (daysUntilTarget || 7));
+      break;
+
+    case 'bi-weekly':
+      const biWeeklyTarget = config?.dayOfWeek ?? start.getDay();
+      const daysSinceStart = Math.floor((nextDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      const biWeeklyPeriod = Math.floor(daysSinceStart / 14) + 1;
+      const nextBiWeeklyDate = new Date(start);
+      nextBiWeeklyDate.setDate(start.getDate() + (biWeeklyPeriod * 14));
+
+      // Adjust to correct day of week
+      const biWeeklyDaysUntilTarget = (biWeeklyTarget - nextBiWeeklyDate.getDay() + 7) % 7;
+      nextBiWeeklyDate.setDate(nextBiWeeklyDate.getDate() + biWeeklyDaysUntilTarget);
+      nextDate = nextBiWeeklyDate;
+      break;
+
+    case 'monthly':
+      const targetDayOfMonth = config?.dayOfMonth ?? start.getDate();
+      nextDate.setDate(1); // Start of month
+      nextDate.setMonth(nextDate.getMonth() + (nextDate.getDate() > targetDayOfMonth ? 1 : 0));
+
+      // Handle month-end adjustment
+      const lastDayOfMonth = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+      const adjustedDay = config?.adjustForMonthEnd && targetDayOfMonth > lastDayOfMonth
+        ? lastDayOfMonth
+        : Math.min(targetDayOfMonth, lastDayOfMonth);
+
+      nextDate.setDate(adjustedDay);
+      break;
+
+    case 'quarterly':
+      const quarterlyStart = new Date(start);
+      const monthsSinceStart = (nextDate.getFullYear() - start.getFullYear()) * 12 +
+        (nextDate.getMonth() - start.getMonth());
+      const nextQuarterOffset = Math.ceil((monthsSinceStart + 1) / 3) * 3;
+
+      nextDate = new Date(start);
+      nextDate.setMonth(start.getMonth() + nextQuarterOffset);
+      break;
+
+    case 'yearly':
+      const targetMonth = config?.monthOfYear ?? (start.getMonth() + 1);
+      const targetDay = config?.dayOfMonth ?? start.getDate();
+
+      nextDate.setMonth(targetMonth - 1, targetDay);
+      if (nextDate <= from) {
+        nextDate.setFullYear(nextDate.getFullYear() + 1);
+      }
+      break;
+
+    case 'custom':
+      if (config?.customPattern) {
+        return calculateCustomNextOccurrence(budget, from);
+      }
+      return null;
+
+    default:
+      return null;
+  }
+
+  // Skip weekends if configured
+  if (config?.skipWeekends) {
+    while (nextDate.getDay() === 0 || nextDate.getDay() === 6) {
+      nextDate.setDate(nextDate.getDate() + 1);
+    }
+  }
+
+  // Check end date
+  if (budget.endDate && nextDate > new Date(budget.endDate)) {
+    return null;
+  }
+
+  return nextDate;
+};
+
+/**
+ * Calculate next occurrence for custom recurrence patterns
+ */
+const calculateCustomNextOccurrence = (budget: Budget, fromDate: Date): Date | null => {
+  const config = budget.recurringConfig?.customPattern;
+  if (!config) return null;
+
+  const start = new Date(budget.startDate);
+  let nextDate = new Date(Math.max(start.getTime(), fromDate.getTime()));
+
+  // Handle end conditions
+  if (config.endByDate && nextDate > new Date(config.endByDate)) {
+    return null;
+  }
+
+  // For now, implement basic interval-based custom patterns
+  // This can be extended for more complex patterns
+  const intervalDays = config.interval * 7; // Assuming weekly intervals for simplicity
+  const daysSinceStart = Math.floor((nextDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  const nextIntervalDays = Math.ceil((daysSinceStart + 1) / intervalDays) * intervalDays;
+
+  nextDate = new Date(start);
+  nextDate.setDate(start.getDate() + nextIntervalDays);
+
+  return nextDate;
+};
+
+/**
+ * Get all occurrences for a budget in a date range
+ */
+export const getBudgetOccurrences = (
+  budget: Budget,
+  startDate: Date,
+  endDate: Date
+): Date[] => {
+  const occurrences: Date[] = [];
+  let currentDate = calculateNextOccurrence(budget, startDate);
+
+  while (currentDate && currentDate <= endDate) {
+    occurrences.push(new Date(currentDate));
+
+    // Calculate next occurrence after current
+    currentDate.setDate(currentDate.getDate() + 1);
+    currentDate = calculateNextOccurrence(budget, currentDate);
+  }
+
+  return occurrences;
+};
+
+/**
+ * Get upcoming occurrences for all budgets
+ */
+export const getUpcomingOccurrences = async (
+  daysAhead: number = 30
+): Promise<UpcomingOccurrence[]> => {
+  const budgets = await fetchBudgets({ isActive: true });
+  const now = new Date();
+  const endDate = new Date();
+  endDate.setDate(now.getDate() + daysAhead);
+
+  const upcomingOccurrences: UpcomingOccurrence[] = [];
+
+  for (const budget of budgets) {
+    const nextOccurrence = calculateNextOccurrence(budget, now);
+
+    if (nextOccurrence && nextOccurrence <= endDate) {
+      const daysUntil = Math.ceil((nextOccurrence.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+      upcomingOccurrences.push({
+        budgetId: budget.id,
+        budgetName: budget.name,
+        occurrenceDate: nextOccurrence.toISOString(),
+        plannedAmount: budget.amount,
+        daysUntil,
+        category: budget.category,
+        type: budget.type,
+      });
+    }
+  }
+
+  // Sort by occurrence date
+  return upcomingOccurrences.sort((a, b) =>
+    new Date(a.occurrenceDate).getTime() - new Date(b.occurrenceDate).getTime()
+  );
+};
+
+/**
+ * Enhanced calculate monthly occurrences with recurring config (simplified)
+ */
+export const calculateMonthlyOccurrencesEnhanced = (
+  budget: Budget,
   year: number,
   month: number
 ): number => {
-  const start = new Date(startDate);
+  const start = new Date(budget.startDate);
   const monthStart = new Date(year, month - 1, 1);
   const monthEnd = new Date(year, month, 0);
 
   // If budget starts after this month, no occurrences
   if (start > monthEnd) return 0;
 
-  switch (frequency) {
+  // If budget has ended before this month, no occurrences
+  if (budget.endDate && new Date(budget.endDate) < monthStart) return 0;
+
+  switch (budget.frequency) {
     case 'weekly':
-      // Calculate weeks in the month
+      // Calculate weeks in the month (simplified)
       const weeksInMonth = Math.ceil((monthEnd.getDate() - Math.max(1, start.getDate())) / 7) + 1;
-      return Math.max(0, Math.min(4, weeksInMonth));
+      return Math.max(0, Math.min(5, weeksInMonth));
 
     case 'bi-weekly':
-      // Calculate bi-weekly occurrences
+      // Calculate bi-weekly occurrences (simplified)
       const biWeeksInMonth = Math.ceil((monthEnd.getDate() - Math.max(1, start.getDate())) / 14) + 1;
-      return Math.max(0, Math.min(2, biWeeksInMonth));
+      return Math.max(0, Math.min(3, biWeeksInMonth));
 
     case 'monthly':
       return 1;
@@ -79,14 +266,42 @@ export const calculateMonthlyOccurrences = (
 };
 
 /**
- * Calculate planned amount for a specific month
+ * Calculate projected monthly total based on historical data
+ */
+export const calculateProjectedMonthlyTotal = async (
+  budgetId: string,
+  year: number,
+  month: number
+): Promise<number> => {
+  // Get historical data for the same budget
+  const transactions = await getOfflineData('transactions', { budget_id: budgetId });
+
+  // Filter to same month in previous years
+  const historicalTransactions = transactions.filter(t => {
+    const transactionDate = new Date(t.date);
+    return transactionDate.getMonth() + 1 === month && transactionDate.getFullYear() < year;
+  });
+
+  if (historicalTransactions.length === 0) {
+    return 0;
+  }
+
+  // Calculate average for this month across previous years
+  const totalHistorical = historicalTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+  const yearsOfData = new Set(historicalTransactions.map(t => new Date(t.date).getFullYear())).size;
+
+  return totalHistorical / yearsOfData;
+};
+
+/**
+ * Calculate planned amount for a specific month (enhanced)
  */
 export const calculatePlannedAmount = (
   budget: Budget,
   year: number,
   month: number
 ): number => {
-  const occurrences = calculateMonthlyOccurrences(budget.frequency, budget.startDate, year, month);
+  const occurrences = calculateMonthlyOccurrencesEnhanced(budget, year, month);
   return budget.amount * occurrences;
 };
 
@@ -124,7 +339,7 @@ const fetchBudgets = async (filters?: BudgetFilters): Promise<Budget[]> => {
 };
 
 /**
- * Fetch budget summary for a specific month
+ * Fetch budget summary for a specific month (enhanced)
  */
 const fetchBudgetSummary = async (budgetId: string, year: number, month: number): Promise<BudgetSummary> => {
   const { isOnline } = getNetworkStatus();
@@ -150,10 +365,29 @@ const fetchBudgetSummary = async (budgetId: string, year: number, month: number)
 
   const actual = monthTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
 
-  // Get budget to calculate planned amount
+  // Get budget to calculate planned amount and recurring info
   const budgets = await getOfflineData<Budget>('budgets', { id: budgetId });
   const budget = budgets[0];
-  const planned = budget ? calculatePlannedAmount(budget, year, month) : 0;
+
+  if (!budget) {
+    throw new Error('Budget not found');
+  }
+
+  const planned = calculatePlannedAmount(budget, year, month);
+  const occurrencesThisMonth = calculateMonthlyOccurrencesEnhanced(budget, year, month);
+  const nextOccurrence = calculateNextOccurrence(budget);
+  const projectedMonthlyTotal = await calculateProjectedMonthlyTotal(budgetId, year, month);
+
+  // Calculate total occurrences since budget start
+  const budgetStart = new Date(budget.startDate);
+  const currentDate = new Date(year, month - 1, 1);
+  const totalOccurrences = getBudgetOccurrences(budget, budgetStart, currentDate).length;
+
+  // Calculate average actual amount
+  const allTransactions = await getOfflineData('transactions', { budget_id: budgetId });
+  const averageActual = allTransactions.length > 0
+    ? allTransactions.reduce((sum, t) => sum + (t.amount || 0), 0) / allTransactions.length
+    : 0;
 
   return {
     budgetId,
@@ -163,11 +397,16 @@ const fetchBudgetSummary = async (budgetId: string, year: number, month: number)
     percentUsed: planned > 0 ? (actual / planned) * 100 : 0,
     isOverBudget: actual > planned,
     transactionCount: monthTransactions.length,
+    nextOccurrence: nextOccurrence?.toISOString(),
+    occurrencesThisMonth,
+    totalOccurrences,
+    averageActual,
+    projectedMonthlyTotal,
   };
 };
 
 /**
- * Fetch monthly budget overview
+ * Fetch monthly budget overview (enhanced)
  */
 const fetchMonthlyOverview = async (year: number, month: number): Promise<MonthlyBudgetOverview> => {
   const budgets = await fetchBudgets({ isActive: true });
@@ -207,6 +446,36 @@ const fetchMonthlyOverview = async (year: number, month: number): Promise<Monthl
     budgetCount: data.budgetCount,
   }));
 
+  // Create recurring budget overview
+  const recurringBudgets = budgetsWithSummary
+    .filter(budget => budget.frequency !== 'one-time')
+    .map(budget => {
+      const plannedOccurrences = calculateMonthlyOccurrencesEnhanced(budget, year, month);
+      const actualOccurrences = budget.summary.transactionCount;
+      const nextOccurrence = calculateNextOccurrence(budget);
+
+      return {
+        budgetId: budget.id,
+        name: budget.name,
+        frequency: budget.frequency,
+        plannedOccurrences,
+        actualOccurrences,
+        totalPlanned: budget.summary.planned,
+        totalActual: budget.summary.actual,
+        nextOccurrence: nextOccurrence?.toISOString(),
+        isOnTrack: actualOccurrences >= plannedOccurrences * 0.8, // 80% threshold
+      };
+    });
+
+  // Get upcoming occurrences for this month
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd = new Date(year, month, 0);
+  const upcomingOccurrences = await getUpcomingOccurrences(30);
+  const monthlyUpcoming = upcomingOccurrences.filter(occurrence => {
+    const occurrenceDate = new Date(occurrence.occurrenceDate);
+    return occurrenceDate >= monthStart && occurrenceDate <= monthEnd;
+  });
+
   return {
     year,
     month,
@@ -215,6 +484,8 @@ const fetchMonthlyOverview = async (year: number, month: number): Promise<Monthl
     totalRemaining,
     budgets: budgetsWithSummary,
     categories,
+    recurringBudgets,
+    upcomingOccurrences: monthlyUpcoming,
   };
 };
 
@@ -408,6 +679,24 @@ export const useUpdateBudget = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.budgets });
       queryClient.invalidateQueries({ queryKey: queryKeys.budget(data.id) });
     },
+  });
+};
+
+export const useUpcomingOccurrences = (daysAhead: number = 30) => {
+  return useQuery({
+    queryKey: queryKeys.upcomingOccurrences(daysAhead),
+    queryFn: () => getUpcomingOccurrences(daysAhead),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useRecurringBudgets = () => {
+  return useQuery({
+    queryKey: queryKeys.recurringBudgets,
+    queryFn: () => fetchBudgets({ frequency: 'weekly' }).then(budgets =>
+      budgets.filter(b => b.frequency !== 'one-time')
+    ),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 

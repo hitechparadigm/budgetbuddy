@@ -24,10 +24,12 @@ import {
   UpdateBudgetRequest,
   BudgetType,
   BudgetFrequency,
+  RecurringBudgetConfig,
   BUDGET_CATEGORIES,
   FREQUENCY_LABELS,
   BUDGET_TYPE_CONFIG,
 } from '../types/budget';
+import RecurringBudgetConfigComponent from './RecurringBudgetConfig';
 
 interface BudgetFormProps {
   visible: boolean;
@@ -46,6 +48,7 @@ interface FormData {
   endDate: string;
   type: BudgetType;
   description: string;
+  recurringConfig: RecurringBudgetConfig;
 }
 
 const initialFormData: FormData = {
@@ -57,6 +60,7 @@ const initialFormData: FormData = {
   endDate: '',
   type: 'expense',
   description: '',
+  recurringConfig: {},
 };
 
 export default function BudgetForm({
@@ -86,6 +90,7 @@ export default function BudgetForm({
         endDate: budget.endDate?.split('T')[0] || '',
         type: budget.type,
         description: budget.description || '',
+        recurringConfig: budget.recurringConfig || {},
       });
     } else {
       setFormData(initialFormData);
@@ -136,6 +141,7 @@ export default function BudgetForm({
       endDate: formData.endDate || undefined,
       type: formData.type,
       description: formData.description.trim() || undefined,
+      recurringConfig: formData.frequency !== 'one-time' ? formData.recurringConfig : undefined,
     };
 
     if (isEditing) {
@@ -512,6 +518,15 @@ export default function BudgetForm({
               <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
             </Pressable>
           </View>
+
+          {/* Recurring Budget Configuration */}
+          {formData.frequency !== 'one-time' && (
+            <RecurringBudgetConfigComponent
+              frequency={formData.frequency}
+              config={formData.recurringConfig}
+              onConfigChange={(config) => updateFormData('recurringConfig', config)}
+            />
+          )}
 
           <View style={dynamicStyles.section}>
             <Text style={dynamicStyles.sectionTitle}>Dates</Text>
