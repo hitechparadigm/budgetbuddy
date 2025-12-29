@@ -451,7 +451,6 @@ exports.handler = async (event, _context) => {
 
                 try {
                     // Try to get user by email
-                    const { AdminGetUserCommand } = require('@aws-sdk/client-cognito-identity-provider');
                     const getUserCommand = new AdminGetUserCommand({
                         UserPoolId: USER_POOL_ID,
                         Username: googleEmail
