@@ -18,7 +18,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.budgetbuddy.app",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Location is used to provide personalized budget suggestions"
+        "NSLocationWhenInUseUsageDescription": "Location is used to provide personalized budget suggestions and track transaction locations"
       }
     },
     "android": {
@@ -28,7 +28,8 @@
       },
       "package": "com.budgetbuddy.app",
       "permissions": [
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
