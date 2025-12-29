@@ -1,12 +1,12 @@
 # BudgetBuddy Requirements Document
 
-**Last Updated**: 2025-11-21
-**Status**: MVP Complete (99%)
-**Scope**: Web Application (Desktop/Tablet/Landscape)
+**Last Updated**: 2025-12-28
+**Status**: Market-Ready MVP Requirements Complete (35 Requirements)
+**Scope**: Web Application + Native Mobile Apps (iOS/Android)
 
 ## Introduction
 
-BudgetBuddy is a zero-based budgeting web application that helps users manage their monthly finances. The MVP focuses on core budgeting functionality with a clean, EveryDollar-inspired interface, AWS serverless backend, and comprehensive budget tracking capabilities.
+BudgetBuddy is a zero-based budgeting application with both web and native mobile apps that helps users manage their monthly finances. The market-ready MVP includes comprehensive budgeting functionality with a clean, EveryDollar-inspired interface, AWS serverless backend, native mobile apps, offline capability, and all essential features needed to compete in the personal finance app market.
 
 ## Glossary
 
@@ -19,6 +19,10 @@ BudgetBuddy is a zero-based budgeting web application that helps users manage th
 - **Planned Amount**: The budgeted amount for a category
 - **Spent Amount**: The actual amount spent/received in a category
 - **Budget Group**: A collection of categories (Income, Savings, or Expenses)
+- **Planned Item**: A budgeted category with an expected amount (e.g., "Salary: $5,000 bi-weekly")
+- **Actual Transaction**: A recorded income or expense transaction (e.g., "Received $4,500 salary on Dec 15")
+- **Recurring Frequency**: How often a planned item occurs (weekly, bi-weekly, monthly, annually)
+- **Recurrence Calculation**: Logic to determine how many occurrences of a recurring item should happen in a given month
 
 ## Requirements
 
@@ -494,3 +498,555 @@ The following features are not included in the current MVP:
 - Budget/transaction APIs require familyId to function
 - Users got stuck in onboarding loop unable to create or access budgets
 - Solution: Auto-create single-person family during registration process
+
+---
+
+### Requirement 18: Recurring Budget Planning 🔧 NEW
+
+**User Story:** As a user, I want to plan recurring income and expenses (like bi-weekly salary) with specific expected dates, so that the system correctly calculates my total planned amount for the month and clearly distinguishes between what I planned and what I actually received.
+
+#### Acceptance Criteria
+
+1. WHEN a user creates a planned item with bi-weekly frequency, THE System SHALL calculate how many occurrences happen in the current month
+2. WHEN a planned item is bi-weekly with $5,000 amount, THE System SHALL show the correct monthly planned total (e.g., $10,000 for a month with 2 pay periods)
+3. WHEN a user creates a planned item, THE System SHALL allow specifying the expected date for the first occurrence
+4. WHEN a user views a category, THE System SHALL display both the per-occurrence amount and the monthly total
+5. THE System SHALL support frequencies: weekly, bi-weekly, monthly, quarterly, annually
+6. WHEN calculating monthly totals, THE System SHALL account for partial months and varying month lengths
+7. THE System SHALL store the base amount (per occurrence) and calculate monthly totals dynamically
+8. WHEN a user edits a recurring item, THE System SHALL update the monthly planned total accordingly
+9. THE System SHALL show the specific expected dates for each occurrence within the month (e.g., "Dec 15, Dec 29")
+
+**Implementation Status**: Not started
+
+---
+
+### Requirement 19: Clear Planned vs Actual Display 🔧 NEW
+
+**User Story:** As a user, I want to clearly see the difference between what I planned to receive/spend and what I actually received/spent, so that I can track my budget performance accurately.
+
+#### Acceptance Criteria
+
+1. WHEN viewing a budget category, THE System SHALL display "Planned" and "Actual" columns with clear labels
+2. THE System SHALL show planned amounts in one color (e.g., blue) and actual amounts in another color (e.g., green for income, red for expenses)
+3. WHEN a category has recurring frequency, THE System SHALL show the frequency indicator (e.g., "🔄 Bi-weekly")
+4. THE System SHALL display the per-occurrence amount and total monthly planned amount separately
+5. WHEN actual amounts exceed planned amounts, THE System SHALL highlight the difference
+6. THE System SHALL calculate and display variance (Actual - Planned) for each category
+7. THE System SHALL use consistent terminology throughout the UI: "Planned" vs "Actual", not "Budgeted" vs "Spent"
+
+**Implementation Status**: Not started
+
+---
+
+### Requirement 20: Monthly Recurrence Logic 🔧 NEW
+
+**User Story:** As a system, I want to accurately calculate how many times a recurring item occurs in any given month, so that planned amounts are correct regardless of month length or start dates.
+
+#### Acceptance Criteria
+
+1. WHEN a bi-weekly item starts on January 1st, THE System SHALL correctly calculate occurrences for each subsequent month
+2. WHEN a monthly item is planned, THE System SHALL show exactly 1 occurrence per month
+3. WHEN a weekly item is planned, THE System SHALL calculate 4-5 occurrences based on the specific month
+4. THE System SHALL handle edge cases like February (28/29 days) and months with 5 Fridays
+5. WHEN a user changes the start date of a recurring item, THE System SHALL recalculate all future occurrences
+6. THE System SHALL store the next expected date for each recurring item
+7. WHEN copying budgets to future months, THE System SHALL preserve recurring settings and recalculate amounts
+8. WHEN calculating recurring dates across months, THE System SHALL maintain the exact interval (e.g., bi-weekly = every 14 days)
+9. WHEN a bi-weekly item occurs on Dec 5 and Dec 19, THE System SHALL correctly calculate the next occurrence as Jan 2
+10. THE System SHALL handle recurring items that span month boundaries correctly
+
+**Implementation Status**: Not started
+
+---
+
+### Requirement 21: Budget Item vs Transaction Clarity 🔧 NEW
+
+**User Story:** As a user, I want clear distinction between planning budget items and recording actual transactions, so that I understand whether I'm setting expectations or recording reality.
+
+#### Acceptance Criteria
+
+1. WHEN adding a budget item, THE System SHALL use terminology like "Plan Income Item" or "Plan Expense Item"
+2. WHEN adding a budget item, THE System SHALL allow specifying expected dates for when the income/expense will occur
+3. WHEN recording a transaction, THE System SHALL use terminology like "Record Actual Income" or "Record Actual Expense"
+4. THE System SHALL use different modal titles and button labels for planning vs recording
+5. WHEN viewing the budget, THE System SHALL clearly separate planned items from actual transactions
+6. THE System SHALL use visual indicators (icons, colors) to distinguish planning from recording
+7. WHEN a user hovers over amounts, THE System SHALL show tooltips explaining "Planned" vs "Actual"
+8. THE System SHALL provide help text explaining the difference between budget planning and transaction recording
+9. WHEN viewing planned items, THE System SHALL show the expected dates alongside the amounts
+
+**Implementation Status**: Not started
+
+---
+
+### Requirement 22: Native Mobile Apps (iOS/Android) 🚨 **2-WEEK MVP PRIORITY**
+
+**User Story:** As a mobile user, I want native iOS and Android apps so that I can manage my budget on-the-go with a fast, responsive mobile experience.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide native iOS and Android applications built with React Native + Expo
+2. THE Mobile App SHALL reuse the existing AWS backend APIs without modification
+3. THE Mobile App SHALL support all core budget functionality: create budgets, add transactions, view summaries
+4. THE Mobile App SHALL provide mobile-optimized navigation with bottom tabs and stack navigation
+5. THE Mobile App SHALL handle authentication using the existing Cognito JWT tokens
+6. THE Mobile App SHALL work offline for viewing existing budget data and adding transactions
+7. THE Mobile App SHALL sync data when internet connection is restored
+8. THE Mobile App SHALL provide native mobile UI components (iOS/Android design systems)
+9. THE Mobile App SHALL support biometric authentication (Face ID, Touch ID, Fingerprint)
+10. THE Mobile App SHALL be deployable to App Store and Google Play Store
+
+**Implementation Status**: Not started
+**Priority**: Critical (2-Week MVP)
+**Technology**: React Native + Expo
+
+---
+
+### Requirement 23: Mobile-Optimized User Experience 📱 **2-WEEK MVP PRIORITY**
+
+**User Story:** As a mobile user, I want a touch-optimized interface designed for small screens so that I can quickly add transactions and check my budget while on-the-go.
+
+#### Acceptance Criteria
+
+1. THE Mobile App SHALL use bottom tab navigation for main sections (Budget, Transactions, Summary, Settings)
+2. THE Mobile App SHALL provide large, touch-friendly buttons and input fields
+3. THE Mobile App SHALL use native mobile gestures (swipe, pull-to-refresh, long press)
+4. THE Mobile App SHALL optimize the transaction entry flow for speed (minimal taps)
+5. THE Mobile App SHALL provide quick-add shortcuts for common transactions
+6. THE Mobile App SHALL use mobile-appropriate font sizes and spacing
+7. THE Mobile App SHALL handle both portrait and landscape orientations
+8. THE Mobile App SHALL provide haptic feedback for user actions
+9. THE Mobile App SHALL use native loading states and error messages
+10. THE Mobile App SHALL support dark mode based on device settings
+
+**Implementation Status**: Not started
+**Priority**: Critical (2-Week MVP)
+
+---
+
+### Requirement 24: Offline Data Capability 🔄 **2-WEEK MVP PRIORITY**
+
+**User Story:** As a mobile user, I want to add transactions and view my budget even without internet connection, so that I can track expenses anywhere.
+
+#### Acceptance Criteria
+
+1. THE Mobile App SHALL store budget and transaction data locally using AsyncStorage
+2. THE Mobile App SHALL allow adding transactions while offline
+3. THE Mobile App SHALL queue offline transactions for sync when connection is restored
+4. THE Mobile App SHALL display cached budget data when offline
+5. THE Mobile App SHALL show connection status to the user
+6. THE Mobile App SHALL automatically sync data when internet connection is detected
+7. THE Mobile App SHALL handle sync conflicts gracefully (offline changes vs server changes)
+8. THE Mobile App SHALL provide manual sync option in settings
+9. THE Mobile App SHALL work for at least 7 days offline with full functionality
+10. THE Mobile App SHALL notify users of pending sync operations
+
+**Implementation Status**: Not started
+**Priority**: Critical (2-Week MVP)
+
+---
+
+### Requirement 25: Mobile Security & Authentication 🔒 **2-WEEK MVP PRIORITY**
+
+**User Story:** As a mobile user, I want secure and convenient authentication options so that my financial data is protected but easily accessible.
+
+#### Acceptance Criteria
+
+1. THE Mobile App SHALL support biometric authentication (Face ID, Touch ID, Fingerprint)
+2. THE Mobile App SHALL provide PIN code authentication as fallback
+3. THE Mobile App SHALL securely store JWT tokens using Keychain (iOS) and Keystore (Android)
+4. THE Mobile App SHALL automatically lock after 5 minutes of inactivity
+5. THE Mobile App SHALL require authentication when app returns from background after 1 minute
+6. THE Mobile App SHALL provide "Stay logged in" option for trusted devices
+7. THE Mobile App SHALL clear sensitive data when app is backgrounded (privacy screen)
+8. THE Mobile App SHALL handle token refresh automatically
+9. THE Mobile App SHALL provide secure logout that clears all local data
+10. THE Mobile App SHALL comply with mobile security best practices
+
+**Implementation Status**: Not started
+**Priority**: Critical (2-Week MVP)
+
+---
+
+### Requirement 26: Data Export and Backup 🚨 **ESSENTIAL**
+
+**User Story:** As a user, I want to export my budget data and create backups so that I can access my financial information outside the app and ensure I never lose my data.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide CSV export for all budget data (categories, transactions, summaries)
+2. THE BudgetBuddy SHALL provide PDF export for monthly budget reports
+3. THE BudgetBuddy SHALL allow users to export data for specific date ranges
+4. THE BudgetBuddy SHALL provide full data backup in JSON format
+5. THE BudgetBuddy SHALL allow users to restore data from backup files
+6. THE BudgetBuddy SHALL include all user data in exports (budgets, transactions, categories, settings)
+7. THE BudgetBuddy SHALL format exported data in standard, readable formats
+8. THE BudgetBuddy SHALL provide export functionality in both web and mobile apps
+9. THE BudgetBuddy SHALL allow scheduled automatic backups (weekly/monthly)
+10. THE BudgetBuddy SHALL notify users before data deletion with export option
+
+**Implementation Status**: Not started
+**Priority**: Critical (Essential for user trust)
+
+---
+
+### Requirement 27: Onboarding and Tutorial 📱 **HIGH PRIORITY**
+
+**User Story:** As a new user, I want guided onboarding and tutorials so that I can quickly understand how to use the app and set up my first budget effectively.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide an interactive tutorial for first-time users
+2. THE BudgetBuddy SHALL offer a sample budget with pre-filled categories and transactions
+3. THE BudgetBuddy SHALL guide users through creating their first budget step-by-step
+4. THE BudgetBuddy SHALL provide contextual help tooltips throughout the app
+5. THE BudgetBuddy SHALL offer a "Getting Started" guide accessible from settings
+6. THE BudgetBuddy SHALL highlight key features during the first few sessions
+7. THE BudgetBuddy SHALL provide video tutorials or animated guides for complex features
+8. THE BudgetBuddy SHALL allow users to skip or replay tutorial sections
+9. THE BudgetBuddy SHALL track onboarding completion and offer help for incomplete steps
+10. THE BudgetBuddy SHALL provide different onboarding flows for web vs mobile
+
+**Implementation Status**: Not started
+**Priority**: High (User Experience)
+
+---
+
+### Requirement 28: Search and Filtering 📱 **HIGH PRIORITY**
+
+**User Story:** As a user with many transactions, I want to search and filter my financial data so that I can quickly find specific transactions or analyze spending patterns.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide search functionality for transactions by description, amount, or category
+2. THE BudgetBuddy SHALL allow filtering transactions by date range
+3. THE BudgetBuddy SHALL allow filtering transactions by category or budget group
+4. THE BudgetBuddy SHALL allow filtering transactions by amount range (min/max)
+5. THE BudgetBuddy SHALL provide search functionality for budget categories
+6. THE BudgetBuddy SHALL show search results with highlighting of matched terms
+7. THE BudgetBuddy SHALL provide recent searches and search suggestions
+8. THE BudgetBuddy SHALL allow combining multiple filters (date + category + amount)
+9. THE BudgetBuddy SHALL provide quick filter buttons for common searches (this month, last month, overspent)
+10. THE BudgetBuddy SHALL maintain search/filter state when navigating between screens
+
+**Implementation Status**: Not started
+**Priority**: High (Essential for users with many transactions)
+
+---
+
+### Requirement 29: Notifications and Reminders 📱 **HIGH PRIORITY**
+
+**User Story:** As a user, I want notifications and reminders so that I stay aware of my budget status and don't miss important financial deadlines.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL send push notifications when categories are overspent
+2. THE BudgetBuddy SHALL send budget alerts when approaching spending limits (80%, 90%, 100%)
+3. THE BudgetBuddy SHALL provide bill reminders for recurring planned items
+4. THE BudgetBuddy SHALL send monthly budget summary notifications
+5. THE BudgetBuddy SHALL allow users to customize notification preferences
+6. THE BudgetBuddy SHALL provide in-app notifications for important events
+7. THE BudgetBuddy SHALL send reminders to add transactions if none recorded for 3+ days
+8. THE BudgetBuddy SHALL notify users of large transactions (user-defined threshold)
+9. THE BudgetBuddy SHALL provide weekly spending summary notifications
+10. THE BudgetBuddy SHALL allow users to disable specific notification types
+
+**Implementation Status**: Not started
+**Priority**: High (Critical for engagement)
+
+---
+
+### Requirement 30: Multi-Currency Support 📱 **HIGH PRIORITY**
+
+**User Story:** As an international user, I want to use my local currency and handle multiple currencies so that I can track my finances accurately regardless of my location.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL support major currencies (USD, EUR, GBP, CAD, AUD, JPY)
+2. THE BudgetBuddy SHALL allow users to select their primary currency during onboarding
+3. THE BudgetBuddy SHALL display all amounts in the user's selected currency
+4. THE BudgetBuddy SHALL provide currency conversion for multi-currency transactions
+5. THE BudgetBuddy SHALL update exchange rates daily from a reliable source
+6. THE BudgetBuddy SHALL allow users to change their primary currency in settings
+7. THE BudgetBuddy SHALL handle currency formatting according to locale (symbols, decimal places)
+8. THE BudgetBuddy SHALL provide exchange rate information for converted transactions
+9. THE BudgetBuddy SHALL support offline currency conversion using cached rates
+10. THE BudgetBuddy SHALL allow manual exchange rate entry when automatic rates unavailable
+
+**Implementation Status**: Not started
+**Priority**: High (Global market requirement)
+
+---
+
+### Requirement 31: Basic Reporting and Analytics 📊 **MEDIUM PRIORITY**
+
+**User Story:** As a user, I want basic reports and spending insights so that I can understand my financial patterns and make better budgeting decisions.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide monthly spending comparison (current vs previous months)
+2. THE BudgetBuddy SHALL show spending trends for the last 3-6 months
+3. THE BudgetBuddy SHALL display top spending categories with percentages
+4. THE BudgetBuddy SHALL provide income vs expenses summary charts
+5. THE BudgetBuddy SHALL show budget performance metrics (planned vs actual)
+6. THE BudgetBuddy SHALL highlight unusual spending patterns or large transactions
+7. THE BudgetBuddy SHALL provide category-wise spending trends over time
+8. THE BudgetBuddy SHALL show savings rate and emergency fund progress
+9. THE BudgetBuddy SHALL provide simple financial insights and recommendations
+10. THE BudgetBuddy SHALL allow exporting reports as PDF or images
+
+**Implementation Status**: Not started
+**Priority**: Medium (Competitive feature)
+
+---
+
+### Requirement 32: Advanced Category Management 📊 **MEDIUM PRIORITY**
+
+**User Story:** As a user, I want advanced category management options so that I can organize my budget in a way that matches my personal financial structure.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL allow users to create custom budget categories
+2. THE BudgetBuddy SHALL provide a library of common category templates
+3. THE BudgetBuddy SHALL allow users to customize category icons and colors
+4. THE BudgetBuddy SHALL support subcategories for detailed expense tracking
+5. THE BudgetBuddy SHALL allow merging and splitting categories
+6. THE BudgetBuddy SHALL provide category usage analytics (frequency, amounts)
+7. THE BudgetBuddy SHALL allow hiding/archiving unused categories
+8. THE BudgetBuddy SHALL support category budgets with rollover options
+9. THE BudgetBuddy SHALL allow bulk category operations (delete, merge, edit)
+10. THE BudgetBuddy SHALL maintain category history when categories are modified
+
+**Implementation Status**: Not started
+**Priority**: Medium (User personalization)
+
+---
+
+### Requirement 33: Quick Actions and Shortcuts 📊 **MEDIUM PRIORITY**
+
+**User Story:** As a frequent user, I want quick actions and shortcuts so that I can perform common tasks faster and more efficiently.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide quick-add buttons for recent transactions
+2. THE BudgetBuddy SHALL show favorite categories for faster transaction entry
+3. THE BudgetBuddy SHALL provide transaction templates for recurring expenses
+4. THE BudgetBuddy SHALL offer swipe gestures for common actions (delete, edit, duplicate)
+5. THE BudgetBuddy SHALL provide keyboard shortcuts for web app power users
+6. THE BudgetBuddy SHALL show recent transactions for quick duplication
+7. THE BudgetBuddy SHALL provide bulk transaction operations (select multiple, bulk edit)
+8. THE BudgetBuddy SHALL offer voice input for transaction descriptions (mobile)
+9. THE BudgetBuddy SHALL provide camera integration for receipt scanning (future)
+10. THE BudgetBuddy SHALL remember user preferences for faster workflows
+
+**Implementation Status**: Not started
+**Priority**: Medium (Speed and efficiency)
+
+---
+
+### Requirement 34: Enhanced Security and Privacy 🔒 **HIGH PRIORITY**
+
+**User Story:** As a user storing sensitive financial data, I want enhanced security and privacy controls so that my information is protected and I have control over my data.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide two-factor authentication (2FA) options
+2. THE BudgetBuddy SHALL offer session management with device tracking
+3. THE BudgetBuddy SHALL provide privacy screen when app is backgrounded
+4. THE BudgetBuddy SHALL allow users to delete their account and all data
+5. THE BudgetBuddy SHALL provide data download before account deletion
+6. THE BudgetBuddy SHALL encrypt sensitive data at rest and in transit
+7. THE BudgetBuddy SHALL provide security audit logs for user review
+8. THE BudgetBuddy SHALL offer privacy settings for data sharing preferences
+9. THE BudgetBuddy SHALL comply with GDPR, CCPA, and other privacy regulations
+10. THE BudgetBuddy SHALL provide transparent privacy policy and data usage information
+
+**Implementation Status**: Not started
+**Priority**: High (Security and compliance)
+
+---
+
+### Requirement 35: Freemium Business Model 💰 **MEDIUM PRIORITY**
+
+**User Story:** As a business, I want a sustainable freemium model so that I can offer value to free users while generating revenue from premium features.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide a free tier with core budgeting functionality
+2. THE BudgetBuddy SHALL limit free users to 3 budgets and 100 transactions per month
+3. THE BudgetBuddy SHALL offer premium subscription with unlimited budgets and transactions
+4. THE BudgetBuddy SHALL provide premium features: advanced reports, data export, multi-currency
+5. THE BudgetBuddy SHALL offer family sharing as a premium feature
+6. THE BudgetBuddy SHALL provide clear upgrade prompts without being intrusive
+7. THE BudgetBuddy SHALL offer monthly and annual subscription options
+8. THE BudgetBuddy SHALL provide free trial period for premium features
+9. THE BudgetBuddy SHALL handle subscription management and billing
+10. THE BudgetBuddy SHALL maintain feature parity between web and mobile for premium users
+
+**Implementation Status**: Not started
+**Priority**: Medium (Business sustainability)
+
+## Updated Success Metrics for Market-Ready MVP
+
+- **User Acquisition**: 1000+ downloads in first month
+- **User Retention**: 40%+ monthly active users after 3 months
+- **Core Functionality**: User can complete full budget cycle in < 5 minutes
+- **Mobile Performance**: App loads in < 3 seconds, 60fps animations
+- **Offline Capability**: 7+ days offline functionality without data loss
+- **Security**: Zero security incidents, 100% data encryption
+- **Export/Backup**: 95%+ successful data exports
+- **Multi-Platform**: Feature parity between web and mobile (95%+)
+- **Premium Conversion**: 5%+ free-to-premium conversion rate
+- **App Store Rating**: 4.0+ stars on both iOS and Android
+
+## Implementation Priority for 2-Week MVP
+
+### **Week 1 Focus (Critical)**
+- Requirements 22-25: Mobile apps, offline capability, security
+- Core recurring budget planning (Requirements 18-21)
+
+### **Week 2 Focus (High Priority)**
+- Requirements 26-27: Data export, onboarding
+- Requirements 28-30: Search, notifications, multi-currency (basic)
+
+### **Post-MVP (Medium Priority)**
+- Requirements 31-35: Advanced features, business model
+
+This comprehensive set of 35 requirements now covers all aspects needed for a market-ready MVP that can compete with established personal finance apps.
+---
+
+### Requirement 36: Calendar View for Expenses 📅 **HIGH PRIORITY**
+
+**User Story:** As a user, I want to view my expenses in a calendar format so that I can see spending patterns over time and identify specific dates with high or unusual spending.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide a calendar view showing expenses by date
+2. THE BudgetBuddy SHALL display daily spending totals on each calendar date
+3. THE BudgetBuddy SHALL allow users to click on dates to see detailed transactions
+4. THE BudgetBuddy SHALL use color coding to indicate spending levels (low, medium, high)
+5. THE BudgetBuddy SHALL show monthly spending trends in the calendar view
+6. THE BudgetBuddy SHALL allow filtering calendar view by category or amount range
+7. THE BudgetBuddy SHALL support both monthly and weekly calendar layouts
+8. THE BudgetBuddy SHALL highlight recurring transaction dates
+9. THE BudgetBuddy SHALL show budget vs actual spending for each day
+10. THE BudgetBuddy SHALL provide calendar navigation between months and years
+
+**Implementation Status**: Not started
+**Priority**: High (User Experience)
+
+---
+
+### Requirement 37: Bank Account Integration with AI Categorization 🏦 **HIGH PRIORITY**
+
+**User Story:** As a user, I want to connect my bank accounts and automatically import transactions with AI-powered categorization so that I don't have to manually enter every transaction.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL integrate with major banks using Open Banking APIs or Plaid
+2. THE BudgetBuddy SHALL securely connect to user bank accounts with proper authentication
+3. THE BudgetBuddy SHALL automatically download new transactions daily
+4. THE BudgetBuddy SHALL use AI to categorize transactions based on merchant and description
+5. THE BudgetBuddy SHALL learn from user corrections to improve categorization accuracy
+6. THE BudgetBuddy SHALL suggest categories based on merchant patterns (e.g., Costco → Groceries)
+7. THE BudgetBuddy SHALL allow users to review and approve imported transactions
+8. THE BudgetBuddy SHALL handle duplicate transaction detection and prevention
+9. THE BudgetBuddy SHALL support multiple bank accounts per user
+10. THE BudgetBuddy SHALL provide transaction matching with existing manual entries
+
+**Implementation Status**: Not started
+**Priority**: High (Automation and convenience)
+
+---
+
+### Requirement 38: AI-Powered Insights and Analytics 🤖 **HIGH PRIORITY**
+
+**User Story:** As a user, I want AI-powered insights about my spending patterns so that I can make better financial decisions and optimize my budget.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL analyze spending patterns and provide personalized insights
+2. THE BudgetBuddy SHALL identify unusual spending and alert users to potential issues
+3. THE BudgetBuddy SHALL suggest budget optimizations based on spending history
+4. THE BudgetBuddy SHALL predict future spending based on historical patterns
+5. THE BudgetBuddy SHALL provide seasonal spending analysis and recommendations
+6. THE BudgetBuddy SHALL identify opportunities for savings in different categories
+7. THE BudgetBuddy SHALL compare user spending to similar demographic groups
+8. THE BudgetBuddy SHALL provide goal-based recommendations (e.g., saving for vacation)
+9. THE BudgetBuddy SHALL generate monthly financial health reports
+10. THE BudgetBuddy SHALL use natural language to explain insights in plain English
+
+**Implementation Status**: Not started
+**Priority**: High (Competitive differentiation)
+
+---
+
+### Requirement 39: AI-Powered Onboarding with Location-Based Suggestions 🎯 **HIGH PRIORITY**
+
+**User Story:** As a new user, I want AI to help me set up my budget by suggesting relevant expense categories based on my location and family situation so that I can get started quickly with a personalized budget.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL use AI to suggest expense categories based on user location
+2. THE BudgetBuddy SHALL customize category suggestions based on family size and composition
+3. THE BudgetBuddy SHALL provide location-specific cost estimates (e.g., average rent in user's city)
+4. THE BudgetBuddy SHALL suggest local services and typical expenses for the area
+5. THE BudgetBuddy SHALL adapt suggestions based on urban vs rural location
+6. THE BudgetBuddy SHALL provide climate-based expense suggestions (heating, cooling costs)
+7. THE BudgetBuddy SHALL suggest transportation options based on location (public transit, car expenses)
+8. THE BudgetBuddy SHALL customize entertainment and dining suggestions for local culture
+9. THE BudgetBuddy SHALL provide realistic budget amounts based on local cost of living
+10. THE BudgetBuddy SHALL learn from user selections to improve future suggestions
+
+**Implementation Status**: Not started
+**Priority**: High (User onboarding experience)
+
+---
+
+### Requirement 40: Google Account Authentication 🔐 **HIGH PRIORITY**
+
+**User Story:** As a user, I want to log in with my Google account so that I can access the app quickly without creating a separate password.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide Google Sign-In option on login screen
+2. THE BudgetBuddy SHALL integrate with Google OAuth 2.0 for secure authentication
+3. THE BudgetBuddy SHALL automatically create user profile from Google account information
+4. THE BudgetBuddy SHALL support Google Sign-In on both web and mobile platforms
+5. THE BudgetBuddy SHALL handle Google account linking with existing email accounts
+6. THE BudgetBuddy SHALL provide option to unlink Google account in settings
+7. THE BudgetBuddy SHALL maintain session consistency across Google authentication
+8. THE BudgetBuddy SHALL handle Google account permission changes gracefully
+9. THE BudgetBuddy SHALL support Google Sign-In alongside existing email/password authentication
+10. THE BudgetBuddy SHALL comply with Google's authentication and privacy requirements
+
+**Implementation Status**: Not started
+**Priority**: High (User convenience and adoption)
+
+---
+
+### Requirement 41: Admin Dashboard and User Management 🔧 **HIGH PRIORITY**
+
+**User Story:** As an administrator, I want a comprehensive admin dashboard so that I can manage users, monitor system health, handle support requests, and maintain the platform effectively.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide a secure admin dashboard accessible only to authorized administrators
+2. THE Admin Dashboard SHALL display user management functionality including user search, account status, and basic user information
+3. THE Admin Dashboard SHALL allow administrators to view user account details, registration date, last login, and subscription status
+4. THE Admin Dashboard SHALL provide user account actions: disable/enable accounts, reset passwords, and delete accounts
+5. THE Admin Dashboard SHALL display system metrics: total users, active users, new registrations, subscription conversions
+6. THE Admin Dashboard SHALL show platform health metrics: API response times, error rates, database performance
+7. THE Admin Dashboard SHALL provide support ticket management for user inquiries and issues
+8. THE Admin Dashboard SHALL allow administrators to send system-wide notifications or maintenance alerts
+9. THE Admin Dashboard SHALL provide audit logs for all administrative actions with timestamps and admin user tracking
+10. THE Admin Dashboard SHALL include data export capabilities for user data, system metrics, and compliance reporting
+11. THE Admin Dashboard SHALL support role-based access control (super admin, support admin, read-only admin)
+12. THE Admin Dashboard SHALL provide subscription management: view plans, process refunds, handle billing issues
+13. THE Admin Dashboard SHALL display usage analytics: feature adoption, user engagement, retention metrics
+14. THE Admin Dashboard SHALL allow bulk user operations: bulk email, account migrations, data cleanup
+15. THE Admin Dashboard SHALL provide real-time monitoring alerts for system issues, security events, and critical errors
+
+**Implementation Status**: Not started
+**Priority**: High (Platform management and support)

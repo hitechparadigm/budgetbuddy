@@ -1,14 +1,14 @@
 # BudgetBuddy Design Document
 
-**Last Updated**: 2025-11-21
-**Status**: MVP Complete (99%)
-**Architecture**: AWS Serverless with React Frontend
+**Last Updated**: 2025-12-28
+**Status**: Market-Ready MVP Design Complete
+**Architecture**: AWS Serverless with React Web App + React Native Mobile Apps
 
 ## Overview
 
-BudgetBuddy is a zero-based budgeting web application built on AWS serverless architecture with a React frontend. The design follows EveryDollar's clean, three-column layout with focus on simplicity and speed.
+BudgetBuddy is a comprehensive zero-based budgeting platform with both web and native mobile applications built on AWS serverless architecture. The design follows EveryDollar's clean, intuitive interface while providing advanced features like recurring budget planning, offline capability, multi-currency support, and comprehensive data export options.
 
-**Core Design Principle:** Users should manage their budget effortlessly with minimal clicks and maximum clarity.
+**Core Design Principle:** Users should manage their budget effortlessly across all devices with minimal clicks, maximum clarity, and complete data ownership.
 
 ## Architecture
 
@@ -19,10 +19,15 @@ BudgetBuddy is a zero-based budgeting web application built on AWS serverless ar
 │                        Client Layer                              │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │  React Web App (Vite + TypeScript + Tailwind CSS)       │  │
-│  │  - Authentication UI                                      │  │
-│  │  - Budget Management Interface                           │  │
-│  │  - Transaction Recording                                 │  │
-│  │  - Summary Visualization                                 │  │
+│  │  - Desktop & Tablet Experience                           │  │
+│  │  - Advanced Features & Admin                             │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  React Native Mobile Apps (iOS + Android)               │  │
+│  │  - Mobile-First Experience                               │  │
+│  │  - Offline Capability                                    │  │
+│  │  - Biometric Authentication                              │  │
+│  │  - Push Notifications                                    │  │
 │  └──────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
                               ↓ HTTPS
@@ -36,6 +41,8 @@ BudgetBuddy is a zero-based budgeting web application built on AWS serverless ar
 │  │  API Gateway (REST API)                                   │  │
 │  │  - /auth/* endpoints                                      │  │
 │  │  - /budget/* endpoints                                    │  │
+│  │  - /export/* endpoints (NEW)                             │  │
+│  │  - /notifications/* endpoints (NEW)                      │  │
 │  │  - JWT token validation                                   │  │
 │  │  - CORS configuration                                     │  │
 │  └──────────────────────────────────────────────────────────┘  │
@@ -46,6 +53,10 @@ BudgetBuddy is a zero-based budgeting web application built on AWS serverless ar
 │  │  │ Auth       │  │ Budget     │  │ Transaction│        │  │
 │  │  │ Handler    │  │ Handler    │  │ Handler    │        │  │
 │  │  └────────────┘  └────────────┘  └────────────┘        │  │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐        │  │
+│  │  │ Export     │  │ Notification│  │ Currency   │        │  │
+│  │  │ Handler    │  │ Handler    │  │ Handler    │        │  │
+│  │  └────────────┘  └────────────┘  └────────────┘        │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │                              ↓                                   │
 │  ┌──────────────────────────────────────────────────────────┐  │
@@ -53,14 +64,25 @@ BudgetBuddy is a zero-based budgeting web application built on AWS serverless ar
 │  │  - User pools                                             │  │
 │  │  - JWT token generation                                   │  │
 │  │  - Password management                                    │  │
+│  │  - MFA support (NEW)                                     │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │                              ↓                                   │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │  DynamoDB (Data Storage)                                  │  │
 │  │  - Single table design                                    │  │
 │  │  - User data                                              │  │
-│  │  - Budget data                                            │  │
+│  │  - Budget data with recurring logic                      │  │
 │  │  - Transaction data                                       │  │
+│  │  - Notification preferences (NEW)                        │  │
+│  │  - Export history (NEW)                                  │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                              ↓                                   │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  Additional AWS Services                                  │  │
+│  │  - SNS (Push Notifications)                              │  │
+│  │  - SES (Email Notifications)                             │  │
+│  │  - S3 (Export File Storage)                              │  │
+│  │  - EventBridge (Scheduled Notifications)                 │  │
 │  └──────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -76,29 +98,44 @@ BudgetBuddy is a zero-based budgeting web application built on AWS serverless ar
 
 ## Technical Stack
 
-### Frontend
+### Frontend - Web Application
 - **Framework**: React 18 with TypeScript
 - **Build Tool**: Vite (fast development and optimized builds)
 - **Styling**: Tailwind CSS (utility-first CSS framework)
 - **Routing**: React Router v6 (client-side routing)
-- **State Management**: React useState/useEffect (no complex state library needed)
+- **State Management**: React useState/useEffect + React Query (API caching)
 - **HTTP Client**: Fetch API with custom wrapper
 - **Icons**: Emoji-based (no icon library needed)
+
+### Frontend - Mobile Applications
+- **Framework**: React Native with Expo (managed workflow)
+- **Language**: TypeScript
+- **Navigation**: React Navigation 6 (bottom tabs + stack navigation)
+- **State Management**: Zustand (lightweight state) + React Query (API caching)
+- **UI Components**: React Native Elements + Native Base
+- **Animations**: React Native Reanimated 3
+- **Offline Storage**: AsyncStorage + SQLite (for complex queries)
+- **Security**: Expo SecureStore (token storage) + LocalAuthentication (biometrics)
+- **Notifications**: Expo Notifications
+- **Network**: NetInfo (connection detection)
 
 ### Backend
 - **API**: AWS API Gateway (REST API)
 - **Compute**: AWS Lambda (Node.js 20)
 - **Authentication**: AWS Cognito User Pools
 - **Database**: Amazon DynamoDB (single-table design)
-- **Storage**: Amazon S3 (static assets)
+- **Storage**: Amazon S3 (static assets, export files)
 - **CDN**: Amazon CloudFront (global content delivery)
+- **Notifications**: Amazon SNS (push notifications) + SES (email)
+- **Scheduling**: Amazon EventBridge (recurring notifications)
 - **Infrastructure**: AWS CDK (TypeScript)
 
 ### Development Tools
 - **Package Manager**: npm
 - **Linting**: ESLint with TypeScript support
 - **Formatting**: Prettier
-- **Testing**: Jest (unit tests)
+- **Testing**: Jest (unit tests) + Detox (E2E mobile testing)
+- **Mobile Builds**: EAS Build (Expo Application Services)
 - **CI/CD**: GitHub Actions
 - **Version Control**: Git with GitHub
 
@@ -111,8 +148,35 @@ interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  timezone: string;         // NEW: IANA timezone (e.g., "America/New_York")
+  currency: string;         // NEW: Primary currency (USD, EUR, etc.)
+  location?: {              // NEW: User's location
+    country: string;
+    city: string;
+    zipCode: string;
+  };
+  preferences: {            // NEW: User preferences
+    notifications: NotificationPreferences;
+    theme: 'light' | 'dark' | 'system';
+    language: string;
+  };
+  subscription: {           // NEW: Subscription info
+    tier: 'free' | 'premium';
+    expiresAt?: string;
+    features: string[];
+  };
   createdAt: string;
   updatedAt: string;
+}
+
+interface NotificationPreferences {
+  pushEnabled: boolean;
+  emailEnabled: boolean;
+  budgetAlerts: boolean;
+  overspendingAlerts: boolean;
+  billReminders: boolean;
+  weeklyReports: boolean;
+  monthlyReports: boolean;
 }
 ```
 
@@ -148,13 +212,32 @@ interface BudgetCategory {
   id: string;
   name: string;             // e.g., "Salary", "Groceries"
   icon: string;             // Emoji
-  plannedAmount: number;
-  spentAmount: number;
+  color?: string;           // NEW: Custom color
+
+  // Recurring settings (NEW)
+  isRecurring: boolean;
+  recurringFrequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'annually';
+  baseAmount: number;       // Amount per occurrence
+  startDate?: string;       // When recurring started (first expected date)
+  endDate?: string;         // When recurring ends (optional)
+  nextExpectedDate?: string; // Next expected occurrence
+  expectedDates?: string[]; // All expected dates for current month
+  isPaused: boolean;        // Whether recurring is paused
+
+  // Calculated amounts
+  plannedMonthlyAmount: number; // Calculated from baseAmount * occurrences
+  actualAmount: number;     // Sum of all transactions (renamed from spentAmount)
+  variance: number;         // actualAmount - plannedMonthlyAmount
+
   transactions: Transaction[];
   order: number;
-  isRecurring: boolean;
-  recurringFrequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'annually';
-  nextDueDate?: string;
+
+  // Category management (NEW)
+  isCustom: boolean;        // User-created vs system category
+  parentCategoryId?: string; // For subcategories
+  isArchived: boolean;      // Hidden but preserved
+  usageCount: number;       // How often used
+  lastUsed?: string;        // Last transaction date
 }
 ```
 
@@ -165,8 +248,22 @@ interface Transaction {
   categoryId: string;
   amount: number;
   description: string;
+  merchant?: string;        // NEW: Merchant/payee name
   date: string;             // YYYY-MM-DD
+  currency?: string;        // NEW: Transaction currency (if different from user default)
+  exchangeRate?: number;    // NEW: Exchange rate used for conversion
+  location?: {              // NEW: Transaction location
+    latitude: number;
+    longitude: number;
+    address?: string;
+  };
+  tags?: string[];          // NEW: User-defined tags
+  receiptUrl?: string;      // NEW: Receipt image URL
+  isRecurring?: boolean;    // NEW: Part of recurring transaction
+  recurringTemplateId?: string; // NEW: Link to recurring template
+  syncStatus: 'synced' | 'pending' | 'failed'; // NEW: Offline sync status
   createdAt: string;
+  updatedAt?: string;       // NEW: For transaction editing
 }
 ```
 
@@ -315,7 +412,128 @@ const params = {
 - **On-demand Backups**: Manual backups before major changes
 - **Disaster Recovery**: Cross-region replication (future enhancement)
 
-## User Interface Design
+## Mobile Application Architecture
+
+### React Native + Expo Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    React Native App Structure                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   Navigation    │  │   State Mgmt    │  │   API Layer     │ │
+│  │                 │  │                 │  │                 │ │
+│  │ • Bottom Tabs   │  │ • Zustand       │  │ • React Query   │ │
+│  │ • Stack Nav     │  │ • AsyncStorage  │  │ • Offline Queue │ │
+│  │ • Deep Linking  │  │ • Secure Store  │  │ • Auto Retry    │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   UI Layer      │  │   Security      │  │   Platform      │ │
+│  │                 │  │                 │  │                 │ │
+│  │ • Native Base   │  │ • Biometrics    │  │ • iOS Specific  │ │
+│  │ • Reanimated    │  │ • Keychain      │  │ • Android Spec  │ │
+│  │ • Gestures      │  │ • App Lock      │  │ • Permissions   │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   Features      │  │   Offline       │  │   Notifications │ │
+│  │                 │  │                 │  │                 │ │
+│  │ • Budget CRUD   │  │ • Local DB      │  │ • Push Notifs   │ │
+│  │ • Transactions  │  │ • Sync Queue    │  │ • Local Notifs  │ │
+│  │ • Export/Import │  │ • Conflict Res  │  │ • Scheduling    │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Navigation Structure
+
+```typescript
+// Bottom Tab Navigator (Main App)
+type RootTabParamList = {
+  Budget: undefined;
+  Transactions: undefined;
+  Summary: undefined;
+  Settings: undefined;
+};
+
+// Stack Navigators for each tab
+type BudgetStackParamList = {
+  BudgetList: undefined;
+  BudgetDetail: { budgetId: string };
+  AddCategory: { groupType: 'income' | 'savings' | 'expense' };
+  EditCategory: { categoryId: string };
+};
+
+type TransactionStackParamList = {
+  TransactionList: undefined;
+  AddTransaction: { categoryId?: string };
+  EditTransaction: { transactionId: string };
+  TransactionDetail: { transactionId: string };
+};
+```
+
+### Offline Data Strategy
+
+```typescript
+// Local Database Schema (SQLite)
+interface LocalBudget {
+  id: string;
+  month: string;
+  data: Budget;
+  lastSynced: string;
+  isDirty: boolean; // Has local changes
+}
+
+interface LocalTransaction {
+  id: string;
+  budgetId: string;
+  data: Transaction;
+  syncStatus: 'synced' | 'pending' | 'failed';
+  createdLocally: boolean;
+  lastSyncAttempt?: string;
+}
+
+// Sync Queue Management
+interface SyncQueue {
+  id: string;
+  type: 'CREATE' | 'UPDATE' | 'DELETE';
+  entity: 'budget' | 'transaction' | 'category';
+  entityId: string;
+  data: any;
+  attempts: number;
+  lastAttempt?: string;
+  error?: string;
+}
+```
+
+### Security Implementation
+
+```typescript
+// Biometric Authentication
+interface BiometricAuth {
+  isAvailable(): Promise<boolean>;
+  authenticate(): Promise<boolean>;
+  getSupportedTypes(): Promise<BiometricType[]>;
+}
+
+// Secure Storage
+interface SecureStorage {
+  setItem(key: string, value: string): Promise<void>;
+  getItem(key: string): Promise<string | null>;
+  removeItem(key: string): Promise<void>;
+  clear(): Promise<void>;
+}
+
+// App Lock Management
+interface AppLock {
+  isLocked: boolean;
+  lockTimeout: number; // minutes
+  requiresAuth: boolean;
+  lastActivity: Date;
+}
+```
 
 ### Main Budget Screen Layout
 
@@ -2254,3 +2472,467 @@ const createBudgetFromAIData = (parsedBudget: any, month: string): Budget => {
 - 409 conflicts handled gracefully without errors
 - localStorage AI budget cleared after successful save
 - Budget persists across page refreshes and month navigation
+
+## Correctness Properties
+
+*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+
+### Property 1: Mobile App Platform Compatibility
+*For any* supported mobile platform (iOS/Android), the app should build successfully and provide the same core functionality as the web version
+**Validates: Requirements 22.1, 22.3**
+
+### Property 2: API Compatibility Across Platforms
+*For any* API endpoint, requests from mobile apps should return the same data structure and status codes as requests from the web app
+**Validates: Requirements 22.2, 22.5**
+
+### Property 3: Offline Transaction Persistence
+*For any* transaction added while offline, it should be stored locally and successfully synced to the server when connection is restored
+**Validates: Requirements 24.2, 24.3**
+
+### Property 4: Biometric Authentication Fallback
+*For any* device where biometric authentication is unavailable or fails, the system should provide PIN authentication as a working alternative
+**Validates: Requirements 25.1, 25.2**
+
+### Property 5: Secure Token Storage
+*For any* authentication token, it should be stored using platform-specific secure storage (Keychain/Keystore) and retrieved correctly across app sessions
+**Validates: Requirements 25.3**
+
+### Property 6: Data Export Completeness
+*For any* user data export request, the exported file should contain all user budgets, transactions, and categories without data loss
+**Validates: Requirements 26.1, 26.6**
+
+### Property 7: Search Result Accuracy
+*For any* search query, all returned results should match the search criteria and no matching items should be omitted
+**Validates: Requirements 28.1, 28.2**
+
+### Property 8: Notification Delivery
+*For any* budget alert condition (overspending, approaching limits), the system should send notifications to users who have enabled that notification type
+**Validates: Requirements 29.1, 29.2**
+
+### Property 9: Currency Conversion Consistency
+*For any* transaction in a non-primary currency, the converted amount should be calculated using the current exchange rate and displayed consistently across all views
+**Validates: Requirements 30.1, 30.4**
+
+### Property 10: Recurring Budget Calculation Accuracy
+*For any* recurring budget item with bi-weekly frequency, the monthly planned amount should equal the base amount multiplied by the correct number of occurrences in that specific month
+**Validates: Requirements 18.1, 18.2, 20.8, 20.9**
+
+### Property 11: Planned vs Actual Variance Calculation
+*For any* budget category, the variance should always equal the actual amount minus the planned amount, and be displayed with correct positive/negative indicators
+**Validates: Requirements 19.1, 19.6**
+
+### Property 12: Offline Data Synchronization
+*For any* data modified while offline, when connection is restored, the local changes should be successfully merged with server data without data loss
+**Validates: Requirements 24.6, 24.7**
+
+### Property 13: Cross-Platform Feature Parity
+*For any* core budgeting feature available on web, the same feature should be available and function identically on mobile platforms
+**Validates: Requirements 22.3, 35.10**
+
+### Property 14: Security Session Management
+*For any* user session, the app should automatically lock after the configured inactivity period and require re-authentication
+**Validates: Requirements 25.4, 25.5**
+
+### Property 15: Export Data Integrity Round Trip
+*For any* exported budget data, importing it back into the system should recreate the exact same budget structure and amounts
+**Validates: Requirements 26.4, 26.5**
+
+## Error Handling
+
+### Mobile App Error Handling
+- **Network Errors**: Graceful degradation to offline mode with user notification
+- **Authentication Errors**: Automatic token refresh with fallback to login screen
+- **Sync Conflicts**: User-friendly conflict resolution with data preservation
+- **Storage Errors**: Fallback storage mechanisms with error reporting
+
+### API Error Handling
+- **Rate Limiting**: Exponential backoff with user feedback
+- **Server Errors**: Retry logic with circuit breaker pattern
+- **Validation Errors**: Field-specific error messages with correction guidance
+- **Currency API Errors**: Fallback to cached exchange rates
+
+### Data Consistency
+- **Offline Sync**: Conflict resolution with user choice for critical data
+- **Concurrent Updates**: Optimistic locking with rollback capability
+- **Export Failures**: Partial export recovery with retry options
+- **Import Validation**: Schema validation with detailed error reporting
+
+## Testing Strategy
+
+### Mobile Testing Approach
+- **Unit Tests**: Core business logic and utility functions (Jest)
+- **Component Tests**: React Native component behavior (React Native Testing Library)
+- **Integration Tests**: API integration and offline sync (Detox E2E)
+- **Device Testing**: Real device testing on iOS and Android
+- **Performance Testing**: Memory usage, battery impact, and load times
+
+### Property-Based Testing Configuration
+- **Framework**: fast-check for JavaScript/TypeScript property testing
+- **Test Iterations**: Minimum 100 iterations per property test
+- **Mobile-Specific**: Test across different device configurations and network conditions
+- **Cross-Platform**: Verify properties hold on both iOS and Android
+
+### Testing Tags Format
+Each property test must reference its design document property:
+- **Feature: market-ready-mvp, Property 1**: Mobile App Platform Compatibility
+- **Feature: market-ready-mvp, Property 10**: Recurring Budget Calculation Accuracy
+
+### Dual Testing Strategy
+- **Unit Tests**: Specific examples, edge cases, error conditions, mobile-specific scenarios
+- **Property Tests**: Universal properties across all inputs, cross-platform consistency
+- **Integration Tests**: End-to-end workflows, offline/online transitions, multi-device sync
+
+## Performance Optimizations
+
+### Mobile Performance
+- **Bundle Size**: Code splitting and lazy loading for React Native
+- **Memory Management**: Efficient image handling and data caching
+- **Battery Optimization**: Background task management and efficient sync
+- **Startup Time**: Optimized app launch and authentication flow
+
+### Cross-Platform Optimization
+- **API Caching**: Shared cache strategy between web and mobile
+- **Offline Storage**: Efficient local database with sync optimization
+- **Network Usage**: Minimal data transfer with delta sync
+- **Real-time Updates**: WebSocket connections for live budget updates
+
+## Security Design
+
+### Mobile Security
+- **Biometric Integration**: Platform-specific biometric APIs with secure fallback
+- **Secure Storage**: Keychain (iOS) and Keystore (Android) for sensitive data
+- **App Backgrounding**: Privacy screen and data clearing when app is backgrounded
+- **Certificate Pinning**: SSL certificate validation for API communications
+
+### Data Protection
+- **Encryption**: End-to-end encryption for sensitive financial data
+- **Privacy Controls**: User-controlled data sharing and deletion
+- **Audit Logging**: Security event tracking with user access
+- **Compliance**: GDPR, CCPA, and financial data protection standards
+
+## Future Enhancements
+
+### Mobile-Specific Features
+- **Receipt Scanning**: OCR integration for automatic transaction entry
+- **Voice Input**: Voice-to-text for transaction descriptions
+- **Apple Pay/Google Pay**: Integration for transaction tracking
+- **Widgets**: Home screen widgets for quick budget overview
+
+### Advanced Features
+- **AI Insights**: Machine learning for spending pattern analysis
+- **Bank Integration**: Open banking APIs for automatic transaction import
+- **Receipt Scanning**: OCR integration for automatic transaction entry
+- **Voice Input**: Voice-to-text for transaction descriptions
+- **Apple Pay/Google Pay**: Integration for transaction tracking
+- **Widgets**: Home screen widgets for quick budget overview
+
+---
+
+## Admin Dashboard Design
+
+### Overview
+
+A comprehensive admin dashboard for platform management, user support, and system monitoring. Built as a separate web application with role-based access control and real-time monitoring capabilities.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Admin Dashboard Architecture                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   Admin Web     │  │   Admin API     │  │   Monitoring    │ │
+│  │   Application   │  │   Gateway       │  │   Services      │ │
+│  │                 │  │                 │  │                 │ │
+│  │ • React + TS    │  │ • Separate API  │  │ • CloudWatch    │ │
+│  │ • Admin UI      │  │ • Admin Auth    │  │ • Custom Metrics│ │
+│  │ • Role-based    │  │ • Rate Limiting │  │ • Alerts        │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+│                                                                 │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
+│  │   User Mgmt     │  │   System Health │  │   Support       │ │
+│  │   Lambda        │  │   Lambda        │  │   Lambda        │ │
+│  │                 │  │                 │  │                 │ │
+│  │ • CRUD Users    │  │ • Metrics       │  │ • Tickets       │ │
+│  │ • Bulk Ops      │  │ • Performance   │  │ • Notifications │ │
+│  │ • Audit Logs    │  │ • Alerts        │  │ • Email         │ │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Data Models
+
+#### Admin User
+```typescript
+interface AdminUser {
+  adminId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'super_admin' | 'support_admin' | 'read_only';
+  permissions: AdminPermission[];
+  lastLogin?: string;
+  isActive: boolean;
+  createdAt: string;
+  createdBy: string;
+}
+
+interface AdminPermission {
+  resource: 'users' | 'system' | 'support' | 'billing';
+  actions: ('read' | 'write' | 'delete')[];
+}
+```
+
+#### Support Ticket
+```typescript
+interface SupportTicket {
+  ticketId: string;
+  userId: string;
+  userEmail: string;
+  subject: string;
+  description: string;
+  category: 'technical' | 'billing' | 'feature_request' | 'bug_report';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  assignedTo?: string;
+  resolution?: string;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+}
+```
+
+#### System Metrics
+```typescript
+interface SystemMetrics {
+  timestamp: string;
+  totalUsers: number;
+  activeUsers: number;
+  newRegistrations: number;
+  subscriptionConversions: number;
+  apiResponseTime: number;
+  errorRate: number;
+  databaseConnections: number;
+  memoryUsage: number;
+  cpuUsage: number;
+}
+```
+
+### UI Components
+
+#### Dashboard Overview
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ BudgetBuddy Admin Dashboard                    [Admin Name ▼]   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ 📊 Overview    👥 Users    🎫 Support    💰 Billing    ⚙️ System │
+│                                                                 │
+│ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐│
+│ │ Total Users │ │Active Users │ │New Today    │ │Conversions  ││
+│ │   12,847    │ │   3,421     │ │    127      │ │    23       ││
+│ └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘│
+│                                                                 │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ System Health                                               │ │
+│ │ API Response Time: 245ms  Error Rate: 0.12%  Uptime: 99.9% │ │
+│ │ [Real-time Chart]                                           │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ Recent Activity                                             │ │
+│ │ • User john@example.com upgraded to Premium                 │ │
+│ │ • Support ticket #1234 resolved                            │ │
+│ │ • System alert: High memory usage resolved                 │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### User Management
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ User Management                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ [Search users...] [Filter ▼] [Export] [Bulk Actions ▼]        │
+│                                                                 │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ Email              │ Name        │ Status │ Plan │ Last Login││
+│ │ john@example.com   │ John Smith  │ Active │ Free │ 2 hrs ago ││
+│ │ jane@example.com   │ Jane Doe    │ Active │ Pro  │ 1 day ago ││
+│ │ bob@example.com    │ Bob Johnson │ Disabled│ Free │ 1 week ago││
+│ └─────────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│ [Previous] Page 1 of 128 [Next]                                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### API Endpoints
+
+#### Admin Authentication
+```
+POST /admin/auth/login
+Request: { email, password, mfaCode? }
+Response: { accessToken, refreshToken, adminUser }
+
+GET /admin/auth/profile
+Headers: Authorization: Bearer <admin_token>
+Response: { adminUser, permissions }
+```
+
+#### User Management
+```
+GET /admin/users
+Query: ?search=email&status=active&plan=premium&page=1&limit=50
+Response: { users: User[], total: number, page: number }
+
+GET /admin/users/{userId}
+Response: { user: User, budgets: Budget[], transactions: Transaction[] }
+
+PUT /admin/users/{userId}/status
+Request: { status: 'active' | 'disabled', reason: string }
+Response: { success: boolean }
+
+DELETE /admin/users/{userId}
+Request: { reason: string, exportData: boolean }
+Response: { success: boolean, exportUrl?: string }
+```
+
+#### System Monitoring
+```
+GET /admin/metrics/overview
+Response: {
+  totalUsers, activeUsers, newRegistrations,
+  subscriptionConversions, systemHealth
+}
+
+GET /admin/metrics/performance
+Query: ?timeRange=24h&metric=response_time
+Response: { dataPoints: MetricPoint[], summary: MetricSummary }
+
+GET /admin/alerts
+Response: { alerts: SystemAlert[], count: number }
+```
+
+#### Support Management
+```
+GET /admin/support/tickets
+Query: ?status=open&priority=high&assignedTo=admin123
+Response: { tickets: SupportTicket[], total: number }
+
+POST /admin/support/tickets
+Request: { userId, subject, description, category, priority }
+Response: { ticket: SupportTicket }
+
+PUT /admin/support/tickets/{ticketId}
+Request: { status, assignedTo, resolution }
+Response: { ticket: SupportTicket }
+```
+
+### Security Implementation
+
+#### Role-Based Access Control
+```typescript
+const AdminPermissions = {
+  super_admin: {
+    users: ['read', 'write', 'delete'],
+    system: ['read', 'write'],
+    support: ['read', 'write'],
+    billing: ['read', 'write']
+  },
+  support_admin: {
+    users: ['read', 'write'],
+    support: ['read', 'write'],
+    billing: ['read']
+  },
+  read_only: {
+    users: ['read'],
+    system: ['read'],
+    support: ['read'],
+    billing: ['read']
+  }
+};
+
+const checkPermission = (adminUser: AdminUser, resource: string, action: string): boolean => {
+  const permissions = AdminPermissions[adminUser.role];
+  return permissions[resource]?.includes(action) || false;
+};
+```
+
+#### Admin Authentication
+- Separate admin user pool in Cognito
+- Multi-factor authentication required
+- Session timeout: 4 hours
+- IP whitelisting for super admins
+- Audit logging for all admin actions
+
+### Monitoring and Alerts
+
+#### Real-time Metrics
+- User registration rate
+- API error rates and response times
+- Database performance metrics
+- Memory and CPU usage
+- Active user sessions
+
+#### Alert Conditions
+- Error rate > 1%
+- API response time > 1000ms
+- New user registrations spike (>500% increase)
+- Database connection pool exhaustion
+- Failed payment processing > 5%
+
+#### Notification Channels
+- Email alerts to admin team
+- Slack integration for critical alerts
+- SMS for urgent system issues
+- In-dashboard notifications
+
+### Implementation Priority
+
+**Phase 1 (Essential)**:
+- Basic admin authentication
+- User management (view, search, disable)
+- System health dashboard
+- Basic support ticket system
+
+**Phase 2 (Enhanced)**:
+- Advanced user operations (bulk actions, data export)
+- Detailed system metrics and monitoring
+- Role-based access control
+- Audit logging
+
+**Phase 3 (Advanced)**:
+- Real-time alerts and notifications
+- Advanced analytics and reporting
+- Automated user lifecycle management
+- Integration with external support tools
+
+### Testing Strategy
+
+**Security Testing**:
+- Role-based access control validation
+- Admin authentication flow testing
+- Permission boundary testing
+- Audit log integrity verification
+
+**Performance Testing**:
+- Large dataset handling (10k+ users)
+- Real-time metrics performance
+- Bulk operation efficiency
+- Dashboard load times
+
+**Integration Testing**:
+- Admin API with main application APIs
+- Monitoring system integration
+- Alert notification delivery
+- Data export functionality
+- **Investment Tracking**: Portfolio integration with budget planning
+- **Family Collaboration**: Real-time collaborative budgeting
+
+### Platform Expansion
+- **Apple Watch**: Quick transaction entry and budget monitoring
+- **Android Wear**: Spending alerts and budget summaries
+- **Desktop Apps**: Native desktop applications for power users
+- **Web Extensions**: Browser extensions for online purchase tracking
