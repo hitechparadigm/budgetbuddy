@@ -7,39 +7,13 @@
 
 import { Amplify } from 'aws-amplify';
 
-// Configuration for AWS Amplify
-// These values should match your existing AWS backend configuration
+// Simplified configuration for AWS Amplify v6
 const amplifyConfig = {
   Auth: {
-    // AWS Cognito User Pool configuration
-    region: process.env.EXPO_PUBLIC_AWS_REGION || 'us-east-1',
-    userPoolId: process.env.EXPO_PUBLIC_USER_POOL_ID || '',
-    userPoolWebClientId: process.env.EXPO_PUBLIC_USER_POOL_CLIENT_ID || '',
-
-    // Optional: Cognito Identity Pool for AWS service access
-    identityPoolId: process.env.EXPO_PUBLIC_IDENTITY_POOL_ID || '',
-
-    // Authentication flow configuration
-    authenticationFlowType: 'USER_SRP_AUTH',
-
-    // Password policy (should match your Cognito configuration)
-    passwordPolicy: {
-      minLength: 8,
-      requireLowercase: true,
-      requireUppercase: true,
-      requireNumbers: true,
-      requireSymbols: false,
+    Cognito: {
+      userPoolId: process.env.EXPO_PUBLIC_USER_POOL_ID || 'us-east-1_example',
+      userPoolClientId: process.env.EXPO_PUBLIC_USER_POOL_CLIENT_ID || 'example-client-id',
     },
-  },
-
-  API: {
-    endpoints: [
-      {
-        name: 'budgetbuddy-api',
-        endpoint: process.env.EXPO_PUBLIC_API_URL || 'https://api.budgetbuddy.com',
-        region: process.env.EXPO_PUBLIC_AWS_REGION || 'us-east-1',
-      },
-    ],
   },
 };
 

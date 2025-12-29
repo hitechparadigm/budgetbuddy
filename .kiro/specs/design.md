@@ -26,7 +26,7 @@ BudgetBuddy is a comprehensive zero-based budgeting platform with both web and n
 │  │  React Native Mobile Apps (iOS + Android)               │  │
 │  │  - Mobile-First Experience                               │  │
 │  │  - Offline Capability                                    │  │
-│  │  - Biometric Authentication                              │  │
+│  │  - Device-Level Security Integration                     │  │
 │  │  - Push Notifications                                    │  │
 │  └──────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
@@ -115,7 +115,7 @@ BudgetBuddy is a comprehensive zero-based budgeting platform with both web and n
 - **UI Components**: React Native Elements + Native Base
 - **Animations**: React Native Reanimated 3
 - **Offline Storage**: AsyncStorage + SQLite (for complex queries)
-- **Security**: Expo SecureStore (token storage) + LocalAuthentication (biometrics)
+- **Security**: Expo SecureStore (token storage) + Device-level authentication
 - **Notifications**: Expo Notifications
 - **Network**: NetInfo (connection detection)
 
@@ -432,7 +432,7 @@ const params = {
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
 │  │   UI Layer      │  │   Security      │  │   Platform      │ │
 │  │                 │  │                 │  │                 │ │
-│  │ • Native Base   │  │ • Biometrics    │  │ • iOS Specific  │ │
+│  │ • Native Base   │  │ • Device Auth   │  │ • iOS Specific  │ │
 │  │ • Reanimated    │  │ • Keychain      │  │ • Android Spec  │ │
 │  │ • Gestures      │  │ • App Lock      │  │ • Permissions   │ │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
@@ -511,11 +511,11 @@ interface SyncQueue {
 ### Security Implementation
 
 ```typescript
-// Biometric Authentication
-interface BiometricAuth {
-  isAvailable(): Promise<boolean>;
-  authenticate(): Promise<boolean>;
-  getSupportedTypes(): Promise<BiometricType[]>;
+// Device-Level Authentication
+interface DeviceAuth {
+  isDeviceSecure(): Promise<boolean>;
+  requiresAuthentication(): boolean;
+  getSecurityLevel(): Promise<'none' | 'pin' | 'biometric'>;
 }
 
 // Secure Storage

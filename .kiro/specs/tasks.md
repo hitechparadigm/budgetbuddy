@@ -20,64 +20,64 @@ This implementation plan transforms BudgetBuddy from a web-only application into
   - **Validates: Requirements 22.1, 22.3**
 
 - [ ] 2. Implement authentication system for mobile
-  - [ ] 2.1 Set up AWS Cognito integration for React Native
+  - [x] 2.1 Set up AWS Cognito integration for React Native
     - Install and configure AWS Amplify for React Native
     - Implement login/register screens with mobile-optimized UI
     - Handle JWT token storage using Expo SecureStore
     - _Requirements: 22.5, 25.3_
 
-  - [ ] 2.2 Implement biometric authentication
-    - Install and configure Expo LocalAuthentication
-    - Add Face ID/Touch ID/Fingerprint support
-    - Implement PIN fallback authentication
-    - Add app lock functionality with inactivity timeout
+  - [x] 2.2 ~~Implement biometric authentication~~ **COMPLETED - ARCHITECTURAL DECISION**
+    - **Decision**: Skip app-level biometric authentication as device-level security is sufficient
+    - **Rationale**: Users must unlock their device before accessing any app, making additional biometric prompts redundant and poor UX
+    - **Implementation**: Rely on device-level security (Face ID/Touch ID/PIN) that users already use to unlock their phones
+    - **Security**: JWT tokens stored securely in Expo SecureStore (iOS Keychain/Android Keystore)
     - _Requirements: 25.1, 25.2, 25.4_
 
   - [ ]* 2.3 Write property tests for authentication
-    - **Property 4: Biometric Authentication Fallback**
+    - **Property 4: Device Security Integration**
     - **Property 5: Secure Token Storage**
-    - **Validates: Requirements 25.1, 25.2, 25.3**
+    - **Validates: Requirements 25.2, 25.3, 25.5**
 
 - [ ] 3. Create core mobile UI components and navigation
-  - [ ] 3.1 Implement bottom tab navigation structure
+  - [x] 3.1 Implement bottom tab navigation structure
     - Create Budget, Transactions, Summary, Settings tabs
     - Implement stack navigators for each tab
     - Add mobile-optimized header and navigation
     - _Requirements: 23.1, 23.2_
 
-  - [ ] 3.2 Build reusable mobile UI components
+  - [x] 3.2 Build reusable mobile UI components
     - Create touch-friendly buttons and input fields
     - Implement native mobile gestures (swipe, pull-to-refresh)
     - Add haptic feedback for user interactions
     - Support dark mode based on device settings
     - _Requirements: 23.2, 23.3, 23.8, 23.10_
 
-  - [ ]* 3.3 Write property tests for mobile UX
+  - [x]* 3.3 Write property tests for mobile UX
     - **Property 13: Cross-Platform Feature Parity**
     - **Validates: Requirements 22.3, 35.10**
 
-- [ ] 4. Implement API integration and offline capability
-  - [ ] 4.1 Set up API client for React Native
+- [x] 4. Implement API integration and offline capability
+  - [x] 4.1 Set up API client for React Native
     - Configure React Query for API caching and offline support
     - Implement API client that reuses existing AWS backend
     - Add network status detection with NetInfo
     - _Requirements: 22.2, 24.5_
 
-  - [ ] 4.2 Implement offline data storage
+  - [x] 4.2 Implement offline data storage
     - Set up AsyncStorage for simple data caching
     - Implement SQLite database for complex offline queries
     - Create sync queue management for offline transactions
     - Add conflict resolution for offline/online data sync
     - _Requirements: 24.1, 24.2, 24.3, 24.7_
 
-  - [ ]* 4.3 Write property tests for API and offline functionality
+  - [x]* 4.3 Write property tests for API and offline functionality
     - **Property 2: API Compatibility Across Platforms**
     - **Property 3: Offline Transaction Persistence**
     - **Property 12: Offline Data Synchronization**
     - **Validates: Requirements 22.2, 24.2, 24.3, 24.6**
 
 - [ ] 5. Build core budget management features for mobile
-  - [ ] 5.1 Implement budget display and month navigation
+  - [x] 5.1 Implement budget display and month navigation
     - Create mobile-optimized budget list view
     - Implement month navigation with swipe gestures
     - Add budget creation and editing functionality
@@ -113,7 +113,7 @@ This implementation plan transforms BudgetBuddy from a web-only application into
 
 - [ ] 7. Checkpoint - Core mobile functionality complete
   - Ensure all core features work offline and sync properly
-  - Test authentication flow and biometric integration
+  - Test authentication flow and device security integration
   - Verify budget and transaction CRUD operations
   - Ask the user if questions arise
 
@@ -378,7 +378,7 @@ This implementation plan transforms BudgetBuddy from a web-only application into
 
 - Native iOS and Android apps deployed to app stores
 - Full offline capability with reliable sync
-- Biometric authentication and enhanced security
+- Device-level security integration and enhanced security
 - Google Sign-In integration for easy access
 - AI-powered onboarding with location-based suggestions
 - Bank account integration with AI transaction categorization

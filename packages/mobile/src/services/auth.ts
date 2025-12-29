@@ -5,7 +5,7 @@
  * using Expo SecureStore for JWT tokens and user session management.
  */
 
-import { Auth } from 'aws-amplify';
+import { signIn, signUp, confirmSignUp, resendSignUpCode, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
@@ -51,26 +51,33 @@ class AuthService {
   /**
    * Sign in user with email and password
    */
-  async signIn(credentials: LoginCredentials): Promise<{ user: User; tokens: AuthTokens }> {
+  async signInUser(credentials: LoginCredentials): Promise<{ user: User; tokens: AuthTokens }> {
     try {
-      const cognitoUser = await Auth.signIn(credentials.email, credentials.password);
+      const { isSignedIn, nextStep } = await signIn({
+        username: credentials.email,
+        password: credentials.password,
+      });
 
-      // Get user session and tokens
-      const session = await Auth.currentSession();
+      if (!isSignedIn) {
+        throw new Error('Sign in failed');
+      }
+
+      // Get current session
+      const session = await fetchAuthSession();
       const tokens: AuthTokens = {
-        accessToken: session.getAccessToken().getJwtToken(),
-        refreshToken: session.getRefreshToken().getToken(),
-        idToken: session.getIdToken().getJwtToken(),
+        accessToken: session.tokens?.accessToken?.toString() || '',
+        refreshToken: '', // Refresh token not directly accessible in Amplify v6
+        idToken: session.tokens?.idToken?.toString() || '',
       };
 
-      // Get user attributes
-      const userAttributes = await Auth.currentUserInfo();
+      // Get user info
+      const currentUser = await getCurrentUser();
       const user: User = {
-        id: cognitoUser.username,
-        email: userAttributes.attributes.email,
-        name: userAttributes.attributes.name,
-        emailVerified: userAttributes.attributes.email_verified === 'true',
-        createdAt: userAttributes.attributes.created_at || new Date().toISOString(),
+        id: currentUser.userId,
+        email: credentials.email,
+        name: currentUser.username,
+        emailVerified: true,
+        createdAt: new Date().toISOString(),
       };
 
       // Store tokens securely
@@ -86,19 +93,21 @@ class AuthService {
   /**
    * Register new user
    */
-  async signUp(credentials: RegisterCredentials): Promise<{ user: User; needsVerification: boolean }> {
+  async signUpUser(credentials: RegisterCredentials): Promise<{ user: User; needsVerification: boolean }> {
     try {
-      const { user: cognitoUser } = await Auth.signUp({
+      const { isSignUpComplete, nextStep } = await signUp({
         username: credentials.email,
         password: credentials.password,
-        attributes: {
-          email: credentials.email,
-          name: credentials.name || '',
+        options: {
+          userAttributes: {
+            email: credentials.email,
+            name: credentials.name || '',
+          },
         },
       });
 
       const user: User = {
-        id: cognitoUser.getUsername(),
+        id: credentials.email,
         email: credentials.email,
         name: credentials.name,
         emailVerified: false,
@@ -107,7 +116,7 @@ class AuthService {
 
       return {
         user,
-        needsVerification: !cognitoUser.isSignUpComplete(),
+        needsVerification: !isSignUpComplete,
       };
     } catch (error: any) {
       throw this.handleAuthError(error);
@@ -117,9 +126,12 @@ class AuthService {
   /**
    * Confirm user registration with verification code
    */
-  async confirmSignUp(email: string, code: string): Promise<void> {
+  async confirmSignUpUser(email: string, code: string): Promise<void> {
     try {
-      await Auth.confirmSignUp(email, code);
+      await confirmSignUp({
+        username: email,
+        confirmationCode: code,
+      });
     } catch (error: any) {
       throw this.handleAuthError(error);
     }
@@ -130,7 +142,9 @@ class AuthService {
    */
   async resendConfirmationCode(email: string): Promise<void> {
     try {
-      await Auth.resendSignUp(email);
+      await resendSignUpCode({
+        username: email,
+      });
     } catch (error: any) {
       throw this.handleAuthError(error);
     }
@@ -139,9 +153,9 @@ class AuthService {
   /**
    * Sign out user and clear stored tokens
    */
-  async signOut(): Promise<void> {
+  async signOutUser(): Promise<void> {
     try {
-      await Auth.signOut();
+      await signOut();
       await this.clearStoredData();
     } catch (error: any) {
       // Even if Cognito sign out fails, clear local data
@@ -155,19 +169,18 @@ class AuthService {
    */
   async getCurrentUser(): Promise<User | null> {
     try {
-      const cognitoUser = await Auth.currentAuthenticatedUser();
-      const userAttributes = await Auth.currentUserInfo();
+      const currentUser = await getCurrentUser();
 
-      if (!cognitoUser || !userAttributes) {
+      if (!currentUser) {
         return null;
       }
 
       return {
-        id: cognitoUser.username,
-        email: userAttributes.attributes.email,
-        name: userAttributes.attributes.name,
-        emailVerified: userAttributes.attributes.email_verified === 'true',
-        createdAt: userAttributes.attributes.created_at || new Date().toISOString(),
+        id: currentUser.userId,
+        email: currentUser.username,
+        name: currentUser.username,
+        emailVerified: true,
+        createdAt: new Date().toISOString(),
       };
     } catch (error) {
       return null;
@@ -179,8 +192,8 @@ class AuthService {
    */
   async isAuthenticated(): Promise<boolean> {
     try {
-      await Auth.currentAuthenticatedUser();
-      return true;
+      const user = await getCurrentUser();
+      return !!user;
     } catch (error) {
       return false;
     }
@@ -191,11 +204,11 @@ class AuthService {
    */
   async getCurrentTokens(): Promise<AuthTokens | null> {
     try {
-      const session = await Auth.currentSession();
+      const session = await fetchAuthSession();
       return {
-        accessToken: session.getAccessToken().getJwtToken(),
-        refreshToken: session.getRefreshToken().getToken(),
-        idToken: session.getIdToken().getJwtToken(),
+        accessToken: session.tokens?.accessToken?.toString() || '',
+        refreshToken: '', // Refresh token not directly accessible in Amplify v6
+        idToken: session.tokens?.idToken?.toString() || '',
       };
     } catch (error) {
       return null;
@@ -207,37 +220,15 @@ class AuthService {
    */
   async refreshTokens(): Promise<AuthTokens> {
     try {
-      const session = await Auth.currentSession();
+      const session = await fetchAuthSession({ forceRefresh: true });
       const tokens: AuthTokens = {
-        accessToken: session.getAccessToken().getJwtToken(),
-        refreshToken: session.getRefreshToken().getToken(),
-        idToken: session.getIdToken().getJwtToken(),
+        accessToken: session.tokens?.accessToken?.toString() || '',
+        refreshToken: '', // Refresh token not directly accessible in Amplify v6
+        idToken: session.tokens?.idToken?.toString() || '',
       };
 
       await this.storeTokens(tokens);
       return tokens;
-    } catch (error: any) {
-      throw this.handleAuthError(error);
-    }
-  }
-
-  /**
-   * Request password reset
-   */
-  async forgotPassword(email: string): Promise<void> {
-    try {
-      await Auth.forgotPassword(email);
-    } catch (error: any) {
-      throw this.handleAuthError(error);
-    }
-  }
-
-  /**
-   * Confirm password reset with code
-   */
-  async confirmForgotPassword(email: string, code: string, newPassword: string): Promise<void> {
-    try {
-      await Auth.forgotPasswordSubmit(email, code, newPassword);
     } catch (error: any) {
       throw this.handleAuthError(error);
     }
@@ -296,7 +287,7 @@ class AuthService {
    * Handle and normalize authentication errors
    */
   private handleAuthError(error: any): AuthError {
-    const errorCode = error.code || 'UNKNOWN_ERROR';
+    const errorCode = error.name || error.code || 'UNKNOWN_ERROR';
     let message = error.message || 'An unknown error occurred';
 
     // Normalize common error messages for better UX

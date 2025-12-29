@@ -21,8 +21,6 @@ interface AuthContextType {
   confirmSignUp: (email: string, code: string) => Promise<void>;
   resendConfirmationCode: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
-  confirmForgotPassword: (email: string, code: string, newPassword: string) => Promise<void>;
   refreshTokens: () => Promise<void>;
 }
 
@@ -48,7 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (isAuthenticated && tokens) {
       const refreshInterval = setInterval(async () => {
         try {
-          await refreshTokens();
+          await handleRefreshTokens();
         } catch (error) {
           console.warn('Failed to refresh tokens:', error);
           // If refresh fails, sign out user
@@ -100,7 +98,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleSignIn = async (credentials: LoginCredentials): Promise<void> => {
     try {
       setIsLoading(true);
-      const { user: signedInUser, tokens: authTokens } = await authService.signIn(credentials);
+      const { user: signedInUser, tokens: authTokens } = await authService.signInUser(credentials);
 
       setUser(signedInUser);
       setTokens(authTokens);
@@ -118,7 +116,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleSignUp = async (credentials: RegisterCredentials): Promise<{ needsVerification: boolean }> => {
     try {
       setIsLoading(true);
-      const result = await authService.signUp(credentials);
+      const result = await authService.signUpUser(credentials);
 
       // Don't set user as authenticated until email is verified
       return result;
@@ -135,7 +133,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleConfirmSignUp = async (email: string, code: string): Promise<void> => {
     try {
       setIsLoading(true);
-      await authService.confirmSignUp(email, code);
+      await authService.confirmSignUpUser(email, code);
 
       // After confirmation, user needs to sign in
     } catch (error) {
@@ -162,7 +160,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleSignOut = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      await authService.signOut();
+      await authService.signOutUser();
     } catch (error) {
       console.warn('Sign out error:', error);
       // Continue with local cleanup even if remote sign out fails
@@ -179,11 +177,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Request password reset
    */
   const handleForgotPassword = async (email: string): Promise<void> => {
-    try {
-      await authService.forgotPassword(email);
-    } catch (error) {
-      throw error;
-    }
+    // TODO: Implement forgot password functionality
+    throw new Error('Forgot password not implemented yet');
   };
 
   /**
@@ -194,11 +189,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     code: string,
     newPassword: string
   ): Promise<void> => {
-    try {
-      await authService.confirmForgotPassword(email, code, newPassword);
-    } catch (error) {
-      throw error;
-    }
+    // TODO: Implement confirm forgot password functionality
+    throw new Error('Confirm forgot password not implemented yet');
   };
 
   /**
@@ -226,8 +218,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     confirmSignUp: handleConfirmSignUp,
     resendConfirmationCode: handleResendConfirmationCode,
     signOut: handleSignOut,
-    forgotPassword: handleForgotPassword,
-    confirmForgotPassword: handleConfirmForgotPassword,
     refreshTokens: handleRefreshTokens,
   };
 

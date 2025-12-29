@@ -164,7 +164,7 @@ describe('Authentication System Properties', () => {
       fc.property(
         fc.constantFrom('ios', 'android', 'web'),
         tokenArbitrary,
-        async (platform, tokens) => {
+        (platform, tokens) => {
           mockPlatform(platform as 'ios' | 'android' | 'web');
 
           // Mock SecureStore for mobile platforms

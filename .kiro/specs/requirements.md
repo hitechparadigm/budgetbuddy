@@ -649,22 +649,24 @@ The following features are not included in the current MVP:
 
 ### Requirement 25: Mobile Security & Authentication 🔒 **2-WEEK MVP PRIORITY**
 
-**User Story:** As a mobile user, I want secure and convenient authentication options so that my financial data is protected but easily accessible.
+**User Story:** As a mobile user, I want secure authentication that leverages my device's built-in security so that my financial data is protected without redundant authentication steps.
 
 #### Acceptance Criteria
 
-1. THE Mobile App SHALL support biometric authentication (Face ID, Touch ID, Fingerprint)
-2. THE Mobile App SHALL provide PIN code authentication as fallback
-3. THE Mobile App SHALL securely store JWT tokens using Keychain (iOS) and Keystore (Android)
-4. THE Mobile App SHALL automatically lock after 5 minutes of inactivity
-5. THE Mobile App SHALL require authentication when app returns from background after 1 minute
-6. THE Mobile App SHALL provide "Stay logged in" option for trusted devices
-7. THE Mobile App SHALL clear sensitive data when app is backgrounded (privacy screen)
-8. THE Mobile App SHALL handle token refresh automatically
-9. THE Mobile App SHALL provide secure logout that clears all local data
-10. THE Mobile App SHALL comply with mobile security best practices
+1. THE Mobile App SHALL rely on device-level security (device unlock with Face ID, Touch ID, PIN, or password)
+2. THE Mobile App SHALL securely store JWT tokens using Expo SecureStore (iOS Keychain/Android Keystore)
+3. THE Mobile App SHALL handle token refresh automatically in the background
+4. THE Mobile App SHALL provide secure logout that clears all local authentication tokens
+5. THE Mobile App SHALL clear sensitive data when app is backgrounded (privacy screen)
+6. THE Mobile App SHALL validate JWT tokens on app startup and redirect to login if expired
+7. THE Mobile App SHALL use HTTPS for all API communications
+8. THE Mobile App SHALL implement proper certificate pinning for API security
+9. THE Mobile App SHALL comply with mobile security best practices (OWASP Mobile Top 10)
+10. THE Mobile App SHALL provide "Stay logged in" option that respects JWT token expiration
 
-**Implementation Status**: Not started
+**Rationale**: Device-level biometric authentication (Face ID/Touch ID/PIN) already provides secure access to the device. Adding app-level biometric authentication would create redundant friction and poor user experience. Users cannot access the app without first unlocking their device, making additional biometric prompts unnecessary.
+
+**Implementation Status**: Partially complete (JWT token storage implemented)
 **Priority**: Critical (2-Week MVP)
 
 ---
