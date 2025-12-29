@@ -10,4 +10,7 @@ export const formatCurrency = (amount: number): string => {
 
 // Email validation moved to validation.ts for consistency
 
+// Recurring budget calculations
+export * from './utils/recurringCalculations';
+
 // Placeholder utilities - will be expanded in future tasks

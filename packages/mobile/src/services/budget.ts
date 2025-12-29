@@ -22,6 +22,7 @@ import {
   UpcomingOccurrence,
   RecurringBudgetOverview,
 } from '../types/budget';
+import { calculateOccurrencesInMonth, calculatePlannedMonthlyAmount } from '@budget-buddy/shared';
 
 /**
  * Generate unique ID for offline budgets
@@ -214,55 +215,22 @@ export const getUpcomingOccurrences = async (
 };
 
 /**
- * Enhanced calculate monthly occurrences with recurring config (simplified)
+ * Enhanced calculate monthly occurrences with recurring config (FIXED - now uses proper date-based calculation)
  */
 export const calculateMonthlyOccurrencesEnhanced = (
   budget: Budget,
   year: number,
   month: number
 ): number => {
-  const start = new Date(budget.startDate);
-  const monthStart = new Date(year, month - 1, 1);
-  const monthEnd = new Date(year, month, 0);
+  const monthStr = String(month).padStart(2, '0');
+  const monthKey = `${year}-${monthStr}`;
 
-  // If budget starts after this month, no occurrences
-  if (start > monthEnd) return 0;
-
-  // If budget has ended before this month, no occurrences
-  if (budget.endDate && new Date(budget.endDate) < monthStart) return 0;
-
-  switch (budget.frequency) {
-    case 'weekly':
-      // Calculate weeks in the month (simplified)
-      const weeksInMonth = Math.ceil((monthEnd.getDate() - Math.max(1, start.getDate())) / 7) + 1;
-      return Math.max(0, Math.min(5, weeksInMonth));
-
-    case 'bi-weekly':
-      // Calculate bi-weekly occurrences (simplified)
-      const biWeeksInMonth = Math.ceil((monthEnd.getDate() - Math.max(1, start.getDate())) / 14) + 1;
-      return Math.max(0, Math.min(3, biWeeksInMonth));
-
-    case 'monthly':
-      return 1;
-
-    case 'quarterly':
-      // Check if this month is a quarter month for this budget
-      const startMonth = start.getMonth() + 1;
-      const quarterMonths = [startMonth, startMonth + 3, startMonth + 6, startMonth + 9]
-        .map(m => m > 12 ? m - 12 : m);
-      return quarterMonths.includes(month) ? 1 : 0;
-
-    case 'yearly':
-      // Check if this month matches the start month
-      return start.getMonth() + 1 === month ? 1 : 0;
-
-    case 'one-time':
-      // Check if the one-time budget falls in this month
-      return start.getMonth() + 1 === month && start.getFullYear() === year ? 1 : 0;
-
-    default:
-      return 0;
-  }
+  // Use the shared calculation utility for accurate results
+  return calculateOccurrencesInMonth(
+    budget.frequency as any,
+    budget.startDate,
+    monthKey
+  );
 };
 
 /**
@@ -294,15 +262,23 @@ export const calculateProjectedMonthlyTotal = async (
 };
 
 /**
- * Calculate planned amount for a specific month (enhanced)
+ * Calculate planned amount for a specific month (enhanced - now uses proper date-based calculation)
  */
 export const calculatePlannedAmount = (
   budget: Budget,
   year: number,
   month: number
 ): number => {
-  const occurrences = calculateMonthlyOccurrencesEnhanced(budget, year, month);
-  return budget.amount * occurrences;
+  const monthStr = String(month).padStart(2, '0');
+  const monthKey = `${year}-${monthStr}`;
+
+  // Use the shared calculation utility for accurate results
+  return calculatePlannedMonthlyAmount(
+    budget.amount,
+    budget.frequency as any,
+    budget.startDate,
+    monthKey
+  );
 };
 
 /**
