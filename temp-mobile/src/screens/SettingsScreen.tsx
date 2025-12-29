@@ -2,13 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Button } from '../components/ui';
-import { ExportModal } from '../components/ExportModal';
-import { BackupModal } from '../components/BackupModal';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../contexts/AuthContext';
-import { useBudgets } from '../services/budget';
-import { useTransactions } from '../services/transaction';
-import { backupService } from '../services/backup';
 import * as Haptics from 'expo-haptics';
 
 interface SettingsItem {
@@ -24,16 +19,9 @@ interface SettingsItem {
 export default function SettingsScreen() {
   const { colors, isDark } = useTheme();
   const { signOut, user } = useAuth();
-  const { data: budgets = [] } = useBudgets();
-  const { data: transactions = [] } = useTransactions();
-
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [darkModeEnabled, setDarkModeEnabled] = useState(isDark);
-  const [exportModalVisible, setExportModalVisible] = useState(false);
-  const [exportType, setExportType] = useState<'budgets' | 'transactions' | 'report'>('budgets');
-  const [backupModalVisible, setBackupModalVisible] = useState(false);
-  const [backupMode, setBackupMode] = useState<'backup' | 'restore' | 'settings'>('backup');
 
   const handleSignOut = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -59,56 +47,21 @@ export default function SettingsScreen() {
 
   const handleExportData = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Show export modal instead of placeholder alert
-    setExportModalVisible(true);
-    setExportType('budgets');
+    Alert.alert('Export Data', 'Data export functionality will be implemented soon.');
   };
 
   const handleDeleteAccount = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert(
       'Delete Account',
-      'This action cannot be undone. Would you like to create a backup before deleting your account?',
+      'This action cannot be undone. All your data will be permanently deleted.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete Without Backup',
+          text: 'Delete',
           style: 'destructive',
           onPress: () => {
             Alert.alert('Account Deletion', 'Account deletion functionality will be implemented soon.');
-          }
-        },
-        {
-          text: 'Backup & Delete',
-          onPress: async () => {
-            try {
-              const result = await backupService.createPreDeletionBackup(
-                budgets,
-                transactions,
-                user?.userId || 'unknown'
-              );
-
-              if (result.success) {
-                Alert.alert(
-                  'Backup Created',
-                  'Your data has been backed up. You can now proceed with account deletion.',
-                  [
-                    { text: 'Cancel' },
-                    {
-                      text: 'Delete Account',
-                      style: 'destructive',
-                      onPress: () => {
-                        Alert.alert('Account Deletion', 'Account deletion functionality will be implemented soon.');
-                      }
-                    }
-                  ]
-                );
-              } else {
-                Alert.alert('Backup Failed', result.error || 'Failed to create backup before deletion.');
-              }
-            } catch (error) {
-              Alert.alert('Error', 'Failed to create backup. Please try again.');
-            }
           }
         },
       ]
@@ -181,70 +134,18 @@ export default function SettingsScreen() {
 
   const dataSettings: SettingsItem[] = [
     {
-      id: 'export-budgets',
-      title: 'Export Budgets',
-      subtitle: 'Download budget data as CSV',
+      id: 'export',
+      title: 'Export Data',
+      subtitle: 'Download your data as CSV or PDF',
       type: 'button',
-      onPress: async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setExportType('budgets');
-        setExportModalVisible(true);
-      },
+      onPress: handleExportData,
     },
     {
-      id: 'export-transactions',
-      title: 'Export Transactions',
-      subtitle: 'Download transaction data as CSV',
-      type: 'button',
-      onPress: async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setExportType('transactions');
-        setExportModalVisible(true);
-      },
-    },
-    {
-      id: 'export-report',
-      title: 'Generate Report',
-      subtitle: 'Create monthly budget PDF report',
-      type: 'button',
-      onPress: async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setExportType('report');
-        setExportModalVisible(true);
-      },
-    },
-    {
-      id: 'create-backup',
-      title: 'Create Backup',
-      subtitle: 'Full backup of all your data',
-      type: 'button',
-      onPress: async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setBackupMode('backup');
-        setBackupModalVisible(true);
-      },
-    },
-    {
-      id: 'restore-backup',
-      title: 'Restore from Backup',
-      subtitle: 'Restore data from backup file',
-      type: 'button',
-      onPress: async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setBackupMode('restore');
-        setBackupModalVisible(true);
-      },
-    },
-    {
-      id: 'backup-settings',
-      title: 'Backup Settings',
-      subtitle: 'Configure automatic backups',
+      id: 'backup',
+      title: 'Backup & Restore',
+      subtitle: 'Manage your data backups',
       type: 'navigation',
-      onPress: async () => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setBackupMode('settings');
-        setBackupModalVisible(true);
-      },
+      onPress: () => Alert.alert('Backup', 'Backup functionality will be implemented soon.'),
     },
   ];
 
@@ -283,10 +184,7 @@ export default function SettingsScreen() {
               )}
               {item.type === 'button' && (
                 <Button
-                  title={
-                    item.id.includes('export') ? 'Export' :
-                    item.id.includes('backup') ? 'Backup' : 'Action'
-                  }
+                  title="Export"
                   onPress={item.onPress}
                   variant="outline"
                   style={styles.actionButton}
@@ -346,23 +244,6 @@ export default function SettingsScreen() {
         {/* App Version */}
         <Text style={styles.version}>Version 1.0.0 (Beta)</Text>
       </ScrollView>
-
-      <ExportModal
-        visible={exportModalVisible}
-        onClose={() => setExportModalVisible(false)}
-        budgets={budgets}
-        transactions={transactions}
-        type={exportType}
-      />
-
-      <BackupModal
-        visible={backupModalVisible}
-        onClose={() => setBackupModalVisible(false)}
-        budgets={budgets}
-        transactions={transactions}
-        userId={user?.userId || 'unknown'}
-        mode={backupMode}
-      />
     </SafeAreaView>
   );
 }

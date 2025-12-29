@@ -115,7 +115,7 @@ This implementation plan transforms BudgetBuddy from a web-only application into
     - Support transaction editing with proper sync handling
     - _Requirements: 28.1, 28.2, 33.4_
 
-- [ ] 7. Checkpoint - Core mobile functionality complete
+- [x] 7. Checkpoint - Core mobile functionality complete
   - Ensure all core features work offline and sync properly
   - Test authentication flow and device security integration
   - Verify budget and transaction CRUD operations
@@ -124,23 +124,26 @@ This implementation plan transforms BudgetBuddy from a web-only application into
 ### Phase 2: Market-Ready Features (Week 2)
 
 - [ ] 8. Implement data export and backup functionality
-  - [ ] 8.1 Add CSV and PDF export capabilities
+  - [x] 8.1 Add CSV and PDF export capabilities
     - Implement CSV export for all budget and transaction data
     - Add PDF generation for monthly budget reports
     - Support date range filtering for exports
     - Ensure export works on both web and mobile platforms
     - _Requirements: 26.1, 26.2, 26.3, 26.8_
 
-  - [ ] 8.2 Implement data backup and restore
+  - [x] 8.2 Implement data backup and restore
     - Add full data backup in JSON format
     - Implement data restore functionality
     - Add automatic backup scheduling options
     - Provide export before account deletion
     - _Requirements: 26.4, 26.5, 26.9, 26.10_
 
-  - [ ]* 8.3 Write property tests for data export
-    - **Property 6: Data Export Completeness**
-    - **Property 15: Export Data Integrity Round Trip**
+  - [x]* 8.3 Write property tests for data export
+    - **Property 23: CSV Export Data Completeness** (partial)
+    - **Property 24: Transaction CSV Export Accuracy** ✓
+    - **Property 25: PDF Report Generation Consistency** (partial)
+    - **Property 26: Export Data Filtering Accuracy** ✓
+    - **Property 27: Export Data Integrity** (partial)
     - **Validates: Requirements 26.1, 26.4, 26.6**
 
 - [ ] 9. Add search, filtering, and quick actions
