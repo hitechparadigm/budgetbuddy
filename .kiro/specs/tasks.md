@@ -108,7 +108,7 @@ This implementation plan transforms BudgetBuddy from a web-only application into
     - Added property-based tests for transaction data integrity
     - _Requirements: 23.4, 23.5, 24.2_
 
-  - [ ] 6.2 Add transaction list and editing
+  - [x] 6.2 Add transaction list and editing
     - Create mobile-optimized transaction list view
     - Implement swipe gestures for edit/delete actions
     - Add transaction search and filtering

@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { Card, LoadingSpinner } from './ui';
+import { LoadingSpinner } from './ui';
 import { useTheme } from '../hooks/useTheme';
 import { Transaction, BudgetCategory } from '../types';
 
