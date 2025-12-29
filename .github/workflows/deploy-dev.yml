@@ -159,6 +159,8 @@ jobs:
 
       - name: Build web application
         working-directory: packages/web-app
+        env:
+          VITE_GOOGLE_WEB_CLIENT_ID: ${{ secrets.VITE_GOOGLE_WEB_CLIENT_ID }}
         run: |
           npm install
           npm run build
