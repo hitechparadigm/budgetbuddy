@@ -1,12 +1,21 @@
 # API Endpoints Documentation
 
 **Base URL**: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1`
-**Last Updated**: 2025-11-30
+**Last Updated**: 2025-12-29
 **API Version**: 1.0
 
 ## Authentication
 
 All endpoints except health checks require JWT authentication via `Authorization: Bearer <token>` header.
+
+### Mobile Authentication Support
+
+The API now supports mobile authentication through AWS Cognito with the following enhancements:
+- **Cross-Platform Token Storage**: Secure token storage using Expo SecureStore (mobile) and localStorage (web)
+- **Automatic Token Refresh**: Background token refresh to maintain session continuity
+- **Email Verification**: Complete email confirmation flow for mobile registration
+- **Password Reset**: Mobile-optimized password reset functionality
+- **Session Management**: Configurable session timeouts and inactivity detection
 
 ### Auth Endpoints
 
