@@ -23,6 +23,12 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - AWS Secrets Manager integration for credential management (budgetbuddy-dev/google-oauth)
   - Comprehensive setup documentation with troubleshooting guide
   - All TypeScript errors resolved, production-ready implementation
+  - **WEB APP**: Full Google Sign-In implementation with backend endpoint
+    - GoogleSignInButton integrated into LoginForm and RegisterForm
+    - Backend /api/auth/google endpoint for token verification
+    - Automatic user creation and family setup on first Google login
+    - Proper JWT token generation via Cognito
+    - Support for new user signup and existing user linking
 - 🚀 **COMPLETE BUDGET MANAGEMENT SYSTEM** - Full-featured budget functionality with offline support
   - Comprehensive budget data models with TypeScript interfaces for type safety
   - Budget service with offline-first CRUD operations and React Query integration
