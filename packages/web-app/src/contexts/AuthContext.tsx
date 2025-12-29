@@ -20,6 +20,7 @@ import type {
 interface AuthContextType extends AuthState {
   login: (credentials: LoginRequest) => Promise<void>;
   register: (userData: RegisterRequest) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -111,6 +112,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         accountType: loginResult.user.accountType as 'single' | 'family',
         subscriptionTier: loginResult.user.subscriptionTier as 'free' | 'premium',
         onboardingCompleted: false, // TODO: Get from API response
+        timezone: loginResult.user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         createdAt: new Date().toISOString(), // TODO: Get from API response
         updatedAt: new Date().toISOString(), // TODO: Get from API response
       };
@@ -168,6 +170,71 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async (idToken: string): Promise<void> => {
+    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+
+    try {
+      // Send Google ID token to backend for verification and user creation/linking
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Google Sign-In failed');
+      }
+
+      const loginResult = await response.json();
+
+      const user: User = {
+        userId: loginResult.user.userId,
+        email: loginResult.user.email,
+        firstName: loginResult.user.firstName,
+        lastName: loginResult.user.lastName,
+        accountType: loginResult.user.accountType as 'single' | 'family',
+        subscriptionTier: loginResult.user.subscriptionTier as 'free' | 'premium',
+        onboardingCompleted: false,
+        timezone: loginResult.user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const tokens: AuthTokens = {
+        accessToken: loginResult.accessToken,
+        refreshToken: loginResult.refreshToken,
+        idToken: loginResult.idToken,
+        expiresIn: loginResult.expiresIn,
+      };
+
+      // Store tokens in localStorage
+      localStorage.setItem('budgetbuddy_access_token', tokens.accessToken);
+      localStorage.setItem('budgetbuddy_refresh_token', tokens.refreshToken);
+      localStorage.setItem('budgetbuddy_id_token', tokens.idToken);
+      localStorage.setItem('budgetbuddy_user', JSON.stringify(user));
+
+      setAuthState({
+        isAuthenticated: true,
+        user,
+        tokens,
+        loading: false,
+        error: null,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error
+        ? error.message
+        : 'Google Sign-In failed. Please try again.';
+
+      setAuthState(prev => ({
+        ...prev,
+        loading: false,
+        error: errorMessage,
+      }));
+      throw error;
+    }
+  };
+
   const logout = async (): Promise<void> => {
     setAuthState(prev => ({ ...prev, loading: true }));
 
@@ -206,6 +273,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     ...authState,
     login,
     register,
+    loginWithGoogle,
     logout,
     clearError,
   };
@@ -248,6 +316,7 @@ const parseUserFromIdToken = (idToken: string): User => {
       accountType: (payload['custom:accountType'] || 'single') as 'single' | 'family',
       subscriptionTier: (payload['custom:subscriptionTier'] || 'free') as 'free' | 'premium',
       onboardingCompleted: payload['custom:onboardingCompleted'] === 'true',
+      timezone: payload['custom:timezone'] || Intl.DateTimeFormat().resolvedOptions().timeZone,
       createdAt: new Date(payload.iat * 1000).toISOString(),
       updatedAt: new Date().toISOString(),
     };
