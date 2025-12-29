@@ -1,48 +1,157 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card, Input, Button } from '../components/ui';
+import { useFocusEffect } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
+import { Card, Button, Input, FloatingActionButton } from '../components/ui';
 import { useTheme } from '../hooks/useTheme';
+import TransactionList from '../components/TransactionList';
+import TransactionForm from '../components/TransactionForm';
+import {
+  useTransactions,
+  useCreateTransaction,
+  useUpdateTransaction,
+  useDeleteTransaction,
+} from '../services/transaction';
+import { useBudgets } from '../services/budget';
+import {
+  Transaction,
+  BudgetCategory,
+  CreateTransactionRequest,
+  UpdateTransactionRequest,
+} from '../types';
 
 export default function TransactionsScreen() {
   const { colors } = useTheme();
-  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showTransactionForm, setShowTransactionForm] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>();
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>();
 
-  const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 2000);
-  }, []);
+  // Queries and mutations
+  const {
+    data: transactions = [],
+    isLoading: transactionsLoading,
+    error: transactionsError,
+    refetch: refetchTransactions,
+  } = useTransactions();
 
-  const mockTransactions = [
-    {
-      id: '1',
-      description: 'Grocery Store',
-      amount: -85.50,
-      category: 'Groceries',
-      date: '2025-12-28',
-      type: 'expense',
-    },
-    {
-      id: '2',
-      description: 'Salary Deposit',
-      amount: 2000.00,
-      category: 'Salary',
-      date: '2025-12-27',
-      type: 'income',
-    },
-    {
-      id: '3',
-      description: 'Coffee Shop',
-      amount: -4.75,
-      category: 'Dining',
-      date: '2025-12-26',
-      type: 'expense',
-    },
-  ];
+  const {
+    data: budgets = [],
+    isLoading: budgetsLoading,
+  } = useBudgets();
+
+  const createTransactionMutation = useCreateTransaction();
+  const updateTransactionMutation = useUpdateTransaction();
+  const deleteTransactionMutation = useDeleteTransaction();
+
+  // Extract categories from budgets
+  const categories: BudgetCategory[] = budgets.flatMap(budget =>
+    // For now, create a simple category structure from budget data
+    // This would be replaced with actual category data from the API
+    [{
+      id: budget.id,
+      name: budget.name,
+      icon: budget.type === 'income' ? '💰' : budget.type === 'savings' ? '💾' : '💸',
+      color: budget.type === 'income' ? '#10B981' : budget.type === 'savings' ? '#3B82F6' : '#EF4444',
+      isRecurring: budget.frequency !== 'one-time',
+      recurringFrequency: budget.frequency === 'weekly' ? 'weekly' :
+                         budget.frequency === 'monthly' ? 'monthly' :
+                         budget.frequency === 'quarterly' ? 'quarterly' :
+                         budget.frequency === 'yearly' ? 'annually' : undefined,
+      baseAmount: budget.amount,
+      plannedMonthlyAmount: budget.amount,
+      actualAmount: 0,
+      variance: 0,
+      transactions: [],
+      order: 0,
+      isCustom: false,
+      isArchived: false,
+      usageCount: 0,
+      isPaused: false,
+    }]
+  );
+
+  // Filter transactions based on search query
+  const filteredTransactions = transactions.filter(transaction => {
+    if (!searchQuery.trim()) return true;
+
+    const query = searchQuery.toLowerCase();
+    return (
+      transaction.description.toLowerCase().includes(query) ||
+      transaction.merchant?.toLowerCase().includes(query) ||
+      transaction.tags?.some(tag => tag.toLowerCase().includes(query))
+    );
+  });
+
+  // Refresh data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      refetchTransactions();
+    }, [refetchTransactions])
+  );
+
+  const handleAddTransaction = (categoryId?: string) => {
+    setSelectedCategoryId(categoryId);
+    setEditingTransaction(undefined);
+    setShowTransactionForm(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setShowTransactionForm(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const handleDeleteTransaction = (transaction: Transaction) => {
+    deleteTransactionMutation.mutate(transaction.id, {
+      onSuccess: () => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      },
+      onError: (error) => {
+        console.error('Failed to delete transaction:', error);
+        Alert.alert('Error', 'Failed to delete transaction. Please try again.');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      },
+    });
+  };
+
+  const handleTransactionFormSubmit = (data: CreateTransactionRequest | UpdateTransactionRequest) => {
+    if ('id' in data) {
+      // Update existing transaction
+      updateTransactionMutation.mutate(data, {
+        onSuccess: () => {
+          setShowTransactionForm(false);
+          setEditingTransaction(undefined);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        },
+        onError: (error) => {
+          console.error('Failed to update transaction:', error);
+          Alert.alert('Error', 'Failed to update transaction. Please try again.');
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        },
+      });
+    } else {
+      // Create new transaction
+      createTransactionMutation.mutate(data, {
+        onSuccess: () => {
+          setShowTransactionForm(false);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        },
+        onError: (error) => {
+          console.error('Failed to create transaction:', error);
+          Alert.alert('Error', 'Failed to create transaction. Please try again.');
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        },
+      });
+    }
+  };
+
+  const handleRefresh = () => {
+    refetchTransactions();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
 
   const dynamicStyles = StyleSheet.create({
     container: {
@@ -50,150 +159,159 @@ export default function TransactionsScreen() {
       backgroundColor: colors.background,
     },
     content: {
-      padding: 16,
+      flex: 1,
     },
     title: {
       fontSize: 28,
       fontWeight: 'bold',
       color: colors.text,
       marginBottom: 8,
+      paddingHorizontal: 16,
+      paddingTop: 16,
     },
     subtitle: {
       fontSize: 16,
       color: colors.textSecondary,
-      marginBottom: 24,
+      marginBottom: 16,
+      paddingHorizontal: 16,
     },
-    transactionCard: {
+    searchContainer: {
+      paddingHorizontal: 16,
+      marginBottom: 16,
+    },
+    summaryCard: {
       backgroundColor: colors.surface,
-      marginBottom: 12,
+      marginHorizontal: 16,
+      marginBottom: 16,
     },
-    transactionHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      marginBottom: 8,
-    },
-    transactionDescription: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-      flex: 1,
-    },
-    transactionAmount: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginLeft: 12,
-    },
-    incomeAmount: {
-      color: colors.income,
-    },
-    expenseAmount: {
-      color: colors.expense,
-    },
-    transactionMeta: {
+    summaryRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      paddingVertical: 8,
     },
-    transactionCategory: {
+    summaryLabel: {
       fontSize: 14,
       color: colors.textSecondary,
     },
-    transactionDate: {
-      fontSize: 12,
-      color: colors.textMuted,
+    summaryValue: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
     },
-    emptyState: {
+    placeholderCard: {
+      backgroundColor: colors.surface,
+      padding: 24,
       alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 60,
+      marginHorizontal: 16,
+      marginBottom: 16,
     },
-    emptyStateText: {
+    placeholderText: {
       fontSize: 16,
       color: colors.textSecondary,
       textAlign: 'center',
-      marginTop: 16,
+      marginBottom: 16,
+    },
+    placeholderEmoji: {
+      fontSize: 48,
+      marginBottom: 16,
     },
   });
 
-  const filteredTransactions = mockTransactions.filter(transaction =>
-    transaction.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    transaction.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const totalAmount = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const transactionCount = filteredTransactions.length;
 
   return (
     <SafeAreaView style={dynamicStyles.container}>
-      <ScrollView
-        contentContainerStyle={dynamicStyles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        <Text style={dynamicStyles.title}>Transactions</Text>
-        <Text style={dynamicStyles.subtitle}>Track your income and expenses</Text>
+      <Text style={dynamicStyles.title}>Transactions</Text>
+      <Text style={dynamicStyles.subtitle}>Track your spending</Text>
 
+      <View style={dynamicStyles.searchContainer}>
         <Input
-          placeholder="Search transactions..."
           value={searchQuery}
           onChangeText={setSearchQuery}
+          placeholder="Search transactions..."
           leftIcon="search"
-          variant="filled"
         />
+      </View>
 
-        {filteredTransactions.length > 0 ? (
-          filteredTransactions.map((transaction) => (
-            <Card
-              key={transaction.id}
-              variant="elevated"
-              style={dynamicStyles.transactionCard}
-              pressable
-              onPress={() => console.log('Transaction pressed:', transaction.id)}
-            >
-              <View style={dynamicStyles.transactionHeader}>
-                <Text style={dynamicStyles.transactionDescription}>
-                  {transaction.description}
-                </Text>
-                <Text
-                  style={[
-                    dynamicStyles.transactionAmount,
-                    transaction.type === 'income'
-                      ? dynamicStyles.incomeAmount
-                      : dynamicStyles.expenseAmount
-                  ]}
-                >
-                  {transaction.type === 'income' ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
-                </Text>
-              </View>
-              <View style={dynamicStyles.transactionMeta}>
-                <Text style={dynamicStyles.transactionCategory}>
-                  {transaction.category}
-                </Text>
-                <Text style={dynamicStyles.transactionDate}>
-                  {new Date(transaction.date).toLocaleDateString()}
-                </Text>
-              </View>
-            </Card>
-          ))
-        ) : (
-          <View style={dynamicStyles.emptyState}>
-            <Text style={{ fontSize: 48 }}>📝</Text>
-            <Text style={dynamicStyles.emptyStateText}>
-              {searchQuery ? 'No transactions match your search' : 'No transactions yet'}
+      {transactionCount > 0 && (
+        <Card variant="elevated" style={dynamicStyles.summaryCard}>
+          <View style={dynamicStyles.summaryRow}>
+            <Text style={dynamicStyles.summaryLabel}>Total Transactions</Text>
+            <Text style={dynamicStyles.summaryValue}>{transactionCount}</Text>
+          </View>
+          <View style={dynamicStyles.summaryRow}>
+            <Text style={dynamicStyles.summaryLabel}>Total Amount</Text>
+            <Text style={dynamicStyles.summaryValue}>
+              ${totalAmount.toFixed(2)}
             </Text>
-            {!searchQuery && (
+          </View>
+        </Card>
+      )}
+
+      <View style={dynamicStyles.content}>
+        {transactionsLoading && transactions.length === 0 ? (
+          <Card variant="elevated" style={dynamicStyles.placeholderCard}>
+            <Text style={dynamicStyles.placeholderEmoji}>⏳</Text>
+            <Text style={dynamicStyles.placeholderText}>
+              Loading your transactions...
+            </Text>
+          </Card>
+        ) : filteredTransactions.length === 0 ? (
+          <Card variant="elevated" style={dynamicStyles.placeholderCard}>
+            <Text style={dynamicStyles.placeholderEmoji}>💸</Text>
+            <Text style={dynamicStyles.placeholderText}>
+              {searchQuery.trim()
+                ? `No transactions found matching "${searchQuery}"`
+                : 'Your transactions will appear here once you start adding them.'
+              }
+            </Text>
+            {!searchQuery.trim() && (
               <Button
                 title="Add Your First Transaction"
-                onPress={() => console.log('Add transaction')}
-                style={{ marginTop: 16 }}
+                onPress={() => handleAddTransaction()}
               />
             )}
-          </View>
+          </Card>
+        ) : (
+          <TransactionList
+            transactions={filteredTransactions}
+            categories={categories}
+            isLoading={transactionsLoading}
+            onRefresh={handleRefresh}
+            onTransactionPress={(transaction) => {
+              console.log('Transaction pressed:', transaction.description);
+              // Could navigate to transaction details
+            }}
+            onEditTransaction={handleEditTransaction}
+            onDeleteTransaction={handleDeleteTransaction}
+            groupByDate={true}
+            showCategory={true}
+            emptyMessage="No transactions found"
+          />
         )}
-      </ScrollView>
+      </View>
+
+      <FloatingActionButton
+        onPress={() => handleAddTransaction()}
+        icon="add"
+        color={colors.primary}
+      />
+
+      <TransactionForm
+        visible={showTransactionForm}
+        onClose={() => {
+          setShowTransactionForm(false);
+          setEditingTransaction(undefined);
+          setSelectedCategoryId(undefined);
+        }}
+        onSubmit={handleTransactionFormSubmit}
+        transaction={editingTransaction}
+        categories={categories}
+        selectedCategoryId={selectedCategoryId}
+        isLoading={createTransactionMutation.isPending || updateTransactionMutation.isPending}
+      />
     </SafeAreaView>
   );
 }
