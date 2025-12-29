@@ -1,20 +1,13 @@
 const { getDefaultConfig } = require('expo/metro-config');
+const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
-// Add support for TypeScript path mapping
-config.resolver.alias = {
-  '@': './src',
-  '@/components': './src/components',
-  '@/screens': './src/screens',
-  '@/navigation': './src/navigation',
-  '@/services': './src/services',
-  '@/hooks': './src/hooks',
-  '@/utils': './src/utils',
-  '@/types': './src/types',
-  '@/store': './src/store',
-  '@/test': './src/test',
-  '@/constants': './src/constants',
-};
+// Disable workspace detection to avoid JSON parsing issues
+config.watchFolders = [];
+config.resolver.platforms = ['ios', 'android', 'native', 'web'];
+
+// Ensure we're not trying to resolve outside the mobile package
+config.projectRoot = __dirname;
 
 module.exports = config;
