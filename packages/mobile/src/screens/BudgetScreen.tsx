@@ -8,6 +8,7 @@ import { useTheme } from '../hooks/useTheme';
 import MonthNavigator from '../components/MonthNavigator';
 import BudgetList from '../components/BudgetList';
 import BudgetForm from '../components/BudgetForm';
+import UpcomingOccurrences from '../components/UpcomingOccurrences';
 import {
   useMonthlyBudgetOverview,
   useCreateBudget,
@@ -344,6 +345,15 @@ export default function BudgetScreen() {
       )}
 
       <View style={dynamicStyles.content}>
+        <UpcomingOccurrences
+          daysAhead={30}
+          maxItems={5}
+          onOccurrencePress={(occurrence) => {
+            console.log('Occurrence pressed:', occurrence.budgetName);
+            // Could navigate to budget details or transaction entry
+          }}
+        />
+
         <BudgetList
           budgets={monthlyOverview?.budgets || []}
           isLoading={isLoading}

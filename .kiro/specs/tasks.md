@@ -33,7 +33,7 @@ This implementation plan transforms BudgetBuddy from a web-only application into
     - **Security**: JWT tokens stored securely in Expo SecureStore (iOS Keychain/Android Keystore)
     - _Requirements: 25.1, 25.2, 25.4_
 
-  - [-]* 2.3 Write property tests for authentication
+  - [x]* 2.3 Write property tests for authentication
     - **Property 4: Device Security Integration**
     - **Property 5: Secure Token Storage**
     - **Validates: Requirements 25.2, 25.3, 25.5**
@@ -84,14 +84,14 @@ This implementation plan transforms BudgetBuddy from a web-only application into
     - Display planned vs actual amounts with clear visual distinction
     - _Requirements: 19.1, 19.2, 19.3_
 
-  - [ ] 5.2 Implement recurring budget planning
+  - [x] 5.2 Implement recurring budget planning
     - Add recurring frequency selection (weekly, bi-weekly, monthly, etc.)
     - Implement monthly occurrence calculation logic
     - Display expected dates for recurring items
     - Calculate correct planned amounts based on recurrence
     - _Requirements: 18.1, 18.2, 18.9, 20.8, 20.9_
 
-  - [ ]* 5.3 Write property tests for recurring budget logic
+  - [x]* 5.3 Write property tests for recurring budget logic
     - **Property 10: Recurring Budget Calculation Accuracy**
     - **Property 11: Planned vs Actual Variance Calculation**
     - **Validates: Requirements 18.1, 18.2, 19.6, 20.8**

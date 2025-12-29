@@ -313,6 +313,8 @@ export const queryKeys = {
   budgets: ['budgets'] as const,
   budget: (id: string) => ['budgets', id] as const,
   budgetsByMonth: (year: number, month: number) => ['budgets', 'month', year, month] as const,
+  recurringBudgets: ['budgets', 'recurring'] as const,
+  upcomingOccurrences: (daysAhead: number) => ['budgets', 'upcoming', daysAhead] as const,
 
   // Transactions
   transactions: ['transactions'] as const,
