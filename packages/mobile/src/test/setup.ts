@@ -111,6 +111,17 @@ jest.mock('expo-sharing', () => ({
   isAvailableAsync: jest.fn(() => Promise.resolve(true)),
 }));
 
+// Mock Expo SQLite
+jest.mock('expo-sqlite', () => ({
+  openDatabaseAsync: jest.fn(() => Promise.resolve({
+    execAsync: jest.fn(() => Promise.resolve()),
+    runAsync: jest.fn(() => Promise.resolve({ lastInsertRowid: 1, changes: 1 })),
+    getFirstAsync: jest.fn(() => Promise.resolve(null)),
+    getAllAsync: jest.fn(() => Promise.resolve([])),
+    closeAsync: jest.fn(() => Promise.resolve()),
+  })),
+}));
+
 // Mock Expo Print
 jest.mock('expo-print', () => ({
   printToFileAsync: jest.fn(() => Promise.resolve({
@@ -174,6 +185,32 @@ jest.mock('@tanstack/react-query', () => ({
     isError: false,
     error: null,
   })),
+}));
+
+// Mock offline service
+jest.mock('../services/offline', () => ({
+  storeOfflineData: jest.fn(() => Promise.resolve()),
+  getOfflineData: jest.fn(() => Promise.resolve([])),
+  deleteOfflineData: jest.fn(() => Promise.resolve()),
+  addToSyncQueue: jest.fn(() => Promise.resolve()),
+}));
+
+// Mock API service
+jest.mock('../services/api', () => ({
+  api: {
+    get: jest.fn(() => Promise.resolve({ data: [] })),
+    post: jest.fn(() => Promise.resolve({ data: {} })),
+    put: jest.fn(() => Promise.resolve({ data: {} })),
+    delete: jest.fn(() => Promise.resolve()),
+  },
+  queryKeys: {
+    budgets: ['budgets'],
+    budget: (id: string) => ['budget', id],
+    budgetsByMonth: (year: number, month: number) => ['budgets', year, month],
+    upcomingOccurrences: (days: number) => ['upcomingOccurrences', days],
+    recurringBudgets: ['recurringBudgets'],
+  },
+  getNetworkStatus: () => ({ isOnline: true }),
 }));
 
 // Global test timeout
