@@ -1,5 +1,78 @@
 # Development Log
 
+## 2025-12-30 - AI-Powered Onboarding Integration (Session 6)
+
+### Session Summary
+
+**Duration**: 2 hours
+**Focus**: Complete Task 12.2 - Integrate AI-powered onboarding into authentication flow
+**Outcome**: End-to-end onboarding flow with automatic budget creation
+
+### Accomplishments
+
+- ✅ **Backend API Endpoints** (1 hour)
+
+  - Added `/auth/profile` GET endpoint to retrieve user profile with onboardingCompleted flag
+  - Added `/auth/onboarding` POST endpoint to save selections and create initial budget
+  - Implemented JWT token authentication for protected endpoints
+  - Added UpdateItemCommand and PutItemCommand to DynamoDB client imports
+  - Validated required fields: city, country, familySize, selectedCategories
+  - Auto-create budget for current month with selected expense categories
+
+- ✅ **Frontend Integration** (0.5 hours)
+
+  - Updated AuthPage to check onboardingCompleted flag after login/registration
+  - Enhanced OnboardingPage with API integration and error handling
+  - Added loading states during budget creation ("Creating Budget...")
+  - Implemented error display for failed onboarding attempts
+  - Updated OnboardingFlow component with isSubmitting prop
+
+- ✅ **API Client Updates** (0.25 hours)
+
+  - Added `getProfile()` method to fetch user profile
+  - Added `completeOnboarding()` method to save selections
+  - Proper TypeScript types for onboarding data
+
+- ✅ **Testing & Deployment** (0.25 hours)
+  - Built shared package successfully
+  - Built web app successfully (555.76 kB)
+  - All TypeScript compilation passed
+  - Ready for CI/CD pipeline deployment
+
+### Technical Details
+
+**Backend Changes**:
+
+- Profile endpoint extracts userId from JWT token payload
+- Onboarding endpoint updates user profile (onboardingCompleted=true)
+- Budget creation transforms CategorySuggestion[] into budget expense items
+- Budget structure matches manual budget creation for consistency
+
+**Frontend Changes**:
+
+- AuthPage now async to check profile after authentication
+- OnboardingPage handles API errors gracefully
+- Complete button disabled during submission
+- Automatic redirect to /budget after successful onboarding
+
+### Issues Encountered
+
+None - smooth implementation with existing infrastructure
+
+### Lessons Learned
+
+1. **JWT Token Parsing**: ID token contains custom attributes (custom:userId) needed for user identification
+2. **DynamoDB Updates**: UpdateItemCommand requires ExpressionAttributeValues with proper type markers
+3. **Budget Structure**: Reusing existing budget creation logic ensures consistency
+4. **Error Handling**: Always provide user feedback during async operations
+
+### Next Steps
+
+1. Test end-to-end onboarding flow after deployment
+2. Verify budget creation with selected categories
+3. Test onboarding skip for existing users
+4. Consider adding onboarding progress persistence (resume if interrupted)
+
 ## 2025-12-30 - City Expense Data Generation & Detailed Structure Implementation (Session 5)
 
 ### Session Summary

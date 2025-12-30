@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.18.0] - 2025-12-30
+
+### 🎯 AI-POWERED ONBOARDING INTEGRATION - COMPLETE
+
+- **End-to-End Onboarding Flow** - Seamless integration with authentication system
+
+  - Backend `/auth/profile` endpoint to get user profile with onboardingCompleted flag
+  - Backend `/auth/onboarding` endpoint to save selections and auto-create initial budget
+  - Frontend integration: AuthPage checks onboarding status and redirects accordingly
+  - OnboardingPage saves selections to backend and creates budget categories
+  - Loading states and error handling throughout onboarding flow
+
+- **Auto-Budget Creation** - Initial budget automatically created from onboarding selections
+
+  - Selected categories transformed into budget expense items with planned amounts
+  - Budget created for current month with AI-generated flag
+  - Seamless transition from onboarding to budget management
+  - Uses same budget structure as manual creation for consistency
+
+- **Enhanced User Experience**
+
+  - New users automatically redirected to onboarding after registration
+  - Existing users skip onboarding if already completed
+  - Loading indicators during budget creation
+  - Error messages for failed onboarding attempts
+  - Disabled submit button during processing
+
+- **API Client Enhancements**
+  - Added `getProfile()` method to fetch user profile
+  - Added `completeOnboarding()` method to save selections
+  - Proper JWT token authentication for protected endpoints
+
+### Technical Implementation
+
+- Added UpdateItemCommand and PutItemCommand to auth Lambda imports
+- Onboarding endpoint validates required fields (city, country, familySize, selectedCategories)
+- Profile endpoint uses JWT token from Authorization header for authentication
+- User profile updated with onboardingCompleted=true after successful setup
+- Budget creation integrated into onboarding completion flow
+
 ## [1.17.0] - 2025-12-30
 
 ### 🌍 DETAILED CITY EXPENSE DATA GENERATION - COMPLETE

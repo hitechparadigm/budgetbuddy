@@ -1,8 +1,8 @@
 # Development Status - BudgetBuddy
 
 **Last Updated**: 2025-12-30
-**Current Phase**: Market-Ready MVP Development - AI-Powered Onboarding Complete
-**Overall Progress**: 87%
+**Current Phase**: Market-Ready MVP Development - AI-Powered Onboarding Integration Complete
+**Overall Progress**: 88%
 
 ## What's Working ✅
 
@@ -127,7 +127,7 @@
 - **Freemium Business Model**: Subscription system and premium features (PENDING)
 - **Admin Dashboard**: User management and support ticket system (PENDING)
 
-### Integration & Polish (50% Complete)
+### Integration & Polish (60% Complete)
 
 - **Google Sign-In**: OAuth 2.0 integration for easier access (✅ COMPLETE)
   - Cross-platform OAuth 2.0 with PKCE flow
@@ -142,12 +142,37 @@
   - AWS Bedrock integration for data generation
   - Rule-based category suggestion service
   - Web and mobile onboarding flows
+  - **Backend integration complete**: Profile and onboarding endpoints
+  - **Auto-budget creation**: Initial budget from onboarding selections
+  - **Auth flow integration**: Automatic redirect based on onboarding status
 - **Bank Account Integration**: Plaid API for transaction import (PENDING)
 - **AI Insights**: Spending pattern analysis and optimization suggestions (PENDING)
 
 ## Recent Accomplishments (2025-12-30)
 
-### AI-Powered Onboarding Complete ✅
+### AI-Powered Onboarding Integration Complete ✅
+
+- **Backend API Endpoints**: Profile and onboarding completion
+  - `/auth/profile` GET endpoint to retrieve user profile with onboardingCompleted flag
+  - `/auth/onboarding` POST endpoint to save selections and create initial budget
+  - JWT token authentication for protected endpoints
+  - Automatic budget creation from selected categories
+  - User profile updated with onboardingCompleted=true after setup
+- **Frontend Integration**: Seamless auth flow
+  - AuthPage checks onboardingCompleted flag after login/registration
+  - Automatic redirect to onboarding for new users
+  - Existing users skip onboarding if already completed
+  - Loading states and error handling throughout flow
+- **API Client Enhancements**: New methods for onboarding
+  - `getProfile()` method to fetch user profile
+  - `completeOnboarding()` method to save selections
+  - Proper TypeScript types for onboarding data
+- **Auto-Budget Creation**: Initial budget from onboarding
+  - Selected categories transformed into budget expense items
+  - Budget created for current month with AI-generated flag
+  - Seamless transition from onboarding to budget management
+
+### AI-Powered Onboarding Data Generation Complete ✅
 
 - **City Expense Data Generation**: 359 unique cities across 9 countries
   - Comprehensive 18-field expense structure with detailed categories
