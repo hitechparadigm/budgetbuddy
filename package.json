@@ -20,10 +20,13 @@
     "clean": "echo 'Cleaning build artifacts...'",
     "deploy:dev": "cd infrastructure && npm run deploy:dev",
     "deploy:staging": "cd infrastructure && npm run deploy:staging",
-    "deploy:prod": "cd infrastructure && npm run deploy:prod"
+    "deploy:prod": "cd infrastructure && npm run deploy:prod",
+    "generate-city-data": "ts-node scripts/generateCityData.ts"
   },
   "devDependencies": {
     "typescript": "^5.1.0",
-    "eslint": "^8.50.0"
+    "eslint": "^8.50.0",
+    "ts-node": "^10.9.2",
+    "@aws-sdk/client-bedrock-runtime": "^3.0.0"
   }
 }
