@@ -4,16 +4,41 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ## Project Status
 
-**Current Phase**: Market-Ready MVP Development - Budget Management System Complete
+**Current Phase**: Market-Ready MVP Development - AI-Powered Onboarding Complete
+
 - **Web Application**: Complete AWS serverless architecture deployed and production-ready ✓
 - **Mobile Foundation**: React Native + Expo app with comprehensive budget management ✓
 - **Budget System**: Full CRUD operations with offline support and visual progress tracking ✓
-- **Authentication System**: AWS Cognito integration with secure token storage ✓
+- **Authentication System**: AWS Cognito + Google Sign-In integration with secure token storage ✓
+- **AI-Powered Onboarding**: Location-based budget suggestions with 348 cities across 9 countries ✓
 - **Property-Based Testing**: Advanced testing methodology with 100% test coverage ✓
 - **Cross-Platform**: iOS, Android, and Web platform compatibility achieved ✓
-- **Overall Progress**: 85% complete (Web MVP operational, Mobile budget system complete)
+- **Overall Progress**: 87% complete (Web MVP operational, Mobile budget system complete, AI onboarding data ready)
 
-### Recent Achievements (2025-12-29)
+### Recent Achievements (2025-12-30)
+
+- 🌍 **DETAILED CITY EXPENSE DATA** - 348 unique cities with comprehensive expense breakdown
+  - Generated expense data for 9 countries: Canada, USA, UK, Germany, France, Netherlands, Spain, Italy, Australia
+  - Detailed 18-field expense structure (vs 10 generic fields):
+    - Housing (3): housing, homeInsurance, utilities
+    - Transportation (5): publicTransit, gas, carInsurance, carMaintenance, parking
+    - Food (2): groceries, diningOut
+    - Healthcare (5): healthInsurance, doctorVisits, medicine, dental, vision
+    - Other (3): entertainment, childcare, personal
+  - Country-specific healthcare rules: Canada/UK (universal) vs USA (private)
+  - Realistic transportation costs reflecting actual car ownership patterns
+  - Automatic duplicate detection removed 101 duplicate cities
+  - Total cost: ~$0.50-0.70 (45-50 AWS Bedrock API requests)
+- 🤖 **AI DATA GENERATION SCRIPT** - Production-ready city data generation system
+  - Incremental file writing (saves after each batch of 10 cities)
+  - Resume capability (loads existing cities and continues from where it left off)
+  - Duplicate detection and removal with detailed reporting
+  - Exponential backoff retry logic (3 attempts with increasing delays)
+  - Progress tracking and cost estimation
+  - Rate limiting (3 seconds between requests to respect AWS quotas)
+
+### Previous Achievements (2025-12-29)
+
 - 🔐 **GOOGLE SIGN-IN AUTHENTICATION** - Complete OAuth 2.0 integration across all platforms
   - Cross-platform Google OAuth 2.0 with PKCE flow for secure authentication
   - Platform-specific client IDs for web, iOS, and Android
@@ -49,6 +74,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - Total: 15/15 property-based tests passing with 100+ iterations each
 
 ### Previous Achievements (2025-12-29)
+
 - 🚀 **MOBILE APP FOUNDATION** - Complete React Native + Expo mobile application implemented
   - Full project structure with TypeScript, navigation, and testing framework
   - Bottom tab navigation (Budget, Transactions, Summary, Settings) with stack navigators
@@ -61,6 +87,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - Cross-platform secure storage: Expo SecureStore (mobile) + localStorage (web)
 
 ### Previous Achievements (2025-12-28)
+
 - 🔧 **CRITICAL FIX: Blank Page Bug** - Fixed JavaScript error causing blank page after login
   - Root cause: Backend budget data had undefined `plannedAmount`/`spentAmount` values
   - Solution: Added data validation in budget transformation with number coercion and defaults
@@ -78,6 +105,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - ⚙️ **Settings Page** - New page for timezone and location management
 
 ### Previous Achievements (2025-11-27)
+
 - 🌐 **Production Deployment**: Web app deployed to CloudFront with full authentication
   - Live at: https://d1ueeugn9zcx7n.cloudfront.net
   - S3 bucket: budgetbuddy-web-app
@@ -88,6 +116,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - ?? **Deploy Script Fixed**: Removed PowerShell syntax error from deployment script
 
 ### Previous Achievements (2025-11-19)
+
 - ?? **CI/CD Automation System**: Complete monitoring and documentation enforcement
   - Kiro hook for automatic GitHub Actions workflow monitoring
   - Pre-push git hook enforcing mandatory documentation updates
@@ -98,6 +127,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - ?? **Responsive Layout**: Perfect column alignment and tablet optimization
 
 ### Previous Achievements
+
 - ?? **Unified Budget & Transaction System**: Complete integration between budget planning and transaction tracking
 - ?? **Real-time Budget vs Actual Tracking**: Live progress bars showing spending against planned amounts
 - ?? **Consistent Category System**: Same categories (Salary ??, Groceries ??, Entertainment ??) across all interfaces
@@ -107,6 +137,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - ?? **Professional UI Components**: Progress bars, category selectors, and visual indicators
 
 ### Previous Achievements
+
 - ✓ **Budget CRUD Operations**: Complete backend implementation with zero-based budgeting
 - ✓ **Authentication System**: Full frontend and backend authentication working
 - ✓ **API Endpoints**: Budget creation, reading, updating, and deletion
@@ -125,6 +156,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 ## Current Status & Quick Start
 
 ### What's Working Right Now
+
 - **Live Web App**: `http://localhost:5173/` - Complete authentication flow ✓
 - **Live API**: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/`
 - **Authentication System**:
@@ -145,6 +177,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - AWS infrastructure fully deployed and operational ✓
 
 ### For Developers
+
 ```bash
 # Start the web application
 cd packages/web-app && npm run dev
@@ -159,6 +192,7 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 ```
 
 ### For DevOps
+
 - **Infrastructure**: All 5 AWS stacks deployed and operational
 - **Monitoring**: CloudWatch dashboards and logging active
 - **CI/CD**: GitHub Actions with automated deployment
@@ -167,6 +201,7 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 ## Core Features
 
 ### User Experience
+
 - **AI-Powered Budget Generation**: Personalized budgets using AWS Bedrock Claude 3.5 Sonnet with regional cost-of-living data
 - **Comprehensive Onboarding**: Dynamic questionnaire based on location, family situation, and lifestyle
 - **Zero-Based Budgeting**: Ensure every dollar is allocated with automatic balance calculations
@@ -174,11 +209,13 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 - **Family Account Sharing**: Collaborative budgeting with role-based permissions (primary, spouse, viewer)
 
 ### Business Model
+
 - **Freemium Model**: Free tier with Google AdSense ads, premium tier ($X/month) with ad-free experience
 - **Premium Features**: Weekly financial tips via email, advanced reporting, data export
 - **Payment Processing**: Stripe integration for subscription management
 
 ### Regional Customization
+
 - **Canada**: RRSP, TFSA, RESP savings categories with pre-seeded data for 25+ major cities
 - **United States**: 401k, IRA, HSA categories with pre-seeded data for 25+ major cities
 - **Cost Optimization**: Pre-seeded regional data reduces AI API calls by 90%
@@ -186,6 +223,7 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 ## Technical Architecture
 
 ### Technology Stack
+
 - **Frontend Monorepo**: Yarn Workspaces + Turborepo
   - Web: React 18+ with Vite + Tailwind CSS
   - Mobile: React Native with Expo 0.76+ + React Native Paper
@@ -203,25 +241,30 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 ## Implementation Roadmap
 
 ### Phase 1: Backend Infrastructure ✓ COMPLETE
+
 - [x] **Task 1**: Project setup and monorepo configuration
 - [x] **Task 2**: AWS Infrastructure and Database Setup
 - [x] **Task 4**: Authentication System Implementation
 - [x] **Task 6.1**: Budget CRUD operations
 
 ### Phase 2: Frontend Foundation ✓ COMPLETE
+
 - [x] **Task 3**: Shared Components and API Client
 
 ### Phase 3: Core Budget Features ✓ COMPLETE
+
 - [x] **Task 6.1**: Budget CRUD operations
 - [x] **Task 6.2**: Build budget dashboard and visualization
 - [x] **Task 6.3**: Create category management system
 
 ### Phase 4: Advanced Features (Future Roadmap)
+
 - [ ] **Task 5**: AI-powered onboarding and budget generation
 - [x] **Task 7**: Transaction management system ✓ COMPLETE
 - [ ] **Task 8**: Family account and multi-user features
 
 ### Phase 5: Production Ready (Future Roadmap)
+
 - [ ] **Task 9**: Mobile application development (React Native)
 - [ ] **Task 10**: Premium features and subscription system
 - [x] **Task 13**: Testing and quality assurance ✓ COMPLETE
@@ -230,6 +273,7 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 ## Cost Management Strategy
 
 ### Estimated Monthly Costs (1,000 active users)
+
 - **AWS Services**: $80-120/month
   - Lambda: $10-15 (500K requests)
   - DynamoDB: $15-25 (2M reads, 500K writes)
@@ -239,6 +283,7 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 - **Total**: $110-170/month ($0.11-0.17 per user)
 
 ### Cost Optimization Features
+
 - Pre-seeded cost-of-living data for 50+ cities reduces AI API calls
 - DynamoDB single-table design minimizes table costs
 - Serverless architecture with pay-per-use pricing
@@ -247,12 +292,14 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 ## Development Guidelines
 
 ### Code Standards
+
 - **Documentation**: All functions must have JSDoc comments and inline explanations
 - **Naming**: Use "budgetbuddy-" prefix for all AWS resources
 - **Testing**: Focus on core functionality, optional comprehensive testing
 - **Error Handling**: Structured responses with correlation IDs
 
 ### AWS Resource Naming Convention
+
 ```
 budgetbuddy-{service}-{environment}
 Examples: budgetbuddy-auth, budgetbuddy-main, budgetbuddy-api
@@ -276,9 +323,11 @@ npm run cdk deploy budgetbuddy-dev-api -- --profile hitechparadigm
 ## Support & Contributing
 
 ### For New Kiro Sessions
+
 This README provides complete context for understanding the project status, architecture, and next steps. All implementation details are documented in the spec files.
 
 ### Development Workflow
+
 1. Create feature branch from `develop`
 2. Follow the task list in `.kiro/specs/family-budget-app/tasks.md`
 3. Use automated documentation system: `./scripts/commit.ps1 "message" -Progress X`
@@ -287,6 +336,3 @@ This README provides complete context for understanding the project status, arch
 ## License
 
 This project is proprietary and confidential.
-
-
-

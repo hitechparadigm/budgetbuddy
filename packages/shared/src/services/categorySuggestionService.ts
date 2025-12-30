@@ -58,6 +58,21 @@ function generateCategorySuggestions(
   const multiplier = calculateFamilySizeMultiplier(familySize);
   const adjustments = getUrbanRuralAdjustments(cityData.classification);
 
+  // Calculate combined amounts from detailed fields
+  const transportationTotal =
+    cityData.expenses.publicTransit +
+    cityData.expenses.gas +
+    cityData.expenses.carInsurance +
+    cityData.expenses.carMaintenance +
+    cityData.expenses.parking;
+
+  const healthcareTotal =
+    cityData.expenses.healthInsurance +
+    cityData.expenses.doctorVisits +
+    cityData.expenses.medicine +
+    cityData.expenses.dental +
+    cityData.expenses.vision;
+
   const categories: CategorySuggestion[] = [
     {
       name: 'Housing',
@@ -70,10 +85,8 @@ function generateCategorySuggestions(
     {
       name: 'Transportation',
       icon: '🚗',
-      baseAmount: cityData.expenses.transportation,
-      adjustedAmount: Math.round(
-        cityData.expenses.transportation * multiplier * adjustments.transportation
-      ),
+      baseAmount: transportationTotal,
+      adjustedAmount: Math.round(transportationTotal * multiplier * adjustments.transportation),
       reason: `${cityData.classification} area transportation costs`,
       priority: 'high',
     },
@@ -106,26 +119,26 @@ function generateCategorySuggestions(
     {
       name: 'Healthcare',
       icon: '⚕️',
-      baseAmount: cityData.expenses.healthcare,
-      adjustedAmount: Math.round(
-        cityData.expenses.healthcare * multiplier * adjustments.healthcare
-      ),
+      baseAmount: healthcareTotal,
+      adjustedAmount: Math.round(healthcareTotal * multiplier * adjustments.healthcare),
       reason: 'Medical expenses and insurance',
       priority: 'high',
     },
     {
       name: 'Insurance',
       icon: '🛡️',
-      baseAmount: cityData.expenses.insurance,
-      adjustedAmount: Math.round(cityData.expenses.insurance * multiplier * adjustments.insurance),
-      reason: 'Auto, home, and other insurance',
+      baseAmount: cityData.expenses.homeInsurance,
+      adjustedAmount: Math.round(
+        cityData.expenses.homeInsurance * multiplier * adjustments.insurance
+      ),
+      reason: 'Home insurance',
       priority: 'high',
     },
     {
       name: 'Dining Out',
       icon: '🍽️',
-      baseAmount: cityData.expenses.dining,
-      adjustedAmount: Math.round(cityData.expenses.dining * multiplier * adjustments.dining),
+      baseAmount: cityData.expenses.diningOut,
+      adjustedAmount: Math.round(cityData.expenses.diningOut * multiplier * adjustments.dining),
       reason: 'Restaurants and takeout',
       priority: 'medium',
     },
