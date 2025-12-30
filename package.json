@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "budget-buddy",
   "version": "1.0.0",
   "private": true,
@@ -24,9 +24,9 @@
     "generate-city-data": "ts-node scripts/generateCityData.ts"
   },
   "devDependencies": {
-    "typescript": "^5.1.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.958.0",
     "eslint": "^8.50.0",
     "ts-node": "^10.9.2",
-    "@aws-sdk/client-bedrock-runtime": "^3.0.0"
+    "typescript": "^5.1.0"
   }
 }
