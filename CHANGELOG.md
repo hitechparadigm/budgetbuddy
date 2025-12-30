@@ -1,21 +1,88 @@
 # Changelog
 
+## [1.17.0] - 2025-12-30
+
+### 🌍 DETAILED CITY EXPENSE DATA GENERATION - COMPLETE
+
+- **Generated 348 Unique Cities** - Comprehensive expense data across 9 countries
+
+  - **Countries**: Canada, USA, UK, Germany, France, Netherlands, Spain, Italy, Australia
+  - **Data Quality**: 101 duplicates detected and removed automatically
+  - **Cost**: ~$0.50-0.70 (45-50 AWS Bedrock API requests)
+
+- **Detailed Expense Structure** - 18 granular expense fields (vs 10 generic)
+
+  - **Housing (3)**: housing, homeInsurance, utilities
+  - **Transportation (5)**: publicTransit, gas, carInsurance, carMaintenance, parking
+  - **Food (2)**: groceries, diningOut
+  - **Healthcare (5)**: healthInsurance, doctorVisits, medicine, dental, vision
+  - **Other (3)**: entertainment, childcare, personal
+
+- **Country-Specific Healthcare Rules** - Accurate universal vs private healthcare
+
+  - **Canada/UK**: healthInsurance=0, doctorVisits=0 (universal healthcare)
+  - **USA**: healthInsurance=$300-500, doctorVisits=$30-100 (private healthcare)
+  - **All Countries**: Realistic dental and vision costs (often not covered)
+
+- **Realistic Transportation Data** - Reflects actual car ownership patterns
+  - **North America**: Includes realistic gas, car insurance, and maintenance costs
+  - **Urban Areas**: Higher public transit costs, but still includes car expenses
+  - **Rural Areas**: Lower transit costs, higher car dependency
+
+### 🔧 DATA GENERATION SCRIPT IMPROVEMENTS
+
+- **Incremental File Writing** - Saves progress after each batch (10 cities)
+
+  - **Benefit**: No data loss if script crashes or times out
+  - **Progress Tracking**: Real-time updates showing cities generated and duplicates removed
+
+- **Duplicate Detection** - Automatic detection and removal of duplicate cities
+
+  - **Logic**: Keeps first occurrence when same city appears multiple times
+  - **Reporting**: Detailed list of all duplicates found and skipped
+
+- **Resume Capability** - Loads existing cities and continues from where it left off
+
+  - **Implementation**: Reads existing cityExpenseData.ts file before starting
+  - **Benefit**: Can restart script without losing previous work
+
+- **Error Handling** - Exponential backoff retry logic for API failures
+  - **Max Retries**: 3 attempts with increasing delays (3s, 6s, 12s)
+  - **Rate Limiting**: 3 seconds between requests to respect AWS quotas
+
+### 📝 FIELD NAMING IMPROVEMENTS
+
+- **Renamed**: `prescriptions` → `medicine` for clarity
+- **Rationale**: "Medicine" is more universally understood than "prescriptions"
+
+### 🎯 NEXT STEPS
+
+- Update `categorySuggestionService.ts` to use new 18-field structure
+- Integrate onboarding into auth flow (show after first login)
+- Save onboarding selections to user profile/database
+- Create initial budget categories based on user selections
+- Test end-to-end onboarding flow on web and mobile
+
 ## [1.16.0] - 2025-12-29
 
 ### 🔧 RECURRING BUDGET CALCULATION FIX - COMPLETE TESTING & DEPLOYMENT
+
 - **Date-Dependent Recurring Calculations** - Fixed critical bug in recurring budget planning
+
   - **Problem**: Planned amounts didn't account for start date, causing mismatches with actual transactions
   - **Example**: Bi-weekly $5,000 salary showed $5,000 planned but $10,000 received (2 transactions)
   - **Root Cause**: System stored per-occurrence amount as planned amount, ignoring frequency and start date
   - **Solution**: Implemented date-dependent calculation that counts actual occurrences in each month
 
 - **Shared Utility Package** - Cross-platform calculation consistency
+
   - **Created**: `packages/shared/src/utils/recurringCalculations.ts` with core calculation functions
   - **Functions**: `calculateOccurrencesInMonth()`, `getOccurrenceDatesInMonth()`, `calculatePlannedMonthlyAmount()`
   - **Timezone Fix**: Added `parseLocalDate()` helper to handle local timezone correctly (fixes Windows date shift bug)
   - **Used By**: Both web and mobile apps for consistent calculations
 
 - **Web App Integration** - Enhanced recurring item creation
+
   - **Updated**: `packages/web-app/src/pages/BudgetPage.tsx` with date picker for start dates
   - **UI Changes**: Added "First Occurrence Date" field for recurring items
   - **Label Changes**: "Amount per Occurrence" for recurring items (vs "Planned Amount" for one-time)
@@ -27,7 +94,9 @@
   - **Consistency**: Mobile app now uses identical calculation logic as web app
 
 ### 🧪 COMPREHENSIVE TEST SUITE - ALL PASSING
+
 - **Shared Package Tests**: 13/13 tests passing
+
   - ✅ 2 bi-weekly occurrences starting Dec 5 (Dec 5, Dec 19)
   - ✅ 3 bi-weekly occurrences starting Dec 1 (Dec 1, Dec 15, Dec 29)
   - ✅ 1 bi-weekly occurrence starting Dec 20
@@ -42,7 +111,9 @@
   - Validates calculations work in jsdom environment
 
 ### 🔧 TECHNICAL ACHIEVEMENTS
+
 - **Timezone Handling**: Fixed critical bug where dates were shifting by one day on Windows
+
   - **Issue**: `new Date(dateString)` interprets in UTC, causing timezone mismatches
   - **Solution**: Created `parseLocalDate()` that parses YYYY-MM-DD in local timezone
   - **Impact**: Consistent date handling across all platforms
@@ -53,13 +124,16 @@
   - Mobile app: jest-expo with React Native support
 
 ### 📱 MOBILE APP TESTING - CROSS-PLATFORM VERIFICATION COMPLETE
+
 - **Mobile Test Suite**: 13/13 tests passing
+
   - ✅ Unit tests for bi-weekly, monthly, and weekly calculations
   - ✅ Property-based tests (30 runs each) for calculation accuracy
   - ✅ Variance calculation tests for planned vs actual amounts
   - ✅ Cross-platform consistency verification
 
 - **Mobile Setup**
+
   - Installed dependencies with `--legacy-peer-deps` flag
   - Resolved React Native peer dependency conflicts
   - Updated Jest setup with expo-sqlite mock
@@ -74,7 +148,9 @@
     - Mobile app result: ✅ $10,000
 
 ### 📊 PROGRESS UPDATE
+
 - **Recurring Budget Feature**: 100% Complete
+
   - ✅ Calculation logic implemented and tested
   - ✅ Web app integration complete
   - ✅ Mobile app integration complete
@@ -83,6 +159,7 @@
   - ✅ All 26 tests passing (13 shared + 13 web + 13 mobile)
 
 - **Overall Project Progress**: ~85% Complete
+
   - Core features: 100% (recurring budgets, transactions, categories)
   - Testing: 95% (unit tests, property tests, integration tests)
   - Documentation: 90% (comprehensive guides and examples)
@@ -97,11 +174,14 @@
   - **Impact**: Proper local package resolution instead of npm registry lookup
 
 ### 📊 CALCULATION EXAMPLES - VERIFIED CORRECT
+
 - **Bi-weekly $5,000 starting Dec 5, 2025**:
+
   - Occurrences: 2 (Dec 5, Dec 19)
   - Planned Amount: $10,000 ✅
 
 - **Bi-weekly $5,000 starting Dec 1, 2025**:
+
   - Occurrences: 3 (Dec 1, Dec 15, Dec 29)
   - Planned Amount: $15,000 ✅
 
@@ -110,6 +190,7 @@
   - Planned Amount: $5,000 ✅
 
 ### ✅ REQUIREMENTS COVERAGE
+
 - Requirement 18.1: Calculate occurrences in current month ✓
 - Requirement 18.2: Show correct monthly planned total ✓
 - Requirement 18.3: Allow specifying expected date for first occurrence ✓
@@ -121,6 +202,7 @@
 - Requirement 18.9: Show specific expected dates for each occurrence ✓
 
 ### 📁 FILES CREATED
+
 1. `packages/shared/src/utils/recurringCalculations.ts` - Core calculation logic
 2. `packages/shared/src/utils/recurringCalculations.test.ts` - Shared package tests
 3. `packages/shared/jest.config.js` - Jest configuration for shared package
@@ -131,6 +213,7 @@
 8. `RECURRING_BUDGET_TESTING_COMPLETE.md` - Testing results and verification
 
 ### 📝 FILES MODIFIED
+
 1. `packages/shared/src/utils/recurringCalculations.ts` - Fixed timezone handling
 2. `packages/shared/package.json` - Added ts-jest and @types/jest
 3. `packages/web-app/src/pages/BudgetPage.tsx` - Added date picker and calculation logic
@@ -139,19 +222,23 @@
 6. `packages/mobile/package.json` - Updated shared package reference
 
 ### 🎯 CROSS-PLATFORM CONSISTENCY
+
 Both web and mobile apps now:
+
 - ✅ Use the same calculation logic (shared utility)
 - ✅ Store the same data structure (baseAmount, startDate, plannedMonthlyAmount)
 - ✅ Display the same information (per-occurrence amount, start date, occurrence dates)
 - ✅ Handle the same edge cases (month boundaries, leap years, etc.)
 
 ### 📊 PROGRESS METRICS
+
 - **Recurring Budget Feature**: 100% complete (was 0%)
 - **Testing Coverage**: 13/13 tests passing (100%)
 - **Cross-Platform Consistency**: Achieved
 - **Overall MVP Progress**: 76% → 77% (recurring budget feature complete)
 
 ### 🔄 NEXT STEPS
+
 1. ⏳ Manual testing on web app (user to perform)
 2. ⏳ Manual testing on mobile app (user to perform)
 3. ⏳ Test copying budgets to future months (should preserve recurring settings)
@@ -163,7 +250,9 @@ Both web and mobile apps now:
 ## [1.15.0] - 2025-12-29
 
 ### 🚀 GOOGLE SIGN-IN AUTHENTICATION - COMPLETE IMPLEMENTATION
+
 - **Google OAuth 2.0 Integration** - Full cross-platform authentication
+
   - **Web Platform**: Google OAuth 2.0 with client ID and secret configured
   - **iOS Platform**: Platform-specific OAuth client ID from Google Cloud Console
   - **Android Platform**: Platform-specific OAuth client ID with SHA-1 fingerprint support
@@ -171,6 +260,7 @@ Both web and mobile apps now:
   - **Token Management**: Secure token storage using Expo SecureStore (iOS Keychain/Android Keystore)
 
 - **UI Components & Integration**
+
   - **GoogleSignInButton**: Reusable component with loading states and platform variants
   - **LoginScreen Integration**: Google Sign-In button added to login flow with divider
   - **Auth Service Methods**: signInWithGoogle, linkGoogleAccount, unlinkGoogleAccount
@@ -183,6 +273,7 @@ Both web and mobile apps now:
   - **Production Ready**: Credentials properly managed with fallback support
 
 ### 🔧 TECHNICAL ACHIEVEMENTS
+
 - **Expo Auth Session v7 Compatibility**: Fixed deprecated startAsync API, using openAuthSessionAsync
 - **PKCE Implementation**: Proper code verifier generation and base64url encoding
 - **Cross-Platform Support**: Single codebase works on web, iOS, and Android
@@ -190,12 +281,14 @@ Both web and mobile apps now:
 - **Type Safety**: All TypeScript errors resolved, full type coverage
 
 ### 📋 DOCUMENTATION
+
 - **GOOGLE_SIGNIN_SETUP.md**: Complete setup guide with development and production instructions
 - **Environment Configuration**: .env.local template with all required variables
 - **AWS Integration**: Instructions for storing credentials in Secrets Manager
 - **Troubleshooting**: Common issues and solutions documented
 
 ### ✅ REQUIREMENTS COVERAGE
+
 - Requirement 40.1: Google Sign-In button on login screen ✓
 - Requirement 40.2: Cross-platform OAuth support (web, iOS, Android) ✓
 - Requirement 40.3: Secure token storage ✓
@@ -203,6 +296,7 @@ Both web and mobile apps now:
 - Requirement 40.9: Production-ready implementation ✓
 
 ### 🔐 SECURITY NOTES
+
 - Credentials stored in AWS Secrets Manager (not in code)
 - .env.local excluded from version control
 - PKCE flow prevents authorization code interception
@@ -213,7 +307,9 @@ Both web and mobile apps now:
 ## [1.14.0] - 2025-12-29
 
 ### 🚀 MAJOR FEATURES - COMPLETE BUDGET MANAGEMENT SYSTEM
+
 - **Budget Management Foundation** - Full-featured budget system with offline support
+
   - **Budget Data Models**: Comprehensive TypeScript interfaces for budgets, summaries, and monthly overviews
   - **Budget Service**: Complete CRUD operations with offline-first architecture and React Query integration
   - **Month Navigation**: Interactive month navigation with haptic feedback and smooth transitions
@@ -229,6 +325,7 @@ Both web and mobile apps now:
   - **Visual Design**: Material Design-inspired components with elevation and shadows
 
 ### 🧪 COMPREHENSIVE TESTING VALIDATION
+
 - **Property-Based Testing** - All budget functionality thoroughly tested
   - **Platform Compatibility**: 7/7 tests passing - budget data structures work across all platforms
   - **Mobile UX Properties**: 5/5 tests passing - touch targets, gestures, theming, haptic feedback
@@ -237,6 +334,7 @@ Both web and mobile apps now:
   - **Total Coverage**: 15/15 property-based tests passing with 100+ iterations each
 
 ### 🔧 TECHNICAL ACHIEVEMENTS
+
 - **Budget Calculation Logic**:
   - Monthly occurrence calculations for different frequencies (weekly, bi-weekly, monthly, quarterly, yearly, one-time)
   - Planned amount calculations based on recurrence patterns
@@ -249,6 +347,7 @@ Both web and mobile apps now:
 - **Performance**: Optimized rendering with proper memoization and efficient data structures
 
 ### 🐛 ISSUES RESOLVED
+
 - **TypeScript Compilation**: Fixed 28 TypeScript errors across 9 files
   - API Error class implementation corrected
   - React Query configuration updated for latest version
@@ -259,6 +358,7 @@ Both web and mobile apps now:
 - **Test Environment**: Fixed font loading issues in test environment
 
 ### 📊 PROGRESS METRICS
+
 - **Mobile App**: 85% complete (up from 70%)
 - **Budget Management**: 90% complete (up from 30%)
 - **Authentication**: 95% complete (maintained)
@@ -266,6 +366,7 @@ Both web and mobile apps now:
 - **Overall MVP Progress**: 75% complete (up from 60%)
 
 ### 🎯 REQUIREMENTS VALIDATED
+
 - **Requirements 19.1, 19.2, 19.3**: Budget display and month navigation ✅
 - **Requirements 22.1, 22.3**: Mobile platform compatibility ✅
 - **Requirements 23.2, 23.3, 23.8, 23.10**: Mobile UI components and UX ✅
@@ -274,7 +375,9 @@ Both web and mobile apps now:
 ## [1.13.0] - 2025-12-29
 
 ### 🚀 MAJOR FEATURES - MOBILE APP FOUNDATION
+
 - **React Native + Expo Mobile App** - Complete mobile application foundation implemented
+
   - **Project Structure**: Full React Native + Expo managed workflow with TypeScript
   - **Navigation**: Bottom tab navigation (Budget, Transactions, Summary, Settings) with stack navigators
   - **Development Environment**: ESLint, Jest, Metro bundler, Babel configuration
@@ -290,6 +393,7 @@ Both web and mobile apps now:
   - **Error Handling**: Normalized error messages for better user experience
 
 ### 🧪 COMPREHENSIVE TESTING SUITE
+
 - **Property-Based Testing** - Advanced testing methodology implemented
   - **Platform Compatibility**: 5 properties testing mobile app consistency across iOS/Android
   - **Authentication Properties**: 4 properties validating biometric fallback, token security, session management
@@ -298,6 +402,7 @@ Both web and mobile apps now:
   - **Validation**: Requirements 22.1, 22.3, 25.1, 25.2, 25.3 validated
 
 ### 🔧 TECHNICAL IMPLEMENTATION
+
 - **Dependencies Added**:
   - `aws-amplify` + `@aws-amplify/react-native` for authentication
   - `expo-secure-store` for secure token storage
@@ -309,7 +414,9 @@ Both web and mobile apps now:
 - **Cross-Platform Storage**: SecureStore for mobile, localStorage fallback for web
 
 ### 🐛 CRITICAL BUG FIXES
+
 - **NaN Serialization Bug** - Fixed data compatibility issue discovered by property tests
+
   - **Root Cause**: NaN values in budget data were converting to null during JSON serialization
   - **Impact**: Round-trip data equality tests failing, potential data corruption
   - **Solution**: Added `noNaN: true` to fast-check generators and proper NaN validation
@@ -321,6 +428,7 @@ Both web and mobile apps now:
   - **Style Fixes**: Fixed React Native TextInput style type issues across auth screens
 
 ### 📋 TASK COMPLETION STATUS
+
 - ✅ **Task 1**: React Native + Expo mobile project structure (COMPLETE)
 - ✅ **Task 1.1**: Platform compatibility property tests (COMPLETE)
 - ✅ **Task 2.1**: AWS Cognito integration for React Native (COMPLETE)
@@ -328,6 +436,7 @@ Both web and mobile apps now:
 - 🔄 **Ready for Task 2.2**: Biometric authentication (Face ID/Touch ID/PIN fallback)
 
 ### 📊 PROGRESS METRICS
+
 - **Mobile Development**: 15% → 35% (Task 1 & 2.1 complete)
 - **Authentication System**: 0% → 85% (Core auth complete, biometric pending)
 - **Testing Coverage**: Property-based testing methodology established
@@ -335,6 +444,7 @@ Both web and mobile apps now:
 - **Overall MVP Progress**: 72% → 78% (mobile foundation established)
 
 ### 🎯 LESSONS LEARNED
+
 - **Property-Based Testing Value**: Discovered critical serialization bug that unit tests missed
 - **Cross-Platform Complexity**: React Native requires careful dependency management with legacy peer deps
 - **Authentication Architecture**: Centralized auth service with platform-specific storage works well
@@ -342,6 +452,7 @@ Both web and mobile apps now:
 - **Testing Strategy**: Async property tests need careful handling, synchronous tests more reliable
 
 ### 🔄 NEXT PRIORITIES
+
 1. **Task 2.2**: Implement biometric authentication (Face ID/Touch ID/Fingerprint + PIN fallback)
 2. **Task 3**: Core mobile UI components and navigation enhancements
 3. **Task 4**: API integration and offline capability
@@ -350,7 +461,9 @@ Both web and mobile apps now:
 ## [1.12.3] - 2025-12-28
 
 ### 🔧 CRITICAL BUG FIXES
+
 - **Blank Page After Login** - Fixed JavaScript error causing blank page after successful login
+
   - **Root Cause**: Budget data from backend had undefined `plannedAmount`/`spentAmount` values
   - **Error**: `Cannot read properties of undefined (reading 'toLocaleString')`
   - **Impact**: Users could login but saw blank page instead of budget interface
@@ -364,6 +477,7 @@ Both web and mobile apps now:
   - **Files Fixed**: `backend/functions/auth/index.js` - registration function updated
 
 ### 🚀 NEW FEATURES
+
 - **Phase 1: Family Management** - Auto-family creation system implemented
   - New users automatically get assigned to single-person family
   - Family metadata includes `familyName`, `primaryUserId`, `memberCount`
@@ -371,17 +485,20 @@ Both web and mobile apps now:
   - Documented Phase 2 (partner invitation) in requirements
 
 ### 🐛 BUG FIXES
+
 - **ESLint Error**: Removed unused `PutItemCommand` import causing pipeline failure
 - **User Access**: Fixed `dmytro.malyk@gmail.com` by assigning to existing family `family_test_20251026`
 - **Data Validation**: Added number validation for all budget amounts to prevent undefined errors
 
 ### 📚 DOCUMENTATION
+
 - **Requirements**: Added Requirement 17 for Family Management system
 - **Phase Planning**: Documented simple family model (adults only, no child accounts)
 
 ## [1.12.2] - 2025-12-28
 
 ### 🔧 CRITICAL AUTHENTICATION FIX
+
 - **User ID Mismatch** - Fixed critical issue where users couldn't access existing budgets after login
   - **Root Cause**: Mock authentication was using `familyId: 'family_123'` but existing budgets were stored under different family IDs (`family_test_20251026`, etc.)
   - **Impact**: Users successfully logged in but saw onboarding questions instead of their existing budgets
@@ -395,12 +512,14 @@ Both web and mobile apps now:
   - **Database**: Verified existing budgets under family IDs: `family_test_20251026`, `family_f4b814b8-c0b1-7061-9147-8d7680b69669`, `family_24a8b468-4081-70db-79dc-622738559d26`
 
 ### Testing Results
+
 - ✅ **AWS Testing** - User reported successful login but seeing onboarding questions
 - ✅ **Database Verification** - Confirmed existing budgets in DynamoDB under different family IDs
 - ✅ **Authentication Flow** - Mock authentication working correctly, issue was family ID mismatch
 - ✅ **Fix Applied** - Updated authentication to use existing family ID from database
 
 ### Lessons Learned
+
 - **Authentication Debugging**: Always verify user/family ID mapping when users can't access existing data
 - **Database Consistency**: Ensure authentication system uses same IDs as stored in database
 - **Mock Data Management**: Keep mock authentication IDs consistent with test data in database
@@ -408,6 +527,7 @@ Both web and mobile apps now:
 ## [1.12.1] - 2025-11-30
 
 ### Documentation & Cleanup
+
 - 📚 **Documentation Update** - Updated all documentation to reflect current project status
   - Updated README.md with accurate phase completion status
   - Updated docs/README.md with latest date (2025-11-30)
@@ -426,6 +546,7 @@ Both web and mobile apps now:
   - Clean and maintainable codebase
 
 ### Technical Improvements
+
 - 🏗️ **Script Consolidation** - Simplified npm scripts for better developer experience
 - 📖 **Documentation Accuracy** - All documentation now reflects actual implementation status
 - 🎯 **Project Status** - Clear roadmap with completed vs future features
@@ -433,6 +554,7 @@ Both web and mobile apps now:
 ## [1.12.0] - 2025-11-30
 
 ### 🚨 CRITICAL FIX
+
 - **Timezone Bug** - Fixed critical bug where December budget was shown on November 30, 2025 at 7:22 PM EST
   - **Root Cause**: Application was using UTC time (`new Date().toISOString()`) instead of user's local timezone
   - **Impact**: All users were seeing the wrong current month when their local time was late in the day
@@ -445,7 +567,9 @@ Both web and mobile apps now:
   - **Files Fixed**: BudgetPage.tsx (6 locations), TransactionForm.tsx (3 locations)
 
 ### Added
+
 - 🌍 **Timezone Management System** (Requirement 13)
+
   - Created `timezoneHelpers.ts` with comprehensive timezone utilities
   - Created `monthHelpers.ts` for timezone-aware month calculations
   - Added timezone detection using browser's `Intl.DateTimeFormat` API
@@ -454,12 +578,14 @@ Both web and mobile apps now:
   - Functions: `detectUserTimezone()`, `getCurrentDateInTimezone()`, `getCurrentMonthInTimezone()`, `formatDateInTimezone()`, `isTodayInTimezone()`
 
 - 🏷️ **Transaction & Budget Item Clarity** (Requirement 10)
+
   - Updated TransactionForm modal title: "Record Actual Income" / "Record Actual Expense"
   - Updated AddBudgetItem modal title: "Add Planned Income/Expense/Savings Item"
   - Clear distinction between actual transactions and planned budget items
   - Updated submit button labels: "Record Transaction" vs "Add Budget Item"
 
 - ⚠️ **Transaction Date Validation** (Requirement 11)
+
   - Created `dateValidation.ts` with date validation utilities
   - Warning banner when transaction date is outside current budget month
   - Three action options: Continue with current month, Switch to correct month, or Cancel
@@ -467,6 +593,7 @@ Both web and mobile apps now:
   - Clear warning message: "This transaction date ([Date]) is outside the current budget month ([Month Year])"
 
 - ✏️ **Transaction Editing** (Requirement 12)
+
   - Created `transactionHelpers.ts` for transaction operations
   - Double-click any transaction in the list to edit it
   - Form pre-populates with existing transaction data
@@ -482,6 +609,7 @@ Both web and mobile apps now:
   - Clean, user-friendly interface
 
 ### Fixed
+
 - 🐛 **All Date Calculations** - Updated to use user's local timezone instead of UTC
   - Fixed `currentMonth` state initialization in BudgetPage
   - Fixed `goToToday()` function to use local timezone
@@ -491,6 +619,7 @@ Both web and mobile apps now:
   - Fixed all date displays throughout the application
 
 ### Improved
+
 - 📝 **UI Labels** - Clear, consistent terminology throughout the application
   - "Transaction" or "Actual" for recorded activity
   - "Budget Item" or "Planned" for future allocations
@@ -498,6 +627,7 @@ Both web and mobile apps now:
   - "Planned" for budgeted amounts in categories
 
 ### Technical
+
 - Created 4 new utility files with comprehensive helper functions
 - Updated User interface with timezone and location fields
 - Zero TypeScript errors across all modified files
@@ -505,6 +635,7 @@ Both web and mobile apps now:
 - Prepared for backend API integration
 
 ### Documentation
+
 - Added Requirements 10, 11, 12, 13 to requirements.md
 - Added comprehensive design details to design.md
 - Created TIMEZONE_BUG_FIX.md with detailed bug analysis
@@ -512,6 +643,7 @@ Both web and mobile apps now:
 - Updated tasks.md with implementation tasks
 
 ### Testing
+
 - ✅ Nov 30, 2025 7:22 PM EST → Shows November (not December)
 - ✅ Transaction date validation warning appears correctly
 - ✅ Double-click transaction editing works
@@ -520,6 +652,7 @@ Both web and mobile apps now:
 - ✅ Zero TypeScript diagnostics errors
 
 ### Next Steps
+
 - Backend API integration for timezone storage
 - Location-to-timezone lookup service
 - Transaction update API endpoint
@@ -528,6 +661,7 @@ Both web and mobile apps now:
 ## [1.11.0] - 2025-11-28
 
 ### Added
+
 - 🎨 **Enhanced Month Navigation UI** - Redesigned month navigation interface
   - Large month heading with year (e.g., "December 2025")
   - Budget remaining display below heading with color coding
@@ -540,6 +674,7 @@ Both web and mobile apps now:
   - Automatic budget creation and saving to DynamoDB
 
 ### Fixed
+
 - 🐛 **Timezone Issues** - Fixed month display showing wrong month due to UTC/local timezone conversion
   - Changed `getMonthName()` to create dates in local timezone
   - Changed `isFutureMonth()` to compare year/month directly without date objects
@@ -547,12 +682,14 @@ Both web and mobile apps now:
   - November now correctly displays as "November" instead of "October"
 
 ### Improved
+
 - 📱 **Cleaner Header Design** - Removed horizontal month scroll, replaced with header-based navigation
 - 💾 **Future Month Handling** - Smart budget copying that preserves structure but resets transactions
 - 🎯 **User Experience** - Easier month navigation with prominent controls
 - 📅 **Month Context Awareness** - Clear visual indicators for past, current, and future months
 
 ### Technical
+
 - Added `goToToday()` function for current month navigation
 - Added `isFutureMonth()` function to detect future month viewing
 - Added `isPastMonth()` function to detect past month viewing
@@ -564,6 +701,7 @@ Both web and mobile apps now:
 ## [1.10.0] - 2025-11-27
 
 ### Fixed
+
 - 🚀 **CloudFront Deployment** - Deployed latest web app version to production
   - **Root Cause**: CloudFront was serving an older version of the application without full authentication and data persistence features
   - **Solution**: Built and deployed latest React app to S3, invalidated CloudFront cache
@@ -578,6 +716,7 @@ Both web and mobile apps now:
   - **Impact**: Deployment script now runs without syntax errors
 
 ### Improved
+
 - 📦 **Production Deployment** - Web app now live at https://d1ueeugn9zcx7n.cloudfront.net
   - Full authentication flow with JWT tokens
   - Budget data persistence to DynamoDB
@@ -587,6 +726,7 @@ Both web and mobile apps now:
 ## [1.9.0] - 2025-11-21
 
 ### Fixed
+
 - 🐛 **Month Navigation Date Bug** - Resolved duplicate months and missing November
   - **Root Cause**: JavaScript Date object mutation when using `setMonth()` on string-constructed dates
   - **Solution**: Changed to `new Date(year, month - 1 + offset, 1)` constructor pattern
@@ -602,6 +742,7 @@ Both web and mobile apps now:
   - **Impact**: Only one month can be selected at a time
 
 ### Improved
+
 - 🎨 **Month Navigation UX/UI** - Better visual hierarchy and user experience
   - Centered navigation on page with `justify-center` layout
   - Reduced selected month size from `text-lg` to `text-base` for better proportions
@@ -614,12 +755,14 @@ Both web and mobile apps now:
   - Improved code comments and documentation
 
 ### Technical Details
+
 - **Date Calculation Fix**: Changed from mutable Date operations to immutable constructor pattern
 - **Layout Stability**: Used CSS `min-h` and `min-w` properties with flexbox centering
 - **Selection Logic**: Simplified to position-based (offset) instead of value-based (monthKey)
 - **Responsive Design**: Added `overflow-x-auto` with `scrollbar-hide` utility class
 
 ### Lessons Learned
+
 - **JavaScript Date Pitfalls**: String-based Date construction with `setMonth()` can cause month boundary issues
 - **Layout Stability**: Fixed dimensions prevent layout jumping during dynamic content changes
 - **UX Best Practices**: Centered navigation with consistent sizing improves user experience
@@ -628,6 +771,7 @@ Both web and mobile apps now:
 ## [1.8.0] - 2025-11-19
 
 ### Added
+
 - 🤖 **CI/CD Automation System** - Complete monitoring and documentation enforcement
   - Kiro hook for automatic GitHub Actions workflow monitoring
   - Pre-push git hook enforcing mandatory documentation updates
@@ -646,6 +790,7 @@ Both web and mobile apps now:
   - Triggers Kiro alerts on deployment failures
 
 ### Technical Implementation
+
 - 🏗️ **Pre-Push Hook** (`.githooks/pre-push`)
   - Validates 5 required documentation files exist
   - Checks file freshness (must be updated within 2 hours)
@@ -664,6 +809,7 @@ Both web and mobile apps now:
   - Saves comprehensive status JSON file
 
 ### Documentation Files
+
 - 📄 **docs/cicd-automation-guide.md** - Complete automation guide (1,385 lines)
   - Mandatory documentation updates mechanism
   - CI/CD deployment monitoring mechanism
@@ -671,6 +817,7 @@ Both web and mobile apps now:
   - Troubleshooting and command reference
 
 ### Progress Metrics
+
 - Overall completion: 98% (up from 97%)
 - CI/CD Automation: 100% complete
 - Documentation Enforcement: 100% complete
@@ -678,6 +825,7 @@ Both web and mobile apps now:
 - Developer Experience: Significantly improved
 
 ### Lessons Learned
+
 - **Git Hooks for Quality** - Pre-push hooks prevent documentation drift
 - **AI-Assisted DevOps** - Kiro integration enables rapid failure resolution
 - **Automated Monitoring** - GitHub CLI enables seamless workflow status checks
@@ -686,6 +834,7 @@ Both web and mobile apps now:
 ## [1.7.0] - 2025-11-19
 
 ### Added
+
 - 📊 **Summary View** - Visual budget overview in right sidebar
   - Circular progress chart showing total income
   - Three-column stats display (Planned/Spent/Remaining)
@@ -703,6 +852,7 @@ Both web and mobile apps now:
   - Native mobile app: Separate future project (not in current scope)
 
 ### Fixed
+
 - 🐛 **Column Alignment Issue** - Fixed Planned/Received columns not aligning vertically
   - Root cause: Edit/delete buttons taking up space even when invisible
   - Solution: Added fixed widths (w-24) and flex-shrink-0 to prevent column shifting
@@ -717,6 +867,7 @@ Both web and mobile apps now:
   - Dark overlay when sidebar is open
 
 ### Updated Documentation
+
 - 📚 **design.md** - Updated responsive design section to focus on web app
   - Removed mobile portrait specifications (bottom tabs, single-view)
   - Added note about separate native mobile app project
@@ -727,6 +878,7 @@ Both web and mobile apps now:
   - Clarified desktop/tablet/landscape scope
 
 ### Technical Improvements
+
 - 🏗️ **Tab System** - Added state management for Summary/Transactions toggle
 - 🎯 **Fixed-Width Columns** - Implemented consistent column widths across all rows
   - Column headers: w-24 (96px) for each amount column
@@ -737,6 +889,7 @@ Both web and mobile apps now:
 - 📦 **Color System** - Automatic color assignment for category indicators
 
 ### Progress Metrics
+
 - Overall completion: 97% (up from 95%)
 - Responsive Design: 100% complete (web app scope)
 - Summary View: 100% complete
@@ -744,6 +897,7 @@ Both web and mobile apps now:
 - Documentation: 100% complete
 
 ### Lessons Learned
+
 - **Invisible Elements Take Space** - Elements with opacity-0 still affect layout
   - Solution: Use fixed widths and flex-shrink-0 to prevent shifting
   - Alternative: Position buttons absolutely or use visibility:hidden
@@ -759,6 +913,7 @@ Both web and mobile apps now:
 ## [1.6.0] - 2025-11-09
 
 ### Added
+
 - 🎯 **Budget Item Management** - Complete CRUD operations for budget categories
   - Add new budget categories with name, icon, planned amount
   - Edit existing categories with inline hover buttons
@@ -782,12 +937,14 @@ Both web and mobile apps now:
   - Real-time balance calculations
 
 ### Fixed
+
 - 🐛 **Duplicate Closing Braces** - Cleaned up syntax errors in BudgetPage
 - 🎨 **Modal Positioning** - Fixed budget item modal placement
 - 🔧 **Type Definitions** - Added 'annually' to recurring frequency types
 - 💻 **Component Structure** - Resolved file corruption from multiple appends
 
 ### Removed
+
 - 🗑️ **27 Obsolete Documentation Files** - Cleaned up session-specific docs
   - AI-ONBOARDING-IMPLEMENTATION.md
   - budget-integration-guide.md
@@ -808,11 +965,13 @@ Both web and mobile apps now:
   - transaction-management/
 
 ### Updated Documentation
+
 - 📚 **requirements.md** - Updated to reflect budget planning and transaction recording
 - 📚 **design.md** - Updated with three-column layout and new modals
 - 📚 **tasks.md** - Marked tasks 1-5 as completed, added task 2.4
 
 ### Technical Improvements
+
 - 🏗️ **Clean Architecture** - Separated planning (budget items) from recording (transactions)
 - 🎯 **State Management** - Proper useState hooks for modals and forms
 - 🎨 **UI Components** - Hover states, edit/delete buttons, responsive breakpoints
@@ -820,6 +979,7 @@ Both web and mobile apps now:
 - 🔧 **localStorage Integration** - Automatic saving on all changes
 
 ### Progress Metrics
+
 - Overall completion: 95% (up from 92%)
 - Budget Planning: 100% complete
 - Transaction Recording: 100% complete
@@ -830,6 +990,7 @@ Both web and mobile apps now:
 - Codebase Cleanup: 100% complete
 
 ### Lessons Learned
+
 - **Modal Placement** - Always insert modals before component closing tags, not after
 - **File Appending** - Use strReplace for insertions to avoid file corruption
 - **Documentation Maintenance** - Regular cleanup prevents documentation debt
@@ -838,6 +999,7 @@ Both web and mobile apps now:
 ## [1.5.0] - 2025-11-02
 
 ### Added
+
 - 🎯 **Unified Budget & Transaction System** - Complete integration between budget planning and transaction tracking
 - 📊 **Real-time Budget vs Actual Tracking** - Live progress bars showing spending against planned amounts
 - 🎨 **Consistent Category System** - Same categories (Salary 💰, Groceries 🛒, Entertainment 🎬) across all interfaces
@@ -847,12 +1009,14 @@ Both web and mobile apps now:
 - 📱 **Professional UI Components** - Progress bars, category selectors, and visual indicators
 
 ### Fixed
+
 - 🐛 **Category Mismatch Resolution** - Eliminated disconnect between budget and transaction categories
 - 🎨 **White Theme Modal Issue** - Added CSS overrides to ensure dark theme visibility in transaction modal
 - 🔧 **Import Path Corrections** - Fixed relative import paths (../../../ → ../../../../) for proper module resolution
 - 💻 **TypeScript Type Safety** - Resolved type errors and improved component interfaces
 
 ### Technical Improvements
+
 - 🏗️ **Shared Type Definitions** - Created unified category and budget types in packages/shared/src/types/
 - 🎯 **Component Architecture** - Implemented BudgetDashboard, BudgetPlanningModal, CategorySelector components
 - 🎨 **CSS Architecture** - Added modal-dark-theme.css with !important overrides for theme consistency
@@ -860,6 +1024,7 @@ Both web and mobile apps now:
 - 🔧 **Development Tools** - Added DevHelper component for easy mock mode toggling
 
 ### Integration Features
+
 - ✅ **Budget Planning Flow** - Complete budget creation with category allocation and zero-based validation
 - ✅ **Transaction Entry Flow** - Enhanced transaction modal with unified category selection
 - ✅ **Progress Visualization** - Real-time progress bars showing budget utilization
@@ -867,11 +1032,13 @@ Both web and mobile apps now:
 - ✅ **Responsive Design** - Professional dark theme matching design requirements
 
 ### Testing & Documentation
+
 - 📚 **Comprehensive Documentation** - Created UNIFIED-BUDGET-SYSTEM.md and budget-integration-guide.md
 - 🧪 **Testing Scenarios** - Documented complete testing flows for budget-transaction integration
 - 🎯 **User Guides** - Step-by-step instructions for testing unified system functionality
 
 ### Progress Metrics
+
 - Overall completion: 92% (up from 85%)
 - Budget System: 100% complete (unified with transactions)
 - Transaction System: 100% complete (integrated with budget)
@@ -881,6 +1048,7 @@ Both web and mobile apps now:
 - Infrastructure: 100% complete
 
 ### Lessons Learned
+
 - **CSS Specificity Management** - Using !important declarations and custom classes to override conflicting styles
 - **Import Path Resolution** - Proper relative path calculation in monorepo structure
 - **Component Integration** - Sharing types and utilities across package boundaries
@@ -889,6 +1057,7 @@ Both web and mobile apps now:
 ## [1.4.0] - 2025-11-01
 
 ### Added
+
 - ✅ Complete transaction CRUD operations with validation
 - ✅ Enhanced error handling with custom error classes (ValidationError, AuthorizationError, etc.)
 - ✅ Simplified API client without package linking dependencies
@@ -898,24 +1067,28 @@ Both web and mobile apps now:
 - ✅ Development quick start guide
 
 ### Fixed
+
 - 🔧 Frontend integration issues with API client package linking
 - 🔧 Error handling with field-specific validation messages
 - 🔧 Budget calculation logic separated into dedicated service
 - 🔧 Deployment workflow simplified for development efficiency
 
 ### Technical Improvements
+
 - 🏗️ Separated concerns: budget-service.js, errors.js
 - 🏗️ Better logging with structured context
 - 🏗️ Streamlined testing approach focused on critical paths
 - 🏗️ Enhanced transaction validation with business logic
 
 ### Testing
+
 - ✅ 13/13 unit tests passing
 - ✅ API health checks successful
 - ✅ Frontend integration verified
 - ✅ Deployment pipeline tested
 
 ### Progress
+
 - Overall completion: 85% (up from 75%)
 - Transaction system: 100% complete
 - Budget system: 100% complete
@@ -923,4 +1096,5 @@ Both web and mobile apps now:
 - Infrastructure: 100% complete
 
 ## Previous versions...
+
 [Previous changelog entries would be here]

@@ -1,8 +1,155 @@
 # Development Log
 
+## 2025-12-30 - City Expense Data Generation & Detailed Structure Implementation (Session 5)
+
+### Session Summary
+
+**Duration**: 8 hours (overnight script execution)
+**Focus**: Generate comprehensive city expense data with detailed 18-field structure
+**Outcome**: 348 unique cities generated across 9 countries with country-specific healthcare rules
+
+### Accomplishments
+
+- ✅ **Data Structure Design** (0.5 hours)
+
+  - Analyzed user feedback on generic expense structure
+  - Designed detailed 18-field expense structure matching categoryDefinitions.ts
+  - Split generic fields into granular subcategories:
+    - insurance → homeInsurance, carInsurance, healthInsurance
+    - transportation → publicTransit, gas, carInsurance, carMaintenance, parking
+    - healthcare → healthInsurance, doctorVisits, medicine, dental, vision
+
+- ✅ **Script Development** (1.5 hours)
+
+  - Fixed TypeScript compilation errors (template literal spacing issues)
+  - Updated AWS Bedrock prompt with detailed field descriptions
+  - Implemented country-specific healthcare rules (universal vs private)
+  - Added realistic transportation cost guidance for North American cities
+  - Renamed `prescriptions` to `medicine` for clarity
+
+- ✅ **Script Enhancements** (1 hour)
+
+  - Implemented incremental file writing (saves after each batch)
+  - Added duplicate detection and removal logic
+  - Implemented resume capability (loads existing cities before starting)
+  - Added exponential backoff retry logic (3 attempts with increasing delays)
+  - Added progress tracking and cost estimation
+
+- ✅ **Data Generation** (6 hours - overnight)
+
+  - Generated 348 unique cities across 9 countries
+  - Processed 45-50 AWS Bedrock API requests
+  - Detected and removed 101 duplicate cities automatically
+  - Total cost: ~$0.50-0.70
+
+- ✅ **Data Validation** (0.5 hours)
+  - Verified Toronto: healthInsurance=0, doctorVisits=0, realistic car costs
+  - Verified London: healthInsurance=0, doctorVisits=0, medicine=15
+  - Verified New York: healthInsurance=450, doctorVisits=50, medicine=40
+  - All 18 expense fields present and realistic
+
+### Issues Encountered & Resolutions
+
+**Issue 1: Generic Expense Structure**
+
+- **Problem**: Initial data had generic fields (insurance, transportation, healthcare) that were confusing
+- **Example**: "insurance: 440" - unclear if car, home, health, or life insurance
+- **Resolution**: Split into specific fields (homeInsurance, carInsurance, healthInsurance)
+- **Time Impact**: +1 hour for redesign and prompt updates
+
+**Issue 2: Unrealistic Zero Values**
+
+- **Problem**: Toronto had gas=0, carInsurance=0, carMaintenance=0 (unrealistic for North America)
+- **Root Cause**: AI prompt was too aggressive about setting car expenses to 0 in cities with transit
+- **Resolution**: Updated prompt to clarify that North Americans typically own cars even in transit cities
+- **Time Impact**: +0.5 hours for prompt refinement and regeneration
+
+**Issue 3: Doctor Visits Cost in Canada**
+
+- **Problem**: doctorVisits=25 for Canada (should be 0 - universal healthcare)
+- **Root Cause**: Prompt didn't explicitly state doctor visits are free in universal healthcare countries
+- **Resolution**: Updated prompt: "SET TO 0 for Canada, UK with full universal healthcare"
+- **Time Impact**: +0.5 hours for prompt update and regeneration
+
+**Issue 4: Script Getting Stuck**
+
+- **Problem**: Script got stuck on UK batch 3 and ran overnight without progress
+- **Root Cause**: AWS Bedrock API timeout or rate limit issue
+- **Resolution**: Implemented resume capability to load existing cities and continue
+- **Time Impact**: +1 hour for resume logic implementation
+
+**Issue 5: Duplicate Cities**
+
+- **Problem**: AI generated same cities multiple times (e.g., Toronto appeared 3 times)
+- **Root Cause**: Requesting "top 10 cities" multiple times returns same cities
+- **Resolution**: Added duplicate detection logic that keeps first occurrence
+- **Time Impact**: +0.5 hours for duplicate detection implementation
+
+### Lessons Learned
+
+1. **Prompt Engineering is Critical**
+
+   - Be extremely explicit about edge cases (e.g., "SET TO 0 for Canada/UK")
+   - Provide examples in the prompt to guide AI behavior
+   - Test with first batch before running full generation
+
+2. **Incremental Saves are Essential**
+
+   - Saving after each batch prevents data loss from timeouts/crashes
+   - Allows monitoring progress in real-time
+   - Enables resume capability for long-running scripts
+
+3. **Duplicate Detection is Necessary**
+
+   - AI models can generate duplicate data when asked for "top N" items
+   - Always implement deduplication logic for data generation scripts
+   - Log duplicates for transparency and debugging
+
+4. **Country-Specific Rules Need Explicit Handling**
+
+   - Universal healthcare countries need healthInsurance=0 AND doctorVisits=0
+   - Transportation patterns vary by region (North America = car-centric)
+   - Don't assume AI will infer these rules - state them explicitly
+
+5. **Resume Capability Saves Time**
+   - Loading existing data before starting prevents wasted API calls
+   - Allows restarting failed scripts without losing progress
+   - Essential for long-running data generation tasks
+
+### Progress Metrics
+
+**City Data Generation**: 100% complete
+
+- 348 unique cities generated
+- 9 countries covered (Canada, USA, UK, Germany, France, Netherlands, Spain, Italy, Australia)
+- 18 detailed expense fields per city
+- Country-specific healthcare rules applied
+
+**AI-Powered Onboarding**: 90% complete
+
+- ✅ Category system (15 expense + 6 income categories)
+- ✅ Geolocation service (IP-based location detection)
+- ✅ Category suggestion service (rule-based logic)
+- ✅ City expense data (348 cities with detailed structure)
+- ✅ Web onboarding flow (3-step: location → family size → categories)
+- ✅ Mobile onboarding flow (React Native)
+- 🔄 Update categorySuggestionService to use new 18-field structure
+- 🔄 Integrate onboarding into auth flow
+- 🔄 Save selections to user profile
+- 🔄 Create initial budgets based on selections
+
+### Next Session Focus
+
+1. Update `categorySuggestionService.ts` to use new 18-field expense structure
+2. Build shared package to include updated city data
+3. Test onboarding flow with new detailed expense data
+4. Integrate onboarding into auth flow (show after first login)
+5. Implement save functionality for onboarding selections
+
 ## 2025-12-29 - Mobile App Testing & Cross-Platform Verification (Session 4)
 
 ### Session Summary
+
 **Duration**: 1 hour
 **Focus**: Complete mobile app testing and verify cross-platform consistency with web app
 **Outcome**: All 13 mobile tests passing, cross-platform consistency verified, ready for production
@@ -10,17 +157,20 @@
 ### Accomplishments
 
 - ✅ **Mobile App Setup** (0.2 hours)
+
   - Installed dependencies with `--legacy-peer-deps` flag
   - Resolved React Native peer dependency conflicts
   - Verified mobile app correctly imports shared package
 
 - ✅ **Test Suite Creation** (0.3 hours)
+
   - Created `packages/mobile/src/services/budget.test.ts` with 7 unit tests
   - Tests cover bi-weekly, monthly, and weekly calculations
   - Tests verify cross-platform consistency with web app
   - All tests passing
 
 - ✅ **Jest Configuration Updates** (0.3 hours)
+
   - Updated `packages/mobile/src/test/setup.ts` with expo-sqlite mock
   - Added offline service mock
   - Added API service mock
@@ -34,6 +184,7 @@
 ### Test Results
 
 **Mobile Budget Service Tests**: 7/7 passing
+
 - ✅ Bi-weekly occurrences: 2 for December 2025
 - ✅ Monthly occurrences: 1 for December 2025
 - ✅ Weekly occurrences: 5 for December 2025
@@ -43,6 +194,7 @@
 - ✅ Cross-platform consistency verified
 
 **Property-Based Tests**: 6/6 passing (1 skipped)
+
 - ✅ Property 10: Recurring budget calculation accuracy (30 runs)
 - ✅ Property 11: Planned vs actual variance calculation (30 runs)
 - ✅ Different frequencies handling (weekly, monthly, quarterly)
@@ -55,6 +207,7 @@
 ### Cross-Platform Consistency Verified ✅
 
 **Example: Bi-Weekly Salary**
+
 - Start Date: December 4, 2025
 - Frequency: Bi-weekly
 - Amount: $5,000
@@ -63,17 +216,20 @@
 - **Status**: ✅ IDENTICAL
 
 Both platforms use the same shared utility:
+
 - `calculateOccurrencesInMonth()` from `@budget-buddy/shared`
 - `calculatePlannedMonthlyAmount()` from `@budget-buddy/shared`
 
 ### Issues Encountered & Resolutions
 
 1. **Expo Dev Server Error**
+
    - Issue: `expo start --web` failed with TypeScript/config plugin errors
    - Resolution: Used Jest testing instead of Expo dev server
    - Outcome: Tests provide better verification than manual testing
 
 2. **Missing @babel/runtime**
+
    - Issue: Shared package compiled code referenced @babel/runtime helpers
    - Resolution: Installed @babel/runtime in shared package and rebuilt
    - Outcome: Mobile tests now run successfully
@@ -86,36 +242,43 @@ Both platforms use the same shared utility:
 ### Files Modified
 
 1. `packages/mobile/src/services/budget.test.ts` (NEW)
+
    - 7 unit tests for recurring budget calculations
 
 2. `packages/mobile/src/test/setup.ts` (MODIFIED)
+
    - Added expo-sqlite mock
    - Added offline service mock
    - Added API service mock
 
 3. `packages/mobile/src/test/properties/recurring-budget.test.ts` (MODIFIED)
+
    - Fixed date format issues
    - Updated test cases with proper start dates
    - Fixed one-time budget test
 
 4. `packages/shared/package.json` (MODIFIED)
+
    - Added @babel/runtime dependency
 
 5. `MOBILE_APP_TESTING_COMPLETE.md` (NEW)
    - Comprehensive documentation of mobile testing
 
 ### Requirements Coverage
+
 - ✅ Requirement 18.1-18.9: Recurring budget planning (verified on mobile)
 - ✅ Cross-platform consistency: Mobile and web use identical logic
 - ✅ Mobile app integration: Uses shared utility correctly
 
 ### Lessons Learned
+
 1. **Jest Testing**: More reliable than manual testing for calculation verification
 2. **Date Handling**: Always use YYYY-MM-DD format for consistent timezone handling
 3. **Shared Utilities**: Monorepo approach ensures cross-platform consistency
 4. **Property-Based Testing**: Catches edge cases that unit tests might miss
 
 ### Next Steps
+
 1. Push mobile testing changes to CI/CD
 2. Monitor CI/CD pipeline for successful deployment
 3. Manual testing on mobile device (optional - tests provide good coverage)
@@ -126,6 +289,7 @@ Both platforms use the same shared utility:
 ## 2025-12-29 - Recurring Budget Calculation Fix & Testing (Session 3)
 
 ### Session Summary
+
 **Duration**: 1.5 hours
 **Focus**: Complete testing and CI/CD deployment of recurring budget calculation fix
 **Outcome**: All tests passing, timezone bug fixed, ready for production deployment
@@ -133,12 +297,14 @@ Both platforms use the same shared utility:
 ### Accomplishments
 
 - ✅ **Test Suite Execution** (0.5 hours)
+
   - Ran shared package tests: 13/13 passing
   - Ran web app tests: 13/13 passing
   - Fixed timezone bug in date parsing (Windows date shift issue)
   - Verified all calculation scenarios work correctly
 
 - ✅ **Jest Configuration Setup** (0.5 hours)
+
   - Created `packages/shared/jest.config.js` with ts-jest preset
   - Created `packages/web-app/jest.config.js` with jsdom environment
   - Installed missing dependencies: ts-jest, @types/jest, jest-environment-jsdom
@@ -153,17 +319,20 @@ Both platforms use the same shared utility:
 ### Issues Encountered & Resolutions
 
 1. **Timezone Date Parsing Bug**
+
    - Issue: Tests failing with dates shifted by one day (Dec 5 → Dec 4)
    - Root Cause: `new Date(dateString)` interprets in UTC, not local timezone
    - Resolution: Created `parseLocalDate()` helper that parses YYYY-MM-DD in local timezone
    - Outcome: All 13 tests now passing on Windows and other timezones
 
 2. **Jest Configuration Missing**
+
    - Issue: Shared package had no jest.config.js, causing TypeScript parse errors
    - Resolution: Created proper jest.config.js with ts-jest preset
    - Outcome: Tests now run successfully with TypeScript support
 
 3. **Package Resolution Issues**
+
    - Issue: Web app trying to fetch @budget-buddy/shared from npm registry
    - Resolution: Updated package.json to use `"@budget-buddy/shared": "file:../shared"`
    - Outcome: Proper local package resolution in monorepo
@@ -176,16 +345,19 @@ Both platforms use the same shared utility:
 ### Technical Details
 
 **Test Results:**
+
 - Shared Package: 13/13 tests passing (1.451s)
 - Web App: 13/13 tests passing (1.061s)
 - Total: 26/26 tests passing
 
 **Calculation Verification:**
+
 - Bi-weekly $5,000 starting Dec 5: 2 occurrences = $10,000 ✅
 - Bi-weekly $5,000 starting Dec 1: 3 occurrences = $15,000 ✅
 - Bi-weekly $5,000 starting Dec 20: 1 occurrence = $5,000 ✅
 
 **Files Modified:**
+
 - packages/shared/src/utils/recurringCalculations.ts (timezone fix)
 - packages/shared/jest.config.js (created)
 - packages/web-app/jest.config.js (created)
@@ -194,17 +366,20 @@ Both platforms use the same shared utility:
 - CHANGELOG.md (version 1.16.0 entry)
 
 ### Requirements Coverage
+
 - ✅ Requirement 18.1-18.9: Recurring budget planning (all verified by tests)
 - ✅ Cross-platform consistency: Web and mobile use same calculation logic
 - ✅ Timezone handling: Fixed for all platforms
 
 ### Lessons Learned
+
 1. **Timezone Handling**: Always use local timezone for user-facing dates, not UTC
 2. **Jest Configuration**: Each package in monorepo may need its own jest.config.js
 3. **Package Resolution**: Use file paths for local packages in monorepo structure
 4. **Test-Driven Fixes**: Property-based tests caught timezone bug that unit tests might miss
 
 ### Next Steps
+
 1. Monitor CI/CD pipeline for successful deployment
 2. Manual testing on web app (user to perform)
 3. Manual testing on mobile app (user to perform)
@@ -216,6 +391,7 @@ Both platforms use the same shared utility:
 ## 2025-12-29 - Google Sign-In Authentication Implementation (Session 2)
 
 ### Session Summary
+
 **Duration**: 2 hours
 **Focus**: Complete Google OAuth 2.0 integration for web, iOS, and Android platforms
 **Outcome**: Production-ready Google Sign-In with secure credential management and cross-platform support
@@ -223,6 +399,7 @@ Both platforms use the same shared utility:
 ### Accomplishments
 
 - ✅ **Google OAuth 2.0 Implementation** (1 hour)
+
   - Fixed expo-auth-session v7 API compatibility (replaced deprecated startAsync with openAuthSessionAsync)
   - Implemented PKCE flow with proper code verifier generation and base64url encoding
   - Created GoogleAuthService with secure token exchange and user info fetching
@@ -230,6 +407,7 @@ Both platforms use the same shared utility:
   - Implemented secure token storage using Expo SecureStore (iOS Keychain/Android Keystore)
 
 - ✅ **UI Integration & Components** (0.5 hours)
+
   - Created GoogleSignInButton component with loading states and platform variants
   - Integrated Google Sign-In button into LoginScreen with divider
   - Added Google Sign-In handler with error handling and user feedback
@@ -244,11 +422,13 @@ Both platforms use the same shared utility:
 ### Issues Encountered & Resolutions
 
 1. **Java/keytool Not Installed**
+
    - Issue: Could not generate SHA-1 fingerprint using keytool
    - Resolution: Used EAS credentials system instead (recommended approach)
    - Outcome: Successfully obtained Android and iOS client IDs from Google Cloud Console
 
 2. **Expo Auth Session API Changes**
+
    - Issue: startAsync method not available in expo-auth-session v7
    - Resolution: Updated to use openAuthSessionAsync from expo-web-browser
    - Outcome: Proper OAuth flow working on all platforms
@@ -261,16 +441,19 @@ Both platforms use the same shared utility:
 ### Technical Details
 
 **Credentials Configured:**
+
 - Web: Stored in AWS Secrets Manager (never commit to code)
 - iOS: Stored in AWS Secrets Manager (never commit to code)
 - Android: Stored in AWS Secrets Manager (never commit to code)
 
 **AWS Secrets Manager:**
+
 - Secret Name: budgetbuddy-dev/google-oauth
 - ARN: arn:aws:secretsmanager:us-east-1:786673323159:secret:budgetbuddy-dev/google-oauth-Ai9T8o
 - Profile: hitechparadigm
 
 ### Requirements Coverage
+
 - ✅ Requirement 40.1: Google Sign-In button on login screen
 - ✅ Requirement 40.2: Cross-platform OAuth support (web, iOS, Android)
 - ✅ Requirement 40.3: Secure token storage
@@ -278,6 +461,7 @@ Both platforms use the same shared utility:
 - ✅ Requirement 40.9: Production-ready implementation
 
 ### Next Steps
+
 1. Implement backend API integration to create/link user accounts
 2. Add Google Sign-In to RegisterScreen
 3. Test end-to-end flow on web, iOS, and Android
@@ -285,4 +469,3 @@ Both platforms use the same shared utility:
 5. Implement backend user creation/linking logic
 
 ---
-
