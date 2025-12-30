@@ -157,6 +157,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Build shared package
+        working-directory: packages/shared
+        run: |
+          npm install
+          npm run build
+
       - name: Build web application
         working-directory: packages/web-app
         env:
