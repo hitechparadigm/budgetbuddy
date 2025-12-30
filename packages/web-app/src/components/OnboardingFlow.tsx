@@ -23,6 +23,7 @@ interface OnboardingFlowProps {
     selectedCategories: CategorySuggestion[]
   ) => void;
   onSkip: () => void;
+  isSubmitting?: boolean;
 }
 
 type OnboardingStep = "location" | "family-size" | "categories" | "review";
@@ -30,6 +31,7 @@ type OnboardingStep = "location" | "family-size" | "categories" | "review";
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onComplete,
   onSkip,
+  isSubmitting = false,
 }) => {
   const [step, setStep] = useState<OnboardingStep>("location");
   const [location, setLocation] = useState<GeolocationResult | null>(null);
@@ -342,10 +344,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 </button>
                 <button
                   onClick={handleComplete}
-                  disabled={selectedCategories.length === 0}
+                  disabled={selectedCategories.length === 0 || isSubmitting}
                   className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  Create Budget ({selectedCategories.length} categories)
+                  {isSubmitting
+                    ? "Creating Budget..."
+                    : `Create Budget (${selectedCategories.length} categories)`}
                 </button>
               </div>
             </div>

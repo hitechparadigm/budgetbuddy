@@ -99,6 +99,28 @@ class SimpleApiClient {
     this.clearTokens();
   }
 
+  async getProfile() {
+    return this.request('/auth/profile', {
+      method: 'GET',
+    });
+  }
+
+  async completeOnboarding(data: {
+    city: string;
+    country: string;
+    familySize: number;
+    selectedCategories: Array<{
+      name: string;
+      icon: string;
+      adjustedAmount: number;
+    }>;
+  }) {
+    return this.request('/auth/onboarding', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Budget endpoints
   async get(endpoint: string) {
     return this.request(endpoint, {
