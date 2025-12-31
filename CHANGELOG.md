@@ -40,6 +40,10 @@
 - User profile updated with onboardingCompleted=true after successful setup
 - Budget creation integrated into onboarding completion flow
 
+### Fixed
+
+- ESLint errors in auth Lambda: Added disable comments for UpdateItemCommand and PutItemCommand imports used in endpoint handlers
+
 ## [1.17.0] - 2025-12-30
 
 ### 🌍 DETAILED CITY EXPENSE DATA GENERATION - COMPLETE

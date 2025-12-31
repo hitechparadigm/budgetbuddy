@@ -57,7 +57,10 @@
 
 ### Issues Encountered
 
-None - smooth implementation with existing infrastructure
+1. **ESLint Unused Variables Error** - CI/CD pipeline failed due to ESLint detecting UpdateItemCommand and PutItemCommand as unused
+   - **Root Cause**: Commands imported at top level but used deep inside endpoint handlers
+   - **Resolution**: Added `// eslint-disable-line no-unused-vars` comments to imports
+   - **Time Impact**: 5 minutes to diagnose and fix
 
 ### Lessons Learned
 
