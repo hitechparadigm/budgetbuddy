@@ -17,13 +17,14 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2025-12-30)
 
-- 🎯 **AI-POWERED ONBOARDING INTEGRATION** - Complete end-to-end onboarding flow
+- 🎯 **AI-POWERED ONBOARDING INTEGRATION** - Complete end-to-end onboarding flow with backend API
 
-  - Backend `/auth/profile` and `/auth/onboarding` endpoints for profile management
-  - Automatic budget creation from onboarding selections
-  - Auth flow integration: redirect based on onboardingCompleted status
-  - Loading states and error handling throughout onboarding process
-  - Seamless transition from onboarding to budget management
+  - Backend `/auth/profile` GET endpoint retrieves user profile with onboardingCompleted flag
+  - Backend `/auth/onboarding` POST endpoint saves selections and auto-creates initial budget
+  - Automatic budget creation from onboarding selections with proper DynamoDB structure
+  - Auth flow integration: AuthPage redirects based on onboardingCompleted status
+  - Loading states and comprehensive error handling throughout onboarding process
+  - Seamless transition from onboarding to budget management page
 
 - 🌍 **DETAILED CITY EXPENSE DATA** - 348 unique cities with comprehensive expense breakdown
   - Generated expense data for 9 countries: Canada, USA, UK, Germany, France, Netherlands, Spain, Italy, Australia
