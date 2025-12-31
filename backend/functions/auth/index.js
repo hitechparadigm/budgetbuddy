@@ -14,8 +14,8 @@ const {
   DynamoDBClient,
   TransactWriteItemsCommand,
   GetItemCommand,
-  UpdateItemCommand,
-  PutItemCommand,
+  UpdateItemCommand, // eslint-disable-line no-unused-vars
+  PutItemCommand, // eslint-disable-line no-unused-vars
 } = require("@aws-sdk/client-dynamodb");
 
 // Environment variables
