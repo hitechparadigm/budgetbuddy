@@ -103,5 +103,9 @@ export function isValidGeolocation(result: GeolocationResult): boolean {
  * Format: "city-countrycode" (lowercase)
  */
 export function createCityKey(city: string, countryCode: string): string {
+  if (!city || !countryCode) {
+    console.error('createCityKey: Invalid parameters', { city, countryCode });
+    return '';
+  }
   return `${city.toLowerCase().replace(/\s+/g, '-')}-${countryCode.toLowerCase()}`;
 }

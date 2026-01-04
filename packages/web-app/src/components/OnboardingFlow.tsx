@@ -90,6 +90,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const handleFamilySizeNext = () => {
     if (!location) return;
 
+    // Ensure we have valid location data
+    if (!location.city || !location.countryCode) {
+      console.error("Invalid location data:", location);
+      return;
+    }
+
     const cityKey = createCityKey(location.city, location.countryCode);
     const sug = getSuggestions(cityKey, familySize);
 
@@ -97,6 +103,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       setSuggestions(sug);
       setSelectedCategories(sug.categories.slice(0, 8)); // Select top 8 by default
       setStep("categories");
+    } else {
+      console.error("No suggestions found for city key:", cityKey);
     }
   };
 
