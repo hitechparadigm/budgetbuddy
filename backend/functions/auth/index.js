@@ -32,6 +32,29 @@ const dynamoClient = new DynamoDBClient({
 });
 
 /**
+ * Helper function to generate CORS headers
+ */
+function getCorsHeaders(origin) {
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://d1ueeugn9zcx7n.cloudfront.net",
+    "https://d2ubhx2a13s7gc.cloudfront.net",
+    "https://app.budgetbuddy.com",
+    "https://admin.budgetbuddy.com",
+  ];
+  const corsOrigin = allowedOrigins.includes(origin)
+    ? origin
+    : allowedOrigins[2]; // Default to CloudFront
+
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": corsOrigin,
+    "Access-Control-Allow-Credentials": "true",
+  };
+}
+
+/**
  * Main Lambda handler function
  */
 exports.handler = async (event, _context) => {
@@ -41,6 +64,7 @@ exports.handler = async (event, _context) => {
   try {
     const httpMethod = event.httpMethod;
     const path = event.path;
+    const origin = event.headers.origin || event.headers.Origin || "";
 
     console.log("Processing request:", httpMethod, path);
 
@@ -52,10 +76,7 @@ exports.handler = async (event, _context) => {
       console.log("Health check requested");
       return {
         statusCode: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: getCorsHeaders(origin),
         body: JSON.stringify({
           status: "healthy",
           service: "auth",
@@ -71,9 +92,10 @@ exports.handler = async (event, _context) => {
       return {
         statusCode: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
+          ...getCorsHeaders(origin),
           "Access-Control-Allow-Headers": "Content-Type,Authorization",
           "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+          "Access-Control-Max-Age": "86400",
         },
         body: "",
       };
@@ -95,10 +117,7 @@ exports.handler = async (event, _context) => {
           console.log("No body received in request");
           return {
             statusCode: 400,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               error: "Bad Request",
               message: "Request body is required",
@@ -110,10 +129,7 @@ exports.handler = async (event, _context) => {
         console.error("JSON parsing failed:", error);
         return {
           statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Bad Request",
             message: "Invalid JSON format",
@@ -150,10 +166,7 @@ exports.handler = async (event, _context) => {
         console.log("Validation failed:", validationErrors);
         return {
           statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Validation Error",
             message: "Request validation failed",
@@ -326,10 +339,7 @@ exports.handler = async (event, _context) => {
 
         return {
           statusCode: 201,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             message: "User registered successfully",
             userId: userId,
@@ -352,10 +362,7 @@ exports.handler = async (event, _context) => {
         if (cognitoError.name === "UsernameExistsException") {
           return {
             statusCode: 409,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               error: "User Already Exists",
               message: "An account with this email address already exists",
@@ -365,10 +372,7 @@ exports.handler = async (event, _context) => {
 
         return {
           statusCode: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Registration Failed",
             message: "Failed to create user account",
@@ -392,10 +396,7 @@ exports.handler = async (event, _context) => {
         } else {
           return {
             statusCode: 400,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               error: "Bad Request",
               message: "Request body is required",
@@ -406,10 +407,7 @@ exports.handler = async (event, _context) => {
         console.error("JSON parsing failed:", error);
         return {
           statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Bad Request",
             message: "Invalid JSON format",
@@ -421,10 +419,7 @@ exports.handler = async (event, _context) => {
       if (!requestBody.idToken) {
         return {
           statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Validation Error",
             message: "Google ID token is required",
@@ -644,10 +639,7 @@ exports.handler = async (event, _context) => {
 
           return {
             statusCode: 200,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               message: isNewUser
                 ? "User created and authenticated"
@@ -674,10 +666,7 @@ exports.handler = async (event, _context) => {
           // Fallback: return a temporary token
           return {
             statusCode: 200,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               message: "User authenticated (temporary token)",
               user: {
@@ -703,10 +692,7 @@ exports.handler = async (event, _context) => {
 
         return {
           statusCode: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Google Sign-In Failed",
             message: "Failed to process Google authentication",
@@ -726,10 +712,7 @@ exports.handler = async (event, _context) => {
       if (!authHeader) {
         return {
           statusCode: 401,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Unauthorized",
             message: "Authorization header is required",
@@ -768,10 +751,7 @@ exports.handler = async (event, _context) => {
         if (!result.Item) {
           return {
             statusCode: 404,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               error: "Not Found",
               message: "User profile not found",
@@ -796,20 +776,14 @@ exports.handler = async (event, _context) => {
 
         return {
           statusCode: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify(profile),
         };
       } catch (error) {
         console.error("Error getting profile:", error);
         return {
           statusCode: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Internal Server Error",
             message: "Failed to get user profile",
@@ -829,10 +803,7 @@ exports.handler = async (event, _context) => {
       if (!authHeader) {
         return {
           statusCode: 401,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Unauthorized",
             message: "Authorization header is required",
@@ -865,10 +836,7 @@ exports.handler = async (event, _context) => {
           } else {
             return {
               statusCode: 400,
-              headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-              },
+              headers: getCorsHeaders(origin),
               body: JSON.stringify({
                 error: "Bad Request",
                 message: "Request body is required",
@@ -878,10 +846,7 @@ exports.handler = async (event, _context) => {
         } catch (error) {
           return {
             statusCode: 400,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               error: "Bad Request",
               message: "Invalid JSON format",
@@ -898,10 +863,7 @@ exports.handler = async (event, _context) => {
         ) {
           return {
             statusCode: 400,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               error: "Validation Error",
               message:
@@ -924,10 +886,7 @@ exports.handler = async (event, _context) => {
         if (!userResult.Item) {
           return {
             statusCode: 404,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               error: "Not Found",
               message: "User profile not found",
@@ -1018,10 +977,7 @@ exports.handler = async (event, _context) => {
 
         return {
           statusCode: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             message: "Onboarding completed successfully",
             budgetCreated: true,
@@ -1035,10 +991,7 @@ exports.handler = async (event, _context) => {
         console.error("Error completing onboarding:", error);
         return {
           statusCode: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Internal Server Error",
             message: "Failed to complete onboarding",
@@ -1067,10 +1020,7 @@ exports.handler = async (event, _context) => {
           console.log("No body received in login request");
           return {
             statusCode: 400,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               error: "Bad Request",
               message: "Request body is required",
@@ -1082,10 +1032,7 @@ exports.handler = async (event, _context) => {
         console.error("JSON parsing failed:", error);
         return {
           statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Bad Request",
             message: "Invalid JSON format",
@@ -1112,10 +1059,7 @@ exports.handler = async (event, _context) => {
         console.log("Login validation failed:", validationErrors);
         return {
           statusCode: 400,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Validation Error",
             message: "Request validation failed",
@@ -1152,10 +1096,7 @@ exports.handler = async (event, _context) => {
 
         return {
           statusCode: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             message: "Login successful",
             accessToken: accessToken,
@@ -1180,10 +1121,7 @@ exports.handler = async (event, _context) => {
         if (authError.name === "NotAuthorizedException") {
           return {
             statusCode: 401,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               error: "Authentication Failed",
               message: "Invalid email or password",
@@ -1194,10 +1132,7 @@ exports.handler = async (event, _context) => {
         if (authError.name === "UserNotFoundException") {
           return {
             statusCode: 401,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
+            headers: getCorsHeaders(origin),
             body: JSON.stringify({
               error: "Authentication Failed",
               message: "Invalid email or password",
@@ -1207,10 +1142,7 @@ exports.handler = async (event, _context) => {
 
         return {
           statusCode: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             error: "Login Failed",
             message: "An error occurred during authentication",
@@ -1247,10 +1179,7 @@ exports.handler = async (event, _context) => {
 
         return {
           statusCode: 200,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             city: data.city || "",
             country: data.country_name || "",
@@ -1265,10 +1194,7 @@ exports.handler = async (event, _context) => {
         console.error("Geolocation detection error:", error);
         return {
           statusCode: 200, // Return 200 with error flag instead of 500
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
+          headers: getCorsHeaders(origin),
           body: JSON.stringify({
             city: "",
             country: "",
@@ -1288,10 +1214,7 @@ exports.handler = async (event, _context) => {
       console.log("Other POST request received for path:", path);
       return {
         statusCode: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: getCorsHeaders(origin),
         body: JSON.stringify({
           message: "POST endpoint working",
           path,
@@ -1303,10 +1226,7 @@ exports.handler = async (event, _context) => {
     // Default response for unhandled routes
     return {
       statusCode: 404,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: getCorsHeaders(origin),
       body: JSON.stringify({
         error: "Not Found",
         message: `Route ${httpMethod} ${path} not found`,
@@ -1318,10 +1238,9 @@ exports.handler = async (event, _context) => {
 
     return {
       statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: getCorsHeaders(
+        event.headers.origin || event.headers.Origin || ""
+      ),
       body: JSON.stringify({
         error: "Internal Server Error",
         message: "An error occurred processing your request",
