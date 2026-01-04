@@ -1,5 +1,137 @@
 # Development Log
 
+## 2025-12-30 - CORS Configuration Fix (Session 6c)
+
+### Session Summary
+
+**Duration**: 1 hour
+**Focus**: Fix CORS preflight failures blocking onboarding completion
+**Outcome**: Backend geolocation proxy added, CORS credentials support fixed
+
+### Bugs Fixed
+
+1. **CORS Preflight Failure for /auth/onboarding**
+
+   - **Symptom**: "Response to preflight request doesn't pass access control check"
+   - **Root Cause**: API Gateway `allowCredentials: true` + Lambda `Access-Control-Allow-Origin: *`
+   - **CORS Spec**: Wildcard origin prohibited when credentials enabled
+   - **User Impact**: Create Budget button does nothing, no error messages
+   - **Severity**: Critical - blocks onboarding completion
+
+2. **Location Detection CORS Error**
+
+   - **Symptom**: "Access-Control-Allow-Origin header is present on the requested resource"
+   - **Root Cause**: Browser CORS policy blocks CloudFront → ipapi.co direct calls
+   - **User Impact**: Users can't proceed past Step 1 of onboarding
+   - **Severity**: Critical - blocks entire onboarding flow
+
+3. **Skip Button Navigation** (Fixed in Session 6b)
+   - Already deployed in v1.18.1
+   - Changed `/dashboard` to `/budget` in AuthPage
+
+### Fixes Implemented
+
+- ✅ **CORS Credentials Support** (0.5 hours)
+
+  - Created `getCorsHeaders(origin)` helper function
+  - Returns specific origin from request headers
+  - Falls back to CloudFront origin if not in allowed list
+  - Added `Access-Control-Allow-Credentials: true` to all responses
+  - Updated all 40+ response objects consistently
+
+- ✅ **Backend Geolocation Proxy** (0.3 hours)
+
+  - Added `GET /auth/geolocation` endpoint in Lambda
+  - Server-side fetch to ipapi.co (no CORS restrictions)
+  - Frontend calls backend proxy instead of ipapi.co
+  - Graceful error handling with success flag
+
+- ✅ **Enhanced OPTIONS Handler** (0.2 hours)
+  - Added `Access-Control-Max-Age: 86400` for browser caching
+  - Proper credentials support in preflight
+  - All required CORS headers included
+
+### Technical Details
+
+**CORS Spec Violation:**
+
+```
+API Gateway: allowCredentials: true
+Lambda: Access-Control-Allow-Origin: *
+Result: CORS preflight fails (spec violation)
+```
+
+**Solution:**
+
+```javascript
+function getCorsHeaders(origin) {
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://d1ueeugn9zcx7n.cloudfront.net",
+    "https://d2ubhx2a13s7gc.cloudfront.net",
+    "https://app.budgetbuddy.com",
+    "https://admin.budgetbuddy.com",
+  ];
+  const corsOrigin = allowedOrigins.includes(origin)
+    ? origin
+    : allowedOrigins[2]; // Default to CloudFront
+
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": corsOrigin,
+    "Access-Control-Allow-Credentials": "true",
+  };
+}
+```
+
+**Files Modified:**
+
+1. `backend/functions/auth/index.js` - CORS helper + geolocation endpoint
+2. `packages/shared/src/services/geolocationService.ts` - Backend proxy call
+
+### Lessons Learned
+
+1. **CORS Credentials Spec**: When `allowCredentials: true`, origin MUST be specific (not `*`)
+
+   - This is a hard requirement in the CORS specification
+   - Browser will block requests even if server sends wildcard
+   - Must validate origin and return exact match
+
+2. **API Gateway vs Lambda CORS**: Both must be configured correctly
+
+   - API Gateway handles preflight OPTIONS at infrastructure level
+   - Lambda must return matching CORS headers in responses
+   - Mismatch causes preflight failures
+
+3. **Server-Side Proxies for Third-Party APIs**: Avoid frontend CORS issues
+
+   - Browser CORS policy doesn't apply to server-to-server calls
+   - Backend can fetch from any API without CORS restrictions
+   - Cleaner error handling and response standardization
+
+4. **Consistent CORS Headers**: All responses need CORS headers
+   - Success responses (200, 201)
+   - Error responses (400, 401, 404, 500)
+   - Preflight responses (OPTIONS)
+   - Missing headers on any response breaks CORS
+
+### Next Steps
+
+1. ⏳ Deploy fixes via CI/CD pipeline
+2. ⏳ Test location detection in production
+3. ⏳ Test Create Budget button (should work after CORS fix)
+4. ⏳ Test Skip button navigation (should work from v1.18.1)
+5. ⏳ Complete end-to-end onboarding testing
+
+### Time Breakdown
+
+- CORS investigation: 0.2 hours
+- getCorsHeaders() helper: 0.3 hours
+- Geolocation proxy: 0.3 hours
+- OPTIONS handler enhancement: 0.2 hours
+- **Total**: 1 hour
+
 ## 2025-12-30 - Onboarding Bug Fixes (Session 6b)
 
 ### Session Summary

@@ -1,5 +1,94 @@
 # Changelog
 
+## [1.18.2] - 2025-12-30
+
+### 🐛 CRITICAL BUG FIXES - CORS Configuration
+
+- **CORS Credentials Support Fixed** - Resolved CORS preflight failures blocking onboarding completion
+
+  - **Root Cause**: API Gateway configured with `allowCredentials: true` but Lambda returning `Access-Control-Allow-Origin: *`
+  - **CORS Spec Violation**: Wildcard origin (`*`) is prohibited when credentials are enabled
+  - **Impact**: `/auth/onboarding` and `/auth/profile` endpoints blocked by browser CORS policy
+  - **Solution**: Created `getCorsHeaders()` helper that returns specific origin from request headers
+
+- **Backend Geolocation Proxy** - Added server-side proxy to avoid frontend CORS issues
+
+  - **Root Cause**: Browser CORS policy blocks direct calls from CloudFront to ipapi.co
+  - **Solution**: Added `/auth/geolocation` GET endpoint that fetches location server-side
+  - **Impact**: Location detection now works without CORS errors
+  - **API**: Frontend calls backend proxy instead of ipapi.co directly
+
+- **Navigation Bug Fixed** - Skip button now properly navigates to budget page
+  - **Root Cause**: AuthPage redirecting to `/dashboard` which doesn't exist
+  - **Solution**: Changed all `/dashboard` redirects to `/budget`
+  - **Impact**: Users can skip onboarding and access app
+  - **Files Fixed**: AuthPage.tsx (2 locations) - already deployed in v1.18.1
+
+### Technical Details
+
+**CORS Configuration Changes:**
+
+```javascript
+// OLD: Wildcard origin (violates CORS spec with credentials)
+headers: {
+  "Access-Control-Allow-Origin": "*",
+}
+
+// NEW: Specific origin from request
+function getCorsHeaders(origin) {
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://d1ueeugn9zcx7n.cloudfront.net",
+    "https://d2ubhx2a13s7gc.cloudfront.net",
+    "https://app.budgetbuddy.com",
+    "https://admin.budgetbuddy.com",
+  ];
+  const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[2];
+
+  return {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": corsOrigin,
+    "Access-Control-Allow-Credentials": "true",
+  };
+}
+```
+
+**Geolocation Proxy Endpoint:**
+
+- Endpoint: `GET /auth/geolocation`
+- Server-side fetch to `https://ipapi.co/json/`
+- Returns standardized response with success flag
+- Graceful error handling (returns 200 with error flag)
+
+**Updated Endpoints:**
+
+- All 40+ response objects now use `getCorsHeaders(origin)`
+- OPTIONS preflight includes `Access-Control-Max-Age: 86400`
+- Error responses (401, 404, 500) include proper CORS headers
+
+### Testing Results
+
+- ✅ Geolocation proxy endpoint added
+- ✅ CORS headers updated consistently across all endpoints
+- ✅ OPTIONS preflight handler enhanced
+- ⏳ Location detection (pending deployment testing)
+- ⏳ Create Budget button (pending deployment testing)
+- ⏳ Skip button navigation (fixed in v1.18.1, needs verification)
+
+### Files Modified
+
+1. `backend/functions/auth/index.js`:
+
+   - Added `getCorsHeaders()` helper function
+   - Added `/auth/geolocation` GET endpoint
+   - Updated all response objects to use helper
+   - Enhanced OPTIONS handler with max-age
+
+2. `packages/shared/src/services/geolocationService.ts`:
+   - Updated to call backend proxy endpoint
+   - Changed from direct ipapi.co to `${API_BASE_URL}/auth/geolocation`
+
 ## [1.18.1] - 2025-12-30
 
 ### 🐛 BUG FIXES - Onboarding Integration
