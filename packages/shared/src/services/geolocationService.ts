@@ -17,13 +17,17 @@ export interface GeolocationResult {
 
 /**
  * Detect user's location using IP-based geolocation
- * Uses ip-api.com free tier (45 requests/minute)
+ * Uses ipapi.co free tier (1000 requests/day, no API key required)
  * Falls back to manual selection if detection fails
  */
 export async function detectUserLocation(): Promise<GeolocationResult> {
   try {
-    const response = await fetch('https://ip-api.com/json/?fields=city,country,countryCode,lat,lon,timezone,status,message', {
+    // Try ipapi.co first (more reliable, no CORS issues)
+    const response = await fetch('https://ipapi.co/json/', {
       method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
     });
 
     if (!response.ok) {
@@ -32,29 +36,22 @@ export async function detectUserLocation(): Promise<GeolocationResult> {
 
     const data = await response.json();
 
-    if (data.status === 'fail') {
-      return {
-        city: '',
-        country: '',
-        countryCode: '',
-        latitude: 0,
-        longitude: 0,
-        timezone: '',
-        success: false,
-        error: data.message || 'Geolocation detection failed',
-      };
+    // Check if we got an error response
+    if (data.error) {
+      throw new Error(data.reason || 'Geolocation detection failed');
     }
 
     return {
       city: data.city || '',
-      country: data.country || '',
-      countryCode: data.countryCode || '',
-      latitude: data.lat || 0,
-      longitude: data.lon || 0,
+      country: data.country_name || '',
+      countryCode: (data.country_code || '').toLowerCase(),
+      latitude: data.latitude || 0,
+      longitude: data.longitude || 0,
       timezone: data.timezone || '',
       success: true,
     };
   } catch (error) {
+    console.error('Geolocation detection error:', error);
     return {
       city: '',
       country: '',

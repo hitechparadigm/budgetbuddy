@@ -36,13 +36,13 @@ export const AuthPage: React.FC = () => {
         // Redirect to onboarding for new users or users who haven't completed onboarding
         navigate("/onboarding");
       } else {
-        // Redirect to dashboard for existing users who completed onboarding
-        navigate("/dashboard");
+        // Redirect to budget for existing users who completed onboarding
+        navigate("/budget");
       }
     } catch (error) {
       console.error("Error checking onboarding status:", error);
-      // Default to dashboard if we can't check
-      navigate("/dashboard");
+      // Default to budget if we can't check
+      navigate("/budget");
     }
   };
 
