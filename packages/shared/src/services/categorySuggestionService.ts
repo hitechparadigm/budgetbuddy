@@ -25,13 +25,37 @@ export interface OnboardingSuggestions {
 
 /**
  * Get category suggestions for a location and family size
+ * Falls back to nearby major cities if exact city not found
  */
 export function getSuggestions(
   cityKey: string,
   familySize: number = 1
 ): OnboardingSuggestions | null {
-  const cityData = getCityExpenseData(cityKey);
+  let cityData = getCityExpenseData(cityKey);
+
+  // If exact city not found, try fallback cities
   if (!cityData) {
+    console.log(`City not found: ${cityKey}, trying fallbacks...`);
+
+    // Common fallback mappings for major metro areas
+    const fallbacks: { [key: string]: string } = {
+      'ashburn-us': 'washington-dc-us',
+      'arlington-us': 'washington-dc-us',
+      'alexandria-us': 'washington-dc-us',
+      'bethesda-us': 'washington-dc-us',
+      'rockville-us': 'washington-dc-us',
+      // Add more fallbacks as needed
+    };
+
+    const fallbackKey = fallbacks[cityKey];
+    if (fallbackKey) {
+      console.log(`Using fallback city: ${fallbackKey}`);
+      cityData = getCityExpenseData(fallbackKey);
+    }
+  }
+
+  if (!cityData) {
+    console.log(`No city data found for ${cityKey} or its fallbacks`);
     return null;
   }
 

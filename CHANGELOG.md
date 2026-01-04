@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.18.8] - 2026-01-04
+
+### 🐛 BUG FIX - City Database Fallback System
+
+- **Added Fallback Cities for Missing Locations** - Fixed Continue button for cities not in database
+  - **Root Cause**: "Ashburn, US" not in our 348-city database, causing getSuggestions() to return null
+  - **Issue**: Continue button fails when detected city has no budget data
+  - **Solution**: Added fallback mapping to nearby major cities (Ashburn → Washington DC)
+  - **Impact**: Continue button now works for suburbs of major cities
+  - **Files Modified**: `packages/shared/src/services/categorySuggestionService.ts`, `packages/web-app/src/components/OnboardingFlow.tsx`
+
+### Technical Details
+
+**Fallback System:**
+
+- Ashburn, VA → Washington DC (common ISP location)
+- Arlington, VA → Washington DC
+- Alexandria, VA → Washington DC
+- Enhanced error logging and user feedback
+
 ## [1.18.7] - 2026-01-04
 
 ### 🐛 BUG FIX - Continue Button JavaScript Error

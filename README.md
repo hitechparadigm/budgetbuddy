@@ -17,6 +17,14 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-04)
 
+- 🐛 **CITY DATABASE FALLBACK SYSTEM** - Fixed Continue button for cities not in database
+
+  - Added fallback mapping for suburbs to nearby major cities
+  - Ashburn, VA → Washington DC (common ISP detection location)
+  - Enhanced error logging and user feedback with alerts
+  - **Impact**: Continue button now works for users in suburbs of major cities
+  - **Root Cause**: 348-city database doesn't include all suburbs and ISP locations
+
 - 🐛 **ONBOARDING REDIRECT LOOP FIX** - Fixed infinite redirect preventing Skip button
 
   - Removed automatic redirect from BudgetPage to onboarding

@@ -88,23 +88,42 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   };
 
   const handleFamilySizeNext = () => {
-    if (!location) return;
+    if (!location) {
+      console.error("No location data available");
+      return;
+    }
+
+    // Debug: Log the location object
+    console.log("Location data:", location);
 
     // Ensure we have valid location data
     if (!location.city || !location.countryCode) {
       console.error("Invalid location data:", location);
+      console.error("Missing fields:", {
+        hasCity: !!location.city,
+        hasCountryCode: !!location.countryCode,
+        city: location.city,
+        countryCode: location.countryCode,
+      });
       return;
     }
 
     const cityKey = createCityKey(location.city, location.countryCode);
+    console.log("Generated city key:", cityKey);
+
     const sug = getSuggestions(cityKey, familySize);
 
     if (sug) {
+      console.log("Found suggestions for:", sug.city, sug.country);
       setSuggestions(sug);
       setSelectedCategories(sug.categories.slice(0, 8)); // Select top 8 by default
       setStep("categories");
     } else {
       console.error("No suggestions found for city key:", cityKey);
+      // Show error message to user
+      alert(
+        `Sorry, we don't have budget data for ${location.city}. Please try selecting a different city or use "Start from Scratch" instead.`
+      );
     }
   };
 
