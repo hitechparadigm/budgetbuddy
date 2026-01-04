@@ -1,5 +1,115 @@
 # Development Log
 
+## 2026-01-04 - City Database Fallback System (Session 6i)
+
+### Session Summary
+
+**Duration**: 0.5 hours
+**Focus**: Fix Continue button for cities not in our 348-city database
+**Outcome**: Added fallback mapping system for suburbs of major cities
+
+### Bug Fixed
+
+**Continue Button Fails for Ashburn, VA**
+
+- **Symptom**: "No suggestions found for city key: ashburn-us"
+- **Root Cause**: Ashburn, VA not in our city database (common ISP location)
+- **User Impact**: Cannot proceed past Family Size step
+- **Severity**: High - affects users detected in suburbs
+
+### Fix Implemented
+
+- ✅ **Fallback City Mapping** (0.5 hours)
+  - Added fallback system in `getSuggestions()` function
+  - Maps Ashburn → Washington DC (and other DC suburbs)
+  - Enhanced error logging and user feedback
+  - Shows alert if no city data available
+
+### Technical Details
+
+**Fallback Mappings:**
+
+```typescript
+const fallbacks: { [key: string]: string } = {
+  "ashburn-us": "washington-dc-us",
+  "arlington-us": "washington-dc-us",
+  "alexandria-us": "washington-dc-us",
+  "bethesda-us": "washington-dc-us",
+  "rockville-us": "washington-dc-us",
+};
+```
+
+**Why This Happened:**
+
+- IP geolocation often detects ISP data centers (Ashburn, VA is major AWS region)
+- Our 348-city database focuses on major cities, not suburbs
+- Need fallback system for metro area suburbs
+
+**Files Modified:**
+
+- `packages/shared/src/services/categorySuggestionService.ts` - Added fallback system
+- `packages/web-app/src/components/OnboardingFlow.tsx` - Enhanced debugging
+
+## 2026-01-04 - Continue Button JavaScript Error Fix (Session 6h)
+
+### Session Summary
+
+**Duration**: 0.25 hours
+**Focus**: Fix JavaScript error breaking Continue button on Family Size step
+**Outcome**: Added safety checks to prevent undefined errors
+
+### Bug Fixed
+
+**TypeError: Cannot read properties of undefined (reading 'toLowerCase')**
+
+- **Symptom**: Continue button on Family Size step does nothing, JavaScript error in console
+- **Root Cause**: `createCityKey()` function calling `.toLowerCase()` on undefined `countryCode`
+- **User Impact**: Cannot proceed past Family Size step
+- **Severity**: Critical - blocks onboarding completion
+
+### Fix Implemented
+
+- ✅ **Added Safety Checks** (0.25 hours)
+  - Added validation in `handleFamilySizeNext()` to check location data
+  - Added validation in `createCityKey()` to check parameters
+  - Added error logging for debugging
+
+### Technical Details
+
+**Code Changes:**
+
+```typescript
+// OnboardingFlow.tsx
+const handleFamilySizeNext = () => {
+  if (!location) return;
+
+  // Ensure we have valid location data
+  if (!location.city || !location.countryCode) {
+    console.error("Invalid location data:", location);
+    return;
+  }
+
+  const cityKey = createCityKey(location.city, location.countryCode);
+  // ...
+};
+
+// geolocationService.ts
+export function createCityKey(city: string, countryCode: string): string {
+  if (!city || !countryCode) {
+    console.error("createCityKey: Invalid parameters", { city, countryCode });
+    return "";
+  }
+  return `${city
+    .toLowerCase()
+    .replace(/\s+/g, "-")}-${countryCode.toLowerCase()}`;
+}
+```
+
+**Files Modified:**
+
+- `packages/web-app/src/components/OnboardingFlow.tsx` - Added validation
+- `packages/shared/src/services/geolocationService.ts` - Added safety check
+
 ## 2026-01-04 - Onboarding Redirect Loop Fix (Session 6g)
 
 ### Session Summary
