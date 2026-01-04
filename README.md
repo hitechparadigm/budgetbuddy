@@ -17,6 +17,14 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-03)
 
+- 🐛 **API GATEWAY ROUTES FIX** - Added missing routes for onboarding endpoints
+
+  - Added `/auth/geolocation` GET endpoint (public) for location detection
+  - Added `/auth/onboarding` POST endpoint (protected) for onboarding completion
+  - Added `/auth/google` POST endpoint (public) for Google Sign-In
+  - **Impact**: Location detection, onboarding completion, and Google Sign-In now work properly
+  - **Root Cause**: Lambda handlers existed but API Gateway had no routes configured
+
 - 🐛 **LEGACY USER TOKEN SUPPORT** - Fixed 500 errors for users without custom:userId attribute
 
   - Added fallback to use `payload.sub` (Cognito user ID) when `custom:userId` is missing
