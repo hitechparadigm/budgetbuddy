@@ -731,7 +731,15 @@ exports.handler = async (event, _context) => {
         const payload = JSON.parse(
           Buffer.from(tokenParts[1], "base64").toString()
         );
-        const userId = payload["custom:userId"];
+
+        // Try to get userId from custom attribute, fallback to sub (Cognito user ID)
+        let userId = payload["custom:userId"];
+        if (!userId) {
+          console.log(
+            "custom:userId not found in token, using sub as fallback"
+          );
+          userId = payload.sub; // Use Cognito's sub as userId for legacy users
+        }
 
         if (!userId) {
           throw new Error("User ID not found in token");
@@ -822,7 +830,15 @@ exports.handler = async (event, _context) => {
         const payload = JSON.parse(
           Buffer.from(tokenParts[1], "base64").toString()
         );
-        const userId = payload["custom:userId"];
+
+        // Try to get userId from custom attribute, fallback to sub (Cognito user ID)
+        let userId = payload["custom:userId"];
+        if (!userId) {
+          console.log(
+            "custom:userId not found in token, using sub as fallback"
+          );
+          userId = payload.sub; // Use Cognito's sub as userId for legacy users
+        }
 
         if (!userId) {
           throw new Error("User ID not found in token");

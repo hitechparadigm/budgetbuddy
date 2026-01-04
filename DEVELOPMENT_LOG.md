@@ -1,5 +1,50 @@
 # Development Log
 
+## 2026-01-03 - Legacy User Token Support (Session 6d)
+
+### Session Summary
+
+**Duration**: 0.5 hours
+**Focus**: Fix 500 errors for legacy users without custom:userId token attribute
+**Outcome**: Added fallback to use sub (Cognito user ID) for legacy users
+
+### Bug Fixed
+
+**500 Error on /auth/profile and /auth/onboarding**
+
+- **Symptom**: "User ID not found in token" error in Lambda logs
+- **Root Cause**: Legacy users don't have `custom:userId` attribute in JWT token
+- **User Impact**: Cannot complete onboarding or access profile
+- **Severity**: Critical - blocks legacy users from using the app
+
+### Fix Implemented
+
+- ✅ **Token Compatibility Fallback** (0.5 hours)
+  - Modified `/auth/profile` endpoint (line ~735)
+  - Modified `/auth/onboarding` endpoint (line ~835)
+  - Added fallback: `userId = payload.sub` when `custom:userId` is missing
+  - Added console logging for debugging
+  - Maintains backward compatibility with new users
+
+### Technical Details
+
+**Code Changes:**
+
+```javascript
+// Try to get userId from custom attribute, fallback to sub (Cognito user ID)
+let userId = payload["custom:userId"];
+if (!userId) {
+  console.log("custom:userId not found in token, using sub as fallback");
+  userId = payload.sub; // Use Cognito's sub as userId for legacy users
+}
+```
+
+**Deployment:**
+
+- Committed via CI/CD pipeline (develop branch)
+- GitHub Actions workflow triggered automatically
+- CloudFront invalidation required after deployment
+
 ## 2026-01-03 - CORS Configuration Fix (Session 6c)
 
 ### Session Summary
