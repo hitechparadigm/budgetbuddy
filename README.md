@@ -17,6 +17,14 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-04)
 
+- 🐛 **ONBOARDING REDIRECT LOOP FIX** - Fixed infinite redirect preventing Skip button
+
+  - Removed automatic redirect from BudgetPage to onboarding
+  - Users can now skip onboarding and access budget page
+  - Empty state shown instead of forcing onboarding
+  - **Impact**: Skip button now works, users have choice to skip onboarding
+  - **Root Cause**: BudgetPage automatically redirected when no budget exists
+
 - 🎨 **MANUAL LOCATION SELECTION** - Added ability to correct inaccurate location detection
 
   - Added "Change Location" button with searchable city dropdown

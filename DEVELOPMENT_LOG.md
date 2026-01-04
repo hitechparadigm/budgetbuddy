@@ -1,5 +1,54 @@
 # Development Log
 
+## 2026-01-04 - Onboarding Redirect Loop Fix (Session 6g)
+
+### Session Summary
+
+**Duration**: 0.25 hours
+**Focus**: Fix infinite redirect loop preventing Skip button from working
+**Outcome**: Users can now skip onboarding and access budget page
+
+### Bug Fixed
+
+**Infinite Redirect Loop**
+
+- **Symptom**: Clicking "Skip for now" or "Continue" buttons appears to do nothing
+- **Root Cause**: BudgetPage automatically redirects to onboarding when no budget exists
+- **User Impact**: Cannot skip onboarding, stuck in infinite loop
+- **Severity**: Critical - blocks users from accessing the app
+
+### Fix Implemented
+
+- ✅ **Removed Automatic Redirect** (0.25 hours)
+  - Changed BudgetPage to show empty state instead of redirecting
+  - Users can now skip onboarding and manually create budgets
+  - Empty state provides "Create Budget" button for manual creation
+
+### Technical Details
+
+**Code Change:**
+
+```typescript
+// OLD: Redirect to onboarding
+console.log("[loadBudget] No AI budget found, redirecting to onboarding");
+navigate("/onboarding");
+
+// NEW: Show empty state
+console.log("[loadBudget] No AI budget found, showing empty state");
+setBudget(null);
+setLoading(false);
+```
+
+**Why This Happened:**
+
+- BudgetPage was designed to force onboarding for new users
+- However, this prevented users from skipping onboarding
+- Created infinite loop: Skip → Budget → Redirect → Onboarding → Skip → ...
+
+**Files Modified:**
+
+- `packages/web-app/src/pages/BudgetPage.tsx` - Removed automatic redirect
+
 ## 2026-01-04 - Manual Location Selection (Session 6f)
 
 ### Session Summary

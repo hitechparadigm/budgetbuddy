@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.18.6] - 2026-01-04
+
+### 🐛 BUG FIX - Onboarding Redirect Loop
+
+- **Removed Automatic Onboarding Redirect** - Fixed infinite redirect loop preventing Skip button
+  - **Root Cause**: BudgetPage automatically redirected to onboarding when no budget exists
+  - **Issue**: Users clicking "Skip for now" were immediately redirected back to onboarding
+  - **Solution**: Show empty state instead of redirecting, allowing users to skip onboarding
+  - **Impact**: Skip button now works, users can access budget page without completing onboarding
+  - **Files Modified**: `packages/web-app/src/pages/BudgetPage.tsx`
+
 ## [1.18.5] - 2026-01-04
 
 ### 🎨 UX IMPROVEMENT - Manual Location Selection
