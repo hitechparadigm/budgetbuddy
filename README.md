@@ -17,6 +17,13 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-03)
 
+- 🐛 **LEGACY USER TOKEN SUPPORT** - Fixed 500 errors for users without custom:userId attribute
+
+  - Added fallback to use `payload.sub` (Cognito user ID) when `custom:userId` is missing
+  - Fixed `/auth/profile` and `/auth/onboarding` endpoints (2 locations)
+  - **Impact**: Legacy users can now complete onboarding and access their profiles
+  - **Root Cause**: Older JWT tokens don't have `custom:userId` attribute
+
 - 🐛 **CORS CONFIGURATION FIX** - Resolved CORS preflight failures blocking onboarding completion
 
   - Fixed CORS credentials support: replaced wildcard origin (`*`) with specific origins

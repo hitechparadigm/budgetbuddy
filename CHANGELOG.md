@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.18.3] - 2026-01-03
+
+### 🐛 BUG FIX - Legacy User Token Support
+
+- **Token Compatibility Fix** - Added fallback for legacy users without custom:userId attribute
+  - **Root Cause**: `/auth/profile` and `/auth/onboarding` returning 500 error for legacy users
+  - **Issue**: Lambda expected `custom:userId` in JWT token, but older tokens only have `sub`
+  - **Solution**: Added fallback to use `payload.sub` when `custom:userId` is missing
+  - **Impact**: Legacy users can now complete onboarding and access their profiles
+  - **Files Fixed**: `backend/functions/auth/index.js` (2 locations)
+
 ## [1.18.2] - 2026-01-03
 
 ### 🐛 CRITICAL BUG FIXES - CORS Configuration
