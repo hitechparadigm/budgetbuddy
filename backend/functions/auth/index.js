@@ -1220,6 +1220,69 @@ exports.handler = async (event, _context) => {
       }
     }
 
+    // Handle geolocation detection endpoint
+    if (httpMethod === "GET" && path === "/auth/geolocation") {
+      console.log("Geolocation detection endpoint hit");
+
+      try {
+        // Fetch location from ipapi.co on behalf of the client
+        const response = await fetch("https://ipapi.co/json/", {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "User-Agent": "BudgetBuddy/1.0",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Check if we got an error response
+        if (data.error) {
+          throw new Error(data.reason || "Geolocation detection failed");
+        }
+
+        return {
+          statusCode: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+          body: JSON.stringify({
+            city: data.city || "",
+            country: data.country_name || "",
+            countryCode: (data.country_code || "").toLowerCase(),
+            latitude: data.latitude || 0,
+            longitude: data.longitude || 0,
+            timezone: data.timezone || "",
+            success: true,
+          }),
+        };
+      } catch (error) {
+        console.error("Geolocation detection error:", error);
+        return {
+          statusCode: 200, // Return 200 with error flag instead of 500
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+          body: JSON.stringify({
+            city: "",
+            country: "",
+            countryCode: "",
+            latitude: 0,
+            longitude: 0,
+            timezone: "",
+            success: false,
+            error: error.message || "Unknown error",
+          }),
+        };
+      }
+    }
+
     // For other POST requests, return a simple success response
     if (httpMethod === "POST") {
       console.log("Other POST request received for path:", path);

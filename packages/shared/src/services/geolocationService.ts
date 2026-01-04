@@ -16,14 +16,15 @@ export interface GeolocationResult {
 }
 
 /**
- * Detect user's location using IP-based geolocation
- * Uses ipapi.co free tier (1000 requests/day, no API key required)
+ * Detect user's location using backend proxy endpoint
+ * Backend calls ipapi.co to avoid CORS issues
  * Falls back to manual selection if detection fails
  */
 export async function detectUserLocation(): Promise<GeolocationResult> {
   try {
-    // Try ipapi.co first (more reliable, no CORS issues)
-    const response = await fetch('https://ipapi.co/json/', {
+    // Call backend proxy endpoint instead of ipapi.co directly
+    const API_BASE_URL = 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
+    const response = await fetch(`${API_BASE_URL}/auth/geolocation`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -36,15 +37,24 @@ export async function detectUserLocation(): Promise<GeolocationResult> {
 
     const data = await response.json();
 
-    // Check if we got an error response
-    if (data.error) {
-      throw new Error(data.reason || 'Geolocation detection failed');
+    // Check if backend returned an error
+    if (!data.success) {
+      return {
+        city: '',
+        country: '',
+        countryCode: '',
+        latitude: 0,
+        longitude: 0,
+        timezone: '',
+        success: false,
+        error: data.error || 'Geolocation detection failed',
+      };
     }
 
     return {
       city: data.city || '',
-      country: data.country_name || '',
-      countryCode: (data.country_code || '').toLowerCase(),
+      country: data.country || '',
+      countryCode: data.countryCode || '',
       latitude: data.latitude || 0,
       longitude: data.longitude || 0,
       timezone: data.timezone || '',
