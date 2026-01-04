@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.18.2] - 2025-12-30
+## [1.18.2] - 2026-01-03
 
 ### 🐛 CRITICAL BUG FIXES - CORS Configuration
 
