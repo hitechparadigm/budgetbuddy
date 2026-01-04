@@ -15,6 +15,15 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Cross-Platform**: iOS, Android, and Web platform compatibility achieved ✓
 - **Overall Progress**: 88% complete (Web MVP operational, Mobile budget system complete, AI onboarding fully integrated)
 
+### Recent Achievements (2026-01-04)
+
+- 🎨 **MANUAL LOCATION SELECTION** - Added ability to correct inaccurate location detection
+
+  - Added "Change Location" button with searchable city dropdown
+  - Real-time search filtering across 348 cities in 9 countries
+  - **Impact**: Users can correct IP geolocation inaccuracies (e.g., ISP location vs actual location)
+  - **Root Cause**: IP geolocation detects ISP's data center, not user's physical location
+
 ### Recent Achievements (2026-01-03)
 
 - 🐛 **API GATEWAY ROUTES FIX** - Added missing routes for onboarding endpoints
