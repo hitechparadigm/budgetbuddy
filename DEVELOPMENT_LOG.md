@@ -1,5 +1,112 @@
 # Development Log
 
+## 2025-12-30 - Onboarding Bug Fixes (Session 6b)
+
+### Session Summary
+
+**Duration**: 0.5 hours
+**Focus**: Fix critical bugs discovered during onboarding testing
+**Outcome**: Location detection and navigation issues resolved
+
+### Bugs Discovered During Testing
+
+1. **Location Detection HTTP 403 Error**
+
+   - **Symptom**: "Couldn't detect location - HTTP error! status: 403"
+   - **Root Cause**: ip-api.com returning 403 Forbidden (CORS or rate limiting)
+   - **User Impact**: Users couldn't proceed past Step 1 of onboarding
+   - **Severity**: Critical - blocks entire onboarding flow
+
+2. **Skip Button Redirect Loop**
+
+   - **Symptom**: Clicking "Skip for now" returns to Step 1 instead of budget page
+   - **Root Cause**: AuthPage redirecting to `/dashboard` which doesn't exist
+   - **User Impact**: Users stuck in onboarding, can't skip
+   - **Severity**: High - prevents users from accessing app
+
+3. **Create Budget Button Not Working**
+   - **Symptom**: Button click does nothing, no navigation
+   - **Root Cause**: Unknown (needs more debugging)
+   - **User Impact**: Users can't complete onboarding
+   - **Severity**: Critical - blocks onboarding completion
+
+### Fixes Implemented
+
+- ✅ **Location Detection Fix** (0.2 hours)
+
+  - Switched from ip-api.com to ipapi.co API
+  - Updated response mapping for new API format
+  - Added proper error logging with console.error
+  - Tested: 1000 requests/day limit (sufficient for MVP)
+
+- ✅ **Navigation Fix** (0.1 hours)
+
+  - Changed `/dashboard` to `/budget` in AuthPage (2 locations)
+  - Verified route exists in App.tsx
+  - Ensures consistent routing throughout app
+
+- ✅ **Enhanced Debugging** (0.1 hours)
+  - Added console logging in OnboardingFlow.handleComplete()
+  - Logs suggestions and selected categories for debugging
+  - Will help identify Create Budget button issue
+
+### Technical Details
+
+**Geolocation Service Changes:**
+
+```typescript
+// OLD: ip-api.com
+fetch("https://ip-api.com/json/?fields=...");
+
+// NEW: ipapi.co
+fetch("https://ipapi.co/json/");
+```
+
+**Response Mapping:**
+
+- `data.country` → `data.country_name`
+- `data.countryCode` → `data.country_code`
+- `data.lat` → `data.latitude`
+- `data.lon` → `data.longitude`
+
+**Files Modified:**
+
+1. `packages/shared/src/services/geolocationService.ts` - API switch
+2. `packages/web-app/src/pages/AuthPage.tsx` - Navigation fix
+3. `packages/web-app/src/components/OnboardingFlow.tsx` - Debug logging
+
+### Lessons Learned
+
+1. **API Selection**: Always test third-party APIs in production environment
+
+   - ip-api.com works in development but fails in production (CORS/rate limits)
+   - ipapi.co has better CORS support and clearer rate limits
+
+2. **Route Consistency**: Verify all routes exist before redirecting
+
+   - `/dashboard` was referenced but never defined in App.tsx
+   - Should have caught this during code review
+
+3. **User Testing is Critical**: Bugs only discovered during actual user testing
+   - Location detection worked in development but failed in production
+   - Navigation bug only visible when following complete user flow
+
+### Next Steps
+
+1. ⏳ Deploy fixes via CI/CD pipeline
+2. ⏳ Test location detection in production
+3. ⏳ Test Skip button navigation
+4. ⏳ Debug Create Budget button issue (if still present)
+5. ⏳ Complete end-to-end onboarding testing
+
+### Time Breakdown
+
+- Bug investigation: 0.1 hours
+- Location detection fix: 0.2 hours
+- Navigation fix: 0.1 hours
+- Debug logging: 0.1 hours
+- **Total**: 0.5 hours
+
 ## 2025-12-30 - AI-Powered Onboarding Integration (Session 6)
 
 ### Session Summary
