@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.18.7] - 2026-01-04
+
+### 🐛 BUG FIX - Continue Button JavaScript Error
+
+- **Added Safety Checks for Location Data** - Fixed TypeError breaking Continue button
+  - **Root Cause**: `createCityKey()` calling `.toLowerCase()` on undefined `countryCode`
+  - **Error**: "Cannot read properties of undefined (reading 'toLowerCase')"
+  - **Solution**: Added validation checks before calling string methods
+  - **Impact**: Continue button now works, no more JavaScript errors
+  - **Files Modified**: `packages/web-app/src/components/OnboardingFlow.tsx`, `packages/shared/src/services/geolocationService.ts`
+
 ## [1.18.6] - 2026-01-04
 
 ### 🐛 BUG FIX - Onboarding Redirect Loop
