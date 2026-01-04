@@ -43,6 +43,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     CategorySuggestion[]
   >([]);
   const [isDetecting, setIsDetecting] = useState(false);
+  const [showManualSelection, setShowManualSelection] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Auto-detect location on mount
   useEffect(() => {
@@ -62,21 +64,27 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   };
 
   const handleManualLocation = () => {
-    // For now, use first city as fallback
-    const cities = getAllCities();
-    if (cities.length > 0) {
-      const city = cities[0];
-      setLocation({
-        city: city.city,
-        country: city.country,
-        countryCode: "ca", // TODO: Get from city data
-        latitude: city.latitude,
-        longitude: city.longitude,
-        timezone: "",
-        success: true,
-      });
-      setStep("family-size");
-    }
+    setShowManualSelection(true);
+  };
+
+  const handleCitySelect = (city: {
+    city: string;
+    country: string;
+    countryCode: string;
+    latitude: number;
+    longitude: number;
+  }) => {
+    setLocation({
+      city: city.city,
+      country: city.country,
+      countryCode: city.countryCode,
+      latitude: city.latitude,
+      longitude: city.longitude,
+      timezone: "",
+      success: true,
+    });
+    setShowManualSelection(false);
+    setSearchQuery("");
   };
 
   const handleFamilySizeNext = () => {
@@ -197,12 +205,20 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   <p className="text-green-700 mt-1">
                     {location.city}, {location.country}
                   </p>
-                  <button
-                    onClick={() => setStep("family-size")}
-                    className="mt-4 bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
-                  >
-                    Continue
-                  </button>
+                  <div className="mt-4 space-x-2">
+                    <button
+                      onClick={() => setStep("family-size")}
+                      className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={handleManualLocation}
+                      className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+                    >
+                      Change Location
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -226,6 +242,57 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       Select Manually
                     </button>
                   </div>
+                </div>
+              )}
+
+              {/* Manual City Selection */}
+              {showManualSelection && (
+                <div className="bg-white border border-gray-300 rounded-lg p-4 mt-4">
+                  <h4 className="font-semibold text-gray-900 mb-3">
+                    Select Your City
+                  </h4>
+                  <input
+                    type="text"
+                    placeholder="Search for your city..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <div className="mt-3 max-h-60 overflow-y-auto space-y-2">
+                    {getAllCities()
+                      .filter(
+                        (city) =>
+                          searchQuery.length === 0 ||
+                          city.city
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase()) ||
+                          city.country
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase())
+                      )
+                      .slice(0, 10)
+                      .map((city) => (
+                        <button
+                          key={`${city.city}-${city.country}`}
+                          onClick={() => handleCitySelect(city)}
+                          className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 border border-gray-200"
+                        >
+                          <div className="font-medium">{city.city}</div>
+                          <div className="text-sm text-gray-600">
+                            {city.country}
+                          </div>
+                        </button>
+                      ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowManualSelection(false);
+                      setSearchQuery("");
+                    }}
+                    className="mt-3 text-gray-600 hover:text-gray-800 text-sm"
+                  >
+                    Cancel
+                  </button>
                 </div>
               )}
             </div>

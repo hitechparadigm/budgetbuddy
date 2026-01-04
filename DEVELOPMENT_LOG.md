@@ -1,5 +1,60 @@
 # Development Log
 
+## 2026-01-04 - Manual Location Selection (Session 6f)
+
+### Session Summary
+
+**Duration**: 0.5 hours
+**Focus**: Add manual location correction for inaccurate IP geolocation
+**Outcome**: Users can now change detected location with searchable city dropdown
+
+### UX Issue Fixed
+
+**Inaccurate Location Detection**
+
+- **Symptom**: User in London, Ontario detected as Ashburn, Virginia
+- **Root Cause**: IP geolocation detects ISP's server location, not user's physical location
+- **User Impact**: Budget suggestions based on wrong city's cost of living
+- **Severity**: High - affects accuracy of AI-powered budget suggestions
+
+### Fix Implemented
+
+- ✅ **Change Location Button** (0.5 hours)
+  - Added "Change Location" button next to "Continue" button
+  - Searchable dropdown with 348 cities across 9 countries
+  - Real-time filtering by city name or country
+  - Shows top 10 matching results
+  - Clean cancel functionality
+
+### Technical Details
+
+**UI Changes:**
+
+```typescript
+// Added state for manual selection
+const [showManualSelection, setShowManualSelection] = useState(false);
+const [searchQuery, setSearchQuery] = useState("");
+
+// Searchable city dropdown
+<input
+  type="text"
+  placeholder="Search for your city..."
+  value={searchQuery}
+  onChange={(e) => setSearchQuery(e.target.value)}
+/>;
+```
+
+**Why IP Geolocation is Inaccurate:**
+
+- Detects ISP's data center location, not user's physical location
+- Canadian ISPs often route through US data centers (Ashburn, VA is common)
+- Browser geolocation API would be more accurate but requires user permission
+- Manual selection is the most reliable fallback
+
+**Files Modified:**
+
+- `packages/web-app/src/components/OnboardingFlow.tsx` - Added manual selection UI
+
 ## 2026-01-03 - API Gateway Routes Fix (Session 6e)
 
 ### Session Summary

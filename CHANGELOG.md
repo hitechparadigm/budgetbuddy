@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.18.5] - 2026-01-04
+
+### 🎨 UX IMPROVEMENT - Manual Location Selection
+
+- **Change Location Button** - Added ability to correct inaccurate location detection
+  - **Issue**: IP-based geolocation detects ISP location, not actual user location
+  - **Example**: User in London, Ontario detected as Ashburn, Virginia (ISP location)
+  - **Solution**: Added "Change Location" button with searchable city dropdown
+  - **Impact**: Users can now manually select their correct city from 348 cities
+  - **Files Modified**: `packages/web-app/src/components/OnboardingFlow.tsx`
+
+### Technical Details
+
+**New Features:**
+
+- "Change Location" button appears even when location detection succeeds
+- Searchable dropdown with 348 cities across 9 countries
+- Real-time search filtering by city name or country
+- Shows top 10 matching results
+- Clean cancel functionality
+
+**Why IP Geolocation is Inaccurate:**
+
+- Detects ISP's server location, not user's physical location
+- Canadian ISPs often route through US data centers
+- Browser geolocation API would be more accurate but requires permission
+
 ## [1.18.4] - 2026-01-03
 
 ### 🐛 CRITICAL BUG FIX - Missing API Gateway Routes
