@@ -17,6 +17,15 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2025-12-30)
 
+- 🐛 **CORS CONFIGURATION FIX** - Resolved CORS preflight failures blocking onboarding completion
+
+  - Fixed CORS credentials support: replaced wildcard origin (`*`) with specific origins
+  - Created `getCorsHeaders()` helper for consistent CORS handling across all 40+ endpoints
+  - Added backend geolocation proxy (`/auth/geolocation`) to avoid frontend CORS issues
+  - Enhanced OPTIONS preflight handler with `Access-Control-Max-Age` for browser caching
+  - **Impact**: Create Budget button and location detection now work properly
+  - **Root Cause**: API Gateway `allowCredentials: true` incompatible with wildcard origin
+
 - 🎯 **AI-POWERED ONBOARDING INTEGRATION** - Complete end-to-end onboarding flow with backend API
 
   - Backend `/auth/profile` GET endpoint retrieves user profile with onboardingCompleted flag
