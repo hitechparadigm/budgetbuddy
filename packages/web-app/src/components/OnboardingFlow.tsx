@@ -104,8 +104,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   };
 
   const handleComplete = () => {
-    if (suggestions) {
+    if (suggestions && selectedCategories.length > 0) {
+      console.log("OnboardingFlow: Calling onComplete with:", {
+        suggestions,
+        selectedCategoriesCount: selectedCategories.length,
+      });
       onComplete(suggestions, selectedCategories);
+    } else {
+      console.error("OnboardingFlow: Cannot complete - missing data:", {
+        hasSuggestions: !!suggestions,
+        selectedCategoriesCount: selectedCategories.length,
+      });
     }
   };
 
