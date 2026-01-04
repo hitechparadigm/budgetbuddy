@@ -397,6 +397,25 @@ export class ApiStack extends cdk.Stack {
       operationName: 'AuthHealthCheck',
     });
 
+    // Geolocation endpoint (public)
+    const geolocationResource = authResource.addResource('geolocation');
+    geolocationResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      operationName: 'GetGeolocation',
+    });
+
+    // Onboarding endpoint (protected)
+    const onboardingResource = authResource.addResource('onboarding');
+    onboardingResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      authorizer,
+      operationName: 'CompleteOnboarding',
+    });
+
+    // Google Sign-In endpoint (public)
+    const googleResource = authResource.addResource('google');
+    googleResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      operationName: 'GoogleSignIn',
+    });
+
     // User profile routes (protected)
     const usersResource = this.api.root.addResource('users');
     usersResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.authHandler), {

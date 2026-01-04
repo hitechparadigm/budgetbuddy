@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.18.4] - 2026-01-03
+
+### 🐛 CRITICAL BUG FIX - Missing API Gateway Routes
+
+- **API Gateway Configuration Fix** - Added missing routes for onboarding endpoints
+  - **Root Cause**: `/auth/geolocation`, `/auth/onboarding`, and `/auth/google` endpoints missing from API Gateway
+  - **Issue**: Lambda handlers existed but API Gateway had no routes configured
+  - **Solution**: Added three missing routes to `infrastructure/lib/api-stack.ts`
+  - **Impact**: Location detection, onboarding completion, and Google Sign-In now work properly
+  - **Files Fixed**: `infrastructure/lib/api-stack.ts` (added 3 routes)
+
 ## [1.18.3] - 2026-01-03
 
 ### 🐛 BUG FIX - Legacy User Token Support

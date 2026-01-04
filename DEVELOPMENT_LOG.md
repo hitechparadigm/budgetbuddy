@@ -1,5 +1,73 @@
 # Development Log
 
+## 2026-01-03 - API Gateway Routes Fix (Session 6e)
+
+### Session Summary
+
+**Duration**: 0.5 hours
+**Focus**: Add missing API Gateway routes for onboarding endpoints
+**Outcome**: Added /auth/geolocation, /auth/onboarding, and /auth/google routes
+
+### Bug Fixed
+
+**CORS Errors on /auth/geolocation and /auth/onboarding**
+
+- **Symptom**: "No 'Access-Control-Allow-Origin' header is present on the requested resource"
+- **Root Cause**: Lambda handlers existed but API Gateway had no routes configured
+- **User Impact**: Location detection and onboarding completion completely broken
+- **Severity**: Critical - blocks entire onboarding flow
+
+### Fix Implemented
+
+- ✅ **API Gateway Routes Added** (0.5 hours)
+  - Added `/auth/geolocation` GET endpoint (public)
+  - Added `/auth/onboarding` POST endpoint (protected with authorizer)
+  - Added `/auth/google` POST endpoint (public)
+  - All routes properly integrated with authHandler Lambda function
+
+### Technical Details
+
+**Routes Added:**
+
+```typescript
+// Geolocation endpoint (public)
+const geolocationResource = authResource.addResource("geolocation");
+geolocationResource.addMethod(
+  "GET",
+  new apigateway.LambdaIntegration(this.functions.authHandler),
+  {
+    operationName: "GetGeolocation",
+  }
+);
+
+// Onboarding endpoint (protected)
+const onboardingResource = authResource.addResource("onboarding");
+onboardingResource.addMethod(
+  "POST",
+  new apigateway.LambdaIntegration(this.functions.authHandler),
+  {
+    authorizer,
+    operationName: "CompleteOnboarding",
+  }
+);
+
+// Google Sign-In endpoint (public)
+const googleResource = authResource.addResource("google");
+googleResource.addMethod(
+  "POST",
+  new apigateway.LambdaIntegration(this.functions.authHandler),
+  {
+    operationName: "GoogleSignIn",
+  }
+);
+```
+
+**Deployment:**
+
+- Infrastructure changes require CDK deployment
+- API Gateway will automatically configure CORS for new routes
+- CloudFront cache invalidation required after deployment
+
 ## 2026-01-03 - Legacy User Token Support (Session 6d)
 
 ### Session Summary
