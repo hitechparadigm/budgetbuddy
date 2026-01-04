@@ -25,6 +25,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - Auth flow integration: AuthPage redirects based on onboardingCompleted status
   - Loading states and comprehensive error handling throughout onboarding process
   - Seamless transition from onboarding to budget management page
+  - **Bug Fixes**: Fixed location detection (switched to ipapi.co), fixed navigation redirect loop
 
 - 🌍 **DETAILED CITY EXPENSE DATA** - 348 unique cities with comprehensive expense breakdown
   - Generated expense data for 9 countries: Canada, USA, UK, Germany, France, Netherlands, Spain, Italy, Australia

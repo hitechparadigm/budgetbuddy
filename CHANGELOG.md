@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.18.1] - 2025-12-30
+
+### 🐛 BUG FIXES - Onboarding Integration
+
+- **Location Detection Fixed** - Resolved HTTP 403 error preventing location detection
+
+  - **Root Cause**: ip-api.com was returning 403 Forbidden errors (likely CORS or rate limiting)
+  - **Solution**: Switched to ipapi.co API (1000 requests/day, no API key required, no CORS issues)
+  - **Impact**: Location detection now works reliably for all users
+  - **API Change**: Updated geolocationService to use ipapi.co with proper error handling
+
+- **Navigation Bug Fixed** - Resolved redirect loop when clicking "Skip for now"
+
+  - **Root Cause**: AuthPage was redirecting to `/dashboard` which doesn't exist in routes
+  - **Solution**: Changed all `/dashboard` redirects to `/budget` (the actual route)
+  - **Impact**: Skip button now properly navigates to budget page without loops
+  - **Files Fixed**: AuthPage.tsx (2 locations)
+
+- **Enhanced Error Logging** - Added debugging for Create Budget button
+  - Added console logging in OnboardingFlow.handleComplete()
+  - Logs suggestions and selected categories count for debugging
+  - Helps identify issues with budget creation flow
+
+### Technical Details
+
+**Geolocation Service Changes:**
+
+- API endpoint: `https://ip-api.com/json/` → `https://ipapi.co/json/`
+- Response mapping: Updated to match ipapi.co response format
+- Error handling: Added proper error logging with console.error
+- Rate limits: 1000 requests/day (sufficient for MVP)
+
+**Navigation Fixes:**
+
+- AuthPage: `navigate("/dashboard")` → `navigate("/budget")` (2 occurrences)
+- Ensures consistent routing throughout the app
+- Prevents 404 errors and redirect loops
+
+### Testing Results
+
+- ✅ Location detection works without 403 errors
+- ✅ Skip button navigates to /budget correctly
+- ✅ No more redirect loops
+- ⏳ Create Budget button (pending user testing)
+
 ## [1.18.0] - 2025-12-30
 
 ### 🎯 AI-POWERED ONBOARDING INTEGRATION - COMPLETE
