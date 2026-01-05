@@ -37,6 +37,12 @@ class SimpleApiClient {
     headers.set('Content-Type', 'application/json');
 
     const accessToken = this.getAccessToken();
+    console.log("API CLIENT DEBUG - Making request:");
+    console.log("  - URL:", url);
+    console.log("  - Method:", options.method || 'GET');
+    console.log("  - Has access token:", !!accessToken);
+    console.log("  - Access token preview:", accessToken ? accessToken.substring(0, 20) + '...' : 'none');
+
     if (accessToken) {
       headers.set('Authorization', `Bearer ${accessToken}`);
     }
@@ -116,6 +122,11 @@ class SimpleApiClient {
       adjustedAmount: number;
     }>;
   }) {
+    console.log("API CLIENT DEBUG - completeOnboarding called");
+    console.log("  - Data:", data);
+    console.log("  - Access token exists:", !!this.getAccessToken());
+    console.log("  - Access token length:", this.getAccessToken()?.length || 0);
+
     return this.request('/auth/onboarding', {
       method: 'POST',
       body: JSON.stringify(data),
