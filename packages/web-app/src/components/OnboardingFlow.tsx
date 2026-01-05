@@ -15,7 +15,10 @@ import {
   OnboardingSuggestions,
   CategorySuggestion,
 } from "@budget-buddy/shared/src/services/categorySuggestionService";
-import { getAllCities } from "@budget-buddy/shared/src/data/cityExpenseData";
+import {
+  getAllCities,
+  CityExpenseData,
+} from "@budget-buddy/shared/src/data/cityExpenseData";
 
 interface OnboardingFlowProps {
   onComplete: (
@@ -67,17 +70,37 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     setShowManualSelection(true);
   };
 
-  const handleCitySelect = (city: {
-    city: string;
-    country: string;
-    countryCode: string;
-    latitude: number;
-    longitude: number;
-  }) => {
+  const handleCitySelect = (city: CityExpenseData) => {
+    // Derive country code from country name
+    const getCountryCode = (countryName: string): string => {
+      const countryCodeMap: { [key: string]: string } = {
+        Canada: "ca",
+        "United States": "us",
+        "United Kingdom": "gb",
+        Germany: "de",
+        France: "fr",
+        Netherlands: "nl",
+        Spain: "es",
+        Italy: "it",
+        Australia: "au",
+      };
+      return countryCodeMap[countryName] || "us"; // Default to 'us' if not found
+    };
+
+    const countryCode = getCountryCode(city.country);
+
+    console.log("Manual city selection:", {
+      city: city.city,
+      country: city.country,
+      countryCode: countryCode,
+      latitude: city.latitude,
+      longitude: city.longitude,
+    });
+
     setLocation({
       city: city.city,
       country: city.country,
-      countryCode: city.countryCode,
+      countryCode: countryCode,
       latitude: city.latitude,
       longitude: city.longitude,
       timezone: "",
@@ -93,8 +116,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       return;
     }
 
-    // Debug: Log the location object
+    // Debug: Log the location object with detailed field analysis
     console.log("Location data:", location);
+    console.log("Location field analysis:", {
+      hasCity: !!location.city,
+      hasCountryCode: !!location.countryCode,
+      city: location.city,
+      countryCode: location.countryCode,
+      cityType: typeof location.city,
+      countryCodeType: typeof location.countryCode,
+      cityLength: location.city?.length,
+      countryCodeLength: location.countryCode?.length,
+    });
 
     // Ensure we have valid location data
     if (!location.city || !location.countryCode) {
