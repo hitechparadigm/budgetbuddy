@@ -216,7 +216,7 @@ describe("Credential Replacement Safety Properties", () => {
           type: "API key",
         },
         {
-          value: "AKIAFAKEAWSKEYFORTESTING",
+          value: "AKIA_OBVIOUSLY_FAKE_TEST_KEY_ONLY",
           expected: true,
           type: "AWS key",
         },
@@ -266,7 +266,7 @@ describe("Credential Replacement Safety Properties", () => {
 
         // Should not match realistic credential patterns
         expect(placeholder).not.toMatch(/^sk_[a-zA-Z0-9]{20,}$/);
-        expect(placeholder).not.toMatch(/^AKIA[0-9A-Z]{16}$/);
+        expect(placeholder).not.toMatch(/^AKIA[0-9A-Z_]{16,}$/);
         expect(placeholder).not.toMatch(/^[A-Z0-9]{20,}$/);
       });
     });
