@@ -36,6 +36,11 @@ export const OnboardingPage: React.FC = () => {
         selectedCategoriesCount: selectedCategories.length,
       });
 
+      console.log(
+        "OnboardingPage: CRITICAL DEBUG - currentMonth being sent:",
+        getCurrentMonthString()
+      );
+
       // Save onboarding data and create initial budget categories
       await apiClient.completeOnboarding({
         city: suggestions.city,

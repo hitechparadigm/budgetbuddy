@@ -360,6 +360,22 @@ export const BudgetPage: React.FC = () => {
 
       console.log("[loadBudget] Found", budgetCount, "budget(s) in backend");
 
+      // CRITICAL DEBUG: Show exactly what months we found
+      if (budgetCount > 0) {
+        console.log(
+          "[loadBudget] CRITICAL DEBUG - Budget months found:",
+          budgets.map((b: any) => b.month)
+        );
+        console.log(
+          "[loadBudget] CRITICAL DEBUG - Looking for month:",
+          currentMonth
+        );
+        console.log(
+          "[loadBudget] CRITICAL DEBUG - First budget details:",
+          budgets[0]
+        );
+      }
+
       if (budgetCount > 0) {
         // Find budget for the EXACT month being viewed
         const monthBudget = budgets.find((b: any) => b.month === currentMonth);
