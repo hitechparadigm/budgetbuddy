@@ -156,7 +156,11 @@ export class MockAuthGuardImpl implements MockAuthGuard {
 
   logSecurityViolation(violation: SecurityViolation): void {
     // Log to security system
-    securityConfig.logSecurityEvent(violation);
+    securityConfig.logSecurityEvent({
+      type: violation.type,
+      message: violation.description,
+      location: violation.environment
+    });
 
     // In production, also log to console for immediate visibility
     if (securityConfig.isProduction()) {
