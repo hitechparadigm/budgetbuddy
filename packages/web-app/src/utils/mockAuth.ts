@@ -1,15 +1,11 @@
 /**
- * Mock Authentication for Development Testing
+ * Mock Authentication for Development
  *
- * ⚠️  WARNING: FOR DEVELOPMENT USE ONLY ⚠️
- * This provides a temporary authentication solution for testing
- * the transaction planning features without full auth setup.
- *
- * DO NOT USE IN PRODUCTION - Contains mock tokens for testing only
+ * Simple, safe mock authentication for development and testing
  */
 
 import { TokenManager } from '../services/api';
-import { mockAuthGuard } from '@/security/MockAuthGuard';
+import { canUseMockAuth, logSecurityEvent } from '@budget-buddy/shared/dist/utils/security';
 
 // Mock JWT token for development ONLY (this would normally come from Cognito)
 // This is a fake token with mock data - NOT a real authentication token
@@ -32,29 +28,14 @@ export const mockUser: MockUser = {
 };
 
 /**
- * Initialize mock authentication for development
- * Call this when the app starts to simulate being logged in
+ * Initialize mock authentication (development only)
  */
 export function initMockAuth(): void {
-  // Security check: Ensure mock auth is allowed in current environment
-  if (!mockAuthGuard.canInitializeMockAuth()) {
-    console.error('🚫 Mock Authentication BLOCKED: Not allowed in current environment');
+  if (!canUseMockAuth()) {
     return;
   }
 
-  // Validate environment safety
-  const validation = mockAuthGuard.validateMockAuthSafety();
-  if (!validation.isValid) {
-    console.error('🚫 Mock Authentication BLOCKED:', validation.errors);
-    return;
-  }
-
-  // Show warnings if any
-  if (validation.warnings.length > 0) {
-    console.warn('⚠️ Mock Authentication Warnings:', validation.warnings);
-  }
-
-  console.log('🔧 Mock Authentication Initialized for Development');
+  logSecurityEvent('Mock authentication initialized for development', 'info');
   console.log('👤 Mock User:', mockUser);
 
   // Set the mock token
@@ -70,6 +51,10 @@ export function initMockAuth(): void {
  * Get mock user data
  */
 export function getMockUser(): MockUser | null {
+  if (!canUseMockAuth()) {
+    return null;
+  }
+
   if (typeof window !== 'undefined') {
     const userData = localStorage.getItem('budgetbuddy_mock_user');
     return userData ? JSON.parse(userData) : null;
@@ -85,11 +70,12 @@ export function clearMockAuth(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('budgetbuddy_mock_user');
   }
+  logSecurityEvent('Mock authentication cleared', 'info');
 }
 
 /**
  * Check if mock auth is active
  */
 export function isMockAuthActive(): boolean {
-  return TokenManager.getToken() === MOCK_JWT_TOKEN;
+  return canUseMockAuth() && TokenManager.getToken() === MOCK_JWT_TOKEN;
 }
