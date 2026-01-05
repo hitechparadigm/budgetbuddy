@@ -19,7 +19,10 @@ import {
 import { authApi } from "../../services/api";
 import { useTheme } from "../../contexts/ThemeContext";
 import ThemeToggle from "../layout/ThemeToggle";
-import { devToolController } from "@/security/DevToolController";
+import {
+  shouldShowDevTools,
+  getEnvironmentInfo,
+} from "@budget-buddy/shared/dist/utils/security";
 
 export const DevHelper: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,29 +30,12 @@ export const DevHelper: React.FC = () => {
   const [mockDataActive, setMockDataActive] = useState(shouldUseMockData());
   const { theme } = useTheme();
 
-  // Security check: Only show in development and when dev tools are allowed
-  if (!devToolController.shouldShowDevTools() || !import.meta.env.DEV) {
+  // Security check: Only show in development
+  if (!shouldShowDevTools() || !import.meta.env.DEV) {
     return null;
   }
 
-  // Get dev tools configuration
-  const devConfig = devToolController.getDevToolsConfig();
-
-  // Validate dev tool safety
-  const validation = devToolController.validateDevToolSafety();
-
-  // Show security warnings if any
-  if (validation.warnings.length > 0 && devConfig.showSecurityWarnings) {
-    console.warn("[DEV_HELPER_SECURITY]", validation.warnings);
-  }
-
   const handleToggleMockAuth = () => {
-    // Check if mock auth is allowed
-    if (!devConfig.allowMockAuth) {
-      console.warn("Mock authentication not allowed in current environment");
-      return;
-    }
-
     if (mockAuthActive) {
       clearMockAuth();
       setMockAuthActive(false);
@@ -60,12 +46,6 @@ export const DevHelper: React.FC = () => {
   };
 
   const handleToggleMockData = () => {
-    // Check if mock data is allowed
-    if (!devConfig.allowMockData) {
-      console.warn("Mock data not allowed in current environment");
-      return;
-    }
-
     if (mockDataActive) {
       disableMockData();
       setMockDataActive(false);
@@ -76,6 +56,7 @@ export const DevHelper: React.FC = () => {
   };
 
   const mockUser = getMockUser();
+  const envInfo = getEnvironmentInfo();
 
   return (
     <div className="fixed bottom-4 left-4 z-50">
@@ -95,28 +76,12 @@ export const DevHelper: React.FC = () => {
             🔧 Dev Helper
           </h3>
 
-          {/* Security Warnings */}
-          {validation.warnings.length > 0 && devConfig.showSecurityWarnings && (
-            <div className="mb-4 p-2 bg-yellow-900 border border-yellow-600 rounded">
-              <h4 className="font-semibold text-yellow-400 mb-1">
-                ⚠️ Security Warnings
-              </h4>
-              {validation.warnings.map((warning, index) => (
-                <div key={index} className="text-xs text-yellow-300">
-                  {warning}
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Environment Info */}
           <div className="mb-4 p-2 bg-blue-900 border border-blue-600 rounded">
             <h4 className="font-semibold text-blue-400 mb-1">🌍 Environment</h4>
             <div className="text-xs text-blue-300">
-              <div>
-                Mode: {devToolController.getEnvironmentInfo().environment}
-              </div>
-              <div>Host: {devToolController.getEnvironmentInfo().hostname}</div>
+              <div>Mode: {envInfo.isDevelopment ? "Development" : "Other"}</div>
+              <div>Host: {envInfo.hostname}</div>
             </div>
           </div>
 
