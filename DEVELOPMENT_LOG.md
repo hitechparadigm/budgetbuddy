@@ -1,5 +1,128 @@
 # Development Log
 
+## 2026-01-05 - Critical Onboarding Budget Persistence Fix (Session 6l)
+
+### Session Summary
+
+**Duration**: 1.5 hours
+**Focus**: Fix critical onboarding budget persistence bug preventing users from accessing budgets after onboarding
+**Outcome**: Identified and fixed familyId mismatch between auth and budget services
+
+### Critical Issue Resolved
+
+**Onboarding Budget Persistence Bug - ROOT CAUSE FIXED**
+
+- **Issue**: Users complete onboarding successfully but budget page shows "No budgets exist in backend"
+- **User Report**: "OnboardingPage: Onboarding completed successfully" but "Found 0 budget(s) in backend"
+- **Root Cause**: FamilyId mismatch between budget creation (auth service) and retrieval (budget service)
+- **Technical Analysis**:
+  - Auth service (onboarding): Uses `familyId` from DynamoDB user profile (`userResult.Item.familyId.S`)
+  - Budget service: Uses `familyId` from JWT token (`user.familyId`) or fallback (`family_${user.userId}`)
+  - JWT tokens don't contain `custom:familyId` claim, so budget service always uses fallback
+  - Creates different partition keys: `FAMILY#family_user_123` vs `FAMILY#family_user_456`
+
+### Solution Implementation
+
+**Updated All Budget Service Functions** (1.0 hours):
+
+- **Functions Fixed**: getBudgets, createBudget, getCurrentBudget, getBudget, updateBudget, deleteBudget
+- **Pattern Applied**: Consistent familyId lookup from user profile in DynamoDB
+- **Fallback Logic**: Maintains backward compatibility with existing users
+
+```javascript
+// NEW: Consistent familyId resolution
+let familyId = user.familyId;
+
+if (!familyId) {
+  const userProfile = await dynamoHelpers.getItem(
+    `USER#${user.userId}`,
+    "PROFILE"
+  );
+
+  if (userProfile && userProfile.familyId) {
+    familyId = userProfile.familyId;
+  } else {
+    familyId = `family_${user.userId}`;
+  }
+}
+```
+
+### Code Analysis & Debugging
+
+**Auth Service Analysis** (0.3 hours):
+
+- Verified onboarding endpoint creates budget using correct familyId from user profile
+- Confirmed extensive debugging logs already in place
+- No changes needed to auth service
+
+**Budget Service Analysis** (0.2 hours):
+
+- Identified all 6 functions using inconsistent familyId resolution
+- Found existing debugging logs showing the mismatch pattern
+- Applied consistent fix to all functions
+
+### Deployment Process
+
+**CI/CD Pipeline Deployment**:
+
+- Committed comprehensive fix with detailed commit message
+- Encountered documentation enforcement (requires 3+ doc files updated)
+- Updated CHANGELOG.md with technical details and impact analysis
+- Currently updating DEVELOPMENT_LOG.md and README.md for pipeline approval
+
+### Files Modified
+
+1. **backend/functions/budget/index.js** - All 6 budget functions updated with consistent familyId lookup
+2. **CHANGELOG.md** - Added v1.18.11 entry with technical details
+3. **DEVELOPMENT_LOG.md** - This session documentation
+4. **README.md** - Progress update (pending)
+5. **docs/development-status.md** - Task completion update (pending)
+
+### Testing Plan
+
+**Post-Deployment Verification**:
+
+1. ✅ Code analysis confirms familyId mismatch was root cause
+2. ⏳ End-to-end testing: Register → Login → Onboarding → Budget Access
+3. ⏳ Verify budget creation and retrieval use same partition key
+4. ⏳ Test with both new users and existing users
+
+### Impact Assessment
+
+**User Experience**:
+
+- **Before**: Users complete onboarding but see empty budget page
+- **After**: Users complete onboarding and immediately see their budget with selected categories
+- **Affected Users**: All new users going through onboarding flow
+- **Existing Users**: No impact (budget access already working)
+
+**Technical Debt Resolved**:
+
+- Eliminated inconsistent familyId resolution across services
+- Improved debugging with consistent logging patterns
+- Enhanced error handling for missing user profiles
+
+### Lessons Learned
+
+**Cross-Service Data Consistency**:
+
+- JWT tokens may not contain all custom attributes needed
+- Services should use consistent data sources for key lookups
+- Database lookups are more reliable than JWT claims for custom data
+
+**Debugging Strategy**:
+
+- Extensive logging in auth service helped identify the exact familyId values
+- Budget service debugging showed the mismatch pattern clearly
+- Code analysis was more effective than trying to deploy without credentials
+
+### Next Steps
+
+1. **Complete Documentation Updates** (0.1 hours) - Update README.md and docs/development-status.md
+2. **Deploy via CI/CD Pipeline** (0.1 hours) - Push through automated deployment
+3. **End-to-End Testing** (0.2 hours) - Verify complete onboarding flow works
+4. **Task 2: Add Logout Functionality** - Next critical bug fix
+
 ## 2026-01-04 - Critical Auth Fix: Cognito User Pool Client Configuration (Session 6k)
 
 ### Session Summary
