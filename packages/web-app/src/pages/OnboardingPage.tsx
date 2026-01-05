@@ -12,6 +12,7 @@ import {
   CategorySuggestion,
 } from "@budget-buddy/shared/src/services/categorySuggestionService";
 import { apiClient } from "../utils/apiClient";
+import { getCurrentMonthString } from "../utils/monthHelpers";
 
 export const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +40,7 @@ export const OnboardingPage: React.FC = () => {
         city: suggestions.city,
         country: suggestions.country,
         familySize: suggestions.familySize,
+        currentMonth: getCurrentMonthString(), // Send timezone-aware current month
         selectedCategories: selectedCategories.map((c) => ({
           name: c.name,
           icon: c.icon,
