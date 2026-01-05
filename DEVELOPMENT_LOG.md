@@ -10,20 +10,42 @@
 
 ### Critical Issue Resolved
 
-**Onboarding Budget Persistence Bug - ROOT CAUSE FIXED**
+**Onboarding Budget Persistence Bug - FIELD NAME MISMATCH FIXED**
 
 - **Issue**: Users complete onboarding successfully but budget page shows "No budgets exist in backend"
 - **User Report**: "OnboardingPage: Onboarding completed successfully" but "Found 0 budget(s) in backend"
-- **Root Cause**: FamilyId mismatch between budget creation (auth service) and retrieval (budget service)
-- **Technical Analysis**:
-  - Auth service (onboarding): Uses `familyId` from DynamoDB user profile (`userResult.Item.familyId.S`)
-  - Budget service: Uses `familyId` from JWT token (`user.familyId`) or fallback (`family_${user.userId}`)
-  - JWT tokens don't contain `custom:familyId` claim, so budget service always uses fallback
-  - Creates different partition keys: `FAMILY#family_user_123` vs `FAMILY#family_user_456`
+- **Root Cause**: Field name mismatch between onboarding endpoint and budget service
+  - **Previous Fix**: FamilyId mismatch (already resolved)
+  - **New Discovery**: Category field names don't match between creation and retrieval
+  - Onboarding endpoint used `planned` and `actual` fields
+  - Budget service expected `plannedAmount` and `spentAmount` fields
+  - Missing required fields: `transactions` array and `order` field
 
 ### Solution Implementation
 
-**Updated All Budget Service Functions** (1.0 hours):
+**Updated Onboarding Endpoint Budget Creation** (2.0 hours):
+
+- **File**: `backend/functions/auth/index.js`
+- **Changes**:
+  - Fixed field names: `planned` → `plannedAmount`, `actual` → `spentAmount`
+  - Added missing fields: `transactions: []`, `order: 1`
+  - Added comprehensive error handling around budget creation
+  - Added immediate verification step to confirm budget was saved
+  - Enhanced logging for debugging
+
+```javascript
+// FIXED: Correct field names to match budget service expectations
+const expenseCategories = requestBody.selectedCategories.map((cat) => ({
+  id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+  name: cat.name,
+  icon: cat.icon,
+  plannedAmount: cat.adjustedAmount, // FIXED: was 'planned'
+  spentAmount: 0, // FIXED: was 'actual'
+  transactions: [], // ADDED: required by budget service
+  order: 1, // ADDED: required by budget service
+  isRecurring: false,
+}));
+```
 
 - **Functions Fixed**: getBudgets, createBudget, getCurrentBudget, getBudget, updateBudget, deleteBudget
 - **Pattern Applied**: Consistent familyId lookup from user profile in DynamoDB

@@ -4,11 +4,11 @@ on:
   pull_request:
     branches: [main, develop]
     paths-ignore:
-      - '**.md'
-      - 'docs/**'
+      - "**.md"
+      - "docs/**"
 
 env:
-  NODE_VERSION: '20'
+  NODE_VERSION: "20"
 
 jobs:
   code-quality:
@@ -97,7 +97,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm install
@@ -133,6 +133,90 @@ jobs:
 
       - name: Run npm audit
         run: npm audit --audit-level=moderate
+
+      - name: Run comprehensive security scan
+        run: |
+          echo "🔒 Running comprehensive security validation..."
+          npm run security:check
+
+      - name: Check for exposed secrets
+        run: |
+          echo "🔍 Scanning for exposed secrets and sensitive information..."
+
+          # Check for JWT tokens (real ones, not mock)
+          if grep -r "eyJ[A-Za-z0-9+/=]\{100,\}" . --exclude-dir=node_modules --exclude-dir=.git --exclude="*.md" --exclude="mockAuth.ts" --exclude="*.test.js"; then
+            echo "❌ Found potential real JWT tokens in repository!"
+            echo "   Please remove any real authentication tokens"
+            exit 1
+          fi
+
+          # Check for hardcoded passwords (excluding validation patterns)
+          if grep -r "password.*['\"][^'\"]*[A-Z][^'\"]*[0-9][^'\"]*[!@#$%^&*][^'\"]*['\"]" . --exclude-dir=node_modules --exclude-dir=.git --exclude="*.md" --exclude="validation.ts" --exclude="*.test.js"; then
+            echo "❌ Found potential hardcoded passwords!"
+            echo "   Please use environment variables for passwords"
+            exit 1
+          fi
+
+          # Check for AWS credentials
+          if grep -r "AKIA[0-9A-Z]\{16\}" . --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "❌ Found potential AWS access keys!"
+            exit 1
+          fi
+
+          # Check for private keys
+          if grep -r "BEGIN.*PRIVATE KEY" . --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "❌ Found potential private keys!"
+            exit 1
+          fi
+
+          # Check for log files that might contain sensitive data
+          if find . -name "*.log" -o -name "auth-logs.txt" -o -name "debug-*.txt" | grep -v node_modules | grep -v .git; then
+            echo "❌ Found log files that should not be committed!"
+            echo "   Please remove log files and add them to .gitignore"
+            exit 1
+          fi
+
+          echo "✅ No exposed secrets detected"
+
+      - name: Validate environment variable usage
+        run: |
+          echo "🔍 Checking for proper environment variable usage..."
+
+          # Check that test files use environment variables for passwords
+          if grep -r "password.*:" scripts/ --include="*.js" | grep -v "process.env" | grep -v "CHANGE_ME_IN_ENV"; then
+            echo "❌ Found hardcoded passwords in scripts!"
+            echo "   Please use process.env.TEST_USER_PASSWORD"
+            exit 1
+          fi
+
+          echo "✅ Environment variable usage looks good"
+
+      - name: Check mock token safety
+        run: |
+          echo "🔍 Validating mock tokens are clearly marked..."
+
+          # Check that mock tokens contain obvious mock identifiers
+          if grep -r "eyJ[A-Za-z0-9+/=]\{50,\}" packages/web-app/src/utils/mockAuth.ts | grep -v "MOCK\|TEST\|DEVELOPMENT"; then
+            echo "❌ Mock tokens should contain obvious mock identifiers!"
+            exit 1
+          fi
+
+          echo "✅ Mock tokens are properly marked"
+
+      - name: Validate .gitignore security entries
+        run: |
+          echo "🔍 Checking .gitignore for security entries..."
+
+          required_entries=("auth-logs.txt" "*.log" "logs/" "debug-*.txt")
+
+          for entry in "${required_entries[@]}"; do
+            if ! grep -q "^$entry" .gitignore; then
+              echo "❌ Missing required .gitignore entry: $entry"
+              exit 1
+            fi
+          done
+
+          echo "✅ .gitignore security entries are present"
 
   lambda-function-tests:
     name: Lambda Function Tests
@@ -192,7 +276,15 @@ jobs:
   pr-summary:
     name: PR Summary
     runs-on: ubuntu-latest
-    needs: [code-quality, infrastructure-validation, unit-tests, security-scan, lambda-function-tests, build-validation]
+    needs:
+      [
+        code-quality,
+        infrastructure-validation,
+        unit-tests,
+        security-scan,
+        lambda-function-tests,
+        build-validation,
+      ]
     if: always()
 
     steps:

@@ -4,19 +4,19 @@ on:
   push:
     branches: [develop]
     paths-ignore:
-      - '**.md'
-      - 'docs/**'
+      - "**.md"
+      - "docs/**"
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason for manual deployment'
+        description: "Reason for manual deployment"
         required: false
-        default: 'Manual deployment trigger'
+        default: "Manual deployment trigger"
 
 env:
-  NODE_VERSION: '20'
-  AWS_REGION: 'us-east-1'
-  ENVIRONMENT: 'dev'
+  NODE_VERSION: "20"
+  AWS_REGION: "us-east-1"
+  ENVIRONMENT: "dev"
 
 jobs:
   pre-deployment-checks:
@@ -34,6 +34,29 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Security pre-deployment scan
+        run: |
+          echo "🔒 Running comprehensive security checks before deployment..."
+          npm run security:check
+
+      - name: Validate production configuration
+        run: |
+          echo "🔍 Validating production configuration security..."
+
+          # Check that mock auth is not used in production builds
+          if grep -r "initMockAuth\|isMockAuthActive" packages/web-app/src --exclude="mockAuth.ts" --exclude="*.test.*"; then
+            echo "⚠️  WARNING: Found mock auth usage in production code"
+            echo "   Please ensure mock auth is disabled in production"
+          fi
+
+          # Verify HTTPS is enforced
+          if grep -r "http://" infrastructure/ --include="*.ts" | grep -v "localhost\|127.0.0.1"; then
+            echo "❌ Found HTTP URLs in infrastructure - use HTTPS only"
+            exit 1
+          fi
+
+          echo "✅ Production configuration security validated"
 
       - name: Run linting
         run: npm run lint
@@ -69,7 +92,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -145,7 +168,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
