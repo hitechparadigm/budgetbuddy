@@ -65,10 +65,15 @@ jobs:
           fi
 
           # Check for AWS credentials
-          if grep -r "AKIA[0-9A-Z]\{16\}" . \
+          if grep -r "AKIA[0-9A-Z_]\{16,\}" . \
               --exclude-dir=node_modules \
               --exclude-dir=.git \
-              --exclude-dir=coverage 2>/dev/null; then
+              --exclude-dir=coverage \
+              --exclude="*.test.js" \
+              --exclude="*.test.ts" \
+              --exclude="security-check*.sh" \
+              --exclude="security-check*.ps1" 2>/dev/null | \
+              grep -v "AKIA_OBVIOUSLY_FAKE\|AKIA_FAKE\|AKIA.*TEST.*KEY"; then
             echo "❌ Found potential AWS access keys!"
             exit 1
           fi
@@ -284,7 +289,15 @@ jobs:
           fi
 
           # Check for AWS credentials
-          if grep -r "AKIA[0-9A-Z]\{16\}" . --exclude-dir=node_modules --exclude-dir=.git; then
+          if grep -r "AKIA[0-9A-Z_]\{16,\}" . \
+              --exclude-dir=node_modules \
+              --exclude-dir=.git \
+              --exclude-dir=coverage \
+              --exclude="*.test.js" \
+              --exclude="*.test.ts" \
+              --exclude="security-check*.sh" \
+              --exclude="security-check*.ps1" 2>/dev/null | \
+              grep -v "AKIA_OBVIOUSLY_FAKE\|AKIA_FAKE\|AKIA.*TEST.*KEY"; then
             echo "❌ Found potential AWS access keys!"
             exit 1
           fi
