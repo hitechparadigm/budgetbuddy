@@ -996,8 +996,10 @@ exports.handler = async (event, _context) => {
           id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: cat.name,
           icon: cat.icon,
-          planned: cat.adjustedAmount,
-          actual: 0,
+          plannedAmount: cat.adjustedAmount, // CRITICAL FIX: Use 'plannedAmount' to match budget service expectations
+          spentAmount: 0, // CRITICAL FIX: Use 'spentAmount' to match budget service expectations
+          transactions: [], // CRITICAL FIX: Add transactions array to match budget service expectations
+          order: 1,
           isRecurring: false,
         }));
 
@@ -1009,7 +1011,7 @@ exports.handler = async (event, _context) => {
 
         // Calculate totals
         const totalExpenses = expenseCategories.reduce(
-          (sum, cat) => sum + cat.planned,
+          (sum, cat) => sum + cat.plannedAmount, // CRITICAL FIX: Use 'plannedAmount' to match field name
           0
         );
 
@@ -1073,17 +1075,73 @@ exports.handler = async (event, _context) => {
         console.log("  - month field:", currentMonth);
         console.log("  - Full budget object:", JSON.stringify(budget, null, 2));
 
-        await dynamoHelpers.putItem(budget);
-        console.log(
-          "Initial budget created from onboarding selections - using dynamoHelpers"
-        );
+        try {
+          await dynamoHelpers.putItem(budget);
+          console.log(
+            "Initial budget created from onboarding selections - using dynamoHelpers"
+          );
 
-        // FINAL DEBUG: Confirm what was actually saved
-        console.log("FINAL DEBUG - Budget saved to DynamoDB:");
-        console.log("  - PK:", budget.PK);
-        console.log("  - SK:", budget.SK);
-        console.log("  - month:", budget.month);
-        console.log("  - budgetId:", budget.budgetId);
+          // FINAL DEBUG: Confirm what was actually saved
+          console.log("FINAL DEBUG - Budget saved to DynamoDB:");
+          console.log("  - PK:", budget.PK);
+          console.log("  - SK:", budget.SK);
+          console.log("  - month:", budget.month);
+          console.log("  - budgetId:", budget.budgetId);
+          console.log("  - totalExpenses:", budget.totalExpenses);
+          console.log("  - expenseCategories count:", expenseCategories.length);
+
+          // VERIFICATION: Immediately query the budget to confirm it was saved
+          try {
+            const { GetItemCommand } = require("@aws-sdk/client-dynamodb");
+            const verifyCommand = new GetItemCommand({
+              TableName: TABLE_NAME,
+              Key: {
+                PK: { S: `FAMILY#${familyId}` },
+                SK: { S: `BUDGET#${currentMonth}` },
+              },
+            });
+
+            const verifyResult = await dynamoClient.send(verifyCommand);
+            if (verifyResult.Item) {
+              console.log(
+                "VERIFICATION SUCCESS - Budget found in DynamoDB immediately after creation"
+              );
+              console.log("  - Verified PK:", verifyResult.Item.PK.S);
+              console.log("  - Verified SK:", verifyResult.Item.SK.S);
+              console.log("  - Verified month:", verifyResult.Item.month?.S);
+            } else {
+              console.error(
+                "VERIFICATION FAILED - Budget NOT found in DynamoDB immediately after creation!"
+              );
+              console.error("  - Searched PK:", `FAMILY#${familyId}`);
+              console.error("  - Searched SK:", `BUDGET#${currentMonth}`);
+            }
+          } catch (verifyError) {
+            console.error(
+              "VERIFICATION ERROR - Failed to verify budget creation:",
+              verifyError
+            );
+          }
+        } catch (budgetError) {
+          console.error(
+            "CRITICAL ERROR - Budget creation failed:",
+            budgetError
+          );
+          console.error("  - Error name:", budgetError.name);
+          console.error("  - Error message:", budgetError.message);
+          console.error("  - Error stack:", budgetError.stack);
+
+          // Return error instead of success
+          return {
+            statusCode: 500,
+            headers: getCorsHeaders(origin),
+            body: JSON.stringify({
+              error: "Budget Creation Failed",
+              message: "Failed to create initial budget during onboarding",
+              details: budgetError.message,
+            }),
+          };
+        }
 
         return {
           statusCode: 200,
