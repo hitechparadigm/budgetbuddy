@@ -38,7 +38,12 @@ jobs:
       - name: Security pre-deployment scan
         run: |
           echo "🔒 Running comprehensive security checks before deployment..."
-          npm run security:check
+
+          # Make security script executable
+          chmod +x scripts/security-check.sh
+
+          # Run security checks using bash script
+          bash scripts/security-check.sh
 
       - name: Validate production configuration
         run: |

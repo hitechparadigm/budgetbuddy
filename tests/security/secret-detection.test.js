@@ -47,11 +47,11 @@ describe("Secret Detection Coverage Properties", () => {
             // Test secret detection patterns
             const secretPatterns = {
               password:
-                /password.*=.*['""][^'""]{8,}['""]|password.*['""][^'""]*[A-Z][^'""]*[0-9][^'""]*[!@#$%^&*][^'""]*['""]]/i,
+                /password.*=.*["'][^"']{8,}["']|password.*["'][^"']*[A-Z][^"']*[0-9][^"']*[!@#$%^&*][^"']*["']/i,
               apiKey:
-                /api[_-]?key.*=.*['""][^'""]{20,}['""]|sk_[a-zA-Z0-9]{20,}/i,
-              token: /token.*=.*['""][^'""]{20,}['""]|eyJ[A-Za-z0-9+/=]{20,}/i,
-              secret: /secret.*=.*['""][^'""]{16,}['""]]/i,
+                /api[_-]?key.*=.*["'][^"']{20,}["']|sk_[a-zA-Z0-9_]{20,}/i,
+              token: /token.*=.*["'][^"']{20,}["']|eyJ[A-Za-z0-9+/=]{20,}/i,
+              secret: /secret.*=.*["'][^"']{16,}["']/i,
               connectionString:
                 /mongodb:\/\/.*:.*@|mysql:\/\/.*:.*@|postgres:\/\/.*:.*@|redis:\/\/.*:.*@/i,
             };
@@ -61,15 +61,22 @@ describe("Secret Detection Coverage Properties", () => {
             if (pattern) {
               const wouldDetect = pattern.test(testData.secretPattern);
 
-              // Most secret patterns should be detectable
-              if (
-                testData.secretPattern.includes('password="') ||
-                testData.secretPattern.includes('api_key="') ||
-                testData.secretPattern.includes('token="') ||
-                (testData.secretPattern.includes("mongodb://") &&
+              // Most secret patterns should be detectable based on their type
+              const shouldDetect =
+                (testData.secretType === "password" &&
+                  testData.secretPattern.includes('password="')) ||
+                (testData.secretType === "apiKey" &&
+                  testData.secretPattern.includes('api_key="')) ||
+                (testData.secretType === "token" &&
+                  testData.secretPattern.includes('token="')) ||
+                (testData.secretType === "secret" &&
+                  testData.secretPattern.includes('secret="')) ||
+                (testData.secretType === "connectionString" &&
+                  testData.secretPattern.includes("mongodb://") &&
                   testData.secretPattern.includes(":") &&
-                  testData.secretPattern.includes("@"))
-              ) {
+                  testData.secretPattern.includes("@"));
+
+              if (shouldDetect) {
                 expect(wouldDetect).toBe(true);
               }
             }
@@ -201,6 +208,8 @@ describe("Secret Detection Coverage Properties", () => {
               "*.test.ts",
               "*.spec.js",
               "*.spec.ts",
+              "test.js",
+              "spec.ts",
               "*.md",
             ];
 
