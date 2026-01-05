@@ -99,6 +99,7 @@ BudgetBuddy is a comprehensive zero-based budgeting platform with both web and n
 ## Technical Stack
 
 ### Frontend - Web Application
+
 - **Framework**: React 18 with TypeScript
 - **Build Tool**: Vite (fast development and optimized builds)
 - **Styling**: Tailwind CSS (utility-first CSS framework)
@@ -108,6 +109,7 @@ BudgetBuddy is a comprehensive zero-based budgeting platform with both web and n
 - **Icons**: Emoji-based (no icon library needed)
 
 ### Frontend - Mobile Applications
+
 - **Framework**: React Native with Expo (managed workflow)
 - **Language**: TypeScript
 - **Navigation**: React Navigation 6 (bottom tabs + stack navigation)
@@ -120,6 +122,7 @@ BudgetBuddy is a comprehensive zero-based budgeting platform with both web and n
 - **Network**: NetInfo (connection detection)
 
 ### Backend
+
 - **API**: AWS API Gateway (REST API)
 - **Compute**: AWS Lambda (Node.js 20)
 - **Authentication**: AWS Cognito User Pools
@@ -131,6 +134,7 @@ BudgetBuddy is a comprehensive zero-based budgeting platform with both web and n
 - **Infrastructure**: AWS CDK (TypeScript)
 
 ### Development Tools
+
 - **Package Manager**: npm
 - **Linting**: ESLint with TypeScript support
 - **Formatting**: Prettier
@@ -142,26 +146,30 @@ BudgetBuddy is a comprehensive zero-based budgeting platform with both web and n
 ## Data Models
 
 ### User Entity
+
 ```typescript
 interface User {
-  userId: string;           // Cognito user ID
+  userId: string; // Cognito user ID
   email: string;
   firstName?: string;
   lastName?: string;
-  timezone: string;         // NEW: IANA timezone (e.g., "America/New_York")
-  currency: string;         // NEW: Primary currency (USD, EUR, etc.)
-  location?: {              // NEW: User's location
+  timezone: string; // NEW: IANA timezone (e.g., "America/New_York")
+  currency: string; // NEW: Primary currency (USD, EUR, etc.)
+  location?: {
+    // NEW: User's location
     country: string;
     city: string;
     zipCode: string;
   };
-  preferences: {            // NEW: User preferences
+  preferences: {
+    // NEW: User preferences
     notifications: NotificationPreferences;
-    theme: 'light' | 'dark' | 'system';
+    theme: "light" | "dark" | "system";
     language: string;
   };
-  subscription: {           // NEW: Subscription info
-    tier: 'free' | 'premium';
+  subscription: {
+    // NEW: Subscription info
+    tier: "free" | "premium";
     expiresAt?: string;
     features: string[];
   };
@@ -183,25 +191,27 @@ interface NotificationPreferences {
 ```
 
 ### Budget Entity
+
 ```typescript
 interface Budget {
-  id: string;               // budget_<timestamp>
-  userId: string;           // Owner's Cognito ID
-  month: string;            // YYYY-MM format
-  groups: BudgetGroup[];    // Income, Savings, Expenses
-  isAIGenerated: boolean;   // Future: AI-generated flag
+  id: string; // budget_<timestamp>
+  userId: string; // Owner's Cognito ID
+  month: string; // YYYY-MM format
+  groups: BudgetGroup[]; // Income, Savings, Expenses
+  isAIGenerated: boolean; // Future: AI-generated flag
   createdAt: string;
   updatedAt: string;
 }
 ```
 
 ### Budget Group
+
 ```typescript
 interface BudgetGroup {
   id: string;
-  name: string;             // "Income", "Savings", "Expenses"
-  type: 'income' | 'savings' | 'expense';
-  icon: string;             // Emoji
+  name: string; // "Income", "Savings", "Expenses"
+  type: "income" | "savings" | "expense";
+  icon: string; // Emoji
   categories: BudgetCategory[];
   isCollapsed: boolean;
   order: number;
@@ -209,63 +219,71 @@ interface BudgetGroup {
 ```
 
 ### Budget Category
+
 ```typescript
 interface BudgetCategory {
   id: string;
-  name: string;             // e.g., "Salary", "Groceries"
-  icon: string;             // Emoji
-  color?: string;           // NEW: Custom color
+  name: string; // e.g., "Salary", "Groceries"
+  icon: string; // Emoji
+  color?: string; // NEW: Custom color
 
   // Recurring settings (NEW)
   isRecurring: boolean;
-  recurringFrequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'quarterly' | 'annually';
-  baseAmount: number;       // Amount per occurrence
-  startDate?: string;       // When recurring started (first expected date)
-  endDate?: string;         // When recurring ends (optional)
+  recurringFrequency?:
+    | "weekly"
+    | "bi-weekly"
+    | "monthly"
+    | "quarterly"
+    | "annually";
+  baseAmount: number; // Amount per occurrence
+  startDate?: string; // When recurring started (first expected date)
+  endDate?: string; // When recurring ends (optional)
   nextExpectedDate?: string; // Next expected occurrence
   expectedDates?: string[]; // All expected dates for current month
-  isPaused: boolean;        // Whether recurring is paused
+  isPaused: boolean; // Whether recurring is paused
 
   // Calculated amounts
   plannedMonthlyAmount: number; // Calculated from baseAmount * occurrences
-  actualAmount: number;     // Sum of all transactions (renamed from spentAmount)
-  variance: number;         // actualAmount - plannedMonthlyAmount
+  actualAmount: number; // Sum of all transactions (renamed from spentAmount)
+  variance: number; // actualAmount - plannedMonthlyAmount
 
   transactions: Transaction[];
   order: number;
 
   // Category management (NEW)
-  isCustom: boolean;        // User-created vs system category
+  isCustom: boolean; // User-created vs system category
   parentCategoryId?: string; // For subcategories
-  isArchived: boolean;      // Hidden but preserved
-  usageCount: number;       // How often used
-  lastUsed?: string;        // Last transaction date
+  isArchived: boolean; // Hidden but preserved
+  usageCount: number; // How often used
+  lastUsed?: string; // Last transaction date
 }
 ```
 
 ### Transaction
+
 ```typescript
 interface Transaction {
   id: string;
   categoryId: string;
   amount: number;
   description: string;
-  merchant?: string;        // NEW: Merchant/payee name
-  date: string;             // YYYY-MM-DD
-  currency?: string;        // NEW: Transaction currency (if different from user default)
-  exchangeRate?: number;    // NEW: Exchange rate used for conversion
-  location?: {              // NEW: Transaction location
+  merchant?: string; // NEW: Merchant/payee name
+  date: string; // YYYY-MM-DD
+  currency?: string; // NEW: Transaction currency (if different from user default)
+  exchangeRate?: number; // NEW: Exchange rate used for conversion
+  location?: {
+    // NEW: Transaction location
     latitude: number;
     longitude: number;
     address?: string;
   };
-  tags?: string[];          // NEW: User-defined tags
-  receiptUrl?: string;      // NEW: Receipt image URL
-  isRecurring?: boolean;    // NEW: Part of recurring transaction
+  tags?: string[]; // NEW: User-defined tags
+  receiptUrl?: string; // NEW: Receipt image URL
+  isRecurring?: boolean; // NEW: Part of recurring transaction
   recurringTemplateId?: string; // NEW: Link to recurring template
-  syncStatus: 'synced' | 'pending' | 'failed'; // NEW: Offline sync status
+  syncStatus: "synced" | "pending" | "failed"; // NEW: Offline sync status
   createdAt: string;
-  updatedAt?: string;       // NEW: For transaction editing
+  updatedAt?: string; // NEW: For transaction editing
 }
 ```
 
@@ -278,12 +296,14 @@ BudgetBuddy uses a single DynamoDB table with a single-table design pattern for 
 **Table Name**: `budgetbuddy-dev-main`
 
 **Primary Key**:
+
 - **Partition Key (PK)**: String - Entity identifier
 - **Sort Key (SK)**: String - Entity type or relationship
 
 **Billing Mode**: On-demand (pay per request)
 
 **Features**:
+
 - Point-in-time recovery enabled
 - Encryption at rest with AWS managed keys
 - CloudWatch metrics enabled
@@ -291,6 +311,7 @@ BudgetBuddy uses a single DynamoDB table with a single-table design pattern for 
 ### Access Patterns
 
 #### 1. User Data
+
 ```
 PK: USER#<userId>
 SK: METADATA
@@ -298,6 +319,7 @@ Attributes: email, firstName, lastName, createdAt, updatedAt
 ```
 
 #### 2. Budget Data
+
 ```
 PK: USER#<userId>
 SK: BUDGET#<month>
@@ -305,6 +327,7 @@ Attributes: budgetId, month, groups (JSON), isAIGenerated, createdAt, updatedAt
 ```
 
 **Example**:
+
 ```json
 {
   "PK": "USER#abc123",
@@ -328,43 +351,47 @@ Attributes: budgetId, month, groups (JSON), isAIGenerated, createdAt, updatedAt
 ### Query Patterns
 
 #### Get User Profile
+
 ```typescript
 const params = {
-  TableName: 'budgetbuddy-dev-main',
+  TableName: "budgetbuddy-dev-main",
   Key: {
     PK: `USER#${userId}`,
-    SK: 'METADATA'
-  }
+    SK: "METADATA",
+  },
 };
 ```
 
 #### Get All Budgets for User
+
 ```typescript
 const params = {
-  TableName: 'budgetbuddy-dev-main',
-  KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+  TableName: "budgetbuddy-dev-main",
+  KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
   ExpressionAttributeValues: {
-    ':pk': `USER#${userId}`,
-    ':sk': 'BUDGET#'
-  }
+    ":pk": `USER#${userId}`,
+    ":sk": "BUDGET#",
+  },
 };
 ```
 
 #### Get Specific Month Budget
+
 ```typescript
 const params = {
-  TableName: 'budgetbuddy-dev-main',
+  TableName: "budgetbuddy-dev-main",
   Key: {
     PK: `USER#${userId}`,
-    SK: `BUDGET#${month}`  // e.g., "BUDGET#2025-11"
-  }
+    SK: `BUDGET#${month}`, // e.g., "BUDGET#2025-11"
+  },
 };
 ```
 
 #### Create/Update Budget
+
 ```typescript
 const params = {
-  TableName: 'budgetbuddy-dev-main',
+  TableName: "budgetbuddy-dev-main",
   Item: {
     PK: `USER#${userId}`,
     SK: `BUDGET#${month}`,
@@ -373,20 +400,22 @@ const params = {
     groups: budgetGroups,
     isAIGenerated: false,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
+    updatedAt: new Date().toISOString(),
+  },
 };
 ```
 
 ### Data Storage Strategy
 
 **Embedded Documents**: Budget groups, categories, and transactions are stored as nested JSON within the budget item. This approach:
+
 - Reduces query complexity (single read for entire budget)
 - Minimizes DynamoDB costs (fewer read/write operations)
 - Simplifies data consistency (atomic updates)
 - Matches the application's access patterns (always fetch complete budget)
 
 **Trade-offs**:
+
 - Item size limit: 400KB (sufficient for typical monthly budgets)
 - No individual transaction queries (acceptable for MVP)
 - Updates require full budget item replacement (acceptable for MVP)
@@ -394,16 +423,19 @@ const params = {
 ### Performance Characteristics
 
 **Read Operations**:
+
 - Get user profile: 1 read unit
 - Get single month budget: 1 read unit
 - Get all user budgets: 1 read unit per month
 
 **Write Operations**:
+
 - Create budget: 1 write unit
 - Update budget: 1 write unit
 - Delete budget: 1 write unit
 
 **Cost Optimization**:
+
 - On-demand billing: Pay only for actual usage
 - Single-table design: Reduced table management overhead
 - Embedded documents: Fewer operations per user action
@@ -464,7 +496,7 @@ type RootTabParamList = {
 type BudgetStackParamList = {
   BudgetList: undefined;
   BudgetDetail: { budgetId: string };
-  AddCategory: { groupType: 'income' | 'savings' | 'expense' };
+  AddCategory: { groupType: "income" | "savings" | "expense" };
   EditCategory: { categoryId: string };
 };
 
@@ -492,7 +524,7 @@ interface LocalTransaction {
   id: string;
   budgetId: string;
   data: Transaction;
-  syncStatus: 'synced' | 'pending' | 'failed';
+  syncStatus: "synced" | "pending" | "failed";
   createdLocally: boolean;
   lastSyncAttempt?: string;
 }
@@ -500,8 +532,8 @@ interface LocalTransaction {
 // Sync Queue Management
 interface SyncQueue {
   id: string;
-  type: 'CREATE' | 'UPDATE' | 'DELETE';
-  entity: 'budget' | 'transaction' | 'category';
+  type: "CREATE" | "UPDATE" | "DELETE";
+  entity: "budget" | "transaction" | "category";
   entityId: string;
   data: any;
   attempts: number;
@@ -517,7 +549,7 @@ interface SyncQueue {
 interface DeviceAuth {
   isDeviceSecure(): Promise<boolean>;
   requiresAuthentication(): boolean;
-  getSecurityLevel(): Promise<'none' | 'pin' | 'biometric'>;
+  getSecurityLevel(): Promise<"none" | "pin" | "biometric">;
 }
 
 // Secure Storage
@@ -540,6 +572,7 @@ interface AppLock {
 ### Main Budget Screen Layout
 
 **Three-Column Layout** (Desktop):
+
 ```
 ┌──────────────┬─────────────────────────────────────┬──────────────────┐
 │ SIDEBAR      │ BUDGET CATEGORIES                   │ SUMMARY/TRANS    │
@@ -564,6 +597,7 @@ interface AppLock {
 ```
 
 **Responsive Behavior**:
+
 - **Desktop (≥1024px)**: Full three-column layout
 - **Tablet (768-1023px)**: Collapsible sidebar, two-column main area
 - **Mobile Landscape (≥640px)**: Hamburger menu, single column with tabs
@@ -571,11 +605,13 @@ interface AppLock {
 ### Month Navigation Design
 
 **Centered Navigation Bar**:
+
 ```
 ◄  [Oct] [Nov] [Dec] [January 2025 - $3,180 left] [Feb] [Mar] [Apr]  ►
 ```
 
 **Features**:
+
 - 7 months visible (3 before, current, 3 after)
 - Selected month: larger, green border, shows remaining budget
 - Non-selected months: smaller, gray border
@@ -586,12 +622,14 @@ interface AppLock {
 ### Color Scheme
 
 **Primary Colors**:
+
 - Green: `#10b981` (success, positive balance, income)
 - Red: `#ef4444` (overspent, negative balance, expenses)
 - Blue: `#3b82f6` (interactive elements, links)
 - Gray: `#6b7280` (text, borders, neutral elements)
 
 **Background Colors**:
+
 - White: `#ffffff` (main background)
 - Light Gray: `#f9fafb` (secondary background)
 - Green Tint: `#f0fdf4` (selected month, positive indicators)
@@ -612,12 +650,14 @@ interface AppLock {
 ### Page Components
 
 1. **AuthPage** (`/auth`)
+
    - Login form
    - Register form
    - Password validation
    - Error handling
 
 2. **BudgetPage** (`/budget`)
+
    - Main application interface
    - Three-column layout
    - Budget management
@@ -632,18 +672,21 @@ interface AppLock {
 ### Feature Components
 
 1. **Sidebar Navigation**
+
    - Logo and branding
    - Navigation menu
    - User profile section
    - Collapsible on mobile
 
 2. **Month Navigation**
+
    - Month pills (7 visible)
    - Previous/Next arrows
    - Current month highlight
    - Remaining budget display
 
 3. **Budget Groups**
+
    - Income group
    - Savings group
    - Expenses group
@@ -651,6 +694,7 @@ interface AppLock {
    - Add item buttons
 
 4. **Budget Categories**
+
    - Category name and icon
    - Planned vs spent amounts
    - Progress indicators
@@ -658,6 +702,7 @@ interface AppLock {
    - Overspent highlighting
 
 5. **Transaction Modal**
+
    - Category selection
    - Amount input
    - Description field
@@ -665,6 +710,7 @@ interface AppLock {
    - Submit/cancel buttons
 
 6. **Budget Item Modal**
+
    - Name input
    - Icon picker (emoji)
    - Amount input
@@ -672,6 +718,7 @@ interface AppLock {
    - Frequency selector
 
 7. **Summary View**
+
    - Circular progress chart
    - Key metrics display
    - Category breakdown
@@ -679,6 +726,7 @@ interface AppLock {
    - Color-coded groups
 
 8. **Transactions List**
+
    - Transaction items
    - Category labels
    - Amount display
@@ -735,6 +783,7 @@ Response: { message }
 ## State Management
 
 ### Local State (React useState)
+
 - Current month selection
 - Modal visibility states
 - Form input values
@@ -742,11 +791,13 @@ Response: { message }
 - Sidebar collapse state
 
 ### Persistent State (localStorage)
+
 - JWT tokens (access, refresh, ID)
 - Token expiration time
 - User preferences (future)
 
 ### Server State (API)
+
 - User profile data
 - Budget data
 - Transaction data
@@ -754,6 +805,7 @@ Response: { message }
 ## Security Design
 
 ### Authentication Flow
+
 1. User submits credentials
 2. Frontend sends to `/auth/login`
 3. Lambda validates with Cognito
@@ -762,12 +814,14 @@ Response: { message }
 6. All subsequent requests include `Authorization: Bearer <token>` header
 
 ### Token Management
+
 - Access token: Short-lived (1 hour)
 - Refresh token: Long-lived (30 days)
 - ID token: Contains user claims
 - Automatic refresh before expiration
 
 ### API Security
+
 - All endpoints require authentication (except /auth/register and /auth/login)
 - JWT validation on API Gateway
 - CORS configured for specific origins
@@ -776,6 +830,7 @@ Response: { message }
 ## Performance Optimizations
 
 ### Frontend
+
 - Code splitting with React.lazy
 - Optimized bundle size with Vite
 - Minimal dependencies
@@ -783,6 +838,7 @@ Response: { message }
 - Debounced API calls for updates
 
 ### Backend
+
 - Lambda cold start optimization
 - DynamoDB single-table design
 - Efficient query patterns
@@ -790,6 +846,7 @@ Response: { message }
 - API Gateway caching (future)
 
 ### Data Loading
+
 - Load budget data on mount
 - Optimistic UI updates
 - Error boundaries for graceful failures
@@ -822,7 +879,6 @@ Response: { message }
 7. **Notifications**: Bill reminders and budget alerts
 8. **Export**: PDF/CSV export functionality
 
-
 ---
 
 ## Enhanced Month Navigation UI Design
@@ -838,6 +894,7 @@ Redesign the month navigation interface to match the EveryDollar style with a cl
 **Location**: Top of budget page (desktop/tablet view)
 
 **Layout**:
+
 ```
 [Month Year]                    [Today] [<] [>]
 $X,XXX.XX left to budget
@@ -845,6 +902,7 @@ $X,XXX.XX left to budget
 ```
 
 **Elements**:
+
 - **Month Title**: Large heading (text-3xl) showing "Month YYYY" (e.g., "December 2025")
 - **Budget Remaining**: Subtitle showing amount left to budget with color coding:
   - Green: Positive remaining
@@ -858,6 +916,7 @@ $X,XXX.XX left to budget
 **Trigger**: When viewing a future month with no existing budget
 
 **Layout**:
+
 ```
         [Circular Icon]
 
@@ -869,6 +928,7 @@ We'll copy November's budget to get you started.
 ```
 
 **Elements**:
+
 - **Icon**: Large circular border with document/arrow icon (w-48 h-48)
 - **Heading**: "Hey there, looks like you need a budget for [Month]"
 - **Subtext**: "We'll copy [Previous Month]'s budget to get you started"
@@ -877,6 +937,7 @@ We'll copy November's budget to get you started.
 ### Data Flow
 
 #### Month Navigation Flow
+
 ```
 User clicks arrow/Today
   ↓
@@ -892,6 +953,7 @@ If not + past: Show empty budget
 ```
 
 #### Copy Previous Month Flow
+
 ```
 User clicks "Start Planning"
   ↓
@@ -910,11 +972,13 @@ Display new budget
 ### API Integration
 
 **Endpoints Used**:
+
 - `GET /budget` - Fetch all budgets for user
 - `POST /budget` - Create new budget
 - `PUT /budget/{id}` - Update existing budget
 
 **Budget Copy Logic**:
+
 ```typescript
 const copyPreviousMonthBudget = async () => {
   // 1. Calculate previous month
@@ -928,17 +992,17 @@ const copyPreviousMonthBudget = async () => {
     ...prevBudget,
     id: generateId(),
     month: currentMonth,
-    groups: prevBudget.groups.map(group => ({
+    groups: prevBudget.groups.map((group) => ({
       ...group,
-      categories: group.categories.map(cat => ({
+      categories: group.categories.map((cat) => ({
         ...cat,
         id: generateId(),
         spentAmount: 0,
-        transactions: []
-      }))
+        transactions: [],
+      })),
     })),
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   };
 
   // 4. Save to backend
@@ -952,9 +1016,11 @@ const copyPreviousMonthBudget = async () => {
 ### State Management
 
 **New State Variables**:
+
 - None (uses existing `currentMonth` state)
 
 **New Functions**:
+
 - `goToToday()` - Navigate to current month
 - `isFutureMonth()` - Check if viewing future month
 - `copyPreviousMonthBudget()` - Copy previous month's budget
@@ -974,19 +1040,21 @@ const copyPreviousMonthBudget = async () => {
 ### Testing Strategy
 
 **Unit Tests**:
+
 - Test `isFutureMonth()` with various dates
 - Test `copyPreviousMonthBudget()` with mock data
 - Test month navigation state updates
 
 **Integration Tests**:
+
 - Test full flow: navigate to future month → copy budget → verify data saved
 - Test "Today" button returns to current month
 - Test arrow navigation updates month correctly
 
 **Property-Based Tests**:
+
 - Property 1: For any future month, copying previous month should create valid budget
 - Property 2: For any month navigation, budget data should persist correctly
-
 
 ---
 
@@ -1003,11 +1071,13 @@ Add functionality to reset the current budget and restart the AI setup process, 
 **Location**: Budget page header, near the month navigation controls
 
 **UI Design**:
+
 ```
 [Month Year]  $X left to budget    [Reset] [Today] [<] [>]
 ```
 
 **Behavior**:
+
 - Clicking "Reset" opens a confirmation modal
 - Modal asks: "Are you sure you want to reset this budget? This will delete all categories and transactions for [Month]."
 - Options: "Cancel" (gray) and "Reset Budget" (red)
@@ -1016,6 +1086,7 @@ Add functionality to reset the current budget and restart the AI setup process, 
 #### 2. Recurring Category Settings
 
 **Data Model Updates**:
+
 ```typescript
 interface BudgetCategory {
   id: string;
@@ -1025,13 +1096,14 @@ interface BudgetCategory {
   spentAmount: number;
   transactions: Transaction[];
   order: number;
-  isRecurring: boolean;  // NEW
-  recurringFrequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'annually';  // NEW
-  nextDueDate?: string;  // NEW - ISO date string
+  isRecurring: boolean; // NEW
+  recurringFrequency?: "weekly" | "bi-weekly" | "monthly" | "annually"; // NEW
+  nextDueDate?: string; // NEW - ISO date string
 }
 ```
 
 **UI Updates**:
+
 - Add checkbox "Make this recurring" when adding/editing categories
 - Add dropdown for frequency (weekly, bi-weekly, monthly, annually)
 - Show recurring badge on category items (e.g., "🔄 Bi-weekly")
@@ -1039,6 +1111,7 @@ interface BudgetCategory {
 #### 3. Smart Budget Copying
 
 **Logic Flow**:
+
 ```
 User clicks "Start Planning for [Month]"
   ↓
@@ -1060,6 +1133,7 @@ Display new budget
 ### API Integration
 
 **No new endpoints needed** - uses existing:
+
 - `GET /budget` - Fetch budgets
 - `POST /budget` - Create new budget
 - `PUT /budget/{id}` - Update budget
@@ -1068,10 +1142,12 @@ Display new budget
 ### State Management
 
 **New State Variables**:
+
 - `showResetModal: boolean` - Control reset confirmation modal
 - None for recurring settings (stored in category data)
 
 **Updated Functions**:
+
 - `copyPreviousMonthBudget()` - Filter to only recurring categories
 - `handleBudgetItemSubmit()` - Save recurring settings
 - `handleResetBudget()` - Delete budget and navigate to AI flow
@@ -1079,24 +1155,25 @@ Display new budget
 ### Recurring Frequency Calculations
 
 **Next Due Date Logic**:
+
 ```typescript
 const calculateNextDueDate = (
   currentDate: Date,
-  frequency: 'weekly' | 'bi-weekly' | 'monthly' | 'annually'
+  frequency: "weekly" | "bi-weekly" | "monthly" | "annually"
 ): string => {
   const next = new Date(currentDate);
 
   switch (frequency) {
-    case 'weekly':
+    case "weekly":
       next.setDate(next.getDate() + 7);
       break;
-    case 'bi-weekly':
+    case "bi-weekly":
       next.setDate(next.getDate() + 14);
       break;
-    case 'monthly':
+    case "monthly":
       next.setMonth(next.getMonth() + 1);
       break;
-    case 'annually':
+    case "annually":
       next.setFullYear(next.getFullYear() + 1);
       break;
   }
@@ -1116,21 +1193,23 @@ const calculateNextDueDate = (
 ### Testing Strategy
 
 **Unit Tests**:
+
 - Test `calculateNextDueDate()` with various frequencies
 - Test `copyPreviousMonthBudget()` filters recurring categories
 - Test reset confirmation modal shows/hides correctly
 
 **Integration Tests**:
+
 - Test full reset flow: click → confirm → navigate to AI page
 - Test recurring category creation and copying
 - Test budget copy preserves recurring settings
 
 **Manual Testing**:
+
 - Create budget with recurring salary (bi-weekly)
 - Navigate to future month and create budget
 - Verify salary is copied with bi-weekly setting
 - Test reset button deletes budget and restarts AI flow
-
 
 ---
 
@@ -1143,30 +1222,40 @@ Improve UI clarity by distinguishing between actual transactions (recorded incom
 ### UI Label Updates
 
 #### Transaction Form (FAB)
+
 **Current**: "Plan an Expense" / "Plan an Income"
 **New**: "Record Actual Expense" / "Record Actual Income"
 
 **Modal Title Logic**:
+
 ```typescript
-const getTransactionModalTitle = (type: 'income' | 'expense', isEdit: boolean) => {
-  if (isEdit) return 'Edit Transaction';
-  return type === 'income' ? 'Record Actual Income' : 'Record Actual Expense';
+const getTransactionModalTitle = (
+  type: "income" | "expense",
+  isEdit: boolean
+) => {
+  if (isEdit) return "Edit Transaction";
+  return type === "income" ? "Record Actual Income" : "Record Actual Expense";
 };
 ```
 
 #### Budget Item Form (Add Item Button)
+
 **Current**: Generic "Add Item"
 **New**: "Add Planned Income Item" / "Add Planned Expense Item" / "Add Planned Savings Item"
 
 **Modal Title Logic**:
+
 ```typescript
-const getBudgetItemModalTitle = (groupType: 'income' | 'savings' | 'expense', isEdit: boolean) => {
-  if (isEdit) return 'Edit Budget Item';
+const getBudgetItemModalTitle = (
+  groupType: "income" | "savings" | "expense",
+  isEdit: boolean
+) => {
+  if (isEdit) return "Edit Budget Item";
 
   const typeLabel = {
-    income: 'Income',
-    savings: 'Savings',
-    expense: 'Expense'
+    income: "Income",
+    savings: "Savings",
+    expense: "Expense",
   }[groupType];
 
   return `Add Planned ${typeLabel} Item`;
@@ -1176,6 +1265,7 @@ const getBudgetItemModalTitle = (groupType: 'income' | 'savings' | 'expense', is
 ### Terminology Consistency
 
 **Throughout the application**:
+
 - Use "Transaction" or "Actual" for recorded activity
 - Use "Budget Item" or "Planned" for future allocations
 - Use "Spent" for actual amounts in categories
@@ -1210,22 +1300,29 @@ const validateTransactionDate = (
   currentBudgetMonth: string // Format: "YYYY-MM"
 ): DateValidationResult => {
   const txDate = new Date(transactionDate);
-  const txMonth = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+  const txMonth = `${txDate.getFullYear()}-${String(
+    txDate.getMonth() + 1
+  ).padStart(2, "0")}`;
 
   if (txMonth === currentBudgetMonth) {
     return { isValid: true };
   }
 
-  const txMonthName = txDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const currentMonthName = new Date(currentBudgetMonth + '-01').toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric'
+  const txMonthName = txDate.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+  const currentMonthName = new Date(
+    currentBudgetMonth + "-01"
+  ).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
   });
 
   return {
     isValid: false,
     warning: `This transaction date (${txMonthName}) is outside the current budget month (${currentMonthName})`,
-    suggestedMonth: txMonth
+    suggestedMonth: txMonth,
   };
 };
 ```
@@ -1235,6 +1332,7 @@ const validateTransactionDate = (
 **Location**: Below date input field in TransactionForm
 
 **Design**:
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ ⚠️ Warning: Date Outside Current Month                      │
@@ -1249,6 +1347,7 @@ const validateTransactionDate = (
 ```
 
 **Styling**:
+
 - Background: Orange/yellow warning color (`bg-yellow-900 bg-opacity-30`)
 - Border: Orange (`border-yellow-600`)
 - Icon: Warning emoji or icon
@@ -1279,7 +1378,7 @@ interface TransactionFormState {
   formData: TransactionFormData;
   dateValidation: DateValidationResult;
   showDateWarning: boolean;
-  userDateChoice: 'continue' | 'switch' | null;
+  userDateChoice: "continue" | "switch" | null;
 }
 ```
 
@@ -1298,12 +1397,14 @@ Enable users to edit existing transactions by double-clicking on them in the tra
 ### UI Interaction
 
 **Transaction List Item**:
+
 - Add `cursor-pointer` class on hover
 - Add `onDoubleClick` event handler
 - Show visual feedback (slight background change) on hover
 - Maintain existing delete button functionality
 
 **CSS Updates**:
+
 ```css
 .transaction-item {
   cursor: pointer;
@@ -1346,12 +1447,14 @@ Close modal
 When editing a transaction, we need to handle three scenarios:
 
 **1. Amount Changed (same category)**:
+
 ```typescript
 const oldSpent = category.spentAmount;
 const newSpent = oldSpent - oldTransaction.amount + newTransaction.amount;
 ```
 
 **2. Category Changed (same amount)**:
+
 ```typescript
 // Old category
 oldCategory.spentAmount -= transaction.amount;
@@ -1361,6 +1464,7 @@ newCategory.spentAmount += transaction.amount;
 ```
 
 **3. Both Amount and Category Changed**:
+
 ```typescript
 // Old category
 oldCategory.spentAmount -= oldTransaction.amount;
@@ -1372,20 +1476,22 @@ newCategory.spentAmount += newTransaction.amount;
 ### Component Updates
 
 **TransactionList.tsx**:
+
 ```typescript
 <div
   className="transaction-item"
   onDoubleClick={() => onEdit(transaction)}
-  style={{ cursor: 'pointer' }}
+  style={{ cursor: "pointer" }}
 >
   {/* Transaction content */}
 </div>
 ```
 
 **TransactionForm.tsx**:
+
 ```typescript
 interface TransactionFormProps {
-  transaction?: Transaction;  // If provided, form is in edit mode
+  transaction?: Transaction; // If provided, form is in edit mode
   onSubmit: (data: TransactionFormData) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
@@ -1393,13 +1499,17 @@ interface TransactionFormProps {
 
 // In component
 const isEditMode = !!transaction;
-const modalTitle = isEditMode ? 'Edit Transaction' : getTransactionModalTitle(formData.type);
-const submitButtonText = isEditMode ? 'Update Transaction' : 'Add Transaction';
+const modalTitle = isEditMode
+  ? "Edit Transaction"
+  : getTransactionModalTitle(formData.type);
+const submitButtonText = isEditMode ? "Update Transaction" : "Add Transaction";
 ```
 
 **BudgetDashboard.tsx** (or parent component):
+
 ```typescript
-const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+const [editingTransaction, setEditingTransaction] =
+  useState<Transaction | null>(null);
 
 const handleEditTransaction = (transaction: Transaction) => {
   setEditingTransaction(transaction);
@@ -1419,7 +1529,7 @@ const handleUpdateTransaction = async (data: TransactionFormData) => {
   const updatedTransaction = {
     ...editingTransaction,
     ...data,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   };
 
   // Update categories
@@ -1445,16 +1555,19 @@ const handleUpdateTransaction = async (data: TransactionFormData) => {
 ### Error Handling
 
 **Validation Errors**:
+
 - Show inline errors for invalid fields
 - Keep modal open with user's changes
 - Highlight problematic fields
 
 **API Errors**:
+
 - Show error toast/notification
 - Keep modal open with user's changes
 - Allow retry or cancel
 
 **Optimistic Updates**:
+
 - Update UI immediately
 - Revert if API call fails
 - Show error message
@@ -1462,22 +1575,24 @@ const handleUpdateTransaction = async (data: TransactionFormData) => {
 ### Testing Strategy
 
 **Unit Tests**:
+
 - Test category spent amount calculations for all scenarios
 - Test form validation in edit mode
 - Test double-click event handler
 
 **Integration Tests**:
+
 - Test full edit flow: double-click → edit → save → verify
 - Test category changes update spent amounts correctly
 - Test error handling and rollback
 
 **Manual Testing**:
+
 - Double-click various transactions
 - Edit amount, category, description, date
 - Verify spent amounts update correctly
 - Test with transactions in different categories
 - Test error scenarios (network failure, validation errors)
-
 
 ---
 
@@ -1490,16 +1605,890 @@ Implement proper timezone handling to ensure users see the correct current month
 ### Problem Analysis
 
 **Current Bug**:
+
 - Date: November 30, 2025, 7:22 PM EST
 - Expected: Show November budget
 - Actual: Shows December budget
 - Root Cause: Application using UTC time (which is already December 1, 2025 at 00:22 UTC)
 
 **UTC vs EST Conversion**:
+
 ```
 November 30, 2025, 7:22 PM EST = November 30, 2025, 19:22 EST
-November 30, 2025, 19:22 EST = December 1, 2025, 00:22 UTC (5 hours ahead)
+UTC Time: December 1, 2025, 00:22 UTC (5 hours ahead)
 ```
+
+### Solution Architecture
+
+#### 1. User Timezone Detection and Storage
+
+**Registration Flow**:
+
+```typescript
+// During user registration
+const detectUserTimezone = (): string => {
+  // Primary: Browser timezone API
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Fallback: Geolocation-based timezone detection
+  if (!timezone) {
+    return detectTimezoneFromLocation();
+  }
+
+  return timezone; // e.g., "America/New_York", "America/Toronto"
+};
+
+// Store in user profile
+interface User {
+  userId: string;
+  email: string;
+  timezone: string; // IANA timezone identifier
+  location?: {
+    country: string;
+    city: string;
+    zipCode: string;
+  };
+  // ... other fields
+}
+```
+
+**User Profile API Updates**:
+
+```typescript
+// Update user profile endpoint
+PUT /auth/profile
+{
+  "timezone": "America/New_York",
+  "location": {
+    "country": "United States",
+    "city": "New York",
+    "zipCode": "10001"
+  }
+}
+```
+
+#### 2. Timezone-Aware Date Calculations
+
+**Current Month Calculation**:
+
+```typescript
+// Replace getCurrentMonthString() with timezone-aware version
+const getCurrentMonthString = (userTimezone: string): string => {
+  const now = new Date();
+
+  // Convert to user's timezone
+  const userDate = new Date(
+    now.toLocaleString("en-US", {
+      timeZone: userTimezone,
+    })
+  );
+
+  const year = userDate.getFullYear();
+  const month = String(userDate.getMonth() + 1).padStart(2, "0");
+
+  return `${year}-${month}`;
+};
+
+// Usage in components
+const currentMonth = getCurrentMonthString(user.timezone);
+```
+
+**Today String Calculation**:
+
+```typescript
+const getTodayString = (userTimezone: string): string => {
+  const now = new Date();
+
+  // Convert to user's timezone
+  const userDate = new Date(
+    now.toLocaleString("en-US", {
+      timeZone: userTimezone,
+    })
+  );
+
+  return userDate.toISOString().split("T")[0]; // YYYY-MM-DD
+};
+```
+
+#### 3. Settings Page for Location Management
+
+**Location Settings Component**:
+
+```typescript
+interface LocationSettings {
+  country: string;
+  city: string;
+  zipCode: string;
+  timezone: string; // Auto-calculated from location
+}
+
+const LocationSettingsForm: React.FC = () => {
+  const [location, setLocation] = useState<LocationSettings>();
+  const [loading, setLoading] = useState(false);
+
+  const handleLocationUpdate = async (newLocation: LocationSettings) => {
+    setLoading(true);
+
+    // Auto-detect timezone from location
+    const timezone = await getTimezoneFromLocation(newLocation);
+
+    // Update user profile
+    await updateUserProfile({
+      ...newLocation,
+      timezone,
+    });
+
+    // Refresh current month calculation
+    window.location.reload(); // Force recalculation
+
+    setLoading(false);
+  };
+
+  return (
+    <form onSubmit={handleLocationUpdate}>
+      <input name="country" placeholder="Country" />
+      <input name="city" placeholder="City" />
+      <input name="zipCode" placeholder="Zip Code" />
+      <button type="submit" disabled={loading}>
+        Update Location
+      </button>
+    </form>
+  );
+};
+```
+
+#### 4. Timezone Service Integration
+
+**Timezone Detection Service**:
+
+```typescript
+// Use external service for location-to-timezone mapping
+const getTimezoneFromLocation = async (location: {
+  country: string;
+  city: string;
+  zipCode: string;
+}): Promise<string> => {
+  try {
+    // Option 1: Use Google Maps Timezone API
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${API_KEY}`
+    );
+
+    // Option 2: Use TimeZoneDB API
+    // Option 3: Use built-in browser geolocation + timezone mapping
+
+    return response.timeZoneId; // e.g., "America/New_York"
+  } catch (error) {
+    console.error("Timezone detection failed:", error);
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }
+};
+```
+
+### Implementation Strategy
+
+#### Phase 1: Fix Current Month Bug (Critical)
+
+1. Update `getCurrentMonthString()` to use user's timezone
+2. Store timezone in user profile during registration
+3. Load timezone from user profile on app startup
+4. Test with EST, PST, UTC edge cases
+
+#### Phase 2: Location Settings (High Priority)
+
+1. Add Settings page with location form
+2. Implement timezone auto-detection from location
+3. Add timezone change handling with app refresh
+4. Test location updates and timezone changes
+
+#### Phase 3: Edge Case Handling (Medium Priority)
+
+1. Handle daylight saving time transitions
+2. Handle users traveling across timezones
+3. Add timezone validation and error handling
+4. Implement offline timezone caching
+
+### Data Flow
+
+```
+User Registration
+  ↓
+Detect Browser Timezone
+  ↓
+Store in User Profile
+  ↓
+App Startup
+  ↓
+Load User Timezone
+  ↓
+Calculate Current Month (Timezone-Aware)
+  ↓
+Display Correct Budget Month
+```
+
+### Testing Strategy
+
+**Critical Test Cases**:
+
+```typescript
+// Test timezone edge cases
+describe("Timezone Handling", () => {
+  test("EST user at 11:30 PM Nov 30 sees November budget", () => {
+    const mockDate = new Date("2025-11-30T23:30:00-05:00"); // EST
+    const currentMonth = getCurrentMonthString("America/New_York");
+    expect(currentMonth).toBe("2025-11");
+  });
+
+  test("UTC user at 4:30 AM Dec 1 sees December budget", () => {
+    const mockDate = new Date("2025-12-01T04:30:00Z"); // UTC
+    const currentMonth = getCurrentMonthString("UTC");
+    expect(currentMonth).toBe("2025-12");
+  });
+
+  test("PST user at 9:30 PM Nov 30 sees November budget", () => {
+    const mockDate = new Date("2025-11-30T21:30:00-08:00"); // PST
+    const currentMonth = getCurrentMonthString("America/Los_Angeles");
+    expect(currentMonth).toBe("2025-11");
+  });
+});
+```
+
+---
+
+## Critical Bug Fixes Design - Requirements 42-45
+
+### Requirement 42: Fix Onboarding Budget Creation Month Mismatch
+
+#### Problem Analysis
+
+**Current Bug**:
+
+- Frontend sends: `currentMonth: "2026-01"`
+- Backend creates budget with: `month: "2026-02"`
+- User cannot find their budget after onboarding
+
+**Root Cause Investigation**:
+Based on the auth service code, the issue appears to be in how `currentMonth` is being processed. The debug logs show extensive month verification, but the mismatch still occurs.
+
+#### Solution Design
+
+**1. Backend Month Handling Fix**:
+
+```javascript
+// In auth service onboarding endpoint
+const handleOnboardingRequest = async (requestBody) => {
+  // CRITICAL: Use the exact month value from frontend
+  const currentMonth = requestBody.currentMonth;
+
+  // Validation: Ensure month format is YYYY-MM
+  if (!/^\d{4}-\d{2}$/.test(currentMonth)) {
+    throw new Error(`Invalid month format: ${currentMonth}. Expected YYYY-MM`);
+  }
+
+  // NO DATE MANIPULATION - use exact value
+  console.log("MONTH DEBUG - Using exact frontend value:", currentMonth);
+
+  const budget = {
+    PK: `FAMILY#${familyId}`,
+    SK: `BUDGET#${currentMonth}`, // Use exact value
+    month: currentMonth, // Use exact value
+    // ... rest of budget object
+  };
+
+  // Additional validation before save
+  if (budget.month !== requestBody.currentMonth) {
+    throw new Error(
+      `Month mismatch detected: expected ${requestBody.currentMonth}, got ${budget.month}`
+    );
+  }
+
+  await dynamoHelpers.putItem(budget);
+
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      message: "Onboarding completed successfully",
+      budgetCreated: true,
+      month: currentMonth, // Return exact value used
+      debugInfo: {
+        receivedMonth: requestBody.currentMonth,
+        savedMonth: budget.month,
+        monthsMatch: budget.month === requestBody.currentMonth,
+      },
+    }),
+  };
+};
+```
+
+**2. Frontend Month Consistency**:
+
+```typescript
+// Ensure frontend sends consistent month format
+const completeOnboarding = async (selections: OnboardingSelections) => {
+  const currentMonth = getCurrentMonthString(); // Must return YYYY-MM format
+
+  console.log("Frontend sending currentMonth:", currentMonth);
+
+  const response = await fetch("/auth/onboarding", {
+    method: "POST",
+    body: JSON.stringify({
+      ...selections,
+      currentMonth: currentMonth, // Exact format: "2026-01"
+    }),
+  });
+
+  const result = await response.json();
+
+  // Verify month consistency in response
+  if (result.month !== currentMonth) {
+    console.error("Month mismatch in response:", {
+      sent: currentMonth,
+      received: result.month,
+    });
+  }
+
+  return result;
+};
+```
+
+**3. Enhanced Debugging**:
+
+```javascript
+// Add comprehensive logging throughout the flow
+const debugMonthFlow = (stage, data) => {
+  console.log(`MONTH DEBUG [${stage}]:`, {
+    timestamp: new Date().toISOString(),
+    stage: stage,
+    data: data,
+    type: typeof data.month || typeof data.currentMonth,
+  });
+};
+
+// Usage throughout onboarding flow
+debugMonthFlow("REQUEST_RECEIVED", requestBody);
+debugMonthFlow("BUDGET_CREATED", budget);
+debugMonthFlow("RESPONSE_SENT", responseData);
+```
+
+#### Testing Strategy
+
+**Unit Tests**:
+
+```javascript
+describe("Onboarding Month Handling", () => {
+  test("should preserve exact month value from frontend", () => {
+    const requestBody = { currentMonth: "2026-01" };
+    const budget = createBudgetFromOnboarding(requestBody);
+    expect(budget.month).toBe("2026-01");
+  });
+
+  test("should reject invalid month formats", () => {
+    const requestBody = { currentMonth: "January 2026" };
+    expect(() => createBudgetFromOnboarding(requestBody)).toThrow();
+  });
+});
+```
+
+### Requirement 43: Add User Logout Functionality
+
+#### Problem Analysis
+
+**Current Issue**: No visible logout option on budget page, users cannot log out
+
+#### Solution Design
+
+**1. Header Layout Update**:
+
+```typescript
+// Add logout to budget page header
+const BudgetPageHeader: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear authentication tokens
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("idToken");
+
+    // Clear any cached user data
+    localStorage.removeItem("userData");
+    localStorage.removeItem("currentBudget");
+
+    // Redirect to login
+    navigate("/auth");
+  };
+
+  return (
+    <header className="budget-header">
+      <div className="header-left">
+        <h1>
+          {monthName} {year}
+        </h1>
+        <p className="remaining-budget">${remainingAmount} left to budget</p>
+      </div>
+
+      <div className="header-right">
+        <button onClick={goToToday} className="today-btn">
+          Today
+        </button>
+        <button onClick={goToPrevMonth} className="nav-btn">
+          ←
+        </button>
+        <button onClick={goToNextMonth} className="nav-btn">
+          →
+        </button>
+        <button onClick={handleLogout} className="logout-btn">
+          Sign Out
+        </button>
+      </div>
+    </header>
+  );
+};
+```
+
+**2. Sidebar Logout Option**:
+
+```typescript
+// Add logout to sidebar navigation
+const Sidebar: React.FC = () => {
+  return (
+    <aside className="sidebar">
+      {/* Navigation items */}
+      <nav className="sidebar-nav">
+        <a href="/budget">📊 Budget</a>
+        <a href="/accounts">🏦 Accounts</a>
+        <a href="/settings">⚙️ Settings</a>
+      </nav>
+
+      {/* User section at bottom */}
+      <div className="sidebar-user">
+        <div className="user-info">
+          <span className="user-name">{user.firstName}</span>
+          <span className="user-email">{user.email}</span>
+        </div>
+        <button onClick={handleLogout} className="logout-link">
+          Sign out
+        </button>
+      </div>
+    </aside>
+  );
+};
+```
+
+**3. Logout Confirmation (Optional)**:
+
+```typescript
+const LogoutConfirmModal: React.FC<{
+  isOpen: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}> = ({ isOpen, onConfirm, onCancel }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content">
+        <h3>Sign Out</h3>
+        <p>Are you sure you want to sign out?</p>
+        <div className="modal-actions">
+          <button onClick={onCancel} className="btn-secondary">
+            Cancel
+          </button>
+          <button onClick={onConfirm} className="btn-primary">
+            Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+**4. Styling**:
+
+```css
+.logout-btn {
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.logout-btn:hover {
+  background: #f9fafb;
+  color: #374151;
+}
+
+.logout-link {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+.logout-link:hover {
+  color: #374151;
+}
+```
+
+### Requirement 44: Improve Onboarding Error Handling
+
+#### Problem Analysis
+
+**Current Issues**:
+
+- Generic error messages
+- No retry options
+- User input lost on errors
+- No clear guidance on what went wrong
+
+#### Solution Design
+
+**1. Enhanced Error Handling**:
+
+```typescript
+interface OnboardingError {
+  type: "network" | "validation" | "server" | "budget_creation";
+  message: string;
+  details?: string;
+  retryable: boolean;
+  supportContact?: boolean;
+}
+
+const handleOnboardingError = (error: any): OnboardingError => {
+  // Network errors
+  if (error.name === "NetworkError" || !navigator.onLine) {
+    return {
+      type: "network",
+      message: "Connection problem. Please check your internet and try again.",
+      retryable: true,
+    };
+  }
+
+  // Validation errors
+  if (error.status === 400) {
+    return {
+      type: "validation",
+      message: "Please check your selections and try again.",
+      details: error.message,
+      retryable: true,
+    };
+  }
+
+  // Server errors
+  if (error.status >= 500) {
+    return {
+      type: "server",
+      message: "Server error. Our team has been notified.",
+      retryable: true,
+      supportContact: true,
+    };
+  }
+
+  // Budget creation specific
+  if (error.message?.includes("budget")) {
+    return {
+      type: "budget_creation",
+      message: "There was a problem creating your budget. Please try again.",
+      retryable: true,
+      supportContact: true,
+    };
+  }
+
+  // Generic fallback
+  return {
+    type: "server",
+    message: "Something went wrong. Please try again.",
+    retryable: true,
+    supportContact: true,
+  };
+};
+```
+
+**2. Error Display Component**:
+
+```typescript
+const OnboardingErrorDisplay: React.FC<{
+  error: OnboardingError;
+  onRetry: () => void;
+  onContactSupport: () => void;
+}> = ({ error, onRetry, onContactSupport }) => {
+  return (
+    <div className="error-container">
+      <div className="error-icon">⚠️</div>
+      <h3 className="error-title">Oops! Something went wrong</h3>
+      <p className="error-message">{error.message}</p>
+
+      {error.details && (
+        <details className="error-details">
+          <summary>Technical details</summary>
+          <pre>{error.details}</pre>
+        </details>
+      )}
+
+      <div className="error-actions">
+        {error.retryable && (
+          <button onClick={onRetry} className="btn-primary">
+            Try Again
+          </button>
+        )}
+
+        {error.supportContact && (
+          <button onClick={onContactSupport} className="btn-secondary">
+            Contact Support
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+```
+
+**3. State Preservation**:
+
+```typescript
+const OnboardingPage: React.FC = () => {
+  const [selections, setSelections] = useState<OnboardingSelections>(() => {
+    // Restore from localStorage on error recovery
+    const saved = localStorage.getItem("onboarding_draft");
+    return saved ? JSON.parse(saved) : getDefaultSelections();
+  });
+
+  const [error, setError] = useState<OnboardingError | null>(null);
+
+  // Save draft on every change
+  useEffect(() => {
+    localStorage.setItem("onboarding_draft", JSON.stringify(selections));
+  }, [selections]);
+
+  const handleSubmit = async () => {
+    try {
+      setError(null);
+      await completeOnboarding(selections);
+
+      // Clear draft on success
+      localStorage.removeItem("onboarding_draft");
+
+      navigate("/budget");
+    } catch (err) {
+      const onboardingError = handleOnboardingError(err);
+      setError(onboardingError);
+
+      // Keep selections for retry
+      // Don't clear localStorage
+    }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    handleSubmit();
+  };
+
+  return (
+    <div className="onboarding-page">
+      {error ? (
+        <OnboardingErrorDisplay
+          error={error}
+          onRetry={handleRetry}
+          onContactSupport={() => window.open("mailto:support@budgetbuddy.com")}
+        />
+      ) : (
+        <OnboardingForm
+          selections={selections}
+          onChange={setSelections}
+          onSubmit={handleSubmit}
+        />
+      )}
+    </div>
+  );
+};
+```
+
+### Requirement 45: Validate Month Consistency Across Services
+
+#### Problem Analysis
+
+**Current Issues**:
+
+- Month format inconsistencies between services
+- No validation at API boundaries
+- Timezone-related month calculation errors
+- Difficult to debug month-related issues
+
+#### Solution Design
+
+**1. Month Format Validation Middleware**:
+
+```typescript
+// Shared validation utility
+export const validateMonthFormat = (month: string): boolean => {
+  const monthRegex = /^\d{4}-\d{2}$/;
+  if (!monthRegex.test(month)) return false;
+
+  const [year, monthNum] = month.split("-").map(Number);
+  return year >= 2020 && year <= 2030 && monthNum >= 1 && monthNum <= 12;
+};
+
+// API Gateway middleware
+const monthValidationMiddleware = (req: any, res: any, next: any) => {
+  const monthFields = ["month", "currentMonth", "targetMonth"];
+
+  for (const field of monthFields) {
+    if (req.body[field] && !validateMonthFormat(req.body[field])) {
+      return res.status(400).json({
+        error: "Invalid month format",
+        field: field,
+        value: req.body[field],
+        expected: 'YYYY-MM format (e.g., "2026-01")',
+      });
+    }
+  }
+
+  next();
+};
+```
+
+**2. Timezone-Aware Month Calculation**:
+
+```typescript
+// Centralized month calculation service
+class MonthService {
+  static getCurrentMonth(timezone: string): string {
+    const now = new Date();
+    const userDate = new Date(
+      now.toLocaleString("en-US", { timeZone: timezone })
+    );
+
+    const year = userDate.getFullYear();
+    const month = String(userDate.getMonth() + 1).padStart(2, "0");
+
+    const result = `${year}-${month}`;
+
+    // Log for debugging
+    console.log("MonthService.getCurrentMonth:", {
+      timezone,
+      utcTime: now.toISOString(),
+      userTime: userDate.toISOString(),
+      calculatedMonth: result,
+    });
+
+    return result;
+  }
+
+  static validateMonthConsistency(
+    frontendMonth: string,
+    backendMonth: string,
+    context: string
+  ): void {
+    if (frontendMonth !== backendMonth) {
+      const error = new Error(`Month mismatch in ${context}`);
+      console.error("Month consistency validation failed:", {
+        context,
+        frontendMonth,
+        backendMonth,
+        timestamp: new Date().toISOString(),
+      });
+      throw error;
+    }
+  }
+}
+```
+
+**3. Enhanced Logging and Debugging**:
+
+```typescript
+// Month operation audit logger
+class MonthAuditLogger {
+  static logMonthOperation(operation: string, data: any): void {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      operation,
+      data,
+      userAgent:
+        typeof window !== "undefined" ? window.navigator.userAgent : "server",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    };
+
+    console.log("MONTH_AUDIT:", JSON.stringify(logEntry, null, 2));
+
+    // In production, send to monitoring service
+    if (process.env.NODE_ENV === "production") {
+      // Send to CloudWatch, DataDog, etc.
+    }
+  }
+}
+
+// Usage throughout the application
+MonthAuditLogger.logMonthOperation("BUDGET_CREATION", {
+  requestedMonth: requestBody.currentMonth,
+  calculatedMonth: currentMonth,
+  userTimezone: user.timezone,
+});
+```
+
+**4. Admin Debugging Tools**:
+
+```typescript
+// Admin endpoint for month debugging
+app.get("/admin/debug/month/:userId", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await getUserById(userId);
+    const currentMonth = MonthService.getCurrentMonth(user.timezone);
+    const budgets = await getBudgetsForUser(userId);
+
+    const debugInfo = {
+      user: {
+        id: userId,
+        timezone: user.timezone,
+        location: user.location,
+      },
+      time: {
+        utc: new Date().toISOString(),
+        userLocal: new Date().toLocaleString("en-US", {
+          timeZone: user.timezone,
+        }),
+        calculatedMonth: currentMonth,
+      },
+      budgets: budgets.map((b) => ({
+        id: b.id,
+        month: b.month,
+        createdAt: b.createdAt,
+      })),
+    };
+
+    res.json(debugInfo);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+```
+
+### Implementation Priority
+
+**Phase 1 (Critical - Week 1)**:
+
+1. Fix onboarding month mismatch (Requirement 42)
+2. Add logout functionality (Requirement 43)
+
+**Phase 2 (High Priority - Week 2)**: 3. Improve error handling (Requirement 44) 4. Add month validation (Requirement 45)
+
+**Testing Strategy**:
+
+- Unit tests for each component
+- Integration tests for complete flows
+- Manual testing with different timezones
+- Error scenario testing
+- Performance testing for validation middleware
+  November 30, 2025, 19:22 EST = December 1, 2025, 00:22 UTC (5 hours ahead)
+
+````
 
 ### Data Model Updates
 
@@ -1524,11 +2513,12 @@ interface User {
   createdAt: string;
   updatedAt: string;
 }
-```
+````
 
 ### Timezone Detection on Registration
 
 **Flow**:
+
 ```
 User registers
   ↓
@@ -1542,6 +2532,7 @@ Use timezone for all date operations
 ```
 
 **Implementation**:
+
 ```typescript
 const detectUserTimezone = (): string => {
   // Use Intl API to get IANA timezone
@@ -1560,7 +2551,7 @@ const detectUserLocation = async (): Promise<Location | null> => {
         // Use reverse geocoding API to get location details
         resolve({
           latitude: position.coords.latitude,
-          longitude: position.coords.longitude
+          longitude: position.coords.longitude,
         });
       },
       () => resolve(null)
@@ -1572,6 +2563,7 @@ const detectUserLocation = async (): Promise<Location | null> => {
 ### Current Month Calculation
 
 **Problem**: Current implementation likely uses:
+
 ```typescript
 // WRONG - Uses UTC
 const currentMonth = new Date().getUTCMonth();
@@ -1579,28 +2571,31 @@ const currentYear = new Date().getUTCFullYear();
 ```
 
 **Solution**: Use user's timezone:
+
 ```typescript
 // CORRECT - Uses user's local timezone
-const getCurrentMonthInTimezone = (timezone: string): { month: number; year: number } => {
+const getCurrentMonthInTimezone = (
+  timezone: string
+): { month: number; year: number } => {
   const now = new Date();
 
   // Format date in user's timezone
-  const formatter = new Intl.DateTimeFormat('en-US', {
+  const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric'
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
   });
 
   const parts = formatter.formatToParts(now);
-  const year = parseInt(parts.find(p => p.type === 'year')?.value || '0');
-  const month = parseInt(parts.find(p => p.type === 'month')?.value || '0');
+  const year = parseInt(parts.find((p) => p.type === "year")?.value || "0");
+  const month = parseInt(parts.find((p) => p.type === "month")?.value || "0");
 
   return { month, year };
 };
 
 // Usage
-const userTimezone = 'America/New_York';
+const userTimezone = "America/New_York";
 const { month, year } = getCurrentMonthInTimezone(userTimezone);
 // On Nov 30, 2025 7:22 PM EST: month = 11, year = 2025 ✓
 ```
@@ -1615,24 +2610,25 @@ Create `packages/web-app/src/utils/timezoneHelpers.ts`:
  */
 export const getCurrentDateInTimezone = (timezone: string): Date => {
   const now = new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', {
+  const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-    hour12: false
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    hour12: false,
   });
 
   const parts = formatter.formatToParts(now);
-  const year = parseInt(parts.find(p => p.type === 'year')?.value || '0');
-  const month = parseInt(parts.find(p => p.type === 'month')?.value || '1') - 1;
-  const day = parseInt(parts.find(p => p.type === 'day')?.value || '1');
-  const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
-  const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
-  const second = parseInt(parts.find(p => p.type === 'second')?.value || '0');
+  const year = parseInt(parts.find((p) => p.type === "year")?.value || "0");
+  const month =
+    parseInt(parts.find((p) => p.type === "month")?.value || "1") - 1;
+  const day = parseInt(parts.find((p) => p.type === "day")?.value || "1");
+  const hour = parseInt(parts.find((p) => p.type === "hour")?.value || "0");
+  const minute = parseInt(parts.find((p) => p.type === "minute")?.value || "0");
+  const second = parseInt(parts.find((p) => p.type === "second")?.value || "0");
 
   return new Date(year, month, day, hour, minute, second);
 };
@@ -1640,11 +2636,13 @@ export const getCurrentDateInTimezone = (timezone: string): Date => {
 /**
  * Gets the current month and year in a specific timezone
  */
-export const getCurrentMonthInTimezone = (timezone: string): { month: number; year: number } => {
+export const getCurrentMonthInTimezone = (
+  timezone: string
+): { month: number; year: number } => {
   const date = getCurrentDateInTimezone(timezone);
   return {
     month: date.getMonth() + 1, // 1-12
-    year: date.getFullYear()
+    year: date.getFullYear(),
   };
 };
 
@@ -1656,9 +2654,9 @@ export const formatDateInTimezone = (
   timezone: string,
   format: Intl.DateTimeFormatOptions
 ): string => {
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat("en-US", {
     ...format,
-    timeZone: timezone
+    timeZone: timezone,
   }).format(date);
 };
 
@@ -1680,6 +2678,7 @@ export const isTodayInTimezone = (date: Date, timezone: string): boolean => {
 ### Settings Page - Location Update
 
 **UI Design**:
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ Settings                                                 │
@@ -1700,6 +2699,7 @@ export const isTodayInTimezone = (date: Date, timezone: string): boolean => {
 ```
 
 **Location to Timezone Mapping**:
+
 - Use a timezone lookup library (e.g., `geo-tz` or `tzlookup`)
 - Or use a geocoding API (Google Maps, OpenStreetMap)
 - Store mapping of zip codes to timezones
@@ -1716,20 +2716,21 @@ const getTimezoneFromLocation = async (
 
   // Option 2: Use a lookup table for common locations
   const locationTimezoneMap: Record<string, string> = {
-    'US-10001': 'America/New_York',
-    'US-90001': 'America/Los_Angeles',
-    'CA-M5H': 'America/Toronto',
+    "US-10001": "America/New_York",
+    "US-90001": "America/Los_Angeles",
+    "CA-M5H": "America/Toronto",
     // ... more mappings
   };
 
   const key = `${country}-${zipCode}`;
-  return locationTimezoneMap[key] || 'America/New_York'; // Default fallback
+  return locationTimezoneMap[key] || "America/New_York"; // Default fallback
 };
 ```
 
 ### State Management
 
 **User Context**:
+
 ```typescript
 interface UserContext {
   user: User;
@@ -1740,11 +2741,11 @@ interface UserContext {
 
 const UserProvider: React.FC = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [timezone, setTimezone] = useState<string>('America/New_York');
+  const [timezone, setTimezone] = useState<string>("America/New_York");
 
   useEffect(() => {
     // Load user profile with timezone
-    loadUserProfile().then(profile => {
+    loadUserProfile().then((profile) => {
       setUser(profile);
       setTimezone(profile.timezone || detectUserTimezone());
     });
@@ -1761,7 +2762,7 @@ const UserProvider: React.FC = ({ children }) => {
     await updateUserProfile({
       ...user,
       location,
-      timezone: newTimezone
+      timezone: newTimezone,
     });
 
     setTimezone(newTimezone);
@@ -1772,7 +2773,9 @@ const UserProvider: React.FC = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, timezone, updateLocation, getCurrentMonth }}>
+    <UserContext.Provider
+      value={{ user, timezone, updateLocation, getCurrentMonth }}
+    >
       {children}
     </UserContext.Provider>
   );
@@ -1782,6 +2785,7 @@ const UserProvider: React.FC = ({ children }) => {
 ### API Updates
 
 **User Profile Endpoint**:
+
 ```typescript
 // GET /user/profile
 Response: {
@@ -1809,12 +2813,14 @@ Request: {
 ### Migration Strategy
 
 **For Existing Users**:
+
 1. Detect timezone on next login
 2. Prompt user to confirm/update location
 3. Store timezone in profile
 4. Use detected timezone going forward
 
 **Default Behavior**:
+
 - If no timezone stored: Detect from browser
 - If detection fails: Use UTC with warning
 - Prompt user to set location in settings
@@ -1822,16 +2828,19 @@ Request: {
 ### Testing Strategy
 
 **Unit Tests**:
+
 - Test `getCurrentMonthInTimezone()` with various timezones
 - Test edge cases: midnight, month boundaries, DST transitions
 - Test timezone detection
 
 **Integration Tests**:
+
 - Test full flow: register → detect timezone → show correct month
 - Test location update → timezone change → UI updates
 - Test with different timezones (EST, PST, UTC, etc.)
 
 **Manual Testing**:
+
 - Test on Nov 30, 2025 at 7:22 PM EST → Should show November
 - Test on Nov 30, 2025 at 11:59 PM EST → Should show November
 - Test on Dec 1, 2025 at 12:00 AM EST → Should show December
@@ -1851,7 +2860,6 @@ Request: {
 - Avoid repeated timezone conversions
 - Store formatted dates when possible
 - Use memoization for expensive operations
-
 
 ---
 
@@ -1873,7 +2881,7 @@ interface DateValidationResult {
 }
 
 const validateTransactionDate = (
-  transactionDate: string,  // YYYY-MM-DD format
+  transactionDate: string, // YYYY-MM-DD format
   currentBudgetMonth: string // YYYY-MM format
 ): DateValidationResult => {
   if (!transactionDate || !currentBudgetMonth) {
@@ -1882,7 +2890,9 @@ const validateTransactionDate = (
 
   // Extract month from transaction date
   const txDate = new Date(transactionDate);
-  const txMonth = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+  const txMonth = `${txDate.getFullYear()}-${String(
+    txDate.getMonth() + 1
+  ).padStart(2, "0")}`;
 
   // Check if transaction month matches current budget month
   if (txMonth === currentBudgetMonth) {
@@ -1890,14 +2900,16 @@ const validateTransactionDate = (
   }
 
   // Format month names for display
-  const txMonthName = txDate.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric'
+  const txMonthName = txDate.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
   });
 
-  const currentMonthName = new Date(currentBudgetMonth + '-01').toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric'
+  const currentMonthName = new Date(
+    currentBudgetMonth + "-01"
+  ).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
   });
 
   return {
@@ -1905,7 +2917,7 @@ const validateTransactionDate = (
     warning: `This transaction date (${txMonthName}) is outside the current budget month (${currentMonthName})`,
     transactionMonth: txMonth,
     transactionMonthName: txMonthName,
-    currentMonthName: currentMonthName
+    currentMonthName: currentMonthName,
   };
 };
 ```
@@ -1917,6 +2929,7 @@ const validateTransactionDate = (
 **Location**: Below date input field in transaction modal
 
 **Layout**:
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ ⚠️ This transaction date (December 2025) is outside the    │
@@ -1927,6 +2940,7 @@ const validateTransactionDate = (
 ```
 
 **Styling**:
+
 - Background: Orange/yellow (`bg-yellow-50`)
 - Border: Orange (`border-yellow-300`)
 - Icon: Warning icon in orange
@@ -1935,11 +2949,13 @@ const validateTransactionDate = (
 #### Date Input Highlighting
 
 **When date is outside current month**:
+
 - Border color: Orange (`border-yellow-500`)
 - Border width: 2px
 - Add warning icon next to input
 
 **When date is valid**:
+
 - Normal border color: Gray (`border-gray-300`)
 - No warning icon
 
@@ -1969,12 +2985,16 @@ If date within current month:
 ### State Management
 
 **New State Variables**:
+
 ```typescript
-const [dateValidation, setDateValidation] = useState<DateValidationResult>({ isValid: true });
+const [dateValidation, setDateValidation] = useState<DateValidationResult>({
+  isValid: true,
+});
 const [showDateWarning, setShowDateWarning] = useState(false);
 ```
 
 **Validation Trigger**:
+
 - On date input change (real-time validation)
 - On form mount (if editing existing transaction)
 - On month change (if modal is open)
@@ -1997,12 +3017,14 @@ Fix the critical bug where budget data from other months is incorrectly displaye
 ### Root Cause Analysis
 
 **Current Issue**:
+
 - User navigates to a month without a budget
 - Budget state is not properly cleared
 - Previous month's budget data remains displayed
 - OR: Budget loading logic is not filtering by month correctly
 
 **Expected Behavior**:
+
 - When no budget exists for a month, display empty state
 - Only show budget data that matches the exact month being viewed
 - Clear previous budget data when switching months
@@ -2022,9 +3044,9 @@ const loadBudget = async () => {
     // Fetch all budgets for user
     const response = await fetch(`${API_BASE_URL}/budget`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('budgetbuddy_id_token')}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${localStorage.getItem("budgetbuddy_id_token")}`,
+        "Content-Type": "application/json",
+      },
     });
 
     if (response.ok) {
@@ -2032,14 +3054,20 @@ const loadBudget = async () => {
 
       if (data.budgets && data.budgets.length > 0) {
         // Find budget for the EXACT month being viewed
-        const monthBudget = data.budgets.find((b: Budget) => b.month === currentMonth);
+        const monthBudget = data.budgets.find(
+          (b: Budget) => b.month === currentMonth
+        );
 
         if (monthBudget) {
           // Verify the budget month matches (double-check)
           if (monthBudget.month === currentMonth) {
             setBudget(monthBudget);
           } else {
-            console.error('Budget month mismatch:', monthBudget.month, currentMonth);
+            console.error(
+              "Budget month mismatch:",
+              monthBudget.month,
+              currentMonth
+            );
             setBudget(null);
           }
         } else {
@@ -2055,7 +3083,7 @@ const loadBudget = async () => {
       setBudget(null);
     }
   } catch (error) {
-    console.error('Error loading budget:', error);
+    console.error("Error loading budget:", error);
     setBudget(null);
   } finally {
     setLoading(false);
@@ -2066,13 +3094,13 @@ const loadBudget = async () => {
 #### 2. Month Change Handler
 
 ```typescript
-const changeMonth = (direction: 'prev' | 'next') => {
+const changeMonth = (direction: "prev" | "next") => {
   // Clear current budget immediately
   setBudget(null);
 
   // Calculate new month
-  const [year, month] = currentMonth.split('-').map(Number);
-  const offset = direction === 'prev' ? -1 : 1;
+  const [year, month] = currentMonth.split("-").map(Number);
+  const offset = direction === "prev" ? -1 : 1;
   const date = new Date(year, month - 1 + offset, 1);
   const newMonth = date.toISOString().slice(0, 7);
 
@@ -2105,7 +3133,7 @@ if (!budget) {
         You haven't created a budget for this month yet.
       </p>
       <button
-        onClick={() => navigate('/onboarding')}
+        onClick={() => navigate("/onboarding")}
         className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
       >
         Create Budget
@@ -2121,6 +3149,7 @@ return <BudgetDisplay budget={budget} />;
 ### Testing Strategy
 
 **Test Cases**:
+
 1. Navigate to month with budget → Should display budget
 2. Navigate to month without budget → Should display empty state
 3. Navigate from month with budget to month without → Should clear previous budget
@@ -2129,6 +3158,7 @@ return <BudgetDisplay budget={budget} />;
 6. Switch rapidly between months → Should not show wrong month's data
 
 **Verification**:
+
 - Check `budget.month` matches `currentMonth` in console
 - Verify budget state is null when no budget exists
 - Confirm no budget data from other months is displayed
@@ -2138,15 +3168,16 @@ return <BudgetDisplay budget={budget} />;
 ## Implementation Priority
 
 **Critical Bug Fixes** (Implement immediately):
+
 1. Empty Month Budget Display Fix (Requirement 15)
 2. Transaction Date Validation (Requirement 14)
 
 **Rationale**:
+
 - Empty month bug causes data integrity issues and user confusion
 - Date validation bug causes transactions to be added to wrong months
 - Both bugs significantly impact core functionality
 - Both are relatively quick fixes with high impact
-
 
 ---
 
@@ -2155,6 +3186,7 @@ return <BudgetDisplay budget={budget} />;
 ### Problem Analysis
 
 **Current Bug Symptoms**:
+
 1. User completes AI onboarding for November
 2. Budget saves successfully (409 conflict = already exists)
 3. User switches to October (empty state - correct)
@@ -2176,7 +3208,9 @@ The backend `getBudgets` function IS working correctly and returning budgets. Th
 ### Solution Design
 
 #### Backend Changes
+
 **No changes needed** - the backend is working correctly:
+
 - `POST /budget` returns 409 when budget exists (correct behavior)
 - `GET /budget` returns all budgets for the family (working)
 - DynamoDB queries are correct
@@ -2186,32 +3220,35 @@ The backend `getBudgets` function IS working correctly and returning budgets. Th
 **1. Handle 409 Conflict as Success**
 
 In `saveBudgetToBackend()`:
+
 ```typescript
 const saveBudgetToBackend = async (budgetData: Budget) => {
   try {
     const response = await fetch(`${API_BASE_URL}/budget`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         month: budgetData.month,
         groups: budgetData.groups,
-        isAIGenerated: budgetData.isAIGenerated
-      })
+        isAIGenerated: budgetData.isAIGenerated,
+      }),
     });
 
     // CRITICAL FIX: Treat 409 conflict as success (budget already exists)
     if (response.ok || response.status === 409) {
-      console.log('[saveBudgetToBackend] Budget saved or already exists');
+      console.log("[saveBudgetToBackend] Budget saved or already exists");
 
       // Clear AI budget from localStorage after successful save
-      localStorage.removeItem('ai-generated-budget');
+      localStorage.removeItem("ai-generated-budget");
 
       // If 409, fetch the existing budget to update local state
       if (response.status === 409) {
-        console.log('[saveBudgetToBackend] Budget already exists, fetching from backend');
+        console.log(
+          "[saveBudgetToBackend] Budget already exists, fetching from backend"
+        );
         await loadBudget(); // Reload to get the existing budget
       } else {
         const savedBudget = await response.json();
@@ -2221,10 +3258,10 @@ const saveBudgetToBackend = async (budgetData: Budget) => {
       }
     } else {
       const errorText = await response.text();
-      console.error('[saveBudgetToBackend] Failed to save budget:', errorText);
+      console.error("[saveBudgetToBackend] Failed to save budget:", errorText);
     }
   } catch (error) {
-    console.error('[saveBudgetToBackend] Error saving budget:', error);
+    console.error("[saveBudgetToBackend] Error saving budget:", error);
   }
 };
 ```
@@ -2232,6 +3269,7 @@ const saveBudgetToBackend = async (budgetData: Budget) => {
 **2. Improve Budget Loading Logic**
 
 In `loadBudget()`:
+
 ```typescript
 const loadBudget = async () => {
   try {
@@ -2239,56 +3277,58 @@ const loadBudget = async () => {
     setBudget(null);
     setLoading(true);
 
-    console.log('[loadBudget] Loading budget for month:', currentMonth);
+    console.log("[loadBudget] Loading budget for month:", currentMonth);
 
     // Fetch all budgets from backend
     const response = await fetch(`${API_BASE_URL}/budget`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('budgetbuddy_id_token')}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${localStorage.getItem("budgetbuddy_id_token")}`,
+        "Content-Type": "application/json",
+      },
     });
 
     if (!response.ok) {
-      console.error('[loadBudget] Failed to fetch budgets:', response.status);
+      console.error("[loadBudget] Failed to fetch budgets:", response.status);
       setLoading(false);
       return;
     }
 
     const data = await response.json();
-    console.log('[loadBudget] Backend response:', data);
+    console.log("[loadBudget] Backend response:", data);
 
     // Check if we have budgets
     if (data.data && data.data.budgets && data.data.budgets.length > 0) {
-      console.log('[loadBudget] Found', data.data.budgets.length, 'budgets');
+      console.log("[loadBudget] Found", data.data.budgets.length, "budgets");
 
       // Find budget for the EXACT month being viewed
-      const monthBudget = data.data.budgets.find((b: Budget) => b.month === currentMonth);
+      const monthBudget = data.data.budgets.find(
+        (b: Budget) => b.month === currentMonth
+      );
 
       if (monthBudget) {
-        console.log('[loadBudget] Found budget for', currentMonth);
+        console.log("[loadBudget] Found budget for", currentMonth);
         setBudget(monthBudget);
         setLoading(false);
         return;
       }
 
       // No budget for this month - show empty state
-      console.log('[loadBudget] No budget found for', currentMonth);
+      console.log("[loadBudget] No budget found for", currentMonth);
       setBudget(null);
       setLoading(false);
       return;
     }
 
     // No budgets exist at all
-    console.log('[loadBudget] No budgets exist in backend');
+    console.log("[loadBudget] No budgets exist in backend");
 
     // Only check for AI budget if this is the current month
     const isCurrentMonth = currentMonth === getCurrentMonthString();
     if (isCurrentMonth) {
-      const aiGeneratedBudget = localStorage.getItem('ai-generated-budget');
+      const aiGeneratedBudget = localStorage.getItem("ai-generated-budget");
 
       if (aiGeneratedBudget) {
-        console.log('[loadBudget] Using AI-generated budget for current month');
+        console.log("[loadBudget] Using AI-generated budget for current month");
         const parsedBudget = JSON.parse(aiGeneratedBudget);
         const budget = createBudgetFromAIData(parsedBudget, currentMonth);
 
@@ -2298,7 +3338,7 @@ const loadBudget = async () => {
         return;
       } else {
         // No AI budget - redirect to onboarding
-        navigate('/onboarding');
+        navigate("/onboarding");
         return;
       }
     }
@@ -2306,9 +3346,8 @@ const loadBudget = async () => {
     // Not current month and no budgets - show empty state
     setBudget(null);
     setLoading(false);
-
   } catch (error) {
-    console.error('[loadBudget] Error loading budget:', error);
+    console.error("[loadBudget] Error loading budget:", error);
     setBudget(null);
     setLoading(false);
   }
@@ -2321,58 +3360,61 @@ const loadBudget = async () => {
 const createBudgetFromAIData = (parsedBudget: any, month: string): Budget => {
   return {
     id: `budget_${Date.now()}`,
-    userId: 'mock_user_id',
+    userId: "mock_user_id",
     month: month,
     groups: [
       {
-        id: 'income-group',
-        name: 'Income',
-        type: 'income',
-        icon: '💰',
+        id: "income-group",
+        name: "Income",
+        type: "income",
+        icon: "💰",
         isCollapsed: false,
         order: 1,
-        categories: parsedBudget.income?.map((cat: any, index: number) => ({
-          ...cat,
-          spentAmount: 0,
-          transactions: [],
-          order: index + 1,
-          isRecurring: false
-        })) || []
+        categories:
+          parsedBudget.income?.map((cat: any, index: number) => ({
+            ...cat,
+            spentAmount: 0,
+            transactions: [],
+            order: index + 1,
+            isRecurring: false,
+          })) || [],
       },
       {
-        id: 'savings-group',
-        name: 'Savings',
-        type: 'savings',
-        icon: '💾',
+        id: "savings-group",
+        name: "Savings",
+        type: "savings",
+        icon: "💾",
         isCollapsed: false,
         order: 2,
-        categories: parsedBudget.savings?.map((cat: any, index: number) => ({
-          ...cat,
-          spentAmount: 0,
-          transactions: [],
-          order: index + 1,
-          isRecurring: false
-        })) || []
+        categories:
+          parsedBudget.savings?.map((cat: any, index: number) => ({
+            ...cat,
+            spentAmount: 0,
+            transactions: [],
+            order: index + 1,
+            isRecurring: false,
+          })) || [],
       },
       {
-        id: 'expenses-group',
-        name: 'Expenses',
-        type: 'expense',
-        icon: '💸',
+        id: "expenses-group",
+        name: "Expenses",
+        type: "expense",
+        icon: "💸",
         isCollapsed: false,
         order: 3,
-        categories: parsedBudget.expenses?.map((cat: any, index: number) => ({
-          ...cat,
-          spentAmount: 0,
-          transactions: [],
-          order: index + 1,
-          isRecurring: false
-        })) || []
-      }
+        categories:
+          parsedBudget.expenses?.map((cat: any, index: number) => ({
+            ...cat,
+            spentAmount: 0,
+            transactions: [],
+            order: index + 1,
+            isRecurring: false,
+          })) || [],
+      },
     ],
     isAIGenerated: true,
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   };
 };
 ```
@@ -2380,6 +3422,7 @@ const createBudgetFromAIData = (parsedBudget: any, month: string): Budget => {
 ### Data Flow
 
 **Correct Flow**:
+
 ```
 1. User completes AI onboarding
    ↓
@@ -2419,6 +3462,7 @@ const createBudgetFromAIData = (parsedBudget: any, month: string): Budget => {
 ### API Response Structure
 
 **Backend Response Format**:
+
 ```json
 {
   "success": true,
@@ -2450,16 +3494,19 @@ const createBudgetFromAIData = (parsedBudget: any, month: string): Budget => {
 ### Testing Strategy
 
 **Unit Tests**:
+
 - Test `saveBudgetToBackend()` handles 409 as success
 - Test `loadBudget()` correctly parses backend response structure
 - Test `createBudgetFromAIData()` creates valid budget object
 
 **Integration Tests**:
+
 - Test full flow: AI onboarding → save → navigate away → navigate back
 - Test 409 conflict handling when budget already exists
 - Test localStorage clearing after successful save
 
 **Manual Testing**:
+
 1. Complete AI onboarding for November
 2. Verify budget displays correctly
 3. Switch to October (should be empty)
@@ -2477,83 +3524,101 @@ const createBudgetFromAIData = (parsedBudget: any, month: string): Budget => {
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property 1: Mobile App Platform Compatibility
-*For any* supported mobile platform (iOS/Android), the app should build successfully and provide the same core functionality as the web version
+
+_For any_ supported mobile platform (iOS/Android), the app should build successfully and provide the same core functionality as the web version
 **Validates: Requirements 22.1, 22.3**
 
 ### Property 2: API Compatibility Across Platforms
-*For any* API endpoint, requests from mobile apps should return the same data structure and status codes as requests from the web app
+
+_For any_ API endpoint, requests from mobile apps should return the same data structure and status codes as requests from the web app
 **Validates: Requirements 22.2, 22.5**
 
 ### Property 3: Offline Transaction Persistence
-*For any* transaction added while offline, it should be stored locally and successfully synced to the server when connection is restored
+
+_For any_ transaction added while offline, it should be stored locally and successfully synced to the server when connection is restored
 **Validates: Requirements 24.2, 24.3**
 
 ### Property 4: Biometric Authentication Fallback
-*For any* device where biometric authentication is unavailable or fails, the system should provide PIN authentication as a working alternative
+
+_For any_ device where biometric authentication is unavailable or fails, the system should provide PIN authentication as a working alternative
 **Validates: Requirements 25.1, 25.2**
 
 ### Property 5: Secure Token Storage
-*For any* authentication token, it should be stored using platform-specific secure storage (Keychain/Keystore) and retrieved correctly across app sessions
+
+_For any_ authentication token, it should be stored using platform-specific secure storage (Keychain/Keystore) and retrieved correctly across app sessions
 **Validates: Requirements 25.3**
 
 ### Property 6: Data Export Completeness
-*For any* user data export request, the exported file should contain all user budgets, transactions, and categories without data loss
+
+_For any_ user data export request, the exported file should contain all user budgets, transactions, and categories without data loss
 **Validates: Requirements 26.1, 26.6**
 
 ### Property 7: Search Result Accuracy
-*For any* search query, all returned results should match the search criteria and no matching items should be omitted
+
+_For any_ search query, all returned results should match the search criteria and no matching items should be omitted
 **Validates: Requirements 28.1, 28.2**
 
 ### Property 8: Notification Delivery
-*For any* budget alert condition (overspending, approaching limits), the system should send notifications to users who have enabled that notification type
+
+_For any_ budget alert condition (overspending, approaching limits), the system should send notifications to users who have enabled that notification type
 **Validates: Requirements 29.1, 29.2**
 
 ### Property 9: Currency Conversion Consistency
-*For any* transaction in a non-primary currency, the converted amount should be calculated using the current exchange rate and displayed consistently across all views
+
+_For any_ transaction in a non-primary currency, the converted amount should be calculated using the current exchange rate and displayed consistently across all views
 **Validates: Requirements 30.1, 30.4**
 
 ### Property 10: Recurring Budget Calculation Accuracy
-*For any* recurring budget item with bi-weekly frequency, the monthly planned amount should equal the base amount multiplied by the correct number of occurrences in that specific month
+
+_For any_ recurring budget item with bi-weekly frequency, the monthly planned amount should equal the base amount multiplied by the correct number of occurrences in that specific month
 **Validates: Requirements 18.1, 18.2, 20.8, 20.9**
 
 ### Property 11: Planned vs Actual Variance Calculation
-*For any* budget category, the variance should always equal the actual amount minus the planned amount, and be displayed with correct positive/negative indicators
+
+_For any_ budget category, the variance should always equal the actual amount minus the planned amount, and be displayed with correct positive/negative indicators
 **Validates: Requirements 19.1, 19.6**
 
 ### Property 12: Offline Data Synchronization
-*For any* data modified while offline, when connection is restored, the local changes should be successfully merged with server data without data loss
+
+_For any_ data modified while offline, when connection is restored, the local changes should be successfully merged with server data without data loss
 **Validates: Requirements 24.6, 24.7**
 
 ### Property 13: Cross-Platform Feature Parity
-*For any* core budgeting feature available on web, the same feature should be available and function identically on mobile platforms
+
+_For any_ core budgeting feature available on web, the same feature should be available and function identically on mobile platforms
 **Validates: Requirements 22.3, 35.10**
 
 ### Property 14: Security Session Management
-*For any* user session, the app should automatically lock after the configured inactivity period and require re-authentication
+
+_For any_ user session, the app should automatically lock after the configured inactivity period and require re-authentication
 **Validates: Requirements 25.4, 25.5**
 
 ### Property 15: Export Data Integrity Round Trip
-*For any* exported budget data, importing it back into the system should recreate the exact same budget structure and amounts
+
+_For any_ exported budget data, importing it back into the system should recreate the exact same budget structure and amounts
 **Validates: Requirements 26.4, 26.5**
 
 ## Error Handling
 
 ### Mobile App Error Handling
+
 - **Network Errors**: Graceful degradation to offline mode with user notification
 - **Authentication Errors**: Automatic token refresh with fallback to login screen
 - **Sync Conflicts**: User-friendly conflict resolution with data preservation
 - **Storage Errors**: Fallback storage mechanisms with error reporting
 
 ### API Error Handling
+
 - **Rate Limiting**: Exponential backoff with user feedback
 - **Server Errors**: Retry logic with circuit breaker pattern
 - **Validation Errors**: Field-specific error messages with correction guidance
 - **Currency API Errors**: Fallback to cached exchange rates
 
 ### Data Consistency
+
 - **Offline Sync**: Conflict resolution with user choice for critical data
 - **Concurrent Updates**: Optimistic locking with rollback capability
 - **Export Failures**: Partial export recovery with retry options
@@ -2562,6 +3627,7 @@ const createBudgetFromAIData = (parsedBudget: any, month: string): Budget => {
 ## Testing Strategy
 
 ### Mobile Testing Approach
+
 - **Unit Tests**: Core business logic and utility functions (Jest)
 - **Component Tests**: React Native component behavior (React Native Testing Library)
 - **Integration Tests**: API integration and offline sync (Detox E2E)
@@ -2569,17 +3635,21 @@ const createBudgetFromAIData = (parsedBudget: any, month: string): Budget => {
 - **Performance Testing**: Memory usage, battery impact, and load times
 
 ### Property-Based Testing Configuration
+
 - **Framework**: fast-check for JavaScript/TypeScript property testing
 - **Test Iterations**: Minimum 100 iterations per property test
 - **Mobile-Specific**: Test across different device configurations and network conditions
 - **Cross-Platform**: Verify properties hold on both iOS and Android
 
 ### Testing Tags Format
+
 Each property test must reference its design document property:
+
 - **Feature: market-ready-mvp, Property 1**: Mobile App Platform Compatibility
 - **Feature: market-ready-mvp, Property 10**: Recurring Budget Calculation Accuracy
 
 ### Dual Testing Strategy
+
 - **Unit Tests**: Specific examples, edge cases, error conditions, mobile-specific scenarios
 - **Property Tests**: Universal properties across all inputs, cross-platform consistency
 - **Integration Tests**: End-to-end workflows, offline/online transitions, multi-device sync
@@ -2587,12 +3657,14 @@ Each property test must reference its design document property:
 ## Performance Optimizations
 
 ### Mobile Performance
+
 - **Bundle Size**: Code splitting and lazy loading for React Native
 - **Memory Management**: Efficient image handling and data caching
 - **Battery Optimization**: Background task management and efficient sync
 - **Startup Time**: Optimized app launch and authentication flow
 
 ### Cross-Platform Optimization
+
 - **API Caching**: Shared cache strategy between web and mobile
 - **Offline Storage**: Efficient local database with sync optimization
 - **Network Usage**: Minimal data transfer with delta sync
@@ -2601,12 +3673,14 @@ Each property test must reference its design document property:
 ## Security Design
 
 ### Mobile Security
+
 - **Biometric Integration**: Platform-specific biometric APIs with secure fallback
 - **Secure Storage**: Keychain (iOS) and Keystore (Android) for sensitive data
 - **App Backgrounding**: Privacy screen and data clearing when app is backgrounded
 - **Certificate Pinning**: SSL certificate validation for API communications
 
 ### Data Protection
+
 - **Encryption**: End-to-end encryption for sensitive financial data
 - **Privacy Controls**: User-controlled data sharing and deletion
 - **Audit Logging**: Security event tracking with user access
@@ -2615,12 +3689,14 @@ Each property test must reference its design document property:
 ## Future Enhancements
 
 ### Mobile-Specific Features
+
 - **Receipt Scanning**: OCR integration for automatic transaction entry
 - **Voice Input**: Voice-to-text for transaction descriptions
 - **Apple Pay/Google Pay**: Integration for transaction tracking
 - **Widgets**: Home screen widgets for quick budget overview
 
 ### Advanced Features
+
 - **AI Insights**: Machine learning for spending pattern analysis
 - **Bank Integration**: Open banking APIs for automatic transaction import
 - **Receipt Scanning**: OCR integration for automatic transaction entry
@@ -2666,13 +3742,14 @@ A comprehensive admin dashboard for platform management, user support, and syste
 ### Data Models
 
 #### Admin User
+
 ```typescript
 interface AdminUser {
   adminId: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: 'super_admin' | 'support_admin' | 'read_only';
+  role: "super_admin" | "support_admin" | "read_only";
   permissions: AdminPermission[];
   lastLogin?: string;
   isActive: boolean;
@@ -2681,12 +3758,13 @@ interface AdminUser {
 }
 
 interface AdminPermission {
-  resource: 'users' | 'system' | 'support' | 'billing';
-  actions: ('read' | 'write' | 'delete')[];
+  resource: "users" | "system" | "support" | "billing";
+  actions: ("read" | "write" | "delete")[];
 }
 ```
 
 #### Support Ticket
+
 ```typescript
 interface SupportTicket {
   ticketId: string;
@@ -2694,9 +3772,9 @@ interface SupportTicket {
   userEmail: string;
   subject: string;
   description: string;
-  category: 'technical' | 'billing' | 'feature_request' | 'bug_report';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  category: "technical" | "billing" | "feature_request" | "bug_report";
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "open" | "in_progress" | "resolved" | "closed";
   assignedTo?: string;
   resolution?: string;
   createdAt: string;
@@ -2706,6 +3784,7 @@ interface SupportTicket {
 ```
 
 #### System Metrics
+
 ```typescript
 interface SystemMetrics {
   timestamp: string;
@@ -2724,6 +3803,7 @@ interface SystemMetrics {
 ### UI Components
 
 #### Dashboard Overview
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ BudgetBuddy Admin Dashboard                    [Admin Name ▼]   │
@@ -2752,6 +3832,7 @@ interface SystemMetrics {
 ```
 
 #### User Management
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ User Management                                                 │
@@ -2773,6 +3854,7 @@ interface SystemMetrics {
 ### API Endpoints
 
 #### Admin Authentication
+
 ```
 POST /admin/auth/login
 Request: { email, password, mfaCode? }
@@ -2784,6 +3866,7 @@ Response: { adminUser, permissions }
 ```
 
 #### User Management
+
 ```
 GET /admin/users
 Query: ?search=email&status=active&plan=premium&page=1&limit=50
@@ -2802,6 +3885,7 @@ Response: { success: boolean, exportUrl?: string }
 ```
 
 #### System Monitoring
+
 ```
 GET /admin/metrics/overview
 Response: {
@@ -2818,6 +3902,7 @@ Response: { alerts: SystemAlert[], count: number }
 ```
 
 #### Support Management
+
 ```
 GET /admin/support/tickets
 Query: ?status=open&priority=high&assignedTo=admin123
@@ -2835,34 +3920,40 @@ Response: { ticket: SupportTicket }
 ### Security Implementation
 
 #### Role-Based Access Control
+
 ```typescript
 const AdminPermissions = {
   super_admin: {
-    users: ['read', 'write', 'delete'],
-    system: ['read', 'write'],
-    support: ['read', 'write'],
-    billing: ['read', 'write']
+    users: ["read", "write", "delete"],
+    system: ["read", "write"],
+    support: ["read", "write"],
+    billing: ["read", "write"],
   },
   support_admin: {
-    users: ['read', 'write'],
-    support: ['read', 'write'],
-    billing: ['read']
+    users: ["read", "write"],
+    support: ["read", "write"],
+    billing: ["read"],
   },
   read_only: {
-    users: ['read'],
-    system: ['read'],
-    support: ['read'],
-    billing: ['read']
-  }
+    users: ["read"],
+    system: ["read"],
+    support: ["read"],
+    billing: ["read"],
+  },
 };
 
-const checkPermission = (adminUser: AdminUser, resource: string, action: string): boolean => {
+const checkPermission = (
+  adminUser: AdminUser,
+  resource: string,
+  action: string
+): boolean => {
   const permissions = AdminPermissions[adminUser.role];
   return permissions[resource]?.includes(action) || false;
 };
 ```
 
 #### Admin Authentication
+
 - Separate admin user pool in Cognito
 - Multi-factor authentication required
 - Session timeout: 4 hours
@@ -2872,6 +3963,7 @@ const checkPermission = (adminUser: AdminUser, resource: string, action: string)
 ### Monitoring and Alerts
 
 #### Real-time Metrics
+
 - User registration rate
 - API error rates and response times
 - Database performance metrics
@@ -2879,6 +3971,7 @@ const checkPermission = (adminUser: AdminUser, resource: string, action: string)
 - Active user sessions
 
 #### Alert Conditions
+
 - Error rate > 1%
 - API response time > 1000ms
 - New user registrations spike (>500% increase)
@@ -2886,6 +3979,7 @@ const checkPermission = (adminUser: AdminUser, resource: string, action: string)
 - Failed payment processing > 5%
 
 #### Notification Channels
+
 - Email alerts to admin team
 - Slack integration for critical alerts
 - SMS for urgent system issues
@@ -2894,18 +3988,21 @@ const checkPermission = (adminUser: AdminUser, resource: string, action: string)
 ### Implementation Priority
 
 **Phase 1 (Essential)**:
+
 - Basic admin authentication
 - User management (view, search, disable)
 - System health dashboard
 - Basic support ticket system
 
 **Phase 2 (Enhanced)**:
+
 - Advanced user operations (bulk actions, data export)
 - Detailed system metrics and monitoring
 - Role-based access control
 - Audit logging
 
 **Phase 3 (Advanced)**:
+
 - Real-time alerts and notifications
 - Advanced analytics and reporting
 - Automated user lifecycle management
@@ -2914,18 +4011,21 @@ const checkPermission = (adminUser: AdminUser, resource: string, action: string)
 ### Testing Strategy
 
 **Security Testing**:
+
 - Role-based access control validation
 - Admin authentication flow testing
 - Permission boundary testing
 - Audit log integrity verification
 
 **Performance Testing**:
+
 - Large dataset handling (10k+ users)
 - Real-time metrics performance
 - Bulk operation efficiency
 - Dashboard load times
 
 **Integration Testing**:
+
 - Admin API with main application APIs
 - Monitoring system integration
 - Alert notification delivery
@@ -2934,6 +4034,7 @@ const checkPermission = (adminUser: AdminUser, resource: string, action: string)
 - **Family Collaboration**: Real-time collaborative budgeting
 
 ### Platform Expansion
+
 - **Apple Watch**: Quick transaction entry and budget monitoring
 - **Android Wear**: Spending alerts and budget summaries
 - **Desktop Apps**: Native desktop applications for power users

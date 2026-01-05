@@ -268,7 +268,11 @@ async function getBudgets(event, user) {
 
   const familyId = user.familyId || `family_${user.userId}`;
 
-  console.log("getBudgets: Querying for familyId:", familyId);
+  console.log("getBudgets: CRITICAL DEBUG - Family ID resolution:");
+  console.log("  - user.familyId from JWT:", user.familyId);
+  console.log("  - user.userId from JWT:", user.userId);
+  console.log("  - Final familyId used for query:", familyId);
+  console.log("  - Query PK will be:", `FAMILY#${familyId}`);
 
   // Query all budgets for the family
   const budgets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
@@ -287,6 +291,25 @@ async function getBudgets(event, user) {
       "getBudgets: All budget months found:",
       budgets.map((b) => b.month)
     );
+    console.log(
+      "getBudgets: All budget PKs found:",
+      budgets.map((b) => b.PK)
+    );
+    console.log(
+      "getBudgets: All budget familyIds found:",
+      budgets.map((b) => b.familyId)
+    );
+  } else {
+    console.log(
+      "getBudgets: No budgets found - checking if any budgets exist at all"
+    );
+
+    // Query without filter to see if there are ANY budgets for this family
+    const allItems = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`);
+    console.log("getBudgets: All items for family:", allItems.length);
+    if (allItems.length > 0) {
+      console.log("getBudgets: Sample items found:", allItems.slice(0, 3));
+    }
   }
 
   // Transform DynamoDB items to API response format

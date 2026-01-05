@@ -1,463 +1,64 @@
-# Implementation Plan: Market-Ready MVP with Mobile Apps
+# Implementation Plan: Critical Bug Fixes
 
 ## Overview
 
-This implementation plan transforms BudgetBuddy from a web-only application into a comprehensive market-ready MVP with native mobile apps (iOS/Android), offline capability, enhanced security, and all essential features needed to compete in the personal finance app market. The plan follows a 2-week sprint focused on mobile-first development using React Native + Expo.
+This implementation plan focuses on fixing the critical bugs that are preventing users from using the application properly. Based on user reports and the current state of the system, we need to immediately address:
+
+1. **Missing Logout Functionality** - Users cannot log out of the application
+2. **Onboarding Profile Creation Issues** - New users getting stuck without proper profiles
+3. **Budget Access Issues** - Users unable to access their budgets after onboarding
+
+These are production-critical issues that must be fixed immediately.
 
 ## Tasks
 
-### Phase 1: Mobile Foundation (Week 1)
-
-- [x] 1. Set up React Native + Expo mobile project structure
-
-  - Initialize new Expo managed workflow project with TypeScript
-  - Configure project structure with proper folder organization
-  - Set up navigation with React Navigation 6 (bottom tabs + stack)
-  - Configure development environment and testing setup
-  - _Requirements: 22.1, 22.4_
-
-- [x]\* 1.1 Write property test for mobile app platform compatibility
-
-  - **Property 1: Mobile App Platform Compatibility**
-  - **Validates: Requirements 22.1, 22.3**
-
-- [ ] 2. Implement authentication system for mobile
-
-  - [x] 2.1 Set up AWS Cognito integration for React Native
-
-    - Install and configure AWS Amplify for React Native
-    - Implement login/register screens with mobile-optimized UI
-    - Handle JWT token storage using Expo SecureStore
-    - _Requirements: 22.5, 25.3_
-
-  - [x] 2.2 ~~Implement biometric authentication~~ **COMPLETED - ARCHITECTURAL DECISION**
-
-    - **Decision**: Skip app-level biometric authentication as device-level security is sufficient
-    - **Rationale**: Users must unlock their device before accessing any app, making additional biometric prompts redundant and poor UX
-    - **Implementation**: Rely on device-level security (Face ID/Touch ID/PIN) that users already use to unlock their phones
-    - **Security**: JWT tokens stored securely in Expo SecureStore (iOS Keychain/Android Keystore)
-    - _Requirements: 25.1, 25.2, 25.4_
-
-  - [x]\* 2.3 Write property tests for authentication
-    - **Property 4: Device Security Integration**
-    - **Property 5: Secure Token Storage**
-    - **Validates: Requirements 25.2, 25.3, 25.5**
-
-- [ ] 3. Create core mobile UI components and navigation
-
-  - [x] 3.1 Implement bottom tab navigation structure
-
-    - Create Budget, Transactions, Summary, Settings tabs
-    - Implement stack navigators for each tab
-    - Add mobile-optimized header and navigation
-    - _Requirements: 23.1, 23.2_
-
-  - [x] 3.2 Build reusable mobile UI components
-
-    - Create touch-friendly buttons and input fields
-    - Implement native mobile gestures (swipe, pull-to-refresh)
-    - Add haptic feedback for user interactions
-    - Support dark mode based on device settings
-    - _Requirements: 23.2, 23.3, 23.8, 23.10_
-
-  - [x]\* 3.3 Write property tests for mobile UX
-    - **Property 13: Cross-Platform Feature Parity**
-    - **Validates: Requirements 22.3, 35.10**
-
-- [x] 4. Implement API integration and offline capability
-
-  - [x] 4.1 Set up API client for React Native
-
-    - Configure React Query for API caching and offline support
-    - Implement API client that reuses existing AWS backend
-    - Add network status detection with NetInfo
-    - _Requirements: 22.2, 24.5_
-
-  - [x] 4.2 Implement offline data storage
-
-    - Set up AsyncStorage for simple data caching
-    - Implement SQLite database for complex offline queries
-    - Create sync queue management for offline transactions
-    - Add conflict resolution for offline/online data sync
-    - _Requirements: 24.1, 24.2, 24.3, 24.7_
-
-  - [x]\* 4.3 Write property tests for API and offline functionality
-    - **Property 2: API Compatibility Across Platforms**
-    - **Property 3: Offline Transaction Persistence**
-    - **Property 12: Offline Data Synchronization**
-    - **Validates: Requirements 22.2, 24.2, 24.3, 24.6**
-
-- [ ] 5. Build core budget management features for mobile
-
-  - [x] 5.1 Implement budget display and month navigation
-
-    - Create mobile-optimized budget list view
-    - Implement month navigation with swipe gestures
-    - Add budget creation and editing functionality
-    - Display planned vs actual amounts with clear visual distinction
-    - _Requirements: 19.1, 19.2, 19.3_
-
-  - [x] 5.2 Implement recurring budget planning
-
-    - Add recurring frequency selection (weekly, bi-weekly, monthly, etc.)
-    - Implement monthly occurrence calculation logic
-    - Display expected dates for recurring items
-    - Calculate correct planned amounts based on recurrence
-    - _Requirements: 18.1, 18.2, 18.9, 20.8, 20.9_
-
-  - [x]\* 5.3 Write property tests for recurring budget logic
-    - **Property 10: Recurring Budget Calculation Accuracy**
-    - **Property 11: Planned vs Actual Variance Calculation**
-    - **Validates: Requirements 18.1, 18.2, 19.6, 20.8**
-
-- [x] 6. Implement transaction management for mobile
-
-  - [x] 6.1 Create mobile transaction entry flow
-
-    - Built optimized transaction entry form for mobile
-    - Added quick-add shortcuts for common transactions
-    - Implemented category selection with search
-    - Support offline transaction creation with sync queue
-    - Added location tracking for transactions
-    - Created comprehensive transaction list with mobile UX
-    - Implemented search and filtering functionality
-    - Added property-based tests for transaction data integrity
-    - _Requirements: 23.4, 23.5, 24.2_
-
-  - [x] 6.2 Add transaction list and editing
-    - Create mobile-optimized transaction list view
-    - Implement swipe gestures for edit/delete actions
-    - Add transaction search and filtering
-    - Support transaction editing with proper sync handling
-    - _Requirements: 28.1, 28.2, 33.4_
-
-- [x] 7. Checkpoint - Core mobile functionality complete
-  - Ensure all core features work offline and sync properly
-  - Test authentication flow and device security integration
-  - Verify budget and transaction CRUD operations
-  - Ask the user if questions arise
-
-### Phase 2: Market-Ready Features (Week 2)
-
-- [ ] 8. Implement data export and backup functionality
-
-  - [x] 8.1 Add CSV and PDF export capabilities
-
-    - Implement CSV export for all budget and transaction data
-    - Add PDF generation for monthly budget reports
-    - Support date range filtering for exports
-    - Ensure export works on both web and mobile platforms
-    - _Requirements: 26.1, 26.2, 26.3, 26.8_
-
-  - [x] 8.2 Implement data backup and restore
-
-    - Add full data backup in JSON format
-    - Implement data restore functionality
-    - Add automatic backup scheduling options
-    - Provide export before account deletion
-    - _Requirements: 26.4, 26.5, 26.9, 26.10_
-
-  - [x]\* 8.3 Write property tests for data export
-    - **Property 23: CSV Export Data Completeness** (partial)
-    - **Property 24: Transaction CSV Export Accuracy** ✓
-    - **Property 25: PDF Report Generation Consistency** (partial)
-    - **Property 26: Export Data Filtering Accuracy** ✓
-    - **Property 27: Export Data Integrity** (partial)
-    - **Validates: Requirements 26.1, 26.4, 26.6**
-
-- [ ] 9. Add search, filtering, and quick actions
-
-  - [x] 9.1 ~~Implement comprehensive search functionality~~ **SKIPPED - BASIC SEARCH SUFFICIENT**
-
-    - **Decision**: Skip comprehensive search as basic search/filtering already exists and works well
-    - **Rationale**: Current implementation covers most common use cases (search by description, merchant, tags)
-    - **Implementation**: Basic real-time search with transaction filtering is sufficient for MVP
-    - **Advanced features**: Date range filtering, search suggestions, persistent state are nice-to-have, not essential
-    - _Requirements: 28.1, 28.2, 28.7, 28.8, 28.10_
-
-  - [x] 9.2 Add quick actions and shortcuts
-
-    - Implement quick-add buttons for recent transactions
-    - Add favorite categories for faster entry
-    - Create transaction templates for recurring expenses
-    - Add bulk operations for transaction management
-    - _Requirements: 33.1, 33.2, 33.3, 33.7_
-
-  - [x]\* 9.3 Write property tests for search and quick actions
-    - **Property 7: Search Result Accuracy** ✓
-    - **Property 39: Quick Transaction Recording** ✓
-    - **Property 40: Transaction Template Management** ✓
-    - **Property 41: Bulk Operations Accuracy** ✓
-    - **Property 42: Preferences Management** ✓
-    - **Validates: Requirements 28.1, 28.2, 33.1, 33.2, 33.3, 33.7**
-
-- [x] 10. Implement notifications and alerts system
-
-  - [x] 10.1 Set up push notifications infrastructure
-
-    - Configure Expo Notifications for mobile push notifications
-    - Set up notification preferences management
-    - Add in-app notification display and settings
-    - Implement budget alerts and bill reminders
-    - _Requirements: 29.5, 29.6_
-
-  - [x] 10.2 Add budget alerts and reminders
-
-    - Implement overspending notifications
-    - Add budget limit alerts (80%, 90%, 100%)
-    - Create bill reminders for recurring items
-    - Add daily expense reminder notifications
-    - Add weekly/monthly summary notifications
-    - _Requirements: 29.1, 29.2, 29.3, 29.9, 29.11, 29.12_
-
-  - [x]\* 10.3 Write property tests for notifications
-    - **Property 28: Notification Delivery Reliability** ✓
-    - **Property 29: Notification Preferences Persistence** (partial)
-    - **Property 30: Budget Alert Threshold Accuracy** (partial)
-    - **Property 31: Quiet Hours Compliance** (partial)
-    - **Property 32: Summary Notification Content Accuracy** (partial)
-    - **Validates: Requirements 29.1, 29.2**
-
-- [x] 11. Add multi-currency support
-
-  - [x] 11.1 Implement currency selection and formatting
-
-    - Add currency selection during onboarding
-    - Support major currencies (USD, EUR, GBP, CAD, AUD, JPY)
-    - Implement locale-based currency formatting
-    - Add currency change functionality in settings
-    - _Requirements: 30.1, 30.2, 30.6, 30.7_
-
-  - [x] 11.2 Add currency conversion functionality
-
-    - Integrate exchange rate API for daily rate updates
-    - Implement currency conversion for transactions
-    - Add offline currency conversion with cached rates
-    - Display exchange rate information for converted amounts
-    - _Requirements: 30.4, 30.5, 30.8, 30.9_
-
-  - [x]\* 11.3 Write property tests for currency support
-    - **Property 33: Currency Conversion Consistency** (partial)
-    - **Property 34: Currency Formatting Accuracy** (partial)
-    - **Property 35: Currency Selection Persistence** ✓
-    - **Property 36: Exchange Rate Validation** (partial)
-    - **Property 37: Currency Symbol and Code Consistency** ✓
-    - **Property 38: Currency Service Initialization** ✓
-    - **Validates: Requirements 30.1, 30.4**
-
-- [ ] 12. Implement AI-powered features and bank integration
-
-  - [x] 12.1 Add Google Sign-In authentication
-
-    - ✅ Integrated Google OAuth 2.0 for web and mobile
-    - ✅ Added GoogleSignInButton component to LoginScreen
-    - ✅ Implemented PKCE flow for secure authentication
-    - ✅ Fixed expo-auth-session v7 API compatibility
-    - ✅ Added Google token storage and management
-    - ✅ Extended auth service with Google methods (signInWithGoogle, linkGoogleAccount, unlinkGoogleAccount)
-    - ✅ All type errors resolved
-    - ✅ Created GOOGLE_SIGNIN_SETUP.md with complete setup instructions
-    - ✅ Updated google.ts config with all platform-specific client IDs
-    - ✅ Created .env.local with all Google OAuth credentials
-    - ✅ **COMPLETE**: All three platforms (Web, iOS, Android) now have proper OAuth client IDs configured
-    - 🔄 **Next Steps**:
-      - Implement backend integration to create/link user accounts
-      - Add Google Sign-In to RegisterScreen
-      - Test end-to-end flow on web and mobile
-      - Write property-based tests for Google authentication
-    - _Requirements: 40.1, 40.2, 40.3, 40.4, 40.9_
-
-  - [x] 12.2 Implement AI-powered onboarding with location suggestions **IN PROGRESS - CORE COMPLETE**
-
-    - ✅ Created category system with 15 expense + 6 income categories (80+ subcategories)
-    - ✅ Built geolocation service for IP-based location detection
-    - ✅ Implemented category suggestion service with rule-based logic
-    - ✅ Created category management service for CRUD operations
-    - ✅ Built web OnboardingFlow component with location → family size → categories flow
-    - ✅ Built mobile OnboardingFlow component (React Native)
-    - ✅ Created OnboardingScreen for mobile app
-    - ✅ Updated shared package exports to include new services
-    - ✅ All builds passing (shared + web)
-    - 🔄 **Next Steps**:
-      - Run data generation script: `npm run generate-city-data` (requires AWS credentials)
-      - Integrate onboarding into auth flow (show after first login)
-      - Save onboarding selections to user profile
-      - Create initial budget categories based on selections
-      - Test end-to-end onboarding flow on web and mobile
-    - _Requirements: 39.1, 39.2, 39.3, 39.4, 39.5, 39.7_
-
-  - [ ] 12.3 Set up bank account integration foundation
-
-    - Research and integrate Plaid API for bank connections
-    - Implement secure bank account linking flow
-    - Add transaction import and duplicate detection
-    - Create basic AI categorization using merchant patterns
-    - _Requirements: 37.1, 37.2, 37.3, 37.6, 37.8_
-
-  - [ ]\* 12.4 Write property tests for AI and integration features
-    - Test Google authentication across platforms
-    - Validate AI categorization accuracy
-    - Test bank integration security and data integrity
-
-- [ ] 13. Add calendar view and AI insights
-
-  - [ ] 13.1 Implement calendar view for expenses
-
-    - Create calendar component showing daily spending totals
-    - Add color coding for spending levels and patterns
-    - Implement date selection to view detailed transactions
-    - Support monthly and weekly calendar layouts
-    - _Requirements: 36.1, 36.2, 36.3, 36.4, 36.7_
-
-  - [ ] 13.2 Build AI-powered insights and analytics
-
-    - Implement spending pattern analysis
-    - Add unusual spending detection and alerts
-    - Create budget optimization suggestions
-    - Generate monthly financial health reports
-    - _Requirements: 38.1, 38.2, 38.3, 38.9_
-
-  - [ ]\* 13.3 Write property tests for calendar and insights
-    - Test calendar data accuracy and date calculations
-    - Validate AI insight generation and recommendations
-
-- [ ] 14. Implement enhanced security and onboarding
-
-  - [ ] 14.1 Add interactive onboarding and tutorial system
-
-    - Build guided tutorial for first-time users with AI suggestions
-    - Create step-by-step budget creation guide
-    - Implement contextual help tooltips throughout the app
-    - Add tutorial replay functionality for web vs mobile
-    - _Requirements: 27.1, 27.3, 27.4, 27.8_
-
-  - [ ] 14.2 Implement advanced security features
-
-    - Add two-factor authentication (2FA) support
-    - Implement session management with device tracking
-    - Add privacy screen when app is backgrounded
-    - Create security audit logs for user review
-    - _Requirements: 34.1, 34.2, 34.3, 34.7_
-
-  - [ ] 14.3 Add privacy controls and data protection
-
-    - Implement account deletion with data export
-    - Add privacy settings for data sharing preferences
-    - Ensure GDPR and CCPA compliance
-    - Create transparent privacy policy integration
-    - _Requirements: 34.4, 34.5, 34.8, 34.9, 34.10_
-
-  - [ ]\* 14.4 Write property tests for security features
-    - **Property 14: Security Session Management**
-    - **Validates: Requirements 25.4, 25.5**
-
-- [ ] 15. Implement freemium business model
-
-  - [ ] 15.1 Set up subscription and billing system
-
-    - Implement free tier with usage limits
-    - Add premium subscription with unlimited features
-    - Set up in-app purchase handling for mobile
-    - Create subscription management interface
-    - _Requirements: 35.1, 35.2, 35.3, 35.9_
-
-  - [ ] 15.2 Add premium features and upgrade flow
-    - Gate advanced features behind premium subscription (AI insights, bank integration)
-    - Implement clear upgrade prompts
-    - Add free trial period for premium features
-    - Ensure feature parity between platforms for premium users
-    - _Requirements: 35.4, 35.6, 35.8, 35.10_
-
-- [ ] 16. Final testing and app store preparation
-
-  - [ ] 16.1 Comprehensive testing and bug fixes
-
-    - Run full test suite including property-based tests
-    - Perform device testing on multiple iOS and Android devices
-    - Test offline/online sync scenarios thoroughly
-    - Test AI features and bank integration security
-    - Fix any critical bugs and performance issues
-    - _All Requirements_
-
-  - [ ] 16.2 App store preparation and deployment
-    - Generate production builds for iOS and Android
-    - Create app store listings with screenshots and descriptions
-    - Prepare privacy policy and terms of service
-    - Submit apps to App Store and Google Play Store
-    - _Requirements: 22.10_
-
-- [ ] 17. Build admin dashboard and user management system
-
-  - [ ] 17.1 Set up admin authentication and authorization
-
-    - Create separate admin user pool in AWS Cognito
-    - Implement role-based access control (super admin, support admin, read-only)
-    - Add multi-factor authentication for admin accounts
-    - Set up admin session management with 4-hour timeout
-    - _Requirements: 41.1, 41.11_
-
-  - [ ] 17.2 Build admin dashboard overview and metrics
-
-    - Create React admin dashboard with TypeScript
-    - Implement system health metrics display (API response time, error rates, uptime)
-    - Add user statistics dashboard (total users, active users, new registrations)
-    - Create real-time monitoring charts and alerts
-    - Display recent activity feed and system notifications
-    - _Requirements: 41.5, 41.6, 41.13, 41.15_
-
-  - [ ] 17.3 Implement user management functionality
-
-    - Build user search and filtering interface
-    - Add user account details view with budget/transaction history
-    - Implement user account actions (disable/enable, password reset, delete)
-    - Create bulk user operations (bulk email, account migrations)
-    - Add user data export capabilities for compliance
-    - _Requirements: 41.2, 41.3, 41.4, 41.10, 41.14_
-
-  - [ ] 17.4 Create support ticket management system
-
-    - Build support ticket creation and management interface
-    - Implement ticket assignment and status tracking
-    - Add ticket categorization (technical, billing, feature request, bug report)
-    - Create ticket priority management and escalation
-    - Integrate email notifications for ticket updates
-    - _Requirements: 41.7, 41.8_
-
-  - [ ] 17.5 Add subscription and billing management
-
-    - Create subscription overview and management interface
-    - Implement billing issue resolution tools
-    - Add refund processing capabilities
-    - Create subscription analytics and conversion tracking
-    - Build payment failure handling and retry mechanisms
-    - _Requirements: 41.12_
-
-  - [ ] 17.6 Implement audit logging and security features
-
-    - Create comprehensive audit logging for all admin actions
-    - Add admin action tracking with timestamps and user identification
-    - Implement IP whitelisting for super admin accounts
-    - Create security event monitoring and alerting
-    - Add data access logging for compliance requirements
-    - _Requirements: 41.9_
-
-  - [ ]\* 17.7 Write property tests for admin system
-    - **Property 16: Admin Role-Based Access Control**
-    - **Property 17: Admin Audit Log Integrity**
-    - **Validates: Requirements 41.9, 41.11**
-
-- [ ] 18. Final checkpoint - Market-ready MVP complete
-  - Ensure all critical features work across web and mobile
-  - Verify offline capability and data sync functionality
-  - Confirm AI features and bank integration work properly
-  - Test calendar view and insights functionality
-  - Validate Google Sign-In and enhanced onboarding
-  - Confirm security features and privacy compliance
-  - Test export/import functionality thoroughly
-  - Validate freemium model implementation
-  - Verify admin dashboard functionality and security
-  - Test user management and support ticket systems
-  - Ask the user if questions arise
+### Critical Bug Fixes (Immediate Priority)
+
+- [-] 1. Fix Critical Onboarding Budget Persistence Bug
+
+  - **Issue**: Budget created during onboarding but not retrievable afterward
+  - **Symptom**: User completes onboarding successfully, but budget page shows "No budgets exist in backend"
+  - **Root Cause**: Budget creation and retrieval using different data structures or keys
+  - Investigate budget service GET endpoint vs onboarding POST endpoint
+  - Fix data structure mismatch between creation and retrieval
+  - Test complete onboarding → budget access flow
+  - _Requirements: 42.1, 42.2, 42.4_
+
+- [ ] 2. Add Missing Logout Functionality
+
+  - **Issue**: Users report "there is no way to log out of this screen at all"
+  - **Current State**: Logout function exists but no visible UI button
+  - Add logout button to budget page header
+  - Add logout option to sidebar navigation
+  - Ensure logout clears all tokens and redirects to login
+  - Test logout functionality across all pages
+  - _Requirements: 43.1, 43.2, 43.3_
+
+- [ ] 3. Fix User Profile Creation Issues
+  - **Issue**: New users getting 404 "User profile not found" errors
+  - **Root Cause**: Profile creation failing during registration
+  - Investigate registration endpoint profile creation
+  - Ensure familyId is properly assigned during registration
+  - Fix profile creation for both email and Google sign-in
+  - Test complete registration → profile → onboarding flow
+  - _Requirements: 17.1, 17.2, 17.3_
+
+### Secondary Fixes (After Critical Issues)
+
+- [ ] 4. Improve Error Handling and User Feedback
+
+  - Add better error messages for onboarding failures
+  - Preserve user input when errors occur
+  - Add retry mechanisms for failed operations
+  - Provide clear guidance when things go wrong
+  - _Requirements: 44.1, 44.2, 44.3_
+
+- [ ] 5. Add Month Consistency Validation
+  - Add validation for month format consistency
+  - Enhance debugging for month-related issues
+  - Add timezone-aware month calculations
+  - Provide admin tools for month debugging
+  - _Requirements: 45.1, 45.2, 45.3_
 
 ## Notes
 
