@@ -871,6 +871,17 @@ exports.handler = async (event, _context) => {
         }
 
         // Validate required fields
+        console.log("ONBOARDING DEBUG - Validating request body:");
+        console.log("  - city:", requestBody.city);
+        console.log("  - country:", requestBody.country);
+        console.log("  - familySize:", requestBody.familySize);
+        console.log("  - currentMonth:", requestBody.currentMonth);
+        console.log("  - selectedCategories:", requestBody.selectedCategories);
+        console.log(
+          "  - selectedCategories length:",
+          requestBody.selectedCategories?.length
+        );
+
         if (
           !requestBody.city ||
           !requestBody.country ||
@@ -878,6 +889,16 @@ exports.handler = async (event, _context) => {
           !requestBody.currentMonth ||
           !requestBody.selectedCategories
         ) {
+          console.error("ONBOARDING VALIDATION FAILED:");
+          console.error("  - Missing city:", !requestBody.city);
+          console.error("  - Missing country:", !requestBody.country);
+          console.error("  - Missing familySize:", !requestBody.familySize);
+          console.error("  - Missing currentMonth:", !requestBody.currentMonth);
+          console.error(
+            "  - Missing selectedCategories:",
+            !requestBody.selectedCategories
+          );
+
           return {
             statusCode: 400,
             headers: getCorsHeaders(origin),
@@ -888,6 +909,10 @@ exports.handler = async (event, _context) => {
             }),
           };
         }
+
+        console.log(
+          "ONBOARDING DEBUG - Validation passed, proceeding with user profile lookup"
+        );
 
         // Get user profile to get familyId
         const getItemCommand = new GetItemCommand({
@@ -934,6 +959,13 @@ exports.handler = async (event, _context) => {
 
         await dynamoClient.send(updateCommand);
         console.log("User profile updated - onboarding completed");
+
+        console.log("ONBOARDING DEBUG - Starting budget creation process");
+        console.log("  - familyId:", familyId);
+        console.log(
+          "  - selectedCategories count:",
+          requestBody.selectedCategories.length
+        );
 
         // Create initial budget for current month with selected categories
         // CRITICAL FIX: Use currentMonth from frontend to ensure timezone consistency
