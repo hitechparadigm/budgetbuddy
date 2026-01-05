@@ -946,6 +946,15 @@ exports.handler = async (event, _context) => {
         const familyId = userResult.Item.familyId.S;
         const currentTime = new Date().toISOString();
 
+        console.log("ONBOARDING DEBUG - Family ID resolution:");
+        console.log("  - userId from token:", userId);
+        console.log("  - familyId from user profile:", familyId);
+        console.log("  - Budget PK will be:", `FAMILY#${familyId}`);
+        console.log(
+          "  - Budget SK will be:",
+          `BUDGET#${requestBody.currentMonth}`
+        );
+
         // Update user profile to mark onboarding as completed
         const { UpdateItemCommand } = require("@aws-sdk/client-dynamodb");
 

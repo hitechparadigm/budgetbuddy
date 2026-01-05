@@ -185,23 +185,27 @@ The following features are not included in the current MVP:
 ## Technical Requirements
 
 ### Performance
+
 - Page load time < 2 seconds
 - API response time < 500ms
 - Smooth animations and transitions (60fps)
 
 ### Security
+
 - All API requests authenticated with JWT tokens
 - HTTPS only for all communications
 - Secure token storage in localStorage
 - Automatic token refresh before expiration
 
 ### Browser Support
+
 - Chrome (latest 2 versions)
 - Firefox (latest 2 versions)
 - Safari (latest 2 versions)
 - Edge (latest 2 versions)
 
 ### Accessibility
+
 - Keyboard navigation support
 - ARIA labels for screen readers
 - Sufficient color contrast ratios
@@ -214,7 +218,6 @@ The following features are not included in the current MVP:
 - 99.9% API uptime
 - < 1% error rate on API calls
 - Zero data loss incidents
-
 
 ---
 
@@ -240,11 +243,11 @@ The following features are not included in the current MVP:
 10. THE BudgetBuddy SHALL maintain the current month selection when navigating between months
 
 **Implementation Notes:**
+
 - Replace horizontal month pills with cleaner header design
 - Add month dropdown for quick access to any month
 - Implement copy-previous-month functionality for future months
 - Ensure budget data persists across month changes
-
 
 ---
 
@@ -266,12 +269,12 @@ The following features are not included in the current MVP:
 10. THE BudgetBuddy SHALL calculate the next due date for recurring categories based on their frequency
 
 **Implementation Notes:**
+
 - Add "Reset Budget" button to budget page header
 - Store `isRecurring` and `recurringFrequency` fields with each category
 - Update `copyPreviousMonthBudget()` to preserve recurring settings
 - Add confirmation modal for budget reset
 - Navigate to AI budget generation page after reset
-
 
 ---
 
@@ -335,7 +338,6 @@ The following features are not included in the current MVP:
 
 **Implementation Status**: Not started
 
-
 ---
 
 ### Requirement 13: User Timezone and Location Management
@@ -371,10 +373,10 @@ The following features are not included in the current MVP:
 **Priority**: High (Bug Fix)
 
 **Notes**:
+
 - Current bug: Application shows December budget on November 30, 2025 at 7:22 PM EST
 - Root cause: Application likely using UTC time instead of user's local timezone
 - Impact: Users see wrong month, leading to confusion and incorrect budget tracking
-
 
 ---
 
@@ -403,6 +405,7 @@ The following features are not included in the current MVP:
 **Priority**: Critical (Bug Fix)
 
 **Notes**:
+
 - Current bug: User can add transaction with Dec 2 date while viewing Nov budget, no warning appears
 - Impact: Transactions are added to wrong months, causing budget tracking errors
 - Root cause: No date validation in transaction modal
@@ -431,6 +434,7 @@ The following features are not included in the current MVP:
 **Priority**: Critical (Bug Fix)
 
 **Notes**:
+
 - Current bug: User sees budget data in months where they never created budgets (e.g., seeing budgets in past months before they started using the app)
 - Impact: Confusing user experience, incorrect budget tracking, data integrity issues
 - Root cause: Budget loading logic not properly filtering by month or showing cached data from other months
@@ -460,6 +464,7 @@ The following features are not included in the current MVP:
 **Priority**: Critical (P0 Bug Fix)
 
 **Notes**:
+
 - Current bug: User creates AI budget for November → switches to October → returns to November → gets redirected to onboarding
 - Symptom: Budget saves successfully (409 conflict confirms it exists), but GET /budget returns "No budgets exist"
 - Impact: Users cannot access their saved AI budgets after navigating between months
@@ -484,16 +489,19 @@ The following features are not included in the current MVP:
 8. 🔄 THE BudgetBuddy SHALL provide basic family management (view members, transfer ownership, leave family)
 
 **Implementation Status**:
+
 - ✅ **Phase 1 Complete**: Auto-family creation during registration implemented
 - 🔄 **Phase 2 Planned**: Partner invitation and family sharing system
 
 **Technical Notes**:
+
 - Family model supports adult users only (no child accounts)
 - Maximum 2 adults per family (couples)
 - Children are managed within the family budget but don't get separate accounts
 - Existing users without families are handled via manual assignment or migration script
 
 **Root Cause of Original Issue**:
+
 - Users registered without familyId assignment
 - Budget/transaction APIs require familyId to function
 - Users got stuck in onboarding loop unable to create or access budgets
@@ -908,18 +916,20 @@ The following features are not included in the current MVP:
 ## Implementation Priority for 2-Week MVP
 
 ### **Week 1 Focus (Critical)**
+
 - Requirements 22-25: Mobile apps, offline capability, security
 - Core recurring budget planning (Requirements 18-21)
 
 ### **Week 2 Focus (High Priority)**
+
 - Requirements 26-27: Data export, onboarding
 - Requirements 28-30: Search, notifications, multi-currency (basic)
 
 ### **Post-MVP (Medium Priority)**
+
 - Requirements 31-35: Advanced features, business model
 
-This comprehensive set of 35 requirements now covers all aspects needed for a market-ready MVP that can compete with established personal finance apps.
----
+## This comprehensive set of 35 requirements now covers all aspects needed for a market-ready MVP that can compete with established personal finance apps.
 
 ### Requirement 36: Calendar View for Expenses 📅 **HIGH PRIORITY**
 
@@ -1055,3 +1065,95 @@ This comprehensive set of 35 requirements now covers all aspects needed for a ma
 
 **Implementation Status**: Not started
 **Priority**: High (Platform management and support)
+
+---
+
+### Requirement 42: Fix Onboarding Budget Creation Month Mismatch 🚨 **CRITICAL BUG FIX**
+
+**User Story:** As a user completing onboarding, I want my budget to be created for the correct month I'm viewing, so that I can immediately see and use my budget after onboarding.
+
+#### Acceptance Criteria
+
+1. WHEN a user completes onboarding with currentMonth "2026-01", THE Onboarding_Service SHALL create a budget with month field "2026-01"
+2. WHEN the Frontend_App sends currentMonth parameter, THE Onboarding_Service SHALL use that exact value without modification
+3. WHEN a budget is created during onboarding, THE Budget_Service SHALL store it with the month field matching the frontend request
+4. WHEN a user navigates to the budget page after onboarding, THE Frontend_App SHALL find and display the budget for the current month
+5. IF there is any date/month manipulation in the backend, THEN THE Onboarding_Service SHALL log the transformation for debugging
+6. WHEN the onboarding endpoint receives a request, THE Onboarding_Service SHALL log the complete request body with month verification
+7. WHEN creating a budget during onboarding, THE Onboarding_Service SHALL log the exact budget object being saved to DynamoDB
+8. WHEN a budget creation fails, THE Onboarding_Service SHALL return a descriptive error message to the frontend
+9. THE system SHALL validate that month strings follow YYYY-MM format before processing
+10. WHEN storing budgets in the database, THE Budget_Service SHALL preserve the original month string format
+
+**Implementation Status**: Not started
+**Priority**: Critical (P0 Bug Fix)
+
+**Root Cause**: Frontend correctly sends "2026-01" but budget is being created with "2026-02" month field, causing mismatch when user tries to view their budget.
+
+---
+
+### Requirement 43: Add User Logout Functionality 🚨 **CRITICAL MISSING FEATURE**
+
+**User Story:** As a logged-in user, I want to be able to log out of the application, so that I can secure my account and switch users if needed.
+
+#### Acceptance Criteria
+
+1. WHEN a user is on the budget page, THE Frontend_App SHALL display a logout button or menu option in the header
+2. WHEN a user clicks the logout option, THE Frontend_App SHALL clear all authentication tokens from localStorage
+3. WHEN logout is triggered, THE Frontend_App SHALL redirect the user to the login page
+4. WHEN a user logs out, THE Frontend_App SHALL clear any cached user data from local storage
+5. THE logout functionality SHALL be accessible from all authenticated pages
+6. THE logout button SHALL be clearly visible and easily accessible (not hidden in deep menus)
+7. WHEN logout is successful, THE Frontend_App SHALL show a confirmation message
+8. THE logout functionality SHALL work consistently across all browsers and devices
+9. WHEN a user logs out, THE Frontend_App SHALL invalidate any active sessions
+10. THE logout button SHALL be styled consistently with the application's design system
+
+**Implementation Status**: Not started
+**Priority**: Critical (Essential Security Feature)
+
+**Current Issue**: No visible logout option on budget page, users cannot log out of the application.
+
+---
+
+### Requirement 44: Improve Onboarding Error Handling and User Feedback 🔧 **HIGH PRIORITY**
+
+**User Story:** As a user going through onboarding, I want clear feedback when something goes wrong, so that I can understand what happened and take appropriate action.
+
+#### Acceptance Criteria
+
+1. WHEN the frontend receives an onboarding error, THE Frontend_App SHALL display the specific error message to the user
+2. WHEN onboarding appears successful but budget is not found, THE Frontend_App SHALL provide actionable error messages
+3. WHEN a budget creation fails during onboarding, THE Frontend_App SHALL offer retry options
+4. WHEN there are network issues during onboarding, THE Frontend_App SHALL provide clear guidance
+5. THE Frontend_App SHALL distinguish between different types of errors (network, validation, server)
+6. WHEN onboarding fails, THE Frontend_App SHALL preserve user input so they don't have to re-enter everything
+7. THE Frontend_App SHALL provide a "Contact Support" option when critical errors occur
+8. WHEN debugging is needed, THE Frontend_App SHALL provide a way to copy error details for support
+9. THE error messages SHALL be user-friendly and avoid technical jargon
+10. THE Frontend_App SHALL track onboarding completion status to prevent users from getting stuck
+
+**Implementation Status**: Not started
+**Priority**: High (User Experience)
+
+---
+
+### Requirement 45: Validate Month Consistency Across Services 🔧 **HIGH PRIORITY**
+
+**User Story:** As a system administrator, I want to ensure month values remain consistent between frontend and backend services, so that budget operations work reliably.
+
+#### Acceptance Criteria
+
+1. WHEN the Frontend_App calculates the current month, THE system SHALL use timezone-aware calculations
+2. WHEN passing month values between services, THE system SHALL maintain exact string format without conversion
+3. WHEN retrieving budgets, THE Budget_Service SHALL return month values in the same format they were stored
+4. THE system SHALL validate month format consistency at API boundaries
+5. WHEN month mismatches are detected, THE system SHALL log detailed debugging information
+6. THE system SHALL provide clear error messages when month format validation fails
+7. WHEN debugging month issues, THE system SHALL log timezone information and date calculations
+8. THE system SHALL handle edge cases like timezone boundaries and daylight saving time
+9. THE system SHALL provide tools for administrators to diagnose month-related issues
+10. THE system SHALL maintain audit logs of month-related operations for troubleshooting
+
+**Implementation Status**: Not started
+**Priority**: High (System Reliability)
