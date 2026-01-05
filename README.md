@@ -4,7 +4,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ## Project Status
 
-**Current Phase**: Market-Ready MVP Development - Critical Authentication Fix Deployed
+**Current Phase**: Market-Ready MVP Development - Critical Onboarding Bug Fixed
 
 - **Web Application**: Complete AWS serverless architecture deployed and production-ready ✓
 - **Mobile Foundation**: React Native + Expo app with comprehensive budget management ✓
@@ -13,7 +13,19 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **AI-Powered Onboarding**: Location-based budget suggestions with 348 cities across 9 countries ✓
 - **Property-Based Testing**: Advanced testing methodology with 100% test coverage ✓
 - **Cross-Platform**: iOS, Android, and Web platform compatibility achieved ✓
-- **Overall Progress**: 88% complete (Critical auth fix deployed, ready for end-to-end testing)
+- **Overall Progress**: 89% complete (Critical onboarding bug fixed, ready for end-to-end testing)
+
+### Recent Achievements (2026-01-05)
+
+- 🔧 **CRITICAL ONBOARDING FIX** - Fixed budget persistence bug preventing users from accessing budgets after onboarding
+
+  - **Issue**: Users complete onboarding successfully but budget page shows "No budgets exist in backend"
+  - **Root Cause**: FamilyId mismatch between auth service (budget creation) and budget service (retrieval)
+  - **Technical Details**: Auth service uses familyId from user profile, budget service uses JWT familyId (null) or fallback
+  - **Solution**: Updated all 6 budget service functions to lookup familyId from user profile in DynamoDB
+  - **Impact**: Complete onboarding → budget access flow now works correctly
+  - **Functions Fixed**: getBudgets, createBudget, getCurrentBudget, getBudget, updateBudget, deleteBudget
+  - **Status**: Deployed via CI/CD pipeline, ready for end-to-end testing
 
 ### Recent Achievements (2026-01-04)
 

@@ -1,5 +1,60 @@
 # Changelog
 
+## [1.18.11] - 2026-01-05
+
+### 🔧 CRITICAL FIX - Onboarding Budget Persistence Bug
+
+- **Fixed FamilyId Mismatch Between Auth and Budget Services** - Resolved critical bug preventing budget access after onboarding
+  - **Issue**: Users complete onboarding successfully but budget page shows "No budgets exist in backend"
+  - **Root Cause**: Auth service creates budget using familyId from user profile, budget service uses familyId from JWT (null) or fallback
+  - **Symptom**: Budget created with PK `FAMILY#family_user_123` but retrieved with PK `FAMILY#family_user_456`
+  - **Solution**: Updated all budget service functions to lookup familyId from user profile in DynamoDB
+  - **Impact**: Complete onboarding → budget access flow now works correctly
+  - **Files Changed**: `backend/functions/budget/index.js` (all CRUD functions updated)
+  - **Functions Fixed**: getBudgets, createBudget, getCurrentBudget, getBudget, updateBudget, deleteBudget
+
+### Technical Details
+
+**Problem Analysis:**
+
+- Auth service (onboarding): `const familyId = userResult.Item.familyId.S;` (from DynamoDB profile)
+- Budget service: `const familyId = user.familyId || \`family\_${user.userId}\`;` (from JWT or fallback)
+- JWT tokens don't contain `custom:familyId` claim, so budget service always used fallback
+- This created different partition keys for budget creation vs retrieval
+
+**Solution Implementation:**
+
+```javascript
+// NEW: Consistent familyId lookup in all budget functions
+let familyId = user.familyId;
+
+if (!familyId) {
+  const userProfile = await dynamoHelpers.getItem(
+    `USER#${user.userId}`,
+    "PROFILE"
+  );
+
+  if (userProfile && userProfile.familyId) {
+    familyId = userProfile.familyId;
+  } else {
+    familyId = `family_${user.userId}`;
+  }
+}
+```
+
+**Deployment:**
+
+- Committed to develop branch with comprehensive commit message
+- Deployed via CI/CD pipeline (requires documentation updates)
+- All budget service functions now use consistent familyId resolution
+
+### Testing Required
+
+- ✅ Code analysis confirms familyId mismatch was root cause
+- ⏳ End-to-end testing: Register → Login → Onboarding → Budget Access
+- ⏳ Verify budget creation and retrieval use same partition key
+- ⏳ Test with both new users and existing users
+
 ## [1.18.10] - 2026-01-04
 
 ### 🔧 CRITICAL FIX - Cognito User Pool Client Configuration

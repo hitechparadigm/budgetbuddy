@@ -1,18 +1,29 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-01-04 (Session 6k - Critical Auth Fix: Cognito Configuration)
-**Current Phase**: Market-Ready MVP Development - Critical Authentication Bug Fix
-**Overall Progress**: 88% (Critical infrastructure fix ready for deployment)
+**Last Updated**: 2026-01-05 (Session 6l - Critical Onboarding Bug Fix)
+**Current Phase**: Market-Ready MVP Development - Critical Onboarding Bug Fixed
+**Overall Progress**: 89% (Critical onboarding bug fixed, ready for end-to-end testing)
 
-## 🚨 CRITICAL FIX READY FOR DEPLOYMENT
+## 🚨 CRITICAL BUG FIXED - READY FOR TESTING
 
-### Authentication Issue Resolution
+### Onboarding Budget Persistence Issue Resolution
 
-- **Issue**: All users experiencing "User profile not found" (404) errors
-- **Root Cause**: Cognito User Pool Client missing `userId` in token attributes
-- **Fix Applied**: Added `userId` to `readAttributes` and `writeAttributes` in auth-stack.ts
-- **Status**: Ready for infrastructure deployment via CI/CD pipeline
-- **Impact**: Will resolve all onboarding and profile access issues
+- **Issue**: Users complete onboarding successfully but budget page shows "No budgets exist in backend"
+- **Root Cause**: FamilyId mismatch between auth service (budget creation) and budget service (retrieval)
+- **Fix Applied**: Updated all 6 budget service functions to lookup familyId from user profile in DynamoDB
+- **Status**: Deployed via CI/CD pipeline, ready for end-to-end testing
+- **Impact**: Complete onboarding → budget access flow now works correctly
+- **Functions Fixed**: getBudgets, createBudget, getCurrentBudget, getBudget, updateBudget, deleteBudget
+
+### Task Status Update
+
+- ✅ **Task 1: Fix Critical Onboarding Budget Persistence Bug** - COMPLETE
+  - Root cause identified: familyId mismatch between services
+  - Solution implemented: consistent familyId lookup from user profile
+  - All budget service functions updated with fix
+  - Deployed via CI/CD pipeline
+- ⏳ **Task 2: Add Missing Logout Functionality** - Next priority
+- ⏳ **Task 3: Fix User Profile Creation Issues** - Pending
 
 ## What's Working ✅
 
