@@ -996,6 +996,19 @@ exports.handler = async (event, _context) => {
           receivedCurrentMonth: requestBody.currentMonth,
         });
 
+        // CRITICAL DEBUG: Verify the month values match exactly
+        console.log("CRITICAL DEBUG - Month verification:");
+        console.log("  - requestBody.currentMonth:", requestBody.currentMonth);
+        console.log("  - currentMonth variable:", currentMonth);
+        console.log("  - budget.month will be:", currentMonth);
+        console.log("  - SK will be:", `BUDGET#${currentMonth}`);
+
+        if (requestBody.currentMonth !== currentMonth) {
+          console.error("MONTH MISMATCH DETECTED!");
+          console.error("  - Expected:", requestBody.currentMonth);
+          console.error("  - Actual:", currentMonth);
+        }
+
         await dynamoHelpers.putItem(budget);
         console.log(
           "Initial budget created from onboarding selections - using dynamoHelpers"
