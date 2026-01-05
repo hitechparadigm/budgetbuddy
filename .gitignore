@@ -121,3 +121,9 @@ dist/
 #
  Kiro CI/CD status files
 .kiro/cicd-status/*.json
+
+# Security - Prevent exposure of sensitive logs
+auth-logs.txt
+*.log
+logs/
+debug-*.txt

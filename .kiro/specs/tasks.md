@@ -18,13 +18,20 @@ These are production-critical issues that must be fixed immediately.
 
   - **Issue**: Budget created during onboarding but not retrievable afterward
   - **Symptom**: User completes onboarding successfully, but budget page shows "No budgets exist in backend"
-  - **Root Cause**: Budget creation and retrieval using different data structures or keys
-  - Investigate budget service GET endpoint vs onboarding POST endpoint
-  - Fix data structure mismatch between creation and retrieval
-  - Test complete onboarding → budget access flow
+  - **Root Cause**: Field name mismatch between onboarding endpoint and budget service
+    - Onboarding endpoint used `planned` and `actual` fields
+    - Budget service expected `plannedAmount` and `spentAmount` fields
+    - Missing required fields: `transactions` array and `order` field
+  - **Solution Implemented**:
+    - Fixed field names to match budget service expectations (`plannedAmount`, `spentAmount`)
+    - Added missing `transactions` array and `order` field to category structure
+    - Added comprehensive error handling around budget creation
+    - Added immediate verification step to confirm budget was saved to DynamoDB
+    - Added detailed logging to debug budget creation process
+  - **Status**: FIXED - Deployed and ready for testing
   - _Requirements: 42.1, 42.2, 42.4_
 
-- [ ] 2. Add Missing Logout Functionality
+- [x] 2. Add Missing Logout Functionality
 
   - **Issue**: Users report "there is no way to log out of this screen at all"
   - **Current State**: Logout function exists but no visible UI button
@@ -34,14 +41,34 @@ These are production-critical issues that must be fixed immediately.
   - Test logout functionality across all pages
   - _Requirements: 43.1, 43.2, 43.3_
 
-- [ ] 3. Fix User Profile Creation Issues
+- [x] 3. Fix User Profile Creation Issues
+
   - **Issue**: New users getting 404 "User profile not found" errors
-  - **Root Cause**: Profile creation failing during registration
-  - Investigate registration endpoint profile creation
-  - Ensure familyId is properly assigned during registration
-  - Fix profile creation for both email and Google sign-in
-  - Test complete registration → profile → onboarding flow
+  - **Root Cause**: Token parsing issues - some users have tokens missing `custom:userId` or `sub` fields
+  - **Solution Implemented**:
+    - Created `parseUserFromIdToken` function in AuthContext to handle token parsing gracefully
+    - Added token validation utilities in `packages/web-app/src/utils/tokenUtils.ts`
+    - Created TokenDiagnostics component for users to self-diagnose token issues
+    - Added token diagnostics tool to Settings page
+  - **Status**: FIXED - Frontend improvements deployed and working
   - _Requirements: 17.1, 17.2, 17.3_
+
+- [x] 4. **CRITICAL SECURITY ALERT** - Remove Exposed Secrets
+  - **Issue**: GitGuardian detected exposed Bearer Token and Company Email Password in repository
+  - **Repository**: hitechparadigm/budgetbuddy
+  - **Date**: January 5th 2026, 03:31:30 UTC
+  - **Solution Implemented**:
+    - ✅ Removed `auth-logs.txt` file containing real JWT tokens
+    - ✅ Updated `.gitignore` to prevent future exposure of sensitive files
+    - ✅ Replaced hardcoded passwords with environment variables in test scripts
+    - ✅ Updated mock tokens to be clearly marked as development-only
+    - ✅ Created comprehensive security validation script (`scripts/security-check.sh`)
+    - ✅ Added automated security checks to CI/CD pipelines (PR and deployment)
+    - ✅ Created pre-commit security hook for developers
+    - ✅ Updated `SECURITY.md` with comprehensive security guidelines
+    - ✅ Added security validation npm scripts (`security:check`, `pre-deploy`)
+  - **Status**: FIXED - All exposed secrets removed, comprehensive security measures implemented
+  - _Requirements: Security compliance, data protection_
 
 ### Secondary Fixes (After Critical Issues)
 

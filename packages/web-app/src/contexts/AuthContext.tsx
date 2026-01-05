@@ -3,15 +3,21 @@
  * Manages user authentication state and provides auth methods
  */
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { apiClient, ApiClientError } from '../utils/apiClient';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { apiClient, ApiClientError } from "../utils/apiClient";
 import type {
   AuthState,
   User,
   LoginRequest,
   RegisterRequest,
-  AuthTokens
-} from '../types';
+  AuthTokens,
+} from "../types";
 
 // ============================================================================
 // Types
@@ -28,6 +34,56 @@ interface AuthContextType extends AuthState {
 interface AuthProviderProps {
   children: ReactNode;
 }
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Parse user information from JWT ID token
+ */
+const parseUserFromIdToken = (idToken: string): User | null => {
+  try {
+    const tokenParts = idToken.split(".");
+    if (tokenParts.length !== 3) {
+      console.error("Invalid token format - not a valid JWT");
+      return null;
+    }
+
+    const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
+
+    // Extract user information from token payload
+    const userId = payload["custom:userId"] || payload.sub;
+    if (!userId) {
+      console.error("No valid userId found in token");
+      return null;
+    }
+
+    return {
+      userId,
+      email: payload.email || "",
+      firstName: payload.given_name || "",
+      lastName: payload.family_name || "",
+      accountType: (payload["custom:accountType"] || "single") as
+        | "single"
+        | "family",
+      subscriptionTier: (payload["custom:subscriptionTier"] || "free") as
+        | "free"
+        | "premium",
+      onboardingCompleted: payload["custom:onboardingCompleted"] === "true",
+      timezone:
+        payload["custom:timezone"] ||
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+      createdAt: payload.iat
+        ? new Date(payload.iat * 1000).toISOString()
+        : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error("Failed to parse user from ID token:", error);
+    return null;
+  }
+};
 
 // ============================================================================
 // Context Creation
@@ -62,13 +118,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Parse user info from ID token
           const user = parseUserFromIdToken(tokens.idToken);
 
-          setAuthState({
-            isAuthenticated: true,
-            user,
-            tokens,
-            loading: false,
-            error: null,
-          });
+          if (user) {
+            setAuthState({
+              isAuthenticated: true,
+              user,
+              tokens,
+              loading: false,
+              error: null,
+            });
+          } else {
+            // Token parsing failed - invalid token, clear auth state
+            console.warn("Token parsing failed, clearing authentication");
+            apiClient.clearTokens();
+            setAuthState({
+              isAuthenticated: false,
+              user: null,
+              tokens: null,
+              loading: false,
+              error: "Invalid authentication token. Please log in again.",
+            });
+          }
         } else {
           // No valid authentication
           setAuthState({
@@ -80,13 +149,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           });
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error("Auth initialization error:", error);
+        // Clear potentially corrupted tokens
+        apiClient.clearTokens();
         setAuthState({
           isAuthenticated: false,
           user: null,
           tokens: null,
           loading: false,
-          error: 'Failed to initialize authentication',
+          error: "Authentication error. Please log in again.",
         });
       }
     };
@@ -99,7 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // ============================================================================
 
   const login = async (credentials: LoginRequest): Promise<void> => {
-    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+    setAuthState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       const loginResult = await apiClient.login(credentials);
@@ -109,10 +180,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: loginResult.user.email,
         firstName: loginResult.user.firstName,
         lastName: loginResult.user.lastName,
-        accountType: loginResult.user.accountType as 'single' | 'family',
-        subscriptionTier: loginResult.user.subscriptionTier as 'free' | 'premium',
+        accountType: loginResult.user.accountType as "single" | "family",
+        subscriptionTier: loginResult.user.subscriptionTier as
+          | "free"
+          | "premium",
         onboardingCompleted: false, // TODO: Get from API response
-        timezone: loginResult.user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timezone:
+          loginResult.user.timezone ||
+          Intl.DateTimeFormat().resolvedOptions().timeZone,
         createdAt: new Date().toISOString(), // TODO: Get from API response
         updatedAt: new Date().toISOString(), // TODO: Get from API response
       };
@@ -132,11 +207,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error: null,
       });
     } catch (error) {
-      const errorMessage = error instanceof ApiClientError
-        ? error.message
-        : 'Login failed. Please try again.';
+      const errorMessage =
+        error instanceof ApiClientError
+          ? error.message
+          : "Login failed. Please try again.";
 
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
         loading: false,
         error: errorMessage,
@@ -146,7 +222,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (userData: RegisterRequest): Promise<void> => {
-    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+    setAuthState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       await apiClient.register(userData);
@@ -157,11 +233,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         password: userData.password,
       });
     } catch (error) {
-      const errorMessage = error instanceof ApiClientError
-        ? error.message
-        : 'Registration failed. Please try again.';
+      const errorMessage =
+        error instanceof ApiClientError
+          ? error.message
+          : "Registration failed. Please try again.";
 
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
         loading: false,
         error: errorMessage,
@@ -171,19 +248,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const loginWithGoogle = async (idToken: string): Promise<void> => {
-    setAuthState(prev => ({ ...prev, loading: true, error: null }));
+    setAuthState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       // Send Google ID token to backend for verification and user creation/linking
-      const response = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken })
+      const response = await fetch("/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Google Sign-In failed');
+        throw new Error(errorData.message || "Google Sign-In failed");
       }
 
       const loginResult = await response.json();
@@ -193,10 +270,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         email: loginResult.user.email,
         firstName: loginResult.user.firstName,
         lastName: loginResult.user.lastName,
-        accountType: loginResult.user.accountType as 'single' | 'family',
-        subscriptionTier: loginResult.user.subscriptionTier as 'free' | 'premium',
+        accountType: loginResult.user.accountType as "single" | "family",
+        subscriptionTier: loginResult.user.subscriptionTier as
+          | "free"
+          | "premium",
         onboardingCompleted: false,
-        timezone: loginResult.user.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timezone:
+          loginResult.user.timezone ||
+          Intl.DateTimeFormat().resolvedOptions().timeZone,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
@@ -209,10 +290,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       };
 
       // Store tokens in localStorage
-      localStorage.setItem('budgetbuddy_access_token', tokens.accessToken);
-      localStorage.setItem('budgetbuddy_refresh_token', tokens.refreshToken);
-      localStorage.setItem('budgetbuddy_id_token', tokens.idToken);
-      localStorage.setItem('budgetbuddy_user', JSON.stringify(user));
+      localStorage.setItem("budgetbuddy_access_token", tokens.accessToken);
+      localStorage.setItem("budgetbuddy_refresh_token", tokens.refreshToken);
+      localStorage.setItem("budgetbuddy_id_token", tokens.idToken);
+      localStorage.setItem("budgetbuddy_user", JSON.stringify(user));
 
       setAuthState({
         isAuthenticated: true,
@@ -222,11 +303,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error: null,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error
-        ? error.message
-        : 'Google Sign-In failed. Please try again.';
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Google Sign-In failed. Please try again.";
 
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
         loading: false,
         error: errorMessage,
@@ -236,7 +318,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = async (): Promise<void> => {
-    setAuthState(prev => ({ ...prev, loading: true }));
+    setAuthState((prev) => ({ ...prev, loading: true }));
 
     try {
       await apiClient.logout();
@@ -249,7 +331,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         error: null,
       });
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       // Even if logout fails, clear local state
       setAuthState({
         isAuthenticated: false,
@@ -262,7 +344,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const clearError = (): void => {
-    setAuthState(prev => ({ ...prev, error: null }));
+    setAuthState((prev) => ({ ...prev, error: null }));
   };
 
   // ============================================================================
@@ -279,9 +361,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
 
@@ -293,35 +373,8 @@ export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
 
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
 
   return context;
-};
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
-const parseUserFromIdToken = (idToken: string): User => {
-  try {
-    // Parse JWT token (basic parsing - in production, use a proper JWT library)
-    const payload = JSON.parse(atob(idToken.split('.')[1]));
-
-    return {
-      userId: payload['custom:userId'] || payload.sub,
-      email: payload.email,
-      firstName: payload.given_name,
-      lastName: payload.family_name,
-      accountType: (payload['custom:accountType'] || 'single') as 'single' | 'family',
-      subscriptionTier: (payload['custom:subscriptionTier'] || 'free') as 'free' | 'premium',
-      onboardingCompleted: payload['custom:onboardingCompleted'] === 'true',
-      timezone: payload['custom:timezone'] || Intl.DateTimeFormat().resolvedOptions().timeZone,
-      createdAt: new Date(payload.iat * 1000).toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-  } catch (error) {
-    console.error('Error parsing ID token:', error);
-    throw new Error('Invalid token format');
-  }
 };

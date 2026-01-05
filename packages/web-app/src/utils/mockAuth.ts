@@ -1,14 +1,18 @@
 /**
  * Mock Authentication for Development Testing
  *
+ * ⚠️  WARNING: FOR DEVELOPMENT USE ONLY ⚠️
  * This provides a temporary authentication solution for testing
  * the transaction planning features without full auth setup.
+ *
+ * DO NOT USE IN PRODUCTION - Contains mock tokens for testing only
  */
 
 import { TokenManager } from '../services/api';
 
-// Mock JWT token for development (this would normally come from Cognito)
-const MOCK_JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzEyMyIsImZhbWlseUlkIjoiZmFtaWx5XzEyMyIsImZpcnN0TmFtZSI6IkpvaG4iLCJsYXN0TmFtZSI6IkRvZSIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsImlhdCI6MTczMDU4MDAwMCwiZXhwIjoxNzMwNjY2NDAwfQ.mock-signature-for-development';
+// Mock JWT token for development ONLY (this would normally come from Cognito)
+// This is a fake token with mock data - NOT a real authentication token
+const MOCK_JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJNT0NLX1VTRVJfSUQiLCJmYW1pbHlJZCI6Im1vY2tfZmFtaWx5IiwiZmlyc3ROYW1lIjoiVGVzdCIsImxhc3ROYW1lIjoiVXNlciIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsImlhdCI6MTczMDU4MDAwMCwiZXhwIjoxNzMwNjY2NDAwfQ.MOCK_SIGNATURE_FOR_DEVELOPMENT_ONLY';
 
 export interface MockUser {
   userId: string;

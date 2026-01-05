@@ -258,7 +258,7 @@ cd packages/web-app && npm run dev
 
 # Test with existing user
 # Email: alice.johnson@budgetbuddy.com
-# Password: SecurePassword123!
+# Password: [Use environment variable or create new test user]
 
 # Test budget endpoints
 curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/health"

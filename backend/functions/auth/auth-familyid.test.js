@@ -67,7 +67,7 @@ describe("Auth Service - FamilyId Fix", () => {
       path: "/auth/onboarding",
       headers: {
         Authorization:
-          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyXzEyMzQ1Njc4OSIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsImdpdmVuX25hbWUiOiJKb2huIiwiZmFtaWx5X25hbWUiOiJEb2UifQ.fake-signature",
+          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJNT0NLX1VTRVJfSUQiLCJlbWFpbCI6InRlc3RAZXhhbXBsZS5jb20iLCJnaXZlbl9uYW1lIjoiVGVzdCIsImZhbWlseV9uYW1lIjoiVXNlciJ9.MOCK_SIGNATURE_FOR_TESTING",
       },
       body: JSON.stringify({
         city: "Toronto",
