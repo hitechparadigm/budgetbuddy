@@ -9,6 +9,7 @@
  */
 
 import { TokenManager } from '../services/api';
+import { mockAuthGuard } from '@/security/MockAuthGuard';
 
 // Mock JWT token for development ONLY (this would normally come from Cognito)
 // This is a fake token with mock data - NOT a real authentication token
@@ -35,6 +36,24 @@ export const mockUser: MockUser = {
  * Call this when the app starts to simulate being logged in
  */
 export function initMockAuth(): void {
+  // Security check: Ensure mock auth is allowed in current environment
+  if (!mockAuthGuard.canInitializeMockAuth()) {
+    console.error('🚫 Mock Authentication BLOCKED: Not allowed in current environment');
+    return;
+  }
+
+  // Validate environment safety
+  const validation = mockAuthGuard.validateMockAuthSafety();
+  if (!validation.isValid) {
+    console.error('🚫 Mock Authentication BLOCKED:', validation.errors);
+    return;
+  }
+
+  // Show warnings if any
+  if (validation.warnings.length > 0) {
+    console.warn('⚠️ Mock Authentication Warnings:', validation.warnings);
+  }
+
   console.log('🔧 Mock Authentication Initialized for Development');
   console.log('👤 Mock User:', mockUser);
 

@@ -292,7 +292,7 @@ describe("Authentication Lambda Handler", () => {
       headers: {},
       body: JSON.stringify({
         email: "test@example.com",
-        password: "TestPassword123!",
+        password: process.env.TEST_PASSWORD || "test-password-123",
         firstName: "John",
         lastName: "Doe",
       }),

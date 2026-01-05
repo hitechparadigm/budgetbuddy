@@ -4,12 +4,22 @@
  * Provides debugging tools and mock data controls for development
  */
 
-import React, { useState } from 'react';
-import { initMockAuth, clearMockAuth, isMockAuthActive, getMockUser } from '../../utils/mockAuth';
-import { enableMockData, disableMockData, shouldUseMockData } from '../../utils/devApiConfig';
-import { authApi } from '../../services/api';
-import { useTheme } from '../../contexts/ThemeContext';
-import ThemeToggle from '../layout/ThemeToggle';
+import React, { useState } from "react";
+import {
+  initMockAuth,
+  clearMockAuth,
+  isMockAuthActive,
+  getMockUser,
+} from "../../utils/mockAuth";
+import {
+  enableMockData,
+  disableMockData,
+  shouldUseMockData,
+} from "../../utils/devApiConfig";
+import { authApi } from "../../services/api";
+import { useTheme } from "../../contexts/ThemeContext";
+import ThemeToggle from "../layout/ThemeToggle";
+import { devToolController } from "@/security/DevToolController";
 
 export const DevHelper: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,12 +27,29 @@ export const DevHelper: React.FC = () => {
   const [mockDataActive, setMockDataActive] = useState(shouldUseMockData());
   const { theme } = useTheme();
 
-  // Only show in development
-  if (!import.meta.env.DEV) {
+  // Security check: Only show in development and when dev tools are allowed
+  if (!devToolController.shouldShowDevTools() || !import.meta.env.DEV) {
     return null;
   }
 
+  // Get dev tools configuration
+  const devConfig = devToolController.getDevToolsConfig();
+
+  // Validate dev tool safety
+  const validation = devToolController.validateDevToolSafety();
+
+  // Show security warnings if any
+  if (validation.warnings.length > 0 && devConfig.showSecurityWarnings) {
+    console.warn("[DEV_HELPER_SECURITY]", validation.warnings);
+  }
+
   const handleToggleMockAuth = () => {
+    // Check if mock auth is allowed
+    if (!devConfig.allowMockAuth) {
+      console.warn("Mock authentication not allowed in current environment");
+      return;
+    }
+
     if (mockAuthActive) {
       clearMockAuth();
       setMockAuthActive(false);
@@ -33,6 +60,12 @@ export const DevHelper: React.FC = () => {
   };
 
   const handleToggleMockData = () => {
+    // Check if mock data is allowed
+    if (!devConfig.allowMockData) {
+      console.warn("Mock data not allowed in current environment");
+      return;
+    }
+
     if (mockDataActive) {
       disableMockData();
       setMockDataActive(false);
@@ -58,7 +91,34 @@ export const DevHelper: React.FC = () => {
       {/* Dev Panel */}
       {isOpen && (
         <div className="absolute bottom-12 left-0 bg-gray-900 text-white p-4 rounded-lg shadow-xl w-80 border border-gray-700">
-          <h3 className="text-lg font-bold mb-4 text-purple-400">🔧 Dev Helper</h3>
+          <h3 className="text-lg font-bold mb-4 text-purple-400">
+            🔧 Dev Helper
+          </h3>
+
+          {/* Security Warnings */}
+          {validation.warnings.length > 0 && devConfig.showSecurityWarnings && (
+            <div className="mb-4 p-2 bg-yellow-900 border border-yellow-600 rounded">
+              <h4 className="font-semibold text-yellow-400 mb-1">
+                ⚠️ Security Warnings
+              </h4>
+              {validation.warnings.map((warning, index) => (
+                <div key={index} className="text-xs text-yellow-300">
+                  {warning}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Environment Info */}
+          <div className="mb-4 p-2 bg-blue-900 border border-blue-600 rounded">
+            <h4 className="font-semibold text-blue-400 mb-1">🌍 Environment</h4>
+            <div className="text-xs text-blue-300">
+              <div>
+                Mode: {devToolController.getEnvironmentInfo().environment}
+              </div>
+              <div>Host: {devToolController.getEnvironmentInfo().hostname}</div>
+            </div>
+          </div>
 
           {/* Authentication Status */}
           <div className="mb-4">
@@ -70,28 +130,32 @@ export const DevHelper: React.FC = () => {
                   onClick={handleToggleMockAuth}
                   className={`px-2 py-1 rounded text-xs ${
                     mockAuthActive
-                      ? 'bg-green-600 hover:bg-green-700'
-                      : 'bg-red-600 hover:bg-red-700'
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-red-600 hover:bg-red-700"
                   }`}
                 >
-                  {mockAuthActive ? 'ON' : 'OFF'}
+                  {mockAuthActive ? "ON" : "OFF"}
                 </button>
               </div>
 
               <div className="flex items-center justify-between">
                 <span>Real Auth:</span>
-                <span className={`px-2 py-1 rounded text-xs ${
-                  authApi.isAuthenticated() && !mockAuthActive
-                    ? 'bg-green-600'
-                    : 'bg-gray-600'
-                }`}>
-                  {authApi.isAuthenticated() && !mockAuthActive ? 'ON' : 'OFF'}
+                <span
+                  className={`px-2 py-1 rounded text-xs ${
+                    authApi.isAuthenticated() && !mockAuthActive
+                      ? "bg-green-600"
+                      : "bg-gray-600"
+                  }`}
+                >
+                  {authApi.isAuthenticated() && !mockAuthActive ? "ON" : "OFF"}
                 </span>
               </div>
 
               {mockUser && (
                 <div className="text-xs text-gray-300 mt-2">
-                  <div>User: {mockUser.firstName} {mockUser.lastName}</div>
+                  <div>
+                    User: {mockUser.firstName} {mockUser.lastName}
+                  </div>
                   <div>Email: {mockUser.email}</div>
                   <div>Family: {mockUser.familyId}</div>
                 </div>
@@ -120,18 +184,17 @@ export const DevHelper: React.FC = () => {
                 onClick={handleToggleMockData}
                 className={`px-2 py-1 rounded text-xs ${
                   mockDataActive
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-red-600 hover:bg-red-700'
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-red-600 hover:bg-red-700"
                 }`}
               >
-                {mockDataActive ? 'ON' : 'OFF'}
+                {mockDataActive ? "ON" : "OFF"}
               </button>
             </div>
             <div className="text-xs text-gray-400 mt-1">
               {mockDataActive
-                ? 'Using mock data for API calls'
-                : 'Using real API endpoints'
-              }
+                ? "Using mock data for API calls"
+                : "Using real API endpoints"}
             </div>
           </div>
 
@@ -161,7 +224,7 @@ export const DevHelper: React.FC = () => {
           {/* API Status */}
           <div className="text-xs text-gray-400">
             <div>Environment: {import.meta.env.MODE}</div>
-            <div>API Base: {import.meta.env.VITE_API_BASE || 'Default'}</div>
+            <div>API Base: {import.meta.env.VITE_API_BASE || "Default"}</div>
           </div>
         </div>
       )}
