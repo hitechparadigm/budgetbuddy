@@ -345,8 +345,8 @@ exports.handler = async (event, _context) => {
           headers: getCorsHeaders(origin),
           body: JSON.stringify({
             message: "User registered successfully",
-            userId: userId,
-            familyId: familyId,
+            userId,
+            familyId,
             email: requestBody.email,
             firstName: requestBody.firstName,
             lastName: requestBody.lastName,
@@ -648,19 +648,19 @@ exports.handler = async (event, _context) => {
                 ? "User created and authenticated"
                 : "User authenticated",
               user: {
-                userId: userId,
+                userId,
                 email: googleEmail,
                 firstName: firstName || "User",
-                lastName: lastName,
+                lastName,
                 accountType: "single",
                 subscriptionTier: "free",
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
               },
-              accessToken: accessToken,
-              refreshToken: refreshToken,
-              idToken: idToken,
+              accessToken,
+              refreshToken,
+              idToken,
               expiresIn: authResult.AuthenticationResult.ExpiresIn,
-              isNewUser: isNewUser,
+              isNewUser,
             }),
           };
         } catch (tokenError) {
@@ -673,10 +673,10 @@ exports.handler = async (event, _context) => {
             body: JSON.stringify({
               message: "User authenticated (temporary token)",
               user: {
-                userId: userId,
+                userId,
                 email: googleEmail,
                 firstName: firstName || "User",
-                lastName: lastName,
+                lastName,
                 accountType: "single",
                 subscriptionTier: "free",
                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -685,7 +685,7 @@ exports.handler = async (event, _context) => {
               refreshToken: requestBody.idToken,
               idToken: requestBody.idToken,
               expiresIn: 3600,
-              isNewUser: isNewUser,
+              isNewUser,
               warning: "Using temporary token",
             }),
           };
@@ -1021,12 +1021,12 @@ exports.handler = async (event, _context) => {
           GSI2PK: `BUDGET#${currentMonth}`,
           GSI2SK: `FAMILY#${familyId}`,
           entityType: "BUDGET",
-          budgetId: budgetId,
-          familyId: familyId,
+          budgetId,
+          familyId,
           month: currentMonth,
           totalIncome: 0,
           totalSavings: 0,
-          totalExpenses: totalExpenses,
+          totalExpenses,
           remainingBalance: -totalExpenses,
           groups: budgetGroups,
           isAIGenerated: true,
@@ -1038,10 +1038,10 @@ exports.handler = async (event, _context) => {
         const { dynamoHelpers } = require("/opt/nodejs/utils");
 
         console.log("Creating budget with data:", {
-          familyId: familyId,
+          familyId,
           month: currentMonth,
-          budgetId: budgetId,
-          totalExpenses: totalExpenses,
+          budgetId,
+          totalExpenses,
           categoriesCount: expenseCategories.length,
           receivedCurrentMonth: requestBody.currentMonth,
         });
@@ -1149,9 +1149,9 @@ exports.handler = async (event, _context) => {
           body: JSON.stringify({
             message: "Onboarding completed successfully",
             budgetCreated: true,
-            budgetId: budgetId,
+            budgetId,
             month: currentMonth,
-            totalExpenses: totalExpenses,
+            totalExpenses,
             categoriesCreated: expenseCategories.length,
           }),
         };
@@ -1267,9 +1267,9 @@ exports.handler = async (event, _context) => {
           headers: getCorsHeaders(origin),
           body: JSON.stringify({
             message: "Login successful",
-            accessToken: accessToken,
-            refreshToken: refreshToken,
-            idToken: idToken,
+            accessToken,
+            refreshToken,
+            idToken,
             user: {
               userId: idTokenPayload["custom:userId"],
               email: idTokenPayload.email,

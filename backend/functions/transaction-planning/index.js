@@ -226,7 +226,7 @@ async function getPlannedTransactions(event, user) {
     const queryParams = event.queryStringParameters || {};
 
     // Build query options based on filters
-    let queryOptions = {
+    const queryOptions = {
         FilterExpression: 'entityType = :entityType',
         ExpressionAttributeValues: {
             ':entityType': 'PLANNED_TRANSACTION'

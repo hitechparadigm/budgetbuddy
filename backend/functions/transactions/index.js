@@ -248,7 +248,7 @@ async function getTransactions(event, user) {
     const queryParams = event.queryStringParameters || {};
 
     // Build query options based on filters
-    let queryOptions = {
+    const queryOptions = {
         FilterExpression: 'entityType = :entityType',
         ExpressionAttributeValues: {
             ':entityType': 'TRANSACTION'
@@ -412,9 +412,9 @@ async function updateTransaction(event, user, transactionId) {
     };
 
     let budgetUpdateNeeded = false;
-    let oldAmount = existingTransaction.amount;
-    let oldType = existingTransaction.type;
-    let oldCategoryId = existingTransaction.categoryId;
+    const oldAmount = existingTransaction.amount;
+    const oldType = existingTransaction.type;
+    const oldCategoryId = existingTransaction.categoryId;
 
     if (requestBody.amount !== undefined) {
         if (requestBody.amount <= 0) {
