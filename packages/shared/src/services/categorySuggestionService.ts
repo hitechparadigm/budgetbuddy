@@ -44,6 +44,7 @@ export function getSuggestions(
       'alexandria-us': 'washington-dc-us',
       'bethesda-us': 'washington-dc-us',
       'rockville-us': 'washington-dc-us',
+      'london-ca': 'london-ca', // London, Ontario should exist in the database
       // Add more fallbacks as needed
     };
 
