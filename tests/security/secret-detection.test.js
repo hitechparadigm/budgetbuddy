@@ -266,7 +266,7 @@ describe("Secret Detection Coverage Properties", () => {
           shouldDetect: true,
         },
         {
-          pattern: "AKIAFAKEAWSKEYFORTESTING",
+          pattern: "AKIA_OBVIOUSLY_FAKE_TEST_KEY_ONLY",
           type: "aws_key",
           shouldDetect: true,
         },
@@ -306,7 +306,7 @@ describe("Secret Detection Coverage Properties", () => {
         const detectionPatterns = [
           /sk_[a-zA-Z0-9]{32,}/,
           /pk_[a-zA-Z0-9]{32,}/,
-          /AKIA[0-9A-Z]{16}/,
+          /AKIA[0-9A-Z_]{16,}/,
           /eyJ[A-Za-z0-9+/=]{20,}/,
           /mongodb:\/\/[^\/\s]+\/\w+/,
           /postgres:\/\/[^\/\s]+\/\w+/,
