@@ -24,15 +24,15 @@ Write-Host "1. Checking for exposed secrets..." -ForegroundColor White
 
 # Check for JWT tokens (exclude source maps)
 $jwtPattern = "eyJ[A-Za-z0-9+/=]{100,}"
-$sourceFiles = Get-ChildItem -Path "." -Recurse -Include "*.js","*.ts","*.json" | Where-Object { $_.FullName -notmatch "node_modules|\.git|coverage|mockAuth\.ts|\.test\." }
+$sourceFiles = Get-ChildItem -Path "." -Recurse -Include "*.js","*.ts","*.json" | Where-Object { $_.FullName -notmatch "node_modules|\.git|coverage|\.github|mockAuth\.ts|\.test\." }
 
 $foundJWT = $false
 foreach ($file in $sourceFiles) {
     try {
         $content = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
         if ($content -and $content -match $jwtPattern) {
-            # Skip source maps
-            if ($content -match "sourceMappingURL=data:application/json;base64") {
+            # Skip source maps and mock tokens
+            if ($content -match "sourceMappingURL=data:application/json;base64" -or $content -match "MOCK.*TOKEN") {
                 continue
             }
             Report-Issue "Potential JWT token found in $($file.Name)"

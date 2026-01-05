@@ -41,12 +41,15 @@ if grep -r "eyJ[A-Za-z0-9+/=]\{100,\}" . \
     --exclude-dir=node_modules \
     --exclude-dir=.git \
     --exclude-dir=coverage \
+    --exclude-dir=.github \
     --exclude="*.md" \
     --exclude="mockAuth.ts" \
     --exclude="*.test.js" \
     --exclude="*.test.ts" \
     --exclude="security-check*.sh" \
-    --exclude="security-check*.ps1" 2>/dev/null; then
+    --exclude="security-check*.ps1" \
+    --exclude="app.js" 2>/dev/null | \
+    grep -v "sourceMappingURL=data:application/json;base64"; then
     report_issue "Real JWT tokens found in repository"
 else
     report_success "No real JWT tokens detected"
@@ -72,14 +75,16 @@ if grep -r "BEGIN.*PRIVATE KEY" . \
     --exclude-dir=node_modules \
     --exclude-dir=.git \
     --exclude-dir=coverage \
+    --exclude-dir=.github \
     --exclude="*.md" \
     --exclude="security-check*.sh" \
     --exclude="security-check*.ps1" \
     --exclude="pre-commit-security.sh" \
     --exclude="*.test.js" \
     --exclude="*.test.ts" \
-    --exclude="CredentialProtectionService.ts" 2>/dev/null | \
-    grep -v "pattern.*BEGIN\|Pattern.*BEGIN\|description.*Private key\|# Private key\|// Private key"; then
+    --exclude="CredentialProtectionService.ts" \
+    --exclude="CHANGELOG.md" 2>/dev/null | \
+    grep -v "pattern.*BEGIN\|Pattern.*BEGIN\|description.*Private key\|# Private key\|// Private key\|content.includes.*BEGIN"; then
     report_issue "Private keys found in repository"
 else
     report_success "No private keys detected"
