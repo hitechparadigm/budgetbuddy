@@ -46,7 +46,7 @@ Register a new user account.
 ```json
 {
   "email": "user@example.com",
-  "password": "SecurePassword123!",
+  "password": "your-secure-password-here",
   "firstName": "John",
   "lastName": "Doe"
 }
@@ -76,7 +76,7 @@ Authenticate user and get JWT tokens.
 ```json
 {
   "email": "user@example.com",
-  "password": "SecurePassword123!"
+  "password": "your-password-here"
 }
 ```
 

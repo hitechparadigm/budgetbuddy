@@ -22,13 +22,20 @@
     "deploy:staging": "cd infrastructure && npm run deploy:staging",
     "deploy:prod": "cd infrastructure && npm run deploy:prod",
     "generate-city-data": "ts-node scripts/generateCityData.ts",
-    "security:check": "bash scripts/security-check.sh",
-    "security:pre-commit": "bash scripts/pre-commit-security.sh",
-    "pre-deploy": "npm run security:check && npm run lint:check && npm run test:unit"
+    "security:check": "powershell -ExecutionPolicy Bypass -File scripts/security-check-win.ps1",
+    "security:check:bash": "bash scripts/security-check.sh",
+    "security:pre-commit": "powershell -ExecutionPolicy Bypass -File scripts/security-check.ps1 -PreCommit",
+    "security:tests": "npx jest tests/security/ --config=tests/security/jest.config.js",
+    "pre-deploy": "npm run security:check && npm run lint:check && npm run test:unit",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.958.0",
+    "@types/jest": "^30.0.0",
     "eslint": "^8.50.0",
+    "fast-check": "^4.5.3",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.1.0"
   }

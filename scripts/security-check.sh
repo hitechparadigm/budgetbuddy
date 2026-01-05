@@ -95,6 +95,23 @@ else
     report_success "No sensitive log files found"
 fi
 
+# Check for backup files
+if find . -name "*.bak" -o -name "*.backup" -o -name "*~" | \
+    grep -v node_modules | grep -v .git 2>/dev/null; then
+    report_issue "Backup files found that should not be committed"
+else
+    report_success "No backup files found"
+fi
+
+# Check for configuration files with potential secrets
+if find . -name "*.conf" -o -name "*.config" -o -name ".env*" | \
+    grep -v node_modules | grep -v .git | \
+    xargs grep -l "password\|secret\|key" 2>/dev/null; then
+    report_warning "Configuration files contain potential secrets - verify they use environment variables"
+else
+    report_success "No hardcoded secrets in configuration files"
+fi
+
 echo ""
 echo "3. Validating environment variable usage..."
 
@@ -170,6 +187,45 @@ if command -v npm &> /dev/null; then
     fi
 else
     report_warning "npm not available - skipping dependency audit"
+fi
+
+echo ""
+echo "8. Comprehensive secret scanning..."
+
+# Enhanced secret detection patterns
+secret_patterns=(
+    "password.*=.*['\"][^'\"]{8,}['\"]"
+    "api[_-]?key.*=.*['\"][^'\"]{20,}['\"]"
+    "secret.*=.*['\"][^'\"]{16,}['\"]"
+    "token.*=.*['\"][^'\"]{20,}['\"]"
+    "auth.*=.*['\"][^'\"]{16,}['\"]"
+)
+
+for pattern in "${secret_patterns[@]}"; do
+    if grep -r -i "$pattern" . \
+        --exclude-dir=node_modules \
+        --exclude-dir=.git \
+        --exclude-dir=coverage \
+        --exclude="*.md" \
+        --exclude="mockAuth.ts" \
+        --exclude="*.test.js" \
+        --exclude="*.test.ts" 2>/dev/null; then
+        report_issue "Potential secrets found matching pattern: $pattern"
+    fi
+done
+
+# Check for database connection strings
+if grep -r "mongodb://\|mysql://\|postgres://\|redis://" . \
+    --exclude-dir=node_modules \
+    --exclude-dir=.git \
+    --exclude-dir=coverage \
+    --exclude="*.md" \
+    --exclude="*.test.js" \
+    --exclude="*.test.ts" 2>/dev/null | \
+    grep -v "localhost\|127.0.0.1\|example.com"; then
+    report_issue "Database connection strings found - ensure they use environment variables"
+else
+    report_success "No hardcoded database connection strings found"
 fi
 
 echo ""
