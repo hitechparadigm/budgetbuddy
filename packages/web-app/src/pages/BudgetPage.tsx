@@ -332,8 +332,8 @@ export const BudgetPage: React.FC = () => {
 
       console.log("[loadBudget] Loading budget for month:", currentMonth);
 
-      // Fetch all budgets from backend
-      const response = await fetch(`${API_BASE_URL}/budget`, {
+      // Fetch all budgets from backend with cache-busting parameter
+      const response = await fetch(`${API_BASE_URL}/budget?t=${Date.now()}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem(
             "budgetbuddy_id_token"

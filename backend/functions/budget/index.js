@@ -281,6 +281,14 @@ async function getBudgets(event, user) {
   console.log("getBudgets: Raw query result:", budgets.length, "items found");
   console.log("getBudgets: First budget item (if any):", budgets[0] || "none");
 
+  // CRITICAL DEBUG: Log all budget months to identify the mismatch
+  if (budgets.length > 0) {
+    console.log(
+      "getBudgets: All budget months found:",
+      budgets.map((b) => b.month)
+    );
+  }
+
   // Transform DynamoDB items to API response format
   const formattedBudgets = budgets.map((budget) => ({
     budgetId: budget.budgetId,
