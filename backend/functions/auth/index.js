@@ -60,6 +60,9 @@ function getCorsHeaders(origin) {
 exports.handler = async (event, _context) => {
   console.log("=== AUTH HANDLER START ===");
   console.log("Event received:", JSON.stringify(event, null, 2));
+  console.log("HTTP Method:", event.httpMethod);
+  console.log("Path:", event.path);
+  console.log("Headers:", JSON.stringify(event.headers, null, 2));
 
   try {
     const httpMethod = event.httpMethod;
@@ -803,7 +806,11 @@ exports.handler = async (event, _context) => {
 
     // Handle onboarding completion endpoint
     if (httpMethod === "POST" && path === "/auth/onboarding") {
+      console.log("=== ONBOARDING ENDPOINT HIT ===");
       console.log("Onboarding completion endpoint hit");
+      console.log("Request method:", httpMethod);
+      console.log("Request path:", path);
+      console.log("Request body length:", event.body ? event.body.length : 0);
 
       // Extract userId from Authorization header
       const authHeader =
