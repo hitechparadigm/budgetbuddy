@@ -1038,9 +1038,18 @@ exports.handler = async (event, _context) => {
         // CRITICAL DEBUG: Verify the month values match exactly
         console.log("CRITICAL DEBUG - Month verification:");
         console.log("  - requestBody.currentMonth:", requestBody.currentMonth);
+        console.log(
+          "  - requestBody.currentMonth type:",
+          typeof requestBody.currentMonth
+        );
         console.log("  - currentMonth variable:", currentMonth);
+        console.log("  - currentMonth variable type:", typeof currentMonth);
         console.log("  - budget.month will be:", currentMonth);
         console.log("  - SK will be:", `BUDGET#${currentMonth}`);
+        console.log(
+          "  - JSON.stringify(requestBody):",
+          JSON.stringify(requestBody)
+        );
 
         if (requestBody.currentMonth !== currentMonth) {
           console.error("MONTH MISMATCH DETECTED!");
@@ -1048,10 +1057,24 @@ exports.handler = async (event, _context) => {
           console.error("  - Actual:", currentMonth);
         }
 
+        // ADDITIONAL DEBUG: Log the exact budget object being created
+        console.log("CRITICAL DEBUG - Budget object being created:");
+        console.log("  - PK:", `FAMILY#${familyId}`);
+        console.log("  - SK:", `BUDGET#${currentMonth}`);
+        console.log("  - month field:", currentMonth);
+        console.log("  - Full budget object:", JSON.stringify(budget, null, 2));
+
         await dynamoHelpers.putItem(budget);
         console.log(
           "Initial budget created from onboarding selections - using dynamoHelpers"
         );
+
+        // FINAL DEBUG: Confirm what was actually saved
+        console.log("FINAL DEBUG - Budget saved to DynamoDB:");
+        console.log("  - PK:", budget.PK);
+        console.log("  - SK:", budget.SK);
+        console.log("  - month:", budget.month);
+        console.log("  - budgetId:", budget.budgetId);
 
         return {
           statusCode: 200,
