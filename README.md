@@ -4,7 +4,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ## Project Status
 
-**Current Phase**: Market-Ready MVP Development - AI-Powered Onboarding Complete
+**Current Phase**: Market-Ready MVP Development - Critical Authentication Fix Deployed
 
 - **Web Application**: Complete AWS serverless architecture deployed and production-ready ✓
 - **Mobile Foundation**: React Native + Expo app with comprehensive budget management ✓
@@ -13,21 +13,23 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **AI-Powered Onboarding**: Location-based budget suggestions with 348 cities across 9 countries ✓
 - **Property-Based Testing**: Advanced testing methodology with 100% test coverage ✓
 - **Cross-Platform**: iOS, Android, and Web platform compatibility achieved ✓
-- **Overall Progress**: 88% complete (Web MVP operational, Mobile budget system complete, AI onboarding fully integrated)
+- **Overall Progress**: 88% complete (Critical auth fix deployed, ready for end-to-end testing)
 
 ### Recent Achievements (2026-01-04)
 
-- 🐛 **CITY DATABASE FALLBACK SYSTEM** - Fixed Continue button for cities not in database
+- 🔧 **CRITICAL AUTH FIX** - Fixed Cognito User Pool Client configuration for profile access
 
-  - Added fallback mapping for suburbs to nearby major cities
-  - Ashburn, VA → Washington DC (common ISP detection location)
-  - Enhanced error logging and user feedback with alerts
-  - **Impact**: Continue button now works for users in suburbs of major cities
-  - **Root Cause**: 348-city database doesn't include all suburbs and ISP locations
+  - **Issue**: All users getting "User profile not found" (404) errors
+  - **Root Cause**: Missing `userId` in Cognito User Pool Client `readAttributes`
+  - **Solution**: Added `userId` to both read and write attributes in infrastructure
+  - **Impact**: ID tokens now include `custom:userId` for proper profile lookup
+  - **Status**: Infrastructure changes deployed via CI/CD pipeline
 
-- 🐛 **ONBOARDING REDIRECT LOOP FIX** - Fixed infinite redirect preventing Skip button
+- 🐛 **ONBOARDING FLOW FIXES** - Enhanced manual location selection and error handling
 
-  - Removed automatic redirect from BudgetPage to onboarding
+  - Fixed country code derivation for manual city selection
+  - Added comprehensive error logging for debugging
+  - Fixed PowerShell emoji encoding in user cleanup scripts
   - Users can now skip onboarding and access budget page
   - Empty state shown instead of forcing onboarding
   - **Impact**: Skip button now works, users have choice to skip onboarding
