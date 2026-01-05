@@ -109,6 +109,7 @@ class SimpleApiClient {
     city: string;
     country: string;
     familySize: number;
+    currentMonth: string;
     selectedCategories: Array<{
       name: string;
       icon: string;

@@ -875,6 +875,7 @@ exports.handler = async (event, _context) => {
           !requestBody.city ||
           !requestBody.country ||
           !requestBody.familySize ||
+          !requestBody.currentMonth ||
           !requestBody.selectedCategories
         ) {
           return {
@@ -883,7 +884,7 @@ exports.handler = async (event, _context) => {
             body: JSON.stringify({
               error: "Validation Error",
               message:
-                "city, country, familySize, and selectedCategories are required",
+                "city, country, familySize, currentMonth, and selectedCategories are required",
             }),
           };
         }
@@ -935,7 +936,9 @@ exports.handler = async (event, _context) => {
         console.log("User profile updated - onboarding completed");
 
         // Create initial budget for current month with selected categories
-        const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+        // CRITICAL FIX: Use currentMonth from frontend to ensure timezone consistency
+        // Frontend sends timezone-aware currentMonth from getCurrentMonthString()
+        const currentMonth = requestBody.currentMonth;
         const budgetId = `budget_${Date.now()}_${Math.random()
           .toString(36)
           .substr(2, 9)}`;
@@ -990,6 +993,7 @@ exports.handler = async (event, _context) => {
           budgetId: budgetId,
           totalExpenses: totalExpenses,
           categoriesCount: expenseCategories.length,
+          receivedCurrentMonth: requestBody.currentMonth,
         });
 
         await dynamoHelpers.putItem(budget);
