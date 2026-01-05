@@ -32,6 +32,7 @@ export const OnboardingPage: React.FC = () => {
         city: suggestions.city,
         country: suggestions.country,
         familySize: suggestions.familySize,
+        currentMonth: getCurrentMonthString(),
         selectedCategoriesCount: selectedCategories.length,
       });
 
