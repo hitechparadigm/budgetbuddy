@@ -1,5 +1,53 @@
 # Development Log
 
+## 2026-01-04 - Critical Auth Fix: Cognito User Pool Client Configuration (Session 6k)
+
+### Session Summary
+
+**Duration**: 0.5 hours
+**Focus**: Fix critical authentication issue preventing user profile access
+**Outcome**: Identified and fixed missing `userId` attribute in Cognito User Pool Client configuration
+
+### Critical Issue Resolved
+
+**User Profile Not Found (404) - ROOT CAUSE IDENTIFIED**
+
+- **Symptom**: All users getting "User profile not found" error on profile endpoint
+- **Root Cause**: Cognito User Pool Client missing `userId` in `readAttributes` and `writeAttributes`
+- **Technical Details**:
+  - User registration creates DynamoDB record with custom `userId` (e.g., `user_1767573863746_5mrmnozon`)
+  - Profile lookup tries to extract `userId` from ID token via `payload["custom:userId"]`
+  - ID token doesn't include `custom:userId` because it's not in client's `readAttributes`
+  - Fallback to `payload.sub` (Cognito sub) fails because DynamoDB uses custom `userId` as key
+- **Solution**: Added `userId` to both `readAttributes` and `writeAttributes` in `infrastructure/lib/auth-stack.ts`
+- **Files Changed**: `infrastructure/lib/auth-stack.ts`
+- **Status**: Ready for deployment via CI/CD pipeline
+
+### Technical Analysis
+
+**Auth Function Token Parsing Logic**:
+
+```javascript
+// Profile endpoint (line ~736)
+let userId = payload["custom:userId"];
+if (!userId) {
+  userId = payload.sub; // Fallback fails - different ID format
+}
+```
+
+**DynamoDB Key Structure**:
+
+- User profiles stored with PK: `USER#user_1767573863746_5mrmnozon`
+- Cognito sub format: `b4a8f408-00e1-70c0-a1b3-930da8a2df9c`
+- Mismatch causes 404 "User profile not found"
+
+### Next Steps
+
+1. **Deploy Infrastructure Changes**: Push changes via CI/CD to update Cognito User Pool Client
+2. **Test Complete Flow**: Verify profile endpoint returns user data after deployment
+3. **Test Onboarding**: Confirm Create Budget functionality works end-to-end
+4. **Verify Manual Location**: Test manual location selection with latest fixes
+
 ## 2026-01-04 - CloudFront Cache Invalidation & User Profile Issue (Session 6j)
 
 ### Session Summary

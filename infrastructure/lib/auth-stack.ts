@@ -225,6 +225,7 @@ export class AuthStack extends cdk.Stack {
           address: true,
         })
         .withCustomAttributes(
+          'userId',
           'familyId',
           'familyRole',
           'accountType',
@@ -241,6 +242,7 @@ export class AuthStack extends cdk.Stack {
           address: true,
         })
         .withCustomAttributes(
+          'userId',
           'familyId',
           'familyRole',
           'accountType',

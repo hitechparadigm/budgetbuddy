@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.18.10] - 2026-01-04
+
+### 🔧 CRITICAL FIX - Cognito User Pool Client Configuration
+
+- **Fixed Custom UserId Token Issue** - Added missing `userId` attribute to Cognito User Pool Client
+  - **Issue**: Profile endpoint returning 404 "User profile not found" for all users
+  - **Root Cause**: Cognito User Pool Client missing `userId` in `readAttributes` and `writeAttributes`
+  - **Solution**: Added `userId` to both read and write attributes in `infrastructure/lib/auth-stack.ts`
+  - **Impact**: ID tokens will now include `custom:userId` attribute for proper profile lookup
+  - **Files Changed**: `infrastructure/lib/auth-stack.ts`
+  - **Deployment Required**: Infrastructure update via CI/CD pipeline
+
+### 🐛 ONBOARDING FLOW FIXES
+
+- **Manual Location Selection** - Fixed country code derivation for manual city selection
+- **Enhanced Error Logging** - Added detailed debugging for onboarding completion failures
+- **User Cleanup Script** - Fixed PowerShell emoji encoding issues in cleanup script
+
 ## [1.18.9] - 2026-01-04
 
 ### 🔧 INFRASTRUCTURE - CloudFront Cache Invalidation
