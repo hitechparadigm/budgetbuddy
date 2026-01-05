@@ -1,5 +1,69 @@
 # Development Log
 
+## 2026-01-04 - CloudFront Cache Invalidation & User Profile Issue (Session 6j)
+
+### Session Summary
+
+**Duration**: 0.25 hours
+**Focus**: Address CORS errors and user profile not found issues after latest deployment
+**Outcome**: CloudFront cache invalidated, identified user profile creation issue
+
+### Issues Identified
+
+**CORS Errors Returned**
+
+- **Symptom**: "Access-Control-Allow-Origin header is present on the requested resource" on `/auth/geolocation`
+- **Root Cause**: CloudFront cache still serving old responses after deployment
+- **Solution**: Invalidated CloudFront cache (invalidation ID: I6O58W494WN089K994JLNV7L78)
+- **Status**: In progress, should resolve within 5-15 minutes
+
+**User Profile Not Found (404)**
+
+- **Symptom**: `/auth/profile` returning 404 "User profile not found"
+- **Root Cause**: New user `info@hitechparadigm.com` profile not created in DynamoDB
+- **Impact**: User cannot access onboarding flow or app functionality
+- **Next Steps**: User needs to complete registration process properly
+
+**Onboarding Process Changed**
+
+- **Symptom**: User reports "no question on location etc" in onboarding
+- **Root Cause**: Without valid user profile, onboarding flow doesn't load properly
+- **Expected**: After profile creation, onboarding should show location detection step
+
+### Actions Taken
+
+- ✅ **CloudFront Cache Invalidation** (0.1 hours)
+
+  - Invalidated distribution E1L1SU9OV8L4YR with pattern `/*`
+  - Should resolve CORS errors within 5-15 minutes
+
+- ✅ **Root Cause Analysis** (0.15 hours)
+  - Verified API Gateway routes are properly configured
+  - Verified Lambda endpoints are implemented correctly
+  - Identified user profile creation as the core issue
+
+### Technical Details
+
+**CloudFront Invalidation:**
+
+```bash
+aws cloudfront create-invalidation --distribution-id E1L1SU9OV8L4YR --paths "/*"
+```
+
+**Profile Endpoint Logic:**
+
+- Extracts userId from JWT token (custom:userId or fallback to sub)
+- Queries DynamoDB for USER#{userId}#PROFILE record
+- Returns 404 if profile doesn't exist
+- User needs to complete registration to create profile
+
+### Next Steps
+
+1. ⏳ Wait 5-15 minutes for CloudFront cache invalidation to complete
+2. ⏳ User should try logging out and registering again with `info@hitechparadigm.com`
+3. ⏳ Verify profile creation during registration process
+4. ⏳ Test complete onboarding flow after profile exists
+
 ## 2026-01-04 - City Database Fallback System (Session 6i)
 
 ### Session Summary

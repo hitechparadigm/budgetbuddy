@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.18.9] - 2026-01-04
+
+### 🔧 INFRASTRUCTURE - CloudFront Cache Invalidation
+
+- **CloudFront Cache Cleared** - Resolved CORS errors after latest deployment
+  - **Issue**: CORS errors returned on `/auth/geolocation` endpoint after deployment
+  - **Root Cause**: CloudFront cache serving old responses despite new Lambda deployment
+  - **Solution**: Invalidated CloudFront distribution E1L1SU9OV8L4YR with pattern `/*`
+  - **Impact**: CORS errors should resolve within 5-15 minutes
+  - **Invalidation ID**: I6O58W494WN089K994JLNV7L78
+
+### 🐛 USER PROFILE ISSUE IDENTIFIED
+
+- **Profile Not Found (404)** - New user profile not created in DynamoDB
+  - **Symptom**: `/auth/profile` returning "User profile not found" for `info@hitechparadigm.com`
+  - **Root Cause**: User registration process didn't complete profile creation in DynamoDB
+  - **Impact**: User cannot access onboarding flow or app functionality
+  - **Next Steps**: User needs to complete registration process properly to create profile
+
+### Technical Notes
+
+**CloudFront Cache Behavior:**
+
+- Lambda deployments update function code immediately
+- CloudFront cache can serve old responses for up to 24 hours (default TTL)
+- Manual invalidation required after API changes to ensure immediate propagation
+- Cache invalidation typically completes within 5-15 minutes
+
+**User Profile Creation Flow:**
+
+- Registration creates Cognito user account
+- Profile creation in DynamoDB happens during first login/token validation
+- Without DynamoDB profile, user cannot access protected endpoints
+- Onboarding flow requires valid user profile to function
+
 ## [1.18.8] - 2026-01-04
 
 ### 🐛 BUG FIX - City Database Fallback System

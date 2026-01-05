@@ -97,7 +97,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       longitude: city.longitude,
     });
 
-    setLocation({
+    const newLocation = {
       city: city.city,
       country: city.country,
       countryCode: countryCode,
@@ -105,14 +105,21 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       longitude: city.longitude,
       timezone: "",
       success: true,
-    });
+    };
+
+    setLocation(newLocation);
     setShowManualSelection(false);
     setSearchQuery("");
+
+    // Log the updated location to verify it's set correctly
+    console.log("Location updated after manual selection:", newLocation);
   };
 
   const handleFamilySizeNext = () => {
     if (!location) {
       console.error("No location data available");
+      alert("Please select a location first before continuing.");
+      setStep("location");
       return;
     }
 
@@ -138,6 +145,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         city: location.city,
         countryCode: location.countryCode,
       });
+      alert(
+        `Invalid location data. Missing: ${!location.city ? "city" : ""} ${
+          !location.countryCode ? "country code" : ""
+        }. Please select a location again.`
+      );
+      setStep("location");
       return;
     }
 
@@ -155,7 +168,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       console.error("No suggestions found for city key:", cityKey);
       // Show error message to user
       alert(
-        `Sorry, we don't have budget data for ${location.city}. Please try selecting a different city or use "Start from Scratch" instead.`
+        `Sorry, we don't have budget data for ${location.city}, ${location.country}. Please try selecting a different city or use "Start from Scratch" instead.`
       );
     }
   };
