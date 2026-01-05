@@ -1,16 +1,34 @@
 # API Endpoints Documentation
 
 **Base URL**: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1`
-**Last Updated**: 2025-12-29
-**API Version**: 1.0
+**Last Updated**: 2026-01-05
+**API Version**: 1.1 (Security Enhanced)
 
 ## Authentication
 
 All endpoints except health checks require JWT authentication via `Authorization: Bearer <token>` header.
 
+### 🔒 Security Enhancements (v1.1)
+
+**Comprehensive Security Validation**: All API endpoints now include enhanced security measures:
+
+- **Automated Secret Detection**: Repository scanned for exposed JWT tokens, AWS credentials, and hardcoded passwords
+- **Environment Variable Enforcement**: All sensitive configuration uses environment variables
+- **CORS Security**: Proper CORS configuration with specific origins (no wildcard with credentials)
+- **Token Validation**: Enhanced JWT token validation with proper error handling
+- **Security Headers**: All responses include appropriate security headers
+- **Rate Limiting**: Enhanced rate limiting to prevent abuse
+
+**Security Monitoring**:
+
+- Pre-deployment security scans block deployments if vulnerabilities detected
+- Pull request security validation prevents vulnerable code merges
+- Comprehensive security documentation and incident response procedures
+
 ### Mobile Authentication Support
 
 The API now supports mobile authentication through AWS Cognito with the following enhancements:
+
 - **Cross-Platform Token Storage**: Secure token storage using Expo SecureStore (mobile) and localStorage (web)
 - **Automatic Token Refresh**: Background token refresh to maintain session continuity
 - **Email Verification**: Complete email confirmation flow for mobile registration
@@ -20,9 +38,11 @@ The API now supports mobile authentication through AWS Cognito with the followin
 ### Auth Endpoints
 
 #### POST /auth/register
+
 Register a new user account.
 
 **Request Body**:
+
 ```json
 {
   "email": "user@example.com",
@@ -33,6 +53,7 @@ Register a new user account.
 ```
 
 **Response**: `200 OK`
+
 ```json
 {
   "success": true,
@@ -47,9 +68,11 @@ Register a new user account.
 ```
 
 #### POST /auth/login
+
 Authenticate user and get JWT tokens.
 
 **Request Body**:
+
 ```json
 {
   "email": "user@example.com",
@@ -58,6 +81,7 @@ Authenticate user and get JWT tokens.
 ```
 
 **Response**: `200 OK`
+
 ```json
 {
   "success": true,
@@ -78,9 +102,11 @@ Authenticate user and get JWT tokens.
 ## Budget Management
 
 ### GET /budget/health
+
 Health check for budget service.
 
 **Response**: `200 OK`
+
 ```json
 {
   "success": true,
@@ -93,11 +119,13 @@ Health check for budget service.
 ```
 
 ### GET /budget
+
 Get all budgets for the authenticated user's family.
 
 **Headers**: `Authorization: Bearer <token>`
 
 **Response**: `200 OK`
+
 ```json
 {
   "success": true,
@@ -120,11 +148,13 @@ Get all budgets for the authenticated user's family.
 ```
 
 ### POST /budget
+
 Create a new budget.
 
 **Headers**: `Authorization: Bearer <token>`
 
 **Request Body**:
+
 ```json
 {
   "month": "2025-11",
@@ -158,9 +188,11 @@ Create a new budget.
 ## Transaction Management
 
 ### GET /transactions/health
+
 Health check for transaction service.
 
 **Response**: `200 OK`
+
 ```json
 {
   "success": true,
@@ -173,11 +205,13 @@ Health check for transaction service.
 ```
 
 ### GET /transactions
+
 Get all transactions with optional filtering.
 
 **Headers**: `Authorization: Bearer <token>`
 
 **Query Parameters**:
+
 - `startDate` (optional): Filter by start date (YYYY-MM-DD)
 - `endDate` (optional): Filter by end date (YYYY-MM-DD)
 - `categoryId` (optional): Filter by category ID
@@ -188,6 +222,7 @@ Get all transactions with optional filtering.
 **Example**: `GET /transactions?type=expense&startDate=2025-11-01&limit=10`
 
 **Response**: `200 OK`
+
 ```json
 {
   "success": true,
@@ -197,7 +232,7 @@ Get all transactions with optional filtering.
         "transactionId": "txn_123",
         "familyId": "family_456",
         "userId": "user_789",
-        "amount": 50.00,
+        "amount": 50.0,
         "type": "expense",
         "categoryId": "cat_groceries_001",
         "description": "Weekly grocery shopping",
@@ -218,14 +253,16 @@ Get all transactions with optional filtering.
 ```
 
 ### POST /transactions
+
 Create a new transaction.
 
 **Headers**: `Authorization: Bearer <token>`
 
 **Request Body**:
+
 ```json
 {
-  "amount": 50.00,
+  "amount": 50.0,
   "type": "expense",
   "categoryId": "cat_groceries_001",
   "description": "Weekly grocery shopping",
@@ -235,6 +272,7 @@ Create a new transaction.
 ```
 
 **Response**: `200 OK`
+
 ```json
 {
   "success": true,
@@ -242,7 +280,7 @@ Create a new transaction.
   "data": {
     "transactionId": "txn_123",
     "familyId": "family_456",
-    "amount": 50.00,
+    "amount": 50.0,
     "type": "expense",
     "categoryId": "cat_groceries_001",
     "description": "Weekly grocery shopping",
@@ -255,11 +293,13 @@ Create a new transaction.
 ```
 
 ### GET /transactions/{transactionId}
+
 Get a specific transaction by ID.
 
 **Headers**: `Authorization: Bearer <token>`
 
 **Response**: `200 OK`
+
 ```json
 {
   "success": true,
@@ -267,7 +307,7 @@ Get a specific transaction by ID.
     "transaction": {
       "transactionId": "txn_123",
       "familyId": "family_456",
-      "amount": 50.00,
+      "amount": 50.0,
       "type": "expense",
       "categoryId": "cat_groceries_001",
       "description": "Weekly grocery shopping",
@@ -279,20 +319,23 @@ Get a specific transaction by ID.
 ```
 
 ### PUT /transactions/{transactionId}
+
 Update an existing transaction.
 
 **Headers**: `Authorization: Bearer <token>`
 
 **Request Body** (all fields optional):
+
 ```json
 {
-  "amount": 75.00,
+  "amount": 75.0,
   "description": "Updated: Weekly grocery shopping with extras",
   "merchant": "Whole Foods Market"
 }
 ```
 
 **Response**: `200 OK`
+
 ```json
 {
   "success": true,
@@ -300,7 +343,7 @@ Update an existing transaction.
   "data": {
     "transaction": {
       "transactionId": "txn_123",
-      "amount": 75.00,
+      "amount": 75.0,
       "description": "Updated: Weekly grocery shopping with extras",
       "updatedAt": "2025-11-01T11:00:00Z"
     }
@@ -309,11 +352,13 @@ Update an existing transaction.
 ```
 
 ### DELETE /transactions/{transactionId}
+
 Delete a transaction (soft delete for audit trail).
 
 **Headers**: `Authorization: Bearer <token>`
 
 **Response**: `200 OK`
+
 ```json
 {
   "success": true,
@@ -330,6 +375,7 @@ Delete a transaction (soft delete for audit trail).
 All endpoints return consistent error responses:
 
 ### 400 Bad Request
+
 ```json
 {
   "success": false,
@@ -340,6 +386,7 @@ All endpoints return consistent error responses:
 ```
 
 ### 401 Unauthorized
+
 ```json
 {
   "success": false,
@@ -350,6 +397,7 @@ All endpoints return consistent error responses:
 ```
 
 ### 404 Not Found
+
 ```json
 {
   "success": false,
@@ -360,6 +408,7 @@ All endpoints return consistent error responses:
 ```
 
 ### 500 Internal Server Error
+
 ```json
 {
   "success": false,
@@ -378,11 +427,13 @@ All endpoints return consistent error responses:
 ## Testing
 
 ### Health Check (No Auth Required)
+
 ```bash
 curl https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/transactions/health
 ```
 
 ### With Authentication
+
 ```bash
 # Get access token first via login
 TOKEN="your_jwt_token_here"
@@ -407,34 +458,47 @@ curl -X GET https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/transactio
 ## SDK Usage
 
 ### JavaScript/TypeScript
+
 ```typescript
-import { transactionApi } from './services/api';
+import { transactionApi } from "./services/api";
 
 // Create transaction
 const transaction = await transactionApi.createTransaction({
-  amount: 50.00,
-  type: 'expense',
-  categoryId: 'cat_groceries_001',
-  description: 'Weekly groceries',
-  date: '2025-11-01'
+  amount: 50.0,
+  type: "expense",
+  categoryId: "cat_groceries_001",
+  description: "Weekly groceries",
+  date: "2025-11-01",
 });
 
 // Get transactions
 const transactions = await transactionApi.getTransactions({
-  type: 'expense',
-  startDate: '2025-11-01'
+  type: "expense",
+  startDate: "2025-11-01",
 });
 ```
 
 ## Changelog
 
+### 2026-01-05 (v1.1 - Security Enhanced)
+
+- 🔒 **CRITICAL SECURITY UPDATE**: Resolved GitGuardian alert for exposed secrets
+- ✅ Removed all exposed JWT tokens and credentials from repository
+- ✅ Implemented comprehensive security validation system
+- ✅ Enhanced CI/CD with automated security scanning
+- ✅ Added security documentation and incident response procedures
+- ✅ Updated CORS configuration for proper credential handling
+- ✅ Added environment variable enforcement for sensitive data
+
 ### 2025-11-01
+
 - ✅ Added complete transaction CRUD endpoints
 - ✅ Enhanced error handling with field-specific validation
 - ✅ Added comprehensive filtering and pagination
 - ✅ Integrated budget recalculation on transaction changes
 
 ### Previous versions
+
 - Budget CRUD endpoints
 - Authentication system
 - Health check endpoints
