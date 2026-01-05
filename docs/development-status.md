@@ -1,8 +1,18 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-01-04 (Session 6i - City Database Fallback System)
-**Current Phase**: Market-Ready MVP Development - Onboarding Flow Stabilization
-**Overall Progress**: 88% (Task 12.2 Complete with all onboarding edge cases handled)
+**Last Updated**: 2026-01-04 (Session 6k - Critical Auth Fix: Cognito Configuration)
+**Current Phase**: Market-Ready MVP Development - Critical Authentication Bug Fix
+**Overall Progress**: 88% (Critical infrastructure fix ready for deployment)
+
+## 🚨 CRITICAL FIX READY FOR DEPLOYMENT
+
+### Authentication Issue Resolution
+
+- **Issue**: All users experiencing "User profile not found" (404) errors
+- **Root Cause**: Cognito User Pool Client missing `userId` in token attributes
+- **Fix Applied**: Added `userId` to `readAttributes` and `writeAttributes` in auth-stack.ts
+- **Status**: Ready for infrastructure deployment via CI/CD pipeline
+- **Impact**: Will resolve all onboarding and profile access issues
 
 ## What's Working ✅
 
