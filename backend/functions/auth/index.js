@@ -963,33 +963,39 @@ exports.handler = async (event, _context) => {
         );
 
         const budget = {
-          PK: { S: `FAMILY#${familyId}` },
-          SK: { S: `BUDGET#${currentMonth}` },
-          GSI2PK: { S: `BUDGET#${currentMonth}` },
-          GSI2SK: { S: `FAMILY#${familyId}` },
-          entityType: { S: "BUDGET" },
-          budgetId: { S: budgetId },
-          familyId: { S: familyId },
-          month: { S: currentMonth },
-          totalIncome: { N: "0" },
-          totalSavings: { N: "0" },
-          totalExpenses: { N: totalExpenses.toString() },
-          remainingBalance: { N: (-totalExpenses).toString() },
-          groups: { S: JSON.stringify(budgetGroups) },
-          isAIGenerated: { BOOL: true },
-          createdAt: { S: currentTime },
-          updatedAt: { S: currentTime },
+          PK: `FAMILY#${familyId}`,
+          SK: `BUDGET#${currentMonth}`,
+          GSI2PK: `BUDGET#${currentMonth}`,
+          GSI2SK: `FAMILY#${familyId}`,
+          entityType: "BUDGET",
+          budgetId: budgetId,
+          familyId: familyId,
+          month: currentMonth,
+          totalIncome: 0,
+          totalSavings: 0,
+          totalExpenses: totalExpenses,
+          remainingBalance: -totalExpenses,
+          groups: budgetGroups,
+          isAIGenerated: true,
+          createdAt: currentTime,
+          updatedAt: currentTime,
         };
 
-        const { PutItemCommand } = require("@aws-sdk/client-dynamodb");
+        // Import dynamoHelpers from utils layer
+        const { dynamoHelpers } = require("/opt/nodejs/utils");
 
-        const putBudgetCommand = new PutItemCommand({
-          TableName: TABLE_NAME,
-          Item: budget,
+        console.log("Creating budget with data:", {
+          familyId: familyId,
+          month: currentMonth,
+          budgetId: budgetId,
+          totalExpenses: totalExpenses,
+          categoriesCount: expenseCategories.length,
         });
 
-        await dynamoClient.send(putBudgetCommand);
-        console.log("Initial budget created from onboarding selections");
+        await dynamoHelpers.putItem(budget);
+        console.log(
+          "Initial budget created from onboarding selections - using dynamoHelpers"
+        );
 
         return {
           statusCode: 200,
