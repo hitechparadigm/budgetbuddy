@@ -225,8 +225,8 @@ describe("Credential Replacement Safety Properties", () => {
       testCases.forEach(({ value, expected, type }) => {
         const isRealCredential = (val) => {
           const realPatterns = [
-            /^sk_[a-zA-Z0-9]{20,}$/,
-            /^AKIA[0-9A-Z]{16}$/,
+            /^sk_[a-zA-Z0-9_]{20,}$/,
+            /^AKIA[0-9A-Z_]{16,}$/,
             /^[A-Za-z0-9+/]{40,}={0,2}$/,
           ];
 

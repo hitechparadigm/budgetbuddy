@@ -25,6 +25,7 @@
     "generate-city-data": "ts-node scripts/generateCityData.ts",
     "security:check": "powershell -ExecutionPolicy Bypass -File scripts/security-check-win.ps1",
     "security:check:bash": "bash scripts/security-check.sh",
+    "security:check:bash": "bash scripts/security-check.sh",
     "security:pre-commit": "powershell -ExecutionPolicy Bypass -File scripts/security-check-win.ps1 -PreCommit",
     "security:tests": "npx jest tests/security/ --config=tests/security/jest.config.js",
     "pre-deploy": "npm run security:check && npm run lint:check && npm run test:unit",

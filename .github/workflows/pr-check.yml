@@ -258,7 +258,12 @@ jobs:
       - name: Run comprehensive security scan
         run: |
           echo "🔒 Running comprehensive security validation..."
-          npm run security:check
+
+          # Make security script executable
+          chmod +x scripts/security-check.sh
+
+          # Run security checks using bash script
+          bash scripts/security-check.sh
 
       - name: Check for exposed secrets
         run: |
