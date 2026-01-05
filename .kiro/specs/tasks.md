@@ -14,7 +14,7 @@ These are production-critical issues that must be fixed immediately.
 
 ### Critical Bug Fixes (Immediate Priority)
 
-- [-] 1. Fix Critical Onboarding Budget Persistence Bug
+- [x] 1. Fix Critical Onboarding Budget Persistence Bug
 
   - **Issue**: Budget created during onboarding but not retrievable afterward
   - **Symptom**: User completes onboarding successfully, but budget page shows "No budgets exist in backend"

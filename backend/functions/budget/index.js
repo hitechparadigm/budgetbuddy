@@ -134,7 +134,21 @@ async function createBudget(event, user) {
     return errorResponse.badRequest("Month must be in YYYY-MM format");
   }
 
-  const familyId = user.familyId || `family_${user.userId}`;
+  // CRITICAL FIX: Get familyId from user profile in DynamoDB instead of JWT
+  let familyId = user.familyId;
+
+  if (!familyId) {
+    const userProfile = await dynamoHelpers.getItem(
+      `USER#${user.userId}`,
+      "PROFILE"
+    );
+
+    if (userProfile && userProfile.familyId) {
+      familyId = userProfile.familyId;
+    } else {
+      familyId = `family_${user.userId}`;
+    }
+  }
   const budgetId = generateId.budget();
   const currentTime = new Date().toISOString();
 
@@ -266,7 +280,31 @@ async function getBudgets(event, user) {
     familyId: user.familyId,
   });
 
-  const familyId = user.familyId || `family_${user.userId}`;
+  // CRITICAL FIX: Get familyId from user profile in DynamoDB instead of JWT
+  // JWT tokens don't contain custom:familyId, so we need to look it up
+  let familyId = user.familyId;
+
+  if (!familyId) {
+    console.log("getBudgets: No familyId in JWT, looking up user profile");
+
+    // Get user profile to get the correct familyId
+    const userProfile = await dynamoHelpers.getItem(
+      `USER#${user.userId}`,
+      "PROFILE"
+    );
+
+    if (userProfile && userProfile.familyId) {
+      familyId = userProfile.familyId;
+      console.log("getBudgets: Found familyId in user profile:", familyId);
+    } else {
+      // Fallback to the old logic if profile not found
+      familyId = `family_${user.userId}`;
+      console.log(
+        "getBudgets: No user profile found, using fallback:",
+        familyId
+      );
+    }
+  }
 
   console.log("getBudgets: CRITICAL DEBUG - Family ID resolution:");
   console.log("  - user.familyId from JWT:", user.familyId);
@@ -354,7 +392,21 @@ async function getCurrentBudget(event, user) {
     familyId: user.familyId,
   });
 
-  const familyId = user.familyId || `family_${user.userId}`;
+  // CRITICAL FIX: Get familyId from user profile in DynamoDB instead of JWT
+  let familyId = user.familyId;
+
+  if (!familyId) {
+    const userProfile = await dynamoHelpers.getItem(
+      `USER#${user.userId}`,
+      "PROFILE"
+    );
+
+    if (userProfile && userProfile.familyId) {
+      familyId = userProfile.familyId;
+    } else {
+      familyId = `family_${user.userId}`;
+    }
+  }
 
   // Extract month from query parameter
   const queryParams = event.queryStringParameters || {};
@@ -415,7 +467,21 @@ async function getBudget(event, user, budgetId) {
     budgetId,
   });
 
-  const familyId = user.familyId || `family_${user.userId}`;
+  // CRITICAL FIX: Get familyId from user profile in DynamoDB instead of JWT
+  let familyId = user.familyId;
+
+  if (!familyId) {
+    const userProfile = await dynamoHelpers.getItem(
+      `USER#${user.userId}`,
+      "PROFILE"
+    );
+
+    if (userProfile && userProfile.familyId) {
+      familyId = userProfile.familyId;
+    } else {
+      familyId = `family_${user.userId}`;
+    }
+  }
 
   // Extract month from budgetId or query parameter
   const queryParams = event.queryStringParameters || {};
@@ -472,7 +538,22 @@ async function updateBudget(event, user, budgetId) {
   });
 
   const requestBody = parseRequestBody(event.body);
-  const familyId = user.familyId || `family_${user.userId}`;
+
+  // CRITICAL FIX: Get familyId from user profile in DynamoDB instead of JWT
+  let familyId = user.familyId;
+
+  if (!familyId) {
+    const userProfile = await dynamoHelpers.getItem(
+      `USER#${user.userId}`,
+      "PROFILE"
+    );
+
+    if (userProfile && userProfile.familyId) {
+      familyId = userProfile.familyId;
+    } else {
+      familyId = `family_${user.userId}`;
+    }
+  }
 
   // Extract month from request body or query parameter
   let month =
@@ -561,7 +642,21 @@ async function deleteBudget(event, user, budgetId) {
     budgetId,
   });
 
-  const familyId = user.familyId || `family_${user.userId}`;
+  // CRITICAL FIX: Get familyId from user profile in DynamoDB instead of JWT
+  let familyId = user.familyId;
+
+  if (!familyId) {
+    const userProfile = await dynamoHelpers.getItem(
+      `USER#${user.userId}`,
+      "PROFILE"
+    );
+
+    if (userProfile && userProfile.familyId) {
+      familyId = userProfile.familyId;
+    } else {
+      familyId = `family_${user.userId}`;
+    }
+  }
   const month =
     event.queryStringParameters && event.queryStringParameters.month;
 
