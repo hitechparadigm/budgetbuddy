@@ -26,6 +26,14 @@ export const OnboardingPage: React.FC = () => {
     setError(null);
 
     try {
+      console.log("OnboardingPage: Starting onboarding completion...");
+      console.log("OnboardingPage: Data to send:", {
+        city: suggestions.city,
+        country: suggestions.country,
+        familySize: suggestions.familySize,
+        selectedCategoriesCount: selectedCategories.length,
+      });
+
       // Save onboarding data and create initial budget categories
       await apiClient.completeOnboarding({
         city: suggestions.city,
@@ -38,17 +46,38 @@ export const OnboardingPage: React.FC = () => {
         })),
       });
 
-      console.log("Onboarding completed successfully");
+      console.log("OnboardingPage: Onboarding completed successfully");
 
       // Navigate to budget page
       navigate("/budget");
     } catch (error) {
-      console.error("Error completing onboarding:", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to complete onboarding. Please try again."
-      );
+      console.error("OnboardingPage: Error completing onboarding:", error);
+
+      // Enhanced error handling
+      let errorMessage = "Failed to complete onboarding. Please try again.";
+
+      if (error instanceof Error) {
+        console.error("OnboardingPage: Error details:", {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+        });
+
+        if (error.message.includes("User profile not found")) {
+          errorMessage =
+            "User profile not found. Please try logging out and logging back in.";
+        } else if (error.message.includes("Network error")) {
+          errorMessage =
+            "Network error. Please check your connection and try again.";
+        } else if (error.message.includes("CORS")) {
+          errorMessage =
+            "Connection error. Please wait a moment and try again.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      setError(errorMessage);
       setIsSubmitting(false);
     }
   };
