@@ -1,0 +1,17 @@
+{
+  "name": "Cleanup AWS Logs",
+  "description": "Automatically cleans up downloaded AWS logs after analysis",
+  "trigger": "manual",
+  "actions": [
+    {
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -Command \"if (Test-Path 'temp-logs') { Remove-Item -Recurse -Force 'temp-logs'; Write-Host '🧹 AWS logs cleaned up successfully!' -ForegroundColor Green } else { Write-Host '⚠️ No logs directory found to clean up.' -ForegroundColor Yellow }\"",
+      "description": "Clean up downloaded AWS logs"
+    },
+    {
+      "type": "message",
+      "message": "AWS logs have been cleaned up. The temp-logs directory has been removed.",
+      "description": "Confirm cleanup completion"
+    }
+  ]
+}

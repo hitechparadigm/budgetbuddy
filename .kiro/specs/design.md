@@ -2604,6 +2604,284 @@ const { month, year } = getCurrentMonthInTimezone(userTimezone);
 
 Create `packages/web-app/src/utils/timezoneHelpers.ts`:
 
+````typescript
+/**
+ * Gets the current date/time in a specific timezone
+ */
+
+---
+
+## Family ID Mismatch Fix Design - Requirement 46
+
+### Problem Analysis
+
+**Critical Issue**: Users complete onboarding successfully but cannot access their AI-generated budgets due to family ID mismatch between services.
+
+**Root Cause**:
+- **Auth Service** (onboarding): Uses `familyId` from user's DynamoDB profile → `FAMILY#family_user_1767574326611_5kyfa7d61`
+- **Budget Service** (retrieval): Uses `familyId` from JWT (often null) or fallback → `FAMILY#family_94c8e448-3021-702b-57bb-6eaac79e1ab0`
+- **Result**: Different partition keys cause "No budgets exist in backend" despite successful creation
+
+**Impact**:
+- Users cannot access budgets after onboarding completion
+- 2+ days of troubleshooting with partial fixes applied
+- Critical P0 bug blocking user onboarding flow
+
+### Solution Design
+
+**1. Centralized Family ID Resolution Service**:
+
+```typescript
+// Create shared utility: backend/layers/utils/familyIdResolver.js
+class FamilyIdResolver {
+  static async resolveFamilyId(
+    userId: string,
+    jwtFamilyId?: string,
+    dynamoHelpers?: any
+  ): Promise<string> {
+    console.log("FamilyIdResolver.resolveFamilyId:", {
+      userId,
+      jwtFamilyId,
+      timestamp: new Date().toISOString()
+    });
+
+    // Step 1: Try JWT familyId if available
+    if (jwtFamilyId) {
+      console.log("Using familyId from JWT:", jwtFamilyId);
+      return jwtFamilyId;
+    }
+
+    // Step 2: Lookup familyId from user profile in DynamoDB
+    if (dynamoHelpers) {
+      try {
+        const userProfile = await dynamoHelpers.getItem(
+          `USER#${userId}`,
+          "PROFILE"
+        );
+        if (userProfile?.familyId) {
+          console.log("Using familyId from DynamoDB profile:", userProfile.familyId);
+          return userProfile.familyId;
+        }
+      } catch (error) {
+        console.error("Failed to lookup familyId from DynamoDB:", error);
+      }
+    }
+
+    // Step 3: Consistent fallback pattern
+    const fallbackFamilyId = `family_${userId}`;
+    console.log("Using fallback familyId:", fallbackFamilyId);
+    return fallbackFamilyId;
+  }
+
+  static logFamilyIdResolution(
+    service: string,
+    operation: string,
+    userId: string,
+    familyId: string,
+    source: 'jwt' | 'dynamodb' | 'fallback'
+  ): void {
+    console.log("FAMILY_ID_RESOLUTION:", {
+      service,
+      operation,
+      userId,
+      familyId,
+      source,
+      partitionKey: `FAMILY#${familyId}`,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+module.exports = { FamilyIdResolver };
+````
+
+**2. Auth Service Integration**:
+
+```javascript
+// Update backend/functions/auth/index.js onboarding endpoint
+const { FamilyIdResolver } = require("/opt/nodejs/familyIdResolver");
+
+// In onboarding completion handler
+const handleOnboardingCompletion = async (event, userId) => {
+  const requestBody = JSON.parse(event.body);
+
+  // Use centralized family ID resolution
+  const familyId = await FamilyIdResolver.resolveFamilyId(
+    userId,
+    null, // JWT doesn't have familyId during onboarding
+    dynamoHelpers
+  );
+
+  FamilyIdResolver.logFamilyIdResolution(
+    "auth-service",
+    "onboarding-budget-creation",
+    userId,
+    familyId,
+    "dynamodb"
+  );
+
+  // Create budget with resolved familyId
+  const budget = {
+    PK: `FAMILY#${familyId}`,
+    SK: `BUDGET#${requestBody.currentMonth}`,
+    entityType: "BUDGET",
+    budgetId: generateId.budget(),
+    familyId: familyId,
+    month: requestBody.currentMonth,
+    // ... rest of budget data
+  };
+
+  await dynamoHelpers.putItem(budget);
+
+  // CRITICAL: Immediate verification
+  const verification = await dynamoHelpers.getItem(
+    `FAMILY#${familyId}`,
+    `BUDGET#${requestBody.currentMonth}`
+  );
+
+  if (!verification) {
+    console.error("BUDGET_VERIFICATION_FAILED:", {
+      familyId,
+      month: requestBody.currentMonth,
+      partitionKey: `FAMILY#${familyId}`,
+      sortKey: `BUDGET#${requestBody.currentMonth}`,
+    });
+
+    throw new Error("Budget creation verification failed");
+  }
+
+  console.log("BUDGET_VERIFICATION_SUCCESS:", {
+    familyId,
+    month: requestBody.currentMonth,
+    budgetId: verification.budgetId,
+  });
+
+  return {
+    statusCode: 200,
+    headers: getCorsHeaders(origin),
+    body: JSON.stringify({
+      message: "Onboarding completed successfully",
+      budgetCreated: true,
+      familyId: familyId,
+      month: requestBody.currentMonth,
+      debugInfo: {
+        partitionKey: `FAMILY#${familyId}`,
+        sortKey: `BUDGET#${requestBody.currentMonth}`,
+        verified: true,
+      },
+    }),
+  };
+};
+```
+
+**3. Budget Service Integration**:
+
+```javascript
+// Update backend/functions/budget/index.js
+const { FamilyIdResolver } = require("/opt/nodejs/familyIdResolver");
+
+// Update getBudgets function
+async function getBudgets(event, user) {
+  logger.info("Getting budgets for family", {
+    userId: user.userId,
+    familyId: user.familyId,
+  });
+
+  // Use centralized family ID resolution
+  const familyId = await FamilyIdResolver.resolveFamilyId(
+    user.userId,
+    user.familyId, // From JWT
+    dynamoHelpers
+  );
+
+  FamilyIdResolver.logFamilyIdResolution(
+    "budget-service",
+    "get-budgets",
+    user.userId,
+    familyId,
+    user.familyId ? "jwt" : "dynamodb"
+  );
+
+  // Query with resolved familyId
+  const budgets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    FilterExpression: "entityType = :entityType",
+    ExpressionAttributeValues: {
+      ":entityType": "BUDGET",
+    },
+  });
+
+  console.log("BUDGET_QUERY_RESULT:", {
+    familyId,
+    partitionKey: `FAMILY#${familyId}`,
+    budgetsFound: budgets.length,
+    budgetMonths: budgets.map((b) => b.month),
+  });
+
+  // Transform and return budgets
+  const formattedBudgets = budgets.map((budget) => ({
+    budgetId: budget.budgetId,
+    familyId: budget.familyId,
+    month: budget.month,
+    totalIncome: budget.totalIncome,
+    totalSavings: budget.totalSavings,
+    totalExpenses: budget.totalExpenses,
+    remainingBalance: budget.remainingBalance,
+    groups: budget.groups,
+    isAIGenerated: budget.isAIGenerated,
+    createdAt: budget.createdAt,
+    updatedAt: budget.updatedAt,
+  }));
+
+  formattedBudgets.sort((a, b) => b.month.localeCompare(a.month));
+
+  return successResponse(
+    {
+      budgets: formattedBudgets,
+      count: formattedBudgets.length,
+      debugInfo: {
+        familyId,
+        partitionKey: `FAMILY#${familyId}`,
+        queryMethod: user.familyId ? "jwt" : "dynamodb-lookup",
+      },
+    },
+    "Budgets retrieved successfully"
+  );
+}
+
+// Apply same pattern to all budget functions:
+// - createBudget, getCurrentBudget, getBudget, updateBudget, deleteBudget
+```
+
+### Implementation Priority
+
+**Phase 1 (Critical - Immediate)**:
+
+1. Create `FamilyIdResolver` utility in shared layer
+2. Update Auth service onboarding endpoint
+3. Update Budget service `getBudgets` function
+4. Add comprehensive logging
+
+**Phase 2 (High Priority - Next)**:
+
+1. Update remaining Budget service functions (createBudget, getCurrentBudget, etc.)
+2. Add error handling and validation
+3. Implement backward compatibility
+4. Add monitoring and alerting
+
+### Success Criteria
+
+- ✅ Users can access AI-generated budgets immediately after onboarding
+- ✅ Auth and Budget services use identical familyId resolution logic
+- ✅ Comprehensive logging enables quick troubleshooting
+- ✅ Backward compatibility maintained for existing users
+- ✅ Zero family ID mismatch errors in production logs
+
+---
+
+### Timezone Utility Functions (Continued)
+
+Create `packages/web-app/src/utils/timezoneHelpers.ts`:
+
 ```typescript
 /**
  * Gets the current date/time in a specific timezone
@@ -3600,6 +3878,31 @@ _For any_ user session, the app should automatically lock after the configured i
 
 _For any_ exported budget data, importing it back into the system should recreate the exact same budget structure and amounts
 **Validates: Requirements 26.4, 26.5**
+
+### Property 16: Consistent Family ID Resolution Across Services
+
+_For any_ user with a given userId and JWT token state, both Auth service and Budget service should resolve to the identical familyId when using the same resolution logic
+**Validates: Requirements 46.1, 46.2, 46.5**
+
+### Property 17: Complete Family ID Fallback Chain
+
+_For any_ user authentication scenario (JWT with familyId, JWT without familyId, or no JWT), the system should consistently follow the fallback chain: JWT → DynamoDB lookup → pattern fallback (`family_${userId}`)
+**Validates: Requirements 46.3, 46.4**
+
+### Property 18: Budget Creation Verification Round Trip
+
+_For any_ budget created during onboarding, immediately querying DynamoDB with the same partition key and sort key should return the created budget, or the creation should fail with appropriate error handling
+**Validates: Requirements 46.6, 46.8**
+
+### Property 19: Comprehensive Family ID Debugging
+
+_For any_ family ID resolution operation, the system should log the resolution source (JWT/DynamoDB/fallback) and return debugging information including the exact partition key used
+**Validates: Requirements 46.9, 46.10**
+
+### Property 20: Budget Creation Error Handling
+
+_For any_ budget creation failure during onboarding, the system should prevent onboarding completion and return an error response with detailed failure information
+**Validates: Requirements 46.7**
 
 ## Error Handling
 

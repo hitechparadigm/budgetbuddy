@@ -1,0 +1,12 @@
+{
+  "name": "Auto-Cleanup AWS Logs",
+  "description": "Automatically cleans up AWS logs after analysis is complete",
+  "trigger": "on_agent_completion",
+  "actions": [
+    {
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -Command \"Start-Sleep -Seconds 30; if (Test-Path 'temp-logs') { Write-Host '🧹 Auto-cleaning AWS logs after analysis...' -ForegroundColor Yellow; Remove-Item -Recurse -Force 'temp-logs'; Write-Host '✅ AWS logs cleaned up automatically!' -ForegroundColor Green }\"",
+      "description": "Auto-cleanup logs after 30 seconds"
+    }
+  ]
+}

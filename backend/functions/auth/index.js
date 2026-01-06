@@ -851,6 +851,9 @@ exports.handler = async (event, _context) => {
           throw new Error("User ID not found in token");
         }
 
+        // Extract familyId from JWT if available (may be null)
+        const jwtFamilyId = payload["custom:familyId"] || null;
+
         // Parse request body
         let requestBody = null;
         try {
@@ -918,37 +921,31 @@ exports.handler = async (event, _context) => {
         }
 
         console.log(
-          "ONBOARDING DEBUG - Validation passed, proceeding with user profile lookup"
+          "ONBOARDING DEBUG - Validation passed, proceeding with centralized family ID resolution"
         );
 
-        // Get user profile to get familyId
-        const getItemCommand = new GetItemCommand({
-          TableName: TABLE_NAME,
-          Key: {
-            PK: { S: `USER#${userId}` },
-            SK: { S: "PROFILE" },
-          },
-        });
+        // Use centralized FamilyIdResolver to get familyId consistently
+        const familyId = await FamilyIdResolver.resolveFamilyId(
+          userId,
+          jwtFamilyId,
+          dynamoHelpers
+        );
 
-        const userResult = await dynamoClient.send(getItemCommand);
+        // Log the resolution for debugging
+        FamilyIdResolver.logFamilyIdResolution(
+          "auth-service",
+          "onboarding",
+          userId,
+          familyId,
+          jwtFamilyId ? "jwt" : "dynamodb-or-fallback"
+        );
 
-        if (!userResult.Item) {
-          return {
-            statusCode: 404,
-            headers: getCorsHeaders(origin),
-            body: JSON.stringify({
-              error: "Not Found",
-              message: "User profile not found",
-            }),
-          };
-        }
-
-        const familyId = userResult.Item.familyId.S;
         const currentTime = new Date().toISOString();
 
         console.log("ONBOARDING DEBUG - Family ID resolution:");
         console.log("  - userId from token:", userId);
-        console.log("  - familyId from user profile:", familyId);
+        console.log("  - jwtFamilyId from token:", jwtFamilyId);
+        console.log("  - resolved familyId:", familyId);
         console.log("  - Budget PK will be:", `FAMILY#${familyId}`);
         console.log(
           "  - Budget SK will be:",
@@ -1034,8 +1031,11 @@ exports.handler = async (event, _context) => {
           updatedAt: currentTime,
         };
 
-        // Import dynamoHelpers from utils layer
-        const { dynamoHelpers } = require("/opt/nodejs/utils");
+        // Import dynamoHelpers and FamilyIdResolver from utils layer
+        const {
+          dynamoHelpers,
+          FamilyIdResolver,
+        } = require("/opt/nodejs/utils");
 
         console.log("Creating budget with data:", {
           familyId,
@@ -1081,6 +1081,15 @@ exports.handler = async (event, _context) => {
             "Initial budget created from onboarding selections - using dynamoHelpers"
           );
 
+          // Log budget creation success with FamilyIdResolver
+          FamilyIdResolver.logFamilyIdResolution(
+            "auth-service",
+            "budget-creation",
+            userId,
+            familyId,
+            "budget-created"
+          );
+
           // FINAL DEBUG: Confirm what was actually saved
           console.log("FINAL DEBUG - Budget saved to DynamoDB:");
           console.log("  - PK:", budget.PK);
@@ -1092,34 +1101,83 @@ exports.handler = async (event, _context) => {
 
           // VERIFICATION: Immediately query the budget to confirm it was saved
           try {
-            const { GetItemCommand } = require("@aws-sdk/client-dynamodb");
-            const verifyCommand = new GetItemCommand({
-              TableName: TABLE_NAME,
-              Key: {
-                PK: { S: `FAMILY#${familyId}` },
-                SK: { S: `BUDGET#${currentMonth}` },
-              },
-            });
+            const verificationBudget = await dynamoHelpers.getItem(
+              `FAMILY#${familyId}`,
+              `BUDGET#${currentMonth}`
+            );
 
-            const verifyResult = await dynamoClient.send(verifyCommand);
-            if (verifyResult.Item) {
+            if (verificationBudget) {
               console.log(
                 "VERIFICATION SUCCESS - Budget found in DynamoDB immediately after creation"
               );
-              console.log("  - Verified PK:", verifyResult.Item.PK.S);
-              console.log("  - Verified SK:", verifyResult.Item.SK.S);
-              console.log("  - Verified month:", verifyResult.Item.month?.S);
+              console.log("  - Verified PK:", `FAMILY#${familyId}`);
+              console.log("  - Verified SK:", `BUDGET#${currentMonth}`);
+              console.log("  - Verified month:", verificationBudget.month);
+              console.log(
+                "  - Verified budgetId:",
+                verificationBudget.budgetId
+              );
+
+              // Log successful verification
+              FamilyIdResolver.logFamilyIdResolution(
+                "auth-service",
+                "budget-verification",
+                userId,
+                familyId,
+                "verification-success"
+              );
             } else {
               console.error(
                 "VERIFICATION FAILED - Budget NOT found in DynamoDB immediately after creation!"
               );
               console.error("  - Searched PK:", `FAMILY#${familyId}`);
               console.error("  - Searched SK:", `BUDGET#${currentMonth}`);
+
+              // Log verification failure
+              FamilyIdResolver.logFamilyIdResolution(
+                "auth-service",
+                "budget-verification",
+                userId,
+                familyId,
+                "verification-failed"
+              );
+
+              // Return error response for verification failure
+              return {
+                statusCode: 500,
+                headers: getCorsHeaders(origin),
+                body: JSON.stringify({
+                  error: "Budget Creation Verification Failed",
+                  message:
+                    "Budget was created but could not be verified immediately",
+                  debugInfo: {
+                    userId,
+                    familyId,
+                    partitionKey: `FAMILY#${familyId}`,
+                    sortKey: `BUDGET#${currentMonth}`,
+                    budgetId: budget.budgetId,
+                  },
+                }),
+              };
             }
           } catch (verifyError) {
             console.error(
               "VERIFICATION ERROR - Failed to verify budget creation:",
               verifyError
+            );
+
+            // Log verification error
+            FamilyIdResolver.logFamilyIdResolution(
+              "auth-service",
+              "budget-verification",
+              userId,
+              familyId,
+              "verification-error"
+            );
+
+            // Continue with success response even if verification failed
+            console.warn(
+              "Continuing with success response despite verification error"
             );
           }
         } catch (budgetError) {
@@ -1153,6 +1211,14 @@ exports.handler = async (event, _context) => {
             month: currentMonth,
             totalExpenses,
             categoriesCreated: expenseCategories.length,
+            debugInfo: {
+              userId,
+              familyId,
+              jwtFamilyId,
+              partitionKey: `FAMILY#${familyId}`,
+              sortKey: `BUDGET#${currentMonth}`,
+              resolutionSource: jwtFamilyId ? "jwt" : "dynamodb-or-fallback",
+            },
           }),
         };
       } catch (error) {
