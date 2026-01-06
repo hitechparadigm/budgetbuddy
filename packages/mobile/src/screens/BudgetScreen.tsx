@@ -21,6 +21,8 @@ import BudgetForm from "../components/BudgetForm";
 import UpcomingOccurrences from "../components/UpcomingOccurrences";
 import SummaryModal from "../components/SummaryModal";
 import QuickAddTransaction from "../components/QuickAddTransaction";
+import ConnectionStatus from "../components/ConnectionStatus";
+import OfflineBanner from "../components/OfflineBanner";
 import {
   useMonthlyBudgetOverview,
   useCreateBudget,
@@ -28,6 +30,7 @@ import {
   useDeleteBudget,
 } from "../services/budget";
 import { useCreateTransaction } from "../services/transaction";
+import { useOfflineSync } from "../hooks/useOfflineSync";
 import {
   Budget,
   BudgetWithSummary,
@@ -67,6 +70,7 @@ export default function BudgetScreen() {
   const updateBudgetMutation = useUpdateBudget();
   const deleteBudgetMutation = useDeleteBudget();
   const createTransactionMutation = useCreateTransaction();
+  const { syncStatus, triggerSync } = useOfflineSync();
 
   // Refresh data when screen comes into focus
   useFocusEffect(
@@ -81,10 +85,14 @@ export default function BudgetScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await refetch();
+      // Also trigger sync if online
+      if (syncStatus.isOnline) {
+        await triggerSync();
+      }
     } finally {
       setRefreshing(false);
     }
-  }, [refetch]);
+  }, [refetch, syncStatus.isOnline, triggerSync]);
 
   const handleMonthChange = (year: number, month: number) => {
     setCurrentDate({ year, month });
@@ -417,6 +425,16 @@ export default function BudgetScreen() {
 
   return (
     <SafeAreaView style={dynamicStyles.container}>
+      {/* Offline Banner */}
+      <OfflineBanner
+        isVisible={!syncStatus.isOnline}
+        pendingItems={syncStatus.pendingItems}
+        onPress={() => {
+          // Could show detailed sync status or settings
+          console.log("Offline banner pressed");
+        }}
+      />
+
       <View style={dynamicStyles.header}>
         <Text style={dynamicStyles.title}>Budget</Text>
         <Pressable
@@ -563,6 +581,9 @@ export default function BudgetScreen() {
         currentYear={currentDate.year}
         onMonthYearSelect={handleMonthPickerSelect}
       />
+
+      {/* Connection Status */}
+      <ConnectionStatus />
     </SafeAreaView>
   );
 }

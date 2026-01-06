@@ -1,18 +1,21 @@
-import React, { useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { NavigationContainer } from '@react-navigation/native';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import React, { useEffect } from "react";
+import { StatusBar } from "expo-status-bar";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { NavigationContainer } from "@react-navigation/native";
+import { StyleSheet, View, ActivityIndicator } from "react-native";
 
-import { AuthProvider, useAuth } from './src/contexts/AuthContext';
-import { CurrencyProvider } from './src/contexts/CurrencyContext';
-import { AuthNavigator } from './src/navigation/AuthNavigator';
-import RootNavigator from '@/navigation/RootNavigator';
-import { notificationService } from './src/services/notification';
+import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
+import { CurrencyProvider } from "./src/contexts/CurrencyContext";
+import { AuthNavigator } from "./src/navigation/AuthNavigator";
+import RootNavigator from "@/navigation/RootNavigator";
+import { notificationService } from "./src/services/notification";
+import { initializeOfflineStorage } from "./src/services/offline";
+import { initializeApiClient } from "./src/services/api";
+import { syncService } from "./src/services/syncService";
 
 // Import Amplify configuration
-import './src/config/amplify';
+import "./src/config/amplify";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -37,8 +40,16 @@ const AppNavigator: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated) {
       notificationService.initialize().catch((error) => {
-        console.error('Failed to initialize notification service:', error);
+        console.error("Failed to initialize notification service:", error);
       });
+
+      // Initialize sync service for authenticated users
+      syncService.initialize().catch((error) => {
+        console.error("Failed to initialize sync service:", error);
+      });
+    } else {
+      // Cleanup sync service when user logs out
+      syncService.cleanup();
     }
   }, [isAuthenticated]);
 
@@ -63,6 +74,27 @@ const AppNavigator: React.FC = () => {
  * Root App Component with Providers
  */
 export default function App() {
+  // Initialize offline storage and API client on app start
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        console.log("Initializing BudgetBuddy mobile app...");
+
+        // Initialize API client with network monitoring
+        initializeApiClient();
+
+        // Initialize offline storage
+        await initializeOfflineStorage();
+
+        console.log("App initialization complete");
+      } catch (error) {
+        console.error("Failed to initialize app:", error);
+      }
+    };
+
+    initializeApp();
+  }, []);
+
   return (
     <GestureHandlerRootView style={styles.container}>
       <QueryClientProvider client={queryClient}>
@@ -83,8 +115,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
   },
 });

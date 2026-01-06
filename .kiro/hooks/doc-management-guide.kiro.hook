@@ -1,0 +1,30 @@
+{
+  "enabled": true,
+  "name": "Documentation Management Guide",
+  "description": "Monitors when requirements, design, or task documents are created or edited to ensure proper documentation practices - adding to existing documents rather than replacing content, and maintaining separate bug tracking",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      "*requirements*.md",
+      "*design*.md",
+      "*tasks*.md",
+      "*task*.md",
+      "*requirement*.md",
+      "*spec*.md",
+      "*specification*.md",
+      "docs/*.md",
+      "REQUIREMENTS.md",
+      "DESIGN.md",
+      "TASKS.md",
+      "BUGS.md",
+      "*bug*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review this documentation change. If this involves requirements, design, or tasks documents, ensure that:\n\n1. New content is being ADDED to existing main documents, not replacing existing content\n2. New requirements are being added (not just bug fixes)\n3. Bug tracking is maintained in a separate document from requirements/design/tasks\n4. The main requirements/design/tasks document structure is preserved\n\nIf any of these practices are violated, provide specific guidance on how to properly organize the documentation according to the project's documentation standards."
+  },
+  "workspaceFolderName": "budgetbuddy",
+  "shortName": "doc-management-guide"
+}
