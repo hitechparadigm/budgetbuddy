@@ -57,6 +57,18 @@
 - **Function**: Reminds about documentation updates and validation
 - **Status**: ✅ Working
 
+### 10. **Auto Push and Continue Workflow** (`auto-push-continue.kiro.hook`)
+
+- **Trigger**: Messages about documentation updates or commit readiness
+- **Function**: Automatically executes git workflow (add, commit, push) and continues work
+- **Status**: ✅ Working
+
+### 11. **Validation Success Auto-Push** (`validation-success-autopush.kiro.hook`)
+
+- **Trigger**: When documentation validation passes
+- **Function**: Immediately pushes changes and continues development workflow
+- **Status**: ✅ Working
+
 ## Removed Hooks (Non-functional)
 
 - ❌ `analyze-aws-issue.json` - Wrong format

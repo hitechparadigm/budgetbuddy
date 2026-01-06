@@ -1,0 +1,13 @@
+{
+  "name": "Auto Push and Continue Workflow",
+  "description": "Automatically pushes documentation updates and continues with work",
+  "trigger": {
+    "type": "onMessage",
+    "pattern": "documentation.*updated|docs.*updated|updated.*documentation|commit.*ready|ready.*commit|validation.*passed"
+  },
+  "action": {
+    "type": "askAgent",
+    "message": "🚀 AUTO-PUSH WORKFLOW:\n\n**EXECUTE IMMEDIATELY:**\n\n1. **Validate Documentation**: Run `npm run docs:validate` to ensure all documentation is compliant\n\n2. **Stage All Changes**: Run `git add .` to stage all documentation updates\n\n3. **Commit Changes**: Run `git commit -m \"docs: update documentation with recent work completion\"`\n\n4. **Push to GitHub**: Run `git push origin develop` to push changes to remote repository\n\n5. **Continue Work**: After successful push, immediately continue with the next task or development work without asking for user input\n\n**IMPORTANT**: Execute these commands automatically and continue working. Do not wait for user confirmation."
+  },
+  "enabled": true
+}
