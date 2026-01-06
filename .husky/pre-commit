@@ -9,4 +9,9 @@ npm run lint:check
 # Run type checking
 npm run type-check
 
+# MANDATORY: Validate documentation updates
+echo "📚 MANDATORY: Validating documentation updates..."
+echo "🚨 All documentation files MUST be updated before commit!"
+npm run docs:validate
+
 echo "✅ Pre-commit checks completed successfully!"

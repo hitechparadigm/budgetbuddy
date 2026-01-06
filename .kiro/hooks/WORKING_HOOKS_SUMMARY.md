@@ -51,6 +51,12 @@
 - **Function**: Runs CI/CD status check script
 - **Status**: ✅ Working
 
+### 9. **Documentation Validation Hook** (`doc-validation-hook.kiro.hook`)
+
+- **Trigger**: Agent completion
+- **Function**: Reminds about documentation updates and validation
+- **Status**: ✅ Working
+
 ## Removed Hooks (Non-functional)
 
 - ❌ `analyze-aws-issue.json` - Wrong format
