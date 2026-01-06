@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   RefreshControl,
   Pressable,
   ScrollView,
-  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -20,12 +19,14 @@ import BudgetList from "../components/BudgetList";
 import BudgetForm from "../components/BudgetForm";
 import UpcomingOccurrences from "../components/UpcomingOccurrences";
 import SummaryModal from "../components/SummaryModal";
+import QuickAddTransaction from "../components/QuickAddTransaction";
 import {
   useMonthlyBudgetOverview,
   useCreateBudget,
   useUpdateBudget,
   useDeleteBudget,
 } from "../services/budget";
+import { useCreateTransaction } from "../services/transaction";
 import {
   Budget,
   BudgetWithSummary,
@@ -33,8 +34,7 @@ import {
   UpdateBudgetRequest,
   BudgetType,
 } from "../types/budget";
-
-const { width: screenWidth } = Dimensions.get("window");
+import { CreateTransactionRequest } from "../services/transaction";
 
 export default function BudgetScreen() {
   const { colors } = useTheme();
@@ -51,6 +51,7 @@ export default function BudgetScreen() {
     useState<BudgetType>("expense");
   const [refreshing, setRefreshing] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   // Queries and mutations
   const {
@@ -63,6 +64,7 @@ export default function BudgetScreen() {
   const createBudgetMutation = useCreateBudget();
   const updateBudgetMutation = useUpdateBudget();
   const deleteBudgetMutation = useDeleteBudget();
+  const createTransactionMutation = useCreateTransaction();
 
   // Refresh data when screen comes into focus
   useFocusEffect(
@@ -170,6 +172,22 @@ export default function BudgetScreen() {
     }
   };
 
+  const handleQuickAddTransaction = (data: CreateTransactionRequest) => {
+    createTransactionMutation.mutate(data, {
+      onSuccess: () => {
+        setShowQuickAdd(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Refresh budget data to show updated amounts
+        refetch();
+      },
+      onError: (error) => {
+        console.error("Failed to create transaction:", error);
+        Alert.alert("Error", "Failed to create transaction. Please try again.");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      },
+    });
+  };
+
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -195,7 +213,21 @@ export default function BudgetScreen() {
     return monthNames[month - 1];
   };
 
+  // Memoize categories for performance
+  const quickAddCategories = useMemo(() => {
+    return monthlyOverview?.budgets || [];
+  }, [monthlyOverview?.budgets]);
+
   const fabActions = [
+    {
+      icon: "flash" as const,
+      label: "Quick Add",
+      onPress: () => {
+        setShowQuickAdd(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      },
+      color: "#F59E0B",
+    },
     {
       icon: "trending-up" as const,
       label: "Add Income",
@@ -498,6 +530,15 @@ export default function BudgetScreen() {
           currentMonth={getMonthName(currentDate.month)}
         />
       )}
+
+      {/* Quick Add Transaction Modal */}
+      <QuickAddTransaction
+        visible={showQuickAdd}
+        onClose={() => setShowQuickAdd(false)}
+        onSubmit={handleQuickAddTransaction}
+        categories={quickAddCategories}
+        isLoading={createTransactionMutation.isPending}
+      />
     </SafeAreaView>
   );
 }
