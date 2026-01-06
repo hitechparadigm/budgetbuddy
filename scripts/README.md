@@ -1,149 +1,105 @@
-# 🤖 Automated Documentation System
+# Scripts Directory
 
-## Quick Start
+## Essential Development Scripts
 
-### Option 1: Smart Commit (Recommended)
-```powershell
-# Automatically updates docs and commits in one command
-./scripts/smart-commit.ps1 "feat: Add budget dashboard" -ProgressPercent 45
+This directory contains only the essential scripts needed for the BudgetBuddy development workflow.
+
+### Security Scripts
+- `security-check-win.ps1` - Windows security validation
+- `security-check.sh` - Linux/Mac security validation
+- `pre-commit-security.sh` - Pre-commit security hooks
+
+### Git Hooks
+- `setup-git-hooks.ps1` - Git hooks setup (Windows)
+- `setup-git-hooks.sh` - Git hooks setup (Linux/Mac)
+
+### Deployment Scripts
+- `deploy-dev.js` - Development deployment
+
+### Testing Scripts
+- `create-test-user.js` - Test user creation
+- `test-transactions.js` - Transaction API testing
+- `test-user-journey.js` - End-to-end testing
+
+### Utility Scripts
+- `delete-corrupted-budgets.js` - Database cleanup utility
+- `check-cicd-status.js` - CI/CD monitoring
+- `cleanup-analysis.js` - Codebase cleanup analysis tool
+- `cleanup-executor.js` - Codebase cleanup execution tool
+
+## Usage
+
+### Security Validation
+```bash
+# Windows
+.\scripts\security-check-win.ps1
+
+# Linux/Mac
+./scripts/security-check.sh
 ```
 
-### Option 2: Manual Documentation Update
-```powershell
-# Update docs manually, then commit normally
-./scripts/auto-update-docs.ps1 -ProgressPercent 45
-git add .
-git commit -m "your message"
-git push origin develop
+### Development Deployment
+```bash
+node scripts/deploy-dev.js
 ```
 
-### Option 3: Automated Git Hooks
-```powershell
-# One-time setup - docs update automatically on every push
-./scripts/git-hooks-auto.ps1
+### Testing
+```bash
+# Create test user
+node scripts/create-test-user.js
 
-# Then just use normal git commands
-git add .
-git commit -m "your message"
-git push origin develop  # Documentation updates automatically
+# Test transactions API
+node scripts/test-transactions.js
+
+# Test complete user journey
+node scripts/test-user-journey.js
 ```
 
-## How It Works
-
-### 🔍 Auto-Detection
-The system automatically detects:
-- **Features Added**: From commit messages with `feat:`, `add:`, `implement:`
-- **Issues Fixed**: From commit messages with `fix:`, `resolve:`, `bug:`
-- **Session Summary**: Recent commit messages
-- **Progress**: From commit message percentages or manual input
-
-### 📄 Files Updated
-- **CHANGELOG.md**: Adds new version with features, fixes, and progress
-- **DEVELOPMENT_LOG.md**: Adds session entry with technical details
-- **README.md**: Updates progress percentage
-- **docs/development-status.md**: Updates progress and last updated date
-
-### 🎯 Benefits
-- ✅ **Zero Manual Work**: No more forgetting to update documentation
-- ✅ **Consistent Format**: All documentation follows the same structure
-- ✅ **Git History Integration**: Automatically extracts information from commits
-- ✅ **Progress Tracking**: Automatically updates progress across all files
-- ✅ **Version Management**: Auto-increments changelog versions
-
-## Examples
-
-### Smart Commit Examples
-```powershell
-# Basic usage
-./scripts/smart-commit.ps1 "feat: Complete authentication system"
-
-# With progress update
-./scripts/smart-commit.ps1 "feat: Add budget CRUD operations" -ProgressPercent 50
-
-# With custom session summary
-./scripts/smart-commit.ps1 "fix: Resolve login issues" -SessionSummary "Fixed authentication token handling and improved error messages"
+### Database Cleanup
+```bash
+# Clean corrupted budgets
+node scripts/delete-corrupted-budgets.js [familyId]
 ```
 
-### Manual Update Examples
-```powershell
-# Basic documentation update
-./scripts/auto-update-docs.ps1
+### Codebase Cleanup
+```bash
+# Analyze codebase for cleanup
+node scripts/cleanup-analysis.js
 
-# With progress
-./scripts/auto-update-docs.ps1 -ProgressPercent 60
-
-# With detailed information
-./scripts/auto-update-docs.ps1 -SessionSummary "Implemented budget dashboard" -FeaturesAdded "Budget visualization, Category management" -IssuesFixed "Fixed calculation errors" -ProgressPercent 65
+# Execute cleanup
+node scripts/cleanup-executor.js
 ```
 
-## Parameters
+## Removed Scripts
 
-### smart-commit.ps1
-- `CommitMessage` (required): Git commit message
-- `SessionSummary` (optional): Custom session description
-- `ProgressPercent` (optional): Overall project progress percentage
+The following obsolete scripts were removed during codebase cleanup:
 
-### auto-update-docs.ps1
-- `SessionSummary` (optional): Session description
-- `FeaturesAdded` (optional): Features added (auto-detected if not provided)
-- `IssuesFixed` (optional): Issues fixed (auto-detected if not provided)
-- `LessonsLearned` (optional): Lessons learned
-- `ProgressPercent` (optional): Progress percentage
+### Documentation Automation (Obsolete)
+- `auto-update-docs.ps1` - Automated doc updates (replaced by manual process)
+- `smart-commit.ps1` - Auto-commit with docs (not used in current workflow)
+- `doc-review.ps1` - Document review automation (obsolete)
+- `simple-doc-check.ps1` - Simple doc validation (redundant)
+- `update-docs-check.bat` - Batch file for docs (obsolete)
+- `update-docs-interactive.ps1` - Interactive doc updates (not used)
+- `update-docs.js` - JavaScript doc updater (obsolete)
+- `git-hooks-auto.ps1` - Auto git hooks setup (manual setup preferred)
 
-## Migration from Manual Process
+### Development Tools (Obsolete)
+- `local-server.js` - Empty file, no content
+- `quick-delete-budgets.js` - Empty file, no content
+- `deploy-web-app.ps1` - Replaced by CDK deployment
+- `test-local-deployment.sh` - Not used in current workflow
+- `validate-json.ps1` - Basic validation, not needed
+- `generateCityData.ts` - AI data generation (one-time use, completed)
 
-### Before (Manual)
-1. Complete development work
-2. Manually update CHANGELOG.md
-3. Manually update DEVELOPMENT_LOG.md
-4. Manually update README.md
-5. Manually update development-status.md
-6. git add, commit, push
+### Cleanup Scripts (Consolidated)
+- `delete-corrupted-budgets.ps1` - PowerShell version (kept JS version)
+- `DELETE_BUDGETS_README.md` - Redundant documentation
 
-### After (Automated)
-```powershell
-# Option A: One command does everything
-./scripts/smart-commit.ps1 "your commit message" -ProgressPercent 45
+## Notes
 
-# Option B: Separate steps
-./scripts/auto-update-docs.ps1 -ProgressPercent 45
-git add .
-git commit -m "your message"
-git push origin develop
-```
-
-## Troubleshooting
-
-### PowerShell Execution Policy
-If you get execution policy errors:
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-### Git Hooks Not Working
-Re-run the setup:
-```powershell
-./scripts/git-hooks-auto.ps1
-```
-
-### Documentation Not Updating
-Check that files exist and are writable:
-- CHANGELOG.md
-- DEVELOPMENT_LOG.md
-- README.md
-- docs/development-status.md
-
-## Advanced Usage
-
-### Custom Documentation Updates
-```powershell
-./scripts/auto-update-docs.ps1 `
-  -SessionSummary "Major authentication overhaul" `
-  -FeaturesAdded "JWT token management, Protected routes, Session persistence" `
-  -IssuesFixed "Login timeout issues, Token refresh problems" `
-  -LessonsLearned "Always validate JWT tokens on client side" `
-  -ProgressPercent 75
-```
-
-### Integration with CI/CD
-The automated system works great with GitHub Actions and other CI/CD systems since it requires no user interaction.
+- All security-related scripts are preserved and essential
+- Deployment scripts use CDK for infrastructure management
+- Testing scripts provide comprehensive API and user journey validation
+- Database cleanup utilities are available for development needs
+- Git hooks setup is manual to ensure proper configuration
