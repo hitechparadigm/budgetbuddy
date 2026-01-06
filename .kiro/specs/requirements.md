@@ -1157,3 +1157,34 @@ The following features are not included in the current MVP:
 
 **Implementation Status**: Not started
 **Priority**: High (System Reliability)
+
+---
+
+### Requirement 46: Fix Family ID Mismatch Between Auth and Budget Services 🔧 **CRITICAL P0 BUG FIX**
+
+**User Story:** As a user completing onboarding, I want my AI-generated budget to be accessible immediately after creation, so that I can start managing my finances without technical issues.
+
+#### Acceptance Criteria
+
+1. WHEN the Auth_Service creates a budget during onboarding, THE system SHALL use the familyId from the user's DynamoDB profile
+2. WHEN the Budget_Service retrieves budgets, THE system SHALL use the same familyId resolution method as the Auth_Service
+3. WHEN a user's JWT token lacks custom:familyId, THE system SHALL lookup familyId from the user's DynamoDB profile consistently across all services
+4. WHEN familyId lookup fails, THE system SHALL use a consistent fallback pattern (`family_${userId}`) across all services
+5. THE Auth_Service and Budget_Service SHALL use identical familyId resolution logic to prevent partition key mismatches
+6. WHEN a budget is created during onboarding, THE system SHALL immediately verify the budget exists in DynamoDB using the same keys
+7. WHEN budget creation fails, THE system SHALL return an error response and prevent onboarding completion
+8. WHEN budget verification fails, THE system SHALL log detailed error information including exact PK/SK values used
+9. THE onboarding endpoint SHALL return the exact familyId and month used for budget creation for debugging
+10. THE system SHALL log both the creation and verification steps with consistent identifiers to enable troubleshooting
+
+**Root Cause Analysis**:
+
+- Auth service creates budgets using `familyId` from user's DynamoDB profile: `FAMILY#family_user_1767574326611_5kyfa7d61`
+- Budget service queries using `familyId` from JWT (often null) or fallback: `FAMILY#family_94c8e448-3021-702b-57bb-6eaac79e1ab0`
+- Different partition keys result in "No budgets exist in backend" despite successful budget creation
+- Issue persists after previous partial fixes in v1.18.11
+
+**Implementation Status**: Not started
+**Priority**: Critical P0 (Blocks user onboarding completion)
+**Impact**: Users cannot access AI-generated budgets after completing onboarding
+**Troubleshooting Duration**: 2+ days of investigation and partial fixes

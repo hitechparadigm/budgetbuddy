@@ -1,27 +1,40 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert, RefreshControl, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
-import * as Haptics from 'expo-haptics';
-import { Card, FloatingActionButton, LoadingSpinner } from '../components/ui';
-import { useTheme } from '../hooks/useTheme';
-import MonthNavigator from '../components/MonthNavigator';
-import BudgetList from '../components/BudgetList';
-import BudgetForm from '../components/BudgetForm';
-import UpcomingOccurrences from '../components/UpcomingOccurrences';
+import React, { useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  RefreshControl,
+  Pressable,
+  ScrollView,
+  Dimensions,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
+import * as Haptics from "expo-haptics";
+import { Ionicons } from "@expo/vector-icons";
+import { Card, FloatingActionButton, LoadingSpinner } from "../components/ui";
+import { useTheme } from "../hooks/useTheme";
+import MonthNavigator from "../components/MonthNavigator";
+import BudgetList from "../components/BudgetList";
+import BudgetForm from "../components/BudgetForm";
+import UpcomingOccurrences from "../components/UpcomingOccurrences";
+import SummaryModal from "../components/SummaryModal";
 import {
   useMonthlyBudgetOverview,
   useCreateBudget,
   useUpdateBudget,
   useDeleteBudget,
-} from '../services/budget';
+} from "../services/budget";
 import {
   Budget,
   BudgetWithSummary,
   CreateBudgetRequest,
   UpdateBudgetRequest,
   BudgetType,
-} from '../types/budget';
+} from "../types/budget";
+
+const { width: screenWidth } = Dimensions.get("window");
 
 export default function BudgetScreen() {
   const { colors } = useTheme();
@@ -34,7 +47,10 @@ export default function BudgetScreen() {
   });
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | undefined>();
-  const [selectedBudgetType, setSelectedBudgetType] = useState<BudgetType>('expense');
+  const [selectedBudgetType, setSelectedBudgetType] =
+    useState<BudgetType>("expense");
+  const [refreshing, setRefreshing] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   // Queries and mutations
   const {
@@ -54,6 +70,17 @@ export default function BudgetScreen() {
       refetch();
     }, [refetch])
   );
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   const handleMonthChange = (year: number, month: number) => {
     setCurrentDate({ year, month });
@@ -75,25 +102,32 @@ export default function BudgetScreen() {
 
   const handleDeleteBudget = (budget: BudgetWithSummary) => {
     Alert.alert(
-      'Delete Budget',
+      "Delete Budget",
       `Are you sure you want to delete "${budget.name}"? This action cannot be undone.`,
       [
         {
-          text: 'Cancel',
-          style: 'cancel',
+          text: "Cancel",
+          style: "cancel",
         },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: () => {
             deleteBudgetMutation.mutate(budget.id, {
               onSuccess: () => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                Haptics.notificationAsync(
+                  Haptics.NotificationFeedbackType.Success
+                );
               },
               onError: (error) => {
-                console.error('Failed to delete budget:', error);
-                Alert.alert('Error', 'Failed to delete budget. Please try again.');
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                console.error("Failed to delete budget:", error);
+                Alert.alert(
+                  "Error",
+                  "Failed to delete budget. Please try again."
+                );
+                Haptics.notificationAsync(
+                  Haptics.NotificationFeedbackType.Error
+                );
               },
             });
           },
@@ -102,8 +136,10 @@ export default function BudgetScreen() {
     );
   };
 
-  const handleBudgetFormSubmit = (data: CreateBudgetRequest | UpdateBudgetRequest) => {
-    if ('id' in data) {
+  const handleBudgetFormSubmit = (
+    data: CreateBudgetRequest | UpdateBudgetRequest
+  ) => {
+    if ("id" in data) {
       // Update existing budget
       updateBudgetMutation.mutate(data, {
         onSuccess: () => {
@@ -112,8 +148,8 @@ export default function BudgetScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         },
         onError: (error) => {
-          console.error('Failed to update budget:', error);
-          Alert.alert('Error', 'Failed to update budget. Please try again.');
+          console.error("Failed to update budget:", error);
+          Alert.alert("Error", "Failed to update budget. Please try again.");
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         },
       });
@@ -126,8 +162,8 @@ export default function BudgetScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         },
         onError: (error) => {
-          console.error('Failed to create budget:', error);
-          Alert.alert('Error', 'Failed to create budget. Please try again.');
+          console.error("Failed to create budget:", error);
+          Alert.alert("Error", "Failed to create budget. Please try again.");
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         },
       });
@@ -135,38 +171,48 @@ export default function BudgetScreen() {
   };
 
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
   const getMonthName = (month: number): string => {
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
     return monthNames[month - 1];
   };
 
   const fabActions = [
     {
-      icon: 'trending-up' as const,
-      label: 'Add Income',
-      onPress: () => handleCreateBudget('income'),
-      color: '#10B981',
+      icon: "trending-up" as const,
+      label: "Add Income",
+      onPress: () => handleCreateBudget("income"),
+      color: "#10B981",
     },
     {
-      icon: 'trending-down' as const,
-      label: 'Add Expense',
-      onPress: () => handleCreateBudget('expense'),
-      color: '#EF4444',
+      icon: "trending-down" as const,
+      label: "Add Expense",
+      onPress: () => handleCreateBudget("expense"),
+      color: "#EF4444",
     },
     {
-      icon: 'save' as const,
-      label: 'Add Savings',
-      onPress: () => handleCreateBudget('savings'),
-      color: '#3B82F6',
+      icon: "save" as const,
+      label: "Add Savings",
+      onPress: () => handleCreateBudget("savings"),
+      color: "#3B82F6",
     },
   ];
 
@@ -175,17 +221,38 @@ export default function BudgetScreen() {
       flex: 1,
       backgroundColor: colors.background,
     },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 8,
+    },
+    summaryButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    summaryButtonText: {
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: "600",
+      marginLeft: 4,
+    },
     content: {
       flex: 1,
       paddingHorizontal: 16,
     },
     title: {
       fontSize: 28,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
-      marginBottom: 8,
-      paddingHorizontal: 16,
-      paddingTop: 16,
     },
     subtitle: {
       fontSize: 16,
@@ -199,9 +266,9 @@ export default function BudgetScreen() {
       marginHorizontal: 16,
     },
     summaryRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       paddingVertical: 8,
     },
     summaryLabel: {
@@ -210,7 +277,7 @@ export default function BudgetScreen() {
     },
     summaryAmount: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     totalRow: {
@@ -221,29 +288,29 @@ export default function BudgetScreen() {
     },
     totalAmount: {
       fontSize: 18,
-      fontWeight: 'bold',
+      fontWeight: "bold",
     },
     positiveAmount: {
-      color: '#10B981',
+      color: "#10B981",
     },
     negativeAmount: {
-      color: '#EF4444',
+      color: "#EF4444",
     },
     loadingContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     errorContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       paddingHorizontal: 32,
     },
     errorText: {
       fontSize: 16,
       color: colors.error,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 16,
     },
     retryButton: {
@@ -255,7 +322,7 @@ export default function BudgetScreen() {
     retryButtonText: {
       color: colors.background,
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
   });
 
@@ -270,7 +337,12 @@ export default function BudgetScreen() {
         />
         <View style={dynamicStyles.loadingContainer}>
           <LoadingSpinner size="large" />
-          <Text style={[dynamicStyles.subtitle, { textAlign: 'center', marginTop: 16 }]}>
+          <Text
+            style={[
+              dynamicStyles.subtitle,
+              { textAlign: "center", marginTop: 16 },
+            ]}
+          >
             Loading your budget...
           </Text>
         </View>
@@ -289,9 +361,13 @@ export default function BudgetScreen() {
         />
         <View style={dynamicStyles.errorContainer}>
           <Text style={dynamicStyles.errorText}>
-            Failed to load budget data. Please check your connection and try again.
+            Failed to load budget data. Please check your connection and try
+            again.
           </Text>
-          <Pressable style={dynamicStyles.retryButton} onPress={() => refetch()}>
+          <Pressable
+            style={dynamicStyles.retryButton}
+            onPress={() => refetch()}
+          >
             <Text style={dynamicStyles.retryButtonText}>Retry</Text>
           </Pressable>
         </View>
@@ -301,7 +377,17 @@ export default function BudgetScreen() {
 
   return (
     <SafeAreaView style={dynamicStyles.container}>
-      <Text style={dynamicStyles.title}>Budget</Text>
+      <View style={dynamicStyles.header}>
+        <Text style={dynamicStyles.title}>Budget</Text>
+        <Pressable
+          style={dynamicStyles.summaryButton}
+          onPress={() => setShowSummaryModal(true)}
+        >
+          <Ionicons name="pie-chart" size={20} color={colors.primary} />
+          <Text style={dynamicStyles.summaryButtonText}>Summary</Text>
+        </Pressable>
+      </View>
+
       <Text style={dynamicStyles.subtitle}>
         {getMonthName(currentDate.month)} {currentDate.year} overview
       </Text>
@@ -329,27 +415,41 @@ export default function BudgetScreen() {
           </View>
 
           <View style={[dynamicStyles.summaryRow, dynamicStyles.totalRow]}>
-            <Text style={[dynamicStyles.summaryLabel, { fontWeight: '600' }]}>
+            <Text style={[dynamicStyles.summaryLabel, { fontWeight: "600" }]}>
               Remaining
             </Text>
-            <Text style={[
-              dynamicStyles.totalAmount,
-              monthlyOverview.totalRemaining >= 0
-                ? dynamicStyles.positiveAmount
-                : dynamicStyles.negativeAmount
-            ]}>
+            <Text
+              style={[
+                dynamicStyles.totalAmount,
+                monthlyOverview.totalRemaining >= 0
+                  ? dynamicStyles.positiveAmount
+                  : dynamicStyles.negativeAmount,
+              ]}
+            >
               {formatCurrency(monthlyOverview.totalRemaining)}
             </Text>
           </View>
         </Card>
       )}
 
-      <View style={dynamicStyles.content}>
+      <ScrollView
+        style={dynamicStyles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
         <UpcomingOccurrences
           daysAhead={30}
           maxItems={5}
           onOccurrencePress={(occurrence) => {
-            console.log('Occurrence pressed:', occurrence.budgetName);
+            console.log("Occurrence pressed:", occurrence.budgetName);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             // Could navigate to budget details or transaction entry
           }}
         />
@@ -357,12 +457,18 @@ export default function BudgetScreen() {
         <BudgetList
           budgets={monthlyOverview?.budgets || []}
           isLoading={isLoading}
-          onBudgetPress={(budget) => console.log('Budget pressed:', budget.name)}
+          onBudgetPress={(budget) => {
+            console.log("Budget pressed:", budget.name);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }}
           onEditBudget={handleEditBudget}
           onDeleteBudget={handleDeleteBudget}
           groupByType={true}
         />
-      </View>
+
+        {/* Add bottom padding for FAB */}
+        <View style={{ height: 100 }} />
+      </ScrollView>
 
       <FloatingActionButton
         actions={fabActions}
@@ -378,8 +484,20 @@ export default function BudgetScreen() {
         }}
         onSubmit={handleBudgetFormSubmit}
         budget={editingBudget}
-        isLoading={createBudgetMutation.isPending || updateBudgetMutation.isPending}
+        isLoading={
+          createBudgetMutation.isPending || updateBudgetMutation.isPending
+        }
       />
+
+      {/* Summary Modal */}
+      {showSummaryModal && monthlyOverview && (
+        <SummaryModal
+          visible={showSummaryModal}
+          onClose={() => setShowSummaryModal(false)}
+          monthlyOverview={monthlyOverview}
+          currentMonth={getMonthName(currentDate.month)}
+        />
+      )}
     </SafeAreaView>
   );
 }

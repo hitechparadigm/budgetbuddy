@@ -1,0 +1,17 @@
+{
+  "name": "Analyze AWS Issue",
+  "description": "Intelligently downloads AWS logs, analyzes them, and auto-cleans up",
+  "trigger": "manual",
+  "actions": [
+    {
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File scripts/download-aws-logs.ps1",
+      "description": "Scan AWS services and download only problematic logs"
+    },
+    {
+      "type": "message",
+      "message": "I've scanned all AWS services and downloaded only the logs that show issues. Let me analyze them for you. The logs will be automatically cleaned up after analysis.",
+      "description": "Notify about intelligent log analysis"
+    }
+  ]
+}
