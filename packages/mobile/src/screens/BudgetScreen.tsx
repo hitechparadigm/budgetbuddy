@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Card, FloatingActionButton, LoadingSpinner } from "../components/ui";
 import { useTheme } from "../hooks/useTheme";
 import MonthNavigator from "../components/MonthNavigator";
+import MonthPickerModal from "../components/MonthPickerModal";
 import BudgetList from "../components/BudgetList";
 import BudgetForm from "../components/BudgetForm";
 import UpcomingOccurrences from "../components/UpcomingOccurrences";
@@ -52,6 +53,7 @@ export default function BudgetScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   // Queries and mutations
   const {
@@ -87,6 +89,12 @@ export default function BudgetScreen() {
   const handleMonthChange = (year: number, month: number) => {
     setCurrentDate({ year, month });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handleMonthPickerSelect = (year: number, month: number) => {
+    setCurrentDate({ year, month });
+    setShowMonthPicker(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
   const handleCreateBudget = (type: BudgetType) => {
@@ -424,11 +432,18 @@ export default function BudgetScreen() {
         {getMonthName(currentDate.month)} {currentDate.year} overview
       </Text>
 
-      <MonthNavigator
-        currentMonth={currentDate.month}
-        currentYear={currentDate.year}
-        onMonthChange={handleMonthChange}
-      />
+      <Pressable
+        onLongPress={() => {
+          setShowMonthPicker(true);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }}
+      >
+        <MonthNavigator
+          currentMonth={currentDate.month}
+          currentYear={currentDate.year}
+          onMonthChange={handleMonthChange}
+        />
+      </Pressable>
 
       {monthlyOverview && (
         <Card variant="elevated" style={dynamicStyles.summaryCard}>
@@ -538,6 +553,15 @@ export default function BudgetScreen() {
         onSubmit={handleQuickAddTransaction}
         categories={quickAddCategories}
         isLoading={createTransactionMutation.isPending}
+      />
+
+      {/* Month Picker Modal */}
+      <MonthPickerModal
+        visible={showMonthPicker}
+        onClose={() => setShowMonthPicker(false)}
+        currentMonth={currentDate.month}
+        currentYear={currentDate.year}
+        onMonthYearSelect={handleMonthPickerSelect}
       />
     </SafeAreaView>
   );
