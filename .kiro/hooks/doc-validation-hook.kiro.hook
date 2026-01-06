@@ -1,0 +1,12 @@
+{
+  "name": "MANDATORY Documentation Validation Hook",
+  "description": "MANDATORY: Ensures all documentation files are updated before every commit",
+  "trigger": {
+    "type": "onAgentComplete"
+  },
+  "action": {
+    "type": "sendMessage",
+    "message": "🚨 MANDATORY DOCUMENTATION UPDATE REQUIRED:\n\nBefore your next commit, you MUST update these files:\n\n📄 README.md - Project overview, features, installation (max 7 days old)\n📄 CHANGELOG.md - Add entry for today's changes (max 24 hours old)\n📄 DEVELOPMENT_LOG.md - Add today's progress entry (max 24 hours old)\n📄 docs/development-status.md - Update current status (max 3 days old)\n\n⚠️ COMMIT WILL FAIL if any documentation is not updated!\n\nRun `npm run docs:validate` to check compliance.\nRun `npm run docs:validate:strict` for strict validation."
+  },
+  "enabled": true
+}
