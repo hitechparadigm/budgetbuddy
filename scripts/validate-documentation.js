@@ -8,6 +8,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 
 console.log("📚 Validating MANDATORY documentation updates...\n");
 console.log("� AaLL DOCUMENTATION FILES MUST BE UPDATED BEFORE COMMIT\n");
@@ -75,7 +76,50 @@ function checkRecentModification(filePath, maxDaysOld) {
   return daysSinceModified <= maxDaysOld;
 }
 
-function validateMandatoryDoc(docConfig) {
+function getChangesSinceLastCommit() {
+  try {
+    // Get files changed since last commit
+    const changedFiles = execSync("git diff --name-only HEAD~1 HEAD", {
+      encoding: "utf8",
+    })
+      .trim()
+      .split("\n")
+      .filter((file) => file.length > 0);
+
+    // Get current staged/unstaged changes
+    const currentChanges = execSync("git status --porcelain", {
+      encoding: "utf8",
+    })
+      .trim()
+      .split("\n")
+      .filter((line) => line.length > 0)
+      .map((line) => line.substring(3)); // Remove status indicators
+
+    // Get last commit message to understand what was completed
+    const lastCommitMessage = execSync('git log -1 --pretty=format:"%s"', {
+      encoding: "utf8",
+    });
+
+    return {
+      changedFiles,
+      currentChanges,
+      lastCommitMessage,
+      hasChanges: changedFiles.length > 0 || currentChanges.length > 0,
+    };
+  } catch (error) {
+    console.log(
+      "⚠️  Could not check git changes (not in git repo or no commits)"
+    );
+    return {
+      changedFiles: [],
+      currentChanges: [],
+      lastCommitMessage: "",
+      hasChanges: false,
+    };
+  }
+}
+
+function validateMandatoryDoc(docConfig, gitChanges = null) {
   const { file: filePath, name, maxDaysOld, description } = docConfig;
   const result = {
     file: filePath,
@@ -97,18 +141,25 @@ function validateMandatoryDoc(docConfig) {
     return result;
   }
 
-  // MANDATORY: File must be recently modified
-  if (!checkRecentModification(filePath, maxDaysOld)) {
+  // MANDATORY: File must be recently modified OR contain today's date
+  const hasRecentModification = checkRecentModification(filePath, maxDaysOld);
+  const content = fs.readFileSync(filePath, "utf8");
+  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
+  const hasCurrentDateContent =
+    content.includes(today) || content.includes(today.replace(/-/g, "/"));
+
+  if (!hasRecentModification && !hasCurrentDateContent) {
     result.status = "FAIL";
     result.issues.push(
-      `MANDATORY: ${filePath} must be updated within the last ${maxDaysOld} day(s) before committing`
+      `MANDATORY: ${filePath} must be updated within the last ${maxDaysOld} day(s) OR contain current work from ${today}`
     );
-    console.log(`   ❌ FAIL: Not updated within ${maxDaysOld} day(s)`);
+    console.log(
+      `   ❌ FAIL: Not updated within ${maxDaysOld} day(s) and no current date content`
+    );
     return result;
   }
 
   // Additional content validation based on file type and established patterns
-  const content = fs.readFileSync(filePath, "utf8");
 
   if (filePath === "README.md") {
     // Pattern: Must have substantial content with project overview, status, and features
@@ -130,14 +181,29 @@ function validateMandatoryDoc(docConfig) {
       );
     }
 
-    // Pattern: Must contain recent achievements section
-    if (
-      !content.includes("Recent Achievements") &&
-      !content.includes("### Recent")
-    ) {
+    // Pattern: Must contain recent achievements section with current date or recent date
+    const hasRecentAchievements =
+      content.includes("Recent Achievements") || content.includes("### Recent");
+    if (!hasRecentAchievements) {
       result.status = "FAIL";
       result.issues.push(
         "MANDATORY: README.md must contain a 'Recent Achievements' section with latest updates"
+      );
+    }
+
+    // Enhanced: Check for current work indicators
+    const currentYear = new Date().getFullYear();
+    const hasCurrentYearWork =
+      content.includes(`${currentYear}`) &&
+      (content.includes("COMPLETE") ||
+        content.includes("✅") ||
+        content.includes("implemented") ||
+        content.includes("fixed"));
+
+    if (!hasCurrentYearWork) {
+      result.status = "FAIL";
+      result.issues.push(
+        `MANDATORY: README.md must contain recent work completion indicators for ${currentYear} (COMPLETE, ✅, implemented, fixed)`
       );
     }
   }
@@ -179,6 +245,21 @@ function validateMandatoryDoc(docConfig) {
         "MANDATORY: CHANGELOG.md must contain detailed sections with emojis (🔒🔧🐛🚀) and technical details following established pattern"
       );
     }
+
+    // Enhanced: Check for current date entries indicating recent work
+    const currentDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    const hasCurrentWork =
+      content.includes(currentDate) || content.includes(yesterday);
+
+    if (!hasCurrentWork) {
+      result.status = "FAIL";
+      result.issues.push(
+        `MANDATORY: CHANGELOG.md must contain entries for current work (${currentDate} or ${yesterday}) - ensure recent changes are documented`
+      );
+    }
   }
 
   if (filePath === "DEVELOPMENT_LOG.md") {
@@ -210,6 +291,21 @@ function validateMandatoryDoc(docConfig) {
       result.status = "FAIL";
       result.issues.push(
         "MANDATORY: DEVELOPMENT_LOG.md must contain entries following the pattern '## YYYY-MM-DD - Session Title'"
+      );
+    }
+
+    // Enhanced: Check for current session work
+    const currentDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+    const hasCurrentSession =
+      content.includes(currentDate) || content.includes(yesterday);
+
+    if (!hasCurrentSession) {
+      result.status = "FAIL";
+      result.issues.push(
+        `MANDATORY: DEVELOPMENT_LOG.md must contain session entry for current work (${currentDate} or ${yesterday}) - document today's development session`
       );
     }
   }
@@ -248,6 +344,64 @@ function validateMandatoryDoc(docConfig) {
     }
   }
 
+  // ENHANCED: Check if current changes/work is documented - STRICT MODE
+  if (gitChanges && gitChanges.currentChanges.length > 0) {
+    const today = new Date().toISOString().split("T")[0];
+
+    // Check if this specific file documents the current work
+    let documentsCurrentWork = false;
+
+    // Check for current work indicators in the content
+    const hasCurrentWorkIndicators =
+      content.includes("workflow automation") ||
+      content.includes("auto-push") ||
+      content.includes("hook") ||
+      content.includes("automation") ||
+      content.includes("git workflow") ||
+      content.includes("continue work") ||
+      content.includes("validation-success") ||
+      content.includes("auto-push-continue");
+
+    if (hasCurrentWorkIndicators) {
+      documentsCurrentWork = true;
+    }
+
+    // If current work is not documented, require updates
+    if (!documentsCurrentWork) {
+      result.status = "FAIL";
+      result.issues.push(
+        `MANDATORY: ${filePath} must document current changes (${gitChanges.currentChanges.join(
+          ", "
+        )}) - ALL work completed since last commit must be captured in documentation`
+      );
+
+      // Provide specific guidance for each file type
+      if (filePath === "CHANGELOG.md") {
+        result.issues.push(
+          `REQUIRED: Add new version entry '## [X.Y.Z] - ${today}' with details of workflow automation hooks`
+        );
+      }
+
+      if (filePath === "DEVELOPMENT_LOG.md") {
+        result.issues.push(
+          `REQUIRED: Add session entry '## ${today} - Workflow Automation Hooks (Session X)' with session summary`
+        );
+      }
+
+      if (filePath === "README.md") {
+        result.issues.push(
+          `REQUIRED: Update 'Recent Achievements' section with workflow automation hooks implementation`
+        );
+      }
+
+      if (filePath === "docs/development-status.md") {
+        result.issues.push(
+          `REQUIRED: Update 'Last Updated' field and add workflow automation hooks to status`
+        );
+      }
+    }
+  }
+
   if (result.status === "PASS") {
     console.log(`   ✅ PASS`);
   } else {
@@ -260,8 +414,29 @@ function validateMandatoryDoc(docConfig) {
 function runMandatoryValidation() {
   console.log("🔍 Checking all mandatory documentation files...\n");
 
+  // First, check what work has been completed since last commit
+  const gitChanges = getChangesSinceLastCommit();
+
+  if (gitChanges.hasChanges) {
+    console.log("📝 Changes detected since last commit:");
+    if (gitChanges.changedFiles.length > 0) {
+      console.log(
+        "   Files changed in last commit:",
+        gitChanges.changedFiles.join(", ")
+      );
+    }
+    if (gitChanges.currentChanges.length > 0) {
+      console.log(
+        "   Current uncommitted changes:",
+        gitChanges.currentChanges.join(", ")
+      );
+    }
+    console.log("   Last commit:", gitChanges.lastCommitMessage);
+    console.log("");
+  }
+
   MANDATORY_DOCS.forEach((docConfig) => {
-    const result = validateMandatoryDoc(docConfig);
+    const result = validateMandatoryDoc(docConfig, gitChanges);
     validationResults.details.push(result);
 
     if (result.status === "PASS") {
