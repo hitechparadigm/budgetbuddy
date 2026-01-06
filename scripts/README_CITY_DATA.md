@@ -1,172 +1,114 @@
-# City Expense Data Generator
+# City Expense Data (Historical)
 
-This script generates realistic monthly expense data for cities using AWS Bedrock AI.
+**Note**: This document describes the city expense data generation process that was completed and the script has been removed as part of codebase cleanup.
 
-## Purpose
+## Current Status
 
-- Generate expense data for onboarding new users
-- Data is cached and reusable to reduce API costs
-- Easily update countries and city counts
-- Run manually by admin when needed
+The city expense data generation is **COMPLETE**. The generated data is available in `packages/shared/src/data/cityExpenseData.ts` and contains expense data for cities across multiple countries.
 
-## Configuration
+## Generated Data
 
-Edit `CITY_CONFIG` in `scripts/generateCityData.ts`:
+The city expense data includes realistic monthly expense estimates for cities in:
 
-```typescript
-const CITY_CONFIG = {
-  'Canada': 100,      // Generate data for 100 Canadian cities
-  'USA': 100,         // Generate data for 100 US cities
-  'UK': 100,          // Generate data for 100 UK cities
-  'Germany': 25,      // Generate data for 25 German cities
-  'France': 25,       // etc...
-  'Netherlands': 15,
-  'Spain': 15,
-  'Italy': 20,
-  'Australia': 50,
-};
-```
+- Canada (100 cities)
+- USA (100 cities)
+- UK (100 cities)
+- Germany (25 cities)
+- France (25 cities)
+- Netherlands (15 cities)
+- Spain (15 cities)
+- Italy (20 cities)
+- Australia (50 cities)
 
 ## Usage
 
-### Prerequisites
-
-1. AWS credentials configured with Bedrock access
-2. Node.js and npm installed
-3. Dependencies installed: `npm install`
-
-### Generate Data
-
-```bash
-npm run generate-city-data
-```
-
-This will:
-1. Call AWS Bedrock for each country
-2. Generate realistic expense data for all cities
-3. Write to `packages/shared/src/data/cityExpenseData.ts`
-4. Include helper functions for searching and finding cities
-
-### After Generation
-
-1. Review the generated data in `cityExpenseData.ts`
-2. Build the shared package: `cd packages/shared && npm run build`
-3. Commit the updated file: `git add packages/shared/src/data/cityExpenseData.ts`
-
-## Cost Estimation
-
-- AWS Bedrock Claude 3.5 Sonnet pricing: ~$0.003 per 1K input tokens, ~$0.015 per 1K output tokens
-- Each country request: ~500 input tokens + ~5000 output tokens = ~$0.08
-- Total for 9 countries: ~$0.72 per full generation
-- **Recommendation**: Run once, cache results, update quarterly
-
-## Output Format
-
-The generated file includes:
+The generated data is available through the shared package:
 
 ```typescript
-export interface CityExpenseData {
+import {
+  getCityExpenseData,
+  getAllCities,
+  searchCities,
+  findNearestCity,
+} from "@budget-buddy/shared/dist/data/cityExpenseData";
+
+// Get data for a specific city
+const torontoData = getCityExpenseData("toronto-ca");
+
+// Search cities
+const canadianCities = searchCities("canada");
+
+// Find nearest city by coordinates
+const nearestCity = findNearestCity(43.6532, -79.3832);
+```
+
+## Data Structure
+
+Each city includes:
+
+```typescript
+interface CityExpenseData {
   city: string;
   country: string;
   latitude: number;
   longitude: number;
   population: number;
-  classification: 'urban' | 'suburban' | 'rural';
+  classification: "urban" | "suburban" | "rural";
   currency: string;
   expenses: {
-    housing: number;
-    transportation: number;
-    groceries: number;
+    housing: number; // Rent/Mortgage
+    homeInsurance: number;
     utilities: number;
+    publicTransit: number;
+    gas: number;
+    carInsurance: number;
+    carMaintenance: number;
+    parking: number;
+    groceries: number;
+    diningOut: number;
+    healthInsurance: number; // 0 for universal healthcare countries
+    doctorVisits: number;
+    medicine: number;
+    dental: number;
+    vision: number;
     entertainment: number;
-    healthcare: number;
-    insurance: number;
     childcare: number;
-    dining: number;
     personal: number;
   };
 }
 ```
 
-## Helper Functions
+## Historical Generation Process
 
-The generated file includes:
+The data was generated using AWS Bedrock AI with the following process:
 
-- `getCityExpenseData(cityKey)` - Get data for a specific city
-- `getAllCities()` - Get all cities
-- `searchCities(query)` - Search by city or country name
-- `findNearestCity(lat, lon)` - Find nearest city within 200km
+1. **AI Generation**: Used Claude 3.5 Sonnet to generate realistic expense data
+2. **Country Coverage**: Generated data for 9 countries with varying city counts
+3. **Quality Assurance**: AI was prompted with specific guidelines for accuracy
+4. **Cost Optimization**: Generated once and cached to avoid recurring API costs
 
-## Adding New Countries
+### Generation Cost
 
-1. Edit `CITY_CONFIG` in `generateCityData.ts`
-2. Add country code mapping in `getCountryCode()` function
-3. Run `npm run generate-city-data`
+- Total cost: ~$0.72 for all countries
+- Generated: 385 cities total
+- One-time generation completed in November 2024
 
-Example:
+## Future Updates
 
-```typescript
-const CITY_CONFIG = {
-  // ... existing countries
-  'Japan': 50,        // Add Japan with 50 cities
-  'Brazil': 30,       // Add Brazil with 30 cities
-};
+If city data needs to be updated in the future:
 
-// Add to getCountryCode():
-const codes: Record<string, string> = {
-  // ... existing codes
-  'Japan': 'jp',
-  'Brazil': 'br',
-};
-```
+1. **Manual Updates**: Edit `packages/shared/src/data/cityExpenseData.ts` directly
+2. **Regeneration**: Would require recreating the generation script
+3. **Recommended Schedule**: Update quarterly only if significant economic changes occur
 
-## Troubleshooting
+## Data Quality Notes
 
-### AWS Credentials Error
+The generated data is based on:
 
-```
-Error: Missing credentials in config
-```
-
-**Solution**: Configure AWS credentials:
-```bash
-aws configure
-```
-
-### Bedrock Access Denied
-
-```
-Error: User is not authorized to perform: bedrock:InvokeModel
-```
-
-**Solution**: Add Bedrock permissions to your IAM user/role:
-```json
-{
-  "Effect": "Allow",
-  "Action": "bedrock:InvokeModel",
-  "Resource": "*"
-}
-```
-
-### Rate Limiting
-
-The script includes 2-second delays between requests to avoid rate limits. If you still hit limits, increase the delay in the `main()` function.
-
-## Maintenance Schedule
-
-**Recommended**: Update city data quarterly (every 3 months) to keep expense estimates current.
-
-**When to update**:
-- Significant economic changes (inflation, recession)
-- Adding new countries
-- User feedback about inaccurate data
-
-## Data Quality
-
-The AI-generated data is based on:
-- Real-world cost of living data
-- Current economic conditions (2025)
-- Local currency values
+- Real-world cost of living data (2024/2025)
+- Country-specific considerations (universal healthcare, etc.)
 - Urban/suburban/rural classifications
+- Local currency values
+- Regional economic conditions
 
-Always review generated data for accuracy before committing.
+The data provides realistic estimates suitable for budgeting application onboarding and should be reviewed periodically for accuracy.
