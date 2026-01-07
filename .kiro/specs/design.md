@@ -4342,3 +4342,255 @@ const checkPermission = (
 - **Android Wear**: Spending alerts and budget summaries
 - **Desktop Apps**: Native desktop applications for power users
 - **Web Extensions**: Browser extensions for online purchase tracking
+
+## Data Export and Backup System Design
+
+### Export Service Architecture
+
+```typescript
+interface ExportService {
+  generateCSVExport(
+    userId: string,
+    options: ExportOptions
+  ): Promise<ExportResult>;
+  generatePDFReport(userId: string, month: string): Promise<ExportResult>;
+  createDataBackup(userId: string): Promise<BackupResult>;
+  restoreFromBackup(userId: string, backupFile: File): Promise<RestoreResult>;
+}
+
+interface ExportOptions {
+  format: "csv" | "pdf" | "json";
+  dateRange: {
+    startDate: string;
+    endDate: string;
+  };
+  categories?: string[];
+  includeTransactions: boolean;
+  includeBudgets: boolean;
+}
+
+interface ExportResult {
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  expiresAt: string;
+  downloadCount: number;
+}
+```
+
+### CSV Export Implementation
+
+```typescript
+class CSVExporter {
+  async generateBudgetCSV(
+    budgets: Budget[],
+    transactions: Transaction[]
+  ): Promise<string> {
+    const headers = [
+      "Date",
+      "Category",
+      "Description",
+      "Amount",
+      "Type",
+      "Budget Month",
+      "Transaction ID",
+      "Currency",
+    ];
+
+    const rows = transactions.map((transaction) => [
+      transaction.date,
+      transaction.categoryName,
+      transaction.description,
+      transaction.amount.toString(),
+      transaction.type,
+      transaction.budgetMonth,
+      transaction.id,
+      transaction.currency || "USD",
+    ]);
+
+    return this.formatCSV(headers, rows);
+  }
+}
+```
+
+### PDF Report Generation
+
+```typescript
+class PDFGenerator {
+  async generateMonthlyReport(
+    budget: Budget,
+    transactions: Transaction[]
+  ): Promise<Buffer> {
+    const doc = new PDFDocument();
+
+    // Header with logo and title
+    this.addHeader(doc, budget.month);
+
+    // Budget summary section
+    this.addBudgetSummary(doc, budget);
+
+    // Category breakdown with charts
+    this.addCategoryBreakdown(doc, budget);
+
+    // Transaction details
+    this.addTransactionDetails(doc, transactions);
+
+    // Footer with generation date
+    this.addFooter(doc);
+
+    return doc;
+  }
+}
+```
+
+## Multi-Currency System Design
+
+### Currency Service Architecture
+
+```typescript
+interface CurrencyService {
+  getSupportedCurrencies(): Promise<Currency[]>;
+  getExchangeRates(baseCurrency: string): Promise<ExchangeRates>;
+  convertAmount(
+    amount: number,
+    fromCurrency: string,
+    toCurrency: string
+  ): Promise<ConversionResult>;
+  formatCurrency(amount: number, currency: string, locale: string): string;
+}
+
+interface Currency {
+  code: string; // ISO 4217 code (USD, EUR, etc.)
+  name: string;
+  symbol: string;
+  decimalPlaces: number;
+  countries: string[];
+}
+
+interface ExchangeRates {
+  baseCurrency: string;
+  rates: Record<string, number>;
+  lastUpdated: string;
+  source: string;
+}
+
+interface ConversionResult {
+  originalAmount: number;
+  originalCurrency: string;
+  convertedAmount: number;
+  convertedCurrency: string;
+  exchangeRate: number;
+  conversionDate: string;
+}
+```
+
+### Multi-Currency Transaction Model
+
+```typescript
+interface MultiCurrencyTransaction extends Transaction {
+  originalAmount?: number;
+  originalCurrency?: string;
+  exchangeRate?: number;
+  conversionDate?: string;
+  isConverted: boolean;
+}
+
+interface CurrencyPreferences {
+  primaryCurrency: string;
+  displayCurrency: string;
+  autoConvert: boolean;
+  showOriginalAmounts: boolean;
+  preferredExchangeRateSource: string;
+}
+```
+
+## Push Notifications System Design
+
+### Notification Service Architecture
+
+```typescript
+interface NotificationService {
+  sendBudgetAlert(userId: string, alert: BudgetAlert): Promise<void>;
+  sendDailyReminder(userId: string): Promise<void>;
+  sendMonthlySummary(userId: string, summary: MonthlySummary): Promise<void>;
+  scheduleRecurringNotifications(
+    userId: string,
+    preferences: NotificationPreferences
+  ): Promise<void>;
+}
+
+interface BudgetAlert {
+  type: "overspending" | "approaching_limit" | "large_transaction";
+  categoryId: string;
+  categoryName: string;
+  currentAmount: number;
+  budgetAmount: number;
+  percentage: number;
+  severity: "low" | "medium" | "high";
+}
+
+interface NotificationPreferences {
+  budgetAlerts: {
+    enabled: boolean;
+    thresholds: number[]; // [80, 90, 100]
+  };
+  dailyReminders: {
+    enabled: boolean;
+    time: string; // HH:MM format
+    timezone: string;
+  };
+  monthlySummary: {
+    enabled: boolean;
+    dayOfMonth: number;
+  };
+  quietHours: {
+    enabled: boolean;
+    startTime: string;
+    endTime: string;
+  };
+}
+```
+
+### AWS SNS Integration
+
+```typescript
+class AWSNotificationService implements NotificationService {
+  private sns: AWS.SNS;
+  private topicArn: string;
+
+  async sendPushNotification(
+    deviceToken: string,
+    notification: PushNotification
+  ): Promise<void> {
+    const message = {
+      default: notification.body,
+      APNS: JSON.stringify({
+        aps: {
+          alert: {
+            title: notification.title,
+            body: notification.body,
+          },
+          badge: notification.badge,
+          sound: notification.sound,
+        },
+        data: notification.data,
+      }),
+      GCM: JSON.stringify({
+        data: {
+          title: notification.title,
+          body: notification.body,
+          ...notification.data,
+        },
+      }),
+    };
+
+    await this.sns
+      .publish({
+        TargetArn: deviceToken,
+        Message: JSON.stringify(message),
+        MessageStructure: "json",
+      })
+      .promise();
+  }
+}
+```

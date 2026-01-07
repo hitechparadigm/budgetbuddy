@@ -1,0 +1,16 @@
+{
+  "name": "budgetbuddy-export-function",
+  "version": "1.0.0",
+  "description": "BudgetBuddy Export Service - CSV and PDF export functionality",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1691.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["budgetbuddy", "export", "csv", "pdf"],
+  "author": "BudgetBuddy Team",
+  "license": "ISC"
+}

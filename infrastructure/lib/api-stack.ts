@@ -201,6 +201,20 @@ export class ApiStack extends cdk.Stack {
     });
 
     /**
+     * Data Export and Backup Functions
+     * Handle CSV/PDF export and data backup functionality
+     */
+    this.functions.exportHandler = new lambda.Function(this, 'ExportHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-export',
+      code: lambda.Code.fromAsset('../backend/functions/export'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy export handler for CSV/PDF export and data backup functionality',
+      timeout: cdk.Duration.minutes(2), // Export operations may take longer for large datasets
+      memorySize: 1024, // More memory for processing large datasets
+    });
+
+    /**
      * Admin Dashboard Functions
      * Handle admin operations and analytics
      */
@@ -531,6 +545,22 @@ export class ApiStack extends cdk.Stack {
     familyResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
       authorizer,
       operationName: 'CreateFamily',
+    });
+
+    // Data Export routes (protected)
+    const exportResource = this.api.root.addResource('export');
+    exportResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.exportHandler), {
+      authorizer,
+      operationName: 'ExportData',
+      methodResponses: [
+        {
+          statusCode: '200',
+          responseParameters: {
+            'method.response.header.Content-Type': true,
+            'method.response.header.Content-Disposition': true,
+          }
+        }
+      ],
     });
 
     // Family health endpoint
