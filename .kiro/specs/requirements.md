@@ -1188,3 +1188,72 @@ The following features are not included in the current MVP:
 **Priority**: Critical P0 (Blocks user onboarding completion)
 **Impact**: Users cannot access AI-generated budgets after completing onboarding
 **Troubleshooting Duration**: 2+ days of investigation and partial fixes
+
+---
+
+### Requirement 42: Data Export and Backup System 📊 **HIGH PRIORITY**
+
+**User Story:** As a user, I want to export my budget data in multiple formats and create comprehensive backups, so that I can analyze my finances in external tools and ensure my data is never lost.
+
+#### Acceptance Criteria
+
+1. WHEN a user requests CSV export, THE Export_Service SHALL generate a CSV file containing all budget categories and transactions with proper formatting
+2. WHEN exporting to CSV, THE Export_Service SHALL include columns for date, category, description, amount, type (income/expense), budget month, and transaction ID
+3. WHEN a user requests PDF export, THE PDF_Generator SHALL create a formatted monthly budget report with visual charts and summaries
+4. WHEN generating PDF reports, THE PDF_Generator SHALL include budget vs actual comparisons, category breakdowns, and spending trends
+5. THE Export_Service SHALL allow users to select specific date ranges for data export (last month, last 3 months, last year, custom range)
+6. THE Export_Service SHALL provide comprehensive data backup in JSON format including all user data (budgets, transactions, categories, settings)
+7. WHEN creating backups, THE Backup_System SHALL include metadata such as backup date, user ID, data version, and file integrity checksums
+8. THE Backup_System SHALL provide restore functionality to import data from backup files with validation and conflict resolution
+9. THE Export_Service SHALL ensure only authenticated users can export their own data with proper security validation
+10. THE Export_Service SHALL complete large dataset exports (1000+ transactions) within 30 seconds and provide progress indicators
+
+**Implementation Status**: Not started
+**Priority**: High (Essential for user trust and data portability)
+**Technology**: Node.js PDF generation, CSV formatting, S3 temporary storage
+
+---
+
+### Requirement 43: Multi-Currency Support System 🌍 **HIGH PRIORITY**
+
+**User Story:** As an international user, I want to use my local currency and handle transactions in multiple currencies, so that I can accurately track my finances regardless of location or travel.
+
+#### Acceptance Criteria
+
+1. THE Currency_Service SHALL support major world currencies (USD, EUR, GBP, CAD, AUD, JPY, CHF, CNY, INR, BRL)
+2. WHEN a user registers, THE System SHALL allow selection of primary currency during onboarding with automatic detection based on location
+3. THE Currency_Service SHALL fetch daily exchange rates from a reliable financial data provider (e.g., ExchangeRate-API, Fixer.io)
+4. WHEN displaying amounts, THE System SHALL format currency according to locale standards (symbols, decimal places, thousand separators)
+5. THE System SHALL allow users to add transactions in different currencies with automatic conversion to primary currency
+6. WHEN converting currencies, THE System SHALL store both original amount/currency and converted amount with exchange rate used
+7. THE System SHALL provide offline currency conversion using cached exchange rates (updated within 24 hours)
+8. THE System SHALL allow users to change their primary currency in settings with historical data conversion options
+9. THE System SHALL display exchange rate information and conversion details for multi-currency transactions
+10. THE System SHALL handle currency conversion for budget planning and reporting with clear indicators of converted amounts
+
+**Implementation Status**: Not started
+**Priority**: High (Global market requirement)
+**Technology**: External exchange rate API, currency formatting libraries
+
+---
+
+### Requirement 44: Push Notifications and Reminders System 📱 **HIGH PRIORITY**
+
+**User Story:** As a mobile user, I want intelligent notifications and reminders about my budget status, so that I stay on track with my financial goals without being overwhelmed by alerts.
+
+#### Acceptance Criteria
+
+1. THE Notification_Service SHALL send push notifications when budget categories exceed 80%, 90%, and 100% of planned amounts
+2. THE Notification_Service SHALL provide daily expense reminder notifications at user-configurable times (default 7:00 PM)
+3. WHEN users haven't recorded transactions for 3+ consecutive days, THE System SHALL send gentle reminder notifications
+4. THE Notification_Service SHALL send monthly budget summary notifications with key metrics and insights
+5. THE System SHALL allow users to customize notification preferences for each type of alert (budget alerts, reminders, summaries)
+6. THE Notification_Service SHALL respect quiet hours settings and user timezone for notification timing
+7. THE System SHALL provide in-app notifications for important events (budget overspending, large transactions, sync issues)
+8. THE Notification_Service SHALL send bill reminders for recurring planned items based on expected dates
+9. THE System SHALL allow users to set custom spending thresholds for large transaction alerts
+10. THE Notification_Service SHALL provide weekly spending summary notifications with category breakdowns and trends
+
+**Implementation Status**: Not started
+**Priority**: High (User engagement and retention)
+**Technology**: AWS SNS, Expo Push Notifications, EventBridge scheduling

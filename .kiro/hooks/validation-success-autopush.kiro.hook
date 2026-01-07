@@ -1,13 +1,14 @@
 {
+  "enabled": true,
   "name": "Validation Success Auto-Push",
   "description": "Automatically pushes when documentation validation passes",
-  "trigger": {
+  "version": "1",
+  "when": {
     "type": "onMessage",
-    "pattern": "ALL MANDATORY DOCUMENTATION CHECKS PASSED|documentation.*validation.*passed|validation.*successful"
+    "pattern": "ALL MANDATORY DOCUMENTATION CHECKS PASSED|DOCUMENTATION CHECKS PASSED|validation.*passed|validation.*successful|commit can proceed"
   },
-  "action": {
+  "then": {
     "type": "askAgent",
-    "message": "✅ DOCUMENTATION VALIDATION PASSED - AUTO-PUSH INITIATED:\n\n**EXECUTE THESE COMMANDS IMMEDIATELY:**\n\n```bash\n# Stage all changes\ngit add .\n\n# Commit with descriptive message\ngit commit -m \"docs: update documentation with completed work since last commit\"\n\n# Push to remote repository\ngit push origin develop\n```\n\n**THEN CONTINUE:**\nAfter successful push, immediately continue with the next development task or work item. Do not wait for user input or confirmation.\n\n**AUTOMATE THIS WORKFLOW** - Execute the git commands and continue working without interruption."
-  },
-  "enabled": true
+    "prompt": "✅ **DOCUMENTATION VALIDATION PASSED - AUTO-PUSH INITIATED**\n\n**EXECUTE THESE COMMANDS IMMEDIATELY:**\n\n```bash\n# Stage all changes\ngit add .\n\n# Commit with descriptive message\ngit commit -m \"docs: update documentation with completed work since last commit\"\n\n# Push to remote repository\ngit push origin develop\n```\n\n**THEN CONTINUE:**\nAfter successful push, immediately continue with the next development task or work item. Do not wait for user input or confirmation.\n\n**AUTOMATE THIS WORKFLOW** - Execute the git commands and continue working without interruption."
+  }
 }

@@ -1079,6 +1079,73 @@ export const BudgetPage: React.FC = () => {
     navigate("/onboarding");
   };
 
+  // Export budget data to CSV
+  const handleExportCSV = async () => {
+    try {
+      const token = localStorage.getItem("budgetbuddy_id_token");
+      if (!token) {
+        alert("Please log in to export data");
+        return;
+      }
+
+      // Show loading state
+      const originalText = document.querySelector(
+        '[onclick="handleExportCSV"]'
+      )?.textContent;
+      const exportButton = document.querySelector(
+        '[onclick="handleExportCSV"]'
+      ) as HTMLButtonElement;
+      if (exportButton) {
+        exportButton.textContent = "Exporting...";
+        exportButton.disabled = true;
+      }
+
+      // Call export API
+      const response = await fetch(`${API_BASE_URL}/export?type=csv`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      // Get the CSV content
+      const csvContent = await response.text();
+
+      // Create download link
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `budget-export-${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log("CSV export completed successfully");
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Failed to export data. Please try again.");
+    } finally {
+      // Reset button state
+      const exportButton = document.querySelector(
+        '[onclick="handleExportCSV"]'
+      ) as HTMLButtonElement;
+      if (exportButton) {
+        exportButton.textContent = "Export CSV";
+        exportButton.disabled = false;
+      }
+    }
+  };
+
   const handleDeleteTransaction = async (
     transactionId: string,
     categoryId: string
@@ -1667,6 +1734,16 @@ export const BudgetPage: React.FC = () => {
 
               {/* Right: Navigation Controls */}
               <div className="flex items-center space-x-2">
+                {/* Export Button - Only show if budget exists */}
+                {budget && (
+                  <button
+                    onClick={handleExportCSV}
+                    className="px-4 py-2 text-sm font-medium text-green-600 border border-green-600 rounded-md hover:bg-green-50 transition-colors"
+                  >
+                    Export CSV
+                  </button>
+                )}
+
                 {/* Reset Button - Only show if budget exists */}
                 {budget && (
                   <button
