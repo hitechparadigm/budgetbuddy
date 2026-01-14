@@ -5,6 +5,7 @@
 
 const AWS = require("aws-sdk");
 const jwt = require("jsonwebtoken");
+const PDFDocument = require("pdfkit");
 
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const TABLE_NAME = process.env.TABLE_NAME || "budgetbuddy-main";
@@ -174,6 +175,342 @@ function generateCSV(budgets, transactions) {
 }
 
 /**
+ * Format currency for display
+ */
+function formatCurrency(amount) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
+}
+
+/**
+ * Format month string (YYYY-MM) to readable format
+ */
+function formatMonth(monthString) {
+  const [year, month] = monthString.split("-");
+  const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+/**
+ * Generate PDF budget report
+ */
+async function generatePDF(budgets, transactions) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ margin: 50, size: "LETTER" });
+      const chunks = [];
+
+      // Collect PDF data
+      doc.on("data", (chunk) => chunks.push(chunk));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", reject);
+
+      // Group data by month
+      const monthlyData = {};
+      budgets.forEach((budget) => {
+        if (!monthlyData[budget.month]) {
+          monthlyData[budget.month] = {
+            budget,
+            transactions: [],
+          };
+        }
+        monthlyData[budget.month].budget = budget;
+      });
+
+      transactions.forEach((transaction) => {
+        const month =
+          transaction.budgetMonth || transaction.date.substring(0, 7);
+        if (!monthlyData[month]) {
+          monthlyData[month] = { budget: null, transactions: [] };
+        }
+        monthlyData[month].transactions.push(transaction);
+      });
+
+      // Sort months
+      const sortedMonths = Object.keys(monthlyData).sort();
+
+      // Title Page
+      doc
+        .fontSize(24)
+        .font("Helvetica-Bold")
+        .text("BudgetBuddy", { align: "center" });
+      doc.moveDown(0.5);
+      doc
+        .fontSize(18)
+        .font("Helvetica")
+        .text("Budget Report", { align: "center" });
+      doc.moveDown(0.5);
+      doc.fontSize(12).text(
+        `Generated: ${new Date().toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })}`,
+        { align: "center" }
+      );
+      doc.moveDown(2);
+
+      // Generate report for each month
+      sortedMonths.forEach((month, index) => {
+        if (index > 0) doc.addPage();
+
+        const data = monthlyData[month];
+        const budget = data.budget;
+
+        // Month Header
+        doc
+          .fontSize(20)
+          .font("Helvetica-Bold")
+          .fillColor("#2563eb")
+          .text(formatMonth(month), { align: "center" });
+        doc.moveDown(1);
+        doc.fillColor("#000000");
+
+        if (budget && budget.groups) {
+          // Calculate totals
+          let totalIncome = 0;
+          let totalSavings = 0;
+          let totalExpenses = 0;
+          let totalSpent = 0;
+
+          budget.groups.forEach((group) => {
+            group.categories.forEach((category) => {
+              const planned = category.plannedAmount || 0;
+              const spent = category.spentAmount || 0;
+
+              if (group.type === "income") {
+                totalIncome += planned;
+              } else if (group.type === "savings") {
+                totalSavings += planned;
+              } else {
+                totalExpenses += planned;
+              }
+              totalSpent += spent;
+            });
+          });
+
+          const remaining = totalIncome - totalSavings - totalExpenses;
+
+          // Summary Box
+          doc.fontSize(14).font("Helvetica-Bold").text("Budget Summary");
+          doc.moveDown(0.5);
+
+          const summaryY = doc.y;
+          doc
+            .fontSize(11)
+            .font("Helvetica")
+            .text(`Total Income:`, 50, summaryY)
+            .text(formatCurrency(totalIncome), 200, summaryY, {
+              align: "right",
+              width: 350,
+            });
+          doc
+            .text(`Total Savings:`, 50)
+            .text(formatCurrency(totalSavings), 200, doc.y - 12, {
+              align: "right",
+              width: 350,
+            });
+          doc
+            .text(`Total Expenses:`, 50)
+            .text(formatCurrency(totalExpenses), 200, doc.y - 12, {
+              align: "right",
+              width: 350,
+            });
+          doc
+            .text(`Total Spent:`, 50)
+            .text(formatCurrency(totalSpent), 200, doc.y - 12, {
+              align: "right",
+              width: 350,
+            });
+
+          doc.moveDown(0.3);
+          doc
+            .strokeColor("#cccccc")
+            .lineWidth(1)
+            .moveTo(50, doc.y)
+            .lineTo(550, doc.y)
+            .stroke();
+          doc.moveDown(0.3);
+
+          doc
+            .fontSize(12)
+            .font("Helvetica-Bold")
+            .text(`Remaining:`, 50)
+            .fillColor(remaining >= 0 ? "#16a34a" : "#dc2626")
+            .text(formatCurrency(remaining), 200, doc.y - 14, {
+              align: "right",
+              width: 350,
+            })
+            .fillColor("#000000");
+
+          doc.moveDown(1.5);
+
+          // Budget Categories by Group
+          budget.groups.forEach((group) => {
+            if (group.categories.length === 0) return;
+
+            doc
+              .fontSize(14)
+              .font("Helvetica-Bold")
+              .text(
+                `${group.icon} ${
+                  group.name.charAt(0).toUpperCase() + group.name.slice(1)
+                }`
+              );
+            doc.moveDown(0.5);
+
+            // Table header
+            doc
+              .fontSize(10)
+              .font("Helvetica-Bold")
+              .text("Category", 50, doc.y, { width: 200, continued: true })
+              .text("Planned", 250, doc.y, { width: 100, align: "right" })
+              .text("Spent", 350, doc.y, { width: 100, align: "right" })
+              .text("Remaining", 450, doc.y, { width: 100, align: "right" });
+
+            doc.moveDown(0.3);
+            doc
+              .strokeColor("#cccccc")
+              .lineWidth(0.5)
+              .moveTo(50, doc.y)
+              .lineTo(550, doc.y)
+              .stroke();
+            doc.moveDown(0.3);
+
+            // Categories
+            group.categories.forEach((category) => {
+              const planned = category.plannedAmount || 0;
+              const spent = category.spentAmount || 0;
+              const remaining = planned - spent;
+
+              const startY = doc.y;
+
+              doc
+                .fontSize(10)
+                .font("Helvetica")
+                .text(`${category.icon} ${category.name}`, 50, startY, {
+                  width: 200,
+                })
+                .text(formatCurrency(planned), 250, startY, {
+                  width: 100,
+                  align: "right",
+                })
+                .text(formatCurrency(spent), 350, startY, {
+                  width: 100,
+                  align: "right",
+                })
+                .fillColor(remaining >= 0 ? "#16a34a" : "#dc2626")
+                .text(formatCurrency(remaining), 450, startY, {
+                  width: 100,
+                  align: "right",
+                })
+                .fillColor("#000000");
+
+              doc.moveDown(0.5);
+            });
+
+            doc.moveDown(0.5);
+          });
+
+          // Transactions Section
+          if (data.transactions.length > 0) {
+            doc.moveDown(1);
+            doc.fontSize(14).font("Helvetica-Bold").text("Transactions");
+            doc.moveDown(0.5);
+
+            // Table header
+            doc
+              .fontSize(10)
+              .font("Helvetica-Bold")
+              .text("Date", 50, doc.y, { width: 80, continued: true })
+              .text("Category", 130, doc.y, { width: 150 })
+              .text("Description", 280, doc.y, { width: 170 })
+              .text("Amount", 450, doc.y, { width: 100, align: "right" });
+
+            doc.moveDown(0.3);
+            doc
+              .strokeColor("#cccccc")
+              .lineWidth(0.5)
+              .moveTo(50, doc.y)
+              .lineTo(550, doc.y)
+              .stroke();
+            doc.moveDown(0.3);
+
+            // Sort transactions by date
+            const sortedTransactions = data.transactions.sort(
+              (a, b) => new Date(a.date) - new Date(b.date)
+            );
+
+            sortedTransactions.forEach((transaction) => {
+              const startY = doc.y;
+
+              // Check if we need a new page
+              if (startY > 700) {
+                doc.addPage();
+                doc.y = 50;
+              }
+
+              const formattedDate = new Date(
+                transaction.date
+              ).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
+
+              doc
+                .fontSize(9)
+                .font("Helvetica")
+                .text(formattedDate, 50, doc.y, { width: 80 })
+                .text(transaction.category || "Uncategorized", 130, startY, {
+                  width: 150,
+                })
+                .text(transaction.description || "", 280, startY, {
+                  width: 170,
+                })
+                .fillColor(
+                  transaction.type === "income" ? "#16a34a" : "#dc2626"
+                )
+                .text(formatCurrency(transaction.amount), 450, startY, {
+                  width: 100,
+                  align: "right",
+                })
+                .fillColor("#000000");
+
+              doc.moveDown(0.4);
+            });
+          }
+        } else {
+          doc
+            .fontSize(12)
+            .font("Helvetica")
+            .text("No budget data available for this month.", {
+              align: "center",
+            });
+        }
+      });
+
+      // Footer on last page
+      doc
+        .fontSize(8)
+        .font("Helvetica")
+        .fillColor("#666666")
+        .text(
+          "Generated by BudgetBuddy - Your Personal Finance Companion",
+          50,
+          750,
+          { align: "center" }
+        );
+
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+/**
  * Main Lambda handler
  */
 exports.handler = async (event) => {
@@ -236,12 +573,35 @@ exports.handler = async (event) => {
         },
         body: csvContent,
       };
+    } else if (exportType === "pdf") {
+      // Get data
+      const [budgets, transactions] = await Promise.all([
+        getBudgets(familyId, startDate, endDate),
+        getTransactions(familyId, startDate, endDate),
+      ]);
+
+      // Generate PDF
+      const pdfBuffer = await generatePDF(budgets, transactions);
+
+      // Return PDF response
+      return {
+        statusCode: 200,
+        headers: {
+          ...getCorsHeaders(),
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="budget-report-${
+            new Date().toISOString().split("T")[0]
+          }.pdf"`,
+        },
+        body: pdfBuffer.toString("base64"),
+        isBase64Encoded: true,
+      };
     } else {
       return {
         statusCode: 400,
         headers: getCorsHeaders(),
         body: JSON.stringify({
-          error: "Unsupported export type. Currently only CSV is supported.",
+          error: "Unsupported export type. Supported types: csv, pdf",
         }),
       };
     }

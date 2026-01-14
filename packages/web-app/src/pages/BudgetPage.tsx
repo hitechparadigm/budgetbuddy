@@ -124,6 +124,7 @@ export const BudgetPage: React.FC = () => {
     return today;
   }); // Format: YYYY-MM
   const [isResizing, setIsResizing] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   // Handle sidebar resize
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -1146,6 +1147,57 @@ export const BudgetPage: React.FC = () => {
     }
   };
 
+  // Export budget data to PDF
+  const handleExportPDF = async () => {
+    try {
+      const token = localStorage.getItem("budgetbuddy_id_token");
+      if (!token) {
+        alert("Please log in to export data");
+        return;
+      }
+
+      // Show loading state using React state
+      setIsExportingPDF(true);
+
+      // Call export API
+      const response = await fetch(`${API_BASE_URL}/export?type=pdf`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export failed: ${response.statusText}`);
+      }
+
+      // Get the PDF content as blob
+      const pdfBlob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `budget-report-${
+        new Date().toISOString().split("T")[0]
+      }.pdf`;
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log("PDF export completed successfully");
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      alert("Failed to export PDF. Please try again.");
+    } finally {
+      // Reset loading state
+      setIsExportingPDF(false);
+    }
+  };
+
   const handleDeleteTransaction = async (
     transactionId: string,
     categoryId: string
@@ -1736,12 +1788,21 @@ export const BudgetPage: React.FC = () => {
               <div className="flex items-center space-x-2">
                 {/* Export Button - Only show if budget exists */}
                 {budget && (
-                  <button
-                    onClick={handleExportCSV}
-                    className="px-4 py-2 text-sm font-medium text-green-600 border border-green-600 rounded-md hover:bg-green-50 transition-colors"
-                  >
-                    Export CSV
-                  </button>
+                  <>
+                    <button
+                      onClick={handleExportCSV}
+                      className="px-4 py-2 text-sm font-medium text-green-600 border border-green-600 rounded-md hover:bg-green-50 transition-colors"
+                    >
+                      Export CSV
+                    </button>
+                    <button
+                      onClick={handleExportPDF}
+                      data-export="pdf"
+                      className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                    >
+                      Export PDF
+                    </button>
+                  </>
                 )}
 
                 {/* Reset Button - Only show if budget exists */}

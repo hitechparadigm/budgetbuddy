@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.21.0] - 2026-01-13
+
+### 📊 PDF EXPORT FUNCTIONALITY - PROFESSIONAL BUDGET REPORTS
+
+- **PDF Export Implementation** - Monthly budget reports with professional formatting and comprehensive data visualization
+
+  - **Feature**: Export budget data as professionally formatted PDF reports
+  - **Backend**: Enhanced export Lambda function with pdfkit library for PDF generation
+  - **Frontend**: Added "Export PDF" button in BudgetPage header next to CSV export
+  - **Report Contents**: Budget summary with totals, category breakdowns by group, transaction history, color-coded spending indicators
+
+- **PDF Report Features**:
+
+  - **Professional Layout**: Title page, monthly sections, formatted tables with proper spacing
+  - **Budget Summary**: Total income, savings, expenses, spent amounts, and remaining balance
+  - **Category Breakdown**: Organized by budget groups (Income, Savings, Expenses) with planned vs spent comparison
+  - **Transaction History**: Complete transaction list with dates, categories, descriptions, and amounts
+  - **Visual Indicators**: Color-coded amounts (green for positive, red for negative/overspent)
+  - **Multi-Month Support**: Generates reports for all months with data, sorted chronologically
+
+- **Technical Implementation**:
+  - **Library**: pdfkit ^0.15.0 for PDF generation
+  - **Endpoint**: Enhanced /export endpoint to support `?type=pdf` parameter
+  - **Response**: Base64-encoded PDF with proper Content-Type and Content-Disposition headers
+  - **Download**: Browser-based download with filename format `budget-report-YYYY-MM-DD.pdf`
+
+### 📋 FILES MODIFIED
+
+1. **backend/functions/export/index.js** - Added PDF generation with pdfkit, comprehensive formatting
+2. **backend/functions/export/package.json** - Added pdfkit dependency
+3. **packages/web-app/src/pages/BudgetPage.tsx** - Added handleExportPDF function and Export PDF button
+4. **.kiro/specs/tasks.md** - Marked Task 24.2 as complete
+
+### ✅ TASK STATUS
+
+**TASK 24.2: COMPLETE** - PDF export functionality fully implemented and operational
+
 ## [1.20.2] - 2026-01-06
 
 ### 🤖 WORKFLOW AUTOMATION HOOKS - SEAMLESS DEVELOPMENT CONTINUATION
