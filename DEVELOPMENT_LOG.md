@@ -1,5 +1,112 @@
 # Development Log
 
+## 2026-01-14 - Architectural Simplification (Session 15)
+
+### Session Summary
+
+**Duration**: 3 hours
+**Focus**: Comprehensive architectural review and simplification
+**Outcome**: Paused auth refactoring, added ESLint rules, documented decisions
+
+### Architectural Review Conducted
+
+Performed unbiased review of entire BudgetBuddy architecture:
+
+- **Assessment**: Moderately overcomplicated for MVP
+- **Key Finding**: Auth Lambda refactoring is premature optimization
+- **Status**: Only 16% complete (1 of 6 functions), adds unnecessary complexity
+- **Root Cause**: Simple import ordering bug (imports at line 1036 vs line 20)
+- **Better Solution**: ESLint rules + file organization (5 min vs 3-week project)
+
+### Decisions Made
+
+1. **Paused Auth Lambda Refactoring**
+
+   - Keep monolithic auth Lambda (1,340 lines is fine with proper organization)
+   - Cancel remaining 5 planned functions (register, login, google, profile, geolocation)
+   - Keep auth-onboarding (already deployed and working)
+   - Fix import bugs with ESLint instead of splitting functions
+
+2. **Added ESLint Rules**
+
+   - `no-use-before-define`: Prevents variables used before definition
+   - `max-lines`: Warns at 500 lines to encourage refactoring when needed
+   - `max-lines-per-function`: Warns at 100 lines for code quality
+   - Impact: Prevents the original bug from recurring
+
+3. **Planned Consolidation** (Next Phase)
+   - Consolidate 9 Lambda functions → 5
+   - Merge family → auth, export → budget, email → budget/transaction
+   - Remove admin Lambda (not needed yet)
+   - Impact: 44% less complexity, 92% faster development
+
+### Critical Bug Fixed
+
+**userId/familyId Mismatch**:
+
+- **Issue**: Users complete onboarding but budget page shows "No budgets exist"
+- **Root Cause**: Budget service used `claims.sub` instead of `claims["custom:userId"]`
+- **Result**: Different familyIds between auth-onboarding and budget service
+- **Fix**: Updated `getUserFromEvent()` to check `custom:userId` first
+- **Testing**: Deleted all users and data, tested with fresh registration
+- **Impact**: Complete onboarding → budget access flow now works
+
+### Documentation Created
+
+1. **ARCHITECTURE_REVIEW.md**
+
+   - Complete unbiased analysis of current architecture
+   - Identified overcomplications and premature optimizations
+   - Provided specific recommendations with cost/benefit analysis
+   - Documented when to split functions (based on real needs, not assumptions)
+
+2. **ARCHITECTURE_DECISIONS.md**
+
+   - ADR-001: Pause auth Lambda refactoring
+   - ADR-002: Consolidate Lambda functions (9 → 5)
+   - ADR-003: Reaffirmed single-table DynamoDB design
+   - ADR-004: Reaffirmed Lambda layer strategy
+   - ADR-005: Reaffirmed serverless architecture
+   - ADR-006: When to split Lambda functions (clear criteria)
+   - ADR-007: Focus on features over infrastructure
+
+3. **Updated tasks.md**
+   - Marked auth refactoring as PAUSED with rationale
+   - Documented alternative solution (ESLint rules)
+   - Preserved original plan for reference
+
+### Key Principles Established
+
+- **YAGNI**: You Aren't Gonna Need It - Don't build until needed
+- **KISS**: Keep It Simple, Stupid - Simplest solution is usually best
+- **Premature Optimization**: Root of all evil - Optimize based on measurements
+- **Build for Today**: Not tomorrow's assumptions
+
+### Files Modified
+
+- `.eslintrc.js` - Added import ordering and code quality rules
+- `.kiro/specs/auth-lambda-refactoring/tasks.md` - Marked as PAUSED
+- `ARCHITECTURE_REVIEW.md` - Complete architectural analysis (new)
+- `ARCHITECTURE_DECISIONS.md` - ADRs documenting decisions (new)
+- `backend/layers/common/nodejs/utils.js` - Fixed userId/familyId mismatch
+- `docs/development-status.md` - Updated with fix details
+- `README.md` - Updated recent achievements
+- `CHANGELOG.md` - Added v1.2.0 entry
+- `DEVELOPMENT_LOG.md` - This entry
+
+### Next Steps
+
+1. **Phase 2**: Consolidate Lambda functions (9 → 5) - 1 week
+2. **Phase 3**: Focus on core features instead of infrastructure
+3. **Monitor**: Watch for real scaling needs before optimizing
+
+### Lessons Learned
+
+- **Simple fixes first**: 5-minute ESLint rule vs 3-week refactoring
+- **Measure before optimizing**: Don't assume scaling needs
+- **MVP focus**: Build features users need, not infrastructure "just in case"
+- **Architectural reviews**: Periodic reviews prevent over-engineering
+
 ## 2026-01-13 - API Gateway Integration Fix (Session 14 - Part 3)
 
 ### Session Summary

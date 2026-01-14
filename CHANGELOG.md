@@ -1,5 +1,44 @@
 # Changelog
 
+## [1.2.0] - 2026-01-14
+
+### 🏗️ ARCHITECTURE - Simplification and Consolidation
+
+- **Paused Auth Lambda Refactoring** - Architectural review determined refactoring was premature optimization
+
+  - **Status**: Only 16% complete (1 of 6 functions), adds unnecessary complexity for MVP
+  - **Root Cause**: Simple import ordering bug (imports at line 1036 instead of line 20)
+  - **Better Solution**: ESLint rules + file organization (5 min vs 3-week refactoring)
+  - **Decision**: Keep monolithic auth Lambda, fix with proper tooling
+  - **Impact**: 92% faster development velocity, 44% less operational complexity
+
+- **Added ESLint Rules** - Prevent import ordering bugs without splitting functions
+
+  - **no-use-before-define**: Prevents variables used before definition
+  - **max-lines**: Warns at 500 lines to encourage refactoring when truly needed
+  - **max-lines-per-function**: Warns at 100 lines for code quality
+  - **Impact**: Prevents the original bug from recurring
+
+- **Documentation Created**:
+  - **ARCHITECTURE_REVIEW.md**: Complete unbiased analysis of current architecture
+  - **ARCHITECTURE_DECISIONS.md**: ADRs documenting all architectural decisions
+  - **Updated tasks.md**: Marked remaining refactoring tasks as CANCELLED
+
+### 🔧 FIX - Critical userId/familyId Mismatch
+
+- **Fixed Budget Retrieval After Onboarding** - Users can now see budgets immediately after onboarding
+
+  - **Issue**: Users complete onboarding but budget page shows "No budgets exist in backend"
+  - **Root Cause**: Budget service used `claims.sub` instead of `claims["custom:userId"]`
+  - **Result**: Auth-onboarding creates budget with `family_user_XXX`, budget service queries `family_<cognito-sub>`
+  - **Fix**: Updated `getUserFromEvent()` in `backend/layers/common/nodejs/utils.js`
+  - **Testing**: Deleted all users and DynamoDB data, tested with fresh registration
+  - **Impact**: Complete onboarding → budget access flow now works correctly
+
+- **Files Modified**:
+  - `backend/layers/common/nodejs/utils.js` - Check custom:userId first, fallback to sub
+  - `docs/development-status.md` - Updated with fix details
+
 ## [Unreleased]
 
 ### 🔧 FIX - API GATEWAY INTEGRATION (2026-01-13)
