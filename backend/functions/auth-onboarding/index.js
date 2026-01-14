@@ -23,8 +23,9 @@ const {
   AuthenticationError,
 } = require("/opt/nodejs/shared/errors");
 
-// Local utilities from Lambda Layer (MUST be at top)
-const { dynamoHelpers, FamilyIdResolver } = require("/opt/nodejs/utils");
+// Local utilities (MUST be at top)
+const dynamoHelpers = require("./utils/dynamo-helpers");
+const FamilyIdResolver = require("./utils/family-id-resolver");
 
 // Environment variables
 const TABLE_NAME = process.env.TABLE_NAME;
