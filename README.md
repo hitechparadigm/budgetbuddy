@@ -22,6 +22,17 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-13)
 
+- 🔧 **API GATEWAY INTEGRATION FIX** - Fixed API Gateway not routing to new auth-onboarding Lambda
+
+  - **Root Cause**: API Gateway deployments not triggered when only Lambda code changes
+  - **Issue**: CDK showed "no changes" despite successful Lambda deployment
+  - **Result**: API Gateway continued routing to old monolithic Lambda (budget creation still failing)
+  - **Solution**: Force API Gateway redeployment by adding timestamp to deployment description
+  - **Verification**: Created `check-api-gateway-integration.ps1` script to verify routing
+  - **Documentation**: Complete root cause analysis in `API_GATEWAY_DEPLOYMENT_FIX.md`
+  - **Impact**: After redeployment, API Gateway will route to new Lambda and budget creation will work
+  - **Status**: Ready to push and deploy via CI/CD
+
 - 🚀 **AUTH-ONBOARDING LAMBDA DEPLOYED VIA CI/CD** - Fixed critical budget creation bug
 
   - **Deployment**: Pushed to develop branch, GitHub Actions CI/CD pipeline deploying automatically
