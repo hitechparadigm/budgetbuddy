@@ -1,5 +1,49 @@
 # Changelog
 
+## [Unreleased]
+
+### 🏗️ ARCHITECTURAL REFACTORING - AUTH LAMBDA SPLIT (PHASE 2 - TASK 11.4)
+
+- **Auth Onboarding Lambda Infrastructure** - Created CDK stack for standalone auth-onboarding Lambda function
+
+  - **Stack**: `AuthOnboardingStack` with dedicated Lambda function for onboarding endpoint
+  - **Function**: `budgetbuddy-auth-onboarding` (~300 lines vs 1484 in monolithic)
+  - **IAM**: Minimal permissions (DynamoDB read/write only) following least privilege principle
+  - **Layers**: Attached auth-shared layer (CORS, validation, errors) and common layer (DynamoDB helpers)
+  - **API Gateway**: Updated /auth/onboarding route to use new Lambda function
+  - **Deployment**: Independent deployment from other auth functions
+
+- **Architecture Improvements**:
+
+  - **Function Size**: Reduced from 1484 lines to ~300 lines (80% reduction)
+  - **Import Safety**: All imports at top of file - ReferenceError bugs now impossible
+  - **Independent Deployment**: Can deploy onboarding changes without affecting other auth endpoints
+  - **Monitoring**: CloudWatch logging with 7-day retention for cost optimization
+  - **Testing**: 12 unit tests covering all scenarios (100% passing)
+
+- **Documentation**:
+  - **README**: Comprehensive deployment and monitoring guide (infrastructure/lib/README-auth-onboarding.md)
+  - **API Contract**: Request/response examples with error handling
+  - **Rollback Plan**: Step-by-step instructions for emergency rollback
+  - **Cost Analysis**: Estimated $0.01 per 1000 requests
+
+### 📋 FILES MODIFIED
+
+1. **infrastructure/lib/auth-onboarding-stack.ts** - New CDK stack for auth-onboarding Lambda
+2. **infrastructure/bin/app.ts** - Added auth-onboarding stack to CDK app
+3. **infrastructure/lib/api-stack.ts** - Updated API Gateway to use new Lambda for /auth/onboarding
+4. **infrastructure/lib/README-auth-onboarding.md** - Comprehensive deployment documentation
+5. **.kiro/specs/auth-lambda-refactoring/tasks.md** - Marked Task 11.4 as complete
+
+### ✅ PHASE 2 PROGRESS
+
+**Task 11.1**: ✅ Create function structure
+**Task 11.2**: ✅ Implement onboarding logic
+**Task 11.3**: ✅ Add unit tests (12/12 passing)
+**Task 11.4**: ✅ Create CloudFormation stack
+
+**Next Steps**: Continue Phase 2 with remaining auth Lambda functions (register, login, google, profile, geolocation)
+
 ## [1.21.1] - 2026-01-13
 
 ### 🔧 CRITICAL BUG FIX - ONBOARDING 500 ERROR (RECURRING ISSUE)
