@@ -237,6 +237,8 @@ This implementation plan refactors the monolithic 1484-line authentication Lambd
     - Define Lambda function resource
     - Define IAM role with minimal permissions
     - Define CloudWatch log group
+    - **⚠️ STATUS**: CDK stack created but NOT deployed to AWS yet
+    - **🚨 ACTION REQUIRED**: Run `cdk deploy budgetbuddy-dev-auth-onboarding`
     - _Requirements: 3.3, 3.4, 3.5_
 
 - [ ] 12. Create auth-geolocation Lambda
