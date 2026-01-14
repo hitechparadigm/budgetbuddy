@@ -1,5 +1,149 @@
 # Development Log
 
+## 2026-01-13 - Critical Onboarding Bug Fix & Architectural Analysis (Session 12)
+
+### Session Summary
+
+**Duration**: 90 minutes
+**Focus**: Fix recurring onboarding 500 error and identify root architectural cause
+**Outcome**: Immediate fix deployed, architectural refactoring plan created to prevent recurrence
+
+### Issue Context
+
+**User-Reported Production Bug**
+
+- **Reporter**: dmytro.malyk@gmail.com
+- **Issue**: Unable to create budget for January 2026 after completing onboarding
+- **Error**: 500 Internal Server Error on `/auth/onboarding` endpoint
+- **User Quote**: "I thought that issue was fixed long ago"
+- **Severity**: Critical - Blocks new user onboarding flow
+
+### Root Cause Analysis (45 minutes)
+
+**Immediate Cause - Import Order Bug**:
+
+- **Location**: `backend/functions/auth/index.js`
+- **Problem**: `dynamoHelpers` and `FamilyIdResolver` imported at line 1036 but used at line 928
+- **Error**: `ReferenceError: dynamoHelpers is not defined` when onboarding endpoint executes
+- **Why It Happened**: Imports placed near usage without realizing earlier usage in 1484-line file
+
+**Deeper Investigation - Recurring Pattern**:
+
+```bash
+# Git history shows multiple fixes to same area:
+3bab970 - CRITICAL FIX: Fix onboarding budget persistence bug (Jan 4)
+90e394b - Fix: Resolve familyId mismatch between auth and budget services
+e022b8c - CRITICAL FIX: Resolve onboarding budget persistence bug
+```
+
+**Architectural Root Cause Identified**:
+
+- **Monolithic Lambda**: 1484 lines handling 8+ endpoints (register, login, Google, profile, onboarding, geolocation)
+- **Violation**: Single Responsibility Principle - one function doing too many things
+- **Temporal Coupling**: Imports used before definition due to scattered logic
+- **Maintenance Burden**: File size makes it impossible to see full context
+- **No Safeguards**: No linting rules or tests to catch import ordering issues
+
+### Solution Implementation (30 minutes)
+
+**Immediate Fix Applied**:
+
+```javascript
+// BEFORE (line 1036 - WRONG):
+const { dynamoHelpers, FamilyIdResolver } = require("/opt/nodejs/utils");
+
+// AFTER (line 20 - CORRECT):
+// Import dynamoHelpers and FamilyIdResolver from utils layer
+const { dynamoHelpers, FamilyIdResolver } = require("/opt/nodejs/utils");
+```
+
+**Verification**:
+
+- ✅ Imports now at top of file after AWS SDK imports
+- ✅ Available when onboarding endpoint executes at line 928
+- ✅ Removed duplicate import from line 1036
+- ✅ All security and lint checks passing
+
+### Architectural Analysis (15 minutes)
+
+**Current State Problems**:
+
+1. **File Size**: 1484 lines - too large to comprehend in one view
+2. **Multiple Responsibilities**: 8+ endpoints in single function
+3. **Scattered Logic**: Onboarding logic spans 200+ lines with imports buried in middle
+4. **No Boundaries**: All endpoints share same scope and imports
+5. **Testing Difficulty**: Hard to test individual endpoints in isolation
+
+**Proposed Long-Term Solution**:
+
+```
+backend/functions/
+├── auth-register/          # Registration endpoint (~150 lines)
+├── auth-login/             # Login endpoint (~100 lines)
+├── auth-google/            # Google Sign-In (~200 lines)
+├── auth-profile/           # Profile management (~100 lines)
+├── auth-onboarding/        # Onboarding completion (~150 lines) ⭐
+├── auth-geolocation/       # Geolocation detection (~80 lines)
+└── shared/                 # Shared utilities
+    ├── cors.js             # CORS header generation
+    ├── token-parser.js     # JWT token parsing
+    └── validators.js       # Input validation
+```
+
+**Benefits of Refactoring**:
+
+- **Smaller Functions**: 100-200 lines each, easy to understand
+- **Clear Boundaries**: Each function has one responsibility
+- **Independent Deployment**: Deploy onboarding changes without touching login
+- **Better Testing**: Focused unit tests per function
+- **Faster Cold Starts**: Smaller bundle sizes
+- **Easier Debugging**: Isolated CloudWatch logs per function
+- **Impossible to Have Import Issues**: Each function has its own imports at top
+
+### Files Modified
+
+1. **backend/functions/auth/index.js** - Moved imports to line 20 (immediate fix)
+2. **CHANGELOG.md** - Added v1.21.1 entry documenting fix and architectural issue
+3. **DEVELOPMENT_LOG.md** - This session entry with comprehensive analysis
+
+### Lessons Learned
+
+**Why This Bug Keeps Recurring**:
+
+- Monolithic functions create maintenance burden that leads to repeated mistakes
+- File size makes it impossible to see full context during development
+- No architectural safeguards to prevent temporal coupling bugs
+- Developers naturally place imports near usage without seeing earlier usage
+
+**Prevention Strategy**:
+
+- **Short-Term**: Add ESLint rule for "no-use-before-define"
+- **Short-Term**: Add unit test that fails if imports are wrong
+- **Long-Term**: Refactor into separate Lambda functions per endpoint
+- **Long-Term**: Establish architectural guidelines for Lambda function size
+
+### Next Steps
+
+**Immediate** (This Session):
+
+- ✅ Commit immediate fix
+- ✅ Update documentation
+- ⏳ Push to trigger CI/CD deployment
+- ⏳ Test with user's account (dmytro.malyk@gmail.com)
+
+**Short-Term** (Next Session):
+
+- Add ESLint rule to prevent import ordering issues
+- Add unit test for module imports
+- Verify fix resolves user's issue
+
+**Long-Term** (Future Sprint):
+
+- Create architectural refactoring task in spec
+- Break auth Lambda into separate functions
+- Establish Lambda function size guidelines (max 300 lines)
+- Implement shared utilities package for common code
+
 ## 2026-01-13 - PDF Export Functionality Implementation (Session 11)
 
 ### Session Summary

@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.21.1] - 2026-01-13
+
+### 🔧 CRITICAL BUG FIX - ONBOARDING 500 ERROR (RECURRING ISSUE)
+
+- **Onboarding Import Order Bug** - Fixed ReferenceError causing 500 error during budget creation
+
+  - **User Report**: dmytro.malyk@gmail.com unable to create budget for January 2026
+  - **Root Cause**: `dynamoHelpers` and `FamilyIdResolver` imported at line 1036 but used starting at line 928
+  - **Error**: `ReferenceError: dynamoHelpers is not defined` when onboarding endpoint executes
+  - **Solution**: Moved imports to line 20 (top of file after AWS SDK imports)
+  - **Impact**: Users can now complete onboarding and create budgets successfully
+
+- **Architectural Issue Identified** - This is a **recurring bug** due to monolithic Lambda design
+
+  - **Problem**: 1484-line auth Lambda function violates Single Responsibility Principle
+  - **Pattern**: Multiple fixes to same area over time (commits 3bab970, 90e394b, e022b8c)
+  - **Why It Recurs**: File size makes it hard to see full context, imports get placed near usage
+  - **Temporal Coupling**: Imports used before definition due to scattered endpoint logic
+
+- **Long-Term Solution Required** - Architectural refactoring needed to prevent recurrence
+  - **Current**: Single monolithic Lambda handling 8+ endpoints (register, login, Google, profile, onboarding, geolocation)
+  - **Proposed**: Separate Lambda functions per endpoint (auth-register, auth-login, auth-onboarding, etc.)
+  - **Benefits**: Smaller functions (100-200 lines), clear boundaries, independent deployment, better testing
+  - **Priority**: High - Production-blocking bug affecting user onboarding
+
+### 📋 FILES MODIFIED
+
+1. **backend/functions/auth/index.js** - Moved imports to top of file (line 20)
+
+### ✅ IMMEDIATE FIX STATUS
+
+**ONBOARDING 500 ERROR: FIXED** - Users can now complete onboarding successfully
+
+**ARCHITECTURAL DEBT: IDENTIFIED** - Refactoring task required to prevent recurrence
+
 ## [1.21.0] - 2026-01-13
 
 ### 📊 PDF EXPORT FUNCTIONALITY - PROFESSIONAL BUDGET REPORTS

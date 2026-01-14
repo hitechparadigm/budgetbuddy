@@ -1,8 +1,56 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-01-13 (PDF Export Functionality Implemented - Task 24.2 Complete)
+**Last Updated**: 2026-01-13 (Critical Onboarding Bug Fixed - Architectural Issue Identified)
 **Current Phase**: Production-Ready with Enterprise Security + Advanced Features
-**Overall Progress**: 93% (PDF export functionality complete, data export system advancing)
+**Overall Progress**: 93% (Onboarding bug fixed, architectural refactoring planned)
+
+## 🔧 CRITICAL ONBOARDING BUG FIX - COMPLETE
+
+### Recurring 500 Error Resolution
+
+- **User-Reported Issue**: dmytro.malyk@gmail.com unable to create budget for January 2026 after onboarding
+  - **Error**: 500 Internal Server Error on `/auth/onboarding` endpoint
+  - **Root Cause**: Import order bug - `dynamoHelpers` and `FamilyIdResolver` imported at line 1036 but used at line 928
+  - **Technical Error**: `ReferenceError: dynamoHelpers is not defined` when onboarding endpoint executes
+  - **Solution**: Moved imports to top of file (line 20) after AWS SDK imports
+  - **Status**: Immediate fix deployed, users can now complete onboarding successfully
+
+### Architectural Issue Identified
+
+- **Deeper Problem**: This is a **recurring bug** due to monolithic Lambda design
+  - **File Size**: 1484-line auth Lambda function handling 8+ endpoints
+  - **Violation**: Single Responsibility Principle - one function doing too many things
+  - **Pattern**: Multiple fixes to same area over time (commits 3bab970, 90e394b, e022b8c)
+  - **Why It Recurs**: File size makes it impossible to see full context, imports get placed near usage
+  - **Temporal Coupling**: Imports used before definition due to scattered endpoint logic
+
+### Long-Term Solution Required
+
+- **Proposed Refactoring**: Split monolithic Lambda into separate functions per endpoint
+
+  ```
+  backend/functions/
+  ├── auth-register/          # Registration endpoint (~150 lines)
+  ├── auth-login/             # Login endpoint (~100 lines)
+  ├── auth-google/            # Google Sign-In (~200 lines)
+  ├── auth-profile/           # Profile management (~100 lines)
+  ├── auth-onboarding/        # Onboarding completion (~150 lines) ⭐
+  ├── auth-geolocation/       # Geolocation detection (~80 lines)
+  └── shared/                 # Shared utilities
+  ```
+
+- **Benefits of Refactoring**:
+
+  - **Smaller Functions**: 100-200 lines each, easy to understand and maintain
+  - **Clear Boundaries**: Each function has one responsibility
+  - **Independent Deployment**: Deploy onboarding changes without touching login
+  - **Better Testing**: Focused unit tests per function
+  - **Faster Cold Starts**: Smaller bundle sizes
+  - **Easier Debugging**: Isolated CloudWatch logs per function
+  - **Impossible to Have Import Issues**: Each function has its own imports at top
+
+- **Priority**: High - Production-blocking bug affecting user onboarding
+- **Next Steps**: Create architectural refactoring task in spec, establish Lambda function size guidelines
 
 ## 📊 PDF EXPORT FUNCTIONALITY - COMPLETE
 
