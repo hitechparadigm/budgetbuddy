@@ -31,6 +31,12 @@ export class AuthStack extends cdk.Stack {
    */
   public readonly userPoolClient: cognito.UserPoolClient;
 
+  /**
+   * Lambda Layer with shared authentication utilities
+   * Exposed as public property for use in API stack
+   */
+  public readonly authSharedLayer: lambda.LayerVersion;
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -273,11 +279,40 @@ export class AuthStack extends cdk.Stack {
       exportName: 'budgetbuddy-user-pool-arn',
     });
 
+    /**
+     * Shared Lambda Layer for authentication utilities
+     *
+     * Contains common code used across all auth Lambda functions:
+     * - CORS handling (cors.js)
+     * - Token parsing (token-parser.js)
+     * - Input validation (validators.js)
+     * - Error formatting (errors.js)
+     */
+    this.authSharedLayer = new lambda.LayerVersion(this, 'AuthSharedLayer', {
+      code: lambda.Code.fromAsset('../backend/layers/shared'),
+      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      description: 'Shared authentication utilities for BudgetBuddy auth Lambda functions',
+      layerVersionName: 'budgetbuddy-auth-shared',
+      removalPolicy: cdk.RemovalPolicy.RETAIN, // Keep old versions for rollback
+    });
+
     // Add comprehensive cost allocation tags
     cdk.Tags.of(this.userPool).add('Component', 'Authentication');
     cdk.Tags.of(this.userPool).add('Service', 'Cognito');
     cdk.Tags.of(this.userPool).add('CostCenter', 'BudgetBuddy-Auth');
     cdk.Tags.of(this.userPool).add('UserType', 'Application-Users');
     cdk.Tags.of(this.userPool).add('SecurityLevel', 'High');
+
+    // Add tags to Lambda Layer
+    cdk.Tags.of(this.authSharedLayer).add('Component', 'Authentication');
+    cdk.Tags.of(this.authSharedLayer).add('Service', 'Lambda-Layer');
+    cdk.Tags.of(this.authSharedLayer).add('CostCenter', 'BudgetBuddy-Auth');
+
+    // Output Lambda Layer ARN for reference
+    new cdk.CfnOutput(this, 'AuthSharedLayerArn', {
+      value: this.authSharedLayer.layerVersionArn,
+      description: 'Lambda Layer ARN for shared authentication utilities',
+      exportName: 'budgetbuddy-auth-shared-layer-arn',
+    });
   }
 }

@@ -1,0 +1,23 @@
+{
+  "name": "@budgetbuddy/auth-shared",
+  "version": "1.0.0",
+  "description": "Shared utilities for BudgetBuddy authentication Lambda functions",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint *.js"
+  },
+  "keywords": [
+    "budgetbuddy",
+    "auth",
+    "shared",
+    "utilities"
+  ],
+  "author": "BudgetBuddy Team",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.56.0"
+  }
+}

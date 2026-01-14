@@ -14,6 +14,7 @@
  */
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 export declare class AuthStack extends cdk.Stack {
     /**
@@ -26,5 +27,10 @@ export declare class AuthStack extends cdk.Stack {
      * Exposed as public property for use in other stacks
      */
     readonly userPoolClient: cognito.UserPoolClient;
+    /**
+     * Lambda Layer with shared authentication utilities
+     * Exposed as public property for use in API stack
+     */
+    readonly authSharedLayer: lambda.LayerVersion;
     constructor(scope: Construct, id: string, props?: cdk.StackProps);
 }
