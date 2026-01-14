@@ -225,7 +225,7 @@ This implementation plan refactors the monolithic 1484-line authentication Lambd
     - **CRITICAL**: Ensure dynamoHelpers and FamilyIdResolver imports are at top of file
     - _Requirements: 1.5, 1.9, 1.10_
 
-  - [ ] 11.3 Add unit tests
+  - [x] 11.3 Add unit tests
 
     - Test successful onboarding
     - Test budget creation
