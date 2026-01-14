@@ -233,7 +233,7 @@ This implementation plan refactors the monolithic 1484-line authentication Lambd
     - Test import availability (prevent ReferenceError)
     - _Requirements: 4.1, 4.4_
 
-  - [ ] 11.4 Create CloudFormation stack
+  - [x] 11.4 Create CloudFormation stack
     - Define Lambda function resource
     - Define IAM role with minimal permissions
     - Define CloudWatch log group

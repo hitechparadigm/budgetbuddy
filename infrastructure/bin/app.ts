@@ -2,10 +2,10 @@
 
 /**
  * AWS CDK Application Entry Point for BudgetBuddy
- * 
+ *
  * This file initializes the CDK app and creates all the necessary stacks
  * for the BudgetBuddy application infrastructure.
- * 
+ *
  * Stacks created:
  * - DatabaseStack: DynamoDB tables and indexes
  * - AuthStack: Cognito User Pools and Identity Pools
@@ -20,6 +20,7 @@ import * as cdk from 'aws-cdk-lib';
 declare const process: any;
 import { DatabaseStack } from '../lib/database-stack';
 import { AuthStack } from '../lib/auth-stack';
+import { AuthOnboardingStack } from '../lib/auth-onboarding-stack';
 import { ApiStack } from '../lib/api-stack';
 import { HostingStack } from '../lib/hosting-stack';
 import { MonitoringStack } from '../lib/monitoring-stack';
@@ -56,6 +57,17 @@ const authStack = new AuthStack(app, `${stackPrefix}-auth`, {
 });
 
 /**
+ * Auth Onboarding Stack - Standalone Lambda for onboarding
+ * Part of architectural refactoring to split monolithic auth Lambda
+ */
+const authOnboardingStack = new AuthOnboardingStack(app, `${stackPrefix}-auth-onboarding`, {
+  env,
+  description: 'BudgetBuddy auth onboarding Lambda - standalone function for user onboarding completion',
+  table: databaseStack.table,
+  authSharedLayer: authStack.authSharedLayer,
+});
+
+/**
  * API Stack - API Gateway and Lambda functions
  * Contains all backend business logic and API endpoints
  * Depends on database and auth stacks
@@ -67,6 +79,7 @@ const apiStack = new ApiStack(app, `${stackPrefix}-api`, {
   table: databaseStack.table,
   userPool: authStack.userPool,
   userPoolClient: authStack.userPoolClient,
+  authOnboardingFunction: authOnboardingStack.onboardingFunction,
 });
 
 /**
@@ -93,8 +106,11 @@ const monitoringStack = new MonitoringStack(app, `${stackPrefix}-monitoring`, {
 });
 
 // Add stack dependencies to ensure proper deployment order
+authOnboardingStack.addDependency(databaseStack);
+authOnboardingStack.addDependency(authStack);
 apiStack.addDependency(databaseStack);
 apiStack.addDependency(authStack);
+apiStack.addDependency(authOnboardingStack);
 monitoringStack.addDependency(databaseStack);
 monitoringStack.addDependency(authStack);
 monitoringStack.addDependency(apiStack);
