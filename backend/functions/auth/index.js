@@ -18,6 +18,9 @@ const {
   PutItemCommand, // eslint-disable-line no-unused-vars
 } = require("@aws-sdk/client-dynamodb");
 
+// Import dynamoHelpers and FamilyIdResolver from utils layer
+const { dynamoHelpers, FamilyIdResolver } = require("/opt/nodejs/utils");
+
 // Environment variables
 const USER_POOL_ID = process.env.USER_POOL_ID;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -1030,12 +1033,6 @@ exports.handler = async (event, _context) => {
           createdAt: currentTime,
           updatedAt: currentTime,
         };
-
-        // Import dynamoHelpers and FamilyIdResolver from utils layer
-        const {
-          dynamoHelpers,
-          FamilyIdResolver,
-        } = require("/opt/nodejs/utils");
 
         console.log("Creating budget with data:", {
           familyId,
