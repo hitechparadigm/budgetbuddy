@@ -33,6 +33,7 @@ export interface ApiStackProps extends cdk.StackProps {
   table: dynamodb.Table;
   userPool: cognito.UserPool;
   userPoolClient: cognito.UserPoolClient;
+  authOnboardingFunction?: lambda.Function; // Optional - for gradual refactoring
 }
 
 export class ApiStack extends cdk.Stack {
@@ -48,8 +49,17 @@ export class ApiStack extends cdk.Stack {
    */
   public readonly functions: { [key: string]: lambda.Function } = {};
 
+  /**
+   * Auth Onboarding Lambda Function (optional)
+   * Part of architectural refactoring - standalone function for onboarding
+   */
+  private readonly authOnboardingFunction?: lambda.Function;
+
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
+
+    // Store auth onboarding function for use in route setup
+    this.authOnboardingFunction = props.authOnboardingFunction;
 
     // Create shared Lambda layer for common dependencies
     const commonLayer = this.createCommonLayer();
@@ -419,7 +429,9 @@ export class ApiStack extends cdk.Stack {
 
     // Onboarding endpoint (protected)
     const onboardingResource = authResource.addResource('onboarding');
-    onboardingResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {
+    // Use new standalone Lambda if available, otherwise fall back to monolithic handler
+    const onboardingHandler = this.authOnboardingFunction || this.functions.authHandler;
+    onboardingResource.addMethod('POST', new apigateway.LambdaIntegration(onboardingHandler), {
       authorizer,
       operationName: 'CompleteOnboarding',
     });

@@ -27,6 +27,7 @@ export interface ApiStackProps extends cdk.StackProps {
     table: dynamodb.Table;
     userPool: cognito.UserPool;
     userPoolClient: cognito.UserPoolClient;
+    authOnboardingFunction?: lambda.Function;
 }
 export declare class ApiStack extends cdk.Stack {
     /**
@@ -41,6 +42,11 @@ export declare class ApiStack extends cdk.Stack {
     readonly functions: {
         [key: string]: lambda.Function;
     };
+    /**
+     * Auth Onboarding Lambda Function (optional)
+     * Part of architectural refactoring - standalone function for onboarding
+     */
+    private readonly authOnboardingFunction?;
     constructor(scope: Construct, id: string, props: ApiStackProps);
     /**
      * Create a Lambda layer with common dependencies
