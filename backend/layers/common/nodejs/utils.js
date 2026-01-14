@@ -163,8 +163,10 @@ const getUserFromEvent = (event) => {
   }
 
   // Handle missing custom attributes gracefully
+  // CRITICAL: Use custom:userId if available, fallback to sub
+  // This ensures consistency with auth-onboarding Lambda
   return {
-    userId: claims.sub,
+    userId: claims["custom:userId"] || claims.sub,
     email: claims.email,
     firstName: claims.given_name || claims["cognito:username"],
     lastName: claims.family_name || "User",
