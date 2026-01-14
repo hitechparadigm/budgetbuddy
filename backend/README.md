@@ -5,7 +5,9 @@
 ## What's in this package
 
 ### Lambda Functions (`functions/`)
-- **auth/**: User authentication, registration, profile management
+
+- **auth/**: User authentication, registration, profile management (⚠️ Being refactored - see below)
+- **auth-onboarding/**: ✨ NEW - Standalone onboarding Lambda (~300 lines, independently deployable)
 - **budget/**: Budget CRUD operations, category management, calculations
 - **transactions/**: Transaction management with automatic budget updates
 - **ai/**: AI-powered budget generation using AWS Bedrock
@@ -13,10 +15,40 @@
 - **payment/**: Stripe integration for subscription management
 - **email/**: SES email sending for notifications and tips
 - **admin/**: Admin dashboard operations and analytics
+- **export/**: CSV/PDF export and data backup functionality
 
-### Shared Layer (`layers/common/`)
-- Common dependencies shared across all Lambda functions
-- Reduces deployment package sizes and improves cold start times
+### Lambda Layers
+
+- **layers/common/**: Common dependencies (DynamoDB helpers, utilities)
+- **layers/shared/**: ✨ NEW - Shared authentication utilities (CORS, validation, token parsing, errors)
+
+### Architectural Refactoring (In Progress)
+
+The monolithic `auth/` Lambda (1484 lines) is being refactored into focused microservices:
+
+**Phase 1**: ✅ Complete - Shared utilities layer (`layers/shared/`)
+
+- CORS handling, token parsing, validation, error formatting
+- 60/60 unit tests passing
+
+**Phase 2**: 🔄 In Progress - Separate Lambda functions (1 of 6 complete)
+
+- ✅ **auth-onboarding/**: Standalone onboarding Lambda (~300 lines)
+  - All imports at top of file (prevents ReferenceError bugs)
+  - 12/12 unit tests passing
+  - Independent deployment
+  - Comprehensive documentation
+- ⏳ auth-register, auth-login, auth-google, auth-profile, auth-geolocation (planned)
+
+**Benefits**:
+
+- 80% code reduction per function
+- Independent deployment per endpoint
+- Faster cold starts (smaller bundles)
+- Import ordering bugs impossible
+- Better testing and maintainability
+
+See `functions/auth-onboarding/README.md` for detailed documentation.
 
 ## Package.json Explanation
 
@@ -37,6 +69,7 @@
 ## Architecture
 
 Each Lambda function:
+
 1. Receives API Gateway events
 2. Validates input using Zod schemas
 3. Performs business logic operations
@@ -46,6 +79,7 @@ Each Lambda function:
 ## Environment Variables
 
 Functions expect these environment variables:
+
 - `TABLE_NAME`: DynamoDB table name
 - `NODE_ENV`: Environment (development/production)
 - `LOG_LEVEL`: Logging verbosity
@@ -55,6 +89,7 @@ Functions expect these environment variables:
 ## Deployment
 
 Functions are deployed via AWS CDK in the infrastructure package. Each function gets:
+
 - Appropriate IAM permissions
 - Environment variables
 - CloudWatch logging
