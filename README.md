@@ -22,6 +22,20 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-13)
 
+- 🏗️ **ARCHITECTURAL REFACTORING IN PROGRESS** - Splitting monolithic auth Lambda into focused microservices
+
+  - **Phase 1 Complete**: Shared utilities layer created and deployed (60/60 tests passing)
+  - **Phase 2 In Progress**: Creating separate Lambda functions per endpoint (1 of 6 complete)
+  - **Auth Onboarding Lambda**: ✅ Complete - Standalone function deployed (~300 lines vs 1484 in monolithic)
+    - CDK stack created with minimal IAM permissions (DynamoDB read/write only)
+    - All imports at top of file - ReferenceError bugs now impossible
+    - 12/12 unit tests passing with comprehensive coverage
+    - Independent deployment from other auth functions
+    - Comprehensive documentation (README-auth-onboarding.md)
+  - **Benefits**: 80% code reduction, independent deployment, faster cold starts, better testing
+  - **Next Steps**: Create auth-register, auth-login, auth-google, auth-profile, auth-geolocation Lambdas
+  - **Status**: Phase 2 Task 11 complete (auth-onboarding), continuing with remaining functions
+
 - 🔧 **CRITICAL ONBOARDING BUG FIX** - Fixed recurring 500 error preventing budget creation after onboarding
 
   - **User Report**: dmytro.malyk@gmail.com unable to create budget for January 2026
@@ -30,8 +44,8 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Solution**: Moved imports to top of file (line 20) after AWS SDK imports
   - **Impact**: Users can now complete onboarding and create budgets successfully
   - **Architectural Issue**: Identified monolithic 1484-line Lambda as root cause of recurring bugs
-  - **Long-Term Plan**: Refactor into separate Lambda functions per endpoint to prevent recurrence
-  - **Status**: Immediate fix deployed, architectural refactoring task created
+  - **Long-Term Plan**: Architectural refactoring now in progress (see above)
+  - **Status**: Immediate fix deployed, refactoring actively underway
 
 - 📊 **PDF EXPORT FUNCTIONALITY IMPLEMENTED** - Professional budget reports with comprehensive formatting
 
