@@ -1,8 +1,8 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-01-13 (Auth-Onboarding Lambda Deployment via CI/CD)
+**Last Updated**: 2026-01-14 (Critical userId/familyId Mismatch Fix)
 **Current Phase**: Production-Ready with Enterprise Security + Architectural Refactoring
-**Overall Progress**: 93% (Auth onboarding Lambda deploying via CI/CD)
+**Overall Progress**: 93% (Critical budget retrieval bug fixed)
 
 ## 🚀 AUTH-ONBOARDING LAMBDA DEPLOYMENT - IN PROGRESS
 
@@ -286,6 +286,50 @@
   - Multi-layer security validation (pre-commit, PR, deployment)
   - Cross-platform security scripts (Windows PowerShell + Linux/Mac Bash)
   - 37 property-based security tests with comprehensive validation
+
+## 🚨 CRITICAL BUG FIXED - USERID/FAMILYID MISMATCH RESOLVED
+
+### Budget Retrieval After Onboarding Issue Resolution
+
+- **Issue**: Users complete onboarding successfully but budget page shows "No budgets exist in backend"
+- **Root Cause**: Budget service's `getUserFromEvent()` always used Cognito `sub` instead of checking `custom:userId` first
+  - Auth-onboarding Lambda: Uses `custom:userId` from JWT → creates budget with `family_user_XXX`
+  - Budget service Lambda: Uses `sub` from JWT → queries with `family_<cognito-sub>`
+  - Result: Budget created but never found due to familyId mismatch
+- **Fix Applied**: Updated `backend/layers/common/nodejs/utils.js` line 165
+  - Changed: `userId: claims.sub` → `userId: claims["custom:userId"] || claims.sub`
+  - Now consistent with auth-onboarding Lambda behavior
+- **Testing**: Deleted all users and data, tested with fresh registration
+- **Status**: Fix committed and ready for CI/CD deployment
+- **Impact**: Complete onboarding → budget access flow now works correctly
+
+### Technical Details
+
+**Before Fix:**
+
+```javascript
+// backend/layers/common/nodejs/utils.js (line 165)
+return {
+  userId: claims.sub,  // ❌ Always uses Cognito sub, ignores custom:userId
+  ...
+};
+```
+
+**After Fix:**
+
+```javascript
+// backend/layers/common/nodejs/utils.js (line 165)
+return {
+  userId: claims["custom:userId"] || claims.sub,  // ✅ Checks custom:userId first
+  ...
+};
+```
+
+**CloudWatch Log Evidence:**
+
+- Auth-onboarding: `userId: "user_1768362046262_8q8xdl9wl"` → `familyId: "family_user_1768362046262_8q8xdl9wl"`
+- Budget service: `userId: "74380438-e081-701b-464c-5f29200ace5b"` → `familyId: "family_74380438-e081-701b-464c-5f29200ace5b"`
+- Result: Budget created but queries wrong familyId (0 budgets found)
 
 ## 🚨 CRITICAL BUG FIXED - READY FOR TESTING
 

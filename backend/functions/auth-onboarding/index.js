@@ -218,6 +218,7 @@ exports.handler = async (event) => {
     );
 
     // Verify budget was created
+    let budgetVerified = false;
     try {
       const verificationBudget = await dynamoHelpers.getItem(
         `FAMILY#${familyId}`,
@@ -226,6 +227,7 @@ exports.handler = async (event) => {
 
       if (verificationBudget) {
         console.log("Budget verification successful");
+        budgetVerified = true;
         FamilyIdResolver.logFamilyIdResolution(
           "auth-onboarding",
           "budget-verification",
@@ -271,7 +273,7 @@ exports.handler = async (event) => {
       // Continue with success response despite verification error
     }
 
-    // Return success response
+    // Return success response with enhanced debugging
     return {
       statusCode: 200,
       headers: getCorsHeaders(origin),
@@ -289,6 +291,9 @@ exports.handler = async (event) => {
           partitionKey: `FAMILY#${familyId}`,
           sortKey: `BUDGET#${currentMonth}`,
           resolutionSource: jwtFamilyId ? "jwt" : "dynamodb-or-fallback",
+          budgetVerified,
+          lambdaFunction: "budgetbuddy-auth-onboarding",
+          timestamp: new Date().toISOString(),
         },
       }),
     };

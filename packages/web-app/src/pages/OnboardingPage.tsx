@@ -55,6 +55,21 @@ export const OnboardingPage: React.FC = () => {
       });
 
       console.log("OnboardingPage: Onboarding completed successfully");
+      console.log("OnboardingPage: Response data:", result);
+
+      // Log debug info if available
+      if (result.debugInfo) {
+        console.log("OnboardingPage: Budget creation debug info:", {
+          budgetCreated: result.budgetCreated,
+          budgetId: result.budgetId,
+          month: result.month,
+          familyId: result.debugInfo.familyId,
+          partitionKey: result.debugInfo.partitionKey,
+          sortKey: result.debugInfo.sortKey,
+          budgetVerified: result.debugInfo.budgetVerified,
+          lambdaFunction: result.debugInfo.lambdaFunction,
+        });
+      }
 
       // Navigate to budget page
       navigate("/budget");
