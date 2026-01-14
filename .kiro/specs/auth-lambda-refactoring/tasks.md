@@ -19,7 +19,7 @@ This implementation plan refactors the monolithic 1484-line authentication Lambd
   - Set up build and deployment scripts
   - _Requirements: 2.1, 2.7_
 
-- [ ] 2. Implement CORS utilities
+- [x] 2. Implement CORS utilities
 
   - [x] 2.1 Extract getCorsHeaders function from monolithic Lambda
 
@@ -33,7 +33,7 @@ This implementation plan refactors the monolithic 1484-line authentication Lambd
     - Add unit tests for OPTIONS requests
     - _Requirements: 2.2_
 
-- [ ] 3. Implement token parsing utilities
+- [x] 3. Implement token parsing utilities
 
   - [x] 3.1 Extract parseAuthToken function
 
@@ -53,7 +53,7 @@ This implementation plan refactors the monolithic 1484-line authentication Lambd
     - Add unit tests for Google token parsing
     - _Requirements: 2.3_
 
-- [ ] 4. Implement validation utilities
+- [x] 4. Implement validation utilities
 
   - [x] 4.1 Extract validateEmail function
 
@@ -72,7 +72,7 @@ This implementation plan refactors the monolithic 1484-line authentication Lambd
     - Add unit tests for onboarding validation
     - _Requirements: 2.4_
 
-- [ ] 5. Implement error handling utilities
+- [x] 5. Implement error handling utilities
 
   - [x] 5.1 Create formatErrorResponse function
 
@@ -93,9 +93,9 @@ This implementation plan refactors the monolithic 1484-line authentication Lambd
 
 ### Phase 2: Create New Lambda Functions (Week 1)
 
-- [ ] 7. Create auth-register Lambda
+- [-] 7. Create auth-register Lambda
 
-  - [ ] 7.1 Create function structure
+  - [-] 7.1 Create function structure
 
     - Create `backend/functions/auth-register/` directory
     - Create index.js with handler function
