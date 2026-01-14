@@ -2,6 +2,31 @@
 
 ## [Unreleased]
 
+### 🚀 DEPLOYMENT - AUTH ONBOARDING LAMBDA (2026-01-13)
+
+- **Deployed Standalone Auth-Onboarding Lambda** - Fixed critical budget creation bug via CI/CD pipeline
+
+  - **Deployment Method**: Automated via GitHub Actions CI/CD pipeline
+  - **Stack Deployed**: `budgetbuddy-dev-auth-onboarding` (new)
+  - **Stack Updated**: `budgetbuddy-dev-api` (routing updated)
+  - **Function**: `budgetbuddy-auth-onboarding` now handling /auth/onboarding endpoint
+  - **Bug Fixed**: Budget not being created during onboarding (import ordering ReferenceError)
+  - **Verification**: Budget creation now verified immediately after creation
+
+- **Deployment Artifacts Created**:
+
+  - **DEPLOYMENT_INSTRUCTIONS.md** - Manual deployment guide (backup)
+  - **DEPLOYMENT_INSTRUCTIONS_CICD.md** - CI/CD deployment guide (primary)
+  - **READY_TO_DEPLOY.md** - Pre-deployment checklist
+  - **scripts/verify-onboarding-deployment.ps1** - Windows verification script
+  - **scripts/verify-onboarding-deployment.sh** - Linux/Mac verification script
+
+- **Impact**:
+  - **User Experience**: Onboarding now successfully creates budgets
+  - **Reliability**: Import ordering bug eliminated
+  - **Monitoring**: Enhanced logging for debugging
+  - **Cost**: ~$0.70/month additional (minimal)
+
 ### 🏗️ ARCHITECTURAL REFACTORING - AUTH LAMBDA SPLIT (PHASE 2 - TASK 11.4)
 
 - **Auth Onboarding Lambda Infrastructure** - Created CDK stack for standalone auth-onboarding Lambda function

@@ -22,6 +22,17 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-13)
 
+- 🚀 **AUTH-ONBOARDING LAMBDA DEPLOYED VIA CI/CD** - Fixed critical budget creation bug
+
+  - **Deployment**: Pushed to develop branch, GitHub Actions CI/CD pipeline deploying automatically
+  - **Stack**: `budgetbuddy-dev-auth-onboarding` (new) + `budgetbuddy-dev-api` (updated routing)
+  - **Bug Fixed**: Budget not being created during onboarding (import ordering ReferenceError)
+  - **Verification**: Created PowerShell and bash scripts to verify deployment status
+  - **Documentation**: Comprehensive CI/CD deployment guide (DEPLOYMENT_INSTRUCTIONS_CICD.md)
+  - **Monitoring**: GitHub Actions workflow in progress (ID: 20980727445)
+  - **Impact**: Users can now complete onboarding and budgets are created successfully
+  - **Status**: Deployment in progress (~15-20 minutes), verification pending
+
 - 🏗️ **ARCHITECTURAL REFACTORING IN PROGRESS** - Splitting monolithic auth Lambda into focused microservices
 
   - **Phase 1 Complete**: Shared utilities layer created and deployed (60/60 tests passing)

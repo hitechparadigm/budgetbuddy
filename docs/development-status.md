@@ -1,8 +1,48 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-01-13 (Architectural Refactoring Phase 2 - Task 11.4 Complete)
+**Last Updated**: 2026-01-13 (Auth-Onboarding Lambda Deployment via CI/CD)
 **Current Phase**: Production-Ready with Enterprise Security + Architectural Refactoring
-**Overall Progress**: 93% (Auth onboarding Lambda deployed, refactoring in progress)
+**Overall Progress**: 93% (Auth onboarding Lambda deploying via CI/CD)
+
+## 🚀 AUTH-ONBOARDING LAMBDA DEPLOYMENT - IN PROGRESS
+
+### CI/CD Deployment Status
+
+**Deployment Method**: GitHub Actions CI/CD Pipeline
+**Workflow**: `deploy-dev.yml`
+**Workflow ID**: 20980727445
+**Status**: In Progress (~15-20 minutes)
+**Branch**: develop
+**Commit**: dfd9a68 - "feat: Deploy auth-onboarding Lambda to fix budget creation bug"
+
+**Stacks Being Deployed**:
+
+- ✅ `budgetbuddy-dev-database` (existing)
+- ✅ `budgetbuddy-dev-auth` (existing)
+- 🔄 `budgetbuddy-dev-auth-onboarding` (NEW - deploying)
+- 🔄 `budgetbuddy-dev-api` (updating routing)
+- ✅ `budgetbuddy-dev-hosting` (existing)
+- ✅ `budgetbuddy-dev-monitoring` (existing)
+
+**Deployment Artifacts Created**:
+
+- `DEPLOYMENT_INSTRUCTIONS_CICD.md` - CI/CD deployment guide
+- `READY_TO_DEPLOY.md` - Pre-deployment checklist
+- `scripts/verify-onboarding-deployment.ps1` - Windows verification script
+- `scripts/verify-onboarding-deployment.sh` - Linux/Mac verification script
+
+**Monitoring Options**:
+
+1. GitHub Actions Web UI: https://github.com/hitechparadigm/budgetbuddy/actions
+2. Kiro CI/CD Hook: Click "Monitor CI/CD Pipeline" button
+3. GitHub CLI: `gh run watch`
+
+**Post-Deployment Verification**:
+
+1. Run `.\scripts\verify-onboarding-deployment.ps1`
+2. Test onboarding with new user account
+3. Verify budget creation successful
+4. Check CloudWatch logs
 
 ## 🏗️ ARCHITECTURAL REFACTORING - IN PROGRESS
 
@@ -17,16 +57,17 @@
 
 **Phase 2**: 🔄 **IN PROGRESS** - Separate Lambda Functions (1 of 6 complete)
 
-**✅ Auth Onboarding Lambda - COMPLETE (Task 11)**
+**✅ Auth Onboarding Lambda - DEPLOYING VIA CI/CD (Task 11)**
 
 - **Function**: `backend/functions/auth-onboarding/` (~300 lines vs 1484 in monolithic)
 - **CDK Stack**: `infrastructure/lib/auth-onboarding-stack.ts` created
 - **Testing**: 12/12 unit tests passing
-- **Documentation**: Comprehensive README with deployment guide
+- **Documentation**: Comprehensive CI/CD deployment guide
 - **IAM**: Minimal permissions (DynamoDB read/write only)
 - **Layers**: auth-shared and common layers attached
 - **API Gateway**: Route updated to use new Lambda
-- **Status**: Ready for deployment to dev environment
+- **Deployment**: CI/CD pipeline in progress (GitHub Actions workflow 20980727445)
+- **Status**: Deploying to dev environment (~15-20 minutes)
 
 **⏳ Remaining Lambda Functions (Planned)**
 

@@ -1,5 +1,124 @@
 # Development Log
 
+## 2026-01-13 - Auth-Onboarding Lambda Deployment via CI/CD (Session 14)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Deploy auth-onboarding Lambda via CI/CD pipeline to fix budget creation bug
+**Outcome**: Successfully pushed to develop branch, CI/CD deployment in progress
+
+### Accomplishments
+
+1. **Created CI/CD Deployment Documentation**
+
+   - `DEPLOYMENT_INSTRUCTIONS_CICD.md` - Complete CI/CD deployment guide
+   - `READY_TO_DEPLOY.md` - Pre-deployment checklist
+   - `DEPLOYMENT_INSTRUCTIONS.md` - Manual deployment backup guide
+
+2. **Created Deployment Verification Scripts**
+
+   - `scripts/verify-onboarding-deployment.ps1` - Windows PowerShell verification
+   - `scripts/verify-onboarding-deployment.sh` - Linux/Mac bash verification
+   - Both scripts check: Stack status, Lambda function, layers, CloudWatch logs
+
+3. **Updated Task Status**
+
+   - Marked Task 11.4 as "CDK stack created but NOT deployed to AWS yet"
+   - Added action required note: "Run `cdk deploy budgetbuddy-dev-auth-onboarding`"
+
+4. **Pushed to GitHub**
+   - Committed all deployment artifacts
+   - Pushed to `develop` branch
+   - GitHub Actions workflow triggered automatically
+   - Workflow ID: 20980727445
+
+### Issues Resolved
+
+**Issue**: Budget not being created during onboarding
+
+- **Root Cause**: New auth-onboarding Lambda created but not deployed to AWS
+- **Evidence**: API Gateway still routing to old monolithic Lambda
+- **Solution**: Deploy via CI/CD pipeline (automatic deployment of all stacks)
+
+**Issue**: User requested CI/CD deployment instead of manual
+
+- **Root Cause**: Initial instructions focused on manual CDK deployment
+- **Solution**: Created comprehensive CI/CD deployment guide
+- **Benefit**: Safer, faster, automated deployment with health checks
+
+### Lessons Learned
+
+1. **CI/CD is Preferred for Multi-Stack Deployments**
+
+   - Automatically deploys all dependent stacks in correct order
+   - Runs pre-deployment checks (linting, tests, security)
+   - Validates health checks post-deployment
+   - Provides detailed logs and rollback capability
+
+2. **Verification Scripts are Essential**
+
+   - Quickly confirm deployment status
+   - Check Lambda function, layers, logs
+   - Validate API Gateway integration
+   - Provide clear success/failure indicators
+
+3. **Documentation Before Deployment**
+
+   - Pre-push hook enforces documentation updates
+   - Prevents outdated documentation
+   - Ensures team awareness of changes
+   - Maintains project knowledge consistency
+
+4. **Deployment Monitoring Options**
+   - GitHub Actions Web UI (visual, detailed)
+   - Kiro CI/CD Hook (AI-assisted debugging)
+   - GitHub CLI (command-line monitoring)
+   - Multiple options increase flexibility
+
+### Next Steps
+
+1. **Monitor CI/CD Deployment** (~15-20 minutes)
+
+   - Watch GitHub Actions workflow progress
+   - Verify all stacks deploy successfully
+   - Check health checks pass
+
+2. **Run Verification Script**
+
+   - Execute `.\scripts\verify-onboarding-deployment.ps1`
+   - Confirm Lambda deployed
+   - Verify API Gateway routing updated
+
+3. **Test Onboarding Flow**
+
+   - Create new test user account
+   - Complete onboarding process
+   - Verify budget is created successfully
+   - Check CloudWatch logs for confirmation
+
+4. **Update Documentation**
+   - Mark Task 11.4 as "DEPLOYED"
+   - Update development-status.md
+   - Document deployment success
+
+### Time Impact
+
+- **Documentation Creation**: 20 minutes
+- **Verification Scripts**: 15 minutes
+- **Git Commit/Push**: 5 minutes
+- **CI/CD Deployment**: 15-20 minutes (in progress)
+- **Total**: ~60 minutes
+
+### Files Modified
+
+- `CHANGELOG.md` - Added deployment entry
+- `DEVELOPMENT_LOG.md` - This session log
+- `.kiro/specs/auth-lambda-refactoring/tasks.md` - Updated task status
+- Created 5 new deployment/verification files
+
+---
+
 ## 2026-01-13 - Auth Lambda Refactoring: Phase 2 Task 11.4 Complete (Session 13)
 
 ### Session Summary
