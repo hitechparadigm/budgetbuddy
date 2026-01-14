@@ -344,6 +344,8 @@ export class ApiStack extends cdk.Stack {
         loggingLevel: apigateway.MethodLoggingLevel.INFO,
         dataTraceEnabled: true,
         metricsEnabled: true,
+        // Force deployment when Lambda integrations change
+        description: `Deployment ${new Date().toISOString()}`,
       },
 
       // Binary media types for file uploads (future feature)
@@ -431,6 +433,14 @@ export class ApiStack extends cdk.Stack {
     const onboardingResource = authResource.addResource('onboarding');
     // Use new standalone Lambda if available, otherwise fall back to monolithic handler
     const onboardingHandler = this.authOnboardingFunction || this.functions.authHandler;
+
+    // Log which handler is being used for debugging
+    if (this.authOnboardingFunction) {
+      console.log('✅ Using standalone auth-onboarding Lambda for /auth/onboarding endpoint');
+    } else {
+      console.log('⚠️  Using monolithic auth Lambda for /auth/onboarding endpoint (fallback)');
+    }
+
     onboardingResource.addMethod('POST', new apigateway.LambdaIntegration(onboardingHandler), {
       authorizer,
       operationName: 'CompleteOnboarding',

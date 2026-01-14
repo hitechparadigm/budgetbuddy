@@ -1,6 +1,71 @@
 # Development Log
 
-## 2026-01-13 - Auth-Onboarding Lambda Deployment via CI/CD (Session 14)
+## 2026-01-13 - API Gateway Integration Fix (Session 14 - Part 3)
+
+### Session Summary
+
+**Duration**: 20 minutes
+**Focus**: Fix API Gateway not routing to new auth-onboarding Lambda
+**Outcome**: Identified root cause and applied fix to force API Gateway redeployment
+
+### Problem Identified
+
+After successful CI/CD deployment of auth-onboarding Lambda, budget creation was still failing:
+
+- **Symptom**: User completes onboarding but budget not created
+- **Root Cause**: API Gateway not routing to new Lambda despite successful deployment
+- **Why**: CDK showed "no changes" because infrastructure code unchanged
+- **Result**: API Gateway continued using old monolithic Lambda with bugs
+
+### Solution Applied
+
+1. **Force API Gateway Redeployment**
+
+   - Modified `infrastructure/lib/api-stack.ts` to include timestamp in deployment description
+   - This forces CDK to detect changes and redeploy API Gateway
+   - Ensures API Gateway uses new Lambda integration
+
+2. **Added Integration Logging**
+
+   - Console logs show which Lambda is being used for `/auth/onboarding`
+   - Helps debug integration issues during deployment
+
+3. **Created Verification Script**
+
+   - `scripts/check-api-gateway-integration.ps1` - Verifies API Gateway routing
+   - Shows which Lambda is integrated with `/auth/onboarding`
+   - Checks recent Lambda invocations and deployment timestamps
+
+4. **Documentation**
+   - `API_GATEWAY_DEPLOYMENT_FIX.md` - Complete root cause analysis
+   - Explains why API Gateway deployments don't auto-trigger
+   - Provides verification steps and lessons learned
+
+### Files Modified
+
+- `infrastructure/lib/api-stack.ts` - Force API Gateway redeployment
+- `scripts/check-api-gateway-integration.ps1` - Verification script (new)
+- `API_GATEWAY_DEPLOYMENT_FIX.md` - Root cause documentation (new)
+- `CHANGELOG.md` - Added API Gateway fix entry
+- `DEVELOPMENT_LOG.md` - This entry
+
+### Next Steps
+
+1. Push changes to GitHub (will trigger CI/CD)
+2. Monitor deployment for API Gateway changes
+3. Run verification script to confirm correct Lambda integration
+4. Test onboarding to verify budget creation works
+
+### Lessons Learned
+
+- API Gateway deployments are separate from Lambda deployments
+- CDK "no changes" doesn't mean everything is up to date
+- Always verify API Gateway integrations after Lambda updates
+- Use verification scripts to catch integration issues early
+
+---
+
+## 2026-01-13 - Auth-Onboarding Lambda Deployment via CI/CD (Session 14 - Part 2)
 
 ### Session Summary
 

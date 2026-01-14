@@ -2,6 +2,33 @@
 
 ## [Unreleased]
 
+### 🔧 FIX - API GATEWAY INTEGRATION (2026-01-13)
+
+- **Fixed API Gateway Not Routing to New Lambda** - Forced API Gateway redeployment to use auth-onboarding Lambda
+
+  - **Root Cause**: API Gateway deployments not triggered when only Lambda code changes
+  - **Issue**: CDK showed "no changes" because infrastructure code unchanged
+  - **Result**: API Gateway continued routing to old monolithic Lambda
+  - **Impact**: Budget creation still failing despite successful Lambda deployment
+
+- **Solution Applied**:
+
+  - **Force Redeployment**: Added timestamp to API Gateway deployment description
+  - **Integration Logging**: Added console logs showing which Lambda is used
+  - **Verification Script**: Created `check-api-gateway-integration.ps1` to verify routing
+  - **Documentation**: Created `API_GATEWAY_DEPLOYMENT_FIX.md` with root cause analysis
+
+- **Files Modified**:
+
+  - `infrastructure/lib/api-stack.ts` - Force API Gateway redeployment
+  - `scripts/check-api-gateway-integration.ps1` - Verification script (new)
+  - `API_GATEWAY_DEPLOYMENT_FIX.md` - Root cause analysis and fix documentation (new)
+
+- **Expected Outcome**:
+  - API Gateway will route `/auth/onboarding` to `budgetbuddy-auth-onboarding` Lambda
+  - Budget creation will work correctly after onboarding
+  - Users will see budgets immediately after completing onboarding
+
 ### 🚀 DEPLOYMENT - AUTH ONBOARDING LAMBDA (2026-01-13)
 
 - **Deployed Standalone Auth-Onboarding Lambda** - Fixed critical budget creation bug via CI/CD pipeline
