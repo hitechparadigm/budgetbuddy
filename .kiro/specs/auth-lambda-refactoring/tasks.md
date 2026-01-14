@@ -209,16 +209,16 @@ This implementation plan refactors the monolithic 1484-line authentication Lambd
     - Define CloudWatch log group
     - _Requirements: 3.3, 3.4, 3.5_
 
-- [ ] 11. Create auth-onboarding Lambda ⭐
+- [x] 11. Create auth-onboarding Lambda ⭐
 
-  - [ ] 11.1 Create function structure
+  - [x] 11.1 Create function structure
 
     - Create `backend/functions/auth-onboarding/` directory
     - Create index.js with handler function
     - Add package.json with dependencies
     - _Requirements: 1.5, 1.7_
 
-  - [ ] 11.2 Implement onboarding logic
+  - [x] 11.2 Implement onboarding logic
 
     - Extract onboarding code from monolithic Lambda
     - Use shared utilities for validation and CORS
