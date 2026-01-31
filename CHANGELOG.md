@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.9.6] - 2026-01-31
+
+### 🧪 TESTING - E2E Notification Tests Complete (Task 11.5)
+
+- **Completed Task 11.5** - Multi-device flow E2E test with real AWS
+  - **Test**: Register 3 devices (iOS, Android, Web), send notification to all, remove device, verify only 2 receive
+  - **Test cases**: 3 (main flow, device limit, disabled devices)
+  - **AWS Operations**: ~12 per test
+  - **Cost**: < $0.01
+  - **File**: `tests/notification-multi-device-e2e.test.js`
+  - **Impact**: All 5 E2E notification tests complete (Tasks 11.1-11.5)
+
+### 🔧 INFRASTRUCTURE - Documentation Validation Fix
+
+- **Fixed safe-commit-push Script** - Stage files before validation
+  - **Problem**: Validation ran before staging, saw no files, always passed
+  - **Solution**: Stage files FIRST, then validate (validation can see staged files)
+  - **Files**: `scripts/safe-commit-push.js`
+  - **Impact**: Documentation validation now enforces mandatory updates correctly
+
+### 📋 TECHNICAL DETAILS
+
+**All E2E Tests Complete**:
+
+- ✅ Task 11.1: Onboarding flow (2 test cases)
+- ✅ Task 11.2: Budget alerts (3 test cases)
+- ✅ Task 11.3: Daily reminders (4 test cases)
+- ✅ Task 11.4: Preferences (4 test cases)
+- ✅ Task 11.5: Multi-device (3 test cases)
+
+**Total**: 5 test files, 17 test cases, ~50 DynamoDB operations, < $0.06 per full run
+
 ## [1.9.5] - 2026-01-31
 
 ### 🧪 TESTING - E2E Notification Tests Complete

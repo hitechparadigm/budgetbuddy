@@ -22,25 +22,22 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-31)
 
-- 🧪 **E2E NOTIFICATION TESTS COMPLETE** - Comprehensive end-to-end tests with real AWS
+- 🧪 **E2E NOTIFICATION TESTS COMPLETE (ALL 5 TASKS)** - Comprehensive end-to-end tests with real AWS
   - **Task 11.1**: Complete onboarding flow (user profile, device registration, preferences, history)
   - **Task 11.2**: Budget alert flow (80%/90%/100% thresholds, deduplication, alert history)
   - **Task 11.3**: Daily reminder flow (3+ day check, quiet hours, time matching ±15 min)
   - **Task 11.4**: Preferences management (web/mobile sync, validation, concurrent updates, persistence)
+  - **Task 11.5**: Multi-device flow (3 devices, removal, device limit, disabled devices)
   - **Testing**: All tests use real DynamoDB (budgetbuddy-main table) with automatic cleanup
-  - **Cost**: < $0.05 total per test run (~40 DynamoDB operations)
-  - **Files**: `tests/notification-*-e2e.test.js` (4 test files, 14 test cases)
+  - **Cost**: < $0.06 total per test run (~50 DynamoDB operations)
+  - **Files**: `tests/notification-*-e2e.test.js` (5 test files, 17 test cases)
   - **Impact**: Validates complete notification system end-to-end with real AWS services
 
-- 🔧 **DOCUMENTATION VALIDATION FIX IMPLEMENTED** - Content-based validation system complete
-  - **Problem Solved**: Validation checked timestamps, not content (allowed commits without proper docs)
-  - **Architecture**: Modular system with 3 utilities + 4 validators
-  - **Utilities**: git-utils (staged files analysis), date-utils (date parsing), content-parser (markdown parsing)
-  - **Validators**: CHANGELOG (version entries), dev-log (session entries), README (recent achievements), status (last updated)
-  - **Main Script**: Refactored validate-documentation.js with orchestration logic
-  - **Testing**: Manual testing complete, all validators working correctly
-  - **Files**: `scripts/utils/*.js`, `scripts/validators/*.js`, `scripts/validate-documentation.js`
-  - **Impact**: Ensures all commits have accurate, current documentation reflecting actual work
+- 🔧 **DOCUMENTATION VALIDATION FIX** - Fixed safe-commit-push script order
+  - **Problem**: Validation ran before staging files, so it saw nothing and always passed
+  - **Solution**: Stage files FIRST, then validate (so validation can see staged files)
+  - **Files**: `scripts/safe-commit-push.js`
+  - **Impact**: Documentation validation now works correctly, enforces mandatory updates
 
 - 🔔 **PUSH NOTIFICATIONS & DAILY REMINDERS** - Complete mobile notification system
   - **Mobile Handlers**: NotificationService class with full lifecycle management
