@@ -1,8 +1,8 @@
 {
   "name": "Task Continuation",
   "version": "2.0.0",
-  "description": "Automatically continues to next, logical task or feature after completion.",
-  "enabled": true,
+  "description": "DISABLED - Functionality merged into autonomous-task-executor.kiro.hook to avoid conflicts",
+  "enabled": false,
   "when": {
     "type": "agentStop"
   },

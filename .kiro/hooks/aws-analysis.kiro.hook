@@ -1,16 +1,10 @@
 {
   "name": "AWS Analysis",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Analyzes AWS CloudWatch logs when explicitly requested",
   "enabled": true,
   "when": {
-    "type": "onMessage",
-    "patterns": [
-      "*analyze aws*",
-      "*check aws logs*",
-      "*download aws logs*",
-      "*aws diagnostics*"
-    ]
+    "type": "userTriggered"
   },
   "then": {
     "type": "askAgent",

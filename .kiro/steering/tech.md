@@ -202,84 +202,16 @@ inclusion: always
 
 ### Testing Tooling
 
-**Unit Testing:**
-
-- **Framework**: Jest
-- **Coverage Target**: > 80%
-- **Mocking**: Jest mocks for AWS SDK
-- **Run**: `npm test` or `npm run test:unit`
-
-**Integration Testing:**
-
-- **Framework**: Jest
-- **Scope**: API endpoints, database operations
-- **Environment**: Isolated test environment
-- **Run**: `npm run test:integration`
-
-**Property-Based Testing:**
-
-- **Framework**: fast-check
-- **Use Cases**: Invariants, edge cases, data validation
-- **Coverage**: Critical business logic
-- **Run**: `npm run test:pbt`
-
-**End-to-End Testing:**
-
-- **Framework**: Playwright (future)
-- **Scope**: User journeys (onboarding, budget creation)
-- **Environment**: Staging
-- **Run**: `npm run test:e2e`
-
-**Security Testing:**
-
-- **npm audit**: Weekly, blocks on high/critical
-- **Dependency scanning**: Dependabot
-- **SAST**: ESLint security rules
-- **DAST**: Manual penetration testing (future)
+**Frameworks**: Jest (unit/integration), fast-check (property-based), Playwright (E2E - future)
+**Coverage**: > 80% | **Security**: npm audit weekly, Dependabot, ESLint rules
+**See**: `.kiro/steering/00-global.md` for detailed testing guidelines and AWS integration testing rules
 
 ### CI/CD Pipeline
 
-**Platform:**
-
-- **Service**: GitHub Actions
-- **Triggers**: Push to develop/main, pull requests
-- **Environments**: dev, staging, prod
-
-**Workflow:**
-
-1. **Pre-deployment Validation**
-   - Security check (npm audit)
-   - Linting (ESLint)
-   - Type checking (TypeScript)
-   - Unit tests
-   - Documentation validation
-
-2. **Build**
-   - CDK synth
-   - Frontend build (Vite)
-   - Lambda packaging
-
-3. **Deploy**
-   - CDK deploy (all stacks)
-   - CloudFront invalidation
-   - Database migrations (if needed)
-
-4. **Post-deployment Health Checks**
-   - API health endpoints
-   - Smoke tests
-   - Rollback on failure
-
-**Branch Protection:**
-
-- **main**: Requires PR, 1 approval, all checks pass
-- **develop**: Requires all checks pass
-- **feature/\***: No restrictions
-
-**Deployment Strategy:**
-
-- **dev**: Auto-deploy on push to develop
-- **staging**: Auto-deploy on push to main
-- **prod**: Manual approval required
+**Platform**: GitHub Actions | **Triggers**: Push to develop/main, PRs | **Environments**: dev, staging, prod
+**Workflow**: Validate → Build → Deploy → Health Checks (see `.kiro/steering/00-global.md` for detailed CI/CD monitoring rules)
+**Branch Protection**: main (PR + approval), develop (all checks), feature/\* (none)
+**Deployment**: dev (auto on develop), staging (auto on main), prod (manual approval)
 
 ### Code Quality Standards
 
@@ -393,10 +325,8 @@ inclusion: always
 ### Development Workflow
 
 **Local Dev**: Frontend `npm run dev`, Backend SAM (future), DB DynamoDB Local (future)
-**AWS Profile**: `hitechparadigm` (see 00-global.md for details)
-**Testing**: Unit `npm test`, Integration `npm run test:integration`, E2E `npm run test:e2e`, Coverage `npm run test:coverage`
-**Validation**: `node scripts/validate-for-commit.js` | **Safe Commit**: `node scripts/safe-commit-push.js "message"`
-**Deployment**: Dev (auto on develop), Staging (auto on main), Prod (manual approval)
+**AWS Profile**: `hitechparadigm`
+**Commands**: See `.kiro/steering/00-global.md` for validation, safe-commit, and deployment workflows
 
 ### Documentation Standards
 
