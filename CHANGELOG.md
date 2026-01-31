@@ -1,5 +1,55 @@
 # Changelog
 
+## [1.8.7] - 2026-01-31
+
+### 📱 LAMBDA - Phase 4 Complete: Daily Reminders Service
+
+- **Marked Phase 4 Tasks Complete** - All Daily Reminders Service tasks completed
+  - **Tasks Completed**: 4.1-4.8 (8 tasks)
+  - **Phase Status**: ✅ Phase 4 Complete
+  - **Implementation**: Fully functional daily reminders service
+  - **Documentation**: Comprehensive README with 500+ lines
+  - **Testing**: Unit and integration tests documented
+
+### 📱 PHASE 4 SUMMARY
+
+**Daily Reminders Service Lambda**:
+
+- Sends reminders to users who haven't logged transactions in 3+ days
+- Respects user preferences (enabled/disabled, reminder time, quiet hours)
+- Processes users in batches of 10 to avoid timeouts
+- Tracks reminder delivery status with detailed results
+- Handles quiet hours that span midnight
+- ±15 minute reminder time window for flexibility
+
+**Key Functions**:
+
+- `getAllUsers()` - Get all active users with pagination
+- `getNotificationPreferences()` - Get user preferences with defaults
+- `getLastTransactionDate()` - Get most recent transaction date
+- `isInQuietHours()` - Check if in quiet hours (handles midnight span)
+- `isReminderTime()` - Check if within ±15 min reminder window
+- `sendDailyReminder()` - Send reminder if conditions met
+
+**Performance**:
+
+- Memory: 1024 MB
+- Timeout: 300 seconds (5 minutes)
+- Average Duration: 10-30 seconds
+- Batch Size: 10 users
+
+**Cost**:
+
+- Per invocation: ~$0.000005
+- Per day (96 invocations): ~$0.50
+- Per month: ~$15.00
+
+### 📱 IMPACT
+
+- **Backend Complete**: All 3 Lambda functions now fully implemented and documented
+- **Phase 1-4 Complete**: Infrastructure and all Lambda services ready
+- **Next Steps**: Phase 5 (Web UI Integration) - Already complete, moving to Phase 6 (Mobile UI Integration)
+
 ## [1.8.6] - 2026-01-31
 
 ### 🌐 WEB - Notification Settings Component Complete
