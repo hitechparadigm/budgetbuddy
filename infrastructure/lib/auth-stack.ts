@@ -11,6 +11,8 @@
  * - Password policies for security
  * - MFA support (optional)
  * - Lambda triggers for custom authentication flows
+ *
+ * Last Updated: 2026-01-31 - Redeployment to fix UPDATE_ROLLBACK_COMPLETE state
  */
 
 import * as cdk from 'aws-cdk-lib';
