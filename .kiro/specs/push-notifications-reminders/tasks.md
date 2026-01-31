@@ -540,14 +540,14 @@ This implementation plan covers the complete push notification and daily reminde
     - Test with multiple devices per user
     - _Requirements: 1.1, 1.2, 1.6, 8.10_
 
-  - [ ] 10.2 Test notification delivery flow
+  - [x] 10.2 Test notification delivery flow
     - Register device
     - Trigger budget alert
     - Verify notification sent to device
     - Verify notification stored in history
     - _Requirements: 1.3, 1.4, 2.1-2.10, 10.1, 10.2_
 
-  - [ ] 10.3 Test preferences update flow
+  - [x] 10.3 Test preferences update flow
     - Update preferences via API
     - Verify preferences saved in DynamoDB
     - Verify behavior changes (e.g., quiet hours respected)
@@ -639,7 +639,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Add to design.md
     - _Requirements: All_
 
-  - [-] 12.4 Update user documentation
+  - [x] 12.4 Update user documentation
     - Add notification settings guide
     - Add troubleshooting guide
     - Add FAQ section
