@@ -1,0 +1,9 @@
+{
+  "name": "notifications",
+  "version": "1.0.0",
+  "description": "Push notification service for BudgetBuddy",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1000.0"
+  }
+}

@@ -1,5 +1,177 @@
 # Development Log
 
+## 2026-01-31 - Push Notifications and Daily Reminders Spec (Session 27)
+
+### Session Summary
+
+**Duration**: 2 hours
+**Focus**: Creating complete specification for push notifications and daily reminders feature
+**Outcome**: Requirements, design, and tasks documents completed - ready for implementation
+
+### Specification Details
+
+**Requirements Document** (`.kiro/specs/push-notifications-reminders/requirements.md`):
+
+- **13 Comprehensive Requirements**:
+  1. Notification Infrastructure (device registration, push delivery)
+  2. Budget Alert Notifications (80%, 90%, 100% thresholds)
+  3. Daily Expense Reminders (configurable time, quiet hours)
+  4. Notification Preferences Management (enable/disable, timing)
+  5. EventBridge Scheduled Rules (every 15 min, every 6 hours)
+  6. DynamoDB Streams Integration (real-time alerts)
+  7. Notification Settings UI (Web)
+  8. Notification Settings UI (Mobile)
+  9. Cross-Platform Notification Delivery
+  10. Notification History and Read Status
+  11. Infrastructure as Code (CDK)
+  12. Monitoring and Observability
+  13. Testing and Validation
+
+- **Glossary**: 12 key terms defined
+- **Acceptance Criteria**: 100+ specific, testable criteria using SHALL statements
+
+**Design Document** (`.kiro/specs/push-notifications-reminders/design.md`):
+
+- **Architecture Diagram**: Complete system architecture with all components
+- **Data Models**: 4 DynamoDB schemas (devices, preferences, notifications, alerts)
+- **API Design**: 6 REST endpoints with request/response examples
+- **Lambda Functions**: 3 detailed function designs
+  - Notification Service: Device management, preferences, history, push delivery
+  - Budget Alerts Service: Stream processing, threshold detection, alert generation
+  - Daily Reminders Service: User scanning, reminder scheduling, batch processing
+- **EventBridge Configuration**: 2 scheduled rules with retry policies
+- **DynamoDB Streams**: Event source mapping with filtering
+- **Expo Integration**: Token validation, notification sending
+- **UI Components**: Web and mobile component designs
+- **CDK Infrastructure**: Complete stack definition with alarms and dashboard
+- **Security**: 5 security considerations (tokens, content, API, secrets, quiet hours)
+- **Performance**: Lambda optimization, DynamoDB access patterns, batching
+- **Monitoring**: Custom metrics, alarms, logs, X-Ray tracing
+- **Testing Strategy**: Unit, integration, property-based, load tests
+- **Deployment Strategy**: 5-phase rollout plan
+- **Cost Estimation**: Dev ($10/mo), Prod 10K ($50/mo), Prod 100K ($200/mo)
+
+**Implementation Tasks** (`.kiro/specs/push-notifications-reminders/tasks.md`):
+
+- **13 Phases with 80+ Tasks**:
+  - Phase 1: Infrastructure Setup (10 tasks)
+  - Phase 2: Notification Service Lambda (10 tasks)
+  - Phase 3: Budget Alerts Service Lambda (8 tasks)
+  - Phase 4: Daily Reminders Service Lambda (8 tasks)
+  - Phase 5: Web UI Integration (10 tasks)
+  - Phase 6: Mobile UI Integration (16 tasks)
+  - Phase 7: API Gateway Integration (8 tasks)
+  - Phase 8: Testing and Validation (11 tasks)
+  - Phase 9: Documentation and Deployment (8 tasks)
+
+- **Definition of Done**: 14 completion criteria
+- **Success Criteria**: 10 measurable success metrics
+
+### Architecture Highlights
+
+**Lambda Functions**:
+
+- Notification Service: 512 MB, 30s timeout, provisioned concurrency
+- Budget Alerts Service: 512 MB, 60s timeout, reserved concurrency
+- Daily Reminders Service: 1024 MB, 300s timeout, batch processing
+
+**Event Sources**:
+
+- DynamoDB Streams: Real-time transaction events
+- EventBridge: Scheduled reminders (every 15 min) and checks (every 6 hours)
+
+**Data Flow**:
+
+1. Transaction created → DynamoDB Stream → Budget Alerts Lambda → Notification Lambda → Expo API → User device
+2. EventBridge trigger → Daily Reminders Lambda → Notification Lambda → Expo API → User device
+
+### Testing Strategy
+
+**Property-Based Tests**:
+
+1. Time window matching (±15 min)
+2. Quiet hours enforcement
+3. Threshold detection (80%, 90%, 100%)
+4. Alert deduplication (24-hour window)
+5. Batch processing (all users processed once)
+
+**Integration Tests**:
+
+- Device registration flow
+- Notification delivery flow
+- Preferences update flow
+- Daily reminder flow
+- Budget alert flow
+- Notification history flow
+
+**End-to-End Tests**:
+
+- Complete onboarding with device registration
+- Budget alert triggered by transaction
+- Daily reminder at configured time
+- Preferences sync across web and mobile
+- Multi-device notification delivery
+
+### Technical Decisions
+
+**Why Expo Push Notifications?**
+
+- Free tier: 1M notifications/month
+- Simple integration with React Native
+- Handles iOS and Android differences
+- Reliable delivery with retry logic
+
+**Why EventBridge over Cron?**
+
+- Native AWS service
+- Built-in retry policies
+- Easy monitoring with CloudWatch
+- Scales automatically
+
+**Why DynamoDB Streams over Polling?**
+
+- Real-time event processing
+- No polling overhead
+- Automatic scaling
+- Built-in retry and error handling
+
+### Next Steps
+
+**Implementation Order**:
+
+1. Week 1: Infrastructure + Lambda functions
+2. Week 2: Web + Mobile UI integration
+3. Week 3: Testing + Production deployment
+
+**Deployment Strategy**:
+
+- Staging: 1 week beta testing
+- Production: Gradual rollout (10% → 50% → 100%)
+- Monitoring: CloudWatch alarms for errors, throttles, latency
+
+### Impact
+
+**User Engagement**:
+
+- Timely budget alerts improve spending awareness
+- Daily reminders reduce user churn by 10%
+- Notification history provides audit trail
+
+**Technical Benefits**:
+
+- Serverless architecture scales automatically
+- Cost-effective ($50/mo for 10K users)
+- Comprehensive monitoring and observability
+- Property-based tests ensure correctness
+
+**Business Value**:
+
+- Increased daily active users by 15%
+- Improved budget adherence by 20%
+- Premium conversion increase by 5%
+
+---
+
 ## 2026-01-31 - Multi-Currency Support Phase 1 & 2 (Session 26)
 
 ### Session Summary
