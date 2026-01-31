@@ -243,6 +243,71 @@ async function updateNotificationPreferences(userId, preferences) {
 }
 
 /**
+ * Get notification history for user
+ */
+async function getNotificationHistory(
+  userId,
+  limit = 50,
+  lastEvaluatedKey = null,
+) {
+  try {
+    const params = {
+      TableName: TABLE_NAME,
+      KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
+      ExpressionAttributeValues: {
+        ":pk": `USER#${userId}`,
+        ":sk": "NOTIFICATION#",
+      },
+      Limit: limit,
+      ScanIndexForward: false, // Sort by SK descending (newest first)
+    };
+
+    if (lastEvaluatedKey) {
+      params.ExclusiveStartKey = lastEvaluatedKey;
+    }
+
+    const result = await dynamodb.query(params).promise();
+
+    return {
+      notifications: result.Items || [],
+      lastEvaluatedKey: result.LastEvaluatedKey,
+    };
+  } catch (error) {
+    console.error("Error getting notification history:", error);
+    throw error;
+  }
+}
+
+/**
+ * Mark notification as read
+ */
+async function markNotificationAsRead(userId, notificationId) {
+  try {
+    await dynamodb
+      .update({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `USER#${userId}`,
+          SK: `NOTIFICATION#${notificationId}`,
+        },
+        UpdateExpression: "SET #read = :read",
+        ExpressionAttributeNames: {
+          "#read": "read",
+        },
+        ExpressionAttributeValues: {
+          ":read": true,
+        },
+      })
+      .promise();
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+    throw error;
+  }
+}
+
+/**
  * Main Lambda handler
  */
 exports.handler = async (event) => {
@@ -359,6 +424,57 @@ exports.handler = async (event) => {
       }
 
       const result = await updateNotificationPreferences(userId, preferences);
+
+      return {
+        statusCode: 200,
+        headers: getCorsHeaders(),
+        body: JSON.stringify(result),
+      };
+    }
+
+    // Get notification history
+    if (method === "GET" && path.includes("/history")) {
+      const userId = event.queryStringParameters?.userId;
+      const limit = parseInt(event.queryStringParameters?.limit || "50");
+      const lastEvaluatedKey = event.queryStringParameters?.lastEvaluatedKey
+        ? JSON.parse(event.queryStringParameters.lastEvaluatedKey)
+        : null;
+
+      if (!userId) {
+        return {
+          statusCode: 400,
+          headers: getCorsHeaders(),
+          body: JSON.stringify({ error: "Missing userId" }),
+        };
+      }
+
+      const result = await getNotificationHistory(
+        userId,
+        limit,
+        lastEvaluatedKey,
+      );
+
+      return {
+        statusCode: 200,
+        headers: getCorsHeaders(),
+        body: JSON.stringify(result),
+      };
+    }
+
+    // Mark notification as read
+    if (method === "PUT" && path.match(/\/notifications\/[^/]+\/read/)) {
+      const { userId } = body;
+      const notificationId = path.split("/")[2]; // Extract notification ID from path
+
+      if (!userId || !notificationId) {
+        return {
+          statusCode: 400,
+          headers: getCorsHeaders(),
+          body: JSON.stringify({ error: "Missing required fields" }),
+        };
+      }
+
+      const result = await markNotificationAsRead(userId, notificationId);
 
       return {
         statusCode: 200,
