@@ -1,5 +1,80 @@
 # Changelog
 
+## [1.8.1] - 2026-01-31
+
+### 🏗️ INFRASTRUCTURE - Notification Stack CDK Implementation
+
+- **Created Notification Stack** - Complete CDK infrastructure for push notifications
+  - **File**: `infrastructure/lib/notification-stack.ts` (200+ lines)
+  - **Components**:
+    - 3 Lambda functions (Notification Service, Budget Alerts, Daily Reminders)
+    - DynamoDB Streams event source mapping with filtering
+    - 2 EventBridge scheduled rules (every 15 min, every 6 hours)
+    - CloudWatch alarms for errors, throttles, and duration
+    - CloudWatch dashboard with metrics widgets
+    - IAM roles and permissions with least privilege
+  - **Features**:
+    - Notification Service: 512 MB, 30s timeout, device management
+    - Budget Alerts Service: 512 MB, 60s timeout, reserved concurrency 10
+    - Daily Reminders Service: 1024 MB, 300s timeout, batch processing
+    - Stream filtering for TRANSACTION records only
+    - Retry policies for EventBridge rules
+    - Comprehensive monitoring and observability
+
+- **Created Stack Documentation** - Complete README for notification stack
+  - **File**: `infrastructure/lib/README-notification.md` (400+ lines)
+  - **Sections**:
+    - Architecture diagram and overview
+    - Lambda function configurations and purposes
+    - EventBridge rules and schedules
+    - DynamoDB Streams configuration
+    - Monitoring (alarms, dashboard, logs)
+    - Deployment instructions with AWS CLI commands
+    - Testing procedures (manual and automated)
+    - Cost estimation (dev, 10K users, 100K users)
+    - Troubleshooting guide
+    - Security considerations
+    - Maintenance tasks and scaling
+
+### 🏗️ TECHNICAL DETAILS
+
+**Lambda Functions**:
+
+- Notification Service: Central hub for push delivery, device management, preferences
+- Budget Alerts Service: Real-time alerts via DynamoDB Streams + scheduled checks
+- Daily Reminders Service: Batch processing of users for daily reminders
+
+**Event Sources**:
+
+- DynamoDB Streams: Real-time transaction events (batch size 10, retry 2)
+- EventBridge: Scheduled reminders (every 15 min) and alert checks (every 6 hours)
+
+**Monitoring**:
+
+- 9 CloudWatch alarms (3 per Lambda: errors, throttles, duration)
+- CloudWatch dashboard with 9 widgets (invocations, errors, duration)
+- Structured logging with correlation IDs
+
+**Security**:
+
+- Least privilege IAM roles per Lambda
+- Expo access token from Secrets Manager
+- DynamoDB encryption at rest
+- 90-day TTL on notification history
+
+**Cost Estimation**:
+
+- Dev: ~$10/month
+- Prod (10K users): ~$50/month
+- Prod (100K users): ~$200/month
+
+### 🏗️ IMPACT
+
+- **Infrastructure Ready**: Complete CDK stack ready for deployment
+- **Monitoring**: Comprehensive alarms and dashboard for observability
+- **Documentation**: Detailed README for deployment and troubleshooting
+- **Next Steps**: Deploy stack, implement Lambda functions, integrate with API Gateway
+
 ## [1.8.0] - 2026-01-31
 
 ### 📱 SPEC - Push Notifications and Daily Reminders (Complete Specification)
