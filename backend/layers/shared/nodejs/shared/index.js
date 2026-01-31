@@ -25,6 +25,13 @@ const {
   NotFoundError,
   ConflictError,
 } = require("./errors");
+const {
+  PERMISSION_MATRIX,
+  hasPermission,
+  checkPermission,
+  getRolePermissions,
+  getAllowedActions,
+} = require("./permissions");
 
 module.exports = {
   // CORS utilities
@@ -50,4 +57,11 @@ module.exports = {
   AuthenticationError,
   NotFoundError,
   ConflictError,
+
+  // Permission utilities
+  PERMISSION_MATRIX,
+  hasPermission,
+  checkPermission,
+  getRolePermissions,
+  getAllowedActions,
 };

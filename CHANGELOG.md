@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.9.13] - 2026-01-31
+
+### 🔒 SECURITY - Permission Middleware Implementation (Task 3.1)
+
+- **Completed Task 3.1** - Role-based access control (RBAC) for family collaboration
+  - **Permission Matrix**: Defined for 3 roles (primary, spouse, viewer) across 12 actions
+  - **Core Functions**: hasPermission, checkPermission, getRolePermissions, getAllowedActions
+  - **Middleware**: Lambda integration with 403/401 error responses
+  - **Files**: `backend/layers/shared/nodejs/shared/permissions.js` + tests
+  - **Impact**: Foundation for enforcing family member permissions across all APIs
+
+### 📋 TECHNICAL DETAILS
+
+**Permission Matrix**:
+
+- **Primary**: Full access (budget, transactions, family management), cannot leave
+- **Spouse**: Full budget/transaction access, can leave, no family management
+- **Viewer**: Read-only access (budgets, transactions), can leave family
+
+**Test Coverage**:
+
+- 34 comprehensive tests (all passing)
+- All role/action combinations validated
+- Invalid input handling
+- Authentication error cases
+- Edge cases covered
+
+**Next Steps**:
+
+- Task 3.2: Integrate permissions into budget Lambda
+- Task 3.3: Integrate permissions into transaction Lambda
+- Task 3.4: Add permission integration tests
+
 ## [1.9.12] - 2026-01-31
 
 ### 🧪 TESTING - Family Lambda Unit Tests Complete (Task 2.8)
