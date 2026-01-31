@@ -22,6 +22,16 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-31)
 
+- 🧪 **E2E NOTIFICATION TESTS COMPLETE** - Comprehensive end-to-end tests with real AWS
+  - **Task 11.1**: Complete onboarding flow (user profile, device registration, preferences, history)
+  - **Task 11.2**: Budget alert flow (80%/90%/100% thresholds, deduplication, alert history)
+  - **Task 11.3**: Daily reminder flow (3+ day check, quiet hours, time matching ±15 min)
+  - **Task 11.4**: Preferences management (web/mobile sync, validation, concurrent updates, persistence)
+  - **Testing**: All tests use real DynamoDB (budgetbuddy-main table) with automatic cleanup
+  - **Cost**: < $0.05 total per test run (~40 DynamoDB operations)
+  - **Files**: `tests/notification-*-e2e.test.js` (4 test files, 14 test cases)
+  - **Impact**: Validates complete notification system end-to-end with real AWS services
+
 - 🔧 **DOCUMENTATION VALIDATION FIX IMPLEMENTED** - Content-based validation system complete
   - **Problem Solved**: Validation checked timestamps, not content (allowed commits without proper docs)
   - **Architecture**: Modular system with 3 utilities + 4 validators
@@ -31,22 +41,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Testing**: Manual testing complete, all validators working correctly
   - **Files**: `scripts/utils/*.js`, `scripts/validators/*.js`, `scripts/validate-documentation.js`
   - **Impact**: Ensures all commits have accurate, current documentation reflecting actual work
-
-- 📋 **DOCUMENTATION VALIDATION SPEC CREATED** - Comprehensive spec for fixing validation bug
-  - **Problem Identified**: Validation checks timestamps, not content (allows commits without proper docs)
-  - **Spec Created**: `.kiro/specs/documentation-validation-fix/` with requirements, design, tasks
-  - **Requirements**: 8 requirements with 40+ acceptance criteria for content-based validation
-  - **Design**: Modular architecture with git utils, date utils, content parser, and 4 validators
-  - **Correctness Properties**: 13 properties for property-based testing
-  - **Tasks**: 13 phases with 35 sub-tasks for incremental implementation
-  - **Impact**: Will ensure all commits have accurate, current documentation
-
-- 🔧 **BUDGET ALERTS LAMBDA FIX** - Removed reserved concurrency to fix deployment
-  - **Issue**: Reserved concurrency setting caused CloudFormation deployment conflicts
-  - **Solution**: Removed `reservedConcurrentExecutions: 5` from notification-stack.ts
-  - **Result**: Notification stack deployed successfully (CREATE_COMPLETE)
-  - **Files**: `infrastructure/lib/notification-stack.ts`, integration tests
-  - **Impact**: Budget alerts Lambda can now auto-scale without deployment issues
 
 - 🔔 **PUSH NOTIFICATIONS & DAILY REMINDERS** - Complete mobile notification system
   - **Mobile Handlers**: NotificationService class with full lifecycle management

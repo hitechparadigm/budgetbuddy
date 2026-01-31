@@ -24,18 +24,8 @@ function main() {
     process.exit(1);
   }
 
-  // Step 1: Validate
-  console.log("Step 1: Running validation...\n");
-  try {
-    execSync("node scripts/validate-for-commit.js", { stdio: "inherit" });
-  } catch (error) {
-    console.log("\n❌ Validation failed. Cannot commit.");
-    console.log("Fix the issues and try again.\n");
-    process.exit(1);
-  }
-
-  // Step 2: Stage changes
-  console.log("\nStep 2: Staging changes...");
+  // Step 1: Stage changes FIRST (so validation can see them)
+  console.log("Step 1: Staging changes...");
   try {
     execSync("git add .", { stdio: "inherit" });
     console.log("✅ Changes staged\n");
@@ -44,8 +34,25 @@ function main() {
     process.exit(1);
   }
 
+  // Step 2: Validate (now validation can see staged files)
+  console.log("Step 2: Running validation...\n");
+  try {
+    execSync("node scripts/validate-for-commit.js", { stdio: "inherit" });
+  } catch (error) {
+    console.log("\n❌ Validation failed. Cannot commit.");
+    console.log("Fix the issues and try again.\n");
+    // Unstage changes on validation failure
+    try {
+      execSync("git reset HEAD", { stdio: "inherit" });
+      console.log("✅ Changes unstaged\n");
+    } catch (resetError) {
+      console.log("⚠️  Warning: Could not unstage changes\n");
+    }
+    process.exit(1);
+  }
+
   // Step 3: Commit
-  console.log("Step 3: Committing changes...");
+  console.log("\nStep 3: Committing changes...");
   try {
     // Escape double quotes in commit message
     const escapedMessage = message.replace(/"/g, '\\"');
