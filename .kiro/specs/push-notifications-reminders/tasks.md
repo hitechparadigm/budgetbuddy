@@ -591,7 +591,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Verify navigated to budget screen
     - _Requirements: 2.1-2.10, 9.1_
 
-  - [ ] 11.3 Test complete daily reminder flow
+  - [x] 11.3 Test complete daily reminder flow
     - Set reminder time
     - Don't log transactions for 3 days
     - Verify reminder received at configured time
