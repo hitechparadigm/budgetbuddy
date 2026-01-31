@@ -51,6 +51,7 @@ export interface MonthlyBudget {
   familyId: string;
   month: string; // YYYY-MM format
   year: number;
+  currency: string; // ISO 4217 currency code (USD, EUR, GBP, CAD, AUD, JPY)
 
   // Budget status
   status: 'draft' | 'active' | 'completed';

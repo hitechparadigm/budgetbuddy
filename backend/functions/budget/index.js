@@ -40,7 +40,7 @@ exports.handler = async (event, context) => {
           service: "budget",
           version: "1.0.0",
         },
-        "Budget service is healthy"
+        "Budget service is healthy",
       );
     }
 
@@ -108,7 +108,7 @@ exports.handler = async (event, context) => {
     }
 
     return errorResponse.internalError(
-      "An error occurred processing your request"
+      "An error occurred processing your request",
     );
   }
 };
@@ -139,7 +139,7 @@ async function createBudget(event, user) {
   const familyId = await FamilyIdResolver.resolveFamilyId(
     user.userId,
     user.familyId,
-    dynamoHelpers
+    dynamoHelpers,
   );
 
   // Log the resolution for debugging
@@ -148,8 +148,25 @@ async function createBudget(event, user) {
     "create-budget",
     user.userId,
     familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback"
+    user.familyId ? "jwt" : "dynamodb-or-fallback",
   );
+
+  // Get user's currency from profile (default to USD if not found)
+  let userCurrency = "USD";
+  try {
+    const userProfile = await dynamoHelpers.getItem(
+      `USER#${user.userId}`,
+      "PROFILE",
+    );
+    if (userProfile && userProfile.currency) {
+      userCurrency = userProfile.currency;
+    }
+  } catch (error) {
+    logger.warn("Could not fetch user currency, defaulting to USD", {
+      userId: user.userId,
+      error: error.message,
+    });
+  }
 
   const budgetId = generateId.budget();
   const currentTime = new Date().toISOString();
@@ -157,7 +174,7 @@ async function createBudget(event, user) {
   // Check if budget already exists for this month
   const existingBudget = await dynamoHelpers.getItem(
     `FAMILY#${familyId}`,
-    `BUDGET#${requestBody.month}`
+    `BUDGET#${requestBody.month}`,
   );
 
   if (existingBudget) {
@@ -185,7 +202,7 @@ async function createBudget(event, user) {
     const updatedBudget = await dynamoHelpers.updateItem(
       `FAMILY#${familyId}`,
       `BUDGET#${requestBody.month}`,
-      updates
+      updates,
     );
 
     logger.info("Budget updated successfully", {
@@ -199,6 +216,7 @@ async function createBudget(event, user) {
         budgetId: updatedBudget.budgetId,
         familyId: updatedBudget.familyId,
         month: updatedBudget.month,
+        currency: updatedBudget.currency,
         totalIncome: updatedBudget.totalIncome,
         totalSavings: updatedBudget.totalSavings,
         totalExpenses: updatedBudget.totalExpenses,
@@ -208,7 +226,7 @@ async function createBudget(event, user) {
         createdAt: updatedBudget.createdAt,
         updatedAt: updatedBudget.updatedAt,
       },
-      "Budget updated successfully"
+      "Budget updated successfully",
     );
   }
 
@@ -222,6 +240,7 @@ async function createBudget(event, user) {
     budgetId,
     familyId,
     month: requestBody.month,
+    currency: requestBody.currency || userCurrency, // Use provided currency or user's default
     totalIncome: 0,
     totalSavings: 0,
     totalExpenses: 0,
@@ -259,6 +278,7 @@ async function createBudget(event, user) {
       budgetId,
       familyId,
       month: requestBody.month,
+      currency: budget.currency,
       totalIncome: budget.totalIncome,
       totalSavings: budget.totalSavings,
       totalExpenses: budget.totalExpenses,
@@ -268,7 +288,7 @@ async function createBudget(event, user) {
       createdAt: budget.createdAt,
       updatedAt: budget.updatedAt,
     },
-    "Budget created successfully"
+    "Budget created successfully",
   );
 }
 
@@ -286,7 +306,7 @@ async function getBudgets(event, user) {
   const familyId = await FamilyIdResolver.resolveFamilyId(
     user.userId,
     user.familyId,
-    dynamoHelpers
+    dynamoHelpers,
   );
 
   // Log the resolution for debugging
@@ -295,7 +315,7 @@ async function getBudgets(event, user) {
     "get-budgets",
     user.userId,
     familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback"
+    user.familyId ? "jwt" : "dynamodb-or-fallback",
   );
 
   console.log("getBudgets: CRITICAL DEBUG - Family ID resolution:");
@@ -319,19 +339,19 @@ async function getBudgets(event, user) {
   if (budgets.length > 0) {
     console.log(
       "getBudgets: All budget months found:",
-      budgets.map((b) => b.month)
+      budgets.map((b) => b.month),
     );
     console.log(
       "getBudgets: All budget PKs found:",
-      budgets.map((b) => b.PK)
+      budgets.map((b) => b.PK),
     );
     console.log(
       "getBudgets: All budget familyIds found:",
-      budgets.map((b) => b.familyId)
+      budgets.map((b) => b.familyId),
     );
   } else {
     console.log(
-      "getBudgets: No budgets found - checking if any budgets exist at all"
+      "getBudgets: No budgets found - checking if any budgets exist at all",
     );
 
     // Query without filter to see if there are ANY budgets for this family
@@ -370,7 +390,7 @@ async function getBudgets(event, user) {
       budgets: formattedBudgets,
       count: formattedBudgets.length,
     },
-    "Budgets retrieved successfully"
+    "Budgets retrieved successfully",
   );
 }
 
@@ -388,7 +408,7 @@ async function getCurrentBudget(event, user) {
   const familyId = await FamilyIdResolver.resolveFamilyId(
     user.userId,
     user.familyId,
-    dynamoHelpers
+    dynamoHelpers,
   );
 
   // Log the resolution for debugging
@@ -397,7 +417,7 @@ async function getCurrentBudget(event, user) {
     "get-current-budget",
     user.userId,
     familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback"
+    user.familyId ? "jwt" : "dynamodb-or-fallback",
   );
 
   // Extract month from query parameter
@@ -406,13 +426,13 @@ async function getCurrentBudget(event, user) {
 
   if (!month) {
     return errorResponse.badRequest(
-      "Month parameter is required (format: YYYY-MM)"
+      "Month parameter is required (format: YYYY-MM)",
     );
   }
 
   let budget = await dynamoHelpers.getItem(
     `FAMILY#${familyId}`,
-    `BUDGET#${month}`
+    `BUDGET#${month}`,
   );
 
   // If no budget exists for this month, create one with recurring items from previous month
@@ -444,7 +464,7 @@ async function getCurrentBudget(event, user) {
       createdAt: budget.createdAt,
       updatedAt: budget.updatedAt,
     },
-    "Budget retrieved successfully"
+    "Budget retrieved successfully",
   );
 }
 
@@ -463,7 +483,7 @@ async function getBudget(event, user, budgetId) {
   const familyId = await FamilyIdResolver.resolveFamilyId(
     user.userId,
     user.familyId,
-    dynamoHelpers
+    dynamoHelpers,
   );
 
   // Log the resolution for debugging
@@ -472,7 +492,7 @@ async function getBudget(event, user, budgetId) {
     "get-budget",
     user.userId,
     familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback"
+    user.familyId ? "jwt" : "dynamodb-or-fallback",
   );
 
   // Extract month from budgetId or query parameter
@@ -481,13 +501,13 @@ async function getBudget(event, user, budgetId) {
 
   if (!month) {
     return errorResponse.badRequest(
-      "Month parameter is required (format: YYYY-MM)"
+      "Month parameter is required (format: YYYY-MM)",
     );
   }
 
   const budget = await dynamoHelpers.getItem(
     `FAMILY#${familyId}`,
-    `BUDGET#${month}`
+    `BUDGET#${month}`,
   );
 
   if (!budget) {
@@ -514,7 +534,7 @@ async function getBudget(event, user, budgetId) {
       createdAt: budget.createdAt,
       updatedAt: budget.updatedAt,
     },
-    "Budget retrieved successfully"
+    "Budget retrieved successfully",
   );
 }
 
@@ -535,7 +555,7 @@ async function updateBudget(event, user, budgetId) {
   const familyId = await FamilyIdResolver.resolveFamilyId(
     user.userId,
     user.familyId,
-    dynamoHelpers
+    dynamoHelpers,
   );
 
   // Log the resolution for debugging
@@ -544,7 +564,7 @@ async function updateBudget(event, user, budgetId) {
     "update-budget",
     user.userId,
     familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback"
+    user.familyId ? "jwt" : "dynamodb-or-fallback",
   );
 
   // Extract month from request body or query parameter
@@ -573,7 +593,7 @@ async function updateBudget(event, user, budgetId) {
   // Check if budget exists
   const existingBudget = await dynamoHelpers.getItem(
     `FAMILY#${familyId}`,
-    `BUDGET#${month}`
+    `BUDGET#${month}`,
   );
 
   if (!existingBudget) {
@@ -596,7 +616,7 @@ async function updateBudget(event, user, budgetId) {
   const updatedBudget = await dynamoHelpers.updateItem(
     `FAMILY#${familyId}`,
     `BUDGET#${month}`,
-    updates
+    updates,
   );
 
   logger.info("Budget updated successfully", {
@@ -619,7 +639,7 @@ async function updateBudget(event, user, budgetId) {
       createdAt: updatedBudget.createdAt,
       updatedAt: updatedBudget.updatedAt,
     },
-    "Budget updated successfully"
+    "Budget updated successfully",
   );
 }
 
@@ -638,7 +658,7 @@ async function deleteBudget(event, user, budgetId) {
   const familyId = await FamilyIdResolver.resolveFamilyId(
     user.userId,
     user.familyId,
-    dynamoHelpers
+    dynamoHelpers,
   );
 
   // Log the resolution for debugging
@@ -647,7 +667,7 @@ async function deleteBudget(event, user, budgetId) {
     "delete-budget",
     user.userId,
     familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback"
+    user.familyId ? "jwt" : "dynamodb-or-fallback",
   );
 
   const month =
@@ -655,14 +675,14 @@ async function deleteBudget(event, user, budgetId) {
 
   if (!month) {
     return errorResponse.badRequest(
-      "Month parameter is required (format: YYYY-MM)"
+      "Month parameter is required (format: YYYY-MM)",
     );
   }
 
   // Check if budget exists
   const existingBudget = await dynamoHelpers.getItem(
     `FAMILY#${familyId}`,
-    `BUDGET#${month}`
+    `BUDGET#${month}`,
   );
 
   if (!existingBudget) {
@@ -737,7 +757,7 @@ async function createBudgetWithRecurringItems(familyId, month) {
     const previousMonth = getPreviousMonth(month);
     const previousBudget = await dynamoHelpers.getItem(
       `FAMILY#${familyId}`,
-      `BUDGET#${previousMonth}`
+      `BUDGET#${previousMonth}`,
     );
 
     // Create base budget structure
@@ -791,7 +811,7 @@ async function createBudgetWithRecurringItems(familyId, month) {
                     remainingAmount: category.plannedAmount || 0,
                   }))
                 : [],
-            })
+            }),
           );
         }
       });
