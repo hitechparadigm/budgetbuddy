@@ -113,7 +113,7 @@ Implement family account sharing with invitation system, role-based permissions,
     - Log permission violations
     - _Requirements: US-3, FR-3_
 
-  - [-] 3.4 Add permission tests
+  - [x] 3.4 Add permission tests
     - Test primary permissions
     - Test spouse permissions
     - Test viewer permissions
@@ -123,7 +123,7 @@ Implement family account sharing with invitation system, role-based permissions,
 ### Phase 4: Email Service Integration (Week 1)
 
 - [ ] 4. Configure SES for Invitations
-  - [ ] 4.1 Set up SES in CDK
+  - [-] 4.1 Set up SES in CDK
     - Verify email domain
     - Create SES identity
     - Configure sending limits
