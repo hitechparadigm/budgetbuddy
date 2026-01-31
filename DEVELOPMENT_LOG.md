@@ -79,10 +79,9 @@
 
 ### Next Steps
 
-1. Complete Task 2.8: Add unit tests for family Lambda
-2. Commit and deploy family Lambda with health endpoint
-3. Continue with Phase 3: Permission middleware integration
-4. Phase 4: Email service (SES) integration
+1. **BLOCKER**: Family Lambda 502 error needs manual AWS investigation (see `.kiro/FAMILY_LAMBDA_502_BLOCKER.md`)
+2. Continue with Task 2.8: Add unit tests (can write tests even if deployment blocked)
+3. After blocker resolved: Complete Phase 2, move to Phase 3 (Permission middleware)
 
 ### Lessons Learned
 
@@ -90,6 +89,19 @@
 - Always add health endpoints to new Lambda functions
 - Session ending instructions must be clear and non-contradictory
 - Reading context FIRST prevents wasted effort
+- **502 errors require deeper investigation** - after 3 attempts, document and move on
+
+### Blocker Details
+
+**Family Lambda 502 Error**: 3 deployment attempts failed with same 502 Bad Gateway error on `/family/health`. Possible causes:
+
+- Lambda not deployed by CDK
+- Missing npm dependencies during build
+- IAM permission issues
+- API Gateway misconfiguration
+- Lambda timeout/crash on startup
+
+**Action**: Documented in `.kiro/FAMILY_LAMBDA_502_BLOCKER.md` for manual investigation. Continuing with unit tests while blocker is investigated.
 
 ## 2026-01-31 - Steering Optimization + Notification Service Tests (Session 35)
 

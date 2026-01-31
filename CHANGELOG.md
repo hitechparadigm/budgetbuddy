@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.9.11] - 2026-01-31
+
+### 📋 DOCUMENTATION - Family Lambda 502 Blocker
+
+- **Documented Deployment Blocker** - 3 failed deployment attempts
+  - **Problem**: Family Lambda health endpoint returns 502 Bad Gateway
+  - **Attempts**: 3 different fixes, all failed with same error
+  - **Action**: Documented in `.kiro/FAMILY_LAMBDA_502_BLOCKER.md` for manual investigation
+  - **Impact**: Deployment blocked, but development can continue (unit tests, etc.)
+  - **Files**: `.kiro/FAMILY_LAMBDA_502_BLOCKER.md`, `DEVELOPMENT_LOG.md`
+
+### 📋 TECHNICAL DETAILS
+
+**Root Cause Unknown**: Requires manual AWS console investigation
+**Possible Causes**: Lambda not deployed, missing dependencies, IAM issues, API Gateway config, timeout/crash
+**Next Steps**: Manual investigation in AWS console, compare with working Lambdas
+**Workaround**: Continue with unit tests, skip health check temporarily
+
 ## [1.9.10] - 2026-01-31
 
 ### 🐛 BUGFIX - Family Lambda Error Handling
