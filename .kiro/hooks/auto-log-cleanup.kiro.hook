@@ -9,7 +9,7 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Log files detected in workspace. After completing any log analysis, automatically clean up temporary log files:\n\n1. **Check Analysis Status**: Ensure log analysis is complete\n2. **Preserve Important Findings**: Save any critical error information to a summary file\n3. **Clean Up Files**: Remove temporary log directories and files\n4. **Confirm Cleanup**: Verify workspace is clean\n\nExecute cleanup command: `powershell -ExecutionPolicy Bypass -Command \"if (Test-Path 'temp-logs') { Write-Host '🧹 Auto-cleaning AWS logs...' -ForegroundColor Yellow; Remove-Item -Recurse -Force 'temp-logs'; Write-Host '✅ AWS logs cleaned up!' -ForegroundColor Green }\"`\n\nKeep workspace clean while preserving analysis results."
+    "prompt": "Log files detected. After analysis complete, cleanup:\npowershell -ExecutionPolicy Bypass -Command \"if (Test-Path 'temp-logs') { Remove-Item -Recurse -Force 'temp-logs' }\""
   },
   "workspaceFolderName": "budgetbuddy",
   "shortName": "auto-log-cleanup"

@@ -1,0 +1,19 @@
+{
+  "name": "AWS Analysis",
+  "version": "2.0.0",
+  "description": "Analyzes AWS CloudWatch logs when explicitly requested",
+  "enabled": true,
+  "when": {
+    "type": "onMessage",
+    "patterns": [
+      "*analyze aws*",
+      "*check aws logs*",
+      "*download aws logs*",
+      "*aws diagnostics*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "AWS analysis requested:\n\n1. Download logs: powershell -ExecutionPolicy Bypass -File scripts/download-aws-logs.ps1\n2. Review ANALYSIS_SUMMARY.md\n3. Identify and fix issues\n4. Cleanup: Remove-Item -Recurse -Force temp-logs\n5. Verify fixes\n\nWork autonomously to resolve issues."
+  }
+}

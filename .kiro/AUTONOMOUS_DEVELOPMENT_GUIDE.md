@@ -96,18 +96,13 @@ node scripts/safe-commit-push.js "feat: add user profile editing"
 - Provides complete instructions for autonomous development
 - Use this when starting autonomous mode
 
-**`post-task-validation.kiro.hook`** (Auto-triggers after tasks)
+**`task-continuation.kiro.hook`** (Auto-triggers after tasks)
 
-- Validates and commits after each task completion
-- Continues to next task automatically
+- Automatically continues to next task after completion
+- Checks for incomplete tasks and starts immediately
+- Consolidated from previous continuation hooks
 
 ### For Fixing Issues
-
-**`validation-failure-handler.kiro.hook`** (Manual trigger)
-
-- Auto-fixes validation failures by type
-- Max 3 retry attempts
-- Use when validation fails
 
 **`cicd-failure-handler.kiro.hook`** (Manual trigger)
 
