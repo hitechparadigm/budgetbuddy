@@ -311,11 +311,11 @@ export class AuthStack extends cdk.Stack {
     cdk.Tags.of(this.authSharedLayer).add('Service', 'Lambda-Layer');
     cdk.Tags.of(this.authSharedLayer).add('CostCenter', 'BudgetBuddy-Auth');
 
-    // Output Lambda Layer ARN for reference
+    // Output Lambda Layer ARN for reference (no export to avoid cross-stack dependency issues)
     new cdk.CfnOutput(this, 'AuthSharedLayerArn', {
       value: this.authSharedLayer.layerVersionArn,
       description: 'Lambda Layer ARN for shared authentication utilities',
-      exportName: 'budgetbuddy-auth-shared-layer-arn',
+      // Removed exportName to avoid cross-stack dependency issues when layer updates
     });
   }
 }
