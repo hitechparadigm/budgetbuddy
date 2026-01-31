@@ -2,7 +2,7 @@
 
 ## [1.6.0] - 2026-01-31
 
-### 🌍 ADDED - Multi-Currency Support (Phase 1 - Currency Utilities)
+### 🌍 ADDED - Multi-Currency Support (Phase 1 & 2 - Currency Utilities & Selector Component)
 
 - **Currency Utility Module**: Comprehensive currency formatting and validation system
   - Support for 6 major currencies: USD, EUR, GBP, CAD, AUD, JPY
@@ -18,15 +18,32 @@
   - Symbol positioning (before/after amount)
   - Locale strings for proper formatting
 
+- **Currency Selector Component**: React component for currency selection
+  - Dropdown with all 6 supported currencies
+  - Shows currency symbol, code, and full name
+  - Accessible keyboard navigation
+  - Disabled and required states
+  - Compact variant for minimal display
+  - Dark mode support
+  - Mobile responsive design
+  - 30 unit tests with full coverage
+
 ### 📦 Technical Details
 
 **Files Added**:
 
 - `packages/shared/src/utils/currency.ts` - Currency utility module (300+ lines)
 - `packages/shared/src/utils/currency.test.ts` - Comprehensive test suite (71 tests)
+- `packages/web-app/src/components/CurrencySelector.tsx` - Currency selector component
+- `packages/web-app/src/components/CurrencySelector.test.tsx` - Component tests (30 tests)
 - `.kiro/specs/multi-currency/requirements.md` - Feature requirements
 - `.kiro/specs/multi-currency/design.md` - Technical design document
 - `.kiro/specs/multi-currency/tasks.md` - Implementation task list (13 tasks)
+
+**Files Modified**:
+
+- `packages/web-app/src/index.css` - Added currency selector styles with dark mode support
+- `packages/web-app/package.json` - Added @testing-library dependencies
 
 **Functions Implemented**:
 
@@ -43,10 +60,21 @@
 ### 🧪 Testing
 
 - 71 unit tests passing for currency utilities
+- 30 unit tests passing for currency selector component
+- Total: 101 tests passing for multi-currency Phase 1 & 2
 - Test coverage: formatCurrency, parseCurrency, validation, edge cases
+- Component tests: rendering, interaction, accessibility, disabled/required states
 - Property-based testing: formatting and parsing are inverse operations
 - All 6 currencies tested with proper decimal places and separators
 - Edge cases: very large amounts, very small amounts, negative amounts, zero
+
+### 📋 Next Steps (Phase 3)
+
+- Update user profile schema to include currency field
+- Update budget and transaction schemas with currency
+- Add currency to auth Lambda functions
+- Integrate currency selector into onboarding flow
+- Add currency management to settings page
 
 ### 📋 Next Steps (Remaining Tasks)
 
