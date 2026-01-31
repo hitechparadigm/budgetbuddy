@@ -533,7 +533,7 @@ This implementation plan covers the complete push notification and daily reminde
     - _Requirements: 3.6_
 
 - [ ] 10. Integration Testing
-  - [ ] 10.1 Test device registration flow
+  - [-] 10.1 Test device registration flow
     - Register device with valid token
     - Verify device stored in DynamoDB
     - Verify device ID returned
@@ -618,7 +618,7 @@ This implementation plan covers the complete push notification and daily reminde
 ### Phase 9: Documentation and Deployment (Week 3)
 
 - [ ] 12. Update Documentation
-  - [ ] 12.1 Create Lambda function READMEs
+  - [x] 12.1 Create Lambda function READMEs
     - Document Notification Service Lambda
     - Document Budget Alerts Service Lambda
     - Document Daily Reminders Service Lambda
