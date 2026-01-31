@@ -1,5 +1,84 @@
 # Development Log
 
+## 2026-01-31 - Validation Script Smart Detection Fix (Session 21)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Fixing validation script logic for docs-only commits
+**Outcome**: Smart detection implemented, validation works correctly for all scenarios
+
+### Problem Statement
+
+**Issue**: Validation script had logic flaw causing false positives for docs-only commits
+
+**Root Cause**: Script was checking wrong baseline:
+
+- Checked files in LAST commit (`git diff --name-only HEAD~1 HEAD`)
+- Failed if docs weren't in the LAST commit
+- Created catch-22: commit code → try to commit docs separately → fails
+
+**Impact**: Could not commit documentation updates separately from code changes
+
+### Solution: Smart Detection
+
+**Approach**: Check staged files instead of last commit
+
+**Implementation**:
+
+1. **Detect staged files** using `git diff --cached --name-only`
+2. **Identify code files** using pattern: `/\.(js|ts|tsx|jsx|json|yml|yaml|sh|ps1)$/`
+3. **Exclude doc files** from code detection
+4. **Enforce docs only when code files are staged**
+5. **Allow docs-only commits** to pass validation
+
+**Changes**:
+
+- **File**: `scripts/validate-documentation.js`
+- **Lines**: 350-381 (enhanced validation logic)
+- **Added**: Documentation-only commit detection and relaxed validation
+
+### Technical Details
+
+**Before Fix**:
+
+```javascript
+// Checked last commit
+const lastCommitFiles = execSync("git diff --name-only HEAD~1 HEAD");
+// Failed if docs not in last commit
+```
+
+**After Fix**:
+
+```javascript
+// Check staged files (what's about to be committed)
+const stagedFiles = execSync("git diff --cached --name-only");
+const stagedCodeFiles = stagedFiles.filter(
+  (file) => codeFilePatterns.test(file) && !docFilePatterns.test(file),
+);
+// Only require docs when code files are staged
+if (gitChanges.hasCodeChanges) {
+  /* enforce docs */
+} else {
+  /* allow docs-only commit */
+}
+```
+
+**Test Scenarios**:
+
+- ✅ Docs-only commit: Passes (relaxed mode)
+- ✅ Code + docs commit: Passes (all 4 docs required)
+- ✅ Code without docs: Fails (blocks commit)
+
+### Impact
+
+**Developer Experience**: No more confusing validation failures
+**Workflow Flexibility**: Can commit docs separately from code
+**Security Maintained**: Still requires docs for all code changes
+**Logic Correctness**: Validates against correct baseline (staged files)
+
+---
+
 ## 2026-01-31 - CI/CD Workflow Fix (Session 20)
 
 ### Session Summary
