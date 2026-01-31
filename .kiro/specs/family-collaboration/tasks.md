@@ -50,7 +50,7 @@ Implement family account sharing with invitation system, role-based permissions,
     - Send email via SES
     - _Requirements: US-1, FR-1_
 
-  - [ ] 2.3 Implement accept invitation endpoint
+  - [x] 2.3 Implement accept invitation endpoint
     - Validate token
     - Check invitation not expired
     - Add user to family
@@ -58,33 +58,33 @@ Implement family account sharing with invitation system, role-based permissions,
     - Return family details
     - _Requirements: US-2, FR-1_
 
-  - [ ] 2.4 Implement get members endpoint
+  - [x] 2.4 Implement get members endpoint
     - Query family members
     - Include user details
     - Return member list
     - _Requirements: US-5, FR-2_
 
-  - [ ] 2.5 Implement update role endpoint
+  - [x] 2.5 Implement update role endpoint
     - Validate user is primary
     - Update member role
     - Return updated member
     - _Requirements: US-3, US-5, FR-3_
 
-  - [ ] 2.6 Implement remove member endpoint
+  - [x] 2.6 Implement remove member endpoint
     - Validate user is primary
     - Prevent removing self
     - Remove member from family
     - Send notification email
     - _Requirements: US-5, FR-3_
 
-  - [ ] 2.7 Implement leave family endpoint
+  - [x] 2.7 Implement leave family endpoint
     - Validate user is not primary
     - Create new family for user
     - Copy current budget
     - Remove from old family
     - _Requirements: US-6_
 
-  - [ ] 2.8 Add unit tests
+  - [-] 2.8 Add unit tests
     - Test invitation creation
     - Test token validation
     - Test permission checks

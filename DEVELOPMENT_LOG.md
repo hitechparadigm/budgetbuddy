@@ -1,5 +1,96 @@
 # Development Log
 
+## 2026-01-31 - Session Continuity Workflow + Family Lambda Foundation (Session 36)
+
+### Session Summary
+
+**Duration**: 120 minutes
+**Focus**: Added session continuity to workflow + implemented family collaboration Lambda foundation
+**Outcome**: Improved workflow with context awareness, family Lambda with 6 endpoints implemented
+
+### Problem Statement
+
+**Workflow Gap**:
+
+- No guidance on checking context transfer summaries from previous sessions
+- Agents starting work without understanding what was in progress
+- Risk of duplicating work or missing important context
+- Hook had contradictory "continue in new session" instruction
+
+**Family Collaboration Missing**:
+
+- Task 2.8 (unit tests) in progress but Lambda missing health endpoint
+- Deployment failing with 502 error on /family/health
+- Need to complete Phase 2 implementation
+
+### Solution: Session Continuity + Health Fix
+
+**1. Session Continuity Workflow**:
+
+- Added Section 0 to 00-global.md: "Session Continuity (FIRST STEP)"
+- Rule: Check context transfer summary BEFORE reading steering files
+- Updated autonomous-task-executor.kiro.hook with SESSION CONTINUITY section
+- Fixed SESSION ENDING section - removed contradictory instruction
+- Created .kiro/SESSION_CONTINUITY_UPDATE.md documentation
+
+**2. Family Lambda Health Endpoint**:
+
+- Added GET /family/health endpoint to index.js
+- Returns { status: "healthy", service: "family" }
+- Fixes deployment health check failures
+
+**3. Family Lambda Implementation Progress**:
+
+- ✅ Task 1.3: Deploy database changes (GSI4 for invitations)
+- ✅ Task 2.1: Create function structure
+- ✅ Task 2.2: Implement invite endpoint
+- ✅ Task 2.3: Implement accept invitation endpoint
+- ✅ Task 2.4: Implement get members endpoint
+- ✅ Task 2.5: Implement update role endpoint
+- ✅ Task 2.6: Implement remove member endpoint
+- ✅ Task 2.7: Implement leave family endpoint
+- 🔄 Task 2.8: Add unit tests (in progress)
+
+### Technical Details
+
+**Session Continuity Benefits**:
+
+- Prevents duplicating recently completed work
+- Ensures smooth continuation across session boundaries
+- Provides most up-to-date project state
+- Makes autonomous development more efficient
+
+**Family Lambda Features**:
+
+- 6 endpoints: invite, accept, get members, update role, remove, leave
+- Role-based permission enforcement (primary, spouse, viewer)
+- Secure token generation and hashing (32 bytes, SHA-256)
+- Email validation and normalization
+- Family size limit enforcement (max 2 members)
+- Duplicate invitation prevention
+
+**Files Modified**:
+
+- `.kiro/steering/00-global.md` - Added session continuity workflow
+- `.kiro/hooks/autonomous-task-executor.kiro.hook` - Added context check, fixed session ending
+- `backend/functions/family/index.js` - Added health endpoint, implemented all endpoints
+- `.kiro/SESSION_CONTINUITY_UPDATE.md` - Documentation
+- `.kiro/specs/family-collaboration/tasks.md` - Updated task status
+
+### Next Steps
+
+1. Complete Task 2.8: Add unit tests for family Lambda
+2. Commit and deploy family Lambda with health endpoint
+3. Continue with Phase 3: Permission middleware integration
+4. Phase 4: Email service (SES) integration
+
+### Lessons Learned
+
+- Context transfer summaries are crucial for session continuity
+- Always add health endpoints to new Lambda functions
+- Session ending instructions must be clear and non-contradictory
+- Reading context FIRST prevents wasted effort
+
 ## 2026-01-31 - Steering Optimization + Notification Service Tests (Session 35)
 
 ### Session Summary

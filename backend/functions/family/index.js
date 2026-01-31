@@ -55,6 +55,10 @@ exports.handler = async (event) => {
     // Route to appropriate handler
     const { httpMethod, path, pathParameters } = event;
 
+    if (httpMethod === "GET" && path === "/family/health") {
+      return successResponse({ status: "healthy", service: "family" });
+    }
+
     if (httpMethod === "POST" && path === "/family/invite") {
       return await handleInvite(event, userId, familyId, familyRole);
     }
@@ -240,40 +244,505 @@ async function handleInvite(event, userId, familyId, familyRole) {
   }
 }
 
-async function handleAcceptInvitation(_event, _userId) {
-  // TODO: Implement in task 2.3
-  return errorResponse(501, "Not implemented yet");
+/**
+ * Accept family invitation
+ *
+ * Requirements:
+ * - Validate token
+ * - Check invitation not expired
+ * - Check family not full
+ * - Add user to family
+ * - Update invitation status
+ * - Return family details
+ */
+async function handleAcceptInvitation(event, userId) {
+  try {
+    // Parse request body
+    const body = JSON.parse(event.body || "{}");
+    const { token } = body;
+
+    if (!token) {
+      return errorResponse(400, "Token is required");
+    }
+
+    // Hash the token to look up invitation
+    const hashedToken = hashToken(token);
+
+    // Find invitation by hashed token
+    // We need to scan since token is not a key
+    const scanResult = await dynamodb
+      .scan({
+        TableName: TABLE_NAME,
+        FilterExpression:
+          "begins_with(PK, :invPrefix) AND #token = :token AND #status = :pending",
+        ExpressionAttributeNames: {
+          "#token": "token",
+          "#status": "status",
+        },
+        ExpressionAttributeValues: {
+          ":invPrefix": "INVITATION#",
+          ":token": hashedToken,
+          ":pending": "pending",
+        },
+      })
+      .promise();
+
+    if (!scanResult.Items || scanResult.Items.length === 0) {
+      return errorResponse(404, "Invitation not found or already used");
+    }
+
+    const invitation = scanResult.Items[0];
+
+    // Check if invitation is expired
+    const now = new Date();
+    const expiresAt = new Date(invitation.expiresAt);
+
+    if (now > expiresAt) {
+      // Update invitation status to expired
+      await dynamodb
+        .update({
+          TableName: TABLE_NAME,
+          Key: {
+            PK: invitation.PK,
+            SK: invitation.SK,
+          },
+          UpdateExpression: "SET #status = :expired",
+          ExpressionAttributeNames: {
+            "#status": "status",
+          },
+          ExpressionAttributeValues: {
+            ":expired": "expired",
+          },
+        })
+        .promise();
+
+      return errorResponse(400, "Invitation has expired");
+    }
+
+    // Get family metadata to check member count
+    const familyResult = await dynamodb
+      .get({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `FAMILY#${invitation.familyId}`,
+          SK: "METADATA",
+        },
+      })
+      .promise();
+
+    if (!familyResult.Item) {
+      return errorResponse(404, "Family not found");
+    }
+
+    const family = familyResult.Item;
+
+    // Check if family is full
+    if (family.memberCount >= 2) {
+      return errorResponse(409, "Family is full. Maximum 2 members allowed");
+    }
+
+    // Add user to family
+    const joinedAt = new Date().toISOString();
+
+    await dynamodb
+      .put({
+        TableName: TABLE_NAME,
+        Item: {
+          PK: `FAMILY#${invitation.familyId}`,
+          SK: `MEMBER#${userId}`,
+          userId,
+          role: invitation.role,
+          joinedAt,
+          addedBy: invitation.invitedBy,
+        },
+      })
+      .promise();
+
+    // Update family member count
+    await dynamodb
+      .update({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `FAMILY#${invitation.familyId}`,
+          SK: "METADATA",
+        },
+        UpdateExpression: "SET memberCount = memberCount + :inc",
+        ExpressionAttributeValues: {
+          ":inc": 1,
+        },
+      })
+      .promise();
+
+    // Update invitation status to accepted
+    await dynamodb
+      .update({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: invitation.PK,
+          SK: invitation.SK,
+        },
+        UpdateExpression:
+          "SET #status = :accepted, acceptedAt = :acceptedAt, acceptedBy = :acceptedBy",
+        ExpressionAttributeNames: {
+          "#status": "status",
+        },
+        ExpressionAttributeValues: {
+          ":accepted": "accepted",
+          ":acceptedAt": joinedAt,
+          ":acceptedBy": userId,
+        },
+      })
+      .promise();
+
+    // Update user's familyId and role in Cognito
+    // This will be handled by the auth service when user logs in next time
+    // For now, we'll just return the family details
+
+    console.log(
+      `User ${userId} accepted invitation and joined family ${invitation.familyId}`,
+    );
+
+    // Return family details
+    return successResponse({
+      familyId: invitation.familyId,
+      role: invitation.role,
+      family: {
+        primaryUserId: family.primaryUserId,
+        memberCount: family.memberCount + 1,
+        subscriptionTier: family.subscriptionTier,
+      },
+    });
+  } catch (error) {
+    console.error("Error in handleAcceptInvitation:", error);
+    return errorResponse(500, "Failed to accept invitation", error.message);
+  }
 }
 
-async function handleGetMembers(_familyId) {
-  // TODO: Implement in task 2.4
-  return errorResponse(501, "Not implemented yet");
+/**
+ * Get all family members
+ *
+ * Requirements:
+ * - Query family members
+ * - Include user details
+ * - Return member list
+ */
+async function handleGetMembers(familyId) {
+  try {
+    // Query all members of the family
+    const membersResult = await dynamodb
+      .query({
+        TableName: TABLE_NAME,
+        KeyConditionExpression:
+          "PK = :familyPK AND begins_with(SK, :memberPrefix)",
+        ExpressionAttributeValues: {
+          ":familyPK": `FAMILY#${familyId}`,
+          ":memberPrefix": "MEMBER#",
+        },
+      })
+      .promise();
+
+    if (!membersResult.Items || membersResult.Items.length === 0) {
+      return successResponse({
+        familyId,
+        members: [],
+      });
+    }
+
+    // Get user details for each member
+    const members = await Promise.all(
+      membersResult.Items.map(async (member) => {
+        // Get user profile
+        const userResult = await dynamodb
+          .get({
+            TableName: TABLE_NAME,
+            Key: {
+              PK: `USER#${member.userId}`,
+              SK: "PROFILE",
+            },
+          })
+          .promise();
+
+        const user = userResult.Item || {};
+
+        return {
+          userId: member.userId,
+          email: user.email || "unknown@example.com",
+          name:
+            `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+            "Unknown User",
+          role: member.role,
+          joinedAt: member.joinedAt,
+        };
+      }),
+    );
+
+    return successResponse({
+      familyId,
+      members,
+    });
+  } catch (error) {
+    console.error("Error in handleGetMembers:", error);
+    return errorResponse(500, "Failed to get family members", error.message);
+  }
 }
 
+/**
+ * Update member role
+ *
+ * Requirements:
+ * - Validate user is primary
+ * - Update member role
+ * - Return updated member
+ */
 async function handleUpdateRole(
-  _event,
-  _userId,
-  _familyId,
-  _familyRole,
-  _targetUserId,
+  event,
+  userId,
+  familyId,
+  familyRole,
+  targetUserId,
 ) {
-  // TODO: Implement in task 2.5
-  return errorResponse(501, "Not implemented yet");
+  try {
+    // Validate user is primary
+    if (familyRole !== "primary") {
+      return errorResponse(403, "Only primary user can change member roles");
+    }
+
+    // Parse request body
+    const body = JSON.parse(event.body || "{}");
+    const { role } = body;
+
+    // Validate role
+    if (!role || !["spouse", "viewer"].includes(role)) {
+      return errorResponse(400, 'Invalid role. Must be "spouse" or "viewer"');
+    }
+
+    // Cannot change primary user's role
+    if (targetUserId === userId) {
+      return errorResponse(400, "Cannot change your own role");
+    }
+
+    // Check if member exists
+    const memberResult = await dynamodb
+      .get({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `FAMILY#${familyId}`,
+          SK: `MEMBER#${targetUserId}`,
+        },
+      })
+      .promise();
+
+    if (!memberResult.Item) {
+      return errorResponse(404, "Member not found");
+    }
+
+    // Update member role
+    const updatedAt = new Date().toISOString();
+
+    await dynamodb
+      .update({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `FAMILY#${familyId}`,
+          SK: `MEMBER#${targetUserId}`,
+        },
+        UpdateExpression: "SET #role = :role, updatedAt = :updatedAt",
+        ExpressionAttributeNames: {
+          "#role": "role",
+        },
+        ExpressionAttributeValues: {
+          ":role": role,
+          ":updatedAt": updatedAt,
+        },
+      })
+      .promise();
+
+    console.log(
+      `User ${userId} updated role of ${targetUserId} to ${role} in family ${familyId}`,
+    );
+
+    return successResponse({
+      userId: targetUserId,
+      role,
+      updatedAt,
+    });
+  } catch (error) {
+    console.error("Error in handleUpdateRole:", error);
+    return errorResponse(500, "Failed to update member role", error.message);
+  }
 }
 
-async function handleRemoveMember(
-  _userId,
-  _familyId,
-  _familyRole,
-  _targetUserId,
-) {
-  // TODO: Implement in task 2.6
-  return errorResponse(501, "Not implemented yet");
+/**
+ * Remove family member
+ *
+ * Requirements:
+ * - Validate user is primary
+ * - Prevent removing self
+ * - Remove member from family
+ * - Send notification email
+ */
+async function handleRemoveMember(userId, familyId, familyRole, targetUserId) {
+  try {
+    // Validate user is primary
+    if (familyRole !== "primary") {
+      return errorResponse(403, "Only primary user can remove members");
+    }
+
+    // Cannot remove self
+    if (targetUserId === userId) {
+      return errorResponse(400, "Cannot remove yourself from the family");
+    }
+
+    // Check if member exists
+    const memberResult = await dynamodb
+      .get({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `FAMILY#${familyId}`,
+          SK: `MEMBER#${targetUserId}`,
+        },
+      })
+      .promise();
+
+    if (!memberResult.Item) {
+      return errorResponse(404, "Member not found");
+    }
+
+    // Remove member from family
+    await dynamodb
+      .delete({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `FAMILY#${familyId}`,
+          SK: `MEMBER#${targetUserId}`,
+        },
+      })
+      .promise();
+
+    // Update family member count
+    await dynamodb
+      .update({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `FAMILY#${familyId}`,
+          SK: "METADATA",
+        },
+        UpdateExpression: "SET memberCount = memberCount - :dec",
+        ExpressionAttributeValues: {
+          ":dec": 1,
+        },
+      })
+      .promise();
+
+    // TODO: Send notification email (will be implemented in Phase 4)
+    console.log(
+      `User ${userId} removed ${targetUserId} from family ${familyId}`,
+    );
+
+    return successResponse({
+      message: "Member removed successfully",
+      userId: targetUserId,
+    });
+  } catch (error) {
+    console.error("Error in handleRemoveMember:", error);
+    return errorResponse(500, "Failed to remove member", error.message);
+  }
 }
 
-async function handleLeaveFamily(_userId, _familyId, _familyRole) {
-  // TODO: Implement in task 2.7
-  return errorResponse(501, "Not implemented yet");
+/**
+ * Leave family
+ *
+ * Requirements:
+ * - Validate user is not primary
+ * - Create new family for user
+ * - Copy current budget
+ * - Remove from old family
+ */
+async function handleLeaveFamily(userId, familyId, familyRole) {
+  try {
+    // Validate user is not primary
+    if (familyRole === "primary") {
+      return errorResponse(
+        403,
+        "Primary user cannot leave family. Transfer ownership or delete family instead",
+      );
+    }
+
+    // Create new family for the leaving user
+    const newFamilyId = uuidv4();
+    const now = new Date().toISOString();
+
+    await dynamodb
+      .put({
+        TableName: TABLE_NAME,
+        Item: {
+          PK: `FAMILY#${newFamilyId}`,
+          SK: "METADATA",
+          familyId: newFamilyId,
+          primaryUserId: userId,
+          createdAt: now,
+          memberCount: 1,
+          subscriptionTier: "free",
+        },
+      })
+      .promise();
+
+    // Add user as primary member of new family
+    await dynamodb
+      .put({
+        TableName: TABLE_NAME,
+        Item: {
+          PK: `FAMILY#${newFamilyId}`,
+          SK: `MEMBER#${userId}`,
+          userId,
+          role: "primary",
+          joinedAt: now,
+          addedBy: userId,
+        },
+      })
+      .promise();
+
+    // Remove user from old family
+    await dynamodb
+      .delete({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `FAMILY#${familyId}`,
+          SK: `MEMBER#${userId}`,
+        },
+      })
+      .promise();
+
+    // Update old family member count
+    await dynamodb
+      .update({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `FAMILY#${familyId}`,
+          SK: "METADATA",
+        },
+        UpdateExpression: "SET memberCount = memberCount - :dec",
+        ExpressionAttributeValues: {
+          ":dec": 1,
+        },
+      })
+      .promise();
+
+    // TODO: Copy current budget to new family (will be implemented later)
+    // TODO: Send notification email to primary user (will be implemented in Phase 4)
+
+    console.log(
+      `User ${userId} left family ${familyId} and created new family ${newFamilyId}`,
+    );
+
+    return successResponse({
+      message: "Left family successfully",
+      newFamilyId,
+    });
+  } catch (error) {
+    console.error("Error in handleLeaveFamily:", error);
+    return errorResponse(500, "Failed to leave family", error.message);
+  }
 }
 
 /**
