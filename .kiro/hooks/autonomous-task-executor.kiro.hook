@@ -7,7 +7,7 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "🌙 AUTONOMOUS DEVELOPMENT MODE\n\nExecute tasks from .kiro/specs/*/tasks.md autonomously:\n\nFOR EACH TASK:\n1. Implement fully (code + tests + docs)\n2. Validate: node scripts/validate-for-commit.js\n3. Commit: node scripts/safe-commit-push.js \"feat: [description]\"\n4. Monitor CI/CD: gh run list --limit 1\n5. Continue to next task\n\nFAILURE HANDLING:\n- Validation fails: Auto-fix and retry (max 3 attempts)\n- CI/CD fails: Analyze, fix, retry (max 2 attempts)\n- Still failing: Document and continue to next task or feature\n\nSee .kiro/steering/00-global.md for detailed rules."
+    "prompt": "🌙 AUTONOMOUS DEVELOPMENT MODE\n\nExecute tasks from .kiro/specs/*/tasks.md autonomously:\n\nFOR EACH TASK:\n1. Implement fully (code + tests + docs)\n2. Validate: node scripts/validate-for-commit.js\n3. Commit: node scripts/safe-commit-push.js \"feat: [description]\"\n4. Monitor CI/CD: gh run list --limit 1\n5. Continue to next task\n\nFAILURE HANDLING:\n- Validation fails: Auto-fix and retry (max 3 attempts)\n- CI/CD fails: Analyze, fix, retry (max 2 attempts)\n- Still failing: Document and continue to next task or feature\n\nSESSION ENDING:\n- when the current session is ending or about to be summarized, STOP all the work immediately.; I should NOT continue working after you've indicated the session is ending\n- wait for the new session\n- continue working in the new session\nThe hook will trigger in the NEW session and continue from there\n\n\nSee .kiro/steering/00-global.md for detailed rules."
   },
   "enabled": true,
   "workspaceFolderName": "budgetbuddy",

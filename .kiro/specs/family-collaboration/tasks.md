@@ -26,7 +26,7 @@ Implement family account sharing with invitation system, role-based permissions,
     - Update Cognito custom attributes if needed
     - _Requirements: FR-2.2, FR-2.3_
 
-  - [ ] 1.3 Deploy database changes
+  - [x] 1.3 Deploy database changes
     - Run CDK deploy for database stack
     - Verify GSI created
     - Test GSI queries
@@ -35,14 +35,14 @@ Implement family account sharing with invitation system, role-based permissions,
 ### Phase 2: Family Lambda Implementation (Week 1)
 
 - [ ] 2. Create Family Lambda Function
-  - [ ] 2.1 Create function structure
+  - [x] 2.1 Create function structure
     - Create backend/functions/family/ directory
     - Create index.js with handler
     - Create package.json
     - Create README.md
     - _Requirements: All_
 
-  - [ ] 2.2 Implement invite endpoint
+  - [x] 2.2 Implement invite endpoint
     - Validate user is primary
     - Check family not full
     - Generate secure token

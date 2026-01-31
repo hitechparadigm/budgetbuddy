@@ -1,5 +1,47 @@
 # Changelog
 
+## [1.9.7] - 2026-01-31
+
+### 🚀 FEATURE - Family Collaboration Foundation (Tasks 1.3, 2.1, 2.2)
+
+- **Completed Task 1.3** - Deploy database changes for family collaboration
+  - **GSI4**: InvitationByEmail index for invitation lookups
+  - **User Schema**: Added familyRole field to user profiles
+  - **Status**: Database changes deployed via CI/CD
+  - **Impact**: Infrastructure ready for family collaboration features
+
+- **Completed Task 2.1** - Create Family Lambda function structure
+  - **Files**: `backend/functions/family/index.js`, `package.json`, `README.md`
+  - **Endpoints**: 6 routes (invite, accept, members, update role, remove, leave)
+  - **Architecture**: Handler → service pattern with CORS support
+  - **Impact**: Foundation for family collaboration API
+
+- **Completed Task 2.2** - Implement invite endpoint
+  - **Validation**: Primary user only, family not full, no duplicate invitations
+  - **Security**: Cryptographically secure tokens (32 bytes), SHA-256 hashing
+  - **Storage**: DynamoDB with GSI4 for email lookups
+  - **Expiration**: 7-day invitation validity
+  - **Files**: `backend/functions/family/index.js`
+  - **Impact**: Users can now send family invitations (email integration pending)
+
+### 📋 TECHNICAL DETAILS
+
+**Family Lambda Features**:
+
+- Role-based permission enforcement (primary, spouse, viewer)
+- Secure token generation and hashing
+- Email validation and normalization
+- Family size limit enforcement (max 2 members)
+- Duplicate invitation prevention
+
+**Next Steps**:
+
+- Task 2.3: Implement accept invitation endpoint
+- Task 2.4: Implement get members endpoint
+- Task 2.5-2.7: Complete member management endpoints
+- Phase 3: Permission middleware integration
+- Phase 4: Email service (SES) integration
+
 ## [1.9.6] - 2026-01-31
 
 ### 🧪 TESTING - E2E Notification Tests Complete (Task 11.5)
