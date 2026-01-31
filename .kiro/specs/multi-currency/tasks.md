@@ -225,13 +225,13 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
     - Save currency to user profile
     - _Requirements: 1.1-1.5, 3.5_
 
-  - [ ] 10.3 Update mobile settings screen
+  - [x] 10.3 Update mobile settings screen
     - Add currency management section
     - Use mobile CurrencySelector
     - Add confirmation dialog
     - _Requirements: 2.1-2.6, 3.5_
 
-  - [ ] 10.4 Update mobile budget and transaction displays
+  - [-] 10.4 Update mobile budget and transaction displays
     - Use formatCurrency() for all amounts
     - Show currency symbols
     - Format based on user's currency

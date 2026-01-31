@@ -3,7 +3,7 @@
  * Displays transactions with mobile-optimized UX
  */
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -12,13 +12,14 @@ import {
   Pressable,
   Alert,
   RefreshControl,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { LoadingSpinner } from './ui';
-import { useTheme } from '../hooks/useTheme';
-import { useCurrency } from '../contexts/CurrencyContext';
-import { Transaction, BudgetCategory } from '../types';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { LoadingSpinner } from "./ui";
+import { useTheme } from "../hooks/useTheme";
+import { useCurrency } from "../contexts/CurrencyContext";
+import { Transaction, BudgetCategory } from "../types";
+import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -49,24 +50,20 @@ export default function TransactionList({
   onDeleteTransaction,
   groupByDate = true,
   showCategory = true,
-  emptyMessage = 'No transactions found',
+  emptyMessage = "No transactions found",
 }: TransactionListProps) {
   const { colors } = useTheme();
-  const { formatAmount } = useCurrency();
+  const { selectedCurrency } = useCurrency();
   const [refreshing, setRefreshing] = useState(false);
 
   const getCategoryName = (categoryId: string): string => {
-    const category = categories.find(c => c.id === categoryId);
-    return category ? category.name : 'Unknown Category';
+    const category = categories.find((c) => c.id === categoryId);
+    return category ? category.name : "Unknown Category";
   };
 
   const getCategoryIcon = (categoryId: string): string => {
-    const category = categories.find(c => c.id === categoryId);
-    return category ? category.icon : '📝';
-  };
-
-  const formatCurrency = (amount: number): string => {
-    return formatAmount(amount);
+    const category = categories.find((c) => c.id === categoryId);
+    return category ? category.icon : "📝";
   };
 
   const formatDate = (dateString: string): string => {
@@ -76,33 +73,39 @@ export default function TransactionList({
     yesterday.setDate(yesterday.getDate() - 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return 'Today';
+      return "Today";
     } else if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
+      return "Yesterday";
     } else {
-      return date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
+      return date.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
       });
     }
   };
 
-  const groupTransactionsByDate = (transactions: Transaction[]): GroupedTransaction[] => {
-    const grouped = transactions.reduce((acc, transaction) => {
-      const date = transaction.date;
-      if (!acc[date]) {
-        acc[date] = [];
-      }
-      acc[date].push(transaction);
-      return acc;
-    }, {} as Record<string, Transaction[]>);
+  const groupTransactionsByDate = (
+    transactions: Transaction[],
+  ): GroupedTransaction[] => {
+    const grouped = transactions.reduce(
+      (acc, transaction) => {
+        const date = transaction.date;
+        if (!acc[date]) {
+          acc[date] = [];
+        }
+        acc[date].push(transaction);
+        return acc;
+      },
+      {} as Record<string, Transaction[]>,
+    );
 
     return Object.entries(grouped)
       .map(([date, transactions]) => ({
         date,
-        transactions: transactions.sort((a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        transactions: transactions.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
         ),
         totalAmount: transactions.reduce((sum, t) => sum + t.amount, 0),
       }))
@@ -133,24 +136,26 @@ export default function TransactionList({
 
   const handleDeleteTransaction = (transaction: Transaction) => {
     Alert.alert(
-      'Delete Transaction',
-      `Are you sure you want to delete this transaction?\n\n${transaction.description}\n${formatCurrency(transaction.amount)}`,
+      "Delete Transaction",
+      `Are you sure you want to delete this transaction?\n\n${transaction.description}\n${formatCurrency(transaction.amount, selectedCurrency.code)}`,
       [
         {
-          text: 'Cancel',
-          style: 'cancel',
+          text: "Cancel",
+          style: "cancel",
         },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: () => {
             if (onDeleteTransaction) {
               onDeleteTransaction(transaction);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success,
+              );
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -201,14 +206,22 @@ export default function TransactionList({
 
         <View style={dynamicStyles.transactionRight}>
           <Text style={dynamicStyles.transactionAmount}>
-            {formatCurrency(transaction.amount)}
+            {formatCurrency(transaction.amount, selectedCurrency.code)}
           </Text>
-          {transaction.syncStatus !== 'synced' && (
+          {transaction.syncStatus !== "synced" && (
             <View style={dynamicStyles.syncStatus}>
               <Ionicons
-                name={transaction.syncStatus === 'pending' ? 'cloud-upload-outline' : 'warning-outline'}
+                name={
+                  transaction.syncStatus === "pending"
+                    ? "cloud-upload-outline"
+                    : "warning-outline"
+                }
                 size={12}
-                color={transaction.syncStatus === 'pending' ? colors.textSecondary : colors.error}
+                color={
+                  transaction.syncStatus === "pending"
+                    ? colors.textSecondary
+                    : colors.error
+                }
               />
             </View>
           )}
@@ -228,7 +241,7 @@ export default function TransactionList({
       <View style={dynamicStyles.dateHeader}>
         <Text style={dynamicStyles.dateText}>{formatDate(item.date)}</Text>
         <Text style={dynamicStyles.dateTotalText}>
-          {formatCurrency(item.totalAmount)}
+          {formatCurrency(item.totalAmount, selectedCurrency.code)}
         </Text>
       </View>
       {item.transactions.map(renderTransaction)}
@@ -247,14 +260,14 @@ export default function TransactionList({
     },
     loadingContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       paddingVertical: 32,
     },
     emptyContainer: {
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       paddingVertical: 64,
       paddingHorizontal: 32,
     },
@@ -266,15 +279,15 @@ export default function TransactionList({
     emptyText: {
       fontSize: 16,
       color: colors.textSecondary,
-      textAlign: 'center',
+      textAlign: "center",
     },
     dateGroup: {
       marginBottom: 16,
     },
     dateHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       paddingHorizontal: 16,
       paddingVertical: 8,
       backgroundColor: colors.surface,
@@ -283,12 +296,12 @@ export default function TransactionList({
     },
     dateText: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     dateTotalText: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.textSecondary,
     },
     flatTransactionContainer: {
@@ -302,13 +315,13 @@ export default function TransactionList({
       borderColor: colors.border,
     },
     transactionContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       padding: 16,
     },
     transactionLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       flex: 1,
       gap: 12,
     },
@@ -320,7 +333,7 @@ export default function TransactionList({
     },
     transactionDescription: {
       fontSize: 16,
-      fontWeight: '500',
+      fontWeight: "500",
       color: colors.text,
       marginBottom: 2,
     },
@@ -332,17 +345,17 @@ export default function TransactionList({
     transactionMerchant: {
       fontSize: 12,
       color: colors.textSecondary,
-      fontStyle: 'italic',
+      fontStyle: "italic",
       marginBottom: 4,
     },
     tagContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+      flexDirection: "row",
+      flexWrap: "wrap",
       gap: 4,
       marginTop: 4,
     },
     tag: {
-      backgroundColor: colors.primary + '20',
+      backgroundColor: colors.primary + "20",
       paddingHorizontal: 6,
       paddingVertical: 2,
       borderRadius: 8,
@@ -357,17 +370,17 @@ export default function TransactionList({
       paddingHorizontal: 4,
     },
     transactionRight: {
-      alignItems: 'flex-end',
+      alignItems: "flex-end",
       gap: 4,
     },
     transactionAmount: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     syncStatus: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
     },
     actionButton: {
       padding: 4,
@@ -422,8 +435,9 @@ export default function TransactionList({
   return (
     <FlatList
       style={dynamicStyles.container}
-      data={transactions.sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      data={transactions.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       )}
       renderItem={renderFlatTransaction}
       keyExtractor={(item) => item.id}
