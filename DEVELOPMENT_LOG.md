@@ -1,5 +1,88 @@
 # Development Log
 
+## 2026-01-31 - E2E Notification Tests Complete + Validation Fix (Session 34)
+
+### Session Summary
+
+**Duration**: 60 minutes
+**Focus**: Completed Task 11.5 (multi-device flow) + fixed documentation validation
+**Outcome**: All 5 E2E notification tests complete, validation now works correctly
+
+### Problem Statement
+
+**Documentation Validation Not Working**:
+
+- Validation script ran BEFORE staging files in safe-commit-push.js
+- Validation saw no staged files and always skipped/passed
+- Documentation updates were not being enforced
+
+**Task 11.5 Remaining**:
+
+- Multi-device flow test needed to complete E2E testing phase
+
+### Solution: Fix Script Order + Complete Testing
+
+**1. Fixed safe-commit-push.js**:
+
+- Changed order: Stage files FIRST, then validate
+- Validation can now see staged files and check content
+- Added unstaging on validation failure
+- Simple fix, big impact
+
+**2. Completed Task 11.5**:
+
+- Created `tests/notification-multi-device-e2e.test.js`
+- Test cases:
+  - Main flow: Register 3 devices, send to all, remove 1, send to 2
+  - Device limit: Register 10 devices, verify limit enforcement
+  - Disabled devices: Verify disabled devices don't receive notifications
+- AWS Operations: ~12 per test
+- Cost: < $0.01
+
+### Implementation Details
+
+**Script Fix**:
+
+```javascript
+// OLD (broken):
+// 1. Validate (sees no files)
+// 2. Stage files
+// 3. Commit
+
+// NEW (working):
+// 1. Stage files
+// 2. Validate (sees staged files)
+// 3. Commit (or unstage on failure)
+```
+
+**Multi-Device Test**:
+
+- Register iOS, Android, Web devices
+- Create notification, verify all 3 would receive
+- Remove Android device
+- Create second notification, verify only iOS and Web receive
+- Test device limit (max 10)
+- Test disabled device filtering
+
+### Results
+
+**All E2E Tests Complete**:
+
+- ✅ Task 11.1: Onboarding flow (2 test cases)
+- ✅ Task 11.2: Budget alerts (3 test cases)
+- ✅ Task 11.3: Daily reminders (4 test cases)
+- ✅ Task 11.4: Preferences (4 test cases)
+- ✅ Task 11.5: Multi-device (3 test cases)
+
+**Total**: 5 test files, 17 test cases, all passing
+
+**Documentation Validation**: Now working correctly, enforces mandatory updates
+
+**Next Steps**:
+
+- Tasks 12.1-12.5: Documentation updates (Lambda READMEs, API docs, architecture diagrams)
+- Tasks 13.1-13.8: Production deployment
+
 ## 2026-01-31 - E2E Notification Tests Implementation (Session 33)
 
 ### Session Summary

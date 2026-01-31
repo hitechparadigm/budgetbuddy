@@ -606,7 +606,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Verify changes reflected on web
     - _Requirements: 4.1-4.10, 7.1-7.10, 8.1-8.10_
 
-  - [-] 11.5 Test multi-device flow
+  - [x] 11.5 Test multi-device flow
     - Register 3 devices for same user
     - Trigger notification
     - Verify all 3 devices receive notification
