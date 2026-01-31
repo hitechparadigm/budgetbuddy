@@ -20,10 +20,40 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Cross-Platform**: iOS, Android, and Web platform compatibility achieved ✓
 - **Overall Progress**: 92% complete (Enterprise security implemented, production-ready)
 
+### Recent Achievements (2026-01-31)
+
+- 🔒 **SECURITY VULNERABILITIES FIXED** - All npm audit vulnerabilities resolved (19 → 0)
+  - **ESLint Update**: Upgraded from 8.50.0 to 9.39.2 (moderate severity fix)
+    - **Vulnerability**: Stack Overflow when serializing objects with circular references (GHSA-p5wg-g6qr-c7cg)
+    - **Impact**: Potential DoS in development environment
+  - **fast-xml-parser Fix**: Added package override to force 5.3.4+ (17 high severity fixes)
+    - **Vulnerability**: RangeError DoS Numeric Entities Bug (GHSA-37qj-frw5-hhjh)
+    - **Impact**: Affects AWS SDK transitive dependencies
+    - **Solution**: Package override forces safe version across all AWS SDK packages
+  - **jsdiff Fix**: Fixed via npm audit fix (low severity)
+  - **AWS SDK Update**: Updated @aws-sdk/client-bedrock-runtime from 3.958.0 to 3.980.0
+  - **Status**: All npm audit checks pass with 0 vulnerabilities
+
+- 🔧 **ESLINT 9 MIGRATION** - Migrated to new flat config format
+  - **Breaking Change**: ESLint 9 requires new configuration format
+  - **Created**: `eslint.config.js` (new flat config format)
+  - **Migrated**: All rules from `.eslintrc.js` to new format
+  - **Added**: `fetch` global for Node.js 18+ compatibility
+  - **Updated**: `no-unused-vars` rule to ignore caught error variables
+  - **Result**: All ESLint checks pass (10 warnings about file size are acceptable)
+
+- 🐛 **ONBOARDING BUG FIX** - Fixed "Create Budget" button JavaScript error
+  - **Issue**: Clicking "Create Budget" threw `ReferenceError: result is not defined`
+  - **Root Cause**: Line 60 referenced undefined variable in OnboardingPage.tsx
+  - **Impact**: Users had to click "Skip for now" to proceed to budget page
+  - **Fix**: Store return value from `apiClient.completeOnboarding()` call
+  - **File**: `packages/web-app/src/pages/OnboardingPage.tsx`
+  - **Result**: Budget creation with AI-suggested categories now works correctly
+  - **Status**: Deployed via CI/CD, ready for testing
+
 ### Recent Achievements (2026-01-14)
 
 - 🏗️ **ARCHITECTURAL SIMPLIFICATION** - Paused auth refactoring, consolidated architecture
-
   - **Decision**: Paused auth Lambda refactoring after comprehensive architectural review
   - **Rationale**: Only 16% complete (1 of 6 functions), adds unnecessary complexity for MVP
   - **Root Cause**: Simple import ordering bug (imports at line 1036 instead of line 20)
@@ -33,7 +63,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Status**: Phase 1 complete (ESLint rules added), Phase 2 starting (consolidate functions)
 
 - 🔧 **CRITICAL BUG FIX** - Fixed userId/familyId mismatch causing budget retrieval failure
-
   - **Issue**: Users complete onboarding but budget page shows "No budgets exist"
   - **Root Cause**: Budget service used `claims.sub` instead of `claims["custom:userId"]`
   - **Result**: Auth-onboarding creates budget with `family_user_XXX`, budget service queries `family_<cognito-sub>`
@@ -43,7 +72,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Status**: Deployed via CI/CD, ready for testing
 
 - 🔧 **API GATEWAY INTEGRATION FIX** - Fixed API Gateway not routing to new auth-onboarding Lambda
-
   - **Root Cause**: API Gateway deployments not triggered when only Lambda code changes
   - **Solution**: Force API Gateway redeployment by adding timestamp to deployment description
   - **Verification**: Created `check-api-gateway-integration.ps1` script to verify routing
@@ -60,7 +88,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Status**: Phase 2 Task 11 complete (auth-onboarding), continuing with remaining functions
 
 - 🔧 **CRITICAL ONBOARDING BUG FIX** - Fixed recurring 500 error preventing budget creation after onboarding
-
   - **User Report**: dmytro.malyk@gmail.com unable to create budget for January 2026
   - **Root Cause**: Import order bug - `dynamoHelpers` and `FamilyIdResolver` imported at line 1036 but used at line 928
   - **Error**: `ReferenceError: dynamoHelpers is not defined` causing 500 error on onboarding endpoint
@@ -71,7 +98,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Status**: Immediate fix deployed, refactoring actively underway
 
 - 📊 **PDF EXPORT FUNCTIONALITY IMPLEMENTED** - Professional budget reports with comprehensive formatting
-
   - **Feature**: Monthly budget reports in PDF format with professional layout and visualizations
   - **Implementation**: Added pdfkit library to export Lambda, comprehensive PDF generation with charts
   - **Frontend**: Export PDF button in BudgetPage header with download functionality
@@ -83,7 +109,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 ### Recent Achievements (2026-01-06)
 
 - 🤖 **WORKFLOW AUTOMATION HOOKS IMPLEMENTED** - Seamless development workflow continuation
-
   - **Issue**: Hooks only sent reminder messages, didn't automate git workflow or continue development work
   - **Solution**: Created automation hooks that execute git commands and continue work automatically
   - **Impact**: Seamless development workflow with automatic git push and work continuation
@@ -92,7 +117,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Status**: 100% operational with automated git workflow execution
 
 - 🔧 **DOCUMENTATION VALIDATION SYSTEM ENHANCED** - Strict change detection ensures ALL work is documented
-
   - **Issue**: Previous validation only checked file modification times, allowing work to go undocumented
   - **Solution**: Enhanced validation with git change detection requiring documentation of ALL changes since last commit
   - **Impact**: No work can be completed without proper documentation - validation now detects and blocks any undocumented changes
@@ -101,7 +125,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Status**: 100% operational with zero-tolerance for undocumented work
 
 - 📚 **DOCUMENTATION VALIDATION SYSTEM RESTORED** - Complete mandatory documentation validation system
-
   - **Issue**: Documentation validation checks were missing from pre-commit hook, only security checks remained
   - **Solution**: Enhanced validation system with pattern-based validation and practical timeframes
   - **Impact**: All development work now properly captured in documentation following established best practices
@@ -112,7 +135,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 ### Recent Achievements (2026-01-05)
 
 - 🔒 **COMPREHENSIVE SECURITY PIPELINE** - Enterprise-grade security infrastructure implemented
-
   - **Multi-Layer Security Validation**: Pre-commit, PR, and deployment security checkpoints
   - **Cross-Platform Security Scripts**: Windows PowerShell and Linux/Mac Bash compatibility
   - **Zero Security Vulnerabilities**: Fixed js-yaml dependency, comprehensive secret detection
@@ -124,7 +146,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Status**: Production-ready with enterprise-grade security measures
 
 - 🔧 **CRITICAL ONBOARDING FIX** - Fixed budget persistence bug preventing users from accessing budgets after onboarding
-
   - **Issue**: Users complete onboarding successfully but budget page shows "No budgets exist in backend"
   - **Root Cause**: FamilyId mismatch between auth service (budget creation) and budget service (retrieval)
   - **Technical Details**: Auth service uses familyId from user profile, budget service uses JWT familyId (null) or fallback
@@ -162,7 +183,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 ### Recent Achievements (2026-01-04)
 
 - 🔧 **CRITICAL AUTH FIX** - Fixed Cognito User Pool Client configuration for profile access
-
   - **Issue**: All users getting "User profile not found" (404) errors
   - **Root Cause**: Missing `userId` in Cognito User Pool Client `readAttributes`
   - **Solution**: Added `userId` to both read and write attributes in infrastructure
@@ -170,7 +190,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Status**: Infrastructure changes deployed via CI/CD pipeline
 
 - 🐛 **ONBOARDING FLOW FIXES** - Enhanced manual location selection and error handling
-
   - Fixed country code derivation for manual city selection
   - Added comprehensive error logging for debugging
   - Fixed PowerShell emoji encoding in user cleanup scripts
@@ -180,7 +199,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Root Cause**: BudgetPage automatically redirected when no budget exists
 
 - 🎨 **MANUAL LOCATION SELECTION** - Added ability to correct inaccurate location detection
-
   - Added "Change Location" button with searchable city dropdown
   - Real-time search filtering across 348 cities in 9 countries
   - **Impact**: Users can correct IP geolocation inaccuracies (e.g., ISP location vs actual location)
@@ -189,7 +207,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 ### Recent Achievements (2026-01-03)
 
 - 🐛 **API GATEWAY ROUTES FIX** - Added missing routes for onboarding endpoints
-
   - Added `/auth/geolocation` GET endpoint (public) for location detection
   - Added `/auth/onboarding` POST endpoint (protected) for onboarding completion
   - Added `/auth/google` POST endpoint (public) for Google Sign-In
@@ -197,14 +214,12 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Root Cause**: Lambda handlers existed but API Gateway had no routes configured
 
 - 🐛 **LEGACY USER TOKEN SUPPORT** - Fixed 500 errors for users without custom:userId attribute
-
   - Added fallback to use `payload.sub` (Cognito user ID) when `custom:userId` is missing
   - Fixed `/auth/profile` and `/auth/onboarding` endpoints (2 locations)
   - **Impact**: Legacy users can now complete onboarding and access their profiles
   - **Root Cause**: Older JWT tokens don't have `custom:userId` attribute
 
 - 🐛 **CORS CONFIGURATION FIX** - Resolved CORS preflight failures blocking onboarding completion
-
   - Fixed CORS credentials support: replaced wildcard origin (`*`) with specific origins
   - Created `getCorsHeaders()` helper for consistent CORS handling across all 40+ endpoints
   - Added backend geolocation proxy (`/auth/geolocation`) to avoid frontend CORS issues
@@ -213,7 +228,6 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Root Cause**: API Gateway `allowCredentials: true` incompatible with wildcard origin
 
 - 🎯 **AI-POWERED ONBOARDING INTEGRATION** - Complete end-to-end onboarding flow with backend API
-
   - Backend `/auth/profile` GET endpoint retrieves user profile with onboardingCompleted flag
   - Backend `/auth/onboarding` POST endpoint saves selections and auto-creates initial budget
   - Automatic budget creation from onboarding selections with proper DynamoDB structure

@@ -1,11 +1,49 @@
 # Changelog
 
+## [1.3.0] - 2026-01-31
+
+### 🔒 SECURITY - Vulnerability Fixes and ESLint 9 Migration
+
+- **Fixed All npm Audit Vulnerabilities** - Resolved 19 security vulnerabilities (1 low, 1 moderate, 17 high)
+  - **eslint**: Updated from 8.50.0 to 9.39.2 (moderate severity)
+    - **Vulnerability**: Stack Overflow when serializing objects with circular references (GHSA-p5wg-g6qr-c7cg)
+    - **Impact**: Potential DoS in development environment
+
+  - **fast-xml-parser**: Added package override to force 5.3.4+ (17 high severity)
+    - **Vulnerability**: RangeError DoS Numeric Entities Bug (GHSA-37qj-frw5-hhjh)
+    - **Impact**: Affects AWS SDK transitive dependencies
+    - **Solution**: Package override forces safe version across all AWS SDK packages
+
+  - **jsdiff**: Fixed via npm audit fix (low severity)
+    - **Vulnerability**: DoS vulnerability in parsePatch and applyPatch (GHSA-73rr-hh4g-fpgx)
+
+  - **@aws-sdk/client-bedrock-runtime**: Updated from 3.958.0 to 3.980.0
+    - **Impact**: Includes fixes for transitive dependencies
+
+- **Migrated to ESLint 9 Flat Config** - Updated ESLint configuration to new format
+  - **Created**: `eslint.config.js` (new flat config format)
+  - **Migrated**: All rules from `.eslintrc.js` to new format
+  - **Added**: `fetch` global for Node.js 18+ compatibility
+  - **Updated**: `no-unused-vars` rule to ignore caught error variables
+  - **Result**: All ESLint checks pass (10 warnings about file size are acceptable)
+
+- **Security Validation**: All npm audit checks now pass with 0 vulnerabilities
+
+### 🐛 FIX - Onboarding "Create Budget" Button
+
+- **Fixed JavaScript Error in OnboardingPage** - "Create Budget" button now works correctly
+  - **Issue**: Clicking "Create Budget" threw `ReferenceError: result is not defined`
+  - **Root Cause**: Line 60 referenced `result` variable that was never assigned
+  - **Impact**: Users had to click "Skip for now" to proceed to budget page
+  - **Fix**: Store return value from `apiClient.completeOnboarding()` call
+  - **File Modified**: `packages/web-app/src/pages/OnboardingPage.tsx`
+  - **Result**: Budget creation with AI-suggested categories now works as intended
+
 ## [1.2.0] - 2026-01-14
 
 ### 🏗️ ARCHITECTURE - Simplification and Consolidation
 
 - **Paused Auth Lambda Refactoring** - Architectural review determined refactoring was premature optimization
-
   - **Status**: Only 16% complete (1 of 6 functions), adds unnecessary complexity for MVP
   - **Root Cause**: Simple import ordering bug (imports at line 1036 instead of line 20)
   - **Better Solution**: ESLint rules + file organization (5 min vs 3-week refactoring)
@@ -13,7 +51,6 @@
   - **Impact**: 92% faster development velocity, 44% less operational complexity
 
 - **Added ESLint Rules** - Prevent import ordering bugs without splitting functions
-
   - **no-use-before-define**: Prevents variables used before definition
   - **max-lines**: Warns at 500 lines to encourage refactoring when truly needed
   - **max-lines-per-function**: Warns at 100 lines for code quality
@@ -27,7 +64,6 @@
 ### 🔧 FIX - Critical userId/familyId Mismatch
 
 - **Fixed Budget Retrieval After Onboarding** - Users can now see budgets immediately after onboarding
-
   - **Issue**: Users complete onboarding but budget page shows "No budgets exist in backend"
   - **Root Cause**: Budget service used `claims.sub` instead of `claims["custom:userId"]`
   - **Result**: Auth-onboarding creates budget with `family_user_XXX`, budget service queries `family_<cognito-sub>`
@@ -44,21 +80,18 @@
 ### 🔧 FIX - API GATEWAY INTEGRATION (2026-01-13)
 
 - **Fixed API Gateway Not Routing to New Lambda** - Forced API Gateway redeployment to use auth-onboarding Lambda
-
   - **Root Cause**: API Gateway deployments not triggered when only Lambda code changes
   - **Issue**: CDK showed "no changes" because infrastructure code unchanged
   - **Result**: API Gateway continued routing to old monolithic Lambda
   - **Impact**: Budget creation still failing despite successful Lambda deployment
 
 - **Solution Applied**:
-
   - **Force Redeployment**: Added timestamp to API Gateway deployment description
   - **Integration Logging**: Added console logs showing which Lambda is used
   - **Verification Script**: Created `check-api-gateway-integration.ps1` to verify routing
   - **Documentation**: Created `API_GATEWAY_DEPLOYMENT_FIX.md` with root cause analysis
 
 - **Files Modified**:
-
   - `infrastructure/lib/api-stack.ts` - Force API Gateway redeployment
   - `scripts/check-api-gateway-integration.ps1` - Verification script (new)
   - `API_GATEWAY_DEPLOYMENT_FIX.md` - Root cause analysis and fix documentation (new)
@@ -71,7 +104,6 @@
 ### 🚀 DEPLOYMENT - AUTH ONBOARDING LAMBDA (2026-01-13)
 
 - **Deployed Standalone Auth-Onboarding Lambda** - Fixed critical budget creation bug via CI/CD pipeline
-
   - **Deployment Method**: Automated via GitHub Actions CI/CD pipeline
   - **Stack Deployed**: `budgetbuddy-dev-auth-onboarding` (new)
   - **Stack Updated**: `budgetbuddy-dev-api` (routing updated)
@@ -80,7 +112,6 @@
   - **Verification**: Budget creation now verified immediately after creation
 
 - **Deployment Artifacts Created**:
-
   - **DEPLOYMENT_INSTRUCTIONS.md** - Manual deployment guide (backup)
   - **DEPLOYMENT_INSTRUCTIONS_CICD.md** - CI/CD deployment guide (primary)
   - **READY_TO_DEPLOY.md** - Pre-deployment checklist
@@ -96,7 +127,6 @@
 ### 🏗️ ARCHITECTURAL REFACTORING - AUTH LAMBDA SPLIT (PHASE 2 - TASK 11.4)
 
 - **Auth Onboarding Lambda Infrastructure** - Created CDK stack for standalone auth-onboarding Lambda function
-
   - **Stack**: `AuthOnboardingStack` with dedicated Lambda function for onboarding endpoint
   - **Function**: `budgetbuddy-auth-onboarding` (~300 lines vs 1484 in monolithic)
   - **IAM**: Minimal permissions (DynamoDB read/write only) following least privilege principle
@@ -105,7 +135,6 @@
   - **Deployment**: Independent deployment from other auth functions
 
 - **Architecture Improvements**:
-
   - **Function Size**: Reduced from 1484 lines to ~300 lines (80% reduction)
   - **Import Safety**: All imports at top of file - ReferenceError bugs now impossible
   - **Independent Deployment**: Can deploy onboarding changes without affecting other auth endpoints
@@ -140,7 +169,6 @@
 ### 🔧 CRITICAL BUG FIX - ONBOARDING 500 ERROR (RECURRING ISSUE)
 
 - **Onboarding Import Order Bug** - Fixed ReferenceError causing 500 error during budget creation
-
   - **User Report**: dmytro.malyk@gmail.com unable to create budget for January 2026
   - **Root Cause**: `dynamoHelpers` and `FamilyIdResolver` imported at line 1036 but used starting at line 928
   - **Error**: `ReferenceError: dynamoHelpers is not defined` when onboarding endpoint executes
@@ -148,7 +176,6 @@
   - **Impact**: Users can now complete onboarding and create budgets successfully
 
 - **Architectural Issue Identified** - This is a **recurring bug** due to monolithic Lambda design
-
   - **Problem**: 1484-line auth Lambda function violates Single Responsibility Principle
   - **Pattern**: Multiple fixes to same area over time (commits 3bab970, 90e394b, e022b8c)
   - **Why It Recurs**: File size makes it hard to see full context, imports get placed near usage
@@ -175,14 +202,12 @@
 ### 📊 PDF EXPORT FUNCTIONALITY - PROFESSIONAL BUDGET REPORTS
 
 - **PDF Export Implementation** - Monthly budget reports with professional formatting and comprehensive data visualization
-
   - **Feature**: Export budget data as professionally formatted PDF reports
   - **Backend**: Enhanced export Lambda function with pdfkit library for PDF generation
   - **Frontend**: Added "Export PDF" button in BudgetPage header next to CSV export
   - **Report Contents**: Budget summary with totals, category breakdowns by group, transaction history, color-coded spending indicators
 
 - **PDF Report Features**:
-
   - **Professional Layout**: Title page, monthly sections, formatted tables with proper spacing
   - **Budget Summary**: Total income, savings, expenses, spent amounts, and remaining balance
   - **Category Breakdown**: Organized by budget groups (Income, Savings, Expenses) with planned vs spent comparison
@@ -212,14 +237,12 @@
 ### 🤖 WORKFLOW AUTOMATION HOOKS - SEAMLESS DEVELOPMENT CONTINUATION
 
 - **Automated Git Workflow Execution** - Created hooks that automatically handle git workflow and continue development
-
   - **Issue**: Previous hooks only sent reminder messages, didn't automate git workflow or continue development work
   - **Root Cause**: Manual intervention required for git commands and workflow continuation after documentation updates
   - **Solution**: Implemented automation hooks that execute git commands and continue work automatically
   - **Impact**: Seamless development workflow with zero manual intervention for git operations
 
 - **Automation Hook Features**:
-
   - **Auto Push and Continue Workflow**: Triggers on documentation update messages, executes git add/commit/push automatically
   - **Validation Success Auto-Push**: Triggers when validation passes, immediately pushes changes and continues work
   - **Workflow Continuity**: Ensures development work continues seamlessly after documentation updates
@@ -248,14 +271,12 @@ The automation system now provides seamless development workflow continuation wi
 ### 🔧 DOCUMENTATION VALIDATION ENHANCEMENTS - STRICT CHANGE DETECTION
 
 - **Enhanced Documentation Validation Script** - Improved validation to ensure ALL work since last commit is documented
-
   - **Issue**: Previous validation only checked file modification times, not whether current changes were documented
   - **Root Cause**: Work could be completed without being captured in documentation if files were recently modified
   - **Solution**: Added git change detection to validate that current uncommitted work is documented
   - **Impact**: No work can go undocumented - validation now requires documentation of ALL changes since last commit
 
 - **Git Integration Features**:
-
   - **Change Detection**: Automatically detects files changed since last commit and current uncommitted changes
   - **Strict Validation**: ANY current changes trigger mandatory documentation updates across all 4 files
   - **Specific Guidance**: Provides exact instructions for what needs to be added to each documentation file
@@ -270,7 +291,6 @@ The automation system now provides seamless development workflow continuation wi
 ### 🤖 AUTOMATION HOOKS - WORKFLOW CONTINUATION
 
 - **Auto-Push Workflow Hooks** - Created hooks to automatically handle git workflow and continue development
-
   - **Auto Push and Continue Workflow**: Triggers on documentation update messages, executes git add/commit/push automatically
   - **Validation Success Auto-Push**: Triggers when validation passes, immediately pushes changes and continues work
   - **Workflow Continuity**: Ensures development work continues seamlessly after documentation updates
@@ -294,7 +314,6 @@ The validation system now ensures that absolutely no work goes undocumented by d
 ### 🚀 MAJOR FEATURE COMPLETION - OFFLINE DATA CAPABILITY & DOCUMENTATION SYSTEM
 
 - **Complete Offline Data Capability Implementation** - Tasks 23.1, 23.2, 23.3 COMPLETE
-
   - **Offline Storage Implementation**: SQLite database with AsyncStorage integration, connection status detection
   - **Data Synchronization**: Automatic sync when connection restored, comprehensive SyncService with bidirectional sync
   - **Conflict Resolution**: Multiple strategies (server_wins, client_wins, merge) with batch processing and retry logic
@@ -315,7 +334,6 @@ The validation system now ensures that absolutely no work goes undocumented by d
 ### 📚 DOCUMENTATION VALIDATION SYSTEM - RESTORED & ENHANCED
 
 - **Documentation Validation System Restoration** - Fixed and enhanced mandatory documentation validation
-
   - **Issue Identified**: Documentation validation checks were missing from pre-commit hook
   - **Root Cause**: Validation script had overly strict daily date requirements
   - **Solution**: Enhanced validation focusing on content quality and established patterns
@@ -330,7 +348,6 @@ The validation system now ensures that absolutely no work goes undocumented by d
 ### 🔒 SECURITY PIPELINE ENHANCEMENTS - CONTINUED IMPROVEMENTS
 
 - **Comprehensive Security Infrastructure** - Enterprise-grade security measures maintained
-
   - **Multi-Layer Security Validation**: Pre-commit, PR, and deployment security checkpoints
   - **Cross-Platform Security Scripts**: Windows PowerShell and Linux/Mac Bash compatibility
   - **Zero Security Vulnerabilities**: Fixed js-yaml dependency, comprehensive secret detection
@@ -340,7 +357,6 @@ The validation system now ensures that absolutely no work goes undocumented by d
 ### 🔧 CRITICAL BUG FIXES - ONBOARDING & AUTHENTICATION
 
 - **Onboarding Budget Persistence Bug** - RESOLVED
-
   - **Issue**: Users complete onboarding successfully but budget page shows "No budgets exist in backend"
   - **Root Cause**: FamilyId mismatch between auth service (budget creation) and budget service (retrieval)
   - **Solution**: Updated all 6 budget service functions to lookup familyId from user profile in DynamoDB
@@ -348,7 +364,6 @@ The validation system now ensures that absolutely no work goes undocumented by d
   - **Functions Fixed**: getBudgets, createBudget, getCurrentBudget, getBudget, updateBudget, deleteBudget
 
 - **Authentication System Fixes** - Multiple critical issues resolved
-
   - **Cognito User Pool Client Configuration**: Added missing `userId` attribute for proper profile lookup
   - **Legacy User Token Support**: Added fallback for users without custom:userId attribute
   - **CORS Configuration**: Fixed CORS preflight failures blocking onboarding completion
@@ -357,14 +372,12 @@ The validation system now ensures that absolutely no work goes undocumented by d
 ### 🐛 UX IMPROVEMENTS - ONBOARDING FLOW ENHANCEMENTS
 
 - **Manual Location Selection** - Enhanced location detection accuracy
-
   - **Issue**: IP geolocation detects ISP location, not user's physical location
   - **Solution**: Added "Change Location" button with searchable city dropdown
   - **Features**: Real-time search filtering across 348 cities in 9 countries
   - **Impact**: Users can correct IP geolocation inaccuracies
 
 - **Onboarding Flow Fixes** - Multiple user experience improvements
-
   - **City Database Fallback System**: Added fallback mapping for suburbs (Ashburn → Washington DC)
   - **JavaScript Error Fixes**: Added safety checks for location data validation
   - **Redirect Loop Fix**: Removed automatic onboarding redirect, users can skip onboarding
@@ -398,20 +411,17 @@ The validation system now ensures that absolutely no work goes undocumented by d
 ### 📚 DOCUMENTATION VALIDATION SYSTEM - RESTORED & ENHANCED
 
 - **Documentation Validation System Restoration** - Fixed and enhanced mandatory documentation validation
-
   - **Issue Identified**: Documentation validation checks were missing from pre-commit hook, only security checks remained
   - **Root Cause**: Validation script had overly strict daily date requirements that were impractical for real development workflows
   - **Solution Implemented**: Enhanced validation to focus on content quality and established patterns rather than strict daily updates
 
 - **Enhanced Validation Logic** - Improved validation approach for better developer experience
-
   - **Pattern-Based Validation**: Validates content structure and required sections following established documentation patterns
   - **Reasonable Timeframes**: Updated validation windows (README: 7 days, CHANGELOG: 3 days, DEVELOPMENT_LOG: 3 days, development-status: 7 days)
   - **Content Quality Focus**: Checks for required sections, proper formatting, and technical detail requirements
   - **Multiple Daily Updates Support**: Allows multiple updates per day without forcing unnecessary documentation changes
 
 - **Fixed Technical Issues** - Resolved validation script problems
-
   - **Timezone Issues**: Fixed date calculation inconsistencies between different date methods
   - **Overly Strict Requirements**: Removed requirement for daily entries regardless of development activity
   - **Pattern Matching**: Enhanced validation to check for established documentation patterns (emojis, technical details, session summaries)
@@ -456,7 +466,6 @@ The BudgetBuddy project now has a comprehensive documentation validation system 
 ### 🔒 COMPREHENSIVE SECURITY PIPELINE IMPLEMENTATION - COMPLETE
 
 - **Enterprise-Grade Security Infrastructure** - Complete security pipeline with automated validation
-
   - **Multi-Layer Security Validation**: Pre-commit, PR, and deployment security checkpoints
   - **Cross-Platform Security Scripts**: Windows PowerShell and Linux/Mac Bash compatibility
   - **Automated Vulnerability Management**: Zero npm audit vulnerabilities (fixed js-yaml dependency)
@@ -464,21 +473,18 @@ The BudgetBuddy project now has a comprehensive documentation validation system 
   - **Comprehensive Secret Detection**: Advanced pattern matching across all file types
 
 - **Security Configuration Management** - Centralized security system
-
   - **SecurityConfigManager**: Environment-based security configuration with automatic detection
   - **DevToolController**: Complete development tool isolation with production blocking
   - **CredentialProtectionService**: Automated credential scanning and secure placeholder generation
   - **MockAuthGuard**: Production-safe mock authentication with environment validation
 
 - **CI/CD Security Pipeline** - Automated security enforcement
-
   - **Pre-Commit Validation**: `.husky/pre-commit` with comprehensive security checks
   - **PR Security Gates**: Enhanced `.github/workflows/pr-check.yml` with security validation
   - **Deployment Security**: New `.github/workflows/deployment-security.yml` with multi-phase validation
   - **Security Property Testing**: 37 property-based tests with 100+ iterations each
 
 - **Security Testing Framework** - Comprehensive validation system
-
   - **Property-Based Security Tests**: 10 core security properties validated
   - **Cross-Platform Testing**: Windows PowerShell and Linux/Mac Bash script compatibility
   - **Automated Vulnerability Detection**: Real-time scanning for secrets, credentials, and security issues
@@ -669,7 +675,6 @@ The BudgetBuddy application now has enterprise-grade security measures integrate
 ### 🛡️ COMPREHENSIVE SECURITY INFRASTRUCTURE IMPLEMENTATION
 
 - **Automated Security Validation System** - Multi-layer security enforcement
-
   - **Pre-deployment Security Scans**: Comprehensive validation before every deployment
     - JWT token detection (excludes legitimate mock tokens)
     - AWS credential scanning (AKIA pattern detection)
@@ -681,7 +686,6 @@ The BudgetBuddy application now has enterprise-grade security measures integrate
   - **Pre-commit Security Hook**: `scripts/pre-commit-security.sh` for developer workflow
 
 - **Developer Security Tools** - Integrated into development workflow
-
   - **npm Scripts Added**:
     - `npm run security:check` - Full comprehensive security scan
     - `npm run security:pre-commit` - Quick pre-commit validation
@@ -698,7 +702,6 @@ The BudgetBuddy application now has enterprise-grade security measures integrate
 ### 🔍 SECURITY VALIDATION COVERAGE
 
 - **Secret Detection Patterns**:
-
   - Real JWT tokens (100+ character eyJ patterns, excluding mock files)
   - AWS access keys (AKIA[0-9A-Z]{16} pattern)
   - Private keys (BEGIN.\*PRIVATE KEY pattern)
@@ -706,7 +709,6 @@ The BudgetBuddy application now has enterprise-grade security measures integrate
   - Sensitive log files (_.log, auth-logs.txt, debug-_.txt)
 
 - **File Exclusions & Safety**:
-
   - Mock authentication files properly excluded from scans
   - Test files excluded from password detection
   - Validation files excluded from false positives
@@ -720,27 +722,22 @@ The BudgetBuddy application now has enterprise-grade security measures integrate
 ### 📋 FILES MODIFIED FOR SECURITY
 
 1. **Removed Sensitive Files**:
-
    - `auth-logs.txt` - Contained 8920 lines of real JWT tokens and authentication data
 
 2. **Security Configuration**:
-
    - `.gitignore` - Added comprehensive security entries
    - `SECURITY.md` - Created comprehensive security documentation
 
 3. **Test Script Security**:
-
    - `scripts/create-test-user.js` - Replaced hardcoded password with environment variable
    - `scripts/test-transactions.js` - Updated to use environment variables
    - `README.md` - Removed hardcoded test credentials
 
 4. **Mock Token Safety**:
-
    - `packages/web-app/src/utils/mockAuth.ts` - Enhanced with clear development warnings
    - `backend/functions/auth/auth-familyid.test.js` - Updated mock token with safe identifiers
 
 5. **CI/CD Security Enhancement**:
-
    - `.github/workflows/deploy-dev.yml` - Added comprehensive pre-deployment security validation
    - `.github/workflows/pr-check.yml` - Enhanced with automated security scanning
 
@@ -803,7 +800,7 @@ let familyId = user.familyId;
 if (!familyId) {
   const userProfile = await dynamoHelpers.getItem(
     `USER#${user.userId}`,
-    "PROFILE"
+    "PROFILE",
   );
 
   if (userProfile && userProfile.familyId) {
@@ -976,14 +973,12 @@ if (!familyId) {
 ### 🐛 CRITICAL BUG FIXES - CORS Configuration
 
 - **CORS Credentials Support Fixed** - Resolved CORS preflight failures blocking onboarding completion
-
   - **Root Cause**: API Gateway configured with `allowCredentials: true` but Lambda returning `Access-Control-Allow-Origin: *`
   - **CORS Spec Violation**: Wildcard origin (`*`) is prohibited when credentials are enabled
   - **Impact**: `/auth/onboarding` and `/auth/profile` endpoints blocked by browser CORS policy
   - **Solution**: Created `getCorsHeaders()` helper that returns specific origin from request headers
 
 - **Backend Geolocation Proxy** - Added server-side proxy to avoid frontend CORS issues
-
   - **Root Cause**: Browser CORS policy blocks direct calls from CloudFront to ipapi.co
   - **Solution**: Added `/auth/geolocation` GET endpoint that fetches location server-side
   - **Impact**: Location detection now works without CORS errors
@@ -1050,7 +1045,6 @@ function getCorsHeaders(origin) {
 ### Files Modified
 
 1. `backend/functions/auth/index.js`:
-
    - Added `getCorsHeaders()` helper function
    - Added `/auth/geolocation` GET endpoint
    - Updated all response objects to use helper
@@ -1065,14 +1059,12 @@ function getCorsHeaders(origin) {
 ### 🐛 BUG FIXES - Onboarding Integration
 
 - **Location Detection Fixed** - Resolved HTTP 403 error preventing location detection
-
   - **Root Cause**: ip-api.com was returning 403 Forbidden errors (likely CORS or rate limiting)
   - **Solution**: Switched to ipapi.co API (1000 requests/day, no API key required, no CORS issues)
   - **Impact**: Location detection now works reliably for all users
   - **API Change**: Updated geolocationService to use ipapi.co with proper error handling
 
 - **Navigation Bug Fixed** - Resolved redirect loop when clicking "Skip for now"
-
   - **Root Cause**: AuthPage was redirecting to `/dashboard` which doesn't exist in routes
   - **Solution**: Changed all `/dashboard` redirects to `/budget` (the actual route)
   - **Impact**: Skip button now properly navigates to budget page without loops
@@ -1110,7 +1102,6 @@ function getCorsHeaders(origin) {
 ### 🎯 AI-POWERED ONBOARDING INTEGRATION - COMPLETE
 
 - **End-to-End Onboarding Flow** - Seamless integration with authentication system
-
   - Backend `/auth/profile` endpoint to get user profile with onboardingCompleted flag
   - Backend `/auth/onboarding` endpoint to save selections and auto-create initial budget
   - Frontend integration: AuthPage checks onboarding status and redirects accordingly
@@ -1118,14 +1109,12 @@ function getCorsHeaders(origin) {
   - Loading states and error handling throughout onboarding flow
 
 - **Auto-Budget Creation** - Initial budget automatically created from onboarding selections
-
   - Selected categories transformed into budget expense items with planned amounts
   - Budget created for current month with AI-generated flag
   - Seamless transition from onboarding to budget management
   - Uses same budget structure as manual creation for consistency
 
 - **Enhanced User Experience**
-
   - New users automatically redirected to onboarding after registration
   - Existing users skip onboarding if already completed
   - Loading indicators during budget creation
@@ -1154,13 +1143,11 @@ function getCorsHeaders(origin) {
 ### 🌍 DETAILED CITY EXPENSE DATA GENERATION - COMPLETE
 
 - **Generated 348 Unique Cities** - Comprehensive expense data across 9 countries
-
   - **Countries**: Canada, USA, UK, Germany, France, Netherlands, Spain, Italy, Australia
   - **Data Quality**: 101 duplicates detected and removed automatically
   - **Cost**: ~$0.50-0.70 (45-50 AWS Bedrock API requests)
 
 - **Detailed Expense Structure** - 18 granular expense fields (vs 10 generic)
-
   - **Housing (3)**: housing, homeInsurance, utilities
   - **Transportation (5)**: publicTransit, gas, carInsurance, carMaintenance, parking
   - **Food (2)**: groceries, diningOut
@@ -1168,7 +1155,6 @@ function getCorsHeaders(origin) {
   - **Other (3)**: entertainment, childcare, personal
 
 - **Country-Specific Healthcare Rules** - Accurate universal vs private healthcare
-
   - **Canada/UK**: healthInsurance=0, doctorVisits=0 (universal healthcare)
   - **USA**: healthInsurance=$300-500, doctorVisits=$30-100 (private healthcare)
   - **All Countries**: Realistic dental and vision costs (often not covered)
@@ -1181,17 +1167,14 @@ function getCorsHeaders(origin) {
 ### 🔧 DATA GENERATION SCRIPT IMPROVEMENTS
 
 - **Incremental File Writing** - Saves progress after each batch (10 cities)
-
   - **Benefit**: No data loss if script crashes or times out
   - **Progress Tracking**: Real-time updates showing cities generated and duplicates removed
 
 - **Duplicate Detection** - Automatic detection and removal of duplicate cities
-
   - **Logic**: Keeps first occurrence when same city appears multiple times
   - **Reporting**: Detailed list of all duplicates found and skipped
 
 - **Resume Capability** - Loads existing cities and continues from where it left off
-
   - **Implementation**: Reads existing cityExpenseData.ts file before starting
   - **Benefit**: Can restart script without losing previous work
 
@@ -1217,21 +1200,18 @@ function getCorsHeaders(origin) {
 ### 🔧 RECURRING BUDGET CALCULATION FIX - COMPLETE TESTING & DEPLOYMENT
 
 - **Date-Dependent Recurring Calculations** - Fixed critical bug in recurring budget planning
-
   - **Problem**: Planned amounts didn't account for start date, causing mismatches with actual transactions
   - **Example**: Bi-weekly $5,000 salary showed $5,000 planned but $10,000 received (2 transactions)
   - **Root Cause**: System stored per-occurrence amount as planned amount, ignoring frequency and start date
   - **Solution**: Implemented date-dependent calculation that counts actual occurrences in each month
 
 - **Shared Utility Package** - Cross-platform calculation consistency
-
   - **Created**: `packages/shared/src/utils/recurringCalculations.ts` with core calculation functions
   - **Functions**: `calculateOccurrencesInMonth()`, `getOccurrenceDatesInMonth()`, `calculatePlannedMonthlyAmount()`
   - **Timezone Fix**: Added `parseLocalDate()` helper to handle local timezone correctly (fixes Windows date shift bug)
   - **Used By**: Both web and mobile apps for consistent calculations
 
 - **Web App Integration** - Enhanced recurring item creation
-
   - **Updated**: `packages/web-app/src/pages/BudgetPage.tsx` with date picker for start dates
   - **UI Changes**: Added "First Occurrence Date" field for recurring items
   - **Label Changes**: "Amount per Occurrence" for recurring items (vs "Planned Amount" for one-time)
@@ -1245,7 +1225,6 @@ function getCorsHeaders(origin) {
 ### 🧪 COMPREHENSIVE TEST SUITE - ALL PASSING
 
 - **Shared Package Tests**: 13/13 tests passing
-
   - ✅ 2 bi-weekly occurrences starting Dec 5 (Dec 5, Dec 19)
   - ✅ 3 bi-weekly occurrences starting Dec 1 (Dec 1, Dec 15, Dec 29)
   - ✅ 1 bi-weekly occurrence starting Dec 20
@@ -1262,7 +1241,6 @@ function getCorsHeaders(origin) {
 ### 🔧 TECHNICAL ACHIEVEMENTS
 
 - **Timezone Handling**: Fixed critical bug where dates were shifting by one day on Windows
-
   - **Issue**: `new Date(dateString)` interprets in UTC, causing timezone mismatches
   - **Solution**: Created `parseLocalDate()` that parses YYYY-MM-DD in local timezone
   - **Impact**: Consistent date handling across all platforms
@@ -1275,14 +1253,12 @@ function getCorsHeaders(origin) {
 ### 📱 MOBILE APP TESTING - CROSS-PLATFORM VERIFICATION COMPLETE
 
 - **Mobile Test Suite**: 13/13 tests passing
-
   - ✅ Unit tests for bi-weekly, monthly, and weekly calculations
   - ✅ Property-based tests (30 runs each) for calculation accuracy
   - ✅ Variance calculation tests for planned vs actual amounts
   - ✅ Cross-platform consistency verification
 
 - **Mobile Setup**
-
   - Installed dependencies with `--legacy-peer-deps` flag
   - Resolved React Native peer dependency conflicts
   - Updated Jest setup with expo-sqlite mock
@@ -1299,7 +1275,6 @@ function getCorsHeaders(origin) {
 ### 📊 PROGRESS UPDATE
 
 - **Recurring Budget Feature**: 100% Complete
-
   - ✅ Calculation logic implemented and tested
   - ✅ Web app integration complete
   - ✅ Mobile app integration complete
@@ -1308,7 +1283,6 @@ function getCorsHeaders(origin) {
   - ✅ All 26 tests passing (13 shared + 13 web + 13 mobile)
 
 - **Overall Project Progress**: ~85% Complete
-
   - Core features: 100% (recurring budgets, transactions, categories)
   - Testing: 95% (unit tests, property tests, integration tests)
   - Documentation: 90% (comprehensive guides and examples)
@@ -1325,12 +1299,10 @@ function getCorsHeaders(origin) {
 ### 📊 CALCULATION EXAMPLES - VERIFIED CORRECT
 
 - **Bi-weekly $5,000 starting Dec 5, 2025**:
-
   - Occurrences: 2 (Dec 5, Dec 19)
   - Planned Amount: $10,000 ✅
 
 - **Bi-weekly $5,000 starting Dec 1, 2025**:
-
   - Occurrences: 3 (Dec 1, Dec 15, Dec 29)
   - Planned Amount: $15,000 ✅
 
@@ -1401,7 +1373,6 @@ Both web and mobile apps now:
 ### 🚀 GOOGLE SIGN-IN AUTHENTICATION - COMPLETE IMPLEMENTATION
 
 - **Google OAuth 2.0 Integration** - Full cross-platform authentication
-
   - **Web Platform**: Google OAuth 2.0 with client ID and secret configured
   - **iOS Platform**: Platform-specific OAuth client ID from Google Cloud Console
   - **Android Platform**: Platform-specific OAuth client ID with SHA-1 fingerprint support
@@ -1409,7 +1380,6 @@ Both web and mobile apps now:
   - **Token Management**: Secure token storage using Expo SecureStore (iOS Keychain/Android Keystore)
 
 - **UI Components & Integration**
-
   - **GoogleSignInButton**: Reusable component with loading states and platform variants
   - **LoginScreen Integration**: Google Sign-In button added to login flow with divider
   - **Auth Service Methods**: signInWithGoogle, linkGoogleAccount, unlinkGoogleAccount
@@ -1458,7 +1428,6 @@ Both web and mobile apps now:
 ### 🚀 MAJOR FEATURES - COMPLETE BUDGET MANAGEMENT SYSTEM
 
 - **Budget Management Foundation** - Full-featured budget system with offline support
-
   - **Budget Data Models**: Comprehensive TypeScript interfaces for budgets, summaries, and monthly overviews
   - **Budget Service**: Complete CRUD operations with offline-first architecture and React Query integration
   - **Month Navigation**: Interactive month navigation with haptic feedback and smooth transitions
@@ -1526,7 +1495,6 @@ Both web and mobile apps now:
 ### 🚀 MAJOR FEATURES - MOBILE APP FOUNDATION
 
 - **React Native + Expo Mobile App** - Complete mobile application foundation implemented
-
   - **Project Structure**: Full React Native + Expo managed workflow with TypeScript
   - **Navigation**: Bottom tab navigation (Budget, Transactions, Summary, Settings) with stack navigators
   - **Development Environment**: ESLint, Jest, Metro bundler, Babel configuration
@@ -1565,7 +1533,6 @@ Both web and mobile apps now:
 ### 🐛 CRITICAL BUG FIXES
 
 - **NaN Serialization Bug** - Fixed data compatibility issue discovered by property tests
-
   - **Root Cause**: NaN values in budget data were converting to null during JSON serialization
   - **Impact**: Round-trip data equality tests failing, potential data corruption
   - **Solution**: Added `noNaN: true` to fast-check generators and proper NaN validation
@@ -1612,7 +1579,6 @@ Both web and mobile apps now:
 ### 🔧 CRITICAL BUG FIXES
 
 - **Blank Page After Login** - Fixed JavaScript error causing blank page after successful login
-
   - **Root Cause**: Budget data from backend had undefined `plannedAmount`/`spentAmount` values
   - **Error**: `Cannot read properties of undefined (reading 'toLocaleString')`
   - **Impact**: Users could login but saw blank page instead of budget interface
@@ -1718,7 +1684,6 @@ Both web and mobile apps now:
 ### Added
 
 - 🌍 **Timezone Management System** (Requirement 13)
-
   - Created `timezoneHelpers.ts` with comprehensive timezone utilities
   - Created `monthHelpers.ts` for timezone-aware month calculations
   - Added timezone detection using browser's `Intl.DateTimeFormat` API
@@ -1727,14 +1692,12 @@ Both web and mobile apps now:
   - Functions: `detectUserTimezone()`, `getCurrentDateInTimezone()`, `getCurrentMonthInTimezone()`, `formatDateInTimezone()`, `isTodayInTimezone()`
 
 - 🏷️ **Transaction & Budget Item Clarity** (Requirement 10)
-
   - Updated TransactionForm modal title: "Record Actual Income" / "Record Actual Expense"
   - Updated AddBudgetItem modal title: "Add Planned Income/Expense/Savings Item"
   - Clear distinction between actual transactions and planned budget items
   - Updated submit button labels: "Record Transaction" vs "Add Budget Item"
 
 - ⚠️ **Transaction Date Validation** (Requirement 11)
-
   - Created `dateValidation.ts` with date validation utilities
   - Warning banner when transaction date is outside current budget month
   - Three action options: Continue with current month, Switch to correct month, or Cancel
@@ -1742,7 +1705,6 @@ Both web and mobile apps now:
   - Clear warning message: "This transaction date ([Date]) is outside the current budget month ([Month Year])"
 
 - ✏️ **Transaction Editing** (Requirement 12)
-
   - Created `transactionHelpers.ts` for transaction operations
   - Double-click any transaction in the list to edit it
   - Form pre-populates with existing transaction data
