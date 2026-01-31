@@ -526,7 +526,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Test boundary cases
     - _Requirements: 2.5_
 
-  - [x] 9.5 Test batch processing property
+  - [-] 9.5 Test batch processing property
     - Generate random user lists of varying sizes
     - Verify all users processed exactly once
     - Test with 0, 1, 10, 100, 1000 users
