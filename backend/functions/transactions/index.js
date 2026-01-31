@@ -25,6 +25,9 @@ const {
 } = require("./errors");
 const { updateBudgetCalculations } = require("./budget-service");
 
+// Import permission checking from shared layer
+const { checkPermission } = require("/opt/nodejs/shared");
+
 /**
  * Main Lambda handler for transaction operations
  * Routes requests to appropriate handlers based on HTTP method and path
@@ -161,6 +164,16 @@ exports.handler = async (event, context) => {
  * POST /transactions
  */
 async function createTransaction(event, user) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "transaction:create");
+  if (permissionError) {
+    logger.warn("Permission denied for transaction creation", {
+      userId: user.userId,
+      role: user.familyRole,
+    });
+    return permissionError;
+  }
+
   logger.info("Creating new transaction", {
     userId: user.userId,
     familyId: user.familyId,
@@ -294,6 +307,16 @@ async function createTransaction(event, user) {
  * GET /transactions?categoryId=...&type=...&startDate=...&endDate=...&limit=...&nextToken=...
  */
 async function getTransactions(event, user) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "transaction:view");
+  if (permissionError) {
+    logger.warn("Permission denied for viewing transactions", {
+      userId: user.userId,
+      role: user.familyRole,
+    });
+    return permissionError;
+  }
+
   logger.info("Getting transactions for family", {
     userId: user.userId,
     familyId: user.familyId,
@@ -416,6 +439,17 @@ async function getTransactions(event, user) {
  * GET /transactions/{transactionId}
  */
 async function getTransaction(event, user, transactionId) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "transaction:view");
+  if (permissionError) {
+    logger.warn("Permission denied for viewing transaction", {
+      userId: user.userId,
+      role: user.familyRole,
+      transactionId,
+    });
+    return permissionError;
+  }
+
   logger.info("Getting specific transaction", {
     userId: user.userId,
     familyId: user.familyId,
@@ -465,6 +499,17 @@ async function getTransaction(event, user, transactionId) {
  * PUT /transactions/{transactionId}
  */
 async function updateTransaction(event, user, transactionId) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "transaction:edit");
+  if (permissionError) {
+    logger.warn("Permission denied for updating transaction", {
+      userId: user.userId,
+      role: user.familyRole,
+      transactionId,
+    });
+    return permissionError;
+  }
+
   logger.info("Updating transaction", {
     userId: user.userId,
     familyId: user.familyId,
@@ -600,6 +645,17 @@ async function updateTransaction(event, user, transactionId) {
  * DELETE /transactions/{transactionId}
  */
 async function deleteTransaction(event, user, transactionId) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "transaction:delete");
+  if (permissionError) {
+    logger.warn("Permission denied for deleting transaction", {
+      userId: user.userId,
+      role: user.familyRole,
+      transactionId,
+    });
+    return permissionError;
+  }
+
   logger.info("Deleting transaction", {
     userId: user.userId,
     familyId: user.familyId,
