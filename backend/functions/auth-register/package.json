@@ -1,0 +1,16 @@
+{
+  "name": "budgetbuddy-auth-register",
+  "version": "1.0.0",
+  "description": "BudgetBuddy authentication registration Lambda function",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.0.0",
+    "@aws-sdk/client-dynamodb": "^3.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

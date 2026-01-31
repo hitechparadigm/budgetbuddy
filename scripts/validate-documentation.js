@@ -345,58 +345,50 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
   }
 
   // ENHANCED: Check if current changes/work is documented - STRICT MODE
-  if (gitChanges && gitChanges.currentChanges.length > 0) {
+  if (
+    gitChanges &&
+    (gitChanges.currentChanges.length > 0 || gitChanges.changedFiles.length > 0)
+  ) {
     const today = new Date().toISOString().split("T")[0];
 
-    // Check if this specific file documents the current work
-    let documentsCurrentWork = false;
+    // STRICT: Check if this file was actually modified in the current commit/staged changes
+    const fileWasModified =
+      gitChanges.currentChanges.includes(filePath) ||
+      gitChanges.changedFiles.includes(filePath);
 
-    // Check for current work indicators in the content
-    const hasCurrentWorkIndicators =
-      content.includes("workflow automation") ||
-      content.includes("auto-push") ||
-      content.includes("hook") ||
-      content.includes("automation") ||
-      content.includes("git workflow") ||
-      content.includes("continue work") ||
-      content.includes("validation-success") ||
-      content.includes("auto-push-continue");
-
-    if (hasCurrentWorkIndicators) {
-      documentsCurrentWork = true;
-    }
-
-    // If current work is not documented, require updates
-    if (!documentsCurrentWork) {
+    if (!fileWasModified) {
       result.status = "FAIL";
       result.issues.push(
-        `MANDATORY: ${filePath} must document current changes (${gitChanges.currentChanges.join(
-          ", "
-        )}) - ALL work completed since last commit must be captured in documentation`
+        `MANDATORY: ${filePath} was NOT updated in this commit but code/files were changed`
+      );
+      result.issues.push(
+        `REQUIRED: Update ${filePath} to document the current changes: ${gitChanges.currentChanges
+          .slice(0, 3)
+          .join(", ")}${gitChanges.currentChanges.length > 3 ? "..." : ""}`
       );
 
       // Provide specific guidance for each file type
       if (filePath === "CHANGELOG.md") {
         result.issues.push(
-          `REQUIRED: Add new version entry '## [X.Y.Z] - ${today}' with details of workflow automation hooks`
+          `REQUIRED: Add new version entry '## [X.Y.Z] - ${today}' with details of all changes in this commit`
         );
       }
 
       if (filePath === "DEVELOPMENT_LOG.md") {
         result.issues.push(
-          `REQUIRED: Add session entry '## ${today} - Workflow Automation Hooks (Session X)' with session summary`
+          `REQUIRED: Add session entry '## ${today} - [Session Title] (Session X)' documenting today's work`
         );
       }
 
       if (filePath === "README.md") {
         result.issues.push(
-          `REQUIRED: Update 'Recent Achievements' section with workflow automation hooks implementation`
+          `REQUIRED: Update 'Recent Achievements' section with latest work completed`
         );
       }
 
       if (filePath === "docs/development-status.md") {
         result.issues.push(
-          `REQUIRED: Update 'Last Updated' field and add workflow automation hooks to status`
+          `REQUIRED: Update 'Last Updated' field to ${today} and document progress`
         );
       }
     }
