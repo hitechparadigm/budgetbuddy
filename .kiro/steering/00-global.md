@@ -336,12 +336,13 @@ When working autonomously (overnight development):
 For each task:
 
 1. **Implement** the feature/fix
-2. **Validate**: `node scripts/validate-for-commit.js`
-3. **If pass**: Commit using `node scripts/safe-commit-push.js "feat: description"`
-4. **If fail**: Auto-fix and retry (max 3 attempts)
-5. **Monitor CI/CD**: Check deployment status
-6. **If CI/CD fails**: Analyze logs, fix, re-validate, commit fix
-7. **Continue** to next task
+2. **Commit**: Use `node scripts/safe-commit-push.js "feat: description"` (validates internally)
+3. **If validation fails**: Auto-fix and retry (max 3 attempts)
+4. **Monitor CI/CD**: Check deployment status (if applicable)
+5. **If CI/CD fails**: Analyze logs, fix, commit fix (max 2 attempts)
+6. **Continue** to next task without stopping
+
+**CRITICAL**: Never run `validate-for-commit.js` manually before `safe-commit-push.js` - it causes duplicate validation. The safe-commit-push script handles validation internally.
 
 ### Safety Mechanisms
 
@@ -358,6 +359,8 @@ For each task:
 - Architectural decision required
 - Breaking change needed
 - Unclear requirements
+
+**IMPORTANT FOR AUTONOMOUS MODE**: Do NOT stop and ask for help during overnight development. Continue to next task if blocked. Document blockers in commit messages and DEVELOPMENT_LOG.md.
 
 ## Interaction Guidelines
 
