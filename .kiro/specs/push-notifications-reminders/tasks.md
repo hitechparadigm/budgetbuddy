@@ -83,8 +83,8 @@ This implementation plan covers the complete push notification and daily reminde
 
 ### Phase 2: Notification Service Lambda (Week 1)
 
-- [ ] 2. Implement Notification Service Lambda
-  - [ ] 2.1 Create function structure
+- [-] 2. Implement Notification Service Lambda
+  - [x] 2.1 Create function structure
     - Create backend/functions/notifications/ directory
     - Create index.js with handler function
     - Create package.json with dependencies

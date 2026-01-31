@@ -1,5 +1,74 @@
 # Changelog
 
+## [1.8.2] - 2026-01-31
+
+### 📱 LAMBDA - Notification Service Documentation
+
+- **Created Notification Service README** - Complete documentation for notifications Lambda
+  - **File**: `backend/functions/notifications/README.md` (400+ lines)
+  - **Sections**:
+    - Overview and purpose
+    - Handler function and supported endpoints
+    - Environment variables and IAM permissions
+    - API endpoint documentation with examples
+    - Data models for devices, preferences, notifications
+    - Function documentation with parameters and returns
+    - Testing procedures (unit, manual, logs)
+    - Error handling and logging
+    - Security considerations
+    - Performance metrics and cost estimation
+    - Deployment instructions
+    - Troubleshooting guide
+    - Future enhancements
+
+### 📱 TECHNICAL DETAILS
+
+**API Endpoints**:
+
+- POST `/notifications/register-device` - Register device for push notifications
+- DELETE `/notifications/device/{deviceId}` - Remove device registration
+- GET `/notifications/preferences` - Get notification preferences
+- PUT `/notifications/preferences` - Update notification preferences
+- POST `/notifications/send` - Send push notification (internal)
+
+**Data Models**:
+
+- Device Registration: User devices with Expo push tokens
+- Notification Preferences: User settings for alerts and reminders
+- Notification History: Sent notifications with read/unread status
+
+**Functions**:
+
+- `registerDeviceToken()` - Register device for push notifications
+- `unregisterDeviceToken()` - Remove device registration
+- `getUserDeviceTokens()` - Get all user devices
+- `sendExpoPushNotification()` - Send via Expo API
+- `sendNotification()` - Send to all user devices
+- `getNotificationPreferences()` - Get user preferences
+- `updateNotificationPreferences()` - Update user preferences
+
+**Performance**:
+
+- Memory: 512 MB
+- Timeout: 30 seconds
+- Provisioned Concurrency: 2
+- Average Duration: 200ms
+- Cold Start: ~500ms
+
+**Cost**:
+
+- Per invocation: ~$0.000001
+- Per month (10K users, 100K invocations): ~$0.50
+- Expo Push Notifications: Free tier (1M/month)
+
+### 📱 IMPACT
+
+- **Documentation Complete**: Comprehensive guide for notification service
+- **Developer Experience**: Clear API documentation with examples
+- **Testing**: Manual testing procedures with AWS CLI commands
+- **Troubleshooting**: Common issues and solutions documented
+- **Next Steps**: Implement remaining endpoints (history, mark as read)
+
 ## [1.8.1] - 2026-01-31
 
 ### 🏗️ INFRASTRUCTURE - Notification Stack CDK Implementation
