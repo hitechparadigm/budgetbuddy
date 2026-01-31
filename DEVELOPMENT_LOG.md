@@ -1,12 +1,12 @@
 # Development Log
 
-## 2026-01-31 - Multi-Currency Support Phase 1 (Session 26)
+## 2026-01-31 - Multi-Currency Support Phase 1 & 2 (Session 26)
 
 ### Session Summary
 
-**Duration**: 2 hours
-**Focus**: Implementing currency utility module with comprehensive testing
-**Outcome**: 71 tests passing, foundation for global currency support
+**Duration**: 3 hours
+**Focus**: Implementing currency utility module and currency selector component
+**Outcome**: 101 tests passing (71 utilities + 30 component), foundation for global currency support
 
 ### Implementation Details
 
@@ -108,38 +108,80 @@
 
 3. **tasks.md** - Implementation task list
    - 13 major tasks with sub-tasks
-   - Phase 1: Currency utility module (COMPLETE)
-   - Phase 2-9: Remaining implementation
+   - Phase 1: Currency utility module (COMPLETE ✅)
+   - Phase 2: Currency selector component (COMPLETE ✅)
+   - Phase 3-9: Remaining implementation
    - Definition of done
    - Success criteria
 
+### Phase 2 Implementation
+
+**Currency Selector Component** (`packages/web-app/src/components/CurrencySelector.tsx`):
+
+- **React Component**: Dropdown for currency selection
+- **Features**:
+  - Displays all 6 supported currencies
+  - Shows currency symbol, code, and full name
+  - Accessible keyboard navigation
+  - Disabled and required states
+  - Custom className support
+  - Compact variant (CurrencySelectorCompact)
+  - Proper ARIA labels and attributes
+
+**Component Tests** (`packages/web-app/src/components/CurrencySelector.test.tsx`):
+
+- **30 unit tests** covering all functionality
+- **Test Categories**:
+  - Rendering (9 tests) - labels, currencies, formatting
+  - Interaction (3 tests) - onChange callbacks, disabled state
+  - Disabled state (2 tests)
+  - Required validation (2 tests)
+  - Accessibility (3 tests) - ARIA labels, keyboard navigation
+  - Currency display format (6 tests) - all 6 currencies
+  - Compact variant (2 tests)
+  - Edge cases (3 tests) - empty value, placeholder
+
+**Styling** (`packages/web-app/src/index.css`):
+
+- Responsive design (mobile-optimized)
+- Dark mode support
+- Focus indicators for accessibility
+- Disabled state styling
+- Consistent with existing design system
+
+**Dependencies Added**:
+
+- `@testing-library/react` - Component testing
+- `@testing-library/jest-dom` - DOM matchers
+- `@testing-library/user-event` - User interaction simulation
+
 ### Next Steps
 
-**Immediate** (Phase 2):
+**Immediate** (Phase 3):
 
-- Create CurrencySelector component for web
-- Add currency selector tests
-- Style currency selector
+- Update user profile DynamoDB schema with currency field
+- Update auth Lambda function to handle currency
+- Add currency validation to auth endpoints
 
-**Short-term** (Phase 3-4):
+**Short-term** (Phase 4-5):
 
-- Update user profile schema with currency field
 - Update budget schema with currency field
 - Update transaction schema with currency field
 - Update Lambda functions to handle currency
+- Add currency to budget/transaction creation
 
-**Medium-term** (Phase 5-6):
+**Medium-term** (Phase 6-7):
 
-- Integrate currency selection in onboarding
-- Add currency management to settings
+- Integrate currency selection in onboarding flow
+- Add currency management to settings page
 - Update budget display with currency formatting
 - Update transaction display with currency formatting
 
-**Long-term** (Phase 7-9):
+**Long-term** (Phase 8-9):
 
-- Mobile app integration
-- Data migration for existing users
-- End-to-end testing
+- Mobile app integration (React Native component)
+- Data migration for existing users (default to USD)
+- End-to-end testing with real AWS
 
 ### Files Modified
 
@@ -147,6 +189,8 @@
 
 - `packages/shared/src/utils/currency.ts` (300+ lines)
 - `packages/shared/src/utils/currency.test.ts` (400+ lines, 71 tests)
+- `packages/web-app/src/components/CurrencySelector.tsx` (100+ lines)
+- `packages/web-app/src/components/CurrencySelector.test.tsx` (200+ lines, 30 tests)
 - `.kiro/specs/multi-currency/requirements.md`
 - `.kiro/specs/multi-currency/design.md`
 - `.kiro/specs/multi-currency/tasks.md`
@@ -154,6 +198,8 @@
 **Updated**:
 
 - `packages/shared/src/utils/index.ts` (already exported currency utilities)
+- `packages/web-app/src/index.css` (added currency selector styles with dark mode)
+- `packages/web-app/package.json` (added @testing-library dependencies)
 
 ### Metrics
 

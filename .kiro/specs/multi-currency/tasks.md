@@ -8,8 +8,8 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
 
 ### Phase 1: Currency Utility Module
 
-- [ ] 1. Create Currency Utility Module
-  - [ ] 1.1 Create `packages/shared/src/utils/currency.ts`
+- [x] 1. Create Currency Utility Module
+  - [x] 1.1 Create `packages/shared/src/utils/currency.ts`
     - Define CurrencyConfig interface
     - Create CURRENCY_CONFIGS constant with 6 currencies
     - Implement getCurrencyConfig() function
@@ -20,7 +20,7 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
     - Implement getCurrencySymbol() function
     - _Requirements: 3.1-3.5_
 
-  - [ ] 1.2 Create currency utility tests
+  - [x] 1.2 Create currency utility tests
     - Test formatCurrency() for all 6 currencies
     - Test decimal places (2 for most, 0 for JPY)
     - Test thousands separators
@@ -30,15 +30,15 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
     - Test parsing and formatting are inverse operations
     - _Requirements: 3.1-3.5_
 
-  - [ ] 1.3 Export currency utilities from shared package
+  - [x] 1.3 Export currency utilities from shared package
     - Add to `packages/shared/src/utils/index.ts`
     - Update package exports
     - _Requirements: 3.5_
 
 ### Phase 2: Currency Selector Component
 
-- [ ] 2. Create Currency Selector Component
-  - [ ] 2.1 Create `packages/web-app/src/components/CurrencySelector.tsx`
+- [x] 2. Create Currency Selector Component
+  - [x] 2.1 Create `packages/web-app/src/components/CurrencySelector.tsx`
     - Create CurrencySelectorProps interface
     - Implement dropdown with all 6 currencies
     - Show currency symbol, code, and name
@@ -48,7 +48,7 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
     - Accessible keyboard navigation
     - _Requirements: 1.1, 2.1-2.3_
 
-  - [ ] 2.2 Create currency selector tests
+  - [x] 2.2 Create currency selector tests
     - Test rendering with all currencies
     - Test currency change callback
     - Test disabled state
@@ -56,7 +56,7 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
     - Test keyboard navigation
     - _Requirements: 1.1, 2.1-2.3_
 
-  - [ ] 2.3 Add currency selector styles
+  - [x] 2.3 Add currency selector styles
     - Consistent with existing design system
     - Responsive for mobile
     - Clear focus indicators
