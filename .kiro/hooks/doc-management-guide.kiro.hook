@@ -6,24 +6,14 @@
   "when": {
     "type": "fileCreated",
     "patterns": [
-      "*requirements*.md",
-      "*design*.md",
-      "*tasks*.md",
-      "*task*.md",
-      "*requirement*.md",
-      "*spec*.md",
-      "*specification*.md",
-      "docs/*.md",
-      "REQUIREMENTS.md",
-      "DESIGN.md",
-      "TASKS.md",
-      "BUGS.md",
-      "*bug*.md"
+      ".kiro/specs/*/requirements.md",
+      ".kiro/specs/*/design.md",
+      ".kiro/specs/*/tasks.md"
     ]
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Review this documentation change. If this involves requirements, design, or tasks documents, ensure that:\n\n1. New content is being ADDED to existing main documents, not replacing existing content\n2. New requirements are being added (not just bug fixes)\n3. Bug tracking is maintained in a separate document from requirements/design/tasks\n4. The main requirements/design/tasks document structure is preserved\n\nIf any of these practices are violated, provide specific guidance on how to properly organize the documentation according to the project's documentation standards."
+    "prompt": "Spec document created/edited. Ensure:\n1. Adding to existing content (not replacing)\n2. Following spec structure from .kiro/steering/structure.md\n3. Maintaining separation: requirements vs design vs tasks\n\nSee .kiro/SPEC_STRUCTURE_EXPLAINED.md for guidance."
   },
   "workspaceFolderName": "budgetbuddy",
   "shortName": "doc-management-guide"

@@ -1,0 +1,13 @@
+{
+  "name": "Task Continuation",
+  "version": "2.0.0",
+  "description": "Automatically continues to next task after completion",
+  "enabled": true,
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Task complete. Check .kiro/specs/*/tasks.md for next incomplete task. If found, start immediately without asking. If all complete, report status."
+  }
+}

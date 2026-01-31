@@ -1,167 +1,199 @@
 # Active Hooks - BudgetBuddy
 
 **Last Updated**: 2026-01-31
-**Status**: Cleaned up and secured
+**Status**: Optimized and streamlined
 
 ---
 
-## Git Hooks (Essential - DO NOT DISABLE)
+## Overview
 
-### 1. `.husky/pre-commit`
+The hook system has been optimized from 13 to 8 active hooks, eliminating duplication and redundancy while maintaining full autonomous development capability.
 
-**Purpose**: Security, linting, type checking, documentation validation
-**Trigger**: Before every commit
+**Key Improvements:**
+
+- ✅ Reduced hook count by 38% (13 → 8)
+- ✅ Eliminated duplicate validation logic
+- ✅ Removed false-trigger AWS monitoring
+- ✅ Consolidated continuation logic
+- ✅ Simplified prompts for clarity
+
+---
+
+## Active Hooks (8 total)
+
+### Git Hooks (2) - Mandatory Security Layer
+
+#### 1. `.husky/pre-commit`
+
+**Purpose**: Final safety check before commit is recorded
+**Trigger**: Every git commit
 **Status**: ✅ Active and required
-**Can be bypassed**: ⚠️ Yes with `--no-verify` (DO NOT DO THIS!)
+**Logic**:
 
-### 2. `.husky/pre-push`
+- Checks for SKIP_PRECOMMIT_VALIDATION flag
+- If set (by safe-commit-push.js), skips validation
+- Otherwise, runs full validation (security, lint, types, docs)
+  **Can be bypassed**: ⚠️ Yes with `--no-verify` (DO NOT DO THIS!)
 
-**Purpose**: Security re-validation + documentation enforcement
-**Trigger**: Before every push
+#### 2. `.husky/pre-push`
+
+**Purpose**: Final security check before code leaves local machine
+**Trigger**: Every git push
 **Status**: ✅ Active and required
+**Logic**: Quick security re-check as safety net
 **Safety net**: Catches commits that bypassed pre-commit
 
 ---
 
-## Kiro Hooks (Optional - Assistive)
+### Kiro Hooks (6) - Assistive Automation Layer
 
-### 3. `autonomous-task-executor.kiro.hook` ⭐ NEW
+#### 3. `autonomous-task-executor.kiro.hook` ⭐ CORE
 
-**Purpose**: Enable autonomous overnight development with validation
-**Trigger**: User manually triggers for autonomous mode
+**Purpose**: Guide autonomous overnight development
+**Trigger**: userTriggered (manual start of autonomous mode)
 **Status**: ✅ Active
-**Action**: Executes tasks with mandatory validation before each commit
-**Safety**: Runs validation script before every commit, never bypasses hooks
+**Action**: Executes tasks with validation before each commit
+**Optimizations**:
 
-### 4. `post-task-validation.kiro.hook` ⭐ NEW
+- Simplified prompt (removed redundancy)
+- References steering files instead of duplicating content
+- Focuses on workflow, not implementation details
 
-**Purpose**: Validate and commit after each task completion
-**Trigger**: After agent stops (task complete)
-**Status**: ✅ Active
-**Action**: Runs validation, commits if passed, continues to next task
-**Safety**: Uses safe-commit-push.js script with full validation
+#### 4. `task-continuation.kiro.hook` ⭐ NEW
 
-### 5. `validation-failure-handler.kiro.hook` ⭐ NEW
-
-**Purpose**: Auto-fix validation failures
-**Trigger**: User manually triggers when validation fails
-**Status**: ✅ Active
-**Action**: Analyzes failure type and attempts automatic fixes
-**Safety**: Max 3 retry attempts, asks user if still failing
-
-### 6. `cicd-failure-handler.kiro.hook` ⭐ NEW
-
-**Purpose**: Auto-fix CI/CD pipeline failures
-**Trigger**: User manually triggers when CI/CD fails
-**Status**: ✅ Active
-**Action**: Analyzes CI/CD logs, fixes issues, re-validates and commits
-**Safety**: Max 2 retry attempts, asks user if still failing
-
-### 7. `monitor-cicd-pipeline.kiro.hook`
-
-**Purpose**: Monitor GitHub Actions workflow status
-**Trigger**: After agent completes a task
-**Status**: ✅ Active
-**Action**: Runs CI/CD status check script
-
-### 8. `manual-aws-analysis.kiro.hook`
-
-**Purpose**: Analyze AWS CloudWatch logs when requested
-**Trigger**: User explicitly requests AWS analysis
-**Status**: ✅ Active
-**Action**: Downloads and analyzes logs, then cleans up
-
-### 9. `aws-logs-analyzer.kiro.hook`
-
-**Purpose**: Auto-analyze AWS logs when issues detected
-**Trigger**: Messages containing AWS error keywords
-**Status**: ✅ Active (with caution)
-**Note**: Pattern matching could be narrower
-
-### 10. `architecture-review-simplified.kiro.hook`
-
-**Purpose**: Quick architectural review on code changes
-**Trigger**: File edits in infrastructure or backend
-**Status**: ✅ Active
-**Action**: Reviews for security, best practices, simplicity
-
-### 11. `auto-log-cleanup.kiro.hook`
-
-**Purpose**: Clean up temporary log files
-**Trigger**: When log files are created
-**Status**: ✅ Active
-**Action**: Removes temp logs after analysis
-
-### 12. `doc-management-guide.kiro.hook`
-
-**Purpose**: Guide proper documentation practices
-**Trigger**: Documentation file creation/editing
-**Status**: ✅ Active
-**Action**: Provides guidance on documentation standards
-
-### 13. `continuation-checker.kiro.hook` ⭐ CRITICAL
-
-**Purpose**: Automatically continue to next task without stopping
-**Trigger**: After agent stops (task complete or any other reason)
+**Purpose**: Automatically continue to next task after completion
+**Trigger**: agentStop
 **Status**: ✅ Active
 **Action**: Checks for incomplete tasks and starts next one immediately
-**Critical**: Enables true autonomous development without manual intervention
+**Replaces**: continuation-checker + monitor-cicd-pipeline (consolidated)
+
+#### 5. `cicd-failure-handler.kiro.hook`
+
+**Purpose**: Auto-fix CI/CD pipeline failures
+**Trigger**: userTriggered
+**Status**: ✅ Active
+**Action**: Analyzes CI/CD logs, fixes issues, re-validates and commits
+**Optimizations**: Simplified prompt, removed redundant instructions
+**Safety**: Max 2 retry attempts, asks user if still failing
+
+#### 6. `aws-analysis.kiro.hook` ⭐ REFINED
+
+**Purpose**: Analyze AWS CloudWatch logs when explicitly requested
+**Trigger**: onMessage with specific patterns
+**Status**: ✅ Active
+**Patterns**:
+
+- `*analyze aws*`
+- `*check aws logs*`
+- `*download aws logs*`
+- `*aws diagnostics*`
+  **Optimizations**:
+- Narrowed patterns (no false triggers)
+- Simplified prompt
+- Renamed from manual-aws-analysis
+
+#### 7. `auto-log-cleanup.kiro.hook`
+
+**Purpose**: Clean up temporary log files after analysis
+**Trigger**: fileCreated (temp-logs/_, _.log)
+**Status**: ✅ Active
+**Action**: Removes temp logs after analysis complete
+**Optimizations**: Simplified prompt
+
+#### 8. `doc-management-guide.kiro.hook`
+
+**Purpose**: Guide proper spec documentation practices
+**Trigger**: fileCreated with specific patterns
+**Status**: ✅ Active
+**Patterns**:
+
+- `.kiro/specs/*/requirements.md`
+- `.kiro/specs/*/design.md`
+- `.kiro/specs/*/tasks.md`
+  **Optimizations**:
+- Narrowed patterns (no false triggers)
+- Simplified prompt
 
 ---
 
-## Disabled Hooks (Security Risk)
+## Removed Hooks (7)
 
-### ❌ `auto-push-continue.kiro.hook.DISABLED`
+### ❌ 1. `post-task-validation.kiro.hook`
+
+**Reason**: Redundant with autonomous-task-executor
+**Impact**: No functionality lost, logic integrated into autonomous-task-executor
+
+### ❌ 2. `validation-failure-handler.kiro.hook`
+
+**Reason**: Logic integrated into autonomous-task-executor
+**Impact**: Auto-fix logic now part of main autonomous workflow
+
+### ❌ 3. `continuation-checker.kiro.hook`
+
+**Reason**: Consolidated into task-continuation
+**Impact**: Single continuation hook replaces duplicate logic
+
+### ❌ 4. `monitor-cicd-pipeline.kiro.hook`
+
+**Reason**: Consolidated into task-continuation
+**Impact**: Single continuation hook replaces duplicate logic
+
+### ❌ 5. `aws-logs-analyzer.kiro.hook`
+
+**Reason**: Too broad pattern matching, false triggers
+**Example**: "I fixed the error" triggered AWS log download
+**Impact**: Replaced by aws-analysis with precise patterns
+
+### ❌ 6. `architecture-review-simplified.kiro.hook`
+
+**Reason**: Created noise by triggering on every file edit
+**Impact**: Architectural guidance provided by steering files
+
+### ❌ 7. `manual-aws-analysis.kiro.hook`
+
+**Reason**: Renamed and refined to aws-analysis
+**Impact**: Same functionality with better naming and patterns
+
+---
+
+## Already Disabled (3)
+
+### 🔴 1. `auto-push-continue.kiro.hook.DISABLED`
 
 **Reason**: Bypasses security checks by auto-committing and pushing
 **Risk**: Could push vulnerable code without validation
-**Status**: 🔴 DISABLED - DO NOT RE-ENABLE
+**Status**: DISABLED - DO NOT RE-ENABLE
 
-### ❌ `validation-success-autopush.kiro.hook.DISABLED`
+### 🔴 2. `validation-success-autopush.kiro.hook.DISABLED`
 
 **Reason**: Assumes documentation validation = safe to push (WRONG!)
 **Risk**: Bypasses pre-commit security checks
-**Status**: 🔴 DISABLED - DO NOT RE-ENABLE
+**Status**: DISABLED - DO NOT RE-ENABLE
 
-### ❌ `master-automation.kiro.hook.DISABLED`
+### 🔴 3. `master-automation.kiro.hook.DISABLED`
 
 **Reason**: Too aggressive, removes developer control
 **Risk**: Makes architectural decisions without human oversight
-**Status**: 🔴 DISABLED - DO NOT RE-ENABLE
+**Status**: DISABLED - DO NOT RE-ENABLE
 
 ---
 
-## Removed Hooks (Redundant)
-
-### 🗑️ `doc-validation-hook.kiro.hook` (REMOVED)
-
-**Reason**: Redundant with `.husky/pre-commit` hook
-**Replacement**: Git pre-commit hook handles documentation validation
-
-### 🗑️ `intelligent-aws-monitor.kiro.hook` (REMOVED)
-
-**Reason**: Redundant with `aws-logs-analyzer.kiro.hook`
-**Replacement**: Use `manual-aws-analysis.kiro.hook` for explicit analysis
-
----
-
-## Autonomous Development Workflow ⭐ NEW
+## Autonomous Development Workflow
 
 ### How to Use Autonomous Mode
 
 **Before leaving for the night:**
 
-1. Ensure you have tasks defined in a task list or spec
+1. Ensure you have tasks defined in `.kiro/specs/*/tasks.md`
 2. Give clear instructions to Kiro:
 
 ```
 Work through tasks 1-5 autonomously. For each task:
 1. Implement the feature
-2. Run validation: node scripts/validate-for-commit.js
-3. If validation passes, commit using: node scripts/safe-commit-push.js "feat: [description]"
-4. If validation fails, fix issues and retry (max 3 attempts)
-5. Monitor CI/CD and fix failures if any
-6. Continue to next task
+2. Validate: node scripts/validate-for-commit.js
+3. Commit: node scripts/safe-commit-push.js "feat: [description]"
+4. Monitor CI/CD: gh run list --limit 1
+5. Continue to next task
 
 Work autonomously overnight. Don't wait for my input between tasks.
 ```
@@ -171,9 +203,9 @@ Work autonomously overnight. Don't wait for my input between tasks.
 1. Execute task 1
 2. Validate (security, linting, types, docs)
 3. If pass → commit and push using safe script
-4. If fail → auto-fix and retry
+4. If fail → auto-fix and retry (max 3 attempts)
 5. Monitor CI/CD
-6. Move to task 2
+6. task-continuation hook triggers → Move to task 2
 7. Repeat until all tasks done
 
 **In the morning:**
@@ -182,27 +214,47 @@ Work autonomously overnight. Don't wait for my input between tasks.
 - Check CI/CD pipeline status
 - Review changes if needed
 
-### New Scripts Available
+---
 
-**`scripts/validate-for-commit.js`**
+## Validation Flow
 
-- Runs all pre-commit checks (security, linting, types, docs)
-- Returns exit code 0 if all pass, 1 if any fail
-- Use this before every commit in autonomous mode
+### Single Validation Per Commit
 
-**`scripts/safe-commit-push.js`**
+```
+safe-commit-push.js called
+  ↓
+Run validate-for-commit.js
+  ↓
+IF PASS:
+  Set SKIP_PRECOMMIT_VALIDATION=1
+  git commit (pre-commit hook skips validation)
+  git push (pre-push hook runs security check)
+ELSE:
+  Report failure
+  Exit
+```
 
-- Validates first, then commits and pushes
-- Never bypasses hooks
-- Usage: `node scripts/safe-commit-push.js "commit message"`
+**Key Point**: Validation runs exactly once per commit attempt
 
-### Safety Mechanisms
+---
 
-1. **Validation is Mandatory**: Every commit must pass all checks
-2. **Auto-Fix with Limits**: Max 3 retry attempts per task
-3. **CI/CD Monitoring**: Watches deployment and auto-fixes failures
-4. **Audit Trail**: All commits have descriptive messages
-5. **No Bypass**: Never uses --no-verify flag
+## AWS Analysis Flow
+
+### Explicit Request Only
+
+```
+User: "analyze aws logs"
+  ↓
+aws-analysis hook triggers
+  ↓
+Download logs → Analyze → Fix → Cleanup
+  ↓
+auto-log-cleanup hook triggers
+  ↓
+Remove temp files
+```
+
+**Key Point**: No false triggers on casual mentions of "error" or "AWS"
 
 ---
 
@@ -213,14 +265,14 @@ Work autonomously overnight. Don't wait for my input between tasks.
 - Let git hooks run on every commit/push
 - Use Kiro hooks for monitoring and assistance
 - Explicitly request AWS analysis when needed
-- Review architectural feedback from hooks
+- Use safe-commit-push.js for all commits in autonomous mode
 
 ### ❌ DON'T
 
 - Use `--no-verify` flag to bypass git hooks
 - Re-enable disabled hooks without security review
-- Create hooks that auto-commit or auto-push
-- Create hooks with overly broad pattern matching
+- Expect hooks to trigger on casual keyword mentions
+- Commit directly with `git commit` in autonomous mode
 
 ---
 
@@ -250,23 +302,25 @@ Work autonomously overnight. Don't wait for my input between tasks.
 3. Update documentation if missing
 4. Push again (without `--no-verify`)
 
-### If Kiro hook is too noisy
+### If AWS analysis doesn't trigger
 
-1. Check `.kiro/hooks/COMPREHENSIVE_HOOK_ANALYSIS.md`
-2. Adjust pattern matching in the hook
-3. Or disable the specific hook if not needed
+Use explicit request: "analyze aws logs" or "check aws logs"
+
+### If task continuation doesn't work
+
+Check that tasks.md files have incomplete tasks marked with `[ ]`
 
 ---
 
 ## Summary
 
-**Total hooks**: 12 active (2 git + 10 Kiro)
+**Total hooks**: 8 active (2 git + 6 Kiro)
+**Removed**: 7 (redundant or problematic)
 **Disabled**: 3 (security risks)
-**Removed**: 2 (redundant)
-**New**: 4 (autonomous development with validation)
+**Optimizations**: Simplified prompts, narrowed patterns, consolidated logic
 
-**Philosophy**: Hooks should assist, not automate critical decisions. New autonomous hooks validate before every commit.
+**Philosophy**: Hooks should assist, not automate critical decisions. Validation happens once per commit. Autonomous mode works seamlessly without stops.
 
 ---
 
-**For detailed analysis, see**: `COMPREHENSIVE_HOOK_ANALYSIS.md`
+**For migration details, see**: `MIGRATION_GUIDE.md`
