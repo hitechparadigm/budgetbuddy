@@ -64,21 +64,21 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
 
 ### Phase 3: Data Model Updates
 
-- [ ] 3. Update User Profile Schema
-  - [ ] 3.1 Update user profile DynamoDB schema
+- [x] 3. Update User Profile Schema
+  - [x] 3.1 Update user profile DynamoDB schema
     - Add `currency` field (default: "USD")
     - Add `locale` field (default: "en-US")
     - Update TypeScript types
     - _Requirements: 1.4, 2.6_
 
-  - [ ] 3.2 Update auth Lambda function
+  - [x] 3.2 Update auth Lambda function
     - Add currency to profile creation
     - Add currency to profile update
     - Add currency to profile response
     - Validate currency code
     - _Requirements: 1.4, 2.6_
 
-  - [ ] 3.3 Update auth Lambda tests
+  - [x] 3.3 Update auth Lambda tests
     - Test profile creation with currency
     - Test profile update with currency
     - Test invalid currency code

@@ -167,6 +167,16 @@ exports.handler = async (event, _context) => {
         validationErrors.push("Last name is required and must be a string");
       }
 
+      // Validate currency if provided
+      if (requestBody.currency) {
+        const validCurrencies = ["USD", "EUR", "GBP", "CAD", "AUD", "JPY"];
+        if (!validCurrencies.includes(requestBody.currency)) {
+          validationErrors.push(
+            `Currency must be one of: ${validCurrencies.join(", ")}`,
+          );
+        }
+      }
+
       // If validation fails, return error
       if (validationErrors.length > 0) {
         console.log("Validation failed:", validationErrors);
@@ -294,6 +304,12 @@ exports.handler = async (event, _context) => {
           },
           lastName: {
             S: requestBody.lastName,
+          },
+          currency: {
+            S: requestBody.currency || "USD", // ISO 4217 currency code
+          },
+          locale: {
+            S: requestBody.locale || "en-US", // Locale for formatting
           },
           familyId: {
             S: familyId,
@@ -441,7 +457,7 @@ exports.handler = async (event, _context) => {
         }
 
         const payload = JSON.parse(
-          Buffer.from(tokenParts[1], "base64").toString()
+          Buffer.from(tokenParts[1], "base64").toString(),
         );
         console.log("Google token payload:", {
           email: payload.email,
@@ -471,7 +487,7 @@ exports.handler = async (event, _context) => {
 
           // Extract userId from custom attributes
           const userIdAttr = existingUser.UserAttributes.find(
-            (attr) => attr.Name === "custom:userId"
+            (attr) => attr.Name === "custom:userId",
           );
           userId = userIdAttr
             ? userIdAttr.Value
@@ -585,6 +601,8 @@ exports.handler = async (event, _context) => {
             email: { S: googleEmail },
             firstName: { S: firstName || "User" },
             lastName: { S: lastName },
+            currency: { S: "USD" }, // Default currency for Google Sign-In
+            locale: { S: "en-US" }, // Default locale for Google Sign-In
             familyId: { S: familyId },
             familyRole: { S: "primary" },
             accountType: { S: "single" },
@@ -735,14 +753,14 @@ exports.handler = async (event, _context) => {
         }
 
         const payload = JSON.parse(
-          Buffer.from(tokenParts[1], "base64").toString()
+          Buffer.from(tokenParts[1], "base64").toString(),
         );
 
         // Try to get userId from custom attribute, fallback to sub (Cognito user ID)
         let userId = payload["custom:userId"];
         if (!userId) {
           console.log(
-            "custom:userId not found in token, using sub as fallback"
+            "custom:userId not found in token, using sub as fallback",
           );
           userId = payload.sub; // Use Cognito's sub as userId for legacy users
         }
@@ -838,14 +856,14 @@ exports.handler = async (event, _context) => {
         }
 
         const payload = JSON.parse(
-          Buffer.from(tokenParts[1], "base64").toString()
+          Buffer.from(tokenParts[1], "base64").toString(),
         );
 
         // Try to get userId from custom attribute, fallback to sub (Cognito user ID)
         let userId = payload["custom:userId"];
         if (!userId) {
           console.log(
-            "custom:userId not found in token, using sub as fallback"
+            "custom:userId not found in token, using sub as fallback",
           );
           userId = payload.sub; // Use Cognito's sub as userId for legacy users
         }
@@ -892,7 +910,7 @@ exports.handler = async (event, _context) => {
         console.log("  - selectedCategories:", requestBody.selectedCategories);
         console.log(
           "  - selectedCategories length:",
-          requestBody.selectedCategories?.length
+          requestBody.selectedCategories?.length,
         );
 
         if (
@@ -909,7 +927,7 @@ exports.handler = async (event, _context) => {
           console.error("  - Missing currentMonth:", !requestBody.currentMonth);
           console.error(
             "  - Missing selectedCategories:",
-            !requestBody.selectedCategories
+            !requestBody.selectedCategories,
           );
 
           return {
@@ -924,14 +942,14 @@ exports.handler = async (event, _context) => {
         }
 
         console.log(
-          "ONBOARDING DEBUG - Validation passed, proceeding with centralized family ID resolution"
+          "ONBOARDING DEBUG - Validation passed, proceeding with centralized family ID resolution",
         );
 
         // Use centralized FamilyIdResolver to get familyId consistently
         const familyId = await FamilyIdResolver.resolveFamilyId(
           userId,
           jwtFamilyId,
-          dynamoHelpers
+          dynamoHelpers,
         );
 
         // Log the resolution for debugging
@@ -940,7 +958,7 @@ exports.handler = async (event, _context) => {
           "onboarding",
           userId,
           familyId,
-          jwtFamilyId ? "jwt" : "dynamodb-or-fallback"
+          jwtFamilyId ? "jwt" : "dynamodb-or-fallback",
         );
 
         const currentTime = new Date().toISOString();
@@ -952,7 +970,7 @@ exports.handler = async (event, _context) => {
         console.log("  - Budget PK will be:", `FAMILY#${familyId}`);
         console.log(
           "  - Budget SK will be:",
-          `BUDGET#${requestBody.currentMonth}`
+          `BUDGET#${requestBody.currentMonth}`,
         );
 
         // Update user profile to mark onboarding as completed
@@ -980,7 +998,7 @@ exports.handler = async (event, _context) => {
         console.log("  - familyId:", familyId);
         console.log(
           "  - selectedCategories count:",
-          requestBody.selectedCategories.length
+          requestBody.selectedCategories.length,
         );
 
         // Create initial budget for current month with selected categories
@@ -1012,7 +1030,7 @@ exports.handler = async (event, _context) => {
         // Calculate totals
         const totalExpenses = expenseCategories.reduce(
           (sum, cat) => sum + cat.plannedAmount, // CRITICAL FIX: Use 'plannedAmount' to match field name
-          0
+          0,
         );
 
         const budget = {
@@ -1048,7 +1066,7 @@ exports.handler = async (event, _context) => {
         console.log("  - requestBody.currentMonth:", requestBody.currentMonth);
         console.log(
           "  - requestBody.currentMonth type:",
-          typeof requestBody.currentMonth
+          typeof requestBody.currentMonth,
         );
         console.log("  - currentMonth variable:", currentMonth);
         console.log("  - currentMonth variable type:", typeof currentMonth);
@@ -1056,7 +1074,7 @@ exports.handler = async (event, _context) => {
         console.log("  - SK will be:", `BUDGET#${currentMonth}`);
         console.log(
           "  - JSON.stringify(requestBody):",
-          JSON.stringify(requestBody)
+          JSON.stringify(requestBody),
         );
 
         if (requestBody.currentMonth !== currentMonth) {
@@ -1075,7 +1093,7 @@ exports.handler = async (event, _context) => {
         try {
           await dynamoHelpers.putItem(budget);
           console.log(
-            "Initial budget created from onboarding selections - using dynamoHelpers"
+            "Initial budget created from onboarding selections - using dynamoHelpers",
           );
 
           // Log budget creation success with FamilyIdResolver
@@ -1084,7 +1102,7 @@ exports.handler = async (event, _context) => {
             "budget-creation",
             userId,
             familyId,
-            "budget-created"
+            "budget-created",
           );
 
           // FINAL DEBUG: Confirm what was actually saved
@@ -1100,19 +1118,19 @@ exports.handler = async (event, _context) => {
           try {
             const verificationBudget = await dynamoHelpers.getItem(
               `FAMILY#${familyId}`,
-              `BUDGET#${currentMonth}`
+              `BUDGET#${currentMonth}`,
             );
 
             if (verificationBudget) {
               console.log(
-                "VERIFICATION SUCCESS - Budget found in DynamoDB immediately after creation"
+                "VERIFICATION SUCCESS - Budget found in DynamoDB immediately after creation",
               );
               console.log("  - Verified PK:", `FAMILY#${familyId}`);
               console.log("  - Verified SK:", `BUDGET#${currentMonth}`);
               console.log("  - Verified month:", verificationBudget.month);
               console.log(
                 "  - Verified budgetId:",
-                verificationBudget.budgetId
+                verificationBudget.budgetId,
               );
 
               // Log successful verification
@@ -1121,11 +1139,11 @@ exports.handler = async (event, _context) => {
                 "budget-verification",
                 userId,
                 familyId,
-                "verification-success"
+                "verification-success",
               );
             } else {
               console.error(
-                "VERIFICATION FAILED - Budget NOT found in DynamoDB immediately after creation!"
+                "VERIFICATION FAILED - Budget NOT found in DynamoDB immediately after creation!",
               );
               console.error("  - Searched PK:", `FAMILY#${familyId}`);
               console.error("  - Searched SK:", `BUDGET#${currentMonth}`);
@@ -1136,7 +1154,7 @@ exports.handler = async (event, _context) => {
                 "budget-verification",
                 userId,
                 familyId,
-                "verification-failed"
+                "verification-failed",
               );
 
               // Return error response for verification failure
@@ -1160,7 +1178,7 @@ exports.handler = async (event, _context) => {
           } catch (verifyError) {
             console.error(
               "VERIFICATION ERROR - Failed to verify budget creation:",
-              verifyError
+              verifyError,
             );
 
             // Log verification error
@@ -1169,18 +1187,18 @@ exports.handler = async (event, _context) => {
               "budget-verification",
               userId,
               familyId,
-              "verification-error"
+              "verification-error",
             );
 
             // Continue with success response even if verification failed
             console.warn(
-              "Continuing with success response despite verification error"
+              "Continuing with success response despite verification error",
             );
           }
         } catch (budgetError) {
           console.error(
             "CRITICAL ERROR - Budget creation failed:",
-            budgetError
+            budgetError,
           );
           console.error("  - Error name:", budgetError.name);
           console.error("  - Error message:", budgetError.message);
@@ -1322,7 +1340,7 @@ exports.handler = async (event, _context) => {
 
         // Parse the ID token to get user information (basic parsing)
         const idTokenPayload = JSON.parse(
-          Buffer.from(idToken.split(".")[1], "base64").toString()
+          Buffer.from(idToken.split(".")[1], "base64").toString(),
         );
 
         return {
@@ -1470,7 +1488,7 @@ exports.handler = async (event, _context) => {
     return {
       statusCode: 500,
       headers: getCorsHeaders(
-        event.headers.origin || event.headers.Origin || ""
+        event.headers.origin || event.headers.Origin || "",
       ),
       body: JSON.stringify({
         error: "Internal Server Error",
