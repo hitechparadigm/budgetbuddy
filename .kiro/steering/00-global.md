@@ -27,17 +27,44 @@ Always follow:
 
 ## Workflow Rules
 
+### 0. Session Continuity (FIRST STEP)
+
+**When starting a new session or continuing work:**
+
+1. **Check for Context Transfer**: If there's a context transfer summary from the previous session, READ IT FIRST
+2. **Understand Current State**: The summary tells you:
+   - What tasks were in progress
+   - What was just completed
+   - What should be done next
+   - Any blockers or issues
+3. **Then Read Steering**: After understanding the context, read steering files: `product.md`, `tech.md`, `structure.md`
+4. **Read Relevant Specs**: Based on the context, read the appropriate spec files
+5. **Make Decision**: Decide whether to:
+   - Continue the in-progress task from the summary
+   - Start the next logical task
+   - Address any blockers mentioned
+
+**Why This Matters**: Context transfer summaries provide the most recent state of the project. Reading them FIRST prevents:
+
+- Duplicating work that was just completed
+- Missing important context about what's in progress
+- Starting the wrong task
+- Ignoring blockers or issues
+
+**Rule**: ALWAYS check for and read context transfer summaries BEFORE reading steering files or starting any work.
+
 ### 1. Never Implement in a Single Step
 
 Before writing any code:
 
-1. Read steering files: `product.md`, `tech.md`, `structure.md` from `.kiro/steering/`
-2. Read spec files based on scope:
+1. **Read context transfer summary** (if present) - see Section 0 above
+2. Read steering files: `product.md`, `tech.md`, `structure.md` from `.kiro/steering/`
+3. Read spec files based on scope:
    - **General project specs**: `.kiro/specs/design.md`, `.kiro/specs/requirements.md`, `.kiro/specs/tasks.md`
    - **Feature-specific specs**: `.kiro/specs/<feature-name>/design.md`, `.kiro/specs/<feature-name>/requirements.md`, `.kiro/specs/<feature-name>/tasks.md`
-3. Propose an implementation plan aligned with existing architecture
-4. Get confirmation or proceed if autonomous mode is active
-5. Only then generate or modify code
+4. Propose an implementation plan aligned with existing architecture
+5. Get confirmation or proceed if autonomous mode is active
+6. Only then generate or modify code
 
 **Spec Structure**:
 
@@ -230,6 +257,16 @@ This:
 
 When working autonomously (overnight development):
 
+### Session Continuity (FIRST STEP)
+
+**At the start of each session:**
+
+1. **Check for context transfer**: Look for summary from previous session
+2. **Read the summary**: Understand what was in progress, what's next, any blockers
+3. **Then proceed**: Follow the workflow below based on the context
+
+**This prevents**: Starting wrong tasks, duplicating work, missing important context
+
 ### Pre-Task CI/CD Check (MANDATORY)
 
 **Before starting ANY task:**
@@ -243,14 +280,15 @@ When working autonomously (overnight development):
 
 For each task:
 
-1. **FIRST: Verify CI/CD deployment success** (see above)
-2. **Implement** the feature/fix
-3. **Commit**: Use `node scripts/safe-commit-push.js "feat: description"` (validates internally)
-4. **If validation fails**: Auto-fix and retry (max 3 attempts)
-5. **Monitor CI/CD**: Wait for deployment to complete after push
-6. **If CI/CD fails**: Analyze logs, fix, commit fix (max 2 attempts)
-7. **Wait for deployment success** before continuing to next task
-8. **Continue** to next task only after deployment succeeds
+1. **FIRST: Check context transfer summary** (if new session)
+2. **SECOND: Verify CI/CD deployment success** (see above)
+3. **Implement** the feature/fix
+4. **Commit**: Use `node scripts/safe-commit-push.js "feat: description"` (validates internally)
+5. **If validation fails**: Auto-fix and retry (max 3 attempts)
+6. **Monitor CI/CD**: Wait for deployment to complete after push
+7. **If CI/CD fails**: Analyze logs, fix, commit fix (max 2 attempts)
+8. **Wait for deployment success** before continuing to next task
+9. **Continue** to next task only after deployment succeeds
 
 **CRITICAL DEPLOYMENT RULE**: NEVER use direct CDK deploy commands (`cdk deploy`, `npm run deploy:dev`, etc.). ALL deployments happen automatically through the CI/CD pipeline when you push to develop/main branches. Your job is to:
 

@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.9.8] - 2026-01-31
+
+### 🔧 WORKFLOW - Session Continuity Enhancement
+
+- **Updated Steering Files** - Added session continuity as FIRST workflow step
+  - **New Section 0**: Session Continuity (FIRST STEP) in 00-global.md
+  - **Rule**: Always check for context transfer summary BEFORE reading steering files
+  - **Benefit**: Prevents duplicating work, missing context, starting wrong tasks
+  - **Files**: `.kiro/steering/00-global.md`
+  - **Impact**: Better context awareness across session boundaries
+
+- **Updated Autonomous Task Executor Hook** - Added session continuity check
+  - **New Section**: SESSION CONTINUITY (FIRST STEP) in hook prompt
+  - **Fixed**: SESSION ENDING section - removed contradictory "continue in new session" instruction
+  - **Clarified**: Stop gracefully when session ends, context transfer handles continuation
+  - **Workflow**: Check context → Read summary → Read steering → Decide next task
+  - **Files**: `.kiro/hooks/autonomous-task-executor.kiro.hook`
+  - **Impact**: Autonomous development now starts with context awareness and ends gracefully
+
+### 🐛 BUGFIX - Family Lambda Health Endpoint
+
+- **Added Health Endpoint** - Fixed deployment failure
+  - **Problem**: Family Lambda missing /family/health endpoint causing 502 error
+  - **Solution**: Added health check route returning { status: "healthy", service: "family" }
+  - **Files**: `backend/functions/family/index.js`
+  - **Impact**: Deployment health checks now pass for family service
+
+### 📋 TECHNICAL DETAILS
+
+**Workflow Order (New)**:
+
+1. Check for context transfer summary (if present)
+2. Read the summary to understand current state
+3. Read steering files (product.md, tech.md, structure.md)
+4. Read relevant specs based on context
+5. Check CI/CD status before starting any task
+6. Proceed with work
+
+**Why This Matters**:
+
+- Context transfer summaries provide the most recent project state
+- Reading them FIRST prevents wasted effort and mistakes
+- Ensures smooth continuation across session boundaries
+- Makes autonomous development more efficient
+
+**Documentation**: Created `.kiro/SESSION_CONTINUITY_UPDATE.md` explaining all changes
+
 ## [1.9.7] - 2026-01-31
 
 ### 🚀 FEATURE - Family Collaboration Foundation (Tasks 1.3, 2.1, 2.2)
