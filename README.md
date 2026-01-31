@@ -22,6 +22,13 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-31)
 
+- 🔧 **CI/CD WORKFLOW FIX** - Resolved duplicate job definition
+  - **Fixed**: Removed duplicate `security-scan` job in `.github/workflows/pr-check.yml`
+  - **Issue**: Duplicate job definition at lines 17 and 217 causing workflow failures
+  - **Solution**: Kept first security-scan job, removed second duplicate (lines 217-337)
+  - **Impact**: PR validation workflow now runs cleanly without job conflicts
+  - **Benefit**: CI/CD pipeline reliability improved, no more duplicate job errors
+
 - 📚 **COMPREHENSIVE DOCUMENTATION SYSTEM** - Complete steering, specs, and hooks integration
   - **Created**: `.kiro/STEERING_SPECS_HOOKS_INTEGRATION.md` - 500+ line guide explaining how all systems work together
   - **Created**: `.kiro/SPEC_STRUCTURE_EXPLAINED.md` - Visual guide to root specs vs feature specs

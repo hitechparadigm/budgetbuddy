@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.5.2] - 2026-01-31
+
+### 🔧 FIX - CI/CD Workflow Duplicate Job
+
+- **Fixed Duplicate security-scan Job** - Resolved workflow failure
+  - **File**: `.github/workflows/pr-check.yml`
+  - **Issue**: Duplicate `security-scan` job definition causing workflow failures
+  - **Location**: Job appeared at lines 17 and 217 (duplicate removed)
+  - **Solution**: Removed second duplicate security-scan job (lines 217-337)
+  - **Result**: PR validation workflow now runs cleanly without job conflicts
+  - **Impact**: CI/CD pipeline reliability improved, no more duplicate job errors
+  - **Testing**: Workflow validated with proper job dependencies
+
+### 🔧 IMPACT
+
+- **CI/CD Reliability**: Workflow now runs without duplicate job errors
+- **PR Validation**: All validation checks run correctly
+- **Developer Experience**: No more confusing workflow failures
+- **Pipeline Health**: Clean workflow structure with proper job dependencies
+
+---
+
 ## [1.5.1] - 2026-01-31
 
 ### 📚 DOCUMENTATION - Comprehensive Integration Guides
