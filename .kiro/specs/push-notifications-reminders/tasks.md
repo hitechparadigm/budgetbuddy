@@ -155,49 +155,49 @@ This implementation plan covers the complete push notification and daily reminde
 
 ### Phase 3: Budget Alerts Service Lambda (Week 1)
 
-- [ ] 3. Implement Budget Alerts Service Lambda
-  - [ ] 3.1 Create function structure
+- [x] 3. Implement Budget Alerts Service Lambda
+  - [x] 3.1 Create function structure
     - Create backend/functions/budget-alerts/ directory
     - Create index.js with handler function
     - Create package.json with dependencies
     - Create README.md with function documentation
     - _Requirements: 2.1-2.10_
 
-  - [ ] 3.2 Implement stream event handler
+  - [x] 3.2 Implement stream event handler
     - Parse DynamoDB stream records
     - Filter for TRANSACTION records
     - Extract transaction data
     - Call checkBudgetThresholds for each transaction
     - _Requirements: 2.7, 6.5_
 
-  - [ ] 3.3 Implement scheduled check handler
+  - [x] 3.3 Implement scheduled check handler
     - Scan all budgets
     - Calculate spending percentages
     - Check for missed alerts
     - Send alerts if needed
     - _Requirements: 2.8_
 
-  - [ ] 3.4 Implement threshold calculation
+  - [x] 3.4 Implement threshold calculation
     - Get budget for transaction
     - Calculate category spending percentage
     - Check if 80%, 90%, or 100% threshold crossed
     - Return threshold level if crossed
     - _Requirements: 2.1, 2.2, 2.3_
 
-  - [ ] 3.5 Implement alert deduplication
+  - [x] 3.5 Implement alert deduplication
     - Query alert history by family, budget, category, threshold
     - Check if alert sent in last 24 hours
     - Return true if duplicate, false otherwise
     - _Requirements: 2.5, 2.10_
 
-  - [ ] 3.6 Implement send budget alert
+  - [x] 3.6 Implement send budget alert
     - Get all family members
     - Create alert notification object
     - Call Notification Service to send push
     - Mark alert as sent in DynamoDB
     - _Requirements: 2.4, 2.6, 2.9, 2.10_
 
-  - [ ] 3.7 Add unit tests
+  - [x] 3.7 Add unit tests
     - Test threshold calculation (80%, 90%, 100%)
     - Test alert deduplication logic
     - Test family member notification logic
@@ -205,7 +205,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Test alert history tracking
     - _Requirements: 13.1, 13.2_
 
-  - [ ] 3.8 Add integration tests
+  - [x] 3.8 Add integration tests
     - Test transaction creation triggers alert
     - Test alert sent to all family members
     - Test duplicate alerts prevented

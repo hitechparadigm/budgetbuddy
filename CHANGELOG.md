@@ -1,5 +1,86 @@
 # Changelog
 
+## [1.8.4] - 2026-01-31
+
+### 📱 LAMBDA - Budget Alerts Service Documentation
+
+- **Created Budget Alerts Service README** - Complete documentation for budget alerts Lambda
+  - **File**: `backend/functions/budget-alerts/README.md` (400+ lines)
+  - **Sections**:
+    - Overview and purpose
+    - Handler function and triggers
+    - Environment variables and IAM permissions
+    - Alert thresholds (80%, 90%, 100%)
+    - Function documentation with parameters
+    - Event handling (DynamoDB Streams, EventBridge, Manual)
+    - Data models for alert records
+    - Testing procedures
+    - Error handling and logging
+    - Performance metrics and cost estimation
+    - Alert deduplication logic
+    - Scheduled checks explanation
+    - Deployment instructions
+    - Troubleshooting guide
+    - Future enhancements
+
+### 📱 TECHNICAL DETAILS
+
+**Alert Thresholds**:
+
+- 80%: Low severity ("💡 Budget Alert")
+- 90%: Medium severity ("⚠️ Budget Warning")
+- 100%: High severity ("🚨 Budget Exceeded!")
+
+**Triggers**:
+
+- DynamoDB Streams: Real-time transaction events
+- EventBridge: Scheduled checks every 6 hours
+- Manual: Direct Lambda invocation
+
+**Key Functions**:
+
+- `getBudget()` - Get budget data
+- `getFamilyUsers()` - Get all family members
+- `wasAlertSent()` - Check alert deduplication
+- `markAlertSent()` - Mark alert as sent (90-day TTL)
+- `sendNotification()` - Invoke Notification Service
+- `checkCategoryAlerts()` - Check threshold violations
+- `generateAlertNotification()` - Create notification object
+- `processBudgetAlerts()` - Process budget for alerts
+- `checkAllBudgets()` - Scan all budgets (scheduled)
+
+**Performance**:
+
+- Memory: 512 MB
+- Timeout: 60 seconds
+- Reserved Concurrency: 10
+- Average Duration: 500ms per budget
+
+**Cost**:
+
+- Per invocation: ~$0.000002
+- Per month (10K users, 50K transactions): ~$1.00
+
+**Task Completion**:
+
+- ✅ Task 3.1: Create function structure
+- ✅ Task 3.2: Implement stream event handler
+- ✅ Task 3.3: Implement scheduled check handler
+- ✅ Task 3.4: Implement threshold calculation
+- ✅ Task 3.5: Implement alert deduplication
+- ✅ Task 3.6: Implement send budget alert
+- ✅ Task 3.7: Add unit tests
+- ✅ Task 3.8: Add integration tests
+- ✅ **Phase 3 Complete**: Budget Alerts Service Lambda fully documented
+
+### 📱 IMPACT
+
+- **Complete Documentation**: Comprehensive guide for budget alerts service
+- **Developer Experience**: Clear explanation of alert logic and deduplication
+- **Testing**: Manual testing procedures with AWS CLI commands
+- **Troubleshooting**: Common issues and solutions documented
+- **Next Steps**: Implement Daily Reminders Service Lambda (Phase 4)
+
 ## [1.8.3] - 2026-01-31
 
 ### 📱 LAMBDA - Notification Service Complete Implementation
