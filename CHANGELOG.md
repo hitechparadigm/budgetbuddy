@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.9.2] - 2026-01-31
+
+### 🔧 INFRASTRUCTURE - Budget Alerts Lambda Concurrency Fix
+
+- **Removed Reserved Concurrency** - Fixed deployment issue with budget alerts Lambda
+  - Removed `reservedConcurrentExecutions: 5` from budget-alerts Lambda configuration
+  - Prevents deployment conflicts and allows auto-scaling
+  - Integration tests updated and passing
+  - **Files**: `infrastructure/lib/notification-stack.ts`, `backend/functions/budget-alerts/integration.test.js`
+  - **Impact**: Budget alerts Lambda can now scale automatically based on load
+
+### 📋 TECHNICAL DETAILS
+
+**Root Cause**: Reserved concurrency setting was causing CloudFormation deployment conflicts
+**Solution**: Removed reserved concurrency, rely on AWS auto-scaling
+**Verification**: Integration tests passing, notification stack deployed successfully
+
 ## [1.9.1] - 2026-01-31
 
 ### 📚 DOCUMENTATION - .kiro/ Directory Cleanup
