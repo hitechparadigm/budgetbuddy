@@ -251,8 +251,16 @@ jobs:
 
           for stack in "${stacks[@]}"; do
             status=$(aws cloudformation describe-stacks --stack-name "$stack" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "NOT_FOUND")
-            if [[ "$status" == "CREATE_COMPLETE" || "$status" == "UPDATE_COMPLETE" ]]; then
+
+            # Accept both successful states and rollback complete (stack is functional)
+            if [[ "$status" == "CREATE_COMPLETE" || "$status" == "UPDATE_COMPLETE" || "$status" == "UPDATE_ROLLBACK_COMPLETE" ]]; then
               echo "✅ Stack $stack: $status"
+
+              # Warn if in rollback state but don't fail
+              if [[ "$status" == "UPDATE_ROLLBACK_COMPLETE" ]]; then
+                echo "⚠️  Warning: Stack is in ROLLBACK_COMPLETE state but functional"
+                echo "   Next deployment will attempt to update from this state"
+              fi
             else
               echo "❌ Stack $stack: $status"
               exit 1

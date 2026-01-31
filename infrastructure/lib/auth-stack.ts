@@ -304,6 +304,7 @@ export class AuthStack extends cdk.Stack {
     cdk.Tags.of(this.userPool).add('CostCenter', 'BudgetBuddy-Auth');
     cdk.Tags.of(this.userPool).add('UserType', 'Application-Users');
     cdk.Tags.of(this.userPool).add('SecurityLevel', 'High');
+    cdk.Tags.of(this.userPool).add('LastDeployment', '2026-01-31');
 
     // Add tags to Lambda Layer
     cdk.Tags.of(this.authSharedLayer).add('Component', 'Authentication');
