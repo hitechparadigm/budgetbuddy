@@ -1,0 +1,12 @@
+{
+  "name": "Post-Task Validation and Commit",
+  "version": "1.0.0",
+  "description": "Automatically validates and commits after task completion",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "✅ Task completed. Execute safe commit workflow:\n\n**STEP 1: Validate**\n```bash\nnode scripts/validate-for-commit.js\n```\n\n**STEP 2: Check Result**\n- If validation PASSED → Proceed to Step 3\n- If validation FAILED → Fix issues and return to Step 1\n\n**STEP 3: Commit and Push**\n```bash\nnode scripts/safe-commit-push.js \"feat: [describe what was implemented]\"\n```\n\n**STEP 4: Monitor CI/CD**\n```bash\ngh run list --limit 1 --json conclusion,displayTitle,url\n```\n\n**STEP 5: Continue**\nImmediately proceed to next task in task list.\n\n**CRITICAL**: Never skip validation. Never use --no-verify. Always use safe-commit-push.js script."
+  }
+}

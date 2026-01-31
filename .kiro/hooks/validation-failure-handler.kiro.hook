@@ -1,0 +1,12 @@
+{
+  "name": "Validation Failure Auto-Fix",
+  "version": "1.0.0",
+  "description": "Automatically fixes validation failures when possible",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "⚠️ Validation failed. Auto-fix workflow:\n\n**ANALYZE FAILURE:**\nRead the validation error output carefully.\n\n**FIX BY TYPE:**\n\n1. **Security Issues** (npm audit):\n   - Run: `npm audit fix`\n   - If that fails: `npm audit fix --force`\n   - Review changes carefully\n   - Re-run validation: `node scripts/validate-for-commit.js`\n\n2. **Linting Errors**:\n   - Run: `npm run lint` (auto-fix enabled)\n   - Review changes\n   - Re-run validation: `node scripts/validate-for-commit.js`\n\n3. **Type Errors**:\n   - Read TypeScript errors carefully\n   - Fix type issues in code\n   - Re-run validation: `node scripts/validate-for-commit.js`\n\n4. **Documentation Missing**:\n   - Update all 4 mandatory docs:\n     - CHANGELOG.md (add entry for this change)\n     - DEVELOPMENT_LOG.md (document what was done)\n     - README.md (update if features changed)\n     - docs/development-status.md (update status)\n   - Re-run validation: `node scripts/validate-for-commit.js`\n\n**AFTER FIXES:**\nRe-run: `node scripts/validate-for-commit.js`\n\nIf still failing after 3 attempts, document the issue and ask user for guidance."
+  }
+}

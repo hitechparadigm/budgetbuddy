@@ -1,0 +1,12 @@
+{
+  "name": "Autonomous Task Executor",
+  "version": "1.0.0",
+  "description": "Enables autonomous overnight development with proper validation",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "🌙 AUTONOMOUS OVERNIGHT DEVELOPMENT MODE\n\n**WORKFLOW:**\n\n1. **Execute Tasks**: Work through task list systematically\n2. **Validate Before Commit**: Run validation script before EVERY commit\n3. **Safe Commit**: Only commit if ALL checks pass\n4. **Auto-Fix**: Attempt to fix validation failures automatically\n5. **Continue**: Move to next task after successful commit\n\n**VALIDATION REQUIREMENTS:**\nBefore EVERY commit, run: `node scripts/validate-for-commit.js`\n\nThis checks:\n- Security (npm audit)\n- Linting (ESLint)\n- Type checking (TypeScript)\n- Documentation (all 4 files updated)\n\n**COMMIT ONLY IF**: Validation script returns success\n\n**IF VALIDATION FAILS**:\n1. Read the error output\n2. Fix the issues automatically\n3. Re-run validation\n4. Retry commit (max 3 attempts)\n\n**COMMIT USING**: `node scripts/safe-commit-push.js \"feat: [describe what was implemented]\"`\n\n**NEVER**:\n- Use --no-verify flag\n- Commit without validation\n- Push without running checks\n- Use git commit directly (use safe-commit-push.js instead)\n\n**AFTER EACH SUCCESSFUL COMMIT**:\n1. Monitor CI/CD: `gh run list --limit 1`\n2. If CI/CD fails, analyze and fix\n3. Continue to next task\n\nWork autonomously but safely. Validation is mandatory."
+  }
+}
