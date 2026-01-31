@@ -443,7 +443,7 @@ This implementation plan covers the complete push notification and daily reminde
 ### Phase 7: API Gateway Integration (Week 2)
 
 - [ ] 8. Add Notification API Routes
-  - [ ] 8.1 Add device registration route
+  - [x] 8.1 Add device registration route
     - POST /notifications/register-device
     - Integrate with Notification Service Lambda
     - Add JWT authorizer
