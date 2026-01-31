@@ -1,0 +1,16 @@
+{
+  "name": "budgetbuddy-restore",
+  "version": "1.0.0",
+  "description": "BudgetBuddy Restore Service - Data restoration from backups",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1691.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

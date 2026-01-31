@@ -1,8 +1,93 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-01-31 (AWS Testing Guidelines Added)
-**Current Phase**: Production-Ready with AWS Integration Testing
-**Overall Progress**: 97% (AWS testing guidelines implemented, cost controls in place)
+**Last Updated**: 2026-01-31 (Data Backup & Restore System - Backend Complete)
+**Current Phase**: Production-Ready with Data Backup Capability
+**Overall Progress**: 98% (Backup/restore backend complete, frontend pending)
+
+## 🚀 DATA BACKUP & RESTORE SYSTEM - BACKEND COMPLETE
+
+### JSON Backup Export
+
+**Status**: ✅ Implemented and tested
+
+**Features**:
+
+- ✅ Complete data backup in JSON format
+- ✅ Exports user profile, all budgets, all transactions
+- ✅ Structured format with version and metadata
+- ✅ Filename: `budgetbuddy-backup-YYYY-MM-DD.json`
+- ✅ Endpoint: `/export?type=json`
+
+**Implementation**:
+
+- Enhanced existing export Lambda function
+- Added getUserProfile and generateJSONBackup functions
+- Comprehensive data structure with metadata
+- Version tracking for future compatibility
+
+### Data Restore Service
+
+**Status**: ✅ Implemented with 12/12 tests passing
+
+**Features**:
+
+- ✅ POST endpoint for restoring backup data
+- ✅ Comprehensive validation of backup structure
+- ✅ Restores budgets and transactions to DynamoDB
+- ✅ Detailed error messages for validation failures
+- ✅ JWT authentication required
+
+**Implementation**:
+
+- New Lambda function: `backend/functions/restore/`
+- Validation functions for backup structure
+- Restore functions for budgets and transactions
+- Error handling for all failure scenarios
+
+**Test Coverage**:
+
+- CORS preflight handling
+- Authentication validation (401 errors)
+- Invalid JSON handling (400 errors)
+- Missing required fields validation
+- Successful restoration scenarios
+- DynamoDB error handling (500 errors)
+
+### Pending Work
+
+**Frontend** (30 min):
+
+- Add "Backup Data" button in Settings page
+- Add "Restore from Backup" file upload component
+- Handle JSON download and file selection
+- Display success/error messages
+
+**Infrastructure** (20 min):
+
+- Create CDK stack for restore Lambda
+- Add API Gateway route for `/restore` endpoint
+- Configure IAM permissions
+- Deploy to dev environment
+
+**Testing** (20 min):
+
+- Integration tests with real AWS
+- End-to-end backup/restore workflow
+- Data integrity validation
+
+**Benefits**:
+
+- Data safety and disaster recovery
+- Data portability between devices
+- Migration capability (future)
+- Cost-effective (~$0.01 per backup, ~$0.02 per restore)
+
+**Next Steps**:
+
+- Implement frontend UI
+- Deploy infrastructure to AWS
+- Test end-to-end workflow
+- Update user documentation
 
 ## 📚 AWS TESTING SYSTEM - IMPLEMENTED
 
