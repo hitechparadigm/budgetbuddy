@@ -41,6 +41,11 @@ exports.handler = async (event) => {
     };
   }
 
+  // Handle health check BEFORE authentication (public endpoint)
+  if (event.httpMethod === "GET" && event.path === "/family/health") {
+    return successResponse({ status: "healthy", service: "family" });
+  }
+
   try {
     // Extract user info from JWT token (added by authorizer)
     const user = event.requestContext?.authorizer?.claims;
@@ -54,10 +59,6 @@ exports.handler = async (event) => {
 
     // Route to appropriate handler
     const { httpMethod, path, pathParameters } = event;
-
-    if (httpMethod === "GET" && path === "/family/health") {
-      return successResponse({ status: "healthy", service: "family" });
-    }
 
     if (httpMethod === "POST" && path === "/family/invite") {
       return await handleInvite(event, userId, familyId, familyRole);

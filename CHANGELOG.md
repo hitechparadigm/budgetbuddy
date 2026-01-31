@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.9.9] - 2026-01-31
+
+### 🐛 BUGFIX - Family Lambda Health Endpoint Authorization
+
+- **Fixed Health Endpoint** - Moved health check before authentication
+  - **Problem**: Health endpoint checked AFTER user authentication, returning 401 Unauthorized
+  - **Solution**: Moved health check to execute BEFORE authentication (public endpoint)
+  - **Files**: `backend/functions/family/index.js`
+  - **Impact**: Deployment health checks now pass, family service accessible
+
+### 📋 TECHNICAL DETAILS
+
+**Root Cause**: Health endpoint was inside the try block after user context validation
+**Fix**: Moved health check to execute immediately after OPTIONS/CORS, before authentication
+**Pattern**: Health endpoints should always be public and check before auth
+
 ## [1.9.8] - 2026-01-31
 
 ### 🔧 WORKFLOW - Session Continuity Enhancement
