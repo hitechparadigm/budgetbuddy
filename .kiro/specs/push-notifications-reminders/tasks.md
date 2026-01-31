@@ -83,7 +83,7 @@ This implementation plan covers the complete push notification and daily reminde
 
 ### Phase 2: Notification Service Lambda (Week 1)
 
-- [-] 2. Implement Notification Service Lambda
+- [x] 2. Implement Notification Service Lambda
   - [x] 2.1 Create function structure
     - Create backend/functions/notifications/ directory
     - Create index.js with handler function
@@ -91,46 +91,46 @@ This implementation plan covers the complete push notification and daily reminde
     - Create README.md with function documentation
     - _Requirements: 1.1-1.8_
 
-  - [ ] 2.2 Implement device registration endpoint
+  - [x] 2.2 Implement device registration endpoint
     - Validate Expo push token format
     - Check device limit (max 10 per user)
     - Store device in DynamoDB
     - Return device ID
     - _Requirements: 1.1, 1.2, 1.6, 1.8_
 
-  - [ ] 2.3 Implement device removal endpoint
+  - [x] 2.3 Implement device removal endpoint
     - Validate user owns device
     - Delete device from DynamoDB
     - Return success message
     - _Requirements: 1.7, 9.2_
 
-  - [ ] 2.4 Implement get preferences endpoint
+  - [x] 2.4 Implement get preferences endpoint
     - Query user preferences from DynamoDB
     - Return default preferences if not found
     - Format response with all preference fields
     - _Requirements: 4.1, 4.9_
 
-  - [ ] 2.5 Implement update preferences endpoint
+  - [x] 2.5 Implement update preferences endpoint
     - Validate time formats (HH:mm)
     - Validate quiet hours range
     - Update preferences in DynamoDB
     - Return updated preferences
     - _Requirements: 4.2, 4.6, 4.7, 4.8, 4.10_
 
-  - [ ] 2.6 Implement get notification history endpoint
+  - [x] 2.6 Implement get notification history endpoint
     - Query notifications by user ID
     - Support pagination with lastEvaluatedKey
     - Limit to 50 notifications per page
     - Sort by sentAt (newest first)
     - _Requirements: 10.4, 10.5, 10.8_
 
-  - [ ] 2.7 Implement mark as read endpoint
+  - [x] 2.7 Implement mark as read endpoint
     - Validate user owns notification
     - Update read status in DynamoDB
     - Return success message
     - _Requirements: 10.6_
 
-  - [ ] 2.8 Implement send push notification function
+  - [x] 2.8 Implement send push notification function
     - Get all user devices from DynamoDB
     - Filter enabled devices
     - Send to Expo Push Notification API
@@ -138,7 +138,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Store notification in history
     - _Requirements: 1.3, 1.4, 1.5, 9.1, 9.6, 10.1, 10.2_
 
-  - [ ] 2.9 Add unit tests
+  - [x] 2.9 Add unit tests
     - Test device registration validation
     - Test preferences validation
     - Test notification history pagination
@@ -146,7 +146,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Test quiet hours calculation
     - _Requirements: 13.1, 13.2_
 
-  - [ ] 2.10 Add integration tests
+  - [x] 2.10 Add integration tests
     - Test device registration flow
     - Test preferences update flow
     - Test notification delivery flow
