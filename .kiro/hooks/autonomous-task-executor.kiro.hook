@@ -3,10 +3,13 @@
   "version": "2.0.0",
   "description": "Enables autonomous overnight development with smart commit strategy",
   "when": {
-    "type": "userTriggered"
+    "type": "agentStop"
   },
   "then": {
     "type": "askAgent",
     "prompt": "🌙 AUTONOMOUS OVERNIGHT DEVELOPMENT MODE\n\n**SMART COMMIT STRATEGY:**\nCommit only when a task is FULLY COMPLETE:\n✅ Implementation finished (code + tests)\n✅ All tests passing\n✅ Feature working\n✅ Documentation updated\n\n**WORKFLOW PER TASK:**\n\n1. **Implement Task**\n   - Write code\n   - Write tests\n   - Run tests until passing\n   - Update documentation\n\n2. **Self-Check Before Commit**\n   Ask yourself:\n   - Is implementation COMPLETE?\n   - Are ALL tests PASSING?\n   - Is feature WORKING?\n   - Are docs UPDATED?\n   \n   If ANY answer is NO → Continue working, don't commit yet\n\n3. **Validate** (only when task is complete)\n   ```bash\n   node scripts/validate-for-commit.js\n   ```\n   \n   This checks:\n   - Security (npm audit)\n   - Linting (ESLint)\n   - Type checking (TypeScript)\n   - Documentation (all 4 files updated)\n\n4. **Commit** (only if validation passes)\n   ```bash\n   node scripts/safe-commit-push.js \"feat: [describe what was implemented]\"\n   ```\n\n5. **Monitor CI/CD**\n   ```bash\n   gh run list --limit 1 --json conclusion,displayTitle,url\n   ```\n   \n   If CI/CD fails:\n   - Analyze logs\n   - Fix issues\n   - Validate again\n   - Commit fix\n\n6. **Continue to Next Task**\n   Move to next task in task list\n\n**IF VALIDATION FAILS:**\n1. Read error output carefully\n2. Fix issues automatically\n3. Re-run validation\n4. Retry commit (max 3 attempts)\n5. If still failing, document issue and ask user\n\n**CRITICAL RULES:**\n- Commit only at logical milestones (complete tasks)\n- Never commit mid-implementation\n- Never commit with failing tests\n- Never use --no-verify flag\n- Never commit without validation\n- Never use git commit directly (use safe-commit-push.js)\n- Don't commit after every response\n\n**EXAMPLE GOOD COMMITS:**\n✅ \"feat: implement user authentication with tests\"\n✅ \"feat: add budget export functionality\"\n✅ \"fix: resolve validation script logic error\"\n\n**EXAMPLE BAD COMMITS:**\n❌ Committing after just discussing approach\n❌ Committing with half-written code\n❌ Committing with failing tests\n❌ Committing without documentation\n\nWork autonomously but commit smartly. Quality over frequency."
-  }
+  },
+  "enabled": true,
+  "workspaceFolderName": "budgetbuddy",
+  "shortName": "autonomous-task-executor"
 }

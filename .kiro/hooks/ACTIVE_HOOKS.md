@@ -102,7 +102,7 @@
 ### 13. `continuation-checker.kiro.hook` ⭐ CRITICAL
 
 **Purpose**: Automatically continue to next task without stopping
-**Trigger**: After agent stops (task complete)
+**Trigger**: After agent stops (task complete or any other reason)
 **Status**: ✅ Active
 **Action**: Checks for incomplete tasks and starts next one immediately
 **Critical**: Enables true autonomous development without manual intervention
