@@ -3,13 +3,15 @@
  * Displays budgets with planned vs actual amounts and visual progress
  */
 
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { Card, LoadingSpinner } from './ui';
-import { useTheme } from '../hooks/useTheme';
-import { BudgetWithSummary, BUDGET_TYPE_CONFIG } from '../types/budget';
+import React from "react";
+import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { Card, LoadingSpinner } from "./ui";
+import { useTheme } from "../hooks/useTheme";
+import { useCurrency } from "../contexts/CurrencyContext";
+import { BudgetWithSummary, BUDGET_TYPE_CONFIG } from "../types/budget";
+import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
 interface BudgetListProps {
   budgets: BudgetWithSummary[];
@@ -34,18 +36,12 @@ const BudgetItem: React.FC<BudgetItemProps> = ({
   onDelete,
 }) => {
   const { colors } = useTheme();
+  const { selectedCurrency } = useCurrency();
   const { summary } = budget;
   const typeConfig = BUDGET_TYPE_CONFIG[budget.type];
 
   const progressPercentage = Math.min(Math.max(summary.percentUsed, 0), 100);
   const isOverBudget = summary.isOverBudget;
-
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(Math.abs(amount));
-  };
 
   const getProgressColor = (): string => {
     if (isOverBudget) return colors.error;
@@ -77,15 +73,15 @@ const BudgetItem: React.FC<BudgetItemProps> = ({
       padding: 16,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       marginBottom: 12,
     },
     titleContainer: {
       flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
     },
     typeIcon: {
       fontSize: 20,
@@ -93,7 +89,7 @@ const BudgetItem: React.FC<BudgetItemProps> = ({
     },
     title: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       flex: 1,
     },
@@ -103,8 +99,8 @@ const BudgetItem: React.FC<BudgetItemProps> = ({
       marginTop: 2,
     },
     actionsContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
     },
     actionButton: {
       padding: 8,
@@ -112,14 +108,14 @@ const BudgetItem: React.FC<BudgetItemProps> = ({
       borderRadius: 6,
     },
     amountContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 12,
     },
     amountSection: {
       flex: 1,
-      alignItems: 'center',
+      alignItems: "center",
     },
     amountLabel: {
       fontSize: 12,
@@ -128,7 +124,7 @@ const BudgetItem: React.FC<BudgetItemProps> = ({
     },
     amountValue: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     plannedAmount: {
       color: colors.text,
@@ -146,10 +142,10 @@ const BudgetItem: React.FC<BudgetItemProps> = ({
       height: 6,
       backgroundColor: colors.border,
       borderRadius: 3,
-      overflow: 'hidden',
+      overflow: "hidden",
     },
     progressFill: {
-      height: '100%',
+      height: "100%",
       backgroundColor: getProgressColor(),
       borderRadius: 3,
       width: `${progressPercentage}%`,
@@ -157,17 +153,17 @@ const BudgetItem: React.FC<BudgetItemProps> = ({
     progressText: {
       fontSize: 12,
       color: colors.textSecondary,
-      textAlign: 'center',
+      textAlign: "center",
       marginTop: 4,
     },
     overBudgetText: {
       color: colors.error,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     transactionCount: {
       fontSize: 12,
       color: colors.textSecondary,
-      textAlign: 'right',
+      textAlign: "right",
     },
   });
 
@@ -187,7 +183,10 @@ const BudgetItem: React.FC<BudgetItemProps> = ({
             <Pressable style={dynamicStyles.actionButton} onPress={handleEdit}>
               <Ionicons name="pencil" size={16} color={colors.textSecondary} />
             </Pressable>
-            <Pressable style={dynamicStyles.actionButton} onPress={handleDelete}>
+            <Pressable
+              style={dynamicStyles.actionButton}
+              onPress={handleDelete}
+            >
               <Ionicons name="trash" size={16} color={colors.error} />
             </Pressable>
           </View>
@@ -196,22 +195,28 @@ const BudgetItem: React.FC<BudgetItemProps> = ({
         <View style={dynamicStyles.amountContainer}>
           <View style={dynamicStyles.amountSection}>
             <Text style={dynamicStyles.amountLabel}>Planned</Text>
-            <Text style={[dynamicStyles.amountValue, dynamicStyles.plannedAmount]}>
-              {formatCurrency(summary.planned)}
+            <Text
+              style={[dynamicStyles.amountValue, dynamicStyles.plannedAmount]}
+            >
+              {formatCurrency(summary.planned, selectedCurrency.code)}
             </Text>
           </View>
 
           <View style={dynamicStyles.amountSection}>
             <Text style={dynamicStyles.amountLabel}>Actual</Text>
-            <Text style={[dynamicStyles.amountValue, dynamicStyles.actualAmount]}>
-              {formatCurrency(summary.actual)}
+            <Text
+              style={[dynamicStyles.amountValue, dynamicStyles.actualAmount]}
+            >
+              {formatCurrency(summary.actual, selectedCurrency.code)}
             </Text>
           </View>
 
           <View style={dynamicStyles.amountSection}>
             <Text style={dynamicStyles.amountLabel}>Remaining</Text>
-            <Text style={[dynamicStyles.amountValue, dynamicStyles.remainingAmount]}>
-              {formatCurrency(summary.remaining)}
+            <Text
+              style={[dynamicStyles.amountValue, dynamicStyles.remainingAmount]}
+            >
+              {formatCurrency(summary.remaining, selectedCurrency.code)}
             </Text>
           </View>
         </View>
@@ -220,19 +225,21 @@ const BudgetItem: React.FC<BudgetItemProps> = ({
           <View style={dynamicStyles.progressBar}>
             <View style={dynamicStyles.progressFill} />
           </View>
-          <Text style={[
-            dynamicStyles.progressText,
-            isOverBudget && dynamicStyles.overBudgetText
-          ]}>
+          <Text
+            style={[
+              dynamicStyles.progressText,
+              isOverBudget && dynamicStyles.overBudgetText,
+            ]}
+          >
             {isOverBudget
-              ? `Over budget by ${formatCurrency(Math.abs(summary.remaining))}`
-              : `${progressPercentage.toFixed(0)}% used`
-            }
+              ? `Over budget by ${formatCurrency(Math.abs(summary.remaining), selectedCurrency.code)}`
+              : `${progressPercentage.toFixed(0)}% used`}
           </Text>
         </View>
 
         <Text style={dynamicStyles.transactionCount}>
-          {summary.transactionCount} transaction{summary.transactionCount !== 1 ? 's' : ''}
+          {summary.transactionCount} transaction
+          {summary.transactionCount !== 1 ? "s" : ""}
         </Text>
       </Pressable>
     </Card>
@@ -263,7 +270,11 @@ export default function BudgetList({
   if (budgets.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="wallet-outline" size={48} color={colors.textSecondary} />
+        <Ionicons
+          name="wallet-outline"
+          size={48}
+          color={colors.textSecondary}
+        />
         <Text style={[styles.emptyTitle, { color: colors.text }]}>
           No budgets yet
         </Text>
@@ -288,17 +299,21 @@ export default function BudgetList({
     }
 
     // Group budgets by type
-    const groupedBudgets = budgets.reduce((groups, budget) => {
-      const type = budget.type;
-      if (!groups[type]) {
-        groups[type] = [];
-      }
-      groups[type].push(budget);
-      return groups;
-    }, {} as Record<string, BudgetWithSummary[]>);
+    const groupedBudgets = budgets.reduce(
+      (groups, budget) => {
+        const type = budget.type;
+        if (!groups[type]) {
+          groups[type] = [];
+        }
+        groups[type].push(budget);
+        return groups;
+      },
+      {} as Record<string, BudgetWithSummary[]>,
+    );
 
     return Object.entries(groupedBudgets).map(([type, typeBudgets]) => {
-      const typeConfig = BUDGET_TYPE_CONFIG[type as keyof typeof BUDGET_TYPE_CONFIG];
+      const typeConfig =
+        BUDGET_TYPE_CONFIG[type as keyof typeof BUDGET_TYPE_CONFIG];
 
       return (
         <View key={type}>
@@ -331,8 +346,8 @@ export default function BudgetList({
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 40,
   },
   loadingText: {
@@ -341,26 +356,26 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 40,
     paddingHorizontal: 32,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptySubtitle: {
     fontSize: 16,
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 12,
     marginTop: 24,
     paddingHorizontal: 16,
