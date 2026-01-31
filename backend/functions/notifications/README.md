@@ -4,13 +4,17 @@
 
 The Notification Service Lambda handles push notification delivery, device management, notification preferences, and notification history for BudgetBuddy. It serves as the central hub for all notification-related operations.
 
+**Last Updated**: January 31, 2026
+**Version**: 1.0.0
+**Status**: Production Ready
+
 ## Purpose
 
-- Register and manage device tokens for push notifications
-- Store and retrieve notification preferences
+- Register and manage device tokens for push notifications (max 10 per user)
+- Store and retrieve notification preferences with quiet hours support
 - Send push notifications via Expo Push Notification API
-- Maintain notification history with read/unread status
-- Support multiple devices per user
+- Maintain notification history with read/unread status (90-day TTL)
+- Support multiple devices per user with automatic cleanup
 
 ## Handler Function
 
