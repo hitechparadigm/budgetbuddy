@@ -104,14 +104,14 @@ exports.handler = async (event) => {
     console.log("  - currentMonth:", requestBody.currentMonth);
     console.log(
       "  - selectedCategories:",
-      requestBody.selectedCategories.length
+      requestBody.selectedCategories.length,
     );
 
     // Resolve familyId using centralized resolver
     const familyId = await FamilyIdResolver.resolveFamilyId(
       userId,
       jwtFamilyId,
-      dynamoHelpers
+      dynamoHelpers,
     );
 
     FamilyIdResolver.logFamilyIdResolution(
@@ -119,7 +119,7 @@ exports.handler = async (event) => {
       "onboarding",
       userId,
       familyId,
-      jwtFamilyId ? "jwt" : "dynamodb-or-fallback"
+      jwtFamilyId ? "jwt" : "dynamodb-or-fallback",
     );
 
     console.log("Family ID resolution:");
@@ -129,7 +129,10 @@ exports.handler = async (event) => {
 
     const currentTime = new Date().toISOString();
 
-    // Update user profile to mark onboarding as completed
+    // Extract currency from request (default to USD if not provided)
+    const currency = requestBody.currency || "USD";
+
+    // Update user profile to mark onboarding as completed and save currency
     const updateCommand = new UpdateItemCommand({
       TableName: TABLE_NAME,
       Key: {
@@ -137,9 +140,10 @@ exports.handler = async (event) => {
         SK: { S: "PROFILE" },
       },
       UpdateExpression:
-        "SET onboardingCompleted = :completed, updatedAt = :updatedAt",
+        "SET onboardingCompleted = :completed, currency = :currency, updatedAt = :updatedAt",
       ExpressionAttributeValues: {
         ":completed": { BOOL: true },
+        ":currency": { S: currency },
         ":updatedAt": { S: currentTime },
       },
       ReturnValues: "ALL_NEW",
@@ -175,7 +179,7 @@ exports.handler = async (event) => {
     // Calculate totals
     const totalExpenses = expenseCategories.reduce(
       (sum, cat) => sum + cat.plannedAmount,
-      0
+      0,
     );
 
     const budget = {
@@ -187,6 +191,7 @@ exports.handler = async (event) => {
       budgetId,
       familyId,
       month: currentMonth,
+      currency, // Add currency to budget
       totalIncome: 0,
       totalSavings: 0,
       totalExpenses,
@@ -214,7 +219,7 @@ exports.handler = async (event) => {
       "budget-creation",
       userId,
       familyId,
-      "budget-created"
+      "budget-created",
     );
 
     // Verify budget was created
@@ -222,7 +227,7 @@ exports.handler = async (event) => {
     try {
       const verificationBudget = await dynamoHelpers.getItem(
         `FAMILY#${familyId}`,
-        `BUDGET#${currentMonth}`
+        `BUDGET#${currentMonth}`,
       );
 
       if (verificationBudget) {
@@ -233,7 +238,7 @@ exports.handler = async (event) => {
           "budget-verification",
           userId,
           familyId,
-          "verification-success"
+          "verification-success",
         );
       } else {
         console.error("Budget verification failed - budget not found");
@@ -242,7 +247,7 @@ exports.handler = async (event) => {
           "budget-verification",
           userId,
           familyId,
-          "verification-failed"
+          "verification-failed",
         );
 
         return {
@@ -268,7 +273,7 @@ exports.handler = async (event) => {
         "budget-verification",
         userId,
         familyId,
-        "verification-error"
+        "verification-error",
       );
       // Continue with success response despite verification error
     }

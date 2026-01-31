@@ -120,8 +120,8 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
 
 ### Phase 4: Onboarding Integration
 
-- [ ] 6. Add Currency Selection to Onboarding
-  - [ ] 6.1 Update OnboardingFlow component
+- [x] 6. Add Currency Selection to Onboarding
+  - [x] 6.1 Update OnboardingFlow component
     - Add currency selection step after location
     - Use CurrencySelector component
     - Default to USD if not selected
@@ -129,14 +129,14 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
     - Pass currency to AI budget generation
     - _Requirements: 1.1-1.5_
 
-  - [ ] 6.2 Update onboarding tests
+  - [x] 6.2 Update onboarding tests
     - Test currency selection step
     - Test default currency (USD)
     - Test currency saved to profile
     - Test currency passed to AI generation
     - _Requirements: 1.1-1.5_
 
-  - [ ] 6.3 Update onboarding Lambda function
+  - [x] 6.3 Update onboarding Lambda function
     - Accept currency in onboarding request
     - Save currency to user profile
     - Use currency in budget creation

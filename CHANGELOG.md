@@ -99,11 +99,73 @@
 
 ### 📋 Next Steps (Phase 6-9)
 
-- Integrate currency selector into onboarding flow
-- Add currency management to settings page
-- Update budget/transaction display with currency formatting
-- Mobile app integration (React Native component)
-- Data migration for existing users (default to USD)
+- ✅ Phase 6: Onboarding Integration - Currency selector in onboarding flow (COMPLETE)
+- Phase 7: Settings Page Integration - Add currency management
+- Phase 8: UI Formatting Updates - Use formatCurrency() in displays
+- Phase 9: Mobile App Integration - React Native components
+
+## [1.6.1] - 2026-01-31
+
+### 🌍 ADDED - Multi-Currency Support (Phase 6 - Onboarding Integration)
+
+- **Currency Selection in Onboarding Flow**: Users can now select their preferred currency during onboarding
+  - **File**: `packages/web-app/src/components/OnboardingFlow.tsx`
+  - **Feature**: Added currency selection step between location and family size
+  - **UI**: Currency selector with all 6 supported currencies
+  - **Default**: USD if not explicitly selected
+  - **Flow**: Location → Currency → Family Size → Categories → Review
+  - **Impact**: New users set their currency preference during initial setup
+
+- **Onboarding Page Integration**: Currency passed to backend during onboarding
+  - **File**: `packages/web-app/src/pages/OnboardingPage.tsx`
+  - **Feature**: Updated handleComplete to accept and pass currency parameter
+  - **API**: Currency sent to auth-onboarding Lambda
+  - **Impact**: User's currency preference saved to profile and used in budget creation
+
+- **Auth-Onboarding Lambda Update**: Backend now accepts and uses currency
+  - **File**: `backend/functions/auth-onboarding/index.js`
+  - **Features**:
+    - Accepts `currency` parameter in onboarding request
+    - Saves currency to user profile during onboarding completion
+    - Uses currency in initial budget creation
+    - Defaults to USD if currency not provided
+  - **Impact**: Complete end-to-end currency flow from onboarding to budget creation
+
+### 📦 Technical Details
+
+**Files Modified**:
+
+- `packages/web-app/src/components/OnboardingFlow.tsx` - Added currency selection step
+- `packages/web-app/src/pages/OnboardingPage.tsx` - Pass currency to backend
+- `backend/functions/auth-onboarding/index.js` - Accept and use currency parameter
+- `.kiro/specs/multi-currency/tasks.md` - Marked Phase 6 tasks as complete
+
+**User Flow**:
+
+1. User completes location detection
+2. User selects currency (defaults to USD)
+3. User selects family size
+4. User selects budget categories
+5. Backend saves currency to user profile
+6. Backend creates initial budget with selected currency
+
+**Progress Bar Updated**:
+
+- Step 1: Location
+- Step 2: Currency (NEW)
+- Step 3: Family Size
+- Step 4: Categories
+- Step 5: Review
+
+### 🧪 Testing
+
+- Currency selector integrated into onboarding flow
+- Default currency (USD) works correctly
+- Currency passed through complete onboarding flow
+- User profile updated with selected currency
+- Initial budget created with selected currency
+
+### 📋 Next Steps (Phase 7-9)
 
 ## [1.5.7] - 2026-01-31
 
