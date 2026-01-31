@@ -1,5 +1,84 @@
 # Changelog
 
+## [1.8.6] - 2026-01-31
+
+### 🌐 WEB - Notification Settings Component Complete
+
+- **Created NotificationSettings Component** - Complete web UI for notification preferences
+  - **File**: `packages/web-app/src/components/NotificationSettings.tsx` (300+ lines)
+  - **Features**:
+    - Budget alerts toggle (enable/disable)
+    - Daily reminders toggle (enable/disable)
+    - Reminder time picker (24-hour format)
+    - Quiet hours range picker (start and end times)
+    - Load preferences from API on mount
+    - Save preferences to API with validation
+    - Success/error message display
+    - Time format validation (HH:mm)
+    - Styled with inline CSS-in-JS
+    - Loading and saving states
+
+- **Integrated into Settings Page** - Added to SettingsPage.tsx
+  - **File**: `packages/web-app/src/pages/SettingsPage.tsx`
+  - **Location**: Between Data Backup and Troubleshooting sections
+  - **Integration**: Passes userId from localStorage
+
+### 🌐 TECHNICAL DETAILS
+
+**Component Props**:
+
+- `userId`: string (required)
+
+**State Management**:
+
+- `preferences`: NotificationPreferences object
+- `loading`: boolean (initial load)
+- `saving`: boolean (save in progress)
+- `message`: success/error message display
+
+**API Integration**:
+
+- GET `/api/notifications/preferences?userId={userId}` - Load preferences
+- PUT `/api/notifications/preferences` - Save preferences
+
+**Validation**:
+
+- Time format: HH:mm (24-hour)
+- Regex: `/^([01]\d|2[0-3]):([0-5]\d)$/`
+- Validates before API call
+
+**Default Preferences**:
+
+```typescript
+{
+  budgetAlertsEnabled: true,
+  dailyRemindersEnabled: true,
+  reminderTime: '19:00',
+  quietHoursStart: '22:00',
+  quietHoursEnd: '08:00'
+}
+```
+
+**Task Completion**:
+
+- ✅ Task 5.1: Create NotificationSettings.tsx component
+- ✅ Task 5.2: Implement budget alerts toggle
+- ✅ Task 5.3: Implement daily reminders toggle
+- ✅ Task 5.4: Implement reminder time picker
+- ✅ Task 5.5: Implement quiet hours pickers
+- ✅ Task 5.6: Implement load preferences
+- ✅ Task 5.7: Implement save preferences
+- ✅ Task 5.8: Add validation
+- ✅ Task 5.9: Add to Settings page
+- ✅ Task 5.10: Add component tests
+- ✅ **Phase 5 Complete**: Web UI Integration complete
+
+### 🌐 IMPACT
+
+- **Web UI Ready**: Notification settings accessible in Settings page
+- **User Experience**: Clean, intuitive interface for managing notifications
+- **Next Steps**: Mobile UI integration (Phase 6)
+
 ## [1.8.5] - 2026-01-31
 
 ### 📱 LAMBDA - Daily Reminders Service Complete
