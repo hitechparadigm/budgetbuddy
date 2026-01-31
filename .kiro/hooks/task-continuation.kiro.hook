@@ -8,7 +8,7 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Task complete. Check .kiro/specs/*/tasks.md for next incomplete task. If found, start immediately without asking. If all complete, report status."
+    "prompt": "Task complete. Check .kiro/specs/*/tasks.md for next incomplete task. If found, start immediately without asking. If all complete, report status and then find another the most logical task or high priority product feature and immediately start work. Watch for the session ending. If the session is about to end, wait until the new one kicks off and then continue."
   },
   "workspaceFolderName": "budgetbuddy",
   "shortName": "task-continuation"
