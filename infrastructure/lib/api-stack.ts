@@ -50,6 +50,13 @@ export class ApiStack extends cdk.Stack {
   public readonly functions: { [key: string]: lambda.Function } = {};
 
   /**
+   * Lambda layers for shared code
+   * Exposed for use in other stacks (e.g., notification stack)
+   */
+  public readonly commonLayer: lambda.LayerVersion;
+  public readonly sharedLayer: lambda.LayerVersion;
+
+  /**
    * Auth Onboarding Lambda Function (optional)
    * Part of architectural refactoring - standalone function for onboarding
    */
@@ -61,11 +68,12 @@ export class ApiStack extends cdk.Stack {
     // Store auth onboarding function for use in route setup
     this.authOnboardingFunction = props.authOnboardingFunction;
 
-    // Create shared Lambda layer for common dependencies
-    const commonLayer = this.createCommonLayer();
+    // Create shared Lambda layers for common dependencies
+    this.commonLayer = this.createCommonLayer();
+    this.sharedLayer = this.createSharedLayer();
 
     // Create Lambda functions for different business domains
-    this.createLambdaFunctions(props, commonLayer);
+    this.createLambdaFunctions(props, this.commonLayer, this.sharedLayer);
 
     // Create API Gateway with proper configuration
     this.api = this.createApiGateway(props.userPool);
@@ -91,10 +99,23 @@ export class ApiStack extends cdk.Stack {
   }
 
   /**
+   * Create a Lambda layer with shared utilities (CORS, validation, etc.)
+   * Provides reusable code across all Lambda functions
+   */
+  private createSharedLayer(): lambda.LayerVersion {
+    return new lambda.LayerVersion(this, 'SharedLayer', {
+      layerVersionName: 'budgetbuddy-shared',
+      code: lambda.Code.fromAsset('../backend/layers/shared'),
+      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      description: 'Shared utilities (CORS, validation, token parsing) for BudgetBuddy Lambda functions',
+    });
+  }
+
+  /**
    * Create all Lambda functions for the application
    * Each function handles a specific business domain
    */
-  private createLambdaFunctions(props: ApiStackProps, commonLayer: lambda.LayerVersion): void {
+  private createLambdaFunctions(props: ApiStackProps, commonLayer: lambda.LayerVersion, sharedLayer: lambda.LayerVersion): void {
     // Common environment variables for all functions
     const commonEnvironment = {
       TABLE_NAME: props.table.tableName,
@@ -107,7 +128,7 @@ export class ApiStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       timeout: cdk.Duration.seconds(30),
       memorySize: 512, // Balanced for cost and performance
-      layers: [commonLayer],
+      layers: [commonLayer, sharedLayer],
       environment: commonEnvironment,
       logRetention: logs.RetentionDays.ONE_WEEK, // Cost optimization
     };

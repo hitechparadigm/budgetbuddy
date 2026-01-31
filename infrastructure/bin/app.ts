@@ -24,6 +24,7 @@ import { AuthOnboardingStack } from '../lib/auth-onboarding-stack';
 import { ApiStack } from '../lib/api-stack';
 import { HostingStack } from '../lib/hosting-stack';
 import { MonitoringStack } from '../lib/monitoring-stack';
+import { NotificationStack } from '../lib/notification-stack';
 
 // Initialize the CDK application
 const app = new cdk.App();
@@ -92,6 +93,19 @@ const hostingStack = new HostingStack(app, `${stackPrefix}-hosting`, {
 });
 
 /**
+ * Notification Stack - Push notifications and daily reminders
+ * Handles device registration, budget alerts, and daily reminders
+ */
+const notificationStack = new NotificationStack(app, `${stackPrefix}-notification`, {
+  env,
+  description: 'BudgetBuddy notification infrastructure with Lambda functions for push notifications and reminders',
+  table: databaseStack.table,
+  commonLayer: apiStack.commonLayer,
+  sharedLayer: apiStack.sharedLayer,
+  expoAccessToken: process.env.EXPO_ACCESS_TOKEN || 'placeholder-token-configure-in-aws',
+});
+
+/**
  * Monitoring Stack - CloudWatch dashboards and alarms
  * Provides observability and alerting for the application
  * Depends on all other stacks for resource references
@@ -111,9 +125,12 @@ authOnboardingStack.addDependency(authStack);
 apiStack.addDependency(databaseStack);
 apiStack.addDependency(authStack);
 apiStack.addDependency(authOnboardingStack);
+notificationStack.addDependency(databaseStack);
+notificationStack.addDependency(apiStack);
 monitoringStack.addDependency(databaseStack);
 monitoringStack.addDependency(authStack);
 monitoringStack.addDependency(apiStack);
+monitoringStack.addDependency(notificationStack);
 
 // Add comprehensive tags to all resources for cost tracking and organization
 cdk.Tags.of(app).add('Project', 'BudgetBuddy');

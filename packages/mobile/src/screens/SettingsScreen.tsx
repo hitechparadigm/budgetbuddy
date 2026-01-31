@@ -1,24 +1,33 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card, Button } from '../components/ui';
-import { ExportModal } from '../components/ExportModal';
-import { BackupModal } from '../components/BackupModal';
-import NotificationSettings from '../components/NotificationSettings';
-import CurrencySelector, { CurrencyDisplay } from '../components/CurrencySelector';
-import { useTheme } from '../hooks/useTheme';
-import { useAuth } from '../contexts/AuthContext';
-import { useCurrency } from '../contexts/CurrencyContext';
-import { useBudgets } from '../services/budget';
-import { useTransactions } from '../services/transaction';
-import { backupService } from '../services/backup';
-import * as Haptics from 'expo-haptics';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Switch,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Card, Button } from "../components/ui";
+import { ExportModal } from "../components/ExportModal";
+import { BackupModal } from "../components/BackupModal";
+import NotificationSettings from "../components/NotificationSettings";
+import CurrencySelector, {
+  CurrencyDisplay,
+} from "../components/CurrencySelector";
+import { useTheme } from "../hooks/useTheme";
+import { useAuth } from "../contexts/AuthContext";
+import { useCurrency } from "../contexts/CurrencyContext";
+import { useBudgets } from "../services/budget";
+import { useTransactions } from "../services/transaction";
+import { backupService } from "../services/backup";
+import * as Haptics from "expo-haptics";
 
 interface SettingsItem {
   id: string;
   title: string;
   subtitle?: string;
-  type: 'toggle' | 'button' | 'navigation';
+  type: "toggle" | "button" | "navigation";
   value?: boolean;
   onPress?: () => void;
   onToggle?: (value: boolean) => void;
@@ -35,32 +44,33 @@ export default function SettingsScreen() {
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [darkModeEnabled, setDarkModeEnabled] = useState(isDark);
   const [exportModalVisible, setExportModalVisible] = useState(false);
-  const [exportType, setExportType] = useState<'budgets' | 'transactions' | 'report'>('budgets');
+  const [exportType, setExportType] = useState<
+    "budgets" | "transactions" | "report"
+  >("budgets");
   const [backupModalVisible, setBackupModalVisible] = useState(false);
-  const [backupMode, setBackupMode] = useState<'backup' | 'restore' | 'settings'>('backup');
-  const [notificationSettingsVisible, setNotificationSettingsVisible] = useState(false);
+  const [backupMode, setBackupMode] = useState<
+    "backup" | "restore" | "settings"
+  >("backup");
+  const [notificationSettingsVisible, setNotificationSettingsVisible] =
+    useState(false);
   const [currencySelectorVisible, setCurrencySelectorVisible] = useState(false);
 
   const handleSignOut = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-            } catch (error) {
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
-            }
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await signOut();
+          } catch (error) {
+            Alert.alert("Error", "Failed to sign out. Please try again.");
           }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleCurrencyChange = async (currency: any) => {
@@ -68,75 +78,88 @@ export default function SettingsScreen() {
       await setSelectedCurrency(currency);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      console.error('Failed to change currency:', error);
-      Alert.alert('Error', 'Failed to change currency. Please try again.');
+      console.error("Failed to change currency:", error);
+      Alert.alert("Error", "Failed to change currency. Please try again.");
     }
   };
 
   const handleDeleteAccount = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert(
-      'Delete Account',
-      'This action cannot be undone. Would you like to create a backup before deleting your account?',
+      "Delete Account",
+      "This action cannot be undone. Would you like to create a backup before deleting your account?",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete Without Backup',
-          style: 'destructive',
+          text: "Delete Without Backup",
+          style: "destructive",
           onPress: () => {
-            Alert.alert('Account Deletion', 'Account deletion functionality will be implemented soon.');
-          }
+            Alert.alert(
+              "Account Deletion",
+              "Account deletion functionality will be implemented soon.",
+            );
+          },
         },
         {
-          text: 'Backup & Delete',
+          text: "Backup & Delete",
           onPress: async () => {
             try {
               const result = await backupService.createPreDeletionBackup(
                 budgets,
                 transactions,
-                user?.userId || 'unknown'
+                user?.userId || "unknown",
               );
 
               if (result.success) {
                 Alert.alert(
-                  'Backup Created',
-                  'Your data has been backed up. You can now proceed with account deletion.',
+                  "Backup Created",
+                  "Your data has been backed up. You can now proceed with account deletion.",
                   [
-                    { text: 'Cancel' },
+                    { text: "Cancel" },
                     {
-                      text: 'Delete Account',
-                      style: 'destructive',
+                      text: "Delete Account",
+                      style: "destructive",
                       onPress: () => {
-                        Alert.alert('Account Deletion', 'Account deletion functionality will be implemented soon.');
-                      }
-                    }
-                  ]
+                        Alert.alert(
+                          "Account Deletion",
+                          "Account deletion functionality will be implemented soon.",
+                        );
+                      },
+                    },
+                  ],
                 );
               } else {
-                Alert.alert('Backup Failed', result.error || 'Failed to create backup before deletion.');
+                Alert.alert(
+                  "Backup Failed",
+                  result.error || "Failed to create backup before deletion.",
+                );
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to create backup. Please try again.');
+              Alert.alert(
+                "Error",
+                "Failed to create backup. Please try again.",
+              );
             }
-          }
+          },
         },
-      ]
+      ],
     );
   };
 
   const accountSettings: SettingsItem[] = [
     {
-      id: 'profile',
-      title: 'Profile Settings',
-      subtitle: 'Update your personal information',
-      type: 'navigation',
-      onPress: () => Alert.alert('Profile', 'Profile settings will be implemented soon.'),
+      id: "profile",
+      title: "Profile Settings",
+      subtitle: "Update your personal information",
+      type: "navigation",
+      onPress: () =>
+        Alert.alert("Profile", "Profile settings will be implemented soon."),
     },
     {
-      id: 'currency',
-      title: 'Currency',
+      id: "currency",
+      title: "Currency",
       subtitle: `${selectedCurrency.code} - ${selectedCurrency.name}`,
-      type: 'navigation',
+      type: "navigation",
       onPress: async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setCurrencySelectorVisible(true);
@@ -146,20 +169,20 @@ export default function SettingsScreen() {
 
   const securitySettings: SettingsItem[] = [
     {
-      id: 'notifications',
-      title: 'Notification Settings',
-      subtitle: 'Manage alerts and reminders',
-      type: 'navigation',
+      id: "notifications",
+      title: "Notification Settings",
+      subtitle: "Manage alerts and reminders",
+      type: "navigation",
       onPress: async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setNotificationSettingsVisible(true);
       },
     },
     {
-      id: 'biometric',
-      title: 'Biometric Authentication',
-      subtitle: 'Use Face ID or Touch ID to unlock',
-      type: 'toggle',
+      id: "biometric",
+      title: "Biometric Authentication",
+      subtitle: "Use Face ID or Touch ID to unlock",
+      type: "toggle",
       value: biometricEnabled,
       onToggle: async (value) => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -170,90 +193,94 @@ export default function SettingsScreen() {
 
   const appSettings: SettingsItem[] = [
     {
-      id: 'darkMode',
-      title: 'Dark Mode',
-      subtitle: 'Use dark theme',
-      type: 'toggle',
+      id: "darkMode",
+      title: "Dark Mode",
+      subtitle: "Use dark theme",
+      type: "toggle",
       value: darkModeEnabled,
       onToggle: async (value) => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setDarkModeEnabled(value);
-        Alert.alert('Dark Mode', 'Dark mode toggle will be fully implemented soon.');
+        Alert.alert(
+          "Dark Mode",
+          "Dark mode toggle will be fully implemented soon.",
+        );
       },
     },
     {
-      id: 'tutorial',
-      title: 'Show Tutorial',
-      subtitle: 'Replay the onboarding tutorial',
-      type: 'navigation',
-      onPress: () => Alert.alert('Tutorial', 'Tutorial replay will be implemented soon.'),
+      id: "tutorial",
+      title: "Show Tutorial",
+      subtitle: "Replay the onboarding tutorial",
+      type: "navigation",
+      onPress: () =>
+        Alert.alert("Tutorial", "Tutorial replay will be implemented soon."),
     },
   ];
 
   const dataSettings: SettingsItem[] = [
     {
-      id: 'export-budgets',
-      title: 'Export Budgets',
-      subtitle: 'Download budget data as CSV',
-      type: 'button',
+      id: "export-budgets",
+      title: "Export Budgets",
+      subtitle: "Download budget data as CSV",
+      type: "button",
       onPress: async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setExportType('budgets');
+        setExportType("budgets");
         setExportModalVisible(true);
       },
     },
     {
-      id: 'export-transactions',
-      title: 'Export Transactions',
-      subtitle: 'Download transaction data as CSV',
-      type: 'button',
+      id: "export-transactions",
+      title: "Export Transactions",
+      subtitle: "Download transaction data as CSV",
+      type: "button",
       onPress: async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setExportType('transactions');
+        setExportType("transactions");
         setExportModalVisible(true);
       },
     },
     {
-      id: 'export-report',
-      title: 'Generate Report',
-      subtitle: 'Create monthly budget PDF report',
-      type: 'button',
+      id: "export-report",
+      title: "Generate Report",
+      subtitle: "Create monthly budget PDF report",
+      type: "button",
       onPress: async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setExportType('report');
+        setExportType("report");
         setExportModalVisible(true);
       },
     },
     {
-      id: 'create-backup',
-      title: 'Create Backup',
-      subtitle: 'Full backup of all your data',
-      type: 'button',
+      id: "create-backup",
+      title: "Create Backup",
+      subtitle: "Full backup of all your data",
+      type: "button",
       onPress: async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setBackupMode('backup');
+        setBackupMode("backup");
         setBackupModalVisible(true);
       },
     },
     {
-      id: 'restore-backup',
-      title: 'Restore from Backup',
-      subtitle: 'Restore data from backup file',
-      type: 'button',
+      id: "restore-backup",
+      title: "Restore from Backup",
+      subtitle: "Restore data from backup file",
+      type: "button",
       onPress: async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setBackupMode('restore');
+        setBackupMode("restore");
         setBackupModalVisible(true);
       },
     },
     {
-      id: 'backup-settings',
-      title: 'Backup Settings',
-      subtitle: 'Configure automatic backups',
-      type: 'navigation',
+      id: "backup-settings",
+      title: "Backup Settings",
+      subtitle: "Configure automatic backups",
+      type: "navigation",
       onPress: async () => {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setBackupMode('settings');
+        setBackupMode("settings");
         setBackupModalVisible(true);
       },
     },
@@ -271,12 +298,17 @@ export default function SettingsScreen() {
                   {item.title}
                 </Text>
                 {item.subtitle && (
-                  <Text style={[styles.settingSubtitle, { color: colors.textSecondary }]}>
+                  <Text
+                    style={[
+                      styles.settingSubtitle,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
                     {item.subtitle}
                   </Text>
                 )}
               </View>
-              {item.type === 'toggle' && (
+              {item.type === "toggle" && (
                 <Switch
                   value={item.value}
                   onValueChange={item.onToggle}
@@ -284,7 +316,7 @@ export default function SettingsScreen() {
                   thumbColor={item.value ? colors.background : colors.textMuted}
                 />
               )}
-              {item.type === 'navigation' && (
+              {item.type === "navigation" && (
                 <Button
                   title=">"
                   onPress={item.onPress}
@@ -292,11 +324,14 @@ export default function SettingsScreen() {
                   style={styles.navigationButton}
                 />
               )}
-              {item.type === 'button' && (
+              {item.type === "button" && (
                 <Button
                   title={
-                    item.id.includes('export') ? 'Export' :
-                    item.id.includes('backup') ? 'Backup' : 'Action'
+                    item.id.includes("export")
+                      ? "Export"
+                      : item.id.includes("backup")
+                        ? "Backup"
+                        : "Action"
                   }
                   onPress={item.onPress}
                   variant="outline"
@@ -305,7 +340,9 @@ export default function SettingsScreen() {
               )}
             </View>
             {index < items.length - 1 && (
-              <View style={[styles.separator, { backgroundColor: colors.border }]} />
+              <View
+                style={[styles.separator, { backgroundColor: colors.border }]}
+              />
             )}
           </View>
         ))}
@@ -323,18 +360,22 @@ export default function SettingsScreen() {
 
         {/* User Info */}
         <Card style={styles.userCard}>
-          <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
+          <Text style={styles.userEmail}>
+            {user?.email || "user@example.com"}
+          </Text>
           <Text style={styles.userStatus}>Premium Member</Text>
         </Card>
 
-        {renderSettingsSection('Account', accountSettings)}
-        {renderSettingsSection('Security & Privacy', securitySettings)}
-        {renderSettingsSection('App Preferences', appSettings)}
-        {renderSettingsSection('Data Management', dataSettings)}
+        {renderSettingsSection("Account", accountSettings)}
+        {renderSettingsSection("Security & Privacy", securitySettings)}
+        {renderSettingsSection("App Preferences", appSettings)}
+        {renderSettingsSection("Data Management", dataSettings)}
 
         {/* Danger Zone */}
         <View style={styles.dangerZone}>
-          <Text style={[styles.sectionTitle, { color: colors.error }]}>Danger Zone</Text>
+          <Text style={[styles.sectionTitle, { color: colors.error }]}>
+            Danger Zone
+          </Text>
           <Card style={styles.sectionCard}>
             <Button
               title="Delete Account"
@@ -371,13 +412,23 @@ export default function SettingsScreen() {
         onClose={() => setBackupModalVisible(false)}
         budgets={budgets}
         transactions={transactions}
-        userId={user?.userId || 'unknown'}
+        userId={user?.userId || "unknown"}
         mode={backupMode}
       />
-      <NotificationSettings
-        visible={notificationSettingsVisible}
-        onClose={() => setNotificationSettingsVisible(false)}
-      />
+      {notificationSettingsVisible && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: colors.background,
+          }}
+        >
+          <NotificationSettings userId={user?.userId || ""} />
+        </View>
+      )}
 
       <CurrencySelector
         visible={currencySelectorVisible}
@@ -389,93 +440,94 @@ export default function SettingsScreen() {
   );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginBottom: 24,
-  },
-  userCard: {
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  userEmail: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  userStatus: {
-    fontSize: 14,
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  sectionCard: {
-    padding: 0,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-  },
-  settingContent: {
-    flex: 1,
-  },
-  settingTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  settingSubtitle: {
-    fontSize: 14,
-  },
-  separator: {
-    height: 1,
-    marginLeft: 16,
-  },
-  navigationButton: {
-    minWidth: 40,
-    height: 40,
-  },
-  actionButton: {
-    minWidth: 80,
-  },
-  dangerZone: {
-    marginBottom: 24,
-  },
-  dangerButton: {
-    margin: 16,
-  },
-  signOutButton: {
-    marginBottom: 16,
-  },
-  version: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      padding: 16,
+      paddingBottom: 32,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: "bold",
+      color: colors.text,
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginBottom: 24,
+    },
+    userCard: {
+      padding: 20,
+      alignItems: "center",
+      marginBottom: 24,
+    },
+    userEmail: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    userStatus: {
+      fontSize: 14,
+      color: colors.primary,
+      fontWeight: "500",
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      marginBottom: 12,
+    },
+    sectionCard: {
+      padding: 0,
+    },
+    settingItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 16,
+    },
+    settingContent: {
+      flex: 1,
+    },
+    settingTitle: {
+      fontSize: 16,
+      fontWeight: "500",
+      marginBottom: 2,
+    },
+    settingSubtitle: {
+      fontSize: 14,
+    },
+    separator: {
+      height: 1,
+      marginLeft: 16,
+    },
+    navigationButton: {
+      minWidth: 40,
+      height: 40,
+    },
+    actionButton: {
+      minWidth: 80,
+    },
+    dangerZone: {
+      marginBottom: 24,
+    },
+    dangerButton: {
+      margin: 16,
+    },
+    signOutButton: {
+      marginBottom: 16,
+    },
+    version: {
+      textAlign: "center",
+      fontSize: 12,
+      color: colors.textMuted,
+    },
+  });

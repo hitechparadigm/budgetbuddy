@@ -1,11 +1,11 @@
 /**
  * Database Stack for BudgetBuddy Application
- * 
+ *
  * Creates a DynamoDB table using single-table design pattern for optimal
  * performance and cost efficiency. The table stores all application entities
  * (users, families, budgets, transactions, etc.) with appropriate GSI indexes
  * for efficient querying patterns.
- * 
+ *
  * Key Features:
  * - Single table design for cost optimization
  * - On-demand billing for automatic scaling
@@ -30,23 +30,23 @@ export class DatabaseStack extends cdk.Stack {
 
     /**
      * Main application table using single-table design
-     * 
+     *
      * Primary Key Structure:
      * - PK (Partition Key): Entity identifier (e.g., "USER#123", "FAMILY#456")
      * - SK (Sort Key): Entity type and additional identifiers
-     * 
+     *
      * This design allows storing multiple entity types in one table
      * while maintaining efficient query patterns and reducing costs.
      */
     this.table = new dynamodb.Table(this, 'BudgetBuddyTable', {
       tableName: 'budgetbuddy-main',
-      
+
       // Partition key - primary identifier for the entity
       partitionKey: {
         name: 'PK',
         type: dynamodb.AttributeType.STRING,
       },
-      
+
       // Sort key - allows multiple items per partition and range queries
       sortKey: {
         name: 'SK',
@@ -56,6 +56,10 @@ export class DatabaseStack extends cdk.Stack {
       // On-demand billing for automatic scaling and cost optimization
       // Only pay for actual read/write requests
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+
+      // Enable DynamoDB Streams for real-time event processing
+      // Required for budget alerts and other event-driven features
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
 
       // Enable point-in-time recovery for data protection
       // Allows restoration of table to any point within the last 35 days
@@ -72,12 +76,12 @@ export class DatabaseStack extends cdk.Stack {
 
     /**
      * GSI1 - Family-based queries
-     * 
+     *
      * Access Patterns:
      * - Get all users in a family
      * - Get family metadata and members
      * - Query family-specific data
-     * 
+     *
      * Key Structure:
      * - GSI1PK: "FAMILY#<familyId>"
      * - GSI1SK: "USER#<userId>" or "METADATA" or other family-related data
@@ -98,13 +102,13 @@ export class DatabaseStack extends cdk.Stack {
 
     /**
      * GSI2 - Date and time-based queries
-     * 
+     *
      * Access Patterns:
      * - Get transactions by date range
      * - Get budgets by month
      * - Query subscriptions by expiration date
      * - Get financial tips by publication date
-     * 
+     *
      * Key Structure:
      * - GSI2PK: Entity type with date (e.g., "BUDGET#2024-01", "SUBSCRIPTION#active")
      * - GSI2SK: "DATE#<date>" or "FAMILY#<familyId>"
@@ -124,12 +128,12 @@ export class DatabaseStack extends cdk.Stack {
 
     /**
      * GSI3 - Category and analytics queries
-     * 
+     *
      * Access Patterns:
      * - Get all transactions for a specific category
      * - Analytics queries for spending by category
      * - Budget vs actual spending analysis
-     * 
+     *
      * Key Structure:
      * - GSI3PK: "BUDGET#<month>" or "CATEGORY#<categoryId>"
      * - GSI3SK: "CATEGORY#<categoryId>" or "FAMILY#<familyId>"
