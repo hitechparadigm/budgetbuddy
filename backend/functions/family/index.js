@@ -30,23 +30,26 @@ const CORS_HEADERS = {
  * Routes requests to appropriate handler based on HTTP method and path
  */
 exports.handler = async (event) => {
-  console.log("Family Lambda invoked:", JSON.stringify(event, null, 2));
-
-  // Handle OPTIONS requests for CORS preflight
-  if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: CORS_HEADERS,
-      body: "",
-    };
-  }
-
-  // Handle health check BEFORE authentication (public endpoint)
-  if (event.httpMethod === "GET" && event.path === "/family/health") {
-    return successResponse({ status: "healthy", service: "family" });
-  }
-
   try {
+    console.log("Family Lambda invoked:", JSON.stringify(event, null, 2));
+
+    // Handle OPTIONS requests for CORS preflight
+    if (event.httpMethod === "OPTIONS") {
+      return {
+        statusCode: 200,
+        headers: CORS_HEADERS,
+        body: "",
+      };
+    }
+
+    // Handle health check BEFORE authentication (public endpoint)
+    if (
+      event.httpMethod === "GET" &&
+      (event.path === "/family/health" || event.path === "/v1/family/health")
+    ) {
+      return successResponse({ status: "healthy", service: "family" });
+    }
+
     // Extract user info from JWT token (added by authorizer)
     const user = event.requestContext?.authorizer?.claims;
     if (!user) {
