@@ -1,5 +1,94 @@
 # Development Log
 
+## 2026-01-31 - AWS Testing Guidelines Addition (Session 22)
+
+### Session Summary
+
+**Duration**: 20 minutes
+**Focus**: Adding AWS integration testing guidelines to steering files
+**Outcome**: Comprehensive testing rules with cost awareness implemented
+
+### Problem Statement
+
+**User Requirement**: "Add to steering that AWS credentials are in hitechparadigm profile. System should test implemented features using AWS to ensure accuracy. Be aware of utility cost. Never go into loop processes that drive cost up."
+
+**Challenge**: Need to enable AWS integration testing while preventing cost overruns
+
+### Solution: AWS Testing Guidelines
+
+**Approach**: Add comprehensive testing rules to steering files with strict cost controls
+
+**Implementation**:
+
+1. **AWS Profile Configuration**
+   - Profile name: `hitechparadigm`
+   - Required for all AWS CLI, CDK, and SDK operations
+   - Environment variable setup documented
+
+2. **Cost Awareness Rules**
+   - Daily limit: < $1.00
+   - Monthly limit: < $20.00
+   - Single test limit: < $0.10
+   - Immediate stop if limits exceeded
+
+3. **Safety Mechanisms**
+   - Max 10 API calls per test
+   - No infinite loops or recursive processes
+   - Lambda timeouts (max 30 seconds)
+   - Immediate cleanup of test data
+   - Dev environment only
+
+4. **Testing Guidelines**
+   - When to test: After deployments, API changes, schema updates
+   - When NOT to test: Unit tests, property-based tests, rapid iteration
+   - Testing commands documented with examples
+
+**Changes**:
+
+- **File**: `.kiro/steering/00-global.md` - Added AWS Integration Testing section
+- **File**: `.kiro/steering/tech.md` - Added AWS Profile Configuration and testing rules
+
+### Technical Details
+
+**AWS Profile Setup**:
+
+```bash
+# PowerShell
+$env:AWS_PROFILE="hitechparadigm"
+
+# Bash/Linux/Mac
+export AWS_PROFILE=hitechparadigm
+```
+
+**Testing Commands**:
+
+```bash
+# Lambda invoke
+aws lambda invoke --function-name budgetbuddy-<function> --payload '{}' response.json --profile hitechparadigm
+
+# CloudWatch logs
+aws logs tail /aws/lambda/budgetbuddy-<function> --follow --profile hitechparadigm
+
+# API testing
+curl -X POST https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/<endpoint>
+```
+
+**Cost-Safe Practices**:
+
+- Single invocation tests (1-3 requests)
+- Immediate cleanup after testing
+- Monitor AWS Cost Explorer
+- CloudWatch alarms for unexpected costs
+
+### Impact
+
+**Testing Capability**: Can now validate features against real AWS services
+**Cost Control**: Strict limits prevent runaway costs
+**Quality Assurance**: End-to-end verification of deployed features
+**Developer Guidance**: Clear rules for when and how to test AWS integrations
+
+---
+
 ## 2026-01-31 - Validation Script Smart Detection Fix (Session 21)
 
 ### Session Summary

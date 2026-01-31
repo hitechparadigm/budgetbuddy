@@ -1,5 +1,60 @@
 # Changelog
 
+## [1.5.4] - 2026-01-31
+
+### 📚 DOCS - AWS Testing Guidelines Added to Steering
+
+- **Added AWS Integration Testing Guidelines** - Comprehensive testing rules with cost awareness
+  - **Files**: `.kiro/steering/00-global.md`, `.kiro/steering/tech.md`
+  - **AWS Profile**: `hitechparadigm` - All AWS operations must use this profile
+  - **Purpose**: Enable testing of implemented features against real AWS services
+  - **Cost Limits**: Daily < $1, Monthly < $20, Single test < $0.10
+  - **Safety Rules**:
+    - Max 10 API calls per test
+    - No infinite loops or recursive processes
+    - Always set Lambda timeouts (max 30s)
+    - Clean up test data immediately
+    - Use dev environment only
+  - **When to Test**: After Lambda deployments, API changes, DynamoDB updates
+  - **Impact**: Can now verify features work correctly in AWS while maintaining cost control
+
+### 📚 TECHNICAL DETAILS
+
+**AWS Profile Configuration**:
+
+```bash
+# PowerShell
+$env:AWS_PROFILE="hitechparadigm"
+
+# Bash/Linux/Mac
+export AWS_PROFILE=hitechparadigm
+
+# CDK Commands
+cdk deploy --profile hitechparadigm
+```
+
+**Testing Commands**:
+
+- Lambda invoke: `aws lambda invoke --function-name <name> --payload '{}' response.json --profile hitechparadigm`
+- CloudWatch logs: `aws logs tail /aws/lambda/<function> --follow --profile hitechparadigm`
+- API testing: `curl -X POST https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/<endpoint>`
+
+**Cost Safety**:
+
+- Single invocation tests (1-3 requests max)
+- Immediate cleanup after testing
+- Monitor AWS Cost Explorer
+- CloudWatch alarms for unexpected costs
+
+### 📚 IMPACT
+
+- **Testing Capability**: Can now validate features against real AWS
+- **Cost Control**: Strict limits prevent runaway costs
+- **Quality Assurance**: End-to-end verification of deployed features
+- **Developer Guidance**: Clear rules for when and how to test
+
+---
+
 ## [1.5.3] - 2026-01-31
 
 ### 🔧 FIX - Validation Script Smart Detection

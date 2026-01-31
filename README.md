@@ -22,6 +22,15 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-31)
 
+- 📚 **AWS TESTING GUIDELINES** - Added comprehensive AWS integration testing rules
+  - **Added**: AWS profile configuration (`hitechparadigm`) to steering files
+  - **Purpose**: Enable testing of implemented features against real AWS services
+  - **Cost Limits**: Daily < $1, Monthly < $20, Single test < $0.10
+  - **Safety Rules**: Max 10 API calls, no loops, immediate cleanup, dev only
+  - **When to Test**: After Lambda deployments, API changes, DynamoDB updates
+  - **Files**: `.kiro/steering/00-global.md`, `.kiro/steering/tech.md`
+  - **Impact**: Can now verify features work correctly in AWS with cost control
+
 - 🔧 **VALIDATION SCRIPT FIX** - Smart detection for code vs docs-only commits
   - **Fixed**: Validation logic now properly handles docs-only commits
   - **Issue**: Script was checking wrong baseline (last commit vs staged files)

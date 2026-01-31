@@ -120,6 +120,74 @@ Before writing any code:
 - Environment promotion: dev → staging → prod
 - Automated rollback on health check failures
 
+### AWS Integration Testing
+
+**AWS Profile Configuration:**
+
+- **Profile Name**: `hitechparadigm`
+- **Usage**: All AWS CLI and SDK calls must use this profile
+- **Environment Variable**: `AWS_PROFILE=hitechparadigm`
+- **CDK Deployment**: Always specify `--profile hitechparadigm`
+
+**Testing Guidelines:**
+
+1. **Test Implemented Features Against Real AWS**
+   - After implementing a feature, test it against the deployed AWS environment
+   - Verify Lambda functions, API Gateway endpoints, DynamoDB operations
+   - Ensure end-to-end functionality works as expected
+
+2. **Cost Awareness - CRITICAL**
+   - **NEVER** create infinite loops or recursive processes
+   - **NEVER** run load tests without explicit approval
+   - **NEVER** create resources that auto-scale without limits
+   - **ALWAYS** set timeouts on Lambda functions (max 30 seconds for most)
+   - **ALWAYS** limit test iterations (max 10 API calls per test)
+   - **ALWAYS** clean up test data after testing
+
+3. **Testing Commands**
+
+   ```bash
+   # Set AWS profile
+   $env:AWS_PROFILE="hitechparadigm"  # PowerShell
+   export AWS_PROFILE=hitechparadigm  # Bash
+
+   # Test Lambda function
+   aws lambda invoke --function-name budgetbuddy-<function> --payload '{}' response.json --profile hitechparadigm
+
+   # Test API endpoint
+   curl -X POST https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/<endpoint>
+
+   # Check CloudWatch logs
+   aws logs tail /aws/lambda/budgetbuddy-<function> --follow --profile hitechparadigm
+   ```
+
+4. **Cost-Safe Testing Practices**
+   - **Single Invocation Tests**: Test with 1-3 requests, not hundreds
+   - **Immediate Cleanup**: Delete test data after each test
+   - **Monitor Costs**: Check AWS Cost Explorer after testing
+   - **Use Dev Environment**: Always test in dev, never prod
+   - **Set Alarms**: CloudWatch alarms for unexpected costs
+
+5. **When to Test Against AWS**
+   - After deploying new Lambda functions
+   - After API Gateway route changes
+   - After DynamoDB schema changes
+   - After authentication/authorization changes
+   - Before marking a task as complete
+
+6. **When NOT to Test Against AWS**
+   - During unit test development (use mocks)
+   - For property-based tests (use local mocks)
+   - For rapid iteration (use local testing)
+   - For destructive operations (use mocks)
+
+**Cost Limits:**
+
+- **Daily Testing Budget**: < $1.00
+- **Monthly Testing Budget**: < $20.00
+- **Single Test Run**: < $0.10
+- **If costs exceed limits**: STOP immediately and report
+
 ### Validation Before Commit
 
 Always run: `node scripts/validate-for-commit.js`

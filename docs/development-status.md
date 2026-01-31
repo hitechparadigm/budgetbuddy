@@ -1,8 +1,66 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-01-31 (Validation Script Smart Detection Fix)
-**Current Phase**: Production-Ready with Intelligent Validation
-**Overall Progress**: 97% (Validation logic fixed, smart detection implemented)
+**Last Updated**: 2026-01-31 (AWS Testing Guidelines Added)
+**Current Phase**: Production-Ready with AWS Integration Testing
+**Overall Progress**: 97% (AWS testing guidelines implemented, cost controls in place)
+
+## 📚 AWS TESTING SYSTEM - IMPLEMENTED
+
+### AWS Integration Testing Guidelines
+
+**Status**: ✅ Implemented and documented
+
+**Configuration**:
+
+- ✅ AWS Profile: `hitechparadigm` configured for all operations
+- ✅ Cost limits defined: Daily < $1, Monthly < $20, Single test < $0.10
+- ✅ Safety rules documented: Max 10 calls, no loops, immediate cleanup
+- ✅ Testing commands provided with examples
+- ✅ When to test guidelines established
+
+**Cost Control Mechanisms**:
+
+1. **Strict Limits** - Daily, monthly, and per-test cost caps
+2. **Safety Rules** - Max API calls, timeout limits, cleanup requirements
+3. **Monitoring** - AWS Cost Explorer checks, CloudWatch alarms
+4. **Environment Isolation** - Dev environment only for testing
+
+**Testing Workflow**:
+
+1. Deploy feature to AWS dev environment
+2. Set AWS profile: `$env:AWS_PROFILE="hitechparadigm"`
+3. Test with 1-3 requests maximum
+4. Verify functionality via CloudWatch logs
+5. Clean up test data immediately
+6. Monitor costs in AWS Cost Explorer
+
+**When to Test**:
+
+- After Lambda function deployments
+- After API Gateway route changes
+- After DynamoDB schema updates
+- After authentication/authorization changes
+- Before marking tasks as complete
+
+**When NOT to Test**:
+
+- During unit test development (use mocks)
+- For property-based tests (use local mocks)
+- For rapid iteration (use local testing)
+- For destructive operations (use mocks)
+
+**Benefits**:
+
+- Can verify features work correctly in real AWS
+- Cost controls prevent runaway expenses
+- Clear guidelines for when and how to test
+- End-to-end validation of deployed features
+
+**Next Steps**:
+
+- Test next deployed feature using guidelines
+- Monitor costs after first AWS integration test
+- Refine guidelines based on real-world usage
 
 ## 🔧 VALIDATION SYSTEM - ENHANCED
 
