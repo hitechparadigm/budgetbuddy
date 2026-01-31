@@ -514,19 +514,19 @@ This implementation plan covers the complete push notification and daily reminde
     - Test overnight quiet hours (e.g., 10 PM - 8 AM)
     - _Requirements: 3.3_
 
-  - [ ] 9.3 Test threshold detection property
+  - [x] 9.3 Test threshold detection property
     - Generate random spending and budget amounts
     - Verify threshold detection (80%, 90%, 100%)
     - Test edge cases (exactly at threshold)
     - _Requirements: 2.1, 2.2, 2.3_
 
-  - [ ] 9.4 Test alert deduplication property
+  - [x] 9.4 Test alert deduplication property
     - Generate random alert timestamps
     - Verify no duplicates within 24 hours
     - Test boundary cases
     - _Requirements: 2.5_
 
-  - [ ] 9.5 Test batch processing property
+  - [x] 9.5 Test batch processing property
     - Generate random user lists of varying sizes
     - Verify all users processed exactly once
     - Test with 0, 1, 10, 100, 1000 users
