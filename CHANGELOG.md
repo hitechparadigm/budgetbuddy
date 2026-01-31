@@ -2,7 +2,7 @@
 
 ## [1.6.0] - 2026-01-31
 
-### 🌍 ADDED - Multi-Currency Support (Phase 1 & 2 - Currency Utilities & Selector Component)
+### 🌍 ADDED - Multi-Currency Support (Phase 1, 2 & 3 - Complete Data Model Integration)
 
 - **Currency Utility Module**: Comprehensive currency formatting and validation system
   - Support for 6 major currencies: USD, EUR, GBP, CAD, AUD, JPY
@@ -28,6 +28,14 @@
   - Mobile responsive design
   - 30 unit tests with full coverage
 
+- **User Profile Schema Update** (Phase 3): Currency fields added to user profiles
+  - Added `currency` field (ISO 4217 code) with USD default
+  - Added `locale` field (e.g., en-US, de-DE) with en-US default
+  - Updated TypeScript types in shared package
+  - Auth Lambda now accepts and validates currency on registration
+  - Google Sign-In creates profiles with default USD currency
+  - Currency validation: Only accepts USD, EUR, GBP, CAD, AUD, JPY
+
 ### 📦 Technical Details
 
 **Files Added**:
@@ -44,6 +52,9 @@
 
 - `packages/web-app/src/index.css` - Added currency selector styles with dark mode support
 - `packages/web-app/package.json` - Added @testing-library dependencies
+- `packages/shared/src/types/user.ts` - Added currency and locale fields to UserSchema
+- `backend/functions/auth/index.js` - Added currency handling in registration and Google Sign-In
+- `.kiro/steering/00-global.md` - Updated autonomous workflow to prevent validation duplication
 
 **Functions Implemented**:
 
@@ -68,23 +79,13 @@
 - All 6 currencies tested with proper decimal places and separators
 - Edge cases: very large amounts, very small amounts, negative amounts, zero
 
-### 📋 Next Steps (Phase 3)
+### 📋 Next Steps (Phase 4-5)
 
-- Update user profile schema to include currency field
-- Update budget and transaction schemas with currency
-- Add currency to auth Lambda functions
+- Update budget schema with currency field
+- Update transaction schema with currency field
+- Update Lambda functions to handle currency in budgets/transactions
 - Integrate currency selector into onboarding flow
 - Add currency management to settings page
-
-### 📋 Next Steps (Remaining Tasks)
-
-- Currency selector component for web and mobile
-- Onboarding integration for currency selection
-- Settings page currency management
-- Budget and transaction currency display
-- Data model updates for currency fields
-- Mobile app integration
-- Data migration for existing users
 
 ## [1.5.7] - 2026-01-31
 

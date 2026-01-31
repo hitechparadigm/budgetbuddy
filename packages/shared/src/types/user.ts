@@ -22,6 +22,8 @@ export const UserSchema = z.object({
   lastName: z.string(), // User's last name
   age: z.number().min(13).max(120), // Age validation (13+ for legal compliance)
   location: LocationSchema, // Geographic location for regional features
+  currency: z.string().length(3).default('USD'), // ISO 4217 currency code (USD, EUR, GBP, CAD, AUD, JPY)
+  locale: z.string().default('en-US'), // Locale for number/date formatting (e.g., en-US, en-GB, de-DE)
   familyId: z.string().optional(), // Optional family account association
   role: z.enum(['primary', 'spouse', 'viewer']), // Role within family account
   subscriptionTier: z.enum(['free', 'premium']), // Subscription level
@@ -44,29 +46,29 @@ export const OnboardingDataSchema = z.object({
   familyStatus: z.enum(['single', 'married', 'common-law']), // Relationship status affects budget categories
   adults: z.number().min(1).max(10), // Number of adults in household
   children: z.array(z.object({ age: z.number().min(0).max(25) })), // Children ages for education/childcare budgeting
-  
+
   // Housing situation for major expense calculation
   housing: z.object({
     type: z.enum(['rent', 'own', 'other']), // Housing type affects related expenses
     monthlyPayment: z.number().min(0), // Monthly housing cost for budget allocation
   }),
-  
+
   // Transportation methods affect budget categories and amounts
   transportation: z.array(z.enum(['car', 'public', 'bike', 'walk'])), // Multiple transportation methods allowed
-  
+
   // Lifestyle preferences for expense estimation
   lifestyle: z.object({
     shoppingPreference: z.enum(['budget', 'average', 'premium']), // Affects grocery and shopping budgets
     diningOut: z.enum(['rarely', 'sometimes', 'often']), // Restaurant budget allocation
     entertainment: z.enum(['minimal', 'moderate', 'active']), // Entertainment expense level
   }),
-  
+
   // Income information for budget proportions
   income: z.object({
     range: z.enum(['under-30k', '30k-50k', '50k-75k', '75k-100k', 'over-100k']), // Income bracket for budget scaling
     frequency: z.enum(['weekly', 'bi-weekly', 'monthly', 'annually']), // Pay frequency for cash flow planning
   }),
-  
+
   // Debt information for payment allocation
   debt: z.object({
     hasDebt: z.boolean(), // Whether user has existing debt obligations
