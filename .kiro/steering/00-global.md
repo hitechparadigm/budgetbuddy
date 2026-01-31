@@ -31,11 +31,20 @@ Always follow:
 
 Before writing any code:
 
-1. Read `product.md`, `tech.md`, `structure.md` from `.kiro/steering/`
-2. Read `design.md`, `requirements.md`, `tasks.md` from relevant spec folder
+1. Read steering files: `product.md`, `tech.md`, `structure.md` from `.kiro/steering/`
+2. Read spec files based on scope:
+   - **General project specs**: `.kiro/specs/design.md`, `.kiro/specs/requirements.md`, `.kiro/specs/tasks.md`
+   - **Feature-specific specs**: `.kiro/specs/<feature-name>/design.md`, `.kiro/specs/<feature-name>/requirements.md`, `.kiro/specs/<feature-name>/tasks.md`
 3. Propose an implementation plan aligned with existing architecture
 4. Get confirmation or proceed if autonomous mode is active
 5. Only then generate or modify code
+
+**Spec Structure**:
+
+- **Root specs** (`.kiro/specs/`): Overall project architecture, requirements, and tasks
+- **Feature specs** (`.kiro/specs/<feature-name>/`): Specific feature implementations (e.g., auth-lambda-refactoring)
+
+**Critical**: If no spec exists for a new feature, create a feature-specific spec folder first following the structure in `structure.md`
 
 ### 2. For Every Change
 
