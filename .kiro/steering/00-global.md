@@ -362,6 +362,15 @@ For each task:
 
 **IMPORTANT FOR AUTONOMOUS MODE**: Do NOT stop and ask for help during overnight development. Continue to next task if blocked. Document blockers in commit messages and DEVELOPMENT_LOG.md.
 
+**CRITICAL - AUTONOMOUS CONTINUATION**: After completing ANY task, IMMEDIATELY identify and start the next logical task without stopping. NEVER stop after completing a task - always continue to the next one. Look at:
+
+1. Remaining tasks in the current spec/feature
+2. Related tasks that build on what you just completed
+3. Next phase in a multi-phase feature
+4. Most logical next step based on project priorities
+
+**DO NOT** wait for user confirmation between tasks in autonomous mode. Keep working until you hit a blocker or complete all available tasks.
+
 ## Interaction Guidelines
 
 ### Before Writing Code
