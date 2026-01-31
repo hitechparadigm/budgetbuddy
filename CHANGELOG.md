@@ -2,7 +2,7 @@
 
 ## [1.6.0] - 2026-01-31
 
-### 🌍 ADDED - Multi-Currency Support (Phase 1, 2 & 3 - Complete Data Model Integration)
+### 🌍 ADDED - Multi-Currency Support (Phase 1-4 - Complete Data Model Integration)
 
 - **Currency Utility Module**: Comprehensive currency formatting and validation system
   - Support for 6 major currencies: USD, EUR, GBP, CAD, AUD, JPY
@@ -36,6 +36,13 @@
   - Google Sign-In creates profiles with default USD currency
   - Currency validation: Only accepts USD, EUR, GBP, CAD, AUD, JPY
 
+- **Budget Schema Update** (Phase 4): Currency fields added to budgets
+  - Added `currency` field to MonthlyBudget TypeScript interface
+  - Budget Lambda fetches user's currency from profile
+  - Budget creation uses user's default currency
+  - Budget responses include currency field
+  - Supports currency override in budget creation request
+
 ### 📦 Technical Details
 
 **Files Added**:
@@ -53,7 +60,9 @@
 - `packages/web-app/src/index.css` - Added currency selector styles with dark mode support
 - `packages/web-app/package.json` - Added @testing-library dependencies
 - `packages/shared/src/types/user.ts` - Added currency and locale fields to UserSchema
+- `packages/shared/src/types/budget.ts` - Added currency field to MonthlyBudget interface
 - `backend/functions/auth/index.js` - Added currency handling in registration and Google Sign-In
+- `backend/functions/budget/index.js` - Added currency fetching from user profile and budget creation
 - `.kiro/steering/00-global.md` - Updated autonomous workflow to prevent validation duplication
 
 **Functions Implemented**:
@@ -79,13 +88,13 @@
 - All 6 currencies tested with proper decimal places and separators
 - Edge cases: very large amounts, very small amounts, negative amounts, zero
 
-### 📋 Next Steps (Phase 4-5)
+### 📋 Next Steps (Phase 5-6)
 
-- Update budget schema with currency field
 - Update transaction schema with currency field
-- Update Lambda functions to handle currency in budgets/transactions
+- Update transaction Lambda functions to handle currency
 - Integrate currency selector into onboarding flow
 - Add currency management to settings page
+- Update budget/transaction display with currency formatting
 
 ## [1.5.7] - 2026-01-31
 
