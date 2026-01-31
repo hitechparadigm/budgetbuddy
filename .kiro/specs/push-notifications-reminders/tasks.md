@@ -567,7 +567,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Verify alert marked as sent
     - _Requirements: 2.1-2.10_
 
-  - [ ] 10.6 Test notification history flow
+  - [x] 10.6 Test notification history flow
     - Send multiple notifications
     - Retrieve notification history
     - Verify pagination works
