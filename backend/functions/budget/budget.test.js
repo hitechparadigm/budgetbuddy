@@ -8,59 +8,12 @@
  * properly queries budgets created by auth service using dynamoHelpers.
  */
 
-const { handler } = require("./index");
+// Enable manual mocks for Lambda layers
+jest.mock("/opt/nodejs/utils");
+jest.mock("/opt/nodejs/shared");
 
-// Mock the utils layer
-jest.mock("/opt/nodejs/utils", () => ({
-  successResponse: jest.fn((data, message) => ({
-    statusCode: 200,
-    body: JSON.stringify({ success: true, data, message }),
-  })),
-  errorResponse: {
-    badRequest: jest.fn((message) => ({
-      statusCode: 400,
-      body: JSON.stringify({ success: false, error: message }),
-    })),
-    notFound: jest.fn((message) => ({
-      statusCode: 404,
-      body: JSON.stringify({ success: false, error: message }),
-    })),
-    internalError: jest.fn((message) => ({
-      statusCode: 500,
-      body: JSON.stringify({ success: false, error: message }),
-    })),
-    unauthorized: jest.fn((message) => ({
-      statusCode: 401,
-      body: JSON.stringify({ success: false, error: message }),
-    })),
-    conflict: jest.fn((message) => ({
-      statusCode: 409,
-      body: JSON.stringify({ success: false, error: message }),
-    })),
-  },
-  parseRequestBody: jest.fn((body) => JSON.parse(body)),
-  getUserFromEvent: jest.fn(() => ({
-    userId: "user_123456789",
-    familyId: null, // Simulates missing custom:familyId in JWT token
-    firstName: "John",
-    lastName: "Doe",
-    email: "test@example.com",
-  })),
-  generateId: {
-    budget: jest.fn(() => "budget_" + Date.now()),
-  },
-  dynamoHelpers: {
-    putItem: jest.fn(),
-    queryByPK: jest.fn(),
-    getItem: jest.fn(),
-    updateItem: jest.fn(),
-  },
-  logger: {
-    info: jest.fn(),
-    error: jest.fn(),
-    warn: jest.fn(),
-  },
-}));
+// Now require the handler after mocks are set up
+const { handler } = require("./index");
 
 describe("Budget Lambda Handler", () => {
   const mockContext = {
@@ -167,7 +120,7 @@ describe("Budget Lambda Handler", () => {
           ExpressionAttributeValues: {
             ":entityType": "BUDGET",
           },
-        })
+        }),
       );
 
       const body = JSON.parse(result.body);
@@ -299,7 +252,7 @@ describe("Budget Lambda Handler", () => {
               }),
             ]),
           }),
-        })
+        }),
       );
     });
 
@@ -332,7 +285,7 @@ describe("Budget Lambda Handler", () => {
         expect.objectContaining({
           groups: expect.any(Object),
           totalExpenses: 500,
-        })
+        }),
       );
 
       expect(dynamoHelpers.putItem).not.toHaveBeenCalled();
@@ -419,7 +372,7 @@ describe("Budget Lambda Handler", () => {
       // Verify correct query parameters
       expect(dynamoHelpers.getItem).toHaveBeenCalledWith(
         "FAMILY#family_user_123456789",
-        "BUDGET#2026-01"
+        "BUDGET#2026-01",
       );
 
       const body = JSON.parse(result.body);
@@ -477,7 +430,7 @@ describe("Budget Lambda Handler", () => {
           SK: "BUDGET#2026-01",
           familyId: "family_user_123456789",
           month: "2026-01",
-        })
+        }),
       );
     });
   });
@@ -521,7 +474,7 @@ describe("Budget Lambda Handler", () => {
           totalSavings: 500, // 500
           totalExpenses: 2000, // 800 + 1200
           remainingBalance: 1500, // 4000 - 500 - 2000
-        })
+        }),
       );
     });
   });

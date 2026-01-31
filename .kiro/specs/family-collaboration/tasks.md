@@ -101,7 +101,7 @@ Implement family account sharing with invitation system, role-based permissions,
     - Add to Lambda layers
     - _Requirements: US-3, FR-3_
 
-  - [ ] 3.2 Update budget Lambda
+  - [x] 3.2 Update budget Lambda
     - Add permission checks to all endpoints
     - Return 403 for unauthorized actions
     - Log permission violations

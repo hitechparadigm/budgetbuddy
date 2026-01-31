@@ -18,6 +18,9 @@ const {
   FamilyIdResolver,
 } = require("/opt/nodejs/utils");
 
+// Import permission checking from shared layer
+const { checkPermission } = require("/opt/nodejs/shared");
+
 /**
  * Main Lambda handler for budget operations
  * Routes requests to appropriate handlers based on HTTP method and path
@@ -118,6 +121,16 @@ exports.handler = async (event, context) => {
  * POST /budget
  */
 async function createBudget(event, user) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "budget:create");
+  if (permissionError) {
+    logger.warn("Permission denied for budget creation", {
+      userId: user.userId,
+      role: user.familyRole,
+    });
+    return permissionError;
+  }
+
   logger.info("Creating new budget", {
     userId: user.userId,
     familyId: user.familyId,
@@ -297,6 +310,16 @@ async function createBudget(event, user) {
  * GET /budget
  */
 async function getBudgets(event, user) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "budget:view");
+  if (permissionError) {
+    logger.warn("Permission denied for viewing budgets", {
+      userId: user.userId,
+      role: user.familyRole,
+    });
+    return permissionError;
+  }
+
   logger.info("Getting budgets for family", {
     userId: user.userId,
     familyId: user.familyId,
@@ -399,6 +422,16 @@ async function getBudgets(event, user) {
  * GET /budget/current?month=YYYY-MM
  */
 async function getCurrentBudget(event, user) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "budget:view");
+  if (permissionError) {
+    logger.warn("Permission denied for viewing current budget", {
+      userId: user.userId,
+      role: user.familyRole,
+    });
+    return permissionError;
+  }
+
   logger.info("Getting current budget", {
     userId: user.userId,
     familyId: user.familyId,
@@ -473,6 +506,17 @@ async function getCurrentBudget(event, user) {
  * GET /budget/{budgetId}
  */
 async function getBudget(event, user, budgetId) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "budget:view");
+  if (permissionError) {
+    logger.warn("Permission denied for viewing budget", {
+      userId: user.userId,
+      role: user.familyRole,
+      budgetId,
+    });
+    return permissionError;
+  }
+
   logger.info("Getting specific budget", {
     userId: user.userId,
     familyId: user.familyId,
@@ -543,6 +587,17 @@ async function getBudget(event, user, budgetId) {
  * PUT /budget/{budgetId}
  */
 async function updateBudget(event, user, budgetId) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "budget:edit");
+  if (permissionError) {
+    logger.warn("Permission denied for updating budget", {
+      userId: user.userId,
+      role: user.familyRole,
+      budgetId,
+    });
+    return permissionError;
+  }
+
   logger.info("Updating budget", {
     userId: user.userId,
     familyId: user.familyId,
@@ -648,6 +703,17 @@ async function updateBudget(event, user, budgetId) {
  * DELETE /budget/{budgetId}
  */
 async function deleteBudget(event, user, budgetId) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "budget:delete");
+  if (permissionError) {
+    logger.warn("Permission denied for deleting budget", {
+      userId: user.userId,
+      role: user.familyRole,
+      budgetId,
+    });
+    return permissionError;
+  }
+
   logger.info("Deleting budget", {
     userId: user.userId,
     familyId: user.familyId,
