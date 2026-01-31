@@ -1,5 +1,58 @@
 # Changelog
 
+## [1.5.0] - 2026-01-31
+
+### 📚 FEATURE - Comprehensive Steering System
+
+- **Implemented AWS Well-Architected Steering Files** - Complete project governance system
+  - **Created**: `.kiro/steering/00-global.md` - Global steering with AWS alignment and workflow rules
+  - **Created**: `.kiro/steering/product.md` - Product vision, users, requirements, and success metrics
+  - **Created**: `.kiro/steering/tech.md` - Technology stack, security baselines, and testing standards
+  - **Created**: `.kiro/steering/structure.md` - Repository layout, naming conventions, and boundaries
+  - **Purpose**: Ensure Kiro follows AWS Well-Architected Framework and best practices consistently
+
+- **Steering System Features**:
+  1. **AWS Well-Architected Alignment** - All six pillars explicitly covered
+  2. **Security by Default** - Least privilege, encryption, secrets management
+  3. **Workflow Automation** - Integration with autonomous development system
+  4. **Quality Standards** - Testing, documentation, and code quality requirements
+  5. **Cost Optimization** - Serverless-first, right-sizing, monitoring
+
+- **Global Steering (00-global.md)**:
+  - Role definition and core principles
+  - Workflow rules (never implement in single step, validate before commit)
+  - AWS alignment (managed services, security defaults, monitoring)
+  - Code quality standards and interaction guidelines
+  - Autonomous development mode integration
+
+- **Product Steering (product.md)**:
+  - Vision and target users (individual, family, premium)
+  - Core value proposition (budget setup, transaction tracking, collaboration)
+  - Non-functional requirements (performance, availability, security)
+  - Out-of-scope features (bank integration, investments, bill pay)
+  - Success metrics (DAU, MAU, conversion, retention)
+
+- **Tech Steering (tech.md)**:
+  - Complete technology stack (React, React Native, Node.js, DynamoDB, CDK)
+  - Security baselines (secrets management, IAM, encryption)
+  - Testing tooling (Jest, fast-check, property-based testing)
+  - CI/CD pipeline (GitHub Actions, validation, deployment)
+  - Code quality standards (ESLint, TypeScript, naming conventions)
+
+- **Structure Steering (structure.md)**:
+  - Repository layout and folder structure
+  - Naming conventions (files, code, AWS resources)
+  - Module boundaries (handler → service → repository)
+  - How to add features end-to-end
+  - Definition of done (code + tests + docs + infra)
+
+### 📚 DOCUMENTATION - Steering System
+
+- **Purpose**: Provide Kiro with comprehensive project context and standards
+- **Benefit**: Consistent adherence to AWS Well-Architected Framework
+- **Integration**: Works with autonomous development system for overnight work
+- **Coverage**: Product, technology, structure, and global workflow rules
+
 ## [1.4.0] - 2026-01-31
 
 ### 🤖 FEATURE - Autonomous Development System
