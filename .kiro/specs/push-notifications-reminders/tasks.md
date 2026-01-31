@@ -502,13 +502,13 @@ This implementation plan covers the complete push notification and daily reminde
 ### Phase 8: Testing and Validation (Week 3)
 
 - [ ] 9. Property-Based Testing
-  - [ ] 9.1 Test time window matching property
+  - [x] 9.1 Test time window matching property
     - Generate random reminder and current times
     - Verify ±15 minute window logic
     - Test with 1000+ random inputs
     - _Requirements: 3.2, 3.9_
 
-  - [ ] 9.2 Test quiet hours property
+  - [x] 9.2 Test quiet hours property
     - Generate random notification and quiet hour times
     - Verify quiet hours logic for all cases
     - Test overnight quiet hours (e.g., 10 PM - 8 AM)
