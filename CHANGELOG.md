@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.9.10] - 2026-01-31
+
+### 🐛 BUGFIX - Family Lambda Error Handling
+
+- **Improved Error Handling** - Wrapped entire handler in try-catch
+  - **Problem**: Lambda might be crashing before reaching health endpoint
+  - **Solution**: Moved try-catch to wrap entire handler including health check
+  - **Added**: Support for both `/family/health` and `/v1/family/health` paths
+  - **Files**: `backend/functions/family/index.js`
+  - **Impact**: Better error handling and logging for debugging 502 errors
+
 ## [1.9.9] - 2026-01-31
 
 ### 🐛 BUGFIX - Family Lambda Health Endpoint Authorization
