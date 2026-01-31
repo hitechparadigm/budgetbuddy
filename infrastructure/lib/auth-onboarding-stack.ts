@@ -22,11 +22,10 @@ import { Construct } from 'constructs';
 
 /**
  * Props for the Auth Onboarding Stack
- * Requires DynamoDB table and shared utilities layer
+ * Requires DynamoDB table only (layer is created internally)
  */
 export interface AuthOnboardingStackProps extends cdk.StackProps {
   table: dynamodb.Table;
-  authSharedLayer: lambda.LayerVersion;
 }
 
 export class AuthOnboardingStack extends cdk.Stack {
@@ -38,6 +37,18 @@ export class AuthOnboardingStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: AuthOnboardingStackProps) {
     super(scope, id, props);
+
+    /**
+     * Auth Shared Lambda Layer
+     * Create our own reference to avoid cross-stack dependency issues
+     */
+    const authSharedLayer = new lambda.LayerVersion(this, 'AuthSharedLayer', {
+      code: lambda.Code.fromAsset('../backend/layers/shared'),
+      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      description: 'Shared authentication utilities for auth-onboarding Lambda',
+      layerVersionName: 'budgetbuddy-auth-shared-onboarding',
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
 
     /**
      * Common Lambda Layer
@@ -69,8 +80,8 @@ export class AuthOnboardingStack extends cdk.Stack {
 
       // Attach shared utilities layers
       layers: [
-        props.authSharedLayer, // CORS, token parsing, validation, error handling
-        commonLayer,           // DynamoDB helpers, FamilyIdResolver
+        authSharedLayer, // CORS, token parsing, validation, error handling (created locally)
+        commonLayer,     // DynamoDB helpers, FamilyIdResolver
       ],
 
       // Environment variables

@@ -60,12 +60,12 @@ const authStack = new AuthStack(app, `${stackPrefix}-auth`, {
 /**
  * Auth Onboarding Stack - Standalone Lambda for onboarding
  * Part of architectural refactoring to split monolithic auth Lambda
+ * Now creates its own layer to avoid cross-stack dependency issues
  */
 const authOnboardingStack = new AuthOnboardingStack(app, `${stackPrefix}-auth-onboarding`, {
   env,
   description: 'BudgetBuddy auth onboarding Lambda - standalone function for user onboarding completion',
   table: databaseStack.table,
-  authSharedLayer: authStack.authSharedLayer,
 });
 
 /**
@@ -121,7 +121,7 @@ const monitoringStack = new MonitoringStack(app, `${stackPrefix}-monitoring`, {
 
 // Add stack dependencies to ensure proper deployment order
 authOnboardingStack.addDependency(databaseStack);
-authOnboardingStack.addDependency(authStack);
+// Removed dependency on authStack to avoid cross-stack layer reference issues
 apiStack.addDependency(databaseStack);
 apiStack.addDependency(authStack);
 apiStack.addDependency(authOnboardingStack);
