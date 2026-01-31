@@ -1,81 +1,288 @@
 /**
- * Currency formatting and calculation utilities for BudgetBuddy
- * Handles multi-currency support for Canadian and US users
+ * Currency Utility Module
+ *
+ * Provides centralized currency formatting, validation, and configuration
+ * for all supported currencies in BudgetBuddy.
+ *
+ * Supported Currencies:
+ * - USD (US Dollar)
+ * - EUR (Euro)
+ * - GBP (British Pound)
+ * - CAD (Canadian Dollar)
+ * - AUD (Australian Dollar)
+ * - JPY (Japanese Yen)
  */
-
-// Supported currency codes for the application
-export const CURRENCY_CODES = {
-  CAD: 'CAD', // Canadian Dollar
-  USD: 'USD', // US Dollar
-} as const;
-
-export type CurrencyCode = keyof typeof CURRENCY_CODES;
 
 /**
- * Determine the appropriate currency based on country code
- * Used during user registration to set default currency
- * @param country - Country code or name (e.g., 'CA', 'Canada', 'US', 'United States')
- * @returns Appropriate currency code for the country
+ * Currency configuration interface
  */
-export const getCurrencyByCountry = (country: string): CurrencyCode => {
-  switch (country.toUpperCase()) {
-    case 'CA':
-    case 'CANADA':
-      return 'CAD';
-    case 'US':
-    case 'USA':
-    case 'UNITED STATES':
-      return 'USD';
-    default:
-      return 'USD'; // Default to USD for unknown countries
+export interface CurrencyConfig {
+  code: string;                    // ISO 4217 code (USD, EUR, etc.)
+  name: string;                    // Full name (US Dollar, Euro, etc.)
+  symbol: string;                  // Currency symbol ($, €, £, etc.)
+  symbolPosition: 'before' | 'after';  // Symbol position relative to amount
+  decimalPlaces: number;           // Number of decimal places
+  thousandsSeparator: string;      // Thousands separator (,)
+  decimalSeparator: string;        // Decimal separator (.)
+  locale: string;                  // Locale for Intl.NumberFormat
+}
+
+/**
+ * Currency configurations for all supported currencies
+ */
+const CURRENCY_CONFIGS: Record<string, CurrencyConfig> = {
+  USD: {
+    code: 'USD',
+    name: 'US Dollar',
+    symbol: '$',
+    symbolPosition: 'before',
+    decimalPlaces: 2,
+    thousandsSeparator: ',',
+    decimalSeparator: '.',
+    locale: 'en-US',
+  },
+  EUR: {
+    code: 'EUR',
+    name: 'Euro',
+    symbol: '€',
+    symbolPosition: 'after',
+    decimalPlaces: 2,
+    thousandsSeparator: '.',
+    decimalSeparator: ',',
+    locale: 'de-DE',
+  },
+  GBP: {
+    code: 'GBP',
+    name: 'British Pound',
+    symbol: '£',
+    symbolPosition: 'before',
+    decimalPlaces: 2,
+    thousandsSeparator: ',',
+    decimalSeparator: '.',
+    locale: 'en-GB',
+  },
+  CAD: {
+    code: 'CAD',
+    name: 'Canadian Dollar',
+    symbol: 'C$',
+    symbolPosition: 'before',
+    decimalPlaces: 2,
+    thousandsSeparator: ',',
+    decimalSeparator: '.',
+    locale: 'en-CA',
+  },
+  AUD: {
+    code: 'AUD',
+    name: 'Australian Dollar',
+    symbol: 'A$',
+    symbolPosition: 'before',
+    decimalPlaces: 2,
+    thousandsSeparator: ',',
+    decimalSeparator: '.',
+    locale: 'en-AU',
+  },
+  JPY: {
+    code: 'JPY',
+    name: 'Japanese Yen',
+    symbol: '¥',
+    symbolPosition: 'before',
+    decimalPlaces: 0,
+    thousandsSeparator: ',',
+    decimalSeparator: '.',
+    locale: 'ja-JP',
+  },
+};
+
+/**
+ * Get currency configuration for a given currency code
+ *
+ * @param code - ISO 4217 currency code (e.g., 'USD', 'EUR')
+ * @returns Currency configuration object
+ * @throws Error if currency code is not supported
+ */
+export function getCurrencyConfig(code: string): CurrencyConfig {
+  const upperCode = code.toUpperCase();
+  const config = CURRENCY_CONFIGS[upperCode];
+
+  if (!config) {
+    throw new Error(`Unsupported currency code: ${code}`);
   }
-};
+
+  return config;
+}
 
 /**
- * Format a numeric amount as currency string with proper locale formatting
- * Uses browser's Intl.NumberFormat for consistent, localized formatting
+ * Format amount with currency symbol and locale-specific formatting
+ *
  * @param amount - Numeric amount to format
- * @param currency - Currency code (CAD or USD)
- * @param locale - Optional locale override (defaults based on currency)
- * @returns Formatted currency string (e.g., "$1,234.56", "C$1,234.56")
+ * @param currencyCode - ISO 4217 currency code
+ * @param options - Formatting options
+ * @returns Formatted currency string
+ *
+ * @example
+ * formatCurrency(1234.56, 'USD') // "$1,234.56"
+ * formatCurrency(1234.56, 'EUR') // "1.234,56 €"
+ * formatCurrency(1234.56, 'JPY') // "¥1,235"
  */
-export const formatCurrency = (
+export function formatCurrency(
   amount: number,
-  currency: CurrencyCode = 'USD',
-  locale?: string
-): string => {
-  // Set appropriate default locale based on currency
-  const defaultLocale = currency === 'CAD' ? 'en-CA' : 'en-US';
-  
-  return new Intl.NumberFormat(locale || defaultLocale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
-};
+  currencyCode: string,
+  options: {
+    showSymbol?: boolean;
+    showCode?: boolean;
+    compact?: boolean;
+  } = {}
+): string {
+  const {
+    showSymbol = true,
+    showCode = false,
+    compact = false,
+  } = options;
+
+  const config = getCurrencyConfig(currencyCode);
+
+  // Use Intl.NumberFormat for locale-aware formatting
+  const formatter = new Intl.NumberFormat(config.locale, {
+    style: showSymbol ? 'currency' : 'decimal',
+    currency: config.code,
+    minimumFractionDigits: config.decimalPlaces,
+    maximumFractionDigits: config.decimalPlaces,
+    notation: compact ? 'compact' : 'standard',
+  });
+
+  let formatted = formatter.format(amount);
+
+  // Add currency code if requested
+  if (showCode && !compact) {
+    formatted += ` ${config.code}`;
+  }
+
+  return formatted;
+}
 
 /**
- * Parse a currency string back to numeric value
- * Removes currency symbols, commas, and other formatting
- * @param value - Currency string to parse (e.g., "$1,234.56", "C$1,234.56")
- * @returns Numeric value, or 0 if parsing fails
+ * Parse currency string to number
+ *
+ * Removes currency symbols, thousands separators, and converts
+ * decimal separator to standard format.
+ *
+ * @param value - Currency string to parse
+ * @param currencyCode - ISO 4217 currency code
+ * @returns Parsed numeric value
+ *
+ * @example
+ * parseCurrency('$1,234.56', 'USD') // 1234.56
+ * parseCurrency('1.234,56 €', 'EUR') // 1234.56
+ * parseCurrency('¥1,235', 'JPY') // 1235
  */
-export const parseCurrency = (value: string): number => {
-  // Remove all non-numeric characters except decimal point and minus sign
-  const cleaned = value.replace(/[^0-9.-]/g, '');
+export function parseCurrency(value: string, currencyCode: string): number {
+  const config = getCurrencyConfig(currencyCode);
+
+  // Remove all non-numeric characters except decimal separator, minus sign, and digits
+  // This handles various currency symbols (including Unicode variants)
+  let cleaned = value
+    .replace(config.code, '')
+    .trim();
+
+  // Remove currency symbols (handle both standard and Unicode variants)
+  // Remove all characters that are not digits, decimal separators, thousands separators, or minus
+  cleaned = cleaned.replace(/[^\d.,\-]/g, '');
+
+  // Remove thousands separators
+  cleaned = cleaned.replace(new RegExp(`\\${config.thousandsSeparator}`, 'g'), '');
+
+  // Convert decimal separator to standard format
+  if (config.decimalSeparator !== '.') {
+    cleaned = cleaned.replace(config.decimalSeparator, '.');
+  }
+
   const parsed = parseFloat(cleaned);
-  return isNaN(parsed) ? 0 : parsed;
-};
+
+  if (isNaN(parsed)) {
+    throw new Error(`Invalid currency value: ${value}`);
+  }
+
+  return parsed;
+}
 
 /**
- * Calculate percentage of amount relative to total
- * Used for budget progress indicators and spending analysis
- * @param amount - Partial amount (e.g., spent amount)
- * @param total - Total amount (e.g., budgeted amount)
- * @returns Percentage as whole number (0-100), or 0 if total is 0
+ * Validate currency code
+ *
+ * @param code - Currency code to validate
+ * @returns True if currency code is supported
  */
-export const calculatePercentage = (amount: number, total: number): number => {
-  if (total === 0) return 0;
-  return Math.round((amount / total) * 100);
-};
+export function isValidCurrency(code: string): boolean {
+  const upperCode = code.toUpperCase();
+  return upperCode in CURRENCY_CONFIGS;
+}
+
+/**
+ * Get all supported currencies
+ *
+ * @returns Array of all currency configurations
+ */
+export function getSupportedCurrencies(): CurrencyConfig[] {
+  return Object.values(CURRENCY_CONFIGS);
+}
+
+/**
+ * Get currency symbol for a given currency code
+ *
+ * @param code - ISO 4217 currency code
+ * @returns Currency symbol
+ *
+ * @example
+ * getCurrencySymbol('USD') // "$"
+ * getCurrencySymbol('EUR') // "€"
+ * getCurrencySymbol('JPY') // "¥"
+ */
+export function getCurrencySymbol(code: string): string {
+  const config = getCurrencyConfig(code);
+  return config.symbol;
+}
+
+/**
+ * Get currency name for a given currency code
+ *
+ * @param code - ISO 4217 currency code
+ * @returns Currency name
+ *
+ * @example
+ * getCurrencyName('USD') // "US Dollar"
+ * getCurrencyName('EUR') // "Euro"
+ */
+export function getCurrencyName(code: string): string {
+  const config = getCurrencyConfig(code);
+  return config.name;
+}
+
+/**
+ * Format currency for display in compact form (e.g., $1.2K, $1.2M)
+ *
+ * @param amount - Numeric amount to format
+ * @param currencyCode - ISO 4217 currency code
+ * @returns Formatted compact currency string
+ *
+ * @example
+ * formatCurrencyCompact(1234, 'USD') // "$1.2K"
+ * formatCurrencyCompact(1234567, 'USD') // "$1.2M"
+ */
+export function formatCurrencyCompact(amount: number, currencyCode: string): string {
+  return formatCurrency(amount, currencyCode, { compact: true });
+}
+
+/**
+ * Format currency without symbol (just the number)
+ *
+ * @param amount - Numeric amount to format
+ * @param currencyCode - ISO 4217 currency code
+ * @returns Formatted number string without currency symbol
+ *
+ * @example
+ * formatCurrencyNumber(1234.56, 'USD') // "1,234.56"
+ * formatCurrencyNumber(1234.56, 'EUR') // "1.234,56"
+ */
+export function formatCurrencyNumber(amount: number, currencyCode: string): string {
+  return formatCurrency(amount, currencyCode, { showSymbol: false });
+}
+

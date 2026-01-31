@@ -1,5 +1,63 @@
 # Changelog
 
+## [1.6.0] - 2026-01-31
+
+### 🌍 ADDED - Multi-Currency Support (Phase 1 - Currency Utilities)
+
+- **Currency Utility Module**: Comprehensive currency formatting and validation system
+  - Support for 6 major currencies: USD, EUR, GBP, CAD, AUD, JPY
+  - Locale-aware formatting using Intl.NumberFormat
+  - Currency parsing with proper decimal and thousands separators
+  - 71 unit tests with 100% coverage
+  - Shared utility functions for web and mobile platforms
+
+- **Currency Configuration**: Complete currency metadata for all supported currencies
+  - Currency symbols, names, and ISO 4217 codes
+  - Decimal places (2 for most, 0 for JPY)
+  - Thousands and decimal separators
+  - Symbol positioning (before/after amount)
+  - Locale strings for proper formatting
+
+### 📦 Technical Details
+
+**Files Added**:
+
+- `packages/shared/src/utils/currency.ts` - Currency utility module (300+ lines)
+- `packages/shared/src/utils/currency.test.ts` - Comprehensive test suite (71 tests)
+- `.kiro/specs/multi-currency/requirements.md` - Feature requirements
+- `.kiro/specs/multi-currency/design.md` - Technical design document
+- `.kiro/specs/multi-currency/tasks.md` - Implementation task list (13 tasks)
+
+**Functions Implemented**:
+
+- `formatCurrency()` - Format amounts with currency symbols and locale-specific formatting
+- `parseCurrency()` - Parse currency strings to numbers
+- `getCurrencyConfig()` - Get currency configuration by code
+- `isValidCurrency()` - Validate currency codes
+- `getSupportedCurrencies()` - Get all supported currencies
+- `getCurrencySymbol()` - Get currency symbol by code
+- `getCurrencyName()` - Get currency name by code
+- `formatCurrencyCompact()` - Format in compact notation (e.g., $1.2M)
+- `formatCurrencyNumber()` - Format without currency symbol
+
+### 🧪 Testing
+
+- 71 unit tests passing for currency utilities
+- Test coverage: formatCurrency, parseCurrency, validation, edge cases
+- Property-based testing: formatting and parsing are inverse operations
+- All 6 currencies tested with proper decimal places and separators
+- Edge cases: very large amounts, very small amounts, negative amounts, zero
+
+### 📋 Next Steps (Remaining Tasks)
+
+- Currency selector component for web and mobile
+- Onboarding integration for currency selection
+- Settings page currency management
+- Budget and transaction currency display
+- Data model updates for currency fields
+- Mobile app integration
+- Data migration for existing users
+
 ## [1.5.7] - 2026-01-31
 
 ### 🔧 REFACTOR - Eliminate Duplicate Validation Checks

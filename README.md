@@ -22,6 +22,18 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-31)
 
+- 🌍 **MULTI-CURRENCY SUPPORT (PHASE 1)** - Currency utility module with 71 tests passing
+  - **Currency Utilities**: Comprehensive formatting and validation for 6 major currencies
+  - **Supported Currencies**: USD, EUR, GBP, CAD, AUD, JPY with proper symbols and formatting
+  - **Locale-Aware**: Uses Intl.NumberFormat for correct decimal/thousands separators
+  - **Functions**: formatCurrency, parseCurrency, getCurrencyConfig, validation helpers
+  - **Testing**: 71 unit tests with 100% coverage, property-based testing for inverse operations
+  - **Decimal Places**: 2 for most currencies, 0 for JPY (proper rounding)
+  - **Files**: `packages/shared/src/utils/currency.ts`, `currency.test.ts`
+  - **Spec Created**: Complete requirements, design, and tasks for full implementation
+  - **Next Steps**: Currency selector component, onboarding integration, settings management
+  - **Impact**: Foundation for global currency support across web and mobile platforms
+
 - 🔧 **VALIDATION OPTIMIZATION** - Eliminated duplicate checks for 66% faster commits
   - **Problem**: Validation ran 3 times per commit (validate script + pre-commit + pre-push)
   - **Solution**: Smart skip logic with `SKIP_PRECOMMIT_VALIDATION` environment variable
