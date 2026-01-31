@@ -101,6 +101,7 @@ Before writing any code:
 - Introduce breaking changes without updating specs
 - Deploy without validation passing
 - Skip documentation updates
+- **Deploy directly to AWS using CDK commands** - ALL deployments MUST go through CI/CD pipeline
 
 ## Testing and CI/CD
 
@@ -119,74 +120,24 @@ Before writing any code:
 - Branch protection enforced (PR validation required)
 - Environment promotion: dev → staging → prod
 - Automated rollback on health check failures
+- **ALL deployments MUST go through CI/CD pipeline** - Never use direct CDK deploy commands
+- After completing a feature, commit and push to trigger automated deployment
 
 ### AWS Integration Testing
 
-**AWS Profile Configuration:**
+**AWS Profile**: `hitechparadigm` - Required for all AWS CLI/CDK commands
 
-- **Profile Name**: `hitechparadigm`
-- **Usage**: All AWS CLI and SDK calls must use this profile
-- **Environment Variable**: `AWS_PROFILE=hitechparadigm`
-- **CDK Deployment**: Always specify `--profile hitechparadigm`
+**Cost Limits**: Daily < $1, Monthly < $20, Single test < $0.10
 
-**Testing Guidelines:**
+**Critical Rules**:
 
-1. **Test Implemented Features Against Real AWS**
-   - After implementing a feature, test it against the deployed AWS environment
-   - Verify Lambda functions, API Gateway endpoints, DynamoDB operations
-   - Ensure end-to-end functionality works as expected
+- Max 10 API calls per test, 30s Lambda timeout
+- Clean up test data immediately
+- Test in dev only, never prod
+- No infinite loops or auto-scaling without limits
 
-2. **Cost Awareness - CRITICAL**
-   - **NEVER** create infinite loops or recursive processes
-   - **NEVER** run load tests without explicit approval
-   - **NEVER** create resources that auto-scale without limits
-   - **ALWAYS** set timeouts on Lambda functions (max 30 seconds for most)
-   - **ALWAYS** limit test iterations (max 10 API calls per test)
-   - **ALWAYS** clean up test data after testing
-
-3. **Testing Commands**
-
-   ```bash
-   # Set AWS profile
-   $env:AWS_PROFILE="hitechparadigm"  # PowerShell
-   export AWS_PROFILE=hitechparadigm  # Bash
-
-   # Test Lambda function
-   aws lambda invoke --function-name budgetbuddy-<function> --payload '{}' response.json --profile hitechparadigm
-
-   # Test API endpoint
-   curl -X POST https://<api-id>.execute-api.us-east-1.amazonaws.com/dev/<endpoint>
-
-   # Check CloudWatch logs
-   aws logs tail /aws/lambda/budgetbuddy-<function> --follow --profile hitechparadigm
-   ```
-
-4. **Cost-Safe Testing Practices**
-   - **Single Invocation Tests**: Test with 1-3 requests, not hundreds
-   - **Immediate Cleanup**: Delete test data after each test
-   - **Monitor Costs**: Check AWS Cost Explorer after testing
-   - **Use Dev Environment**: Always test in dev, never prod
-   - **Set Alarms**: CloudWatch alarms for unexpected costs
-
-5. **When to Test Against AWS**
-   - After deploying new Lambda functions
-   - After API Gateway route changes
-   - After DynamoDB schema changes
-   - After authentication/authorization changes
-   - Before marking a task as complete
-
-6. **When NOT to Test Against AWS**
-   - During unit test development (use mocks)
-   - For property-based tests (use local mocks)
-   - For rapid iteration (use local testing)
-   - For destructive operations (use mocks)
-
-**Cost Limits:**
-
-- **Daily Testing Budget**: < $1.00
-- **Monthly Testing Budget**: < $20.00
-- **Single Test Run**: < $0.10
-- **If costs exceed limits**: STOP immediately and report
+**When to test**: After Lambda/API/DB/auth changes, before task completion
+**When NOT to test**: Unit tests, property tests, rapid iteration, destructive ops
 
 ### Validation Before Commit
 
@@ -218,114 +169,19 @@ This:
 
 ## AWS Alignment
 
-### Prefer Managed, Serverless Services
+**Default Services**: Lambda (Node.js 20.x), API Gateway, DynamoDB, Cognito, S3, Bedrock, CloudWatch, Secrets Manager
 
-**Default Choices:**
+**Security Defaults**: Least privilege IAM, no wildcards, encryption at rest/transit, TLS 1.2+
 
-- **Compute**: Lambda (Node.js 20.x)
-- **API**: API Gateway (REST or HTTP API)
-- **Database**: DynamoDB (single-table design)
-- **Auth**: Cognito User Pools
-- **Storage**: S3 (with encryption)
-- **AI**: Bedrock (Claude 3.5 Sonnet)
-- **Monitoring**: CloudWatch, X-Ray
-- **Secrets**: Secrets Manager or SSM Parameter Store
-
-### Security Defaults
-
-**IAM:**
-
-- Least privilege roles and policies
-- No wildcard permissions unless justified
-- Service-specific roles (one per Lambda)
-- Resource-based policies where appropriate
-
-**Network:**
-
-- API Gateway for public endpoints
-- VPC only when required (RDS, ElastiCache)
-- Security groups with minimal ingress
-- Private subnets for data tier
-
-**Data Protection:**
-
-- Encryption at rest (S3, DynamoDB, RDS)
-- Encryption in transit (TLS 1.2+)
-- Secrets rotation policies
-- Data classification and handling
-
-### When Proposing New Components
-
-Always call out:
-
-1. **Cost Impact**: Estimated monthly cost, scaling behavior
-2. **Reliability Impact**: Availability, fault tolerance, recovery
-3. **Security Impact**: Attack surface, data exposure, compliance
-4. **Operational Impact**: Monitoring, alerting, runbooks
-
-Suggest AWS-native monitoring:
-
-- CloudWatch dashboards and alarms
-- CloudTrail for audit logs
-- Config for compliance
-- GuardDuty for threat detection
-- Security Hub for centralized security
+**When Proposing Components**: Call out cost, reliability, security, and operational impact
 
 ## Code Quality
 
-### Follow Established Patterns
+**Follow Patterns**: ESLint config, TypeScript strict, consistent naming (see tech.md/structure.md)
 
-**Code Style:**
+**Module Design**: Small, composable, single responsibility, clear interfaces
 
-- Defined in `tech.md` and `structure.md`
-- ESLint configuration (eslint.config.js)
-- TypeScript strict mode
-- Consistent naming conventions
-
-**Module Design:**
-
-- Small, composable modules
-- Clear interfaces and contracts
-- Single responsibility principle
-- Dependency injection where appropriate
-
-**Comments:**
-
-- Only where intent is non-obvious
-- Prefer clear naming and structure
-- Document "why" not "what"
-- Keep comments up to date
-
-### File Organization
-
-**Backend (Lambda):**
-
-```
-backend/functions/
-  <function-name>/
-    index.js          # Handler
-    *.test.js         # Tests
-    package.json      # Dependencies
-    README.md         # Function docs
-```
-
-**Infrastructure (CDK):**
-
-```
-infrastructure/lib/
-  <stack-name>-stack.ts   # CDK stack
-  README-<stack>.md       # Stack docs
-```
-
-**Frontend (React):**
-
-```
-packages/web-app/src/
-  components/       # Reusable components
-  pages/           # Page components
-  services/        # API clients
-  utils/           # Utilities
-```
+**File Organization**: See structure.md for backend/frontend/infrastructure layouts
 
 ## Autonomous Development Mode
 
@@ -341,6 +197,13 @@ For each task:
 4. **Monitor CI/CD**: Check deployment status (if applicable)
 5. **If CI/CD fails**: Analyze logs, fix, commit fix (max 2 attempts)
 6. **Continue** to next task without stopping
+
+**CRITICAL DEPLOYMENT RULE**: NEVER use direct CDK deploy commands (`cdk deploy`, `npm run deploy:dev`, etc.). ALL deployments happen automatically through the CI/CD pipeline when you push to develop/main branches. Your job is to:
+
+1. Complete the feature implementation
+2. Commit and push the code
+3. Let GitHub Actions handle the deployment
+4. Monitor the deployment logs if needed
 
 **CRITICAL**: Never run `validate-for-commit.js` manually before `safe-commit-push.js` - it causes duplicate validation. The safe-commit-push script handles validation internally.
 
@@ -421,53 +284,14 @@ Summarize in 3-5 bullets:
 
 ## AWS Well-Architected Pillars
 
-For every change, consider:
+Consider for every change:
 
-### 1. Operational Excellence
-
-- Runbooks for common operations
-- Automated deployment and rollback
-- Monitoring and alerting
-- Incident response procedures
-
-### 2. Security
-
-- Identity and access management
-- Detective controls (logging, monitoring)
-- Infrastructure protection (network, compute)
-- Data protection (encryption, backup)
-- Incident response
-
-### 3. Reliability
-
-- Foundations (IAM, networking, service quotas)
-- Workload architecture (distributed, loosely coupled)
-- Change management (deployment, rollback)
-- Failure management (backup, recovery, testing)
-
-### 4. Performance Efficiency
-
-- Selection (compute, storage, database, network)
-- Review (continuous improvement)
-- Monitoring (metrics, alarms)
-- Trade-offs (consistency vs latency)
-
-### 5. Cost Optimization
-
-- Practice cloud financial management
-- Expenditure and usage awareness
-- Cost-effective resources
-- Manage demand and supply
-- Optimize over time
-
-### 6. Sustainability
-
-- Region selection (renewable energy)
-- User behavior patterns
-- Software and architecture patterns
-- Data patterns
-- Hardware patterns
-- Development and deployment process
+1. **Operational Excellence**: Runbooks, automated deployment/rollback, monitoring
+2. **Security**: IAM, logging, infrastructure/data protection, incident response
+3. **Reliability**: Distributed architecture, change/failure management, backup/recovery
+4. **Performance**: Right-sizing, monitoring, trade-offs
+5. **Cost Optimization**: Financial management, cost-effective resources
+6. **Sustainability**: Region selection, efficient patterns
 
 ## Summary
 

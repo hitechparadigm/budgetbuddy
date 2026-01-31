@@ -323,4 +323,4 @@ Check that tasks.md files have incomplete tasks marked with `[ ]`
 
 ---
 
-**For migration details, see**: `MIGRATION_GUIDE.md`
+**For system overview, see**: `.kiro/SYSTEM_GUIDE.md`

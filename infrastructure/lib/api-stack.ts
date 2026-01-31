@@ -34,6 +34,7 @@ export interface ApiStackProps extends cdk.StackProps {
   userPool: cognito.UserPool;
   userPoolClient: cognito.UserPoolClient;
   authOnboardingFunction?: lambda.Function; // Optional - for gradual refactoring
+  notificationFunction?: lambda.Function; // Optional - for push notifications
 }
 
 export class ApiStack extends cdk.Stack {
@@ -62,11 +63,20 @@ export class ApiStack extends cdk.Stack {
    */
   private readonly authOnboardingFunction?: lambda.Function;
 
+  /**
+   * Notification Service Lambda Function (optional)
+   * Handles push notifications, device management, and preferences
+   */
+  private readonly notificationFunction?: lambda.Function;
+
   constructor(scope: Construct, id: string, props: ApiStackProps) {
     super(scope, id, props);
 
     // Store auth onboarding function for use in route setup
     this.authOnboardingFunction = props.authOnboardingFunction;
+
+    // Store notification function for use in route setup
+    this.notificationFunction = props.notificationFunction;
 
     // Create shared Lambda layers for common dependencies
     this.commonLayer = this.createCommonLayer();
@@ -689,6 +699,59 @@ export class ApiStack extends cdk.Stack {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'AIHealthCheck',
     });
+
+    // Notification routes (protected) - only add if notification function is available
+    if (this.notificationFunction) {
+      const notificationsResource = this.api.root.addResource('notifications');
+
+      // Device registration route (protected)
+      const registerDeviceResource = notificationsResource.addResource('register-device');
+      registerDeviceResource.addMethod('POST', new apigateway.LambdaIntegration(this.notificationFunction), {
+        authorizer,
+        operationName: 'RegisterDevice',
+      });
+
+      // Device management routes (protected)
+      const deviceResource = notificationsResource.addResource('device');
+      const deviceIdResource = deviceResource.addResource('{deviceId}');
+      deviceIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.notificationFunction), {
+        authorizer,
+        operationName: 'RemoveDevice',
+      });
+
+      // Notification preferences routes (protected)
+      const preferencesResource = notificationsResource.addResource('preferences');
+      preferencesResource.addMethod('GET', new apigateway.LambdaIntegration(this.notificationFunction), {
+        authorizer,
+        operationName: 'GetNotificationPreferences',
+      });
+      preferencesResource.addMethod('PUT', new apigateway.LambdaIntegration(this.notificationFunction), {
+        authorizer,
+        operationName: 'UpdateNotificationPreferences',
+      });
+
+      // Notification history routes (protected)
+      const historyResource = notificationsResource.addResource('history');
+      historyResource.addMethod('GET', new apigateway.LambdaIntegration(this.notificationFunction), {
+        authorizer,
+        operationName: 'GetNotificationHistory',
+      });
+
+      // Mark notification as read route (protected)
+      const notificationIdResource = notificationsResource.addResource('{notificationId}');
+      const readResource = notificationIdResource.addResource('read');
+      readResource.addMethod('PUT', new apigateway.LambdaIntegration(this.notificationFunction), {
+        authorizer,
+        operationName: 'MarkNotificationAsRead',
+      });
+
+      // Notification health endpoint
+      const notificationHealthResource = notificationsResource.addResource('health');
+      notificationHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.notificationFunction), {
+        methodResponses: [{ statusCode: '200' }],
+        operationName: 'NotificationHealthCheck',
+      });
+    }
   }
 
   /**
