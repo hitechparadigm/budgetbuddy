@@ -1,5 +1,133 @@
 # Development Log
 
+## 2026-01-31 - Notification Stack Integration and Deployment (Session 29)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Integrating NotificationStack into CDK app and preparing for CI/CD deployment
+**Outcome**: Infrastructure changes committed to develop branch for automated deployment
+
+### Problem Statement
+
+**Issue**: NotificationStack was defined but not integrated into main CDK app
+
+**Discovery**:
+
+- NotificationStack existed in `infrastructure/lib/notification-stack.ts`
+- Not instantiated in `infrastructure/bin/app.ts`
+- API stack didn't export layers needed by NotificationStack
+- DynamoDB table didn't have Streams enabled (required for budget alerts)
+
+**User Feedback**: Correctly pointed out that direct AWS deployment bypasses CI/CD pipeline
+
+### Solution: Proper CI/CD Workflow
+
+**Approach**: Follow established workflow instead of direct deployment
+
+**Implementation**:
+
+1. **Integrated NotificationStack into CDK App**
+   - Added import in `infrastructure/bin/app.ts`
+   - Instantiated NotificationStack with proper dependencies
+   - Added stack dependencies (depends on DatabaseStack and ApiStack)
+   - Configured environment-specific naming
+
+2. **Enhanced API Stack for Layer Sharing**
+   - Created `sharedLayer` from `backend/layers/shared`
+   - Exported `commonLayer` and `sharedLayer` as public properties
+   - Updated all Lambda functions to use both layers
+   - Modified function signature to accept both layers
+
+3. **Enabled DynamoDB Streams**
+   - Updated `infrastructure/lib/database-stack.ts`
+   - Added `stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES`
+   - Required for real-time budget alert triggers
+
+4. **Followed Proper Deployment Workflow**
+   - Ran `validate-for-commit.js` (all checks passed)
+   - Used `safe-commit-push.js` for commit
+   - Pushed to develop branch
+   - CI/CD pipeline will handle deployment
+
+### Technical Details
+
+**Files Modified**:
+
+1. `infrastructure/bin/app.ts`:
+   - Added NotificationStack import
+   - Instantiated NotificationStack between HostingStack and MonitoringStack
+   - Added dependencies: notificationStack.addDependency(databaseStack, apiStack)
+   - Added monitoring dependency on notificationStack
+
+2. `infrastructure/lib/api-stack.ts`:
+   - Added public properties: `commonLayer` and `sharedLayer`
+   - Created `createSharedLayer()` method
+   - Updated `createLambdaFunctions()` to accept both layers
+   - Updated commonProps to include both layers
+
+3. `infrastructure/lib/database-stack.ts`:
+   - Added `stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES`
+   - Enables real-time event capture for budget alerts
+
+**Validation Results**:
+
+- ✅ Security: PASS (no secrets, no vulnerabilities)
+- ✅ Linting: PASS (16 warnings, 0 errors - acceptable)
+- ✅ Type Check: PASS
+- ✅ Documentation: PASS (all 4 mandatory files updated)
+
+**Deployment Strategy**:
+
+- Committed to develop branch
+- CI/CD pipeline will:
+  1. Run validation checks
+  2. Build TypeScript
+  3. Deploy database stack (enable streams)
+  4. Deploy notification stack (3 Lambda functions)
+  5. Run health checks
+  6. Rollback on failure
+
+### Lessons Learned
+
+**Best Practice Followed**: Always use CI/CD pipeline for deployments
+
+- Direct AWS deployments bypass validation
+- No audit trail or rollback capability
+- Violates established workflow
+
+**Correct Workflow**:
+
+1. Make infrastructure changes
+2. Run validation locally
+3. Commit to develop branch
+4. CI/CD handles deployment
+5. Monitor deployment status
+
+### Next Steps
+
+**Immediate** (CI/CD will handle):
+
+- Deploy database stack with streams enabled
+- Deploy notification stack with 3 Lambda functions
+- Verify all resources created
+- Check CloudWatch logs for errors
+
+**Phase 7** (Next task - API Gateway Integration):
+
+- Add 6 notification endpoints to API Gateway
+- Configure CORS and authentication
+- Test with Postman
+- Integrate with web and mobile apps
+
+### Impact
+
+**Infrastructure Ready**: All notification infrastructure defined and committed
+**CI/CD Compliant**: Following proper deployment workflow
+**Next Phase**: API Gateway integration (Phase 7)
+
+---
+
 ## 2026-01-31 - Notification Stack CDK Implementation (Session 28)
 
 ### Session Summary

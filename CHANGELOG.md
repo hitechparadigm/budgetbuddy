@@ -1,5 +1,68 @@
 # Changelog
 
+## [1.8.8] - 2026-01-31
+
+### 🏗️ INFRASTRUCTURE - Notification Stack Deployment Ready (Task 1.10)
+
+- **Integrated Notification Stack into CDK App** - Complete infrastructure ready for CI/CD deployment
+  - **File**: `infrastructure/bin/app.ts` - Added NotificationStack instantiation
+  - **Dependencies**: NotificationStack depends on DatabaseStack and ApiStack
+  - **Layers**: Exported commonLayer and sharedLayer from ApiStack for reuse
+  - **Features**:
+    - 3 Lambda functions (Notification Service, Budget Alerts, Daily Reminders)
+    - DynamoDB Streams event source mapping
+    - EventBridge scheduled rules (every 15 min, every 6 hours)
+    - CloudWatch alarms and dashboard
+    - IAM roles with least privilege
+
+- **Enabled DynamoDB Streams** - Required for real-time budget alerts
+  - **File**: `infrastructure/lib/database-stack.ts`
+  - **Stream Type**: NEW_AND_OLD_IMAGES
+  - **Purpose**: Capture transaction events for budget alert triggers
+  - **Cost**: Included in DynamoDB pricing
+
+- **Enhanced API Stack** - Added shared layer support
+  - **File**: `infrastructure/lib/api-stack.ts`
+  - **Changes**:
+    - Created sharedLayer from `backend/layers/shared`
+    - Exported commonLayer and sharedLayer as public properties
+    - Updated all Lambda functions to use both layers
+  - **Benefits**: Reduced code duplication, faster cold starts
+
+### 🏗️ TECHNICAL DETAILS
+
+**NotificationStack Configuration**:
+
+- Stack Name: `budgetbuddy-dev-notification`
+- Region: us-east-1
+- Lambda Functions:
+  - budgetbuddy-dev-notifications (512 MB, 30s timeout)
+  - budgetbuddy-dev-budget-alerts (512 MB, 60s timeout, reserved concurrency 10)
+  - budgetbuddy-dev-daily-reminders (1024 MB, 300s timeout)
+
+**DynamoDB Streams**:
+
+- Enabled on budgetbuddy-main table
+- Stream view type: NEW_AND_OLD_IMAGES
+- Event source mapping: Batch size 10, retry 2, filter for TRANSACTION records
+
+**EventBridge Rules**:
+
+- Daily reminders: Every 15 minutes (96 invocations/day)
+- Budget alerts: Every 6 hours (4 invocations/day)
+
+**Deployment Method**:
+
+- ✅ Committed to develop branch
+- ✅ CI/CD pipeline will deploy automatically
+- ❌ NOT deployed directly (following best practices)
+
+### 🏗️ IMPACT
+
+- **Infrastructure Complete**: All notification infrastructure defined in CDK
+- **CI/CD Ready**: Changes pushed to develop branch for automated deployment
+- **Next Steps**: CI/CD will deploy to dev environment, then Phase 7 (API Gateway Integration)
+
 ## [1.8.7] - 2026-01-31
 
 ### 📱 LAMBDA - Phase 4 Complete: Daily Reminders Service
