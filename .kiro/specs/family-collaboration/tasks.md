@@ -94,7 +94,7 @@ Implement family account sharing with invitation system, role-based permissions,
 ### Phase 3: Permission Middleware (Week 1)
 
 - [ ] 3. Implement Permission System
-  - [ ] 3.1 Create permission middleware
+  - [x] 3.1 Create permission middleware
     - Create shared/permissions.js
     - Define permission matrix
     - Implement checkPermission function
