@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "description": "Enables autonomous overnight development with smart commit strategy",
   "when": {
-    "type": "agentStop"
+    "type": "userTriggered"
   },
   "then": {
     "type": "askAgent",

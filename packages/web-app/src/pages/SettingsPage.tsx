@@ -13,6 +13,7 @@ import {
 import TokenDiagnostics from "../components/TokenDiagnostics";
 import { CurrencySelector } from "../components/CurrencySelector";
 import { getCurrencyConfig } from "@budget-buddy/shared/src/utils/currency";
+import { NotificationSettings } from "../components/NotificationSettings";
 
 interface LocationForm {
   country: string;
@@ -667,6 +668,11 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Notification Settings Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <NotificationSettings userId={localStorage.getItem("userId") || ""} />
         </div>
 
         {/* Troubleshooting Section */}
