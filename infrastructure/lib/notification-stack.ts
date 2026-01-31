@@ -54,7 +54,7 @@ export class NotificationStack extends cdk.Stack {
       },
       timeout: cdk.Duration.seconds(60),
       memorySize: 512,
-      reservedConcurrentExecutions: 10,
+      // Reserved concurrency removed for dev - can be added in prod if needed
       description: 'Monitors budget spending and triggers alerts at threshold levels',
     });
 

@@ -553,14 +553,14 @@ This implementation plan covers the complete push notification and daily reminde
     - Verify behavior changes (e.g., quiet hours respected)
     - _Requirements: 4.1-4.10_
 
-  - [ ] 10.4 Test daily reminder flow
+  - [x] 10.4 Test daily reminder flow
     - Set reminder time to current time
     - Wait for EventBridge trigger
     - Verify reminder sent
     - Verify reminder logged
     - _Requirements: 3.1-3.10_
 
-  - [ ] 10.5 Test budget alert flow
+  - [x] 10.5 Test budget alert flow
     - Create transaction that crosses threshold
     - Verify DynamoDB Stream triggers Lambda
     - Verify alert sent to all family members

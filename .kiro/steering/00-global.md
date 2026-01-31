@@ -93,11 +93,54 @@ Before writing any code:
 - Property-based tests for invariants
 - End-to-end tests for user journeys
 
-### 4. Never
+### 4. CI/CD Deployment Monitoring (CRITICAL)
+
+**Before Starting Any New Task:**
+
+1. **Check CI/CD Status**: Run `node scripts/check-cicd-status.js` to verify latest deployment
+2. **Wait for Success**: If deployment is in progress or failed, STOP and wait
+3. **Monitor Active Deployments**: Check every 2 minutes until deployment completes
+4. **Only Proceed on Success**: Start new tasks ONLY after successful deployment
+
+**Deployment Monitoring Rules:**
+
+- **NEVER start new tasks while deployment is in progress**
+- **NEVER start new tasks if last deployment failed**
+- **ALWAYS verify deployment success before continuing**
+- **ALWAYS check `.kiro/cicd-status/latest.json` for deployment status**
+
+**If Deployment Failed:**
+
+1. Read failure logs from CI/CD status
+2. Analyze the error and root cause
+3. Fix the issue that caused failure
+4. Commit and push the fix
+5. Wait for new deployment to succeed
+6. Only then continue with next task
+
+**Deployment Status Check:**
+
+```bash
+# Check latest deployment status
+node scripts/check-cicd-status.js
+
+# Expected output for success:
+# ✅ CI/CD Status: SUCCESS
+# Branch: develop
+# Conclusion: success
+
+# If failed:
+# ❌ CI/CD Status: FAILED
+# [Error logs will be displayed]
+```
+
+### 5. Never
 
 - Hardcode secrets, API keys, or passwords
 - Disable security controls to "make things work"
 - Use `--no-verify` flag to bypass git hooks
+- **Start new tasks without verifying CI/CD deployment success**
+- **Ignore failed deployments**
 - Introduce breaking changes without updating specs
 - Deploy without validation passing
 - Skip documentation updates
@@ -187,23 +230,36 @@ This:
 
 When working autonomously (overnight development):
 
+### Pre-Task CI/CD Check (MANDATORY)
+
+**Before starting ANY task:**
+
+1. **Check deployment status**: `node scripts/check-cicd-status.js`
+2. **Verify success**: Ensure last deployment succeeded
+3. **If in progress**: Wait and check every 2 minutes
+4. **If failed**: Fix deployment issues FIRST before continuing
+
 ### Workflow
 
 For each task:
 
-1. **Implement** the feature/fix
-2. **Commit**: Use `node scripts/safe-commit-push.js "feat: description"` (validates internally)
-3. **If validation fails**: Auto-fix and retry (max 3 attempts)
-4. **Monitor CI/CD**: Check deployment status (if applicable)
-5. **If CI/CD fails**: Analyze logs, fix, commit fix (max 2 attempts)
-6. **Continue** to next task without stopping
+1. **FIRST: Verify CI/CD deployment success** (see above)
+2. **Implement** the feature/fix
+3. **Commit**: Use `node scripts/safe-commit-push.js "feat: description"` (validates internally)
+4. **If validation fails**: Auto-fix and retry (max 3 attempts)
+5. **Monitor CI/CD**: Wait for deployment to complete after push
+6. **If CI/CD fails**: Analyze logs, fix, commit fix (max 2 attempts)
+7. **Wait for deployment success** before continuing to next task
+8. **Continue** to next task only after deployment succeeds
 
 **CRITICAL DEPLOYMENT RULE**: NEVER use direct CDK deploy commands (`cdk deploy`, `npm run deploy:dev`, etc.). ALL deployments happen automatically through the CI/CD pipeline when you push to develop/main branches. Your job is to:
 
 1. Complete the feature implementation
 2. Commit and push the code
-3. Let GitHub Actions handle the deployment
-4. Monitor the deployment logs if needed
+3. **WAIT for GitHub Actions deployment to complete**
+4. **VERIFY deployment succeeded using check-cicd-status.js**
+5. Monitor the deployment logs if needed
+6. Only then proceed to next task
 
 **CRITICAL**: Never run `validate-for-commit.js` manually before `safe-commit-push.js` - it causes duplicate validation. The safe-commit-push script handles validation internally.
 
