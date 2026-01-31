@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Autonomous Continuation Checker",
+  "description": "Automatically checks for incomplete tasks and continues working without stopping when agent completes a task",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Check .kiro/steering/00-global.md for autonomous continuation rules. Review all .kiro/specs/*/tasks.md files for incomplete tasks. Identify the next logical task based on: 1) Remaining tasks in current spec, 2) Related tasks that build on completed work, 3) Next phase in multi-phase features. START the next task immediately without stopping or asking for confirmation. If all tasks are complete, report completion status."
+  }
+}

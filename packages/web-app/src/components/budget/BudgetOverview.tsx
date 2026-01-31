@@ -3,8 +3,9 @@
  * Displays high-level budget summary with income, savings, expenses, and remaining balance
  */
 
-import React from 'react';
-import { Budget } from '../../contexts/BudgetContext';
+import React from "react";
+import { Budget } from "../../contexts/BudgetContext";
+import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
 // ============================================================================
 // Types
@@ -21,7 +22,7 @@ interface BudgetOverviewProps {
 
 export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
   budget,
-  loading = false
+  loading = false,
 }) => {
   // ============================================================================
   // Render Loading State
@@ -58,10 +59,12 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
             Ready to Start Budgeting
           </h3>
           <p className="text-gray-500 mb-4">
-            Use the "Add Income", "Add Savings", or "Add Expense" buttons below to get started.
+            Use the "Add Income", "Add Savings", or "Add Expense" buttons below
+            to get started.
           </p>
           <p className="text-sm text-blue-600">
-            Your budget will be created automatically when you add your first item!
+            Your budget will be created automatically when you add your first
+            item!
           </p>
         </div>
       </div>
@@ -73,25 +76,25 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
   // ============================================================================
 
   const incomeProgress = budget.totalIncome > 0 ? 100 : 0;
-  const savingsProgress = budget.totalIncome > 0
-    ? Math.min((budget.totalSavings / budget.totalIncome) * 100, 100)
-    : 0;
-  const expensesProgress = budget.totalIncome > 0
-    ? Math.min((budget.totalExpenses / budget.totalIncome) * 100, 100)
-    : 0;
+  const savingsProgress =
+    budget.totalIncome > 0
+      ? Math.min((budget.totalSavings / budget.totalIncome) * 100, 100)
+      : 0;
+  const expensesProgress =
+    budget.totalIncome > 0
+      ? Math.min((budget.totalExpenses / budget.totalIncome) * 100, 100)
+      : 0;
 
   // Determine remaining balance color
-  const remainingBalanceColor = budget.remainingBalance > 0
-    ? 'text-green-600'
-    : budget.remainingBalance < 0
-      ? 'text-red-600'
-      : 'text-gray-600';
+  const remainingBalanceColor =
+    budget.remainingBalance > 0
+      ? "text-green-600"
+      : budget.remainingBalance < 0
+        ? "text-red-600"
+        : "text-gray-600";
 
-  const remainingBalanceIcon = budget.remainingBalance > 0
-    ? '✓'
-    : budget.remainingBalance < 0
-      ? '⚠'
-      : '=';
+  const remainingBalanceIcon =
+    budget.remainingBalance > 0 ? "✓" : budget.remainingBalance < 0 ? "⚠" : "=";
 
   // ============================================================================
   // Render Budget Overview
@@ -119,7 +122,7 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
             <div>
               <p className="text-sm font-medium text-green-600">Income</p>
               <p className="text-2xl font-bold text-green-900">
-                ${budget.totalIncome.toLocaleString()}
+                {formatCurrency(budget.totalIncome, budget.currency || "USD")}
               </p>
             </div>
             <div className="text-green-400 text-2xl">💰</div>
@@ -140,7 +143,7 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
             <div>
               <p className="text-sm font-medium text-blue-600">Savings</p>
               <p className="text-2xl font-bold text-blue-900">
-                ${budget.totalSavings.toLocaleString()}
+                {formatCurrency(budget.totalSavings, budget.currency || "USD")}
               </p>
             </div>
             <div className="text-blue-400 text-2xl">🏦</div>
@@ -164,7 +167,7 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
             <div>
               <p className="text-sm font-medium text-orange-600">Expenses</p>
               <p className="text-2xl font-bold text-orange-900">
-                ${budget.totalExpenses.toLocaleString()}
+                {formatCurrency(budget.totalExpenses, budget.currency || "USD")}
               </p>
             </div>
             <div className="text-orange-400 text-2xl">🛒</div>
@@ -183,14 +186,21 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
         </div>
 
         {/* Remaining Balance */}
-        <div className={`${budget.remainingBalance >= 0 ? 'bg-gray-50 border-gray-200' : 'bg-red-50 border-red-200'} border rounded-lg p-4`}>
+        <div
+          className={`${budget.remainingBalance >= 0 ? "bg-gray-50 border-gray-200" : "bg-red-50 border-red-200"} border rounded-lg p-4`}
+        >
           <div className="flex items-center justify-between">
             <div>
-              <p className={`text-sm font-medium ${budget.remainingBalance >= 0 ? 'text-gray-600' : 'text-red-600'}`}>
+              <p
+                className={`text-sm font-medium ${budget.remainingBalance >= 0 ? "text-gray-600" : "text-red-600"}`}
+              >
                 Remaining
               </p>
               <p className={`text-2xl font-bold ${remainingBalanceColor}`}>
-                ${Math.abs(budget.remainingBalance).toLocaleString()}
+                {formatCurrency(
+                  Math.abs(budget.remainingBalance),
+                  budget.currency || "USD",
+                )}
               </p>
             </div>
             <div className={`text-2xl ${remainingBalanceColor}`}>
@@ -200,34 +210,43 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
           <div className="mt-2">
             <p className={`text-xs ${remainingBalanceColor}`}>
               {budget.remainingBalance > 0
-                ? 'Money left to allocate'
+                ? "Money left to allocate"
                 : budget.remainingBalance < 0
-                  ? 'Over budget'
-                  : 'Perfectly balanced'}
+                  ? "Over budget"
+                  : "Perfectly balanced"}
             </p>
           </div>
         </div>
       </div>
 
       {/* Zero-Based Budgeting Status */}
-      <div className={`rounded-lg p-4 ${budget.remainingBalance === 0
-        ? 'bg-green-50 border border-green-200'
-        : 'bg-yellow-50 border border-yellow-200'
-        }`}>
+      <div
+        className={`rounded-lg p-4 ${
+          budget.remainingBalance === 0
+            ? "bg-green-50 border border-green-200"
+            : "bg-yellow-50 border border-yellow-200"
+        }`}
+      >
         <div className="flex items-center">
-          <div className={`text-2xl mr-3 ${budget.remainingBalance === 0 ? 'text-green-600' : 'text-yellow-600'}`}>
-            {budget.remainingBalance === 0 ? '🎯' : '⚖️'}
+          <div
+            className={`text-2xl mr-3 ${budget.remainingBalance === 0 ? "text-green-600" : "text-yellow-600"}`}
+          >
+            {budget.remainingBalance === 0 ? "🎯" : "⚖️"}
           </div>
           <div>
-            <h3 className={`text-sm font-medium ${budget.remainingBalance === 0 ? 'text-green-800' : 'text-yellow-800'}`}>
+            <h3
+              className={`text-sm font-medium ${budget.remainingBalance === 0 ? "text-green-800" : "text-yellow-800"}`}
+            >
               {budget.remainingBalance === 0
-                ? 'Perfect Zero-Based Budget!'
-                : 'Zero-Based Budget Status'}
+                ? "Perfect Zero-Based Budget!"
+                : "Zero-Based Budget Status"}
             </h3>
-            <p className={`text-sm ${budget.remainingBalance === 0 ? 'text-green-600' : 'text-yellow-600'}`}>
+            <p
+              className={`text-sm ${budget.remainingBalance === 0 ? "text-green-600" : "text-yellow-600"}`}
+            >
               {budget.remainingBalance === 0
-                ? 'Every dollar has been allocated. Great job!'
-                : `You need to ${budget.remainingBalance > 0 ? 'allocate' : 'reduce'} $${Math.abs(budget.remainingBalance).toLocaleString()} to achieve zero-based budgeting.`}
+                ? "Every dollar has been allocated. Great job!"
+                : `You need to ${budget.remainingBalance > 0 ? "allocate" : "reduce"} ${formatCurrency(Math.abs(budget.remainingBalance), budget.currency || "USD", { showSymbol: false })} to achieve zero-based budgeting.`}
             </p>
           </div>
         </div>
@@ -241,11 +260,11 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
 // ============================================================================
 
 function formatMonth(monthString: string | undefined): string {
-  if (!monthString) return 'Unknown Month';
-  const [year, month] = monthString.split('-');
+  if (!monthString) return "Unknown Month";
+  const [year, month] = monthString.split("-");
   const date = new Date(parseInt(year), parseInt(month) - 1);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long'
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
   });
 }
