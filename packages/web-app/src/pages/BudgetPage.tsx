@@ -20,6 +20,7 @@ import {
   calculatePlannedMonthlyAmount,
   getOccurrenceDatesInMonth,
 } from "@budget-buddy/shared";
+import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
 const API_BASE_URL =
   "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
@@ -73,6 +74,7 @@ export const BudgetPage: React.FC = () => {
   const navigate = useNavigate();
   const [budget, setBudget] = useState<Budget | null>(null);
   const [loading, setLoading] = useState(true);
+  const currency = budget?.currency || "USD"; // Get currency from budget or default to USD
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
@@ -90,7 +92,7 @@ export const BudgetPage: React.FC = () => {
   // Budget item management
   const [showBudgetItemModal, setShowBudgetItemModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<BudgetCategory | null>(
-    null
+    null,
   );
   const [selectedGroupType, setSelectedGroupType] = useState<
     "income" | "savings" | "expense" | null
@@ -111,7 +113,7 @@ export const BudgetPage: React.FC = () => {
 
   // Right sidebar tab state
   const [activeTab, setActiveTab] = useState<"summary" | "transactions">(
-    "transactions"
+    "transactions",
   );
 
   // Right sidebar width state
@@ -257,7 +259,7 @@ export const BudgetPage: React.FC = () => {
     console.log(
       "[transformBackendBudget] Transformed to",
       groups.length,
-      "groups"
+      "groups",
     );
     return { ...backendBudget, groups };
   };
@@ -337,7 +339,7 @@ export const BudgetPage: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/budget?t=${Date.now()}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem(
-            "budgetbuddy_id_token"
+            "budgetbuddy_id_token",
           )}`,
           "Content-Type": "application/json",
         },
@@ -346,7 +348,7 @@ export const BudgetPage: React.FC = () => {
       if (!response.ok) {
         console.error(
           "[loadBudget] Failed to fetch budgets. Status:",
-          response.status
+          response.status,
         );
         setLoading(false);
         return;
@@ -365,15 +367,15 @@ export const BudgetPage: React.FC = () => {
       if (budgetCount > 0) {
         console.log(
           "[loadBudget] CRITICAL DEBUG - Budget months found:",
-          budgets.map((b: any) => b.month)
+          budgets.map((b: any) => b.month),
         );
         console.log(
           "[loadBudget] CRITICAL DEBUG - Looking for month:",
-          currentMonth
+          currentMonth,
         );
         console.log(
           "[loadBudget] CRITICAL DEBUG - First budget details:",
-          budgets[0]
+          budgets[0],
         );
       }
 
@@ -395,7 +397,7 @@ export const BudgetPage: React.FC = () => {
         console.log(
           "[loadBudget] No budget found for",
           currentMonth,
-          "(other months have budgets)"
+          "(other months have budgets)",
         );
         setBudget(null);
         setLoading(false);
@@ -414,7 +416,7 @@ export const BudgetPage: React.FC = () => {
 
         if (aiGeneratedBudget) {
           console.log(
-            "[loadBudget] Using AI-generated budget for current month"
+            "[loadBudget] Using AI-generated budget for current month",
           );
           const parsedBudget = JSON.parse(aiGeneratedBudget);
           const budget = createBudgetFromAIData(parsedBudget, currentMonth);
@@ -453,7 +455,7 @@ export const BudgetPage: React.FC = () => {
 
       console.log(
         "[saveBudgetToBackend] Saving budget for month:",
-        budgetData.month
+        budgetData.month,
       );
 
       // Transform groups array to object format for backend
@@ -484,19 +486,19 @@ export const BudgetPage: React.FC = () => {
         console.log(
           "[saveBudgetToBackend] Budget saved or already exists (status:",
           response.status,
-          ")"
+          ")",
         );
 
         // Clear AI budget from localStorage after successful save
         localStorage.removeItem("ai-generated-budget");
         console.log(
-          "[saveBudgetToBackend] Cleared AI budget from localStorage"
+          "[saveBudgetToBackend] Cleared AI budget from localStorage",
         );
 
         if (response.status === 409) {
           // Budget already exists - reload from backend to get the existing one
           console.log(
-            "[saveBudgetToBackend] Budget already exists (409), reloading from backend"
+            "[saveBudgetToBackend] Budget already exists (409), reloading from backend",
           );
           await loadBudget();
         } else {
@@ -504,11 +506,11 @@ export const BudgetPage: React.FC = () => {
           const savedBudget = await response.json();
           console.log(
             "[saveBudgetToBackend] Budget saved successfully:",
-            savedBudget
+            savedBudget,
           );
           if (savedBudget.data) {
             console.log(
-              "[saveBudgetToBackend] Updating local state with saved budget"
+              "[saveBudgetToBackend] Updating local state with saved budget",
             );
             const transformedBudget = transformBackendBudget(savedBudget.data);
             setBudget(transformedBudget);
@@ -520,7 +522,7 @@ export const BudgetPage: React.FC = () => {
           "[saveBudgetToBackend] Failed to save budget (status:",
           response.status,
           "):",
-          errorText
+          errorText,
         );
       }
     } catch (error) {
@@ -535,7 +537,7 @@ export const BudgetPage: React.FC = () => {
     if (!Array.isArray(budget.groups)) {
       console.error(
         "[calculateTotals] budget.groups is not an array:",
-        budget.groups
+        budget.groups,
       );
       return { income: 0, planned: 0, spent: 0, remaining: 0 };
     }
@@ -544,7 +546,7 @@ export const BudgetPage: React.FC = () => {
     const income =
       incomeGroup?.categories.reduce(
         (sum, cat) => sum + cat.plannedAmount,
-        0
+        0,
       ) || 0;
 
     const nonIncomeGroups = budget.groups.filter((g) => g.type !== "income");
@@ -552,14 +554,14 @@ export const BudgetPage: React.FC = () => {
       (sum, group) =>
         sum +
         group.categories.reduce((catSum, cat) => catSum + cat.plannedAmount, 0),
-      0
+      0,
     );
 
     const spent = nonIncomeGroups.reduce(
       (sum, group) =>
         sum +
         group.categories.reduce((catSum, cat) => catSum + cat.spentAmount, 0),
-      0
+      0,
     );
 
     // Remaining = money left to budget (income - planned allocations)
@@ -654,7 +656,7 @@ export const BudgetPage: React.FC = () => {
   // Budget item management functions
   const openBudgetItemModal = (
     groupType: "income" | "savings" | "expense",
-    category?: BudgetCategory
+    category?: BudgetCategory,
   ) => {
     setSelectedGroupType(groupType);
     if (category) {
@@ -704,7 +706,7 @@ export const BudgetPage: React.FC = () => {
     console.log("[handleBudgetItemSubmit] Budget exists:", !!budget);
     console.log(
       "[handleBudgetItemSubmit] Selected group type:",
-      selectedGroupType
+      selectedGroupType,
     );
     console.log("[handleBudgetItemSubmit] Form data:", budgetItemForm);
 
@@ -727,7 +729,7 @@ export const BudgetPage: React.FC = () => {
     if (isNaN(baseAmount)) {
       console.log(
         "[handleBudgetItemSubmit] Invalid amount:",
-        budgetItemForm.plannedAmount
+        budgetItemForm.plannedAmount,
       );
       return;
     }
@@ -742,12 +744,12 @@ export const BudgetPage: React.FC = () => {
         baseAmount,
         budgetItemForm.recurringFrequency,
         startDate,
-        budget.month
+        budget.month,
       );
       occurrenceDates = getOccurrenceDatesInMonth(
         budgetItemForm.recurringFrequency,
         startDate,
-        budget.month
+        budget.month,
       );
       console.log("[handleBudgetItemSubmit] Recurring item calculated:", {
         baseAmount,
@@ -762,14 +764,14 @@ export const BudgetPage: React.FC = () => {
       "[handleBudgetItemSubmit] Creating new category with baseAmount:",
       baseAmount,
       "plannedAmount:",
-      plannedAmount
+      plannedAmount,
     );
     const updatedBudget = { ...budget };
 
     if (editingCategory) {
       console.log(
         "[handleBudgetItemSubmit] Editing existing category:",
-        editingCategory.id
+        editingCategory.id,
       );
       // Edit existing category
       updatedBudget.groups = updatedBudget.groups.map((group) => ({
@@ -795,7 +797,7 @@ export const BudgetPage: React.FC = () => {
     } else {
       console.log(
         "[handleBudgetItemSubmit] Adding new category to group type:",
-        selectedGroupType
+        selectedGroupType,
       );
       // Add new category
       const newCategory: BudgetCategory = {
@@ -816,14 +818,14 @@ export const BudgetPage: React.FC = () => {
 
       console.log(
         "[handleBudgetItemSubmit] New category created:",
-        newCategory
+        newCategory,
       );
 
       updatedBudget.groups = updatedBudget.groups.map((group) => {
         if (group.type === selectedGroupType) {
           console.log(
             "[handleBudgetItemSubmit] Found matching group, adding category. Group before:",
-            group.categories.length
+            group.categories.length,
           );
           const updatedGroup = {
             ...group,
@@ -831,7 +833,7 @@ export const BudgetPage: React.FC = () => {
           };
           console.log(
             "[handleBudgetItemSubmit] Group after:",
-            updatedGroup.categories.length
+            updatedGroup.categories.length,
           );
           return updatedGroup;
         }
@@ -842,7 +844,7 @@ export const BudgetPage: React.FC = () => {
     console.log("[handleBudgetItemSubmit] Updated budget:", updatedBudget);
     setBudget(updatedBudget);
     console.log(
-      "[handleBudgetItemSubmit] Budget state updated, saving to backend..."
+      "[handleBudgetItemSubmit] Budget state updated, saving to backend...",
     );
     await saveBudgetToBackend(updatedBudget);
     console.log("[handleBudgetItemSubmit] Saved to backend, closing modal...");
@@ -922,7 +924,7 @@ export const BudgetPage: React.FC = () => {
       setLoading(true);
       console.log(
         "[copyPreviousMonthBudget] Starting budget copy for month:",
-        currentMonth
+        currentMonth,
       );
 
       // Calculate previous month
@@ -931,14 +933,14 @@ export const BudgetPage: React.FC = () => {
       const prevMonth = prevMonthDate.toISOString().slice(0, 7);
       console.log(
         "[copyPreviousMonthBudget] Looking for previous month budget:",
-        prevMonth
+        prevMonth,
       );
 
       // Fetch previous month's budget
       const response = await fetch(`${API_BASE_URL}/budget`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem(
-            "budgetbuddy_id_token"
+            "budgetbuddy_id_token",
           )}`,
           "Content-Type": "application/json",
         },
@@ -947,7 +949,7 @@ export const BudgetPage: React.FC = () => {
       if (!response.ok) {
         console.error(
           "[copyPreviousMonthBudget] Failed to fetch budgets. Status:",
-          response.status
+          response.status,
         );
         alert("Failed to fetch budgets. Please try again.");
         setLoading(false);
@@ -965,7 +967,7 @@ export const BudgetPage: React.FC = () => {
 
       if (prevBudget) {
         console.log(
-          "[copyPreviousMonthBudget] Found previous month budget, copying..."
+          "[copyPreviousMonthBudget] Found previous month budget, copying...",
         );
 
         // Transform backend budget to frontend format first
@@ -997,7 +999,7 @@ export const BudgetPage: React.FC = () => {
         console.log("[copyPreviousMonthBudget] Budget copied successfully");
       } else {
         console.warn(
-          "[copyPreviousMonthBudget] No previous month budget found to copy"
+          "[copyPreviousMonthBudget] No previous month budget found to copy",
         );
 
         // Create empty budget structure for future month
@@ -1047,10 +1049,10 @@ export const BudgetPage: React.FC = () => {
         // Show user feedback
         alert(
           `No budget found for ${getMonthName(
-            prevMonth
+            prevMonth,
           )}. Created empty budget structure for ${
             getMonthName(currentMonth).split(" ")[0]
-          }. You can now add your income and expense categories.`
+          }. You can now add your income and expense categories.`,
         );
       }
 
@@ -1058,7 +1060,7 @@ export const BudgetPage: React.FC = () => {
     } catch (error) {
       console.error(
         "[copyPreviousMonthBudget] Error copying previous month budget:",
-        error
+        error,
       );
       alert("Failed to create budget. Please try again.");
       setLoading(false);
@@ -1091,10 +1093,10 @@ export const BudgetPage: React.FC = () => {
 
       // Show loading state
       const originalText = document.querySelector(
-        '[onclick="handleExportCSV"]'
+        '[onclick="handleExportCSV"]',
       )?.textContent;
       const exportButton = document.querySelector(
-        '[onclick="handleExportCSV"]'
+        '[onclick="handleExportCSV"]',
       ) as HTMLButtonElement;
       if (exportButton) {
         exportButton.textContent = "Exporting...";
@@ -1138,7 +1140,7 @@ export const BudgetPage: React.FC = () => {
     } finally {
       // Reset button state
       const exportButton = document.querySelector(
-        '[onclick="handleExportCSV"]'
+        '[onclick="handleExportCSV"]',
       ) as HTMLButtonElement;
       if (exportButton) {
         exportButton.textContent = "Export CSV";
@@ -1200,7 +1202,7 @@ export const BudgetPage: React.FC = () => {
 
   const handleDeleteTransaction = async (
     transactionId: string,
-    categoryId: string
+    categoryId: string,
   ) => {
     if (!budget) return;
     if (!confirm("Are you sure you want to delete this transaction?")) return;
@@ -1211,14 +1213,14 @@ export const BudgetPage: React.FC = () => {
       categories: group.categories.map((cat) => {
         if (cat.id === categoryId) {
           const transaction = cat.transactions.find(
-            (t) => t.id === transactionId
+            (t) => t.id === transactionId,
           );
           if (transaction) {
             return {
               ...cat,
               spentAmount: cat.spentAmount - transaction.amount,
               transactions: cat.transactions.filter(
-                (t) => t.id !== transactionId
+                (t) => t.id !== transactionId,
               ),
             };
           }
@@ -1708,7 +1710,7 @@ export const BudgetPage: React.FC = () => {
                       totals.remaining < 0 ? "text-red-600" : "text-green-600"
                     }`}
                   >
-                    ${totals.remaining.toLocaleString()} left to budget
+                    {formatCurrency(totals.remaining, currency)} left to budget
                   </p>
                 </div>
                 {/* Logout button for mobile */}
@@ -1777,7 +1779,7 @@ export const BudgetPage: React.FC = () => {
                         totals.remaining < 0 ? "text-red-600" : "text-green-600"
                       }`}
                     >
-                      ${Math.abs(totals.remaining).toLocaleString()}
+                      {formatCurrency(Math.abs(totals.remaining), currency)}
                     </span>{" "}
                     left to budget
                   </p>
@@ -1961,7 +1963,7 @@ export const BudgetPage: React.FC = () => {
                     const [year, month] = currentMonth.split("-").map(Number);
                     const prevDate = new Date(year, month - 2, 1);
                     return getMonthName(
-                      prevDate.toISOString().slice(0, 7)
+                      prevDate.toISOString().slice(0, 7),
                     ).split(" ")[0];
                   })()}{" "}
                   budget to get you started.
@@ -2044,10 +2046,10 @@ export const BudgetPage: React.FC = () => {
                             <div className="text-xs text-green-600 ml-6">
                               {category.recurringFrequency} •{" "}
                               {category.baseAmount &&
-                                `$${category.baseAmount.toLocaleString()} per occurrence`}
+                                `${formatCurrency(category.baseAmount, currency, { showSymbol: false })} per occurrence`}
                               {category.startDate &&
                                 ` • Starts: ${new Date(
-                                  category.startDate
+                                  category.startDate,
                                 ).toLocaleDateString()}`}
                             </div>
                           )}
@@ -2058,7 +2060,7 @@ export const BudgetPage: React.FC = () => {
                               Planned
                             </div>
                             <div className="font-medium">
-                              ${category.plannedAmount.toLocaleString()}
+                              {formatCurrency(category.plannedAmount, currency)}
                             </div>
                           </div>
                           <div className="text-right md:w-24 flex-shrink-0">
@@ -2070,11 +2072,11 @@ export const BudgetPage: React.FC = () => {
                                 category.spentAmount > category.plannedAmount
                                   ? "text-red-600"
                                   : category.spentAmount > 0
-                                  ? "text-green-600"
-                                  : "text-gray-400"
+                                    ? "text-green-600"
+                                    : "text-gray-400"
                               }`}
                             >
-                              ${category.spentAmount.toLocaleString()}
+                              {formatCurrency(category.spentAmount, currency)}
                             </div>
                           </div>
                           <div className="flex items-center space-x-1 w-16 justify-end opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0">
@@ -2141,10 +2143,13 @@ export const BudgetPage: React.FC = () => {
                           Planned
                         </div>
                         <div>
-                          $
-                          {group.categories
-                            .reduce((sum, cat) => sum + cat.plannedAmount, 0)
-                            .toLocaleString()}
+                          {formatCurrency(
+                            group.categories.reduce(
+                              (sum, cat) => sum + cat.plannedAmount,
+                              0,
+                            ),
+                            currency,
+                          )}
                         </div>
                       </div>
                       <div className="text-right md:w-24 flex-shrink-0">
@@ -2152,10 +2157,13 @@ export const BudgetPage: React.FC = () => {
                           Received
                         </div>
                         <div>
-                          $
-                          {group.categories
-                            .reduce((sum, cat) => sum + cat.spentAmount, 0)
-                            .toLocaleString()}
+                          {formatCurrency(
+                            group.categories.reduce(
+                              (sum, cat) => sum + cat.spentAmount,
+                              0,
+                            ),
+                            currency,
+                          )}
                         </div>
                       </div>
                       <div className="w-16 flex-shrink-0 hidden md:block"></div>
@@ -2277,7 +2285,7 @@ export const BudgetPage: React.FC = () => {
                         Income
                       </div>
                       <div className="text-2xl font-bold text-gray-900">
-                        ${totals.income.toLocaleString()}
+                        {formatCurrency(totals.income, currency)}
                       </div>
                     </div>
                   </div>
@@ -2288,13 +2296,13 @@ export const BudgetPage: React.FC = () => {
                   <div>
                     <div className="text-gray-500 uppercase mb-1">Planned</div>
                     <div className="font-semibold text-gray-900">
-                      ${totals.planned.toLocaleString()}
+                      {formatCurrency(totals.planned, currency)}
                     </div>
                   </div>
                   <div>
                     <div className="text-gray-500 uppercase mb-1">Spent</div>
                     <div className="font-semibold text-gray-900">
-                      ${totals.spent.toLocaleString()}
+                      {formatCurrency(totals.spent, currency)}
                     </div>
                   </div>
                   <div>
@@ -2302,7 +2310,7 @@ export const BudgetPage: React.FC = () => {
                       Remaining
                     </div>
                     <div className="font-semibold text-gray-900">
-                      ${totals.remaining.toLocaleString()}
+                      {formatCurrency(totals.remaining, currency)}
                     </div>
                   </div>
                 </div>
@@ -2315,7 +2323,7 @@ export const BudgetPage: React.FC = () => {
                       .map((group, index) => {
                         const groupTotal = group.categories.reduce(
                           (sum, cat) => sum + cat.plannedAmount,
-                          0
+                          0,
                         );
                         const percentage =
                           totals.planned > 0
@@ -2350,7 +2358,7 @@ export const BudgetPage: React.FC = () => {
                             </div>
                             <div className="flex items-center space-x-2">
                               <span className="text-sm font-semibold text-gray-900">
-                                ${groupTotal.toLocaleString()}
+                                {formatCurrency(groupTotal, currency)}
                               </span>
                               <span className="text-xs text-gray-500">
                                 ({percentage}%)
@@ -2408,10 +2416,10 @@ export const BudgetPage: React.FC = () => {
                                               : "text-gray-900"
                                           }`}
                                         >
-                                          ${spent.toLocaleString()}
+                                          {formatCurrency(spent, currency)}
                                         </div>
                                         <div className="text-gray-500">
-                                          of ${planned.toLocaleString()}
+                                          of {formatCurrency(planned, currency)}
                                         </div>
                                       </div>
                                       <div
@@ -2419,8 +2427,8 @@ export const BudgetPage: React.FC = () => {
                                           isOverspent
                                             ? "text-red-600"
                                             : remaining === 0
-                                            ? "text-gray-400"
-                                            : "text-green-600"
+                                              ? "text-gray-400"
+                                              : "text-green-600"
                                         }`}
                                       >
                                         ({percentSpent}%)
@@ -2523,14 +2531,14 @@ export const BudgetPage: React.FC = () => {
                                     isIncome ? "text-green-600" : "text-red-600"
                                   }`}
                                 >
-                                  {isIncome ? "+" : "-"}$
-                                  {transaction.amount.toLocaleString()}
+                                  {isIncome ? "+" : "-"}
+                                  {formatCurrency(transaction.amount, currency)}
                                 </div>
                                 <button
                                   onClick={() =>
                                     handleDeleteTransaction(
                                       transaction.id,
-                                      cat.id
+                                      cat.id,
                                     )
                                   }
                                   className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors flex-shrink-0"
@@ -2552,13 +2560,13 @@ export const BudgetPage: React.FC = () => {
                                 </button>
                               </div>
                             );
-                          })
-                        )
+                          }),
+                        ),
                       )}
 
                     {budget &&
                       budget.groups.every((g) =>
-                        g.categories.every((c) => c.transactions.length === 0)
+                        g.categories.every((c) => c.transactions.length === 0),
                       ) && (
                         <div className="text-center py-8 text-gray-400">
                           <p className="text-sm">No transactions yet</p>
@@ -2780,8 +2788,8 @@ export const BudgetPage: React.FC = () => {
                 {selectedGroupType === "income"
                   ? "Income"
                   : selectedGroupType === "savings"
-                  ? "Savings"
-                  : "Expense"}{" "}
+                    ? "Savings"
+                    : "Expense"}{" "}
                 Item
               </h3>
               <button

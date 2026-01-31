@@ -170,20 +170,20 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
 ### Phase 6: UI Formatting Updates
 
 - [ ] 8. Update Budget Display
-  - [ ] 8.1 Update BudgetList component
+  - [x] 8.1 Update BudgetList component
     - Use formatCurrency() for all amounts
     - Show currency symbol in budget summary
     - Show currency code in budget header
     - Format category amounts with currency
     - _Requirements: 3.1-3.5, 4.4_
 
-  - [ ] 8.2 Update BudgetForm component
+  - [x] 8.2 Update BudgetForm component
     - Use formatCurrency() for input placeholders
     - Show currency symbol in input fields
     - Parse currency input correctly
     - _Requirements: 3.1-3.5, 4.4_
 
-  - [ ] 8.3 Update budget display tests
+  - [x] 8.3 Update budget display tests
     - Test currency formatting for USD
     - Test currency formatting for EUR
     - Test currency formatting for JPY
@@ -191,19 +191,19 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
     - _Requirements: 3.1-3.5, 4.4_
 
 - [ ] 9. Update Transaction Display
-  - [ ] 9.1 Update TransactionList component
+  - [x] 9.1 Update TransactionList component
     - Use formatCurrency() for transaction amounts
     - Show currency symbol in transaction list
     - Format amounts based on user's currency
     - _Requirements: 3.1-3.5, 4.5_
 
-  - [ ] 9.2 Update TransactionForm component
+  - [x] 9.2 Update TransactionForm component
     - Use formatCurrency() for input placeholders
     - Show currency symbol in amount input
     - Parse currency input correctly
     - _Requirements: 3.1-3.5, 4.5_
 
-  - [ ] 9.3 Update transaction display tests
+  - [x] 9.3 Update transaction display tests
     - Test currency formatting for USD
     - Test currency formatting for EUR
     - Test currency formatting for JPY
