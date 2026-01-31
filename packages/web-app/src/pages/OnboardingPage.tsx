@@ -22,6 +22,7 @@ export const OnboardingPage: React.FC = () => {
   const handleComplete = async (
     suggestions: OnboardingSuggestions,
     selectedCategories: CategorySuggestion[],
+    currency: string,
   ) => {
     setIsSubmitting(true);
     setError(null);
@@ -34,6 +35,7 @@ export const OnboardingPage: React.FC = () => {
         familySize: suggestions.familySize,
         currentMonth: getCurrentMonthString(),
         selectedCategoriesCount: selectedCategories.length,
+        currency,
       });
 
       console.log(
@@ -47,6 +49,7 @@ export const OnboardingPage: React.FC = () => {
         country: suggestions.country,
         familySize: suggestions.familySize,
         currentMonth: getCurrentMonthString(), // Send timezone-aware current month
+        currency, // Pass currency to backend
         selectedCategories: selectedCategories.map((c) => ({
           name: c.name,
           icon: c.icon,

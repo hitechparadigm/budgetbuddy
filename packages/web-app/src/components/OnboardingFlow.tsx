@@ -19,17 +19,24 @@ import {
   getAllCities,
   CityExpenseData,
 } from "@budget-buddy/shared/src/data/cityExpenseData";
+import { CurrencySelector } from "./CurrencySelector";
 
 interface OnboardingFlowProps {
   onComplete: (
     suggestions: OnboardingSuggestions,
-    selectedCategories: CategorySuggestion[]
+    selectedCategories: CategorySuggestion[],
+    currency: string,
   ) => void;
   onSkip: () => void;
   isSubmitting?: boolean;
 }
 
-type OnboardingStep = "location" | "family-size" | "categories" | "review";
+type OnboardingStep =
+  | "location"
+  | "currency"
+  | "family-size"
+  | "categories"
+  | "review";
 
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onComplete,
@@ -38,9 +45,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 }) => {
   const [step, setStep] = useState<OnboardingStep>("location");
   const [location, setLocation] = useState<GeolocationResult | null>(null);
+  const [currency, setCurrency] = useState<string>("USD"); // Default to USD
   const [familySize, setFamilySize] = useState<number>(1);
   const [suggestions, setSuggestions] = useState<OnboardingSuggestions | null>(
-    null
+    null,
   );
   const [selectedCategories, setSelectedCategories] = useState<
     CategorySuggestion[]
@@ -61,8 +69,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     setIsDetecting(false);
 
     if (result.success) {
-      // Auto-advance to next step
-      setTimeout(() => setStep("family-size"), 1000);
+      // Auto-advance to currency selection step
+      setTimeout(() => setStep("currency"), 1000);
     }
   };
 
@@ -148,7 +156,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       alert(
         `Invalid location data. Missing: ${!location.city ? "city" : ""} ${
           !location.countryCode ? "country code" : ""
-        }. Please select a location again.`
+        }. Please select a location again.`,
       );
       setStep("location");
       return;
@@ -168,7 +176,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       console.error("No suggestions found for city key:", cityKey);
       // Show error message to user
       alert(
-        `Sorry, we don't have budget data for ${location.city}, ${location.country}. Please try selecting a different city or use "Start from Scratch" instead.`
+        `Sorry, we don't have budget data for ${location.city}, ${location.country}. Please try selecting a different city or use "Start from Scratch" instead.`,
       );
     }
   };
@@ -189,8 +197,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       console.log("OnboardingFlow: Calling onComplete with:", {
         suggestions,
         selectedCategoriesCount: selectedCategories.length,
+        currency,
       });
-      onComplete(suggestions, selectedCategories);
+      onComplete(suggestions, selectedCategories, currency);
     } else {
       console.error("OnboardingFlow: Cannot complete - missing data:", {
         hasSuggestions: !!suggestions,
@@ -223,29 +232,34 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         {/* Progress Bar */}
         <div className="px-6 pt-4">
           <div className="flex items-center justify-between mb-2">
-            {["Location", "Family Size", "Categories", "Review"].map(
-              (label, idx) => (
-                <div key={label} className="flex items-center">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      [
-                        "location",
-                        "family-size",
-                        "categories",
-                        "review",
-                      ].indexOf(step) >= idx
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-200 text-gray-600"
-                    }`}
-                  >
-                    {idx + 1}
-                  </div>
-                  <span className="ml-2 text-sm text-gray-600 hidden sm:inline">
-                    {label}
-                  </span>
+            {[
+              "Location",
+              "Currency",
+              "Family Size",
+              "Categories",
+              "Review",
+            ].map((label, idx) => (
+              <div key={label} className="flex items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    [
+                      "location",
+                      "currency",
+                      "family-size",
+                      "categories",
+                      "review",
+                    ].indexOf(step) >= idx
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-200 text-gray-600"
+                  }`}
+                >
+                  {idx + 1}
                 </div>
-              )
-            )}
+                <span className="ml-2 text-sm text-gray-600 hidden sm:inline">
+                  {label}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -280,7 +294,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </p>
                   <div className="mt-4 space-x-2">
                     <button
-                      onClick={() => setStep("family-size")}
+                      onClick={() => setStep("currency")}
                       className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
                     >
                       Continue
@@ -341,7 +355,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                             .includes(searchQuery.toLowerCase()) ||
                           city.country
                             .toLowerCase()
-                            .includes(searchQuery.toLowerCase())
+                            .includes(searchQuery.toLowerCase()),
                       )
                       .slice(0, 10)
                       .map((city) => (
@@ -371,7 +385,51 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </div>
           )}
 
-          {/* Step 2: Family Size */}
+          {/* Step 2: Currency Selection */}
+          {step === "currency" && (
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">💱 Select your currency</h3>
+              <p className="text-gray-600">
+                Choose the currency you'll use for your budget. This will be
+                used for all amounts and transactions.
+              </p>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <p className="text-blue-800 text-sm">
+                  💡 <strong>Tip:</strong> You can change your currency later in
+                  Settings, but existing budgets and transactions won't be
+                  converted.
+                </p>
+              </div>
+
+              <div className="mt-6">
+                <CurrencySelector
+                  value={currency}
+                  onChange={setCurrency}
+                  required
+                  label="Select your currency"
+                  showFullName={true}
+                />
+              </div>
+
+              <div className="flex justify-between mt-8">
+                <button
+                  onClick={() => setStep("location")}
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  ← Back
+                </button>
+                <button
+                  onClick={() => setStep("family-size")}
+                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Family Size */}
           {step === "family-size" && (
             <div className="space-y-4">
               <h3 className="text-xl font-semibold">
@@ -396,12 +454,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       {size === 1
                         ? "👤"
                         : size === 2
-                        ? "👥"
-                        : size === 3
-                        ? "👨‍👩‍👧"
-                        : size === 4
-                        ? "👨‍👩‍👧‍👦"
-                        : "👨‍👩‍👧‍👦+"}
+                          ? "👥"
+                          : size === 3
+                            ? "👨‍👩‍👧"
+                            : size === 4
+                              ? "👨‍👩‍👧‍👦"
+                              : "👨‍👩‍👧‍👦+"}
                     </div>
                     <div className="font-medium">
                       {size} {size === 1 ? "person" : "people"}
@@ -412,7 +470,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
               <div className="flex justify-between mt-8">
                 <button
-                  onClick={() => setStep("location")}
+                  onClick={() => setStep("currency")}
                   className="text-gray-600 hover:text-gray-800"
                 >
                   ← Back
@@ -427,7 +485,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </div>
           )}
 
-          {/* Step 3: Category Selection */}
+          {/* Step 4: Category Selection */}
           {step === "categories" && suggestions && (
             <div className="space-y-4">
               <h3 className="text-xl font-semibold">
@@ -448,7 +506,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
                 {suggestions.categories.map((category) => {
                   const isSelected = selectedCategories.find(
-                    (c) => c.name === category.name
+                    (c) => c.name === category.name,
                   );
                   return (
                     <button
