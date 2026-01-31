@@ -4,8 +4,9 @@
  * Simplified design inspired by EveryDollar for easy budget management
  */
 
-import React, { useState } from 'react';
-import { BudgetGroup, Category } from '../../contexts/BudgetContext';
+import React, { useState } from "react";
+import { BudgetGroup, Category } from "../../contexts/BudgetContext";
+import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
 // ============================================================================
 // Types
@@ -17,6 +18,7 @@ interface BudgetGroupsProps {
     savings: BudgetGroup[];
     expenses: BudgetGroup[];
   };
+  currency?: string;
   loading?: boolean;
   onUpdateGroups?: (groups: {
     income: BudgetGroup[];
@@ -27,13 +29,19 @@ interface BudgetGroupsProps {
 
 interface BudgetGroupCardProps {
   group: BudgetGroup;
-  groupType: 'income' | 'savings' | 'expenses';
+  groupType: "income" | "savings" | "expenses";
   groupIndex: number;
+  currency: string;
   isExpanded: boolean;
   onToggle: () => void;
   onAddCategory: () => void;
   onUpdateCategory: (category: Category, plannedAmount: number) => void;
-  onUpdateCategoryName: (category: Category, newName: string, groupType: 'income' | 'savings' | 'expenses', groupIndex: number) => void;
+  onUpdateCategoryName: (
+    category: Category,
+    newName: string,
+    groupType: "income" | "savings" | "expenses",
+    groupIndex: number,
+  ) => void;
 }
 
 // ============================================================================
@@ -42,10 +50,13 @@ interface BudgetGroupCardProps {
 
 export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
   groups,
+  currency = "USD",
   loading = false,
-  onUpdateGroups
+  onUpdateGroups,
 }) => {
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['income-0', 'savings-0', 'expenses-0'])); // Expand all by default
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    new Set(["income-0", "savings-0", "expenses-0"]),
+  ); // Expand all by default
 
   // ============================================================================
   // Event Handlers
@@ -64,19 +75,30 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
   const handleAddCategory = (groupKey: string) => {
     if (!onUpdateGroups) return;
 
-    const [type, indexStr] = groupKey.split('-');
+    const [type, indexStr] = groupKey.split("-");
     const index = parseInt(indexStr);
-    const groupType = type as 'income' | 'savings' | 'expenses';
+    const groupType = type as "income" | "savings" | "expenses";
 
     // Create a simple new category
     const newCategory: Category = {
       categoryId: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      categoryName: `New ${groupType === 'income' ? 'Income' : groupType === 'savings' ? 'Savings' : 'Expense'}`,
+      categoryName: `New ${groupType === "income" ? "Income" : groupType === "savings" ? "Savings" : "Expense"}`,
       parentGroup: groups[groupType][index].groupName,
-      groupType: groupType === 'savings' ? 'saving' : groupType === 'expenses' ? 'expense' : 'income',
+      groupType:
+        groupType === "savings"
+          ? "saving"
+          : groupType === "expenses"
+            ? "expense"
+            : "income",
       categoryOrder: groups[groupType][index].categories.length,
-      icon: groupType === 'income' ? '💰' : groupType === 'savings' ? '🏦' : '🛒',
-      colorCode: groupType === 'income' ? '#10B981' : groupType === 'savings' ? '#3B82F6' : '#F59E0B',
+      icon:
+        groupType === "income" ? "💰" : groupType === "savings" ? "🏦" : "🛒",
+      colorCode:
+        groupType === "income"
+          ? "#10B981"
+          : groupType === "savings"
+            ? "#3B82F6"
+            : "#F59E0B",
       plannedAmount: 0,
       spentAmount: 0,
       remainingAmount: 0,
@@ -88,37 +110,50 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
     const updatedGroups = { ...groups };
     updatedGroups[groupType][index] = {
       ...updatedGroups[groupType][index],
-      categories: [...updatedGroups[groupType][index].categories, newCategory]
+      categories: [...updatedGroups[groupType][index].categories, newCategory],
     };
 
     onUpdateGroups(updatedGroups);
   };
 
-  const handleUpdateCategory = (groupKey: string, category: Category, plannedAmount: number) => {
+  const handleUpdateCategory = (
+    groupKey: string,
+    category: Category,
+    plannedAmount: number,
+  ) => {
     if (!onUpdateGroups) return;
 
-    const [type, indexStr] = groupKey.split('-');
+    const [type, indexStr] = groupKey.split("-");
     const index = parseInt(indexStr);
-    const groupType = type as 'income' | 'savings' | 'expenses';
+    const groupType = type as "income" | "savings" | "expenses";
 
     const updatedGroups = { ...groups };
     const group = updatedGroups[groupType][index];
 
-    const updatedCategories = group.categories.map(cat =>
+    const updatedCategories = group.categories.map((cat) =>
       cat.categoryId === category.categoryId
-        ? { ...cat, plannedAmount, remainingAmount: plannedAmount - cat.spentAmount }
-        : cat
+        ? {
+            ...cat,
+            plannedAmount,
+            remainingAmount: plannedAmount - cat.spentAmount,
+          }
+        : cat,
     );
 
     updatedGroups[groupType][index] = {
       ...group,
-      categories: updatedCategories
+      categories: updatedCategories,
     };
 
     onUpdateGroups(updatedGroups);
   };
 
-  const handleUpdateCategoryName = (category: Category, newName: string, groupType: 'income' | 'savings' | 'expenses', groupIndex: number) => {
+  const handleUpdateCategoryName = (
+    category: Category,
+    newName: string,
+    groupType: "income" | "savings" | "expenses",
+    groupIndex: number,
+  ) => {
     if (!onUpdateGroups || !newName.trim()) return;
 
     // Create updated groups with the new category name
@@ -126,14 +161,14 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
     const targetGroup = updatedGroups[groupType][groupIndex];
 
     if (targetGroup && targetGroup.categories) {
-      targetGroup.categories = targetGroup.categories.map(cat =>
+      targetGroup.categories = targetGroup.categories.map((cat) =>
         cat.categoryId === category.categoryId
           ? { ...cat, categoryName: newName.trim() }
-          : cat
+          : cat,
       );
     }
 
-    console.log('Update category name:', category.categoryId, newName);
+    console.log("Update category name:", category.categoryId, newName);
     onUpdateGroups(updatedGroups);
   };
 
@@ -170,10 +205,13 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
           group={group}
           groupType="income"
           groupIndex={index}
+          currency={currency}
           isExpanded={expandedGroups.has(`income-${index}`)}
           onToggle={() => toggleGroup(`income-${index}`)}
           onAddCategory={() => handleAddCategory(`income-${index}`)}
-          onUpdateCategory={(cat, amount) => handleUpdateCategory(`income-${index}`, cat, amount)}
+          onUpdateCategory={(cat, amount) =>
+            handleUpdateCategory(`income-${index}`, cat, amount)
+          }
           onUpdateCategoryName={handleUpdateCategoryName}
         />
       ))}
@@ -185,10 +223,13 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
           group={group}
           groupType="savings"
           groupIndex={index}
+          currency={currency}
           isExpanded={expandedGroups.has(`savings-${index}`)}
           onToggle={() => toggleGroup(`savings-${index}`)}
           onAddCategory={() => handleAddCategory(`savings-${index}`)}
-          onUpdateCategory={(cat, amount) => handleUpdateCategory(`savings-${index}`, cat, amount)}
+          onUpdateCategory={(cat, amount) =>
+            handleUpdateCategory(`savings-${index}`, cat, amount)
+          }
           onUpdateCategoryName={handleUpdateCategoryName}
         />
       ))}
@@ -200,31 +241,36 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
           group={group}
           groupType="expenses"
           groupIndex={index}
+          currency={currency}
           isExpanded={expandedGroups.has(`expenses-${index}`)}
           onToggle={() => toggleGroup(`expenses-${index}`)}
           onAddCategory={() => handleAddCategory(`expenses-${index}`)}
-          onUpdateCategory={(cat, amount) => handleUpdateCategory(`expenses-${index}`, cat, amount)}
+          onUpdateCategory={(cat, amount) =>
+            handleUpdateCategory(`expenses-${index}`, cat, amount)
+          }
           onUpdateCategoryName={handleUpdateCategoryName}
         />
       ))}
 
       {/* Empty State */}
-      {groups.income.length === 0 && groups.savings.length === 0 && groups.expenses.length === 0 && (
-        <div className="bg-white shadow rounded-lg p-8">
-          <div className="text-center">
-            <div className="text-gray-400 text-6xl mb-4">📋</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No Budget Categories
-            </h3>
-            <p className="text-gray-500 mb-4">
-              Add income, savings, and expense categories to start budgeting.
-            </p>
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-              Add Categories
-            </button>
+      {groups.income.length === 0 &&
+        groups.savings.length === 0 &&
+        groups.expenses.length === 0 && (
+          <div className="bg-white shadow rounded-lg p-8">
+            <div className="text-center">
+              <div className="text-gray-400 text-6xl mb-4">📋</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No Budget Categories
+              </h3>
+              <p className="text-gray-500 mb-4">
+                Add income, savings, and expense categories to start budgeting.
+              </p>
+              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Add Categories
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };
@@ -237,16 +283,19 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
   group,
   groupType,
   groupIndex,
+  currency,
   isExpanded,
   onToggle,
   onAddCategory,
   onUpdateCategory,
   onUpdateCategoryName,
 }) => {
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
-  const [editAmount, setEditAmount] = useState<string>('');
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
+    null,
+  );
+  const [editAmount, setEditAmount] = useState<string>("");
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
-  const [editName, setEditName] = useState<string>('');
+  const [editName, setEditName] = useState<string>("");
 
   // ============================================================================
   // Group Type Styling - Simplified
@@ -254,14 +303,14 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
 
   const getGroupColor = (type: string) => {
     switch (type) {
-      case 'income':
-        return 'text-green-700';
-      case 'savings':
-        return 'text-blue-700';
-      case 'expenses':
-        return 'text-gray-700';
+      case "income":
+        return "text-green-700";
+      case "savings":
+        return "text-blue-700";
+      case "expenses":
+        return "text-gray-700";
       default:
-        return 'text-gray-700';
+        return "text-gray-700";
     }
   };
 
@@ -280,7 +329,7 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
 
   const handleCancelEdit = () => {
     setEditingCategoryId(null);
-    setEditAmount('');
+    setEditAmount("");
   };
 
   const handleStartNameEdit = (category: Category) => {
@@ -293,12 +342,12 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
       onUpdateCategoryName(category, editName.trim(), groupType, groupIndex);
     }
     setEditingNameId(null);
-    setEditName('');
+    setEditName("");
   };
 
   const handleCancelNameEdit = () => {
     setEditingNameId(null);
-    setEditName('');
+    setEditName("");
   };
 
   // ============================================================================
@@ -314,12 +363,17 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
       >
         <div className="flex items-center space-x-2">
           <svg
-            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+            className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-90" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
           </svg>
           <h3 className={`text-base font-semibold ${groupColor}`}>
             {group.groupName}
@@ -327,7 +381,9 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
         </div>
         <div className="flex items-center space-x-6 text-sm">
           <span className="text-gray-600 font-medium">Planned</span>
-          <span className="text-gray-600 font-medium w-24 text-right">Remaining</span>
+          <span className="text-gray-600 font-medium w-24 text-right">
+            Remaining
+          </span>
         </div>
       </div>
 
@@ -350,8 +406,8 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
                         className="text-sm border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         autoFocus
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveName(category);
-                          if (e.key === 'Escape') handleCancelNameEdit();
+                          if (e.key === "Enter") handleSaveName(category);
+                          if (e.key === "Escape") handleCancelNameEdit();
                         }}
                         onBlur={() => handleSaveName(category)}
                       />
@@ -376,8 +432,8 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
                             className="w-24 px-2 py-1 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                             autoFocus
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleSaveEdit(category);
-                              if (e.key === 'Escape') handleCancelEdit();
+                              if (e.key === "Enter") handleSaveEdit(category);
+                              if (e.key === "Escape") handleCancelEdit();
                             }}
                           />
                         </div>
@@ -386,16 +442,36 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
                             onClick={() => handleSaveEdit(category)}
                             className="p-1 text-green-600 hover:text-green-800"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
                             </svg>
                           </button>
                           <button
                             onClick={handleCancelEdit}
                             className="p-1 text-gray-400 hover:text-gray-600"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
                             </svg>
                           </button>
                         </div>
@@ -406,11 +482,16 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
                           onClick={() => handleStartEdit(category)}
                           className="text-sm font-medium text-gray-900 hover:text-blue-600 w-24 text-right"
                         >
-                          ${category.plannedAmount.toLocaleString()}
+                          {formatCurrency(category.plannedAmount, currency)}
                         </button>
-                        <span className={`text-sm font-medium w-24 text-right ${category.remainingAmount >= 0 ? 'text-blue-600' : 'text-red-600'
-                          }`}>
-                          ${category.remainingAmount.toLocaleString()}
+                        <span
+                          className={`text-sm font-medium w-24 text-right ${
+                            category.remainingAmount >= 0
+                              ? "text-blue-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {formatCurrency(category.remainingAmount, currency)}
                         </span>
                       </>
                     )}
@@ -426,7 +507,12 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
               onClick={onAddCategory}
               className="text-sm text-blue-600 hover:text-blue-800 font-medium"
             >
-              + Add {groupType === 'income' ? 'Income' : groupType === 'savings' ? 'Savings' : 'Expense'}
+              + Add{" "}
+              {groupType === "income"
+                ? "Income"
+                : groupType === "savings"
+                  ? "Savings"
+                  : "Expense"}
             </button>
           </div>
         </div>

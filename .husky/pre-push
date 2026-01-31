@@ -1,0 +1,32 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🚀 BudgetBuddy Pre-Push Hook"
+echo "============================"
+echo ""
+echo "ℹ️  Lightweight safety check before push"
+echo ""
+
+# Quick security re-check (safety net only)
+echo "🔒 Quick security check..."
+if ! npm run security:pre-commit 2>&1 | grep -q "All security checks passed"; then
+    echo ""
+    echo "❌ PUSH BLOCKED: Security vulnerabilities detected!"
+    echo ""
+    echo "This should not happen if you used safe-commit-push.js"
+    echo "If you committed with --no-verify, you MUST:"
+    echo "  1. Fix all security vulnerabilities"
+    echo "  2. Amend your commit: git commit --amend --no-edit"
+    echo "  3. Push again"
+    echo ""
+    exit 1
+fi
+echo "✅ Security check passed"
+echo ""
+
+echo "============================"
+echo "✅ PRE-PUSH CHECK PASSED"
+echo "✅ Pushing to CI/CD pipeline"
+echo ""
+exit 0
+

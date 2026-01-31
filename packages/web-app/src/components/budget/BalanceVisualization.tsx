@@ -1,10 +1,11 @@
-import React from 'react';
+import React from "react";
+import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
 interface BalanceData {
   totalIncome: number;
   totalExpenses: number;
   netBalance: number;
-  currency: 'CAD' | 'USD';
+  currency: "CAD" | "USD";
   month: string;
   year: number;
 }
@@ -25,27 +26,28 @@ interface BalanceVisualizationProps {
 export const BalanceVisualization: React.FC<BalanceVisualizationProps> = ({
   balanceData,
   weeklyBreakdowns = [],
-  loading = false
+  loading = false,
 }) => {
-  const formatCurrency = (amount: number, currency: string) => {
-    const symbol = currency === 'CAD' ? 'CAS' : 'USD';
-    const sign = amount >= 0 ? '+' : '';
-    return `${sign}${symbol} ${Math.abs(amount).toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })}`;
-  };
-
   const getBalanceColor = (balance: number) => {
-    if (balance > 0) return 'text-green-400';
-    if (balance < 0) return 'text-red-400';
-    return 'text-gray-400';
+    if (balance > 0) return "text-green-400";
+    if (balance < 0) return "text-red-400";
+    return "text-gray-400";
   };
 
   const getMonthLabel = (month: string, year: number) => {
     const monthNames = [
-      'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'
+      "JAN",
+      "FEB",
+      "MAR",
+      "APR",
+      "MAY",
+      "JUN",
+      "JUL",
+      "AUG",
+      "SEP",
+      "OCT",
+      "NOV",
+      "DEC",
     ];
     const monthIndex = parseInt(month) - 1;
     return `${monthNames[monthIndex]} ${year.toString().slice(-2)}`;
@@ -71,7 +73,9 @@ export const BalanceVisualization: React.FC<BalanceVisualizationProps> = ({
         <h2 className="text-gray-400 text-sm font-medium mb-1">
           {getMonthLabel(balanceData.month, balanceData.year)} Balance
         </h2>
-        <div className={`text-3xl font-bold ${getBalanceColor(balanceData.netBalance)}`}>
+        <div
+          className={`text-3xl font-bold ${getBalanceColor(balanceData.netBalance)}`}
+        >
           {formatCurrency(balanceData.netBalance, balanceData.currency)}
         </div>
       </div>
@@ -107,25 +111,27 @@ export const BalanceVisualization: React.FC<BalanceVisualizationProps> = ({
           <span>Budget Allocation</span>
           <span>
             {balanceData.totalIncome > 0
-              ? Math.round((balanceData.totalExpenses / balanceData.totalIncome) * 100)
-              : 0
-            }% used
+              ? Math.round(
+                  (balanceData.totalExpenses / balanceData.totalIncome) * 100,
+                )
+              : 0}
+            % used
           </span>
         </div>
         <div className="w-full bg-gray-700 rounded-full h-2">
           <div
             className={`h-2 rounded-full transition-all duration-300 ${
               balanceData.totalExpenses > balanceData.totalIncome
-                ? 'bg-red-500'
-                : 'bg-blue-500'
+                ? "bg-red-500"
+                : "bg-blue-500"
             }`}
             style={{
               width: `${Math.min(
                 balanceData.totalIncome > 0
                   ? (balanceData.totalExpenses / balanceData.totalIncome) * 100
                   : 0,
-                100
-              )}%`
+                100,
+              )}%`,
             }}
           ></div>
         </div>
@@ -134,10 +140,15 @@ export const BalanceVisualization: React.FC<BalanceVisualizationProps> = ({
       {/* Weekly Breakdowns */}
       {weeklyBreakdowns.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-gray-300 text-sm font-medium">Weekly Breakdown</h3>
+          <h3 className="text-gray-300 text-sm font-medium">
+            Weekly Breakdown
+          </h3>
           <div className="space-y-2">
             {weeklyBreakdowns.map((week, index) => (
-              <div key={index} className="flex items-center justify-between py-2 px-3 bg-gray-800 rounded-lg">
+              <div
+                key={index}
+                className="flex items-center justify-between py-2 px-3 bg-gray-800 rounded-lg"
+              >
                 <span className="text-gray-400 text-sm">{week.period}</span>
                 <div className="flex items-center space-x-4">
                   <span className="text-green-400 text-sm">
@@ -146,7 +157,9 @@ export const BalanceVisualization: React.FC<BalanceVisualizationProps> = ({
                   <span className="text-red-400 text-sm">
                     -{formatCurrency(week.expenses, balanceData.currency)}
                   </span>
-                  <span className={`text-sm font-medium ${getBalanceColor(week.balance)}`}>
+                  <span
+                    className={`text-sm font-medium ${getBalanceColor(week.balance)}`}
+                  >
                     {formatCurrency(week.balance, balanceData.currency)}
                   </span>
                 </div>
@@ -157,26 +170,33 @@ export const BalanceVisualization: React.FC<BalanceVisualizationProps> = ({
       )}
 
       {/* Balance Status Indicator */}
-      <div className={`text-center p-3 rounded-lg ${
-        balanceData.netBalance > 0
-          ? 'bg-green-900 bg-opacity-30 border border-green-700'
-          : balanceData.netBalance < 0
-          ? 'bg-red-900 bg-opacity-30 border border-red-700'
-          : 'bg-gray-800 border border-gray-600'
-      }`}>
-        <span className={`text-sm font-medium ${
+      <div
+        className={`text-center p-3 rounded-lg ${
           balanceData.netBalance > 0
-            ? 'text-green-400'
+            ? "bg-green-900 bg-opacity-30 border border-green-700"
             : balanceData.netBalance < 0
-            ? 'text-red-400'
-            : 'text-gray-400'
-        }`}>
+              ? "bg-red-900 bg-opacity-30 border border-red-700"
+              : "bg-gray-800 border border-gray-600"
+        }`}
+      >
+        <span
+          className={`text-sm font-medium ${
+            balanceData.netBalance > 0
+              ? "text-green-400"
+              : balanceData.netBalance < 0
+                ? "text-red-400"
+                : "text-gray-400"
+          }`}
+        >
           {balanceData.netBalance > 0
-            ? '✓ Budget is balanced with surplus'
+            ? "✓ Budget is balanced with surplus"
             : balanceData.netBalance < 0
-            ? '⚠ Budget is over by ' + formatCurrency(Math.abs(balanceData.netBalance), balanceData.currency)
-            : '○ Budget is perfectly balanced'
-          }
+              ? "⚠ Budget is over by " +
+                formatCurrency(
+                  Math.abs(balanceData.netBalance),
+                  balanceData.currency,
+                )
+              : "○ Budget is perfectly balanced"}
         </span>
       </div>
     </div>
