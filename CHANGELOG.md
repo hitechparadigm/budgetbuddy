@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.4.0] - 2026-01-31
+
+### 🤖 FEATURE - Autonomous Development System
+
+- **Implemented Safe Autonomous Development Workflow** - Enables overnight development with mandatory validation
+  - **Created**: `scripts/validate-for-commit.js` - Runs all pre-commit checks (security, linting, types, docs)
+  - **Created**: `scripts/safe-commit-push.js` - Validates before committing, never bypasses hooks
+  - **Purpose**: Allow autonomous development while maintaining security and quality standards
+  - **Safety**: Every commit must pass validation (no --no-verify allowed)
+
+- **Created 4 New Autonomous Development Hooks**:
+  1. **autonomous-task-executor.kiro.hook** - Main workflow orchestrator for overnight development
+  2. **post-task-validation.kiro.hook** - Validates and commits after each task completion
+  3. **validation-failure-handler.kiro.hook** - Auto-fixes validation failures (max 3 attempts)
+  4. **cicd-failure-handler.kiro.hook** - Handles CI/CD pipeline failures (max 2 attempts)
+
+- **Disabled 3 Dangerous Hooks** - Removed hooks that bypassed security checks
+  - **Disabled**: `auto-push-continue.kiro.hook` - Bypassed security by auto-committing
+  - **Disabled**: `validation-success-autopush.kiro.hook` - Assumed docs validation = safe to push
+  - **Disabled**: `master-automation.kiro.hook` - Too aggressive, removed developer control
+  - **Reason**: These hooks could push vulnerable code without validation
+
+- **Removed 2 Redundant Hooks**:
+  - **Removed**: `doc-validation-hook.kiro.hook` - Redundant with git pre-commit hook
+  - **Removed**: `intelligent-aws-monitor.kiro.hook` - Duplicated aws-logs-analyzer functionality
+
+### 🔒 SECURITY - Improved Git Hooks
+
+- **Enhanced Pre-Commit Hook** - Added explicit warnings and better error handling
+  - **Added**: Warnings about --no-verify flag dangers
+  - **Added**: Failure tracking with CHECKS_FAILED variable
+  - **Added**: Loud failure messages with remediation steps
+  - **Added**: Proper shebang for shell execution
+
+- **Enhanced Pre-Push Hook** - Added security re-validation as safety net
+  - **Added**: Security re-validation as first step
+  - **Added**: Detection of bypassed pre-commit hook
+  - **Added**: Remediation guidance for commits with security issues
+  - **Added**: Explicit warnings about --no-verify and --force
+
+### 📚 DOCUMENTATION - Autonomous Development
+
+- **Created**: `AUTONOMOUS_DEVELOPMENT_DESIGN.md` - Complete design for autonomous development
+- **Created**: `COMPREHENSIVE_HOOK_ANALYSIS.md` - Analysis of all hooks (dangerous vs safe)
+- **Created**: `.kiro/hooks/ACTIVE_HOOKS.md` - Reference for current active hooks
+- **Updated**: Hook documentation with autonomous workflow instructions
+
 ## [1.3.0] - 2026-01-31
 
 ### 🔒 SECURITY - Vulnerability Fixes and ESLint 9 Migration

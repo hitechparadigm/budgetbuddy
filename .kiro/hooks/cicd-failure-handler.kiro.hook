@@ -1,0 +1,12 @@
+{
+  "name": "CI/CD Failure Auto-Fix",
+  "version": "1.0.0",
+  "description": "Automatically handles and fixes CI/CD pipeline failures",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "🔴 CI/CD failure detected. Auto-fix workflow:\n\n**STEP 1: Get Failure Details**\n```bash\ngh run list --limit 1 --json conclusion,displayTitle,url\ngh run view --log-failed\n```\n\n**STEP 2: Analyze Failure**\nIdentify failure type:\n- Build failure → Check dependencies, syntax errors\n- Test failure → Check test code, logic errors\n- Deployment failure → Check AWS resources, permissions\n- Linting failure → Run npm run lint to fix\n- Type errors → Fix TypeScript issues\n\n**STEP 3: Implement Fix**\nFix the identified issue in code.\n\n**STEP 4: Validate Locally**\n```bash\nnode scripts/validate-for-commit.js\n```\n\n**STEP 5: Commit Fix**\n```bash\nnode scripts/safe-commit-push.js \"fix: resolve CI/CD failure - [describe fix]\"\n```\n\n**STEP 6: Monitor**\nWatch new CI/CD run:\n```bash\ngh run list --limit 1\ngh run watch\n```\n\nIf still failing after 2 attempts, document the issue and ask user for guidance."
+  }
+}
