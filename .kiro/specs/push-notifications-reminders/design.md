@@ -1209,3 +1209,430 @@ test("Reminder time matching property", () => {
 - Increased daily active users by 15%
 - Improved budget adherence by 20%
 - Premium conversion rate increase by 5%
+
+## Detailed Architecture Diagrams
+
+### Lambda Function Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         Notification Service Lambda                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐     │
+│  │ Device           │    │ Preferences      │    │ History          │     │
+│  │ Management       │    │ Management       │    │ Management       │     │
+│  ├──────────────────┤    ├──────────────────┤    ├──────────────────┤     │
+│  │ • Register       │    │ • Get            │    │ • Get history    │     │
+│  │ • Remove         │    │ • Update         │    │ • Mark as read   │     │
+│  │ • Validate token │    │ • Validate times │    │ • Pagination     │     │
+│  └──────────────────┘    └──────────────────┘    └──────────────────┘     │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │                    Push Notification Delivery                       │    │
+│  ├────────────────────────────────────────────────────────────────────┤    │
+│  │ 1. Get all user devices from DynamoDB                              │    │
+│  │ 2. Filter enabled devices                                          │    │
+│  │ 3. Batch devices (max 100 per request)                             │    │
+│  │ 4. Send to Expo Push API                                           │    │
+│  │ 5. Handle delivery failures gracefully                             │    │
+│  │ 6. Store notification in history                                   │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       Budget Alerts Service Lambda                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │                    DynamoDB Stream Handler                          │    │
+│  ├────────────────────────────────────────────────────────────────────┤    │
+│  │ 1. Receive transaction event from stream                           │    │
+│  │ 2. Parse transaction data                                          │    │
+│  │ 3. Get budget for transaction                                      │    │
+│  │ 4. Calculate category spending percentage                          │    │
+│  │ 5. Check if threshold crossed (80%, 90%, 100%)                     │    │
+│  │ 6. Check if alert already sent (24-hour deduplication)             │    │
+│  │ 7. Send alert to all family members                                │    │
+│  │ 8. Mark alert as sent                                              │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │                    Scheduled Check Handler                          │    │
+│  ├────────────────────────────────────────────────────────────────────┤    │
+│  │ 1. Scan all active budgets                                         │    │
+│  │ 2. Calculate spending percentages                                  │    │
+│  │ 3. Check for missed alerts                                         │    │
+│  │ 4. Send alerts if needed                                           │    │
+│  │ 5. Mark alerts as sent                                             │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      Daily Reminders Service Lambda                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐    │
+│  │                    Reminder Scheduler                               │    │
+│  ├────────────────────────────────────────────────────────────────────┤    │
+│  │ 1. Get current time (hour and minute)                              │    │
+│  │ 2. Calculate ±15 minute window                                     │    │
+│  │ 3. Query users with matching reminder time                         │    │
+│  │ 4. Process users in batches of 10                                  │    │
+│  │ 5. For each user:                                                  │    │
+│  │    a. Check if reminders enabled                                   │    │
+│  │    b. Check if in quiet hours                                      │    │
+│  │    c. Get last transaction date                                    │    │
+│  │    d. If 3+ days since last transaction, send reminder             │    │
+│  │ 6. Log reminder delivery status                                    │    │
+│  └────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Event Source Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            Event Sources                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │                               │
+                    ▼                               ▼
+        ┌───────────────────────┐       ┌───────────────────────┐
+        │  DynamoDB Streams     │       │  EventBridge Rules    │
+        ├───────────────────────┤       ├───────────────────────┤
+        │ • Transaction INSERT  │       │ • Daily Reminders     │
+        │ • Transaction MODIFY  │       │   (every 15 min)      │
+        │ • Budget UPDATE       │       │ • Budget Checks       │
+        │                       │       │   (every 6 hours)     │
+        └───────────────────────┘       └───────────────────────┘
+                    │                               │
+                    │                               │
+                    ▼                               ▼
+        ┌───────────────────────┐       ┌───────────────────────┐
+        │  Budget Alerts        │       │  Daily Reminders      │
+        │  Service Lambda       │       │  Service Lambda       │
+        │                       │       │                       │
+        │  • Batch size: 10     │       │  • Batch size: 10     │
+        │  • Retry: 2 attempts  │       │  • Retry: 2 attempts  │
+        │  • Filter: TRANSACTION│       │  • Timeout: 5 min     │
+        └───────────────────────┘       └───────────────────────┘
+                    │                               │
+                    └───────────────┬───────────────┘
+                                    │
+                                    ▼
+                        ┌───────────────────────┐
+                        │  Notification Service │
+                        │  Lambda               │
+                        │                       │
+                        │  • Send push          │
+                        │  • Store history      │
+                        │  • Handle failures    │
+                        └───────────────────────┘
+                                    │
+                                    ▼
+                        ┌───────────────────────┐
+                        │  Expo Push API        │
+                        │                       │
+                        │  • Validate tokens    │
+                        │  • Deliver messages   │
+                        │  • Return receipts    │
+                        └───────────────────────┘
+                                    │
+                                    ▼
+                        ┌───────────────────────┐
+                        │  User Devices         │
+                        │                       │
+                        │  • iOS                │
+                        │  • Android            │
+                        └───────────────────────┘
+```
+
+### Data Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         Budget Alert Data Flow                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. User creates transaction
+        │
+        ▼
+2. Transaction stored in DynamoDB
+        │
+        ▼
+3. DynamoDB Stream emits event
+        │
+        ▼
+4. Budget Alerts Lambda receives event
+        │
+        ├─► Get budget for transaction
+        │   (Query: PK=FAMILY#<familyId>, SK=BUDGET#<budgetId>)
+        │
+        ├─► Calculate category spending
+        │   (Query: PK=FAMILY#<familyId>, SK begins_with TRANSACTION#)
+        │
+        ├─► Check threshold (80%, 90%, 100%)
+        │   spending / budget >= threshold?
+        │
+        ├─► Check alert history
+        │   (Query: PK=FAMILY#<familyId>, SK=ALERT#<budgetId>#<categoryId>#<threshold>)
+        │   Alert sent in last 24 hours?
+        │
+        ├─► If threshold crossed and no recent alert:
+        │   │
+        │   ├─► Get all family members
+        │   │   (Query: PK=FAMILY#<familyId>, SK begins_with USER#)
+        │   │
+        │   ├─► For each family member:
+        │   │   │
+        │   │   ├─► Call Notification Service Lambda
+        │   │   │   (Invoke with userId, notification data)
+        │   │   │
+        │   │   └─► Notification Service:
+        │   │       │
+        │   │       ├─► Get user devices
+        │   │       │   (Query: PK=USER#<userId>, SK begins_with DEVICE#)
+        │   │       │
+        │   │       ├─► Send to Expo Push API
+        │   │       │   (POST https://exp.host/--/api/v2/push/send)
+        │   │       │
+        │   │       └─► Store in notification history
+        │   │           (Put: PK=USER#<userId>, SK=NOTIFICATION#<timestamp>#<id>)
+        │   │
+        │   └─► Mark alert as sent
+        │       (Put: PK=FAMILY#<familyId>, SK=ALERT#<budgetId>#<categoryId>#<threshold>)
+        │
+        └─► End
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       Daily Reminder Data Flow                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+1. EventBridge triggers Lambda (every 15 minutes)
+        │
+        ▼
+2. Daily Reminders Lambda executes
+        │
+        ├─► Get current time (hour, minute)
+        │
+        ├─► Calculate time window (±15 minutes)
+        │
+        ├─► Query users with matching reminder time
+        │   (Scan with filter: reminderTime in [currentTime - 15, currentTime + 15])
+        │
+        ├─► For each user (batch of 10):
+        │   │
+        │   ├─► Get user preferences
+        │   │   (Query: PK=USER#<userId>, SK=PREFERENCES#NOTIFICATIONS)
+        │   │
+        │   ├─► Check if reminders enabled
+        │   │   preferences.dailyRemindersEnabled === true?
+        │   │
+        │   ├─► Check if in quiet hours
+        │   │   currentTime between quietHoursStart and quietHoursEnd?
+        │   │
+        │   ├─► Get last transaction date
+        │   │   (Query: PK=USER#<userId>, SK begins_with TRANSACTION#, Limit=1, ScanIndexForward=false)
+        │   │
+        │   ├─► Calculate days since last transaction
+        │   │   daysSince = (currentDate - lastTransactionDate) / 86400000
+        │   │
+        │   ├─► If daysSince >= 3 and not in quiet hours:
+        │   │   │
+        │   │   ├─► Call Notification Service Lambda
+        │   │   │   (Invoke with userId, reminder notification)
+        │   │   │
+        │   │   └─► Notification Service:
+        │   │       │
+        │   │       ├─► Get user devices
+        │   │       │   (Query: PK=USER#<userId>, SK begins_with DEVICE#)
+        │   │       │
+        │   │       ├─► Send to Expo Push API
+        │   │       │   (POST https://exp.host/--/api/v2/push/send)
+        │   │       │
+        │   │       └─► Store in notification history
+        │   │           (Put: PK=USER#<userId>, SK=NOTIFICATION#<timestamp>#<id>)
+        │   │
+        │   └─► Log reminder delivery
+        │       (CloudWatch Logs)
+        │
+        └─► End
+```
+
+### DynamoDB Access Patterns Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      DynamoDB Access Patterns                                │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Main Table:
+  PK: USER#<userId> | FAMILY#<familyId>
+  SK: DEVICE#<deviceId> | PREFERENCES#NOTIFICATIONS | NOTIFICATION#<timestamp>#<id> | ALERT#<budgetId>#<categoryId>#<threshold>
+
+Access Pattern 1: Get all devices for a user
+  Query:
+    PK = USER#<userId>
+    SK begins_with DEVICE#
+  Use Case: Send push notification to all user devices
+  Performance: O(1) - Single partition, efficient
+
+Access Pattern 2: Get user notification preferences
+  Query:
+    PK = USER#<userId>
+    SK = PREFERENCES#NOTIFICATIONS
+  Use Case: Check if notifications enabled, get reminder time
+  Performance: O(1) - Single item lookup
+
+Access Pattern 3: Get notification history for a user
+  Query:
+    PK = USER#<userId>
+    SK begins_with NOTIFICATION#
+    Limit = 50
+    ScanIndexForward = false (newest first)
+  Use Case: Display notification history in UI
+  Performance: O(1) - Single partition, paginated
+
+Access Pattern 4: Check if alert already sent
+  Query:
+    PK = FAMILY#<familyId>
+    SK = ALERT#<budgetId>#<categoryId>#<threshold>
+  Use Case: Prevent duplicate alerts within 24 hours
+  Performance: O(1) - Single item lookup
+
+Access Pattern 5: Get users by reminder time (for daily reminders)
+  Scan:
+    FilterExpression: reminderTime between :start and :end
+  Use Case: Find users to send reminders to
+  Performance: O(n) - Full table scan (acceptable for scheduled job)
+  Optimization: Consider GSI on reminderTime if user base grows large
+
+Access Pattern 6: Get last transaction for user
+  Query:
+    PK = USER#<userId>
+    SK begins_with TRANSACTION#
+    Limit = 1
+    ScanIndexForward = false (newest first)
+  Use Case: Check days since last transaction for reminders
+  Performance: O(1) - Single partition, single item
+
+Access Pattern 7: Get all family members
+  Query:
+    PK = FAMILY#<familyId>
+    SK begins_with USER#
+  Use Case: Send budget alert to all family members
+  Performance: O(1) - Single partition, efficient
+```
+
+### CloudWatch Monitoring Dashboard Layout
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    BudgetBuddy Notifications Dashboard                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌────────────────────────────────┐  ┌────────────────────────────────┐   │
+│  │  Lambda Invocations            │  │  Lambda Errors                 │   │
+│  ├────────────────────────────────┤  ├────────────────────────────────┤   │
+│  │  • Notification Service        │  │  • Error Rate (%)              │   │
+│  │  • Budget Alerts Service       │  │  • Error Count                 │   │
+│  │  • Daily Reminders Service     │  │  • By Function                 │   │
+│  │  • Last 24 hours               │  │  • Last 24 hours               │   │
+│  └────────────────────────────────┘  └────────────────────────────────┘   │
+│                                                                              │
+│  ┌────────────────────────────────┐  ┌────────────────────────────────┐   │
+│  │  Lambda Duration (ms)          │  │  Lambda Throttles              │   │
+│  ├────────────────────────────────┤  ├────────────────────────────────┤   │
+│  │  • p50, p95, p99               │  │  • Throttle Count              │   │
+│  │  • By Function                 │  │  • By Function                 │   │
+│  │  • Last 24 hours               │  │  • Last 24 hours               │   │
+│  └────────────────────────────────┘  └────────────────────────────────┘   │
+│                                                                              │
+│  ┌────────────────────────────────┐  ┌────────────────────────────────┐   │
+│  │  Custom Metrics                │  │  DynamoDB Stream Metrics       │   │
+│  ├────────────────────────────────┤  ├────────────────────────────────┤   │
+│  │  • Notifications Sent          │  │  • Records Processed           │   │
+│  │  • Notifications Failed        │  │  • Iterator Age                │   │
+│  │  • Devices Registered          │  │  • Batch Size                  │   │
+│  │  • Alerts Triggered            │  │  • Last 24 hours               │   │
+│  │  • Reminders Sent              │  │                                │   │
+│  │  • Last 24 hours               │  │                                │   │
+│  └────────────────────────────────┘  └────────────────────────────────┘   │
+│                                                                              │
+│  ┌────────────────────────────────┐  ┌────────────────────────────────┐   │
+│  │  EventBridge Metrics           │  │  Expo API Metrics              │   │
+│  ├────────────────────────────────┤  ├────────────────────────────────┤   │
+│  │  • Rule Invocations            │  │  • API Calls                   │   │
+│  │  • Failed Invocations          │  │  • Success Rate                │   │
+│  │  • By Rule                     │  │  • Error Rate                  │   │
+│  │  • Last 24 hours               │  │  • Last 24 hours               │   │
+│  └────────────────────────────────┘  └────────────────────────────────┘   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+## Deployment Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         Deployment Pipeline                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+GitHub Repository
+        │
+        ├─► Push to develop branch
+        │   │
+        │   ▼
+        │   GitHub Actions CI/CD
+        │   │
+        │   ├─► Run validation
+        │   │   • Security check (npm audit)
+        │   │   • Linting (ESLint)
+        │   │   • Type checking (TypeScript)
+        │   │   • Unit tests (Jest)
+        │   │   • Property-based tests (fast-check)
+        │   │
+        │   ├─► Build
+        │   │   • CDK synth
+        │   │   • Lambda packaging
+        │   │   • Frontend build
+        │   │
+        │   ├─► Deploy to dev environment
+        │   │   • CDK deploy (all stacks)
+        │   │   • Lambda functions
+        │   │   • API Gateway
+        │   │   • EventBridge rules
+        │   │   • DynamoDB Stream mappings
+        │   │
+        │   └─► Post-deployment health checks
+        │       • API health endpoints
+        │       • Smoke tests
+        │       • Rollback on failure
+        │
+        └─► Merge to main branch
+            │
+            ▼
+            GitHub Actions CI/CD
+            │
+            ├─► Run validation (same as above)
+            │
+            ├─► Build (same as above)
+            │
+            ├─► Deploy to staging environment
+            │   • CDK deploy (all stacks)
+            │   • Monitor for 1 week
+            │
+            └─► Manual approval for production
+                │
+                ▼
+                Deploy to production
+                • Gradual rollout (10% → 50% → 100%)
+                • Monitor metrics
+                • Rollback on issues
+```
