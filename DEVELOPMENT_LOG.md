@@ -111,6 +111,11 @@ See: .kiro/steering/00-global.md for detailed testing guidelines
 - `packages/mobile/src/services/notification.test.ts` - Created (29 tests)
 - `.kiro/specs/push-notifications-reminders/tasks.md` - Updated (7.6 complete)
 
+**Family Collaboration Infrastructure**:
+
+- `infrastructure/lib/database-stack.ts` - Added GSI4 for invitation lookups by email
+- `.kiro/specs/family-collaboration/tasks.md` - Started Task 1 (DynamoDB schema updates)
+
 ### Testing Results
 
 **Notification Service Tests**:

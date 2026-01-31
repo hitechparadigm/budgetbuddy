@@ -13,14 +13,14 @@ Implement family account sharing with invitation system, role-based permissions,
 ### Phase 1: Data Model and Infrastructure (Week 1)
 
 - [ ] 1. Update DynamoDB Schema
-  - [ ] 1.1 Add GSI for invitation lookups
+  - [x] 1.1 Add GSI for invitation lookups
     - Create InvitationByEmail GSI
     - Partition key: invitedEmail
     - Sort key: createdAt
     - Update database-stack.ts
     - _Requirements: FR-1.2, FR-1.4_
 
-  - [ ] 1.2 Update user profile schema
+  - [x] 1.2 Update user profile schema
     - Add familyRole field to user profiles
     - Update auth Lambda to include role in JWT
     - Update Cognito custom attributes if needed

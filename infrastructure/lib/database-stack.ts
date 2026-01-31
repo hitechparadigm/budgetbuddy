@@ -151,6 +151,31 @@ export class DatabaseStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
+    /**
+     * GSI4 - Invitation lookups by email
+     *
+     * Access Patterns:
+     * - Get pending invitations by email address
+     * - Check if user has been invited to a family
+     * - Query invitation status and expiration
+     *
+     * Key Structure:
+     * - GSI4PK: "INVITATION#<invitedEmail>"
+     * - GSI4SK: "CREATED#<timestamp>" or "FAMILY#<familyId>"
+     */
+    this.table.addGlobalSecondaryIndex({
+      indexName: 'GSI4',
+      partitionKey: {
+        name: 'GSI4PK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'GSI4SK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     // Output the table name for reference in other stacks and applications
     new cdk.CfnOutput(this, 'TableName', {
       value: this.table.tableName,
