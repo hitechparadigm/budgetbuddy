@@ -398,12 +398,48 @@ inclusion: always
 - **Backend**: Local Lambda testing with SAM (future)
 - **Database**: DynamoDB Local (future)
 
+**AWS Profile Configuration:**
+
+- **Profile Name**: `hitechparadigm`
+- **Required for**: All AWS CLI commands, CDK deployments, SDK calls
+- **Setup**:
+
+  ```bash
+  # PowerShell
+  $env:AWS_PROFILE="hitechparadigm"
+
+  # Bash/Linux/Mac
+  export AWS_PROFILE=hitechparadigm
+  ```
+
+- **CDK Commands**: Always use `--profile hitechparadigm`
+  ```bash
+  cdk deploy --profile hitechparadigm
+  cdk synth --profile hitechparadigm
+  ```
+
+**AWS Integration Testing:**
+
+- **Purpose**: Verify features work against real AWS services
+- **When**: After deploying Lambda functions, API changes, DynamoDB updates
+- **Cost Limits**:
+  - Single test: < $0.10
+  - Daily: < $1.00
+  - Monthly: < $20.00
+- **Safety Rules**:
+  - Max 10 API calls per test
+  - No infinite loops or recursive processes
+  - Always set Lambda timeouts (max 30s)
+  - Clean up test data immediately
+  - Use dev environment only
+
 **Testing:**
 
 - **Unit**: `npm test`
 - **Integration**: `npm run test:integration`
 - **E2E**: `npm run test:e2e`
 - **Coverage**: `npm run test:coverage`
+- **AWS Integration**: Manual testing against dev environment with cost awareness
 
 **Validation:**
 
