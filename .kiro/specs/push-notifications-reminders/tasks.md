@@ -632,14 +632,14 @@ This implementation plan covers the complete push notification and daily reminde
     - Add to docs/api-endpoints.md
     - _Requirements: All API requirements_
 
-  - [-] 12.3 Create architecture diagrams
+  - [x] 12.3 Create architecture diagrams
     - Diagram showing all Lambda functions
     - Diagram showing event sources
     - Diagram showing data flow
     - Add to design.md
     - _Requirements: All_
 
-  - [ ] 12.4 Update user documentation
+  - [-] 12.4 Update user documentation
     - Add notification settings guide
     - Add troubleshooting guide
     - Add FAQ section
