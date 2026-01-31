@@ -49,7 +49,12 @@ function main() {
   try {
     // Escape double quotes in commit message
     const escapedMessage = message.replace(/"/g, '\\"');
-    execSync(`git commit -m "${escapedMessage}"`, { stdio: "inherit" });
+    // Set environment variable to skip duplicate validation in pre-commit hook
+    process.env.SKIP_PRECOMMIT_VALIDATION = "1";
+    execSync(`git commit -m "${escapedMessage}"`, {
+      stdio: "inherit",
+      env: { ...process.env, SKIP_PRECOMMIT_VALIDATION: "1" },
+    });
     console.log("✅ Commit successful\n");
   } catch (error) {
     console.log("❌ Commit failed\n");

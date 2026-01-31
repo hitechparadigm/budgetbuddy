@@ -1,11 +1,25 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-echo "🔒 BudgetBuddy Pre-Commit Security & Quality Checks"
-echo "=================================================="
+echo "🔒 BudgetBuddy Pre-Commit Hook"
+echo "=============================="
 echo ""
-echo "⚠️  WARNING: Do NOT use --no-verify flag!"
-echo "⚠️  Bypassing these checks violates security policy!"
+echo "ℹ️  This hook is a lightweight safety net."
+echo "ℹ️  Full validation should be run BEFORE committing."
+echo ""
+
+# Check if validation was already run by safe-commit-push.js
+# Look for validation marker in recent output or environment
+if [ -n "$SKIP_PRECOMMIT_VALIDATION" ]; then
+    echo "✅ Validation already completed by safe-commit-push.js"
+    echo "✅ Skipping duplicate checks"
+    echo ""
+    exit 0
+fi
+
+# If user is committing directly (not via safe-commit-push.js), run full validation
+echo "⚠️  Direct commit detected (not using safe-commit-push.js)"
+echo "⚠️  Running full validation as safety check..."
 echo ""
 
 # Track if any check fails
@@ -17,13 +31,11 @@ if ! npm run security:pre-commit; then
     echo ""
     echo "❌ SECURITY CHECK FAILED!"
     echo "🚨 CRITICAL: Security vulnerabilities detected"
-    echo "🚨 You MUST fix these issues before committing"
     echo ""
     echo "📋 To fix:"
     echo "  1. Run: npm audit fix"
-    echo "  2. For breaking changes: npm audit fix --force"
-    echo "  3. Review and test changes"
-    echo "  4. Commit again (without --no-verify)"
+    echo "  2. Review and test changes"
+    echo "  3. Use: node scripts/safe-commit-push.js \"message\""
     echo ""
     CHECKS_FAILED=1
 fi
@@ -34,12 +46,10 @@ echo "2️⃣  Running ESLint..."
 if ! npm run lint:check; then
     echo ""
     echo "❌ LINTING FAILED!"
-    echo "🚨 ESLint errors must be fixed before committing"
     echo ""
     echo "📋 To fix:"
     echo "  1. Run: npm run lint (auto-fix)"
-    echo "  2. Review changes"
-    echo "  3. Commit again"
+    echo "  2. Use: node scripts/safe-commit-push.js \"message\""
     echo ""
     CHECKS_FAILED=1
 fi
@@ -50,7 +60,6 @@ echo "3️⃣  Running TypeScript type check..."
 if ! npm run type-check; then
     echo ""
     echo "❌ TYPE CHECK FAILED!"
-    echo "🚨 TypeScript errors must be fixed before committing"
     echo ""
     CHECKS_FAILED=1
 fi
@@ -58,29 +67,28 @@ fi
 # 4. Documentation validation (MANDATORY)
 echo ""
 echo "4️⃣  Validating documentation updates..."
-echo "📚 MANDATORY: All documentation files MUST be updated!"
 if ! npm run docs:validate; then
     echo ""
     echo "❌ DOCUMENTATION VALIDATION FAILED!"
-    echo "🚨 All mandatory documentation must be updated"
     echo ""
     CHECKS_FAILED=1
 fi
 
 # Final verdict
 echo ""
-echo "=================================================="
+echo "=============================="
 if [ $CHECKS_FAILED -eq 1 ]; then
     echo "❌ PRE-COMMIT CHECKS FAILED"
     echo ""
-    echo "🚫 COMMIT BLOCKED - Fix the issues above and try again"
+    echo "🚫 COMMIT BLOCKED"
     echo ""
-    echo "⚠️  DO NOT use 'git commit --no-verify' to bypass these checks!"
-    echo "⚠️  Bypassing security checks violates project security policy!"
+    echo "💡 TIP: Use 'node scripts/safe-commit-push.js \"message\"' to validate first"
+    echo ""
+    echo "⚠️  DO NOT use 'git commit --no-verify' to bypass!"
     echo ""
     exit 1
 else
     echo "✅ ALL PRE-COMMIT CHECKS PASSED"
-    echo "✅ Commit can proceed safely"
     echo ""
 fi
+
