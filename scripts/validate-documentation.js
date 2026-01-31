@@ -78,15 +78,15 @@ function checkRecentModification(filePath, maxDaysOld) {
 
 function getChangesSinceLastCommit() {
   try {
-    // Get files changed since last commit
-    const changedFiles = execSync("git diff --name-only HEAD~1 HEAD", {
+    // Get files staged for commit (what's about to be committed)
+    const stagedFiles = execSync("git diff --cached --name-only", {
       encoding: "utf8",
     })
       .trim()
       .split("\n")
       .filter((file) => file.length > 0);
 
-    // Get current staged/unstaged changes
+    // Get all current changes (staged + unstaged)
     const currentChanges = execSync("git status --porcelain", {
       encoding: "utf8",
     })
@@ -100,21 +100,34 @@ function getChangesSinceLastCommit() {
       encoding: "utf8",
     });
 
+    // Check if staged files include code files (non-documentation)
+    const codeFilePatterns = /\.(js|ts|tsx|jsx|json|yml|yaml|sh|ps1)$/;
+    const docFilePatterns =
+      /^(README\.md|CHANGELOG\.md|DEVELOPMENT_LOG\.md|docs\/.*\.md)$/;
+
+    const stagedCodeFiles = stagedFiles.filter(
+      (file) => codeFilePatterns.test(file) && !docFilePatterns.test(file),
+    );
+
     return {
-      changedFiles,
+      stagedFiles,
+      stagedCodeFiles,
       currentChanges,
       lastCommitMessage,
-      hasChanges: changedFiles.length > 0 || currentChanges.length > 0,
+      hasChanges: stagedFiles.length > 0 || currentChanges.length > 0,
+      hasCodeChanges: stagedCodeFiles.length > 0,
     };
   } catch (error) {
     console.log(
-      "⚠️  Could not check git changes (not in git repo or no commits)"
+      "⚠️  Could not check git changes (not in git repo or no commits)",
     );
     return {
-      changedFiles: [],
+      stagedFiles: [],
+      stagedCodeFiles: [],
       currentChanges: [],
       lastCommitMessage: "",
       hasChanges: false,
+      hasCodeChanges: false,
     };
   }
 }
@@ -135,7 +148,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
   if (!checkFileExists(filePath)) {
     result.status = "FAIL";
     result.issues.push(
-      `MANDATORY: ${filePath} file is missing and must be created`
+      `MANDATORY: ${filePath} file is missing and must be created`,
     );
     console.log(`   ❌ FAIL: File missing`);
     return result;
@@ -151,10 +164,10 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
   if (!hasRecentModification && !hasCurrentDateContent) {
     result.status = "FAIL";
     result.issues.push(
-      `MANDATORY: ${filePath} must be updated within the last ${maxDaysOld} day(s) OR contain current work from ${today}`
+      `MANDATORY: ${filePath} must be updated within the last ${maxDaysOld} day(s) OR contain current work from ${today}`,
     );
     console.log(
-      `   ❌ FAIL: Not updated within ${maxDaysOld} day(s) and no current date content`
+      `   ❌ FAIL: Not updated within ${maxDaysOld} day(s) and no current date content`,
     );
     return result;
   }
@@ -166,7 +179,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     if (content.length < 1000) {
       result.status = "FAIL";
       result.issues.push(
-        "MANDATORY: README.md must contain substantial content (>1000 characters) with project overview, current status, and features"
+        "MANDATORY: README.md must contain substantial content (>1000 characters) with project overview, current status, and features",
       );
     }
 
@@ -177,7 +190,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     ) {
       result.status = "FAIL";
       result.issues.push(
-        "MANDATORY: README.md must contain a '## Project Status' or '## Current Status' section"
+        "MANDATORY: README.md must contain a '## Project Status' or '## Current Status' section",
       );
     }
 
@@ -187,7 +200,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     if (!hasRecentAchievements) {
       result.status = "FAIL";
       result.issues.push(
-        "MANDATORY: README.md must contain a 'Recent Achievements' section with latest updates"
+        "MANDATORY: README.md must contain a 'Recent Achievements' section with latest updates",
       );
     }
 
@@ -203,7 +216,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     if (!hasCurrentYearWork) {
       result.status = "FAIL";
       result.issues.push(
-        `MANDATORY: README.md must contain recent work completion indicators for ${currentYear} (COMPLETE, ✅, implemented, fixed)`
+        `MANDATORY: README.md must contain recent work completion indicators for ${currentYear} (COMPLETE, ✅, implemented, fixed)`,
       );
     }
   }
@@ -213,7 +226,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     if (!content.startsWith("# Changelog")) {
       result.status = "FAIL";
       result.issues.push(
-        "MANDATORY: CHANGELOG.md must start with '# Changelog' header following established pattern"
+        "MANDATORY: CHANGELOG.md must start with '# Changelog' header following established pattern",
       );
     }
 
@@ -223,7 +236,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     if (!hasVersionEntries) {
       result.status = "FAIL";
       result.issues.push(
-        "MANDATORY: CHANGELOG.md must contain version entries following the pattern '## [X.Y.Z] - YYYY-MM-DD'"
+        "MANDATORY: CHANGELOG.md must contain version entries following the pattern '## [X.Y.Z] - YYYY-MM-DD'",
       );
     }
 
@@ -236,13 +249,13 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
         line.includes("### 🐛") ||
         line.includes("### 🚀") ||
         line.includes("**Technical Details**") ||
-        line.includes("**Impact**")
+        line.includes("**Impact**"),
     );
 
     if (recentSections.length === 0) {
       result.status = "FAIL";
       result.issues.push(
-        "MANDATORY: CHANGELOG.md must contain detailed sections with emojis (🔒🔧🐛🚀) and technical details following established pattern"
+        "MANDATORY: CHANGELOG.md must contain detailed sections with emojis (🔒🔧🐛🚀) and technical details following established pattern",
       );
     }
 
@@ -257,7 +270,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     if (!hasCurrentWork) {
       result.status = "FAIL";
       result.issues.push(
-        `MANDATORY: CHANGELOG.md must contain entries for current work (${currentDate} or ${yesterday}) - ensure recent changes are documented`
+        `MANDATORY: CHANGELOG.md must contain entries for current work (${currentDate} or ${yesterday}) - ensure recent changes are documented`,
       );
     }
   }
@@ -267,7 +280,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     if (!content.startsWith("# Development Log")) {
       result.status = "FAIL";
       result.issues.push(
-        "MANDATORY: DEVELOPMENT_LOG.md must start with '# Development Log' header following established pattern"
+        "MANDATORY: DEVELOPMENT_LOG.md must start with '# Development Log' header following established pattern",
       );
     }
 
@@ -281,7 +294,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     if (!hasSessionSummary) {
       result.status = "FAIL";
       result.issues.push(
-        "MANDATORY: DEVELOPMENT_LOG.md must contain '### Session Summary' sections with Duration, Focus, and Outcome following established pattern"
+        "MANDATORY: DEVELOPMENT_LOG.md must contain '### Session Summary' sections with Duration, Focus, and Outcome following established pattern",
       );
     }
 
@@ -290,7 +303,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     if (!hasDateEntries) {
       result.status = "FAIL";
       result.issues.push(
-        "MANDATORY: DEVELOPMENT_LOG.md must contain entries following the pattern '## YYYY-MM-DD - Session Title'"
+        "MANDATORY: DEVELOPMENT_LOG.md must contain entries following the pattern '## YYYY-MM-DD - Session Title'",
       );
     }
 
@@ -305,7 +318,7 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     if (!hasCurrentSession) {
       result.status = "FAIL";
       result.issues.push(
-        `MANDATORY: DEVELOPMENT_LOG.md must contain session entry for current work (${currentDate} or ${yesterday}) - document today's development session`
+        `MANDATORY: DEVELOPMENT_LOG.md must contain session entry for current work (${currentDate} or ${yesterday}) - document today's development session`,
       );
     }
   }
@@ -320,15 +333,15 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     ];
 
     const missingSections = requiredSections.filter(
-      (section) => !content.includes(section)
+      (section) => !content.includes(section),
     );
 
     if (missingSections.length > 0) {
       result.status = "FAIL";
       result.issues.push(
         `MANDATORY: development-status.md missing required sections: ${missingSections.join(
-          ", "
-        )} - must follow established pattern`
+          ", ",
+        )} - must follow established pattern`,
       );
     }
 
@@ -339,59 +352,64 @@ function validateMandatoryDoc(docConfig, gitChanges = null) {
     ) {
       result.status = "FAIL";
       result.issues.push(
-        "MANDATORY: development-status.md must contain '## What's Working ✅' and '## What's Missing ❌' sections following established pattern"
+        "MANDATORY: development-status.md must contain '## What's Working ✅' and '## What's Missing ❌' sections following established pattern",
       );
     }
   }
 
-  // ENHANCED: Check if current changes/work is documented - STRICT MODE
-  if (
-    gitChanges &&
-    (gitChanges.currentChanges.length > 0 || gitChanges.changedFiles.length > 0)
-  ) {
+  // ENHANCED: Check if current changes/work is documented - SMART MODE
+  if (gitChanges && gitChanges.hasCodeChanges) {
+    // Only require docs if CODE files are being committed
     const today = new Date().toISOString().split("T")[0];
 
-    // STRICT: Check if this file was actually modified in the current commit/staged changes
-    const fileWasModified =
-      gitChanges.currentChanges.includes(filePath) ||
-      gitChanges.changedFiles.includes(filePath);
+    // Check if this doc file is staged for commit
+    const fileIsStaged = gitChanges.stagedFiles.includes(filePath);
 
-    if (!fileWasModified) {
+    if (!fileIsStaged) {
       result.status = "FAIL";
       result.issues.push(
-        `MANDATORY: ${filePath} was NOT updated in this commit but code/files were changed`
+        `MANDATORY: ${filePath} must be staged when committing code changes`,
       );
       result.issues.push(
-        `REQUIRED: Update ${filePath} to document the current changes: ${gitChanges.currentChanges
+        `CODE FILES STAGED: ${gitChanges.stagedCodeFiles
           .slice(0, 3)
-          .join(", ")}${gitChanges.currentChanges.length > 3 ? "..." : ""}`
+          .join(", ")}${gitChanges.stagedCodeFiles.length > 3 ? "..." : ""}`,
       );
 
       // Provide specific guidance for each file type
       if (filePath === "CHANGELOG.md") {
         result.issues.push(
-          `REQUIRED: Add new version entry '## [X.Y.Z] - ${today}' with details of all changes in this commit`
+          `REQUIRED: Add new version entry '## [X.Y.Z] - ${today}' with details of all changes in this commit`,
         );
       }
 
       if (filePath === "DEVELOPMENT_LOG.md") {
         result.issues.push(
-          `REQUIRED: Add session entry '## ${today} - [Session Title] (Session X)' documenting today's work`
+          `REQUIRED: Add session entry '## ${today} - [Session Title] (Session X)' documenting today's work`,
         );
       }
 
       if (filePath === "README.md") {
         result.issues.push(
-          `REQUIRED: Update 'Recent Achievements' section with latest work completed`
+          `REQUIRED: Update 'Recent Achievements' section with latest work completed`,
         );
       }
 
       if (filePath === "docs/development-status.md") {
         result.issues.push(
-          `REQUIRED: Update 'Last Updated' field to ${today} and document progress`
+          `REQUIRED: Update 'Last Updated' field to ${today} and document progress`,
         );
       }
     }
+  } else if (
+    gitChanges &&
+    !gitChanges.hasCodeChanges &&
+    gitChanges.stagedFiles.length > 0
+  ) {
+    // Documentation-only commit - allow it without strict validation
+    console.log(
+      `   ℹ️  Documentation-only commit detected - relaxed validation`,
+    );
   }
 
   if (result.status === "PASS") {
@@ -410,18 +428,21 @@ function runMandatoryValidation() {
   const gitChanges = getChangesSinceLastCommit();
 
   if (gitChanges.hasChanges) {
-    console.log("📝 Changes detected since last commit:");
-    if (gitChanges.changedFiles.length > 0) {
+    console.log("📝 Changes detected:");
+    if (gitChanges.stagedFiles.length > 0) {
       console.log(
-        "   Files changed in last commit:",
-        gitChanges.changedFiles.join(", ")
+        "   Files staged for commit:",
+        gitChanges.stagedFiles.join(", "),
       );
     }
-    if (gitChanges.currentChanges.length > 0) {
+    if (gitChanges.stagedCodeFiles.length > 0) {
       console.log(
-        "   Current uncommitted changes:",
-        gitChanges.currentChanges.join(", ")
+        "   Code files staged:",
+        gitChanges.stagedCodeFiles.join(", "),
       );
+      console.log("   ⚠️  Code changes detected - documentation required!");
+    } else {
+      console.log("   ℹ️  Documentation-only commit - validation relaxed");
     }
     console.log("   Last commit:", gitChanges.lastCommitMessage);
     console.log("");
@@ -451,7 +472,7 @@ function generateMandatoryReport() {
   console.log(`   ✅ Passed: ${validationResults.passed}`);
   console.log(`   ❌ Failed: ${validationResults.failed}`);
   console.log(
-    `   📄 Total: ${validationResults.passed + validationResults.failed}\n`
+    `   📄 Total: ${validationResults.passed + validationResults.failed}\n`,
   );
 
   if (validationResults.failed > 0) {
@@ -471,34 +492,34 @@ function generateMandatoryReport() {
 
     console.log("\n💡 Quick Fix Guide:");
     console.log(
-      "   1. README.md: Update with latest features, current status, and recent achievements"
+      "   1. README.md: Update with latest features, current status, and recent achievements",
     );
     console.log(
-      "   2. CHANGELOG.md: Add entry with format '## [X.Y.Z] - YYYY-MM-DD' and detailed technical sections"
+      "   2. CHANGELOG.md: Add entry with format '## [X.Y.Z] - YYYY-MM-DD' and detailed technical sections",
     );
     console.log(
-      "   3. DEVELOPMENT_LOG.md: Add entry with format '## YYYY-MM-DD - Session Title (Session X)' and session summary"
+      "   3. DEVELOPMENT_LOG.md: Add entry with format '## YYYY-MM-DD - Session Title (Session X)' and session summary",
     );
     console.log(
-      "   4. docs/development-status.md: Update 'Last Updated' field and progress sections"
+      "   4. docs/development-status.md: Update 'Last Updated' field and progress sections",
     );
     console.log("");
     console.log("📋 Follow Established Patterns:");
     console.log(
-      "   • README.md: Include '## Project Status' and 'Recent Achievements' sections"
+      "   • README.md: Include '## Project Status' and 'Recent Achievements' sections",
     );
     console.log(
-      "   • CHANGELOG.md: Use emojis (🔒🔧🐛🚀), technical details, and impact analysis"
+      "   • CHANGELOG.md: Use emojis (🔒🔧🐛🚀), technical details, and impact analysis",
     );
     console.log(
-      "   • DEVELOPMENT_LOG.md: Include session summaries with Duration, Focus, Outcome"
+      "   • DEVELOPMENT_LOG.md: Include session summaries with Duration, Focus, Outcome",
     );
     console.log(
-      "   • development-status.md: Update Last Updated field and maintain What's Working/Missing sections"
+      "   • development-status.md: Update Last Updated field and maintain What's Working/Missing sections",
     );
     console.log("");
     console.log(
-      '   Then run: git add . && git commit -m "docs: update documentation"'
+      '   Then run: git add . && git commit -m "docs: update documentation"',
     );
     console.log("");
 

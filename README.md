@@ -22,6 +22,14 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-31)
 
+- 🔧 **VALIDATION SCRIPT FIX** - Smart detection for code vs docs-only commits
+  - **Fixed**: Validation logic now properly handles docs-only commits
+  - **Issue**: Script was checking wrong baseline (last commit vs staged files)
+  - **Solution**: Implemented smart detection using `git diff --cached`
+  - **Logic**: Only requires docs when CODE files are staged, allows docs-only commits
+  - **Impact**: No more false positives, validation works correctly for all scenarios
+  - **Benefit**: Can commit documentation updates separately without validation errors
+
 - 🔧 **CI/CD WORKFLOW FIX** - Resolved duplicate job definition
   - **Fixed**: Removed duplicate `security-scan` job in `.github/workflows/pr-check.yml`
   - **Issue**: Duplicate job definition at lines 17 and 217 causing workflow failures

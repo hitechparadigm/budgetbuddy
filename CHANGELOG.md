@@ -1,5 +1,53 @@
 # Changelog
 
+## [1.5.3] - 2026-01-31
+
+### 🔧 FIX - Validation Script Smart Detection
+
+- **Fixed Validation Logic** - Resolved false positives for docs-only commits
+  - **File**: `scripts/validate-documentation.js`
+  - **Issue**: Validation was checking wrong baseline (last commit vs staged files)
+  - **Root Cause**: Script compared against `HEAD~1 HEAD` instead of staged files
+  - **Solution**: Implemented smart detection using `git diff --cached --name-only`
+  - **New Logic**:
+    - Detects staged files (what's about to be committed)
+    - Identifies code files vs documentation files
+    - Only requires docs when CODE files are staged
+    - Allows docs-only commits to pass validation
+  - **Result**: No more false positives, validation works correctly for all scenarios
+  - **Impact**: Can commit documentation updates separately without validation errors
+
+### 🔧 TECHNICAL DETAILS
+
+**Before Fix:**
+
+- Checked files in last commit (`git diff --name-only HEAD~1 HEAD`)
+- Failed if docs weren't in the LAST commit
+- Created catch-22: commit code → try to commit docs → fails because docs weren't in code commit
+
+**After Fix:**
+
+- Checks staged files (`git diff --cached --name-only`)
+- Detects code files using pattern: `/\.(js|ts|tsx|jsx|json|yml|yaml|sh|ps1)$/`
+- Excludes doc files from code detection
+- Only enforces doc requirement when code files are staged
+- Allows pure documentation commits
+
+**Test Results:**
+
+- ✅ Docs-only commit: Passes (relaxed mode)
+- ✅ Code + docs commit: Passes (all 4 docs required)
+- ✅ Code without docs: Fails (blocks commit)
+
+### 🔧 IMPACT
+
+- **Developer Experience**: No more confusing validation failures
+- **Workflow Flexibility**: Can commit docs separately from code
+- **Security Maintained**: Still requires docs for all code changes
+- **Logic Correctness**: Validates against correct baseline (staged files)
+
+---
+
 ## [1.5.2] - 2026-01-31
 
 ### 🔧 FIX - CI/CD Workflow Duplicate Job
