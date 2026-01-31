@@ -576,14 +576,14 @@ This implementation plan covers the complete push notification and daily reminde
     - _Requirements: 10.1-10.10_
 
 - [ ] 11. End-to-End Testing
-  - [ ] 11.1 Test complete onboarding flow
+  - [x] 11.1 Test complete onboarding flow
     - Register user
     - Complete onboarding
     - Register device for notifications
     - Verify default preferences created
     - _Requirements: 1.1-1.8, 4.9, 8.10_
 
-  - [ ] 11.2 Test complete budget alert flow
+  - [x] 11.2 Test complete budget alert flow
     - Create budget
     - Add transactions to reach 80% threshold
     - Verify alert received on mobile
