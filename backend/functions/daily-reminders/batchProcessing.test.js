@@ -13,18 +13,21 @@ const fc = require("fast-check");
  */
 async function processBatch(users, batchSize = 10) {
   const processedUsers = [];
+  const batches = [];
 
+  // Split users into batches
   for (let i = 0; i < users.length; i += batchSize) {
-    const batch = users.slice(i, i + batchSize);
+    batches.push(users.slice(i, i + batchSize));
+  }
 
-    // Process batch in parallel
+  // Process each batch
+  for (const batch of batches) {
     const results = await Promise.all(
       batch.map(async (user) => {
         // Simulate processing
         return user.userId;
       }),
     );
-
     processedUsers.push(...results);
   }
 
@@ -32,300 +35,423 @@ async function processBatch(users, batchSize = 10) {
 }
 
 /**
- * Check if all users were processed exactly once
+ * Process users with error handling
+ * Returns { processed, failed }
  */
-function validateProcessing(originalUsers, processedUserIds) {
-  // Check count
-  if (originalUsers.length !== processedUserIds.length) {
-    return false;
+async function processBatchWithErrors(users, batchSize = 10, failureRate = 0) {
+  const processed = [];
+  const failed = [];
+  const batches = [];
+
+  // Split users into batches
+  for (let i = 0; i < users.length; i += batchSize) {
+    batches.push(users.slice(i, i + batchSize));
   }
 
-  // Check each user was processed exactly once
-  const originalIds = originalUsers.map((u) => u.userId).sort();
-  const processedIds = [...processedUserIds].sort();
+  // Process each batch
+  for (const batch of batches) {
+    const results = await Promise.allSettled(
+      batch.map(async (user) => {
+        // Simulate random failures
+        if (Math.random() < failureRate) {
+          throw new Error(`Failed to process user ${user.userId}`);
+        }
+        return user.userId;
+      }),
+    );
 
-  return JSON.stringify(originalIds) === JSON.stringify(processedIds);
-}
+    results.forEach((result, index) => {
+      if (result.status === "fulfilled") {
+        processed.push(result.value);
+      } else {
+        failed.push(batch[index].userId);
+      }
+    });
+  }
 
-/**
- * Generate test users
- */
-function generateUsers(count) {
-  return Array.from({ length: count }, (_, i) => ({
-    userId: `user-${i}`,
-    email: `user${i}@example.com`,
-  }));
+  return { processed, failed };
 }
 
 describe("Property-Based Tests: Batch Processing", () => {
   describe("processBatch", () => {
-    it("should process all users exactly once with batch size 10", async () => {
+    it("should process all users exactly once", async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.integer({ min: 0, max: 100 }), // userCount
-          async (userCount) => {
-            const users = generateUsers(userCount);
-            const processedIds = await processBatch(users, 10);
-            return validateProcessing(users, processedIds);
-          },
-        ),
-        { numRuns: 100 },
-      );
-    });
+          fc.array(
+            fc.record({
+              userId: fc.string({ minLength: 1, maxLength: 50 }),
+              email: fc.emailAddress(),
+            }),
+            { minLength: 0, maxLength: 1000 },
+          ),
+          fc.integer({ min: 1, max: 100 }),
+          async (users, batchSize) => {
+            const processedUserIds = await processBatch(users, batchSize);
 
-    it("should process all users exactly once with varying batch sizes", async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.integer({ min: 0, max: 100 }), // userCount
-          fc.integer({ min: 1, max: 50 }), // batchSize
-          async (userCount, batchSize) => {
-            const users = generateUsers(userCount);
-            const processedIds = await processBatch(users, batchSize);
-            return validateProcessing(users, processedIds);
+            // All users should be processed
+            expect(processedUserIds.length).toBe(users.length);
+
+            // All original user IDs should be in processed list (in same order)
+            const originalUserIds = users.map((u) => u.userId);
+            expect(processedUserIds).toEqual(originalUserIds);
+
+            return true;
           },
         ),
-        { numRuns: 100 },
+        { numRuns: 1000 },
       );
     });
 
     it("should handle empty user list", async () => {
-      const users = [];
-      const processedIds = await processBatch(users, 10);
-      expect(processedIds).toEqual([]);
+      await fc.assert(
+        fc.asyncProperty(
+          fc.integer({ min: 1, max: 100 }),
+          async (batchSize) => {
+            const processedUserIds = await processBatch([], batchSize);
+            return processedUserIds.length === 0;
+          },
+        ),
+        { numRuns: 1000 },
+      );
     });
 
     it("should handle single user", async () => {
-      const users = generateUsers(1);
-      const processedIds = await processBatch(users, 10);
-      expect(validateProcessing(users, processedIds)).toBe(true);
-    });
-
-    it("should handle exactly one batch", async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.integer({ min: 1, max: 10 }), // userCount (1-10)
-          async (userCount) => {
-            const users = generateUsers(userCount);
-            const processedIds = await processBatch(users, 10);
-            return validateProcessing(users, processedIds);
+          fc.record({
+            userId: fc.string({ minLength: 1, maxLength: 50 }),
+            email: fc.emailAddress(),
+          }),
+          fc.integer({ min: 1, max: 100 }),
+          async (user, batchSize) => {
+            const processedUserIds = await processBatch([user], batchSize);
+            return (
+              processedUserIds.length === 1 &&
+              processedUserIds[0] === user.userId
+            );
           },
         ),
-        { numRuns: 100 },
-      );
-    });
-
-    it("should handle exactly multiple full batches", async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.integer({ min: 1, max: 10 }), // batchCount
-          fc.integer({ min: 1, max: 20 }), // batchSize
-          async (batchCount, batchSize) => {
-            const userCount = batchCount * batchSize;
-            const users = generateUsers(userCount);
-            const processedIds = await processBatch(users, batchSize);
-            return validateProcessing(users, processedIds);
-          },
-        ),
-        { numRuns: 100 },
-      );
-    });
-
-    it("should handle partial last batch", async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.integer({ min: 1, max: 10 }), // fullBatches
-          fc.integer({ min: 1, max: 9 }), // remainingUsers
-          fc.integer({ min: 1, max: 20 }), // batchSize
-          async (fullBatches, remainingUsers, batchSize) => {
-            const userCount = fullBatches * batchSize + remainingUsers;
-            const users = generateUsers(userCount);
-            const processedIds = await processBatch(users, batchSize);
-            return validateProcessing(users, processedIds);
-          },
-        ),
-        { numRuns: 100 },
-      );
-    });
-
-    it("should maintain order of processing", async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.integer({ min: 1, max: 50 }), // userCount
-          fc.integer({ min: 1, max: 20 }), // batchSize
-          async (userCount, batchSize) => {
-            const users = generateUsers(userCount);
-            const processedIds = await processBatch(users, batchSize);
-
-            // Check that order is maintained
-            const expectedIds = users.map((u) => u.userId);
-            return JSON.stringify(processedIds) === JSON.stringify(expectedIds);
-          },
-        ),
-        { numRuns: 100 },
+        { numRuns: 1000 },
       );
     });
 
     it("should handle batch size larger than user count", async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.integer({ min: 1, max: 20 }), // userCount
-          fc.integer({ min: 21, max: 100 }), // batchSize (larger than userCount)
-          async (userCount, batchSize) => {
-            const users = generateUsers(userCount);
-            const processedIds = await processBatch(users, batchSize);
-            return validateProcessing(users, processedIds);
+          fc.array(
+            fc.record({
+              userId: fc.string({ minLength: 1, maxLength: 50 }),
+              email: fc.emailAddress(),
+            }),
+            { minLength: 1, maxLength: 50 },
+          ),
+          async (users) => {
+            const batchSize = users.length + 100; // Much larger than user count
+            const processedUserIds = await processBatch(users, batchSize);
+
+            // All users should be processed
+            const originalUserIds = users.map((u) => u.userId);
+            return (
+              processedUserIds.length === users.length &&
+              JSON.stringify(processedUserIds) ===
+                JSON.stringify(originalUserIds)
+            );
           },
         ),
-        { numRuns: 100 },
+        { numRuns: 1000 },
       );
     });
 
     it("should handle batch size of 1", async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.integer({ min: 1, max: 20 }), // userCount
-          async (userCount) => {
-            const users = generateUsers(userCount);
-            const processedIds = await processBatch(users, 1);
-            return validateProcessing(users, processedIds);
-          },
-        ),
-        { numRuns: 100 },
-      );
-    });
+          fc.array(
+            fc.record({
+              userId: fc.string({ minLength: 1, maxLength: 50 }),
+              email: fc.emailAddress(),
+            }),
+            { minLength: 0, maxLength: 100 },
+          ),
+          async (users) => {
+            const processedUserIds = await processBatch(users, 1);
 
-    it("should not duplicate any users", async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.integer({ min: 1, max: 100 }), // userCount
-          fc.integer({ min: 1, max: 20 }), // batchSize
-          async (userCount, batchSize) => {
-            const users = generateUsers(userCount);
-            const processedIds = await processBatch(users, batchSize);
-
-            // Check for duplicates
-            const uniqueIds = new Set(processedIds);
-            return uniqueIds.size === processedIds.length;
-          },
-        ),
-        { numRuns: 100 },
-      );
-    });
-
-    it("should not skip any users", async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.integer({ min: 1, max: 100 }), // userCount
-          fc.integer({ min: 1, max: 20 }), // batchSize
-          async (userCount, batchSize) => {
-            const users = generateUsers(userCount);
-            const processedIds = await processBatch(users, batchSize);
-
-            // Check that all original user IDs are in processed IDs
-            const originalIds = new Set(users.map((u) => u.userId));
-            const processedSet = new Set(processedIds);
-
-            for (const id of originalIds) {
-              if (!processedSet.has(id)) {
-                return false;
-              }
-            }
-
-            return true;
-          },
-        ),
-        { numRuns: 100 },
-      );
-    });
-
-    it("should handle edge case: 1000 users", async () => {
-      const users = generateUsers(1000);
-      const processedIds = await processBatch(users, 10);
-      expect(validateProcessing(users, processedIds)).toBe(true);
-      expect(processedIds.length).toBe(1000);
-    });
-
-    it("should be consistent for the same input", async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.integer({ min: 1, max: 50 }), // userCount
-          fc.integer({ min: 1, max: 20 }), // batchSize
-          async (userCount, batchSize) => {
-            const users = generateUsers(userCount);
-
-            const processedIds1 = await processBatch(users, batchSize);
-            const processedIds2 = await processBatch(users, batchSize);
-
+            // All users should be processed in order
+            const originalUserIds = users.map((u) => u.userId);
             return (
-              JSON.stringify(processedIds1) === JSON.stringify(processedIds2)
+              processedUserIds.length === users.length &&
+              JSON.stringify(processedUserIds) ===
+                JSON.stringify(originalUserIds)
             );
           },
         ),
-        { numRuns: 50 },
+        { numRuns: 1000 },
+      );
+    });
+
+    it("should preserve user order within batches", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.array(
+            fc.record({
+              userId: fc.string({ minLength: 1, maxLength: 50 }),
+              email: fc.emailAddress(),
+            }),
+            { minLength: 1, maxLength: 100 },
+          ),
+          fc.integer({ min: 1, max: 50 }),
+          async (users, batchSize) => {
+            const processedUserIds = await processBatch(users, batchSize);
+            const originalUserIds = users.map((u) => u.userId);
+
+            // Order should be preserved
+            return (
+              JSON.stringify(processedUserIds) ===
+              JSON.stringify(originalUserIds)
+            );
+          },
+        ),
+        { numRuns: 1000 },
+      );
+    });
+
+    it("should handle users with duplicate IDs", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.array(
+            fc.record({
+              userId: fc.constantFrom("user1", "user2", "user3"),
+              email: fc.emailAddress(),
+            }),
+            { minLength: 1, maxLength: 100 },
+          ),
+          fc.integer({ min: 1, max: 50 }),
+          async (users, batchSize) => {
+            const processedUserIds = await processBatch(users, batchSize);
+
+            // All users should be processed (even duplicates)
+            return processedUserIds.length === users.length;
+          },
+        ),
+        { numRuns: 1000 },
       );
     });
   });
 
-  describe("validateProcessing", () => {
-    it("should return true when all users processed exactly once", () => {
-      fc.assert(
-        fc.property(
-          fc.integer({ min: 1, max: 100 }), // userCount
-          (userCount) => {
-            const users = generateUsers(userCount);
-            const processedIds = users.map((u) => u.userId);
-            return validateProcessing(users, processedIds) === true;
+  describe("processBatchWithErrors", () => {
+    it("should process all successful users and track failures", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.array(
+            fc.record({
+              userId: fc.string({ minLength: 1, maxLength: 50 }),
+              email: fc.emailAddress(),
+            }),
+            { minLength: 1, maxLength: 100 },
+          ),
+          fc.integer({ min: 1, max: 50 }),
+          async (users, batchSize) => {
+            const { processed, failed } = await processBatchWithErrors(
+              users,
+              batchSize,
+              0, // No failures
+            );
+
+            // All users should be processed successfully
+            const originalUserIds = users.map((u) => u.userId);
+            return (
+              processed.length === users.length &&
+              failed.length === 0 &&
+              JSON.stringify(processed) === JSON.stringify(originalUserIds)
+            );
           },
         ),
         { numRuns: 1000 },
       );
     });
 
-    it("should return false when user count mismatch", () => {
-      fc.assert(
-        fc.property(
-          fc.integer({ min: 2, max: 100 }), // userCount
-          (userCount) => {
-            const users = generateUsers(userCount);
-            const processedIds = users
-              .slice(0, userCount - 1)
-              .map((u) => u.userId);
-            return validateProcessing(users, processedIds) === false;
+    it("should handle partial failures without stopping batch", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.array(
+            fc.record({
+              userId: fc.string({ minLength: 1, maxLength: 50 }),
+              email: fc.emailAddress(),
+            }),
+            { minLength: 10, maxLength: 100 },
+          ),
+          fc.integer({ min: 1, max: 50 }),
+          async (users, batchSize) => {
+            const { processed, failed } = await processBatchWithErrors(
+              users,
+              batchSize,
+              0.3, // 30% failure rate
+            );
+
+            // All users should be accounted for (either processed or failed)
+            const totalAccounted = processed.length + failed.length;
+            return totalAccounted === users.length;
+          },
+        ),
+        { numRuns: 100 }, // Fewer runs due to randomness
+      );
+    });
+
+    it("should not have duplicate entries in processed or failed", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.array(
+            fc.record({
+              userId: fc.string({ minLength: 1, maxLength: 50 }),
+              email: fc.emailAddress(),
+            }),
+            { minLength: 1, maxLength: 100 },
+          ),
+          fc.integer({ min: 1, max: 50 }),
+          async (users, batchSize) => {
+            const { processed, failed } = await processBatchWithErrors(
+              users,
+              batchSize,
+              0.2, // 20% failure rate
+            );
+
+            // No duplicates in processed
+            const uniqueProcessed = new Set(processed);
+            const noDuplicatesProcessed =
+              uniqueProcessed.size === processed.length;
+
+            // No duplicates in failed
+            const uniqueFailed = new Set(failed);
+            const noDuplicatesFailed = uniqueFailed.size === failed.length;
+
+            // No overlap between processed and failed
+            const noOverlap = processed.every((id) => !failed.includes(id));
+
+            return noDuplicatesProcessed && noDuplicatesFailed && noOverlap;
+          },
+        ),
+        { numRuns: 100 }, // Fewer runs due to randomness
+      );
+    });
+
+    it("should handle all failures gracefully", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.array(
+            fc.record({
+              userId: fc.string({ minLength: 1, maxLength: 50 }),
+              email: fc.emailAddress(),
+            }),
+            { minLength: 1, maxLength: 100 },
+          ),
+          fc.integer({ min: 1, max: 50 }),
+          async (users, batchSize) => {
+            const { processed, failed } = await processBatchWithErrors(
+              users,
+              batchSize,
+              1.0, // 100% failure rate
+            );
+
+            // All users should fail
+            return processed.length === 0 && failed.length === users.length;
+          },
+        ),
+        { numRuns: 1000 },
+      );
+    });
+  });
+
+  describe("Batch Size Edge Cases", () => {
+    it("should handle various batch sizes correctly", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.integer({ min: 0, max: 1000 }), // userCount
+          fc.integer({ min: 1, max: 100 }), // batchSize
+          async (userCount, batchSize) => {
+            const users = Array.from({ length: userCount }, (_, i) => ({
+              userId: `user${i}`,
+              email: `user${i}@example.com`,
+            }));
+
+            const processedUserIds = await processBatch(users, batchSize);
+
+            // Calculate expected number of batches
+            const expectedBatches = Math.ceil(userCount / batchSize);
+
+            // All users should be processed
+            return (
+              processedUserIds.length === userCount &&
+              new Set(processedUserIds).size === userCount
+            );
           },
         ),
         { numRuns: 1000 },
       );
     });
 
-    it("should return false when there are duplicates", () => {
-      fc.assert(
-        fc.property(
-          fc.integer({ min: 2, max: 100 }), // userCount
-          (userCount) => {
-            const users = generateUsers(userCount);
-            const processedIds = users.map((u) => u.userId);
-            processedIds[0] = processedIds[1]; // Create duplicate
-            return validateProcessing(users, processedIds) === false;
+    it("should handle exact multiples of batch size", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.integer({ min: 1, max: 100 }), // batchSize
+          fc.integer({ min: 1, max: 10 }), // multiplier
+          async (batchSize, multiplier) => {
+            const userCount = batchSize * multiplier;
+            const users = Array.from({ length: userCount }, (_, i) => ({
+              userId: `user${i}`,
+              email: `user${i}@example.com`,
+            }));
+
+            const processedUserIds = await processBatch(users, batchSize);
+
+            return (
+              processedUserIds.length === userCount &&
+              new Set(processedUserIds).size === userCount
+            );
           },
         ),
         { numRuns: 1000 },
       );
     });
 
-    it("should return true for empty lists", () => {
-      const result = validateProcessing([], []);
-      expect(result).toBe(true);
+    it("should handle one less than batch size", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.integer({ min: 2, max: 100 }), // batchSize
+          async (batchSize) => {
+            const userCount = batchSize - 1;
+            const users = Array.from({ length: userCount }, (_, i) => ({
+              userId: `user${i}`,
+              email: `user${i}@example.com`,
+            }));
+
+            const processedUserIds = await processBatch(users, batchSize);
+
+            return (
+              processedUserIds.length === userCount &&
+              new Set(processedUserIds).size === userCount
+            );
+          },
+        ),
+        { numRuns: 1000 },
+      );
     });
 
-    it("should handle order independence", () => {
-      fc.assert(
-        fc.property(
-          fc.integer({ min: 2, max: 50 }), // userCount
-          (userCount) => {
-            const users = generateUsers(userCount);
-            const processedIds = users.map((u) => u.userId).reverse();
-            // Should still be valid even if order is different
-            return validateProcessing(users, processedIds) === true;
+    it("should handle one more than batch size", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.integer({ min: 1, max: 100 }), // batchSize
+          async (batchSize) => {
+            const userCount = batchSize + 1;
+            const users = Array.from({ length: userCount }, (_, i) => ({
+              userId: `user${i}`,
+              email: `user${i}@example.com`,
+            }));
+
+            const processedUserIds = await processBatch(users, batchSize);
+
+            return (
+              processedUserIds.length === userCount &&
+              new Set(processedUserIds).size === userCount
+            );
           },
         ),
         { numRuns: 1000 },
@@ -336,6 +462,5 @@ describe("Property-Based Tests: Batch Processing", () => {
 
 module.exports = {
   processBatch,
-  validateProcessing,
-  generateUsers,
+  processBatchWithErrors,
 };
