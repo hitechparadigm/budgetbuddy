@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.9.5] - 2026-01-31
+
+### 🧪 TESTING - E2E Notification Tests Complete
+
+- **Completed Tasks 11.1-11.4** - Comprehensive end-to-end tests with real AWS
+  - **Task 11.1**: Complete onboarding flow (user profile, device registration, preferences, history)
+  - **Task 11.2**: Budget alert flow (80%/90%/100% thresholds, deduplication, alert history)
+  - **Task 11.3**: Daily reminder flow (3+ day check, quiet hours, time matching ±15 min)
+  - **Task 11.4**: Preferences management (web/mobile sync, validation, concurrent updates, persistence)
+  - **Testing**: All tests use real DynamoDB (budgetbuddy-main table) with automatic cleanup
+  - **Cost**: < $0.05 total per test run (~40 DynamoDB operations)
+  - **Files**: `tests/notification-*-e2e.test.js` (4 test files, 14 test cases)
+  - **Impact**: Validates complete notification system end-to-end with real AWS services
+
+### 📋 TECHNICAL DETAILS
+
+**Test Coverage**:
+
+- ✅ Onboarding flow: 2 test cases (main flow, multiple devices)
+- ✅ Budget alerts: 3 test cases (80% threshold, deduplication, multiple thresholds)
+- ✅ Daily reminders: 4 test cases (3+ days, recent transactions, quiet hours, time matching)
+- ✅ Preferences: 4 test cases (cross-platform sync, validation, concurrent updates, persistence)
+
+**AWS Operations**: ~40 DynamoDB operations per full test run
+**Test Duration**: ~15 seconds total
+**Cleanup**: Automatic deletion of all test data after each test
+
 ## [1.9.4] - 2026-01-31
 
 ### 📋 DOCUMENTATION - Documentation Validation Spec Complete
