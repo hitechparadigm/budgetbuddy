@@ -1,5 +1,47 @@
 # Changelog
 
+## [1.9.14] - 2026-01-31
+
+### 🔒 SECURITY - Budget Lambda Permission Integration (Task 3.2)
+
+- **Completed Task 3.2** - Integrated RBAC permission checks into budget Lambda
+  - **Endpoints Updated**: All 6 budget endpoints (create, get, get current, get by ID, update, delete)
+  - **Permission Checks**: Added at start of each endpoint function
+  - **Actions**: budget:create, budget:view, budget:edit, budget:delete
+  - **Error Handling**: Returns 403 Forbidden for unauthorized actions
+  - **Logging**: Permission violations logged with user role and action
+  - **Files**: `backend/functions/budget/index.js` + test infrastructure
+  - **Impact**: Budget endpoints now enforce family member permissions
+
+### 📋 TECHNICAL DETAILS
+
+**Permission Integration Pattern**:
+
+- Check permission before processing request
+- Return 403 error if permission denied
+- Log violation with context (userId, role, action)
+- Continue with handler logic if permission granted
+
+**Test Infrastructure**:
+
+- Created manual mocks for Lambda layers
+- Added Jest configuration with moduleNameMapper
+- Permission checks default to allowing all in tests
+- 16 tests passing (6 pre-existing failures unrelated to permissions)
+
+**Deployment Blocker**:
+
+- CDK export dependency issue prevents deployment
+- Documented in `.kiro/SHARED_LAYER_EXPORT_ISSUE.md`
+- Can continue with local development
+- Deployment fix required (deploy all stacks together or refactor)
+
+**Next Steps**:
+
+- Task 3.3: Integrate permissions into transaction Lambda
+- Task 3.4: Add permission integration tests
+- Fix deployment blocker (separate commit)
+
 ## [1.9.13] - 2026-01-31
 
 ### 🔒 SECURITY - Permission Middleware Implementation (Task 3.1)

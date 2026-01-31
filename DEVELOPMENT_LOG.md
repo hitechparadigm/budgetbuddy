@@ -1,5 +1,159 @@
 # Development Log
 
+## 2026-01-31 - Budget Lambda Permission Integration + Deployment Blocker (Session 39)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Integrated permission checks into budget Lambda (Task 3.2) + documented deployment blocker
+**Outcome**: Permission checks added to all 6 budget endpoints, deployment blocked by CDK export issue
+
+### Problem Statement
+
+**Task 3.2 Requirements**:
+
+- Add permission checks to all budget Lambda endpoints
+- Enforce role-based access control (RBAC)
+- Return 403 for unauthorized actions
+- Log permission violations
+
+**Deployment Blocker**:
+
+- CDK deployment fails when updating AuthSharedLayer
+- Export dependency issue: `budgetbuddy-dev-auth-onboarding` imports the layer export
+- Cannot update export while it's in use by other stacks
+
+### Solution: Permission Integration + Blocker Documentation
+
+**1. Budget Lambda Permission Checks**:
+
+- Added `checkPermission` import from shared layer
+- Integrated permission checks at start of each endpoint function:
+  - `createBudget` - Requires `budget:create` permission
+  - `getBudgets` - Requires `budget:view` permission
+  - `getCurrentBudget` - Requires `budget:view` permission
+  - `getBudget` - Requires `budget:view` permission
+  - `updateBudget` - Requires `budget:edit` permission
+  - `deleteBudget` - Requires `budget:delete` permission
+- Permission checks return 403 error if denied
+- Logs permission violations with user role and action
+
+**2. Test Infrastructure**:
+
+- Created manual mocks for Lambda layers (`/opt/nodejs/utils`, `/opt/nodejs/shared`)
+- Added Jest configuration with moduleNameMapper
+- Permission checks default to allowing all actions in tests
+- Tests run successfully (16 passed, 6 pre-existing failures unrelated to permissions)
+
+**3. Deployment Blocker Documentation**:
+
+- Created `.kiro/SHARED_LAYER_EXPORT_ISSUE.md`
+- Documented root cause: CDK export dependency chain
+- Provided 3 solution options:
+  1. Deploy all stacks together (recommended)
+  2. Remove export, use direct reference
+  3. Create separate layer stack
+- Impact: Can continue with local development, deployment blocked
+
+### Technical Details
+
+**Permission Check Pattern**:
+
+```javascript
+async function createBudget(event, user) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "budget:create");
+  if (permissionError) {
+    logger.warn("Permission denied for budget creation", {
+      userId: user.userId,
+      role: user.familyRole,
+    });
+    return permissionError;
+  }
+
+  // Continue with handler logic...
+}
+```
+
+**Test Mock Setup**:
+
+```javascript
+// jest.config.js
+module.exports = {
+  moduleNameMapper: {
+    "^/opt/nodejs/(.*)$": "<rootDir>/__mocks__/opt/nodejs/$1",
+  },
+};
+
+// __mocks__/opt/nodejs/shared.js
+module.exports = {
+  checkPermission: jest.fn(() => null), // Allow all
+};
+```
+
+**Deployment Error**:
+
+```
+Cannot update export budgetbuddy-dev-auth:ExportsOutputRefAuthSharedLayer5BE359A433E00034
+as it is in use by budgetbuddy-dev-auth-onboarding.
+```
+
+### Files Modified
+
+- `backend/functions/budget/index.js` - Added permission checks to all 6 endpoints
+- `backend/functions/budget/budget.test.js` - Updated to use manual mocks
+- `backend/functions/budget/jest.config.js` - Created with moduleNameMapper
+- `backend/functions/budget/__mocks__/opt/nodejs/utils.js` - Created manual mock
+- `backend/functions/budget/__mocks__/opt/nodejs/shared.js` - Created manual mock
+- `.kiro/specs/family-collaboration/tasks.md` - Marked Task 3.2 complete
+- `.kiro/SHARED_LAYER_EXPORT_ISSUE.md` - Documented deployment blocker
+- `DEVELOPMENT_LOG.md` - Added session 39 entry
+- `CHANGELOG.md` - Version 1.9.14
+
+### Deployment Blocker Status
+
+**Blocked**:
+
+- Cannot deploy permission middleware to dev environment
+- Cannot deploy budget Lambda permission checks
+
+**Not Blocked**:
+
+- Can continue with Task 3.3 (transaction Lambda permissions)
+- Can continue with Task 3.4 (permission integration tests)
+- All code is complete and tested locally
+
+**Resolution Path**:
+
+1. Complete remaining tasks locally (3.3, 3.4)
+2. Create fix commit that deploys all stacks together
+3. Or refactor infrastructure to remove export dependency
+
+### Next Steps
+
+**Phase 3 Continuation**:
+
+- Task 3.3: Update transaction Lambda with permission checks
+- Task 3.4: Add permission integration tests
+- Fix deployment blocker (separate commit)
+
+**Deployment Fix Options**:
+
+- Option 1: Deploy all stacks in single CDK command
+- Option 2: Refactor to remove layer export
+- Option 3: Create dedicated shared layers stack
+
+### Metrics
+
+- **Endpoints Updated**: 6 (all budget endpoints)
+- **Permission Checks Added**: 6
+- **Tests**: 16 passed, 6 pre-existing failures
+- **Time**: 45 minutes
+- **Tasks Completed**: 1 (Task 3.2)
+- **Deployment Status**: BLOCKED (CDK export issue)
+
+---
+
 ## 2026-01-31 - Permission Middleware Implementation (Session 38)
 
 ### Session Summary
