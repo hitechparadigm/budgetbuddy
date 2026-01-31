@@ -43,6 +43,12 @@ export declare class ApiStack extends cdk.Stack {
         [key: string]: lambda.Function;
     };
     /**
+     * Lambda layers for shared code
+     * Exposed for use in other stacks (e.g., notification stack)
+     */
+    readonly commonLayer: lambda.LayerVersion;
+    readonly sharedLayer: lambda.LayerVersion;
+    /**
      * Auth Onboarding Lambda Function (optional)
      * Part of architectural refactoring - standalone function for onboarding
      */
@@ -53,6 +59,11 @@ export declare class ApiStack extends cdk.Stack {
      * Reduces deployment package sizes and improves cold start times
      */
     private createCommonLayer;
+    /**
+     * Create a Lambda layer with shared utilities (CORS, validation, etc.)
+     * Provides reusable code across all Lambda functions
+     */
+    private createSharedLayer;
     /**
      * Create all Lambda functions for the application
      * Each function handles a specific business domain
