@@ -144,8 +144,8 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
 
 ### Phase 5: Settings Page Integration
 
-- [ ] 7. Add Currency Management to Settings
-  - [ ] 7.1 Update SettingsPage component
+- [x] 7. Add Currency Management to Settings
+  - [x] 7.1 Update SettingsPage component
     - Add "Currency Settings" section
     - Show current currency with symbol and code
     - Add CurrencySelector for changing currency
@@ -154,13 +154,13 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
     - Update user profile on currency change
     - _Requirements: 2.1-2.6_
 
-  - [ ] 7.2 Create currency change confirmation dialog
+  - [x] 7.2 Create currency change confirmation dialog
     - Show warning message
     - Confirm/Cancel buttons
     - Accessible keyboard navigation
     - _Requirements: 2.4, 2.5_
 
-  - [ ] 7.3 Update settings page tests
+  - [x] 7.3 Update settings page tests
     - Test currency display
     - Test currency change
     - Test confirmation dialog

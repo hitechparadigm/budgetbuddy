@@ -11,6 +11,8 @@ import {
   formatDateInTimezone,
 } from "../utils/timezoneHelpers";
 import TokenDiagnostics from "../components/TokenDiagnostics";
+import { CurrencySelector } from "../components/CurrencySelector";
+import { getCurrencyConfig } from "@budget-buddy/shared/src/utils/currency";
 
 interface LocationForm {
   country: string;
@@ -21,6 +23,9 @@ interface LocationForm {
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const [timezone, setTimezone] = useState<string>("");
+  const [currency, setCurrency] = useState<string>("USD");
+  const [showCurrencyConfirm, setShowCurrencyConfirm] = useState(false);
+  const [pendingCurrency, setPendingCurrency] = useState<string>("");
   const [locationForm, setLocationForm] = useState<LocationForm>({
     country: "",
     city: "",
@@ -40,8 +45,11 @@ export const SettingsPage: React.FC = () => {
     const detectedTimezone = detectUserTimezone();
     setTimezone(detectedTimezone);
 
-    // TODO: Load user profile from API to get saved location
-    // For now, just use detected timezone
+    // TODO: Load user profile from API to get saved location and currency
+    // For now, just use detected timezone and default USD
+    // In a real implementation:
+    // const profile = await apiClient.getUserProfile();
+    // setCurrency(profile.currency || "USD");
   }, []);
 
   const getCurrentLocalTime = () => {
@@ -97,6 +105,44 @@ export const SettingsPage: React.FC = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCurrencyChange = (newCurrency: string) => {
+    if (newCurrency === currency) return;
+
+    // Show confirmation dialog
+    setPendingCurrency(newCurrency);
+    setShowCurrencyConfirm(true);
+  };
+
+  const confirmCurrencyChange = async () => {
+    setSaving(true);
+    setMessage(null);
+    setShowCurrencyConfirm(false);
+
+    try {
+      // TODO: Save to backend API
+      // await apiClient.updateUserProfile({ currency: pendingCurrency });
+
+      setCurrency(pendingCurrency);
+      setMessage({
+        type: "success",
+        text: `Currency updated to ${getCurrencyConfig(pendingCurrency).name}. New budgets and transactions will use this currency.`,
+      });
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text: "Failed to update currency. Please try again.",
+      });
+    } finally {
+      setSaving(false);
+      setPendingCurrency("");
+    }
+  };
+
+  const cancelCurrencyChange = () => {
+    setShowCurrencyConfirm(false);
+    setPendingCurrency("");
   };
 
   const handleBackupData = async () => {
@@ -374,6 +420,68 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Currency Settings Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Currency Settings
+          </h2>
+
+          {/* Current Currency Display */}
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <div className="text-green-600 text-2xl">💱</div>
+              <div className="flex-1">
+                <div className="font-medium text-gray-900 mb-1">
+                  Current Currency
+                </div>
+                <div className="text-sm text-gray-600">
+                  {getCurrencyConfig(currency).symbol} {currency} -{" "}
+                  {getCurrencyConfig(currency).name}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Currency Selector */}
+          <div className="mb-4">
+            <CurrencySelector
+              value={currency}
+              onChange={handleCurrencyChange}
+              disabled={saving}
+              label="Change Currency"
+              showFullName={true}
+            />
+          </div>
+
+          {/* Warning Note */}
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start space-x-2">
+              <svg
+                className="w-5 h-5 text-yellow-600 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-yellow-800">Important</p>
+                <p className="text-xs text-yellow-700 mt-1">
+                  Changing your currency will not convert existing budget
+                  amounts or transactions. Only new budgets and transactions
+                  will use the new currency. Existing data will remain in their
+                  original currency.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Profile Section (Placeholder) */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile</h2>
@@ -586,6 +694,46 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Currency Change Confirmation Dialog */}
+      {showCurrencyConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              Confirm Currency Change
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to change your currency from{" "}
+              <strong>{getCurrencyConfig(currency).name}</strong> to{" "}
+              <strong>{getCurrencyConfig(pendingCurrency).name}</strong>?
+            </p>
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-6">
+              <p className="text-sm text-yellow-800">
+                <strong>Warning:</strong> Existing budgets and transactions will
+                not be converted. They will remain in their original currency.
+                Only new budgets and transactions will use{" "}
+                {getCurrencyConfig(pendingCurrency).name}.
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={cancelCurrencyChange}
+                disabled={saving}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmCurrencyChange}
+                disabled={saving}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? "Updating..." : "Confirm Change"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Token Diagnostics Modal */}
       {showTokenDiagnostics && (
