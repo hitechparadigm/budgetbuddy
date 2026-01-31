@@ -53,7 +53,7 @@ inclusion: always
 
 **Code**: Written, tests passing (> 80%), linting/type-checking pass, security check pass
 **Infrastructure**: CDK stack created, IAM least privilege, alarms configured, README updated, synth/deploy pass
-**Documentation**: README.md, CHANGELOG.md, DEVELOPMENT_LOG.md, docs/development-status.md updated
+**Documentation**: See `.kiro/steering/00-global.md` for mandatory documentation requirements
 **Deployment**: Validation pass, safe-commit used, CI/CD pass, health checks pass
 
 ## Architectural Boundaries

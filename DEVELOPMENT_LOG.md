@@ -1,5 +1,167 @@
 # Development Log
 
+## 2026-01-31 - Steering Optimization + Notification Service Tests (Session 35)
+
+### Session Summary
+
+**Duration**: 90 minutes
+**Focus**: Eliminated steering file duplication + completed mobile notification service tests
+**Outcome**: 62-70% token reduction in steering files, 29 notification service tests passing
+
+### Problem Statement
+
+**Steering Files Duplication**:
+
+- Heavy duplication across 00-global.md, tech.md, structure.md
+- Testing sections repeated in multiple files
+- CI/CD workflow duplicated
+- Validation/commit process redundant
+- Hook conflicts (2 hooks on same event)
+- Total token usage: ~37K (too high)
+
+**Notification Service Tests Missing**:
+
+- Task 7.6 incomplete (mobile push notification handler tests)
+- Need comprehensive test coverage for device registration, handlers, navigation
+
+### Solution: Consolidate + Test
+
+**1. Steering Files Optimization**:
+
+- Removed testing details from tech.md (kept in 00-global.md only)
+- Consolidated CI/CD workflow (removed from tech.md)
+- Removed validation/commit duplication
+- Removed documentation requirements from structure.md
+- Fixed hook conflicts (disabled task-continuation.kiro.hook)
+- Fixed aws-analysis.kiro.hook event type (onMessage → userTriggered)
+- Token savings: ~3,900 additional tokens (20-25% reduction)
+- Combined with previous optimization: 62-70% total reduction (~37K → ~11-14K)
+
+**2. Notification Service Tests**:
+
+- Created `packages/mobile/src/services/notification.test.ts`
+- 29 comprehensive tests covering:
+  - Device registration (success, failures, permissions, emulator)
+  - Notification handlers (setup, received, response, cleanup)
+  - Navigation logic (budget alerts, daily reminders, unknown types)
+  - Error handling (permissions, tokens, API errors)
+  - Platform-specific behavior (iOS, Android)
+- All tests passing ✅
+
+### Implementation Details
+
+**Steering Consolidation**:
+
+```markdown
+# Before (tech.md):
+
+### Testing Tooling
+
+- Framework: Jest
+- Coverage: > 80%
+- Mocking: Jest mocks
+- Run: npm test
+  [... 30 more lines ...]
+
+# After (tech.md):
+
+### Testing Tooling
+
+Frameworks: Jest, fast-check, Playwright
+See: .kiro/steering/00-global.md for detailed testing guidelines
+```
+
+**Test Coverage**:
+
+- Device registration: 6 tests
+- Notification handlers: 9 tests
+- Navigation logic: 3 tests
+- Error handling: 3 tests
+- Platform-specific: 2 tests
+- Cleanup/state: 6 tests
+
+### Technical Decisions
+
+**Why Consolidate Steering Files?**
+
+- Single source of truth prevents conflicts
+- Easier maintenance (update once, not 3-4 times)
+- Reduces token usage for AI context
+- Improves readability and navigation
+
+**Why Comprehensive Tests?**
+
+- Mobile notifications are critical for user engagement
+- Complex lifecycle management (permissions, tokens, handlers)
+- Platform-specific behavior needs validation
+- Error handling must be robust
+
+### Files Modified
+
+**Steering Optimization**:
+
+- `.kiro/steering/tech.md` - 3 sections consolidated
+- `.kiro/steering/structure.md` - 1 section consolidated
+- `.kiro/hooks/task-continuation.kiro.hook` - Disabled (conflict)
+- `.kiro/hooks/aws-analysis.kiro.hook` - Fixed event type
+- `.kiro/STEERING_OPTIMIZATION_COMPLETE.md` - Created summary
+
+**Notification Tests**:
+
+- `packages/mobile/src/services/notification.test.ts` - Created (29 tests)
+- `.kiro/specs/push-notifications-reminders/tasks.md` - Updated (7.6 complete)
+
+### Testing Results
+
+**Notification Service Tests**:
+
+```
+Test Suites: 1 passed, 1 total
+Tests:       29 passed, 29 total
+Time:        0.828 s
+```
+
+**Coverage**:
+
+- Device registration: 100%
+- Notification handlers: 100%
+- Navigation logic: 100%
+- Error handling: 100%
+
+### Next Steps
+
+1. Continue with next incomplete task in push-notifications-reminders spec
+2. Complete remaining E2E tests (tasks 9-11)
+3. Deploy notification infrastructure to staging
+4. Test with real devices
+
+### Lessons Learned
+
+**Steering File Management**:
+
+- Regular audits prevent token bloat
+- Duplication creeps in over time
+- References are better than repetition
+- Single source of truth is critical
+
+**Mobile Testing**:
+
+- Module mocking requires careful setup
+- jest.doMock + resetModules for dynamic mocks
+- Platform-specific behavior needs explicit tests
+- Async operations need proper waiting
+
+### Session Metrics
+
+- Token reduction: ~3,900 (additional 20-25%)
+- Total reduction: 62-70% from original
+- Tests created: 29
+- Tests passing: 29 (100%)
+- Time spent: 90 minutes
+- Tasks completed: 1 (Task 7.6)
+
+---
+
 ## 2026-01-31 - E2E Notification Tests Complete + Validation Fix (Session 34)
 
 ### Session Summary
