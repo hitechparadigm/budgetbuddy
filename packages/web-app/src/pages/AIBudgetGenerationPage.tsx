@@ -5,8 +5,9 @@
  * and allows users to accept, customize, or regenerate
  */
 
-import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
 interface BudgetCategory {
   id: string;
@@ -20,6 +21,7 @@ interface GeneratedBudget {
   monthlyIncome: number;
   totalAllocated: number;
   remaining: number;
+  currency?: string;
   income: BudgetCategory[];
   savings: BudgetCategory[];
   expenses: BudgetCategory[];
@@ -45,7 +47,7 @@ export const AIBudgetGenerationPage: React.FC = () => {
 
     // Simulate AI budget generation based on onboarding data
     // In production, this would call AWS Bedrock API
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
     // Mock AI-generated budget based on user responses
     const mockBudget: GeneratedBudget = {
@@ -57,23 +59,29 @@ export const AIBudgetGenerationPage: React.FC = () => {
 
       income: [
         {
-          id: 'salary',
-          name: 'Salary',
-          icon: '💰',
+          id: "salary",
+          name: "Salary",
+          icon: "💰",
           plannedAmount: getIncomeEstimate(onboardingData?.monthlyIncome),
-          description: 'Primary employment income'
-        }
+          description: "Primary employment income",
+        },
       ],
 
       savings: generateSavingsCategories(onboardingData),
       expenses: generateExpenseCategories(onboardingData),
 
-      aiInsights: generateAIInsights(onboardingData)
+      aiInsights: generateAIInsights(onboardingData),
     };
 
     // Calculate totals
-    const totalSavings = mockBudget.savings.reduce((sum, cat) => sum + cat.plannedAmount, 0);
-    const totalExpenses = mockBudget.expenses.reduce((sum, cat) => sum + cat.plannedAmount, 0);
+    const totalSavings = mockBudget.savings.reduce(
+      (sum, cat) => sum + cat.plannedAmount,
+      0,
+    );
+    const totalExpenses = mockBudget.expenses.reduce(
+      (sum, cat) => sum + cat.plannedAmount,
+      0,
+    );
     mockBudget.totalAllocated = totalSavings + totalExpenses;
     mockBudget.remaining = mockBudget.monthlyIncome - mockBudget.totalAllocated;
 
@@ -83,12 +91,18 @@ export const AIBudgetGenerationPage: React.FC = () => {
 
   const getIncomeEstimate = (incomeRange: string | undefined): number => {
     switch (incomeRange) {
-      case 'under-2k': return 1800;
-      case '2k-3k': return 2500;
-      case '3k-5k': return 4000;
-      case '5k-8k': return 6500;
-      case 'over-8k': return 9000;
-      default: return 4000;
+      case "under-2k":
+        return 1800;
+      case "2k-3k":
+        return 2500;
+      case "3k-5k":
+        return 4000;
+      case "5k-8k":
+        return 6500;
+      case "over-8k":
+        return 9000;
+      default:
+        return 4000;
     }
   };
 
@@ -98,37 +112,37 @@ export const AIBudgetGenerationPage: React.FC = () => {
 
     // Emergency fund (always recommended)
     categories.push({
-      id: 'emergency-fund',
-      name: 'Emergency Fund',
-      icon: '🛡️',
+      id: "emergency-fund",
+      name: "Emergency Fund",
+      icon: "🛡️",
       plannedAmount: Math.round(income * 0.1), // 10% of income
-      description: 'Build 3-6 months of expenses'
+      description: "Build 3-6 months of expenses",
     });
 
     // Goal-based savings
-    if (data?.mainGoal === 'retirement') {
+    if (data?.mainGoal === "retirement") {
       categories.push({
-        id: 'retirement',
-        name: 'RRSP/401k',
-        icon: '🏖️',
+        id: "retirement",
+        name: "RRSP/401k",
+        icon: "🏖️",
         plannedAmount: Math.round(income * 0.15), // 15% for retirement focus
-        description: 'Long-term retirement savings'
+        description: "Long-term retirement savings",
       });
-    } else if (data?.mainGoal === 'save-house') {
+    } else if (data?.mainGoal === "save-house") {
       categories.push({
-        id: 'house-fund',
-        name: 'House Fund',
-        icon: '🏠',
+        id: "house-fund",
+        name: "House Fund",
+        icon: "🏠",
         plannedAmount: Math.round(income * 0.2), // 20% for house savings
-        description: 'Down payment and closing costs'
+        description: "Down payment and closing costs",
       });
     } else {
       categories.push({
-        id: 'retirement',
-        name: 'RRSP/401k',
-        icon: '🏖️',
+        id: "retirement",
+        name: "RRSP/401k",
+        icon: "🏖️",
         plannedAmount: Math.round(income * 0.1), // 10% baseline
-        description: 'Retirement savings'
+        description: "Retirement savings",
       });
     }
 
@@ -143,9 +157,9 @@ export const AIBudgetGenerationPage: React.FC = () => {
 
     // Realistic Toronto Housing Costs
     let housingAmount: number;
-    if (data?.housingStatus === 'live-with-family') {
+    if (data?.housingStatus === "live-with-family") {
       housingAmount = Math.min(income * 0.15, 800); // Contribution to family
-    } else if (data?.housingStatus === 'rent') {
+    } else if (data?.housingStatus === "rent") {
       // Toronto rental costs based on household size
       if (householdSize <= 2) {
         housingAmount = Math.max(1800, income * 0.35); // 1BR/2BR minimum $1800
@@ -166,11 +180,14 @@ export const AIBudgetGenerationPage: React.FC = () => {
     }
 
     categories.push({
-      id: 'housing',
-      name: data?.housingStatus === 'rent' ? 'Rent' : 'Housing',
-      icon: '🏠',
+      id: "housing",
+      name: data?.housingStatus === "rent" ? "Rent" : "Housing",
+      icon: "🏠",
       plannedAmount: Math.round(housingAmount),
-      description: data?.housingStatus === 'rent' ? 'Monthly rent payment (Toronto rates)' : 'Mortgage/housing costs'
+      description:
+        data?.housingStatus === "rent"
+          ? "Monthly rent payment (Toronto rates)"
+          : "Mortgage/housing costs",
     });
 
     // Realistic Toronto Grocery Costs
@@ -188,11 +205,11 @@ export const AIBudgetGenerationPage: React.FC = () => {
     }
 
     categories.push({
-      id: 'groceries',
-      name: 'Groceries',
-      icon: '🛒',
+      id: "groceries",
+      name: "Groceries",
+      icon: "🛒",
       plannedAmount: groceryAmount,
-      description: `Food for ${householdSize} ${householdSize === 1 ? 'person' : 'people'} (Toronto prices)`
+      description: `Food for ${householdSize} ${householdSize === 1 ? "person" : "people"} (Toronto prices)`,
     });
 
     // Transportation (handles multiple methods)
@@ -203,25 +220,25 @@ export const AIBudgetGenerationPage: React.FC = () => {
     // Calculate costs for each transportation method
     transportationMethods.forEach((method: string) => {
       switch (method) {
-        case 'car-owned':
+        case "car-owned":
           totalTransportAmount += 250; // Gas, insurance, maintenance
-          transportCategories.push('owned car');
+          transportCategories.push("owned car");
           break;
-        case 'car-payment':
+        case "car-payment":
           totalTransportAmount += 400; // Payment + gas + insurance
-          transportCategories.push('car payment');
+          transportCategories.push("car payment");
           break;
-        case 'public-transit':
+        case "public-transit":
           totalTransportAmount += 120; // Monthly passes
-          transportCategories.push('public transit');
+          transportCategories.push("public transit");
           break;
-        case 'rideshare':
+        case "rideshare":
           totalTransportAmount += 200; // Uber/Lyft usage
-          transportCategories.push('rideshare');
+          transportCategories.push("rideshare");
           break;
-        case 'walk-bike':
+        case "walk-bike":
           totalTransportAmount += 30; // Minimal costs
-          transportCategories.push('walk/bike');
+          transportCategories.push("walk/bike");
           break;
       }
     });
@@ -229,15 +246,15 @@ export const AIBudgetGenerationPage: React.FC = () => {
     // Default if no transportation selected
     if (totalTransportAmount === 0) {
       totalTransportAmount = 200;
-      transportCategories.push('general transportation');
+      transportCategories.push("general transportation");
     }
 
     categories.push({
-      id: 'transportation',
-      name: 'Transportation',
-      icon: '🚗',
+      id: "transportation",
+      name: "Transportation",
+      icon: "🚗",
       plannedAmount: Math.round(totalTransportAmount),
-      description: `${transportCategories.join(', ')} costs`
+      description: `${transportCategories.join(", ")} costs`,
     });
 
     // Realistic Toronto Utilities
@@ -251,95 +268,114 @@ export const AIBudgetGenerationPage: React.FC = () => {
     }
 
     categories.push({
-      id: 'utilities',
-      name: 'Utilities',
-      icon: '⚡',
+      id: "utilities",
+      name: "Utilities",
+      icon: "⚡",
       plannedAmount: utilitiesAmount,
-      description: 'Electricity, water, internet, phone (Toronto rates)'
+      description: "Electricity, water, internet, phone (Toronto rates)",
     });
 
     // Entertainment/Personal
     categories.push({
-      id: 'entertainment',
-      name: 'Entertainment',
-      icon: '🎬',
+      id: "entertainment",
+      name: "Entertainment",
+      icon: "🎬",
       plannedAmount: Math.round(income * 0.05), // 5% of income
-      description: 'Movies, dining out, hobbies'
+      description: "Movies, dining out, hobbies",
     });
 
     // Debt payments (if applicable)
-    if (data?.debtSituation && data.debtSituation !== 'no-debt') {
+    if (data?.debtSituation && data.debtSituation !== "no-debt") {
       categories.push({
-        id: 'debt-payment',
-        name: 'Debt Payment',
-        icon: '💳',
+        id: "debt-payment",
+        name: "Debt Payment",
+        icon: "💳",
         plannedAmount: Math.round(income * 0.15), // 15% for debt payoff
-        description: getDebtDescription(data.debtSituation)
+        description: getDebtDescription(data.debtSituation),
       });
     }
 
     return categories;
   };
 
-
-
   const getDebtDescription = (debtSituation: string): string => {
     switch (debtSituation) {
-      case 'credit-cards': return 'Credit card minimum payments';
-      case 'student-loans': return 'Student loan payments';
-      case 'mortgage-only': return 'Mortgage payment';
-      case 'multiple-debts': return 'Various debt payments';
-      default: return 'Debt payments';
+      case "credit-cards":
+        return "Credit card minimum payments";
+      case "student-loans":
+        return "Student loan payments";
+      case "mortgage-only":
+        return "Mortgage payment";
+      case "multiple-debts":
+        return "Various debt payments";
+      default:
+        return "Debt payments";
     }
   };
 
   const generateAIInsights = (data: any): string[] => {
     const insights: string[] = [];
 
-    insights.push(`Based on your ${data?.familySituation || 'family'} situation in Toronto, this budget uses realistic GTA cost-of-living data and prioritizes ${data?.mainGoal?.replace('-', ' ') || 'financial stability'}.`);
+    insights.push(
+      `Based on your ${data?.familySituation || "family"} situation in Toronto, this budget uses realistic GTA cost-of-living data and prioritizes ${data?.mainGoal?.replace("-", " ") || "financial stability"}.`,
+    );
 
     // Toronto-specific insights
     if (data?.householdSize >= 4) {
-      insights.push("Toronto housing costs are high for families. We've allocated realistic amounts based on current rental/ownership rates in the GTA.");
+      insights.push(
+        "Toronto housing costs are high for families. We've allocated realistic amounts based on current rental/ownership rates in the GTA.",
+      );
     }
 
-    insights.push("Grocery costs reflect Toronto's higher food prices, especially for families with children.");
+    insights.push(
+      "Grocery costs reflect Toronto's higher food prices, especially for families with children.",
+    );
 
     if (data?.householdSize > 2) {
-      insights.push(`With ${data.householdSize} people in your household, we've scaled grocery and utility costs accordingly.`);
+      insights.push(
+        `With ${data.householdSize} people in your household, we've scaled grocery and utility costs accordingly.`,
+      );
     }
 
-    if (data?.mainGoal === 'emergency-fund') {
-      insights.push("We've prioritized building your emergency fund - aim for 3-6 months of expenses.");
+    if (data?.mainGoal === "emergency-fund") {
+      insights.push(
+        "We've prioritized building your emergency fund - aim for 3-6 months of expenses.",
+      );
     }
 
-    if (data?.debtSituation !== 'no-debt') {
-      insights.push("We've allocated funds for debt payment. Consider the debt snowball method to pay off debts faster.");
+    if (data?.debtSituation !== "no-debt") {
+      insights.push(
+        "We've allocated funds for debt payment. Consider the debt snowball method to pay off debts faster.",
+      );
     }
 
     // Transportation insights
     if (data?.transportation && data.transportation.length > 1) {
-      insights.push(`We've accounted for your ${data.transportation.length} transportation methods to give you a realistic budget.`);
+      insights.push(
+        `We've accounted for your ${data.transportation.length} transportation methods to give you a realistic budget.`,
+      );
     }
 
-    insights.push("This budget follows the zero-based budgeting principle - every dollar has a purpose.");
+    insights.push(
+      "This budget follows the zero-based budgeting principle - every dollar has a purpose.",
+    );
 
     return insights;
   };
 
   const handleAcceptBudget = () => {
     // Save the AI-generated budget and navigate to main budget page
-    localStorage.setItem('ai-generated-budget', JSON.stringify(budget));
-    navigate('/budget');
+    localStorage.setItem("ai-generated-budget", JSON.stringify(budget));
+    navigate("/budget");
   };
 
   const handleCustomizeBudget = () => {
     // Navigate to budget customization page
-    navigate('/budget/customize', { state: { generatedBudget: budget } });
+    navigate("/budget/customize", { state: { generatedBudget: budget } });
   };
 
   const handleStartOver = () => {
-    navigate('/onboarding');
+    navigate("/onboarding");
   };
 
   if (loading) {
@@ -347,7 +383,9 @@ export const AIBudgetGenerationPage: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Creating your personalized budget... 🤖</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Creating your personalized budget... 🤖
+          </h2>
           <div className="space-y-2 text-gray-600">
             <p>✨ Analyzing your responses...</p>
             <p>📍 Checking local cost-of-living data...</p>
@@ -363,7 +401,9 @@ export const AIBudgetGenerationPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Something went wrong
+          </h2>
           <button
             onClick={handleStartOver}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
@@ -381,13 +421,16 @@ export const AIBudgetGenerationPage: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-4 py-2 mb-4">
-            <span className="text-blue-600 text-sm font-medium">✨ AI-Generated Budget</span>
+            <span className="text-blue-600 text-sm font-medium">
+              ✨ AI-Generated Budget
+            </span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Here's your personalized budget! 🎯
           </h1>
           <p className="text-gray-600">
-            Based on your responses and cost-of-living data for {budget.location}
+            Based on your responses and cost-of-living data for{" "}
+            {budget.location}
           </p>
         </div>
 
@@ -395,23 +438,37 @@ export const AIBudgetGenerationPage: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">${budget.monthlyIncome.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {formatCurrency(budget.monthlyIncome, budget.currency || "USD")}
+              </div>
               <div className="text-sm text-gray-600">Monthly Income</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">${budget.totalAllocated.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {formatCurrency(
+                  budget.totalAllocated,
+                  budget.currency || "USD",
+                )}
+              </div>
               <div className="text-sm text-gray-600">Total Allocated</div>
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${budget.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                ${Math.abs(budget.remaining).toLocaleString()}
+              <div
+                className={`text-2xl font-bold ${budget.remaining >= 0 ? "text-green-600" : "text-red-600"}`}
+              >
+                {formatCurrency(
+                  Math.abs(budget.remaining),
+                  budget.currency || "USD",
+                )}
               </div>
               <div className="text-sm text-gray-600">
-                {budget.remaining >= 0 ? 'Remaining' : 'Over Budget'}
+                {budget.remaining >= 0 ? "Remaining" : "Over Budget"}
               </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{budget.householdSize}</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {budget.householdSize}
+              </div>
               <div className="text-sm text-gray-600">Household Size</div>
             </div>
           </div>
@@ -425,17 +482,27 @@ export const AIBudgetGenerationPage: React.FC = () => {
               💰 Income
             </h3>
             <div className="space-y-3">
-              {budget.income.map(category => (
-                <div key={category.id} className="flex items-center justify-between">
+              {budget.income.map((category) => (
+                <div
+                  key={category.id}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{category.icon}</span>
                     <div>
-                      <div className="text-gray-900 font-medium">{category.name}</div>
-                      <div className="text-xs text-gray-600">{category.description}</div>
+                      <div className="text-gray-900 font-medium">
+                        {category.name}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {category.description}
+                      </div>
                     </div>
                   </div>
                   <div className="text-green-600 font-semibold">
-                    ${category.plannedAmount.toLocaleString()}
+                    {formatCurrency(
+                      category.plannedAmount,
+                      budget.currency || "USD",
+                    )}
                   </div>
                 </div>
               ))}
@@ -448,17 +515,27 @@ export const AIBudgetGenerationPage: React.FC = () => {
               💾 Savings
             </h3>
             <div className="space-y-3">
-              {budget.savings.map(category => (
-                <div key={category.id} className="flex items-center justify-between">
+              {budget.savings.map((category) => (
+                <div
+                  key={category.id}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{category.icon}</span>
                     <div>
-                      <div className="text-gray-900 font-medium">{category.name}</div>
-                      <div className="text-xs text-gray-600">{category.description}</div>
+                      <div className="text-gray-900 font-medium">
+                        {category.name}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {category.description}
+                      </div>
                     </div>
                   </div>
                   <div className="text-blue-600 font-semibold">
-                    ${category.plannedAmount.toLocaleString()}
+                    {formatCurrency(
+                      category.plannedAmount,
+                      budget.currency || "USD",
+                    )}
                   </div>
                 </div>
               ))}
@@ -471,17 +548,27 @@ export const AIBudgetGenerationPage: React.FC = () => {
               💸 Expenses
             </h3>
             <div className="space-y-3">
-              {budget.expenses.map(category => (
-                <div key={category.id} className="flex items-center justify-between">
+              {budget.expenses.map((category) => (
+                <div
+                  key={category.id}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{category.icon}</span>
                     <div>
-                      <div className="text-gray-900 font-medium">{category.name}</div>
-                      <div className="text-xs text-gray-600">{category.description}</div>
+                      <div className="text-gray-900 font-medium">
+                        {category.name}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {category.description}
+                      </div>
                     </div>
                   </div>
                   <div className="text-red-600 font-semibold">
-                    ${category.plannedAmount.toLocaleString()}
+                    {formatCurrency(
+                      category.plannedAmount,
+                      budget.currency || "USD",
+                    )}
                   </div>
                 </div>
               ))}
