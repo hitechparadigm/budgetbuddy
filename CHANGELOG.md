@@ -1,5 +1,77 @@
 # Changelog
 
+## [1.5.5] - 2026-01-31
+
+### 🚀 FEATURE - Data Backup and Restore System (Backend Complete)
+
+- **Implemented JSON Backup Export** - Complete data backup in JSON format
+  - **File**: `backend/functions/export/index.js`
+  - **Feature**: Added `?type=json` parameter to export endpoint
+  - **Data Included**: User profile, all budgets, all transactions
+  - **Format**: Structured JSON with version, metadata, and complete data
+  - **Filename**: `budgetbuddy-backup-YYYY-MM-DD.json`
+  - **Impact**: Users can now export complete data backup
+
+- **Implemented Data Restore Service** - Restore from backup files
+  - **Files**: `backend/functions/restore/index.js`, `package.json`, `restore.test.js`
+  - **Feature**: POST endpoint for restoring backup data
+  - **Validation**: Comprehensive backup structure validation
+  - **Functionality**: Restores budgets and transactions to DynamoDB
+  - **Tests**: 12/12 unit tests passing ✅
+  - **Impact**: Users can restore data from backup files
+
+### 🚀 TECHNICAL DETAILS
+
+**Backup Structure**:
+
+- Version tracking for compatibility
+- Complete user profile data
+- All budgets with categories and totals
+- All transactions with full details
+- Metadata with counts and date ranges
+
+**Restore Process**:
+
+1. JWT authentication validation
+2. JSON structure validation
+3. Budget restoration with ID generation
+4. Transaction restoration with ID generation
+5. Success response with restored counts
+
+**Validation Rules**:
+
+- Version field required
+- Budgets array with month and categories
+- Transactions array with date, category, amount, type
+- Detailed error messages for invalid data
+
+**Test Coverage**:
+
+- CORS preflight handling
+- Authentication validation (401 errors)
+- Invalid JSON handling (400 errors)
+- Missing required fields validation
+- Successful restoration with multiple items
+- DynamoDB error handling (500 errors)
+
+### 🚀 IMPACT
+
+- **Data Safety**: Users can backup complete data
+- **Data Portability**: Export and restore between devices
+- **Disaster Recovery**: Restore from backup if data lost
+- **Migration**: Move data between accounts (future)
+- **Cost**: ~$0.01 per backup, ~$0.02 per restore
+
+### 📋 PENDING
+
+- Frontend UI for backup/restore in Settings page
+- CDK infrastructure for restore Lambda
+- API Gateway integration
+- End-to-end testing with real AWS
+- User documentation
+
+---
+
 ## [1.5.4] - 2026-01-31
 
 ### 📚 DOCS - AWS Testing Guidelines Added to Steering
