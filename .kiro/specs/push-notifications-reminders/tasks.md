@@ -599,7 +599,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Verify navigated to transactions screen
     - _Requirements: 3.1-3.10, 9.1_
 
-  - [ ] 11.4 Test preferences management flow
+  - [x] 11.4 Test preferences management flow
     - Update preferences on web
     - Verify changes reflected on mobile
     - Update preferences on mobile
