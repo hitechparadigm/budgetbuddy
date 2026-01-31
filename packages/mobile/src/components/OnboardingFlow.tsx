@@ -25,16 +25,17 @@ import {
   CategorySuggestion,
 } from "@budget-buddy/shared/src/services/categorySuggestionService";
 import { getAllCities } from "@budget-buddy/shared/src/data/cityExpenseData";
+import { CurrencySelector } from "./CurrencySelector";
 
 interface OnboardingFlowProps {
   onComplete: (
     suggestions: OnboardingSuggestions,
-    selectedCategories: CategorySuggestion[]
+    selectedCategories: CategorySuggestion[],
   ) => void;
   onSkip: () => void;
 }
 
-type OnboardingStep = "location" | "family-size" | "categories";
+type OnboardingStep = "location" | "currency" | "family-size" | "categories";
 
 const { width } = Dimensions.get("window");
 
@@ -44,9 +45,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 }) => {
   const [step, setStep] = useState<OnboardingStep>("location");
   const [location, setLocation] = useState<GeolocationResult | null>(null);
+  const [currency, setCurrency] = useState<string>("USD");
   const [familySize, setFamilySize] = useState<number>(1);
   const [suggestions, setSuggestions] = useState<OnboardingSuggestions | null>(
-    null
+    null,
   );
   const [selectedCategories, setSelectedCategories] = useState<
     CategorySuggestion[]
@@ -65,8 +67,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     setIsDetecting(false);
 
     if (result.success) {
-      // Auto-advance to next step after 1 second
-      setTimeout(() => setStep("family-size"), 1000);
+      // Auto-advance to currency step after 1 second
+      setTimeout(() => setStep("currency"), 1000);
     }
   };
 
@@ -84,7 +86,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         timezone: "",
         success: true,
       });
-      setStep("family-size");
+      setStep("currency");
     }
   };
 
@@ -119,7 +121,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   };
 
   const renderProgressBar = () => {
-    const steps = ["location", "family-size", "categories"];
+    const steps = ["location", "currency", "family-size", "categories"];
     const currentIndex = steps.indexOf(step);
 
     return (
@@ -188,7 +190,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 </Text>
                 <TouchableOpacity
                   style={styles.primaryButton}
-                  onPress={() => setStep("family-size")}
+                  onPress={() => setStep("currency")}
                 >
                   <Text style={styles.primaryButtonText}>Continue</Text>
                 </TouchableOpacity>
@@ -222,7 +224,38 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </View>
         )}
 
-        {/* Step 2: Family Size */}
+        {/* Step 2: Currency Selection */}
+        {step === "currency" && (
+          <View style={styles.stepContainer}>
+            <Text style={styles.stepTitle}>💰 Select Your Currency</Text>
+            <Text style={styles.stepSubtitle}>
+              Choose the currency you'll use for budgeting
+            </Text>
+
+            <CurrencySelector
+              value={currency}
+              onChange={setCurrency}
+              label="Currency"
+            />
+
+            <View style={styles.navigationButtons}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => setStep("location")}
+              >
+                <Text style={styles.backButtonText}>← Back</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => setStep("family-size")}
+              >
+                <Text style={styles.primaryButtonText}>Continue</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Step 3: Family Size */}
         {step === "family-size" && (
           <View style={styles.stepContainer}>
             <Text style={styles.stepTitle}>
@@ -246,12 +279,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     {size === 1
                       ? "👤"
                       : size === 2
-                      ? "👥"
-                      : size === 3
-                      ? "👨‍👩‍👧"
-                      : size === 4
-                      ? "👨‍👩‍👧‍👦"
-                      : "👨‍👩‍👧‍👦+"}
+                        ? "👥"
+                        : size === 3
+                          ? "👨‍👩‍👧"
+                          : size === 4
+                            ? "👨‍👩‍👧‍👦"
+                            : "👨‍👩‍👧‍👦+"}
                   </Text>
                   <Text style={styles.familySizeText}>
                     {size} {size === 1 ? "person" : "people"}
@@ -263,7 +296,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             <View style={styles.navigationButtons}>
               <TouchableOpacity
                 style={styles.backButton}
-                onPress={() => setStep("location")}
+                onPress={() => setStep("currency")}
               >
                 <Text style={styles.backButtonText}>← Back</Text>
               </TouchableOpacity>
@@ -298,7 +331,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             <View style={styles.categoriesGrid}>
               {suggestions.categories.map((category) => {
                 const isSelected = selectedCategories.find(
-                  (c) => c.name === category.name
+                  (c) => c.name === category.name,
                 );
                 return (
                   <TouchableOpacity

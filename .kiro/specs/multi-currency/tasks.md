@@ -213,13 +213,13 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
 ### Phase 7: Mobile App Integration
 
 - [ ] 10. Update Mobile Currency Display
-  - [ ] 10.1 Create mobile CurrencySelector component
+  - [x] 10.1 Create mobile CurrencySelector component
     - Port web component to React Native
     - Use native picker component
     - Touch-optimized UI
     - _Requirements: 1.1, 2.1-2.3, 3.5_
 
-  - [ ] 10.2 Update mobile onboarding flow
+  - [x] 10.2 Update mobile onboarding flow
     - Add currency selection step
     - Use mobile CurrencySelector
     - Save currency to user profile
