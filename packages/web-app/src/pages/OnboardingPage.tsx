@@ -21,7 +21,7 @@ export const OnboardingPage: React.FC = () => {
 
   const handleComplete = async (
     suggestions: OnboardingSuggestions,
-    selectedCategories: CategorySuggestion[]
+    selectedCategories: CategorySuggestion[],
   ) => {
     setIsSubmitting(true);
     setError(null);
@@ -38,11 +38,11 @@ export const OnboardingPage: React.FC = () => {
 
       console.log(
         "OnboardingPage: CRITICAL DEBUG - currentMonth being sent:",
-        getCurrentMonthString()
+        getCurrentMonthString(),
       );
 
       // Save onboarding data and create initial budget categories
-      await apiClient.completeOnboarding({
+      const result = await apiClient.completeOnboarding({
         city: suggestions.city,
         country: suggestions.country,
         familySize: suggestions.familySize,
