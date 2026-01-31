@@ -645,7 +645,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Add FAQ section
     - _Requirements: All_
 
-  - [ ] 12.5 Update README and CHANGELOG
+  - [x] 12.5 Update README and CHANGELOG
     - Add push notifications to features
     - Document supported platforms
     - Add version entry to CHANGELOG
