@@ -541,6 +541,279 @@ const transactions = await transactionApi.getTransactions({
 
 BudgetBuddy supports 6 major currencies for international users. Currency is set at the user profile level and applies to all budgets and transactions.
 
+## Push Notifications
+
+### Overview
+
+BudgetBuddy supports push notifications for budget alerts and daily reminders. Users can manage notification preferences and view notification history.
+
+### POST /notifications/register-device
+
+Register a device for push notifications.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Request Body**:
+
+```json
+{
+  "deviceToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+  "platform": "ios"
+}
+```
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Device registered successfully",
+  "data": {
+    "deviceId": "device_123",
+    "deviceToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+    "platform": "ios",
+    "enabled": true,
+    "registeredAt": "2026-01-31T10:00:00Z"
+  }
+}
+```
+
+### DELETE /notifications/device/{deviceId}
+
+Remove a registered device.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Device removed successfully"
+}
+```
+
+### GET /notifications/preferences
+
+Get notification preferences for the authenticated user.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "budgetAlertsEnabled": true,
+    "dailyRemindersEnabled": true,
+    "reminderTime": "09:00",
+    "quietHoursStart": "22:00",
+    "quietHoursEnd": "08:00"
+  }
+}
+```
+
+### PUT /notifications/preferences
+
+Update notification preferences.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Request Body** (all fields optional):
+
+```json
+{
+  "budgetAlertsEnabled": true,
+  "dailyRemindersEnabled": false,
+  "reminderTime": "10:00",
+  "quietHoursStart": "23:00",
+  "quietHoursEnd": "07:00"
+}
+```
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Preferences updated successfully",
+  "data": {
+    "budgetAlertsEnabled": true,
+    "dailyRemindersEnabled": false,
+    "reminderTime": "10:00",
+    "quietHoursStart": "23:00",
+    "quietHoursEnd": "07:00",
+    "updatedAt": "2026-01-31T10:00:00Z"
+  }
+}
+```
+
+### GET /notifications/history
+
+Get notification history with pagination.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Query Parameters**:
+
+- `limit` (optional): Number of notifications to return (default: 50, max: 100)
+- `lastEvaluatedKey` (optional): Pagination token from previous response
+
+**Example**: `GET /notifications/history?limit=20`
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "notifications": [
+      {
+        "notificationId": "notif_123",
+        "type": "budget_alert",
+        "title": "Budget Alert: Groceries",
+        "body": "You've reached 80% of your Groceries budget",
+        "severity": "medium",
+        "read": false,
+        "sentAt": "2026-01-31T09:00:00Z",
+        "data": {
+          "budgetId": "budget_456",
+          "categoryId": "cat_groceries_001",
+          "threshold": 80
+        }
+      }
+    ],
+    "lastEvaluatedKey": "notif_123#2026-01-31T09:00:00Z"
+  }
+}
+```
+
+### PUT /notifications/{notificationId}/read
+
+Mark a notification as read.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Notification marked as read"
+}
+```
+
+### GET /notifications/health
+
+Health check for notification service.
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "status": "healthy",
+    "service": "notifications",
+    "version": "1.0.0"
+  }
+}
+```
+
+### Notification Types
+
+**Budget Alerts**:
+
+- Triggered when spending reaches 80%, 90%, or 100% of budget
+- Sent to all family members
+- Deduplicated (no duplicate alerts within 24 hours)
+
+**Daily Reminders**:
+
+- Sent at user-configured time (±15 minute window)
+- Only sent if no transactions logged in 3+ days
+- Respects quiet hours settings
+
+### Notification Preferences
+
+**Budget Alerts Enabled**:
+
+- Type: Boolean
+- Default: true
+- Description: Enable/disable budget threshold alerts
+
+**Daily Reminders Enabled**:
+
+- Type: Boolean
+- Default: true
+- Description: Enable/disable daily expense tracking reminders
+
+**Reminder Time**:
+
+- Type: String (HH:mm format, 24-hour)
+- Default: "09:00"
+- Description: Time to send daily reminders
+
+**Quiet Hours**:
+
+- Type: String (HH:mm format, 24-hour)
+- Default: Start "22:00", End "08:00"
+- Description: No notifications sent during quiet hours
+- Note: Supports overnight ranges (e.g., 22:00 to 08:00)
+
+### Device Management
+
+**Device Limit**: Maximum 10 devices per user
+
+**Device TTL**: Devices automatically removed after 90 days of inactivity
+
+**Platform Support**:
+
+- iOS (via Expo Push Notifications)
+- Android (via Expo Push Notifications)
+
+### Testing
+
+**Register Device**:
+
+```bash
+TOKEN="your_jwt_token_here"
+
+curl -X POST https://api.budgetbuddy.com/v1/notifications/register-device \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "deviceToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+    "platform": "ios"
+  }'
+```
+
+**Update Preferences**:
+
+```bash
+curl -X PUT https://api.budgetbuddy.com/v1/notifications/preferences \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "budgetAlertsEnabled": true,
+    "reminderTime": "10:00"
+  }'
+```
+
+**Get Notification History**:
+
+```bash
+curl -X GET https://api.budgetbuddy.com/v1/notifications/history?limit=20 \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+## Multi-Currency Support
+
+### Overview
+
+BudgetBuddy supports 6 major currencies for international users. Currency is set at the user profile level and applies to all budgets and transactions.
+
 ### Supported Currencies
 
 | Code | Name              | Symbol | Decimal Places | Example Format |

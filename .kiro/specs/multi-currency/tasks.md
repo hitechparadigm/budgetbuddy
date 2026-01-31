@@ -318,7 +318,7 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
 - [x] Data migration scripts tested ✅
 - [x] Documentation updated ✅
 - [x] Code reviewed and validated ✅
-- [ ] Deployed to dev environment
+- [ ] Deployed to dev environment via CI/CD pipeline
 - [ ] End-to-end testing with real AWS
 
 ## Success Criteria

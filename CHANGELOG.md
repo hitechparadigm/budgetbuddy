@@ -1,5 +1,55 @@
 # Changelog
 
+## [1.9.1] - 2026-01-31
+
+### 📚 DOCUMENTATION - .kiro/ Directory Cleanup
+
+- **Eliminated Duplication and Redundancy** - Streamlined documentation from 10 to 7 files (30% reduction)
+  - **Deleted 7 files**:
+    - STEERING_SPECS_HOOKS_INTEGRATION.md (1000+ lines, 80% duplication)
+    - SPEC_STRUCTURE_EXPLAINED.md (500+ lines, redundant examples)
+    - STEERING_AND_SPECS_GUIDE.md (300+ lines, overlapping content)
+    - hooks/AUTOMATION_GUIDE.md (obsolete, referenced removed hooks)
+    - hooks/WORKING_HOOKS_SUMMARY.md (obsolete, listed removed hooks)
+
+  - **Created 2 consolidated files**:
+    - SYSTEM_GUIDE.md (200 lines) - Single reference for entire system
+    - README.md (80 lines) - Navigation guide for .kiro/ directory
+
+  - **Kept 5 current files**:
+    - AUTONOMOUS_DEVELOPMENT_GUIDE.md - Autonomous workflow (updated references)
+    - hooks/ACTIVE_HOOKS.md - Hook documentation (updated references)
+    - hooks/CICD_MONITORING_SETUP.md - CI/CD setup guide
+    - hooks/MIGRATION_GUIDE.md - Hooks optimization changes
+    - hooks/TESTING_RESULTS.md - Optimization verification
+
+- **Benefits**:
+  - ✅ 53% reduction in documentation lines (3,550 → 1,680)
+  - ✅ Zero duplication between files
+  - ✅ All obsolete content removed
+  - ✅ Clear navigation with README.md
+  - ✅ Single entry point (SYSTEM_GUIDE.md)
+  - ✅ Reduced maintenance burden
+
+- **Documentation Philosophy**:
+  - Minimal and focused (only what's needed)
+  - Each file has single, clear purpose
+  - Practical examples over theory
+  - Always current (obsolete content removed immediately)
+
+### 📋 TECHNICAL DETAILS
+
+**Files Deleted**: 7 (5 root + 2 hooks)
+**Files Created**: 2 (SYSTEM_GUIDE.md, README.md)
+**Files Updated**: 2 (AUTONOMOUS_DEVELOPMENT_GUIDE.md, ACTIVE_HOOKS.md)
+**Content Preserved**: All important content consolidated into SYSTEM_GUIDE.md
+
+**Verification**:
+
+- No broken references to deleted files
+- All content preserved in consolidated files
+- Clear navigation structure established
+
 ## [1.9.0] - 2026-01-31
 
 ### 🔧 INFRASTRUCTURE - Hooks System Optimization

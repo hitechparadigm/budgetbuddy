@@ -262,3 +262,5 @@ Just ask! I can:
 ---
 
 **Ready to try autonomous development?** Just give me a task list and say "work autonomously"!
+
+**For more details, see `.kiro/SYSTEM_GUIDE.md`**

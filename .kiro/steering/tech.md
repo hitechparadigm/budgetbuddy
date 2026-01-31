@@ -392,65 +392,11 @@ inclusion: always
 
 ### Development Workflow
 
-**Local Development:**
-
-- **Frontend**: `npm run dev` (Vite dev server)
-- **Backend**: Local Lambda testing with SAM (future)
-- **Database**: DynamoDB Local (future)
-
-**AWS Profile Configuration:**
-
-- **Profile Name**: `hitechparadigm`
-- **Required for**: All AWS CLI commands, CDK deployments, SDK calls
-- **Setup**:
-
-  ```bash
-  # PowerShell
-  $env:AWS_PROFILE="hitechparadigm"
-
-  # Bash/Linux/Mac
-  export AWS_PROFILE=hitechparadigm
-  ```
-
-- **CDK Commands**: Always use `--profile hitechparadigm`
-  ```bash
-  cdk deploy --profile hitechparadigm
-  cdk synth --profile hitechparadigm
-  ```
-
-**AWS Integration Testing:**
-
-- **Purpose**: Verify features work against real AWS services
-- **When**: After deploying Lambda functions, API changes, DynamoDB updates
-- **Cost Limits**:
-  - Single test: < $0.10
-  - Daily: < $1.00
-  - Monthly: < $20.00
-- **Safety Rules**:
-  - Max 10 API calls per test
-  - No infinite loops or recursive processes
-  - Always set Lambda timeouts (max 30s)
-  - Clean up test data immediately
-  - Use dev environment only
-
-**Testing:**
-
-- **Unit**: `npm test`
-- **Integration**: `npm run test:integration`
-- **E2E**: `npm run test:e2e`
-- **Coverage**: `npm run test:coverage`
-- **AWS Integration**: Manual testing against dev environment with cost awareness
-
-**Validation:**
-
-- **Pre-commit**: `node scripts/validate-for-commit.js`
-- **Safe Commit**: `node scripts/safe-commit-push.js "message"`
-
-**Deployment:**
-
-- **Dev**: Push to develop branch (auto-deploy)
-- **Staging**: Push to main branch (auto-deploy)
-- **Prod**: Manual approval in GitHub Actions
+**Local Dev**: Frontend `npm run dev`, Backend SAM (future), DB DynamoDB Local (future)
+**AWS Profile**: `hitechparadigm` (see 00-global.md for details)
+**Testing**: Unit `npm test`, Integration `npm run test:integration`, E2E `npm run test:e2e`, Coverage `npm run test:coverage`
+**Validation**: `node scripts/validate-for-commit.js` | **Safe Commit**: `node scripts/safe-commit-push.js "message"`
+**Deployment**: Dev (auto on develop), Staging (auto on main), Prod (manual approval)
 
 ### Documentation Standards
 
@@ -507,75 +453,12 @@ inclusion: always
 - **staging**: Production-like, alarms enabled
 - **prod**: Minimal logging, all alarms, provisioned DynamoDB
 
-## Technology Decisions
+## Technology Decisions Summary
 
-### Why Serverless?
-
-**Pros:**
-
-- No server management
-- Auto-scaling
-- Pay-per-use pricing
-- High availability built-in
-
-**Cons:**
-
-- Cold starts (mitigated with layers)
-- Vendor lock-in (AWS)
-- Debugging complexity (mitigated with X-Ray)
-
-**Decision**: Serverless is ideal for MVP with unpredictable traffic.
-
-### Why DynamoDB?
-
-**Pros:**
-
-- Serverless (no management)
-- Auto-scaling
-- High performance (single-digit ms latency)
-- Built-in backup and recovery
-
-**Cons:**
-
-- NoSQL (requires data modeling)
-- Limited query flexibility
-- Cost at scale
-
-**Decision**: DynamoDB fits serverless architecture and access patterns.
-
-### Why React Native?
-
-**Pros:**
-
-- Code sharing with web (React)
-- Single codebase for iOS and Android
-- Large ecosystem
-- Expo simplifies development
-
-**Cons:**
-
-- Performance vs native
-- Platform-specific bugs
-- Larger app size
-
-**Decision**: React Native enables fast mobile development with code reuse.
-
-### Why CDK over Terraform?
-
-**Pros:**
-
-- TypeScript (same language as app)
-- AWS-native (better support)
-- Constructs library (reusable patterns)
-- Type safety
-
-**Cons:**
-
-- AWS-only (vendor lock-in)
-- Steeper learning curve
-- CloudFormation limitations
-
-**Decision**: CDK provides type safety and AWS-native experience.
+**Serverless**: No management, auto-scaling, pay-per-use (trade-off: cold starts, vendor lock-in)
+**DynamoDB**: Serverless, high performance, auto-scaling (trade-off: NoSQL modeling, limited queries)
+**React Native**: Code sharing, single codebase iOS/Android (trade-off: performance vs native)
+**CDK**: TypeScript, AWS-native, type safety (trade-off: AWS-only, steeper learning)
 
 ## Summary
 
@@ -583,13 +466,6 @@ inclusion: always
 **Architecture**: Serverless microservices
 **Testing**: Jest + fast-check + property-based testing
 **CI/CD**: GitHub Actions with automated deployment
-**Security**: AWS best practices, secrets in Secrets Manager, encryption everywhere
+**Security**: AWS best practices, Secrets Manager, encryption everywhere
 **Observability**: CloudWatch Logs + Metrics + X-Ray
-
-**Key Principles**:
-
-- Serverless first
-- Infrastructure as code (CDK)
-- Test-driven development
-- Security by default
-- Cost-conscious design
+**Principles**: Serverless first, IaC (CDK), TDD, security by default, cost-conscious

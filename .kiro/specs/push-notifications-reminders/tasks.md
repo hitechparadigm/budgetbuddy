@@ -442,7 +442,7 @@ This implementation plan covers the complete push notification and daily reminde
 
 ### Phase 7: API Gateway Integration (Week 2)
 
-- [ ] 8. Add Notification API Routes
+- [x] 8. Add Notification API Routes
   - [x] 8.1 Add device registration route
     - POST /notifications/register-device
     - Integrate with Notification Service Lambda
@@ -450,28 +450,28 @@ This implementation plan covers the complete push notification and daily reminde
     - Test with Postman
     - _Requirements: 1.1, 1.2_
 
-  - [ ] 8.2 Add device removal route
+  - [x] 8.2 Add device removal route
     - DELETE /notifications/device/{deviceId}
     - Integrate with Notification Service Lambda
     - Add JWT authorizer
     - Test with Postman
     - _Requirements: 1.7_
 
-  - [ ] 8.3 Add get preferences route
+  - [x] 8.3 Add get preferences route
     - GET /notifications/preferences
     - Integrate with Notification Service Lambda
     - Add JWT authorizer
     - Test with Postman
     - _Requirements: 4.1_
 
-  - [ ] 8.4 Add update preferences route
+  - [x] 8.4 Add update preferences route
     - PUT /notifications/preferences
     - Integrate with Notification Service Lambda
     - Add JWT authorizer
     - Test with Postman
     - _Requirements: 4.2_
 
-  - [ ] 8.5 Add get notification history route
+  - [x] 8.5 Add get notification history route
     - GET /notifications/history
     - Integrate with Notification Service Lambda
     - Add JWT authorizer
@@ -479,20 +479,20 @@ This implementation plan covers the complete push notification and daily reminde
     - Test with Postman
     - _Requirements: 10.4_
 
-  - [ ] 8.6 Add mark as read route
+  - [x] 8.6 Add mark as read route
     - PUT /notifications/{notificationId}/read
     - Integrate with Notification Service Lambda
     - Add JWT authorizer
     - Test with Postman
     - _Requirements: 10.6_
 
-  - [ ] 8.7 Update API Gateway CDK stack
+  - [x] 8.7 Update API Gateway CDK stack
     - Add all notification routes
     - Configure CORS
     - Deploy to dev environment
     - _Requirements: All API requirements_
 
-  - [ ] 8.8 Test all API endpoints
+  - [x] 8.8 Test all API endpoints
     - Test with valid JWT tokens
     - Test with invalid tokens (should fail)
     - Test error responses
@@ -625,7 +625,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Include purpose, inputs, outputs, errors
     - _Requirements: All_
 
-  - [ ] 12.2 Update API documentation
+  - [x] 12.2 Update API documentation
     - Document all notification endpoints
     - Include request/response examples
     - Document error codes
@@ -653,19 +653,20 @@ This implementation plan covers the complete push notification and daily reminde
 
 - [ ] 13. Deploy to Production
   - [ ] 13.1 Deploy infrastructure to staging
-    - Deploy Notification Stack
-    - Verify all resources created
+    - Commit and push all changes to develop branch
+    - Monitor GitHub Actions CI/CD pipeline
+    - Verify all resources created via CloudFormation console
     - Run smoke tests
     - _Requirements: 11.1-11.10_
 
   - [ ] 13.2 Deploy Lambda functions to staging
-    - Deploy all 3 Lambda functions
-    - Verify functions invocable
+    - Lambda functions deploy automatically with infrastructure
+    - Verify functions invocable via AWS console
     - Test with staging data
     - _Requirements: All Lambda requirements_
 
   - [ ] 13.3 Deploy web app to staging
-    - Deploy with notification settings
+    - Web app deploys automatically via CI/CD
     - Test on staging environment
     - Verify API integration
     - _Requirements: 7.1-7.10_
@@ -684,9 +685,9 @@ This implementation plan covers the complete push notification and daily reminde
     - _Requirements: 12.1-12.10_
 
   - [ ] 13.6 Deploy to production (gradual rollout)
-    - Deploy infrastructure to production
-    - Deploy Lambda functions to production
-    - Enable for 10% of users
+    - Merge to main branch to trigger production deployment
+    - Monitor CI/CD pipeline
+    - Enable for 10% of users (feature flag)
     - Monitor for 24 hours
     - _Requirements: All_
 
