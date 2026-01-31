@@ -34,7 +34,7 @@ Implement family account sharing with invitation system, role-based permissions,
 
 ### Phase 2: Family Lambda Implementation (Week 1)
 
-- [ ] 2. Create Family Lambda Function
+- [x] 2. Create Family Lambda Function
   - [x] 2.1 Create function structure
     - Create backend/functions/family/ directory
     - Create index.js with handler
@@ -84,7 +84,7 @@ Implement family account sharing with invitation system, role-based permissions,
     - Remove from old family
     - _Requirements: US-6_
 
-  - [-] 2.8 Add unit tests
+  - [x] 2.8 Add unit tests
     - Test invitation creation
     - Test token validation
     - Test permission checks

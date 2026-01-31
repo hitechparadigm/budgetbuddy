@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.9.12] - 2026-01-31
+
+### 🧪 TESTING - Family Lambda Unit Tests Complete (Task 2.8)
+
+- **Completed Task 2.8** - Comprehensive unit tests for family Lambda
+  - **Coverage**: All 6 endpoints (invite, accept, get members, update role, remove, leave)
+  - **Test Cases**: 20+ tests covering success paths, error cases, permissions
+  - **Mocking**: AWS SDK DynamoDB mocked for isolated testing
+  - **File**: `backend/functions/family/index.test.js`
+  - **Impact**: Phase 2 complete (all tasks 2.1-2.8 done), ready for Phase 3
+
+### 📋 TECHNICAL DETAILS
+
+**Test Coverage**:
+
+- Health check (public endpoint, no auth)
+- CORS preflight handling
+- Authentication validation
+- Invite endpoint (primary only, validation, family size limits)
+- Accept invitation (token validation, expiration)
+- Get members (family member list)
+- Update role (primary only, role validation)
+- Remove member (primary only, prevent self-removal)
+- Leave family (non-primary only)
+
+**Next Steps**:
+
+- Phase 3: Permission middleware integration
+- Phase 4: Email service (SES) integration
+- Note: Deployment still blocked by 502 error (see `.kiro/FAMILY_LAMBDA_502_BLOCKER.md`)
+
 ## [1.9.11] - 2026-01-31
 
 ### 📋 DOCUMENTATION - Family Lambda 502 Blocker
