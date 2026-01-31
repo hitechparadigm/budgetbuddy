@@ -22,6 +22,19 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-01-31)
 
+- 🔔 **PUSH NOTIFICATIONS & DAILY REMINDERS** - Complete mobile notification system
+  - **Mobile Handlers**: NotificationService class with full lifecycle management
+  - **Device Registration**: Expo push token registration with backend API
+  - **Notification Handlers**: Foreground alerts and tap navigation to Budget/Transactions
+  - **Navigation Logic**: Deep linking to relevant screens with context data
+  - **Property-Based Tests**: Time window matching, quiet hours, threshold detection (10,000+ test runs)
+  - **Backend Tests**: Alert deduplication, batch processing with fast-check
+  - **Lambda READMEs**: Comprehensive documentation for all 3 notification Lambdas
+  - **Test Coverage**: 186+ tests for notification system
+  - **Files**: `packages/mobile/src/services/notification.ts`, `packages/mobile/App.tsx`, `backend/functions/notifications/`, `backend/functions/budget-alerts/`, `backend/functions/daily-reminders/`
+  - **Status**: Code complete, ready for CI/CD deployment
+  - **Impact**: Users receive budget alerts and daily reminders on mobile devices
+
 - 🌍 **MULTI-CURRENCY SUPPORT COMPLETE** - Full implementation with 6 currencies
   - **Supported Currencies**: USD, EUR, GBP, CAD, AUD, JPY with proper symbols and formatting
   - **Currency Utilities**: Comprehensive formatting and validation (71 tests passing)
