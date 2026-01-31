@@ -74,7 +74,7 @@ This implementation plan covers the complete push notification and daily reminde
     - Add widgets for DynamoDB Stream metrics
     - _Requirements: 12.7_
 
-  - [-] 1.10 Deploy Notification Stack
+  - [x] 1.10 Deploy Notification Stack
     - Run cdk synth to validate
     - Deploy to dev environment
     - Verify all resources created
