@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.5.1] - 2026-01-31
+
+### 📚 DOCUMENTATION - Comprehensive Integration Guides
+
+- **Created Steering-Specs-Hooks Integration Guide** - Complete system explanation
+  - **File**: `.kiro/STEERING_SPECS_HOOKS_INTEGRATION.md` (500+ lines)
+  - **Purpose**: Explain how steering (HOW), specs (WHAT), and hooks (WHEN) work together
+  - **Content**: Visual diagrams, complete development flow, integration points, practical examples
+  - **Sections**: Overview, steering system, spec system, hook system, integration, examples, best practices
+  - **Benefit**: Crystal-clear understanding of entire development system for developers and Kiro
+
+- **Created Spec Structure Guide** - Visual explanation of spec organization
+  - **File**: `.kiro/SPEC_STRUCTURE_EXPLAINED.md` (400+ lines)
+  - **Purpose**: Clarify root specs vs feature specs with visual diagrams
+  - **Content**: Visual structure, decision trees, when to use each type, common mistakes
+  - **Sections**: Two types of specs, how to use specs, decision tree, when to create feature specs
+  - **Benefit**: Eliminates confusion about where specs go and when to create new ones
+
+- **Cleaned Spec Structure** - Removed incomplete/empty spec folders
+  - **Removed**: `.kiro/specs/mobile-app-completion/` (empty design.md file)
+  - **Reason**: Folder was incomplete and causing confusion
+  - **Result**: Clean spec structure with only root specs and auth-lambda-refactoring feature spec
+  - **Benefit**: No duplicate or confusing spec folders
+
+- **Updated Global Steering** - Added spec structure documentation
+  - **File**: `.kiro/steering/00-global.md`
+  - **Added**: Clear explanation of root specs vs feature specs
+  - **Added**: When to use each type of spec
+  - **Added**: Examples of spec structure and usage
+  - **Benefit**: Kiro now understands spec organization from steering context
+
+### 📚 IMPACT
+
+- **Developer Onboarding**: New developers can understand the entire system in < 30 minutes
+- **Kiro Effectiveness**: Kiro has complete context for consistent, high-quality work
+- **System Clarity**: No more confusion about steering vs specs vs hooks
+- **Maintenance**: Easy to update and extend the system with clear documentation
+- **Integration**: All three systems (steering, specs, hooks) work seamlessly together
+
+---
+
 ## [1.5.0] - 2026-01-31
 
 ### 📚 FEATURE - Comprehensive Steering System
