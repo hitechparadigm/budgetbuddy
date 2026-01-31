@@ -107,13 +107,13 @@ Implement family account sharing with invitation system, role-based permissions,
     - Log permission violations
     - _Requirements: US-3, FR-3_
 
-  - [ ] 3.3 Update transaction Lambda
+  - [x] 3.3 Update transaction Lambda
     - Add permission checks to all endpoints
     - Return 403 for unauthorized actions
     - Log permission violations
     - _Requirements: US-3, FR-3_
 
-  - [ ] 3.4 Add permission tests
+  - [-] 3.4 Add permission tests
     - Test primary permissions
     - Test spouse permissions
     - Test viewer permissions

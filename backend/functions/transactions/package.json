@@ -16,6 +16,9 @@
     "collectCoverageFrom": [
       "*.js",
       "!*.test.js"
-    ]
+    ],
+    "moduleNameMapper": {
+      "^/opt/nodejs/(.*)$": "<rootDir>/__mocks__/opt/nodejs/$1"
+    }
   }
 }
