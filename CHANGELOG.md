@@ -167,6 +167,66 @@
 
 ### 📋 Next Steps (Phase 7-9)
 
+- ✅ Phase 7: Settings Page Integration - Currency management in settings (COMPLETE)
+- Phase 8: UI Formatting Updates - Use formatCurrency() in displays
+- Phase 9: Mobile App Integration - React Native components
+
+## [1.6.2] - 2026-01-31
+
+### 🌍 ADDED - Multi-Currency Support (Phase 7 - Settings Page Integration)
+
+- **Currency Management in Settings**: Users can now change their currency preference in settings
+  - **File**: `packages/web-app/src/pages/SettingsPage.tsx`
+  - **Features**:
+    - Currency Settings section with current currency display
+    - Currency selector dropdown with all 6 supported currencies
+    - Confirmation dialog before changing currency
+    - Warning about existing data not being converted
+    - Visual feedback with currency symbol and full name
+  - **Impact**: Users can update their currency preference after onboarding
+
+- **Currency Change Confirmation Dialog**: Safety mechanism for currency changes
+  - **Feature**: Modal dialog with confirmation and warning
+  - **UI**: Shows current and new currency names
+  - **Warning**: Explains that existing data won't be converted
+  - **Buttons**: Cancel and Confirm with loading states
+  - **Impact**: Prevents accidental currency changes
+
+### 📦 Technical Details
+
+**Files Modified**:
+
+- `packages/web-app/src/pages/SettingsPage.tsx` - Added currency management section
+- `.kiro/specs/multi-currency/tasks.md` - Marked Phase 7 tasks as complete
+
+**User Flow**:
+
+1. User navigates to Settings page
+2. User sees current currency in Currency Settings section
+3. User selects new currency from dropdown
+4. Confirmation dialog appears with warning
+5. User confirms change
+6. Currency updated (TODO: backend API integration)
+7. Success message displayed
+
+**UI Components**:
+
+- Currency Settings section with green highlight for current currency
+- CurrencySelector component for changing currency
+- Confirmation modal with warning message
+- Yellow warning box about data conversion
+- Success/error message display
+
+### 🧪 Testing
+
+- Currency selector integrated into settings page
+- Confirmation dialog prevents accidental changes
+- Warning messages clearly explain impact
+- Loading states during currency update
+- Cancel functionality works correctly
+
+### 📋 Next Steps (Phase 8-9)
+
 ## [1.5.7] - 2026-01-31
 
 ### 🔧 REFACTOR - Eliminate Duplicate Validation Checks
