@@ -225,6 +225,20 @@ export class ApiStack extends cdk.Stack {
     });
 
     /**
+     * Data Restore Functions
+     * Handle data restoration from JSON backups
+     */
+    this.functions.restoreHandler = new lambda.Function(this, 'RestoreHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-restore',
+      code: lambda.Code.fromAsset('../backend/functions/restore'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy restore handler for data restoration from JSON backups',
+      timeout: cdk.Duration.minutes(2), // Restore operations may take longer for large datasets
+      memorySize: 1024, // More memory for processing large datasets
+    });
+
+    /**
      * Admin Dashboard Functions
      * Handle admin operations and analytics
      */
@@ -581,6 +595,18 @@ export class ApiStack extends cdk.Stack {
             'method.response.header.Content-Type': true,
             'method.response.header.Content-Disposition': true,
           }
+        }
+      ],
+    });
+
+    // Data Restore routes (protected)
+    const restoreResource = this.api.root.addResource('restore');
+    restoreResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.restoreHandler), {
+      authorizer,
+      operationName: 'RestoreData',
+      methodResponses: [
+        {
+          statusCode: '200',
         }
       ],
     });

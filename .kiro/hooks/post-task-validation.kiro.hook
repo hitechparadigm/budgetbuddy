@@ -1,12 +1,12 @@
 {
-  "name": "Post-Task Validation and Commit",
-  "version": "1.0.0",
-  "description": "Automatically validates and commits after task completion",
+  "name": "Smart Task Completion Commit",
+  "version": "2.0.0",
+  "description": "Commits only when a task is fully implemented and tested (not after every response)",
   "when": {
-    "type": "agentStop"
+    "type": "userTriggered"
   },
   "then": {
     "type": "askAgent",
-    "prompt": "✅ Task completed. Execute safe commit workflow:\n\n**STEP 1: Validate**\n```bash\nnode scripts/validate-for-commit.js\n```\n\n**STEP 2: Check Result**\n- If validation PASSED → Proceed to Step 3\n- If validation FAILED → Fix issues and return to Step 1\n\n**STEP 3: Commit and Push**\n```bash\nnode scripts/safe-commit-push.js \"feat: [describe what was implemented]\"\n```\n\n**STEP 4: Monitor CI/CD**\n```bash\ngh run list --limit 1 --json conclusion,displayTitle,url\n```\n\n**STEP 5: Continue**\nImmediately proceed to next task in task list.\n\n**CRITICAL**: Never skip validation. Never use --no-verify. Always use safe-commit-push.js script."
+    "prompt": "🎯 SMART COMMIT WORKFLOW - Only commit when task is COMPLETE\n\n**WHEN TO COMMIT:**\n✅ Task implementation is COMPLETE (code + tests written)\n✅ All tests are PASSING\n✅ Feature is WORKING (tested manually if needed)\n✅ Documentation is UPDATED (all 4 files)\n\n**WHEN NOT TO COMMIT:**\n❌ Still planning or discussing\n❌ Mid-implementation (code not finished)\n❌ Tests not written yet\n❌ Tests failing\n❌ Just updated documentation\n\n**COMMIT WORKFLOW:**\n\n**STEP 1: Self-Check**\nAsk yourself:\n- Is the task FULLY implemented?\n- Are ALL tests passing?\n- Is the feature WORKING?\n- Are docs updated?\n\nIf ANY answer is NO → Don't commit yet, continue working.\n\n**STEP 2: Validate**\n```bash\nnode scripts/validate-for-commit.js\n```\n\n**STEP 3: Check Result**\n- If validation PASSED → Proceed to Step 4\n- If validation FAILED → Fix issues and return to Step 2\n- Max 3 retry attempts\n\n**STEP 4: Commit and Push**\n```bash\nnode scripts/safe-commit-push.js \"feat: [describe what was implemented]\"\n```\n\n**STEP 5: Monitor CI/CD**\n```bash\ngh run list --limit 1 --json conclusion,displayTitle,url\n```\n\n**STEP 6: Continue**\nProceed to next task in task list.\n\n**CRITICAL RULES:**\n- Never skip validation\n- Never use --no-verify\n- Always use safe-commit-push.js script\n- Commit only at logical milestones (complete tasks)\n- Don't commit after every response"
   }
 }

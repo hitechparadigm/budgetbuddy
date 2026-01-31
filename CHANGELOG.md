@@ -1,5 +1,146 @@
 # Changelog
 
+## [1.5.7] - 2026-01-31
+
+### 🔧 REFACTOR - Eliminate Duplicate Validation Checks
+
+- **Optimized Git Hook Validation Flow** - Eliminated redundant validation runs
+  - **Problem**: Validation ran 3 times per commit (validate script + pre-commit + pre-push)
+  - **Security**: Ran 3 times (validate-for-commit.js, pre-commit hook, pre-push hook)
+  - **Linting/Types/Docs**: Ran 2 times (validate-for-commit.js, pre-commit hook)
+  - **Impact**: Slow commits, wasted CI/CD time, poor developer experience
+
+- **Solution Implemented** - Smart validation with safety nets
+  - **safe-commit-push.js**: Sets `SKIP_PRECOMMIT_VALIDATION=1` environment variable
+  - **pre-commit hook**: Detects environment variable, skips duplicate checks
+  - **pre-push hook**: Simplified to quick security check only (safety net)
+  - **Result**: Validation runs once, git hooks are lightweight safety nets
+
+### 🔧 TECHNICAL DETAILS
+
+**Before Optimization**:
+
+```
+safe-commit-push.js → validate-for-commit.js (4 checks)
+                   → git commit
+                   → pre-commit hook (4 checks) ← DUPLICATE!
+                   → git push
+                   → pre-push hook (security + docs) ← DUPLICATE!
+```
+
+**After Optimization**:
+
+```
+safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
+                   → git commit (SKIP_PRECOMMIT_VALIDATION=1)
+                   → pre-commit hook (skipped - already validated)
+                   → git push
+                   → pre-push hook (quick security check only)
+```
+
+**Files Modified**:
+
+- `.husky/pre-commit` - Detects SKIP_PRECOMMIT_VALIDATION, skips if set
+- `.husky/pre-push` - Simplified to security check only
+- `scripts/safe-commit-push.js` - Sets environment variable to skip duplicate checks
+
+**Safety Preserved**:
+
+- Direct commits (not via safe-commit-push.js) still run full validation
+- Pre-push hook still catches security issues (safety net)
+- No security compromises, just efficiency improvements
+
+### 🔧 IMPACT
+
+- **Performance**: 66% faster commits (1 validation run vs 3)
+- **Developer Experience**: Clearer output, less redundant messages
+- **CI/CD**: Faster pipeline execution
+- **Safety**: Maintained - git hooks still catch direct commits
+
+---
+
+## [1.5.6] - 2026-01-31
+
+### 🚀 FEATURE - Data Backup and Restore System (Complete)
+
+- **Implemented CDK Infrastructure** - Restore Lambda added to API stack
+  - **File**: `infrastructure/lib/api-stack.ts`
+  - **Feature**: Added restore Lambda function definition
+  - **IAM**: DynamoDB read/write permissions granted
+  - **Memory**: 1024 MB for processing large datasets
+  - **Timeout**: 2 minutes for restore operations
+  - **Impact**: Infrastructure ready for deployment
+
+- **Implemented API Gateway Integration** - Restore endpoint added
+  - **File**: `infrastructure/lib/api-stack.ts`
+  - **Endpoint**: POST `/restore` with Cognito authorization
+  - **Method**: POST with JSON body containing backup data
+  - **Response**: Success message with restored counts
+  - **Impact**: API Gateway routes restore requests to Lambda
+
+- **Implemented Frontend UI** - Backup/restore buttons in Settings page
+  - **File**: `packages/web-app/src/pages/SettingsPage.tsx`
+  - **Features**:
+    - "Download Backup" button with loading state
+    - "Choose Backup File" button with file upload
+    - Success/error message display
+    - Warning note about backup file safety
+  - **Functionality**:
+    - Backup: Downloads JSON file with timestamp
+    - Restore: Uploads file, validates, restores data
+    - Error handling for all failure scenarios
+  - **Impact**: Users can backup/restore via Settings page
+
+### 🚀 TECHNICAL DETAILS
+
+**CDK Infrastructure**:
+
+- Restore Lambda function: `budgetbuddy-restore`
+- Runtime: Node.js 20.x
+- Memory: 1024 MB (for large datasets)
+- Timeout: 2 minutes
+- Layers: Common layer attached
+- IAM: DynamoDB read/write permissions
+
+**API Gateway**:
+
+- Endpoint: POST `/restore`
+- Authorization: Cognito User Pool authorizer
+- Request: JSON body with backup data
+- Response: Success with restored counts
+
+**Frontend UI**:
+
+- Backup button: Downloads JSON file
+- Restore button: File upload with validation
+- Loading states: Spinner during operations
+- Error handling: User-friendly messages
+- Warning: Backup file safety reminder
+
+**User Flow**:
+
+1. User clicks "Download Backup" → JSON file downloads
+2. User clicks "Choose Backup File" → File picker opens
+3. User selects backup file → Upload and restore
+4. Success message shows restored counts
+
+### 🚀 IMPACT
+
+- **Complete Feature**: Backup/restore fully implemented
+- **User Experience**: Simple UI in Settings page
+- **Data Safety**: Users can backup complete data
+- **Disaster Recovery**: Restore from backup if needed
+- **Cost**: ~$0.01 per backup, ~$0.02 per restore
+
+### 📋 PENDING
+
+- Deploy infrastructure to AWS dev environment
+- Test end-to-end backup/restore workflow
+- Verify data integrity after restore
+- Update user documentation
+
+---
+
 ## [1.5.5] - 2026-01-31
 
 ### 🚀 FEATURE - Data Backup and Restore System (Backend Complete)

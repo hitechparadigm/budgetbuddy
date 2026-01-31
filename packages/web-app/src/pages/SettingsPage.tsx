@@ -32,6 +32,8 @@ export const SettingsPage: React.FC = () => {
     text: string;
   } | null>(null);
   const [showTokenDiagnostics, setShowTokenDiagnostics] = useState(false);
+  const [backupInProgress, setBackupInProgress] = useState(false);
+  const [restoreInProgress, setRestoreInProgress] = useState(false);
 
   useEffect(() => {
     // Detect and set current timezone
@@ -94,6 +96,116 @@ export const SettingsPage: React.FC = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleBackupData = async () => {
+    setBackupInProgress(true);
+    setMessage(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL ||
+        "https://your-api-url.execute-api.us-east-1.amazonaws.com/v1";
+      const response = await fetch(`${apiUrl}/export?type=json`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to export data");
+      }
+
+      // Download the backup file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `budgetbuddy-backup-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setMessage({
+        type: "success",
+        text: "Backup downloaded successfully! Keep this file safe.",
+      });
+    } catch (error) {
+      console.error("Backup error:", error);
+      setMessage({
+        type: "error",
+        text: "Failed to create backup. Please try again.",
+      });
+    } finally {
+      setBackupInProgress(false);
+    }
+  };
+
+  const handleRestoreData = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setRestoreInProgress(true);
+    setMessage(null);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Not authenticated");
+      }
+
+      // Read file content
+      const fileContent = await file.text();
+      const backupData = JSON.parse(fileContent);
+
+      const apiUrl =
+        import.meta.env.VITE_API_URL ||
+        "https://your-api-url.execute-api.us-east-1.amazonaws.com/v1";
+      const response = await fetch(`${apiUrl}/restore`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(backupData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to restore data");
+      }
+
+      const result = await response.json();
+
+      setMessage({
+        type: "success",
+        text: `Data restored successfully! Restored ${result.restored.budgets} budgets and ${result.restored.transactions} transactions.`,
+      });
+
+      // Reset file input
+      event.target.value = "";
+    } catch (error) {
+      console.error("Restore error:", error);
+      setMessage({
+        type: "error",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Failed to restore data. Please check the backup file and try again.",
+      });
+      event.target.value = "";
+    } finally {
+      setRestoreInProgress(false);
     }
   };
 
@@ -272,6 +384,181 @@ export const SettingsPage: React.FC = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Account</h2>
           <p className="text-gray-600">Account settings coming soon...</p>
+        </div>
+
+        {/* Data Backup & Restore Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Data Backup & Restore
+          </h2>
+
+          <div className="space-y-6">
+            {/* Backup Section */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Backup Your Data
+              </h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Download a complete backup of all your budgets, transactions,
+                and settings in JSON format. Keep this file safe - you can use
+                it to restore your data if needed.
+              </p>
+              <button
+                onClick={handleBackupData}
+                disabled={backupInProgress}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors flex items-center space-x-2"
+              >
+                {backupInProgress ? (
+                  <>
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    <span>Creating Backup...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                      />
+                    </svg>
+                    <span>Download Backup</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-gray-200"></div>
+
+            {/* Restore Section */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Restore from Backup
+              </h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Upload a backup file to restore your data. This will add the
+                budgets and transactions from the backup to your account.
+                Existing data will not be deleted.
+              </p>
+              <div className="flex items-center space-x-3">
+                <label
+                  htmlFor="restore-file"
+                  className={`px-4 py-2 border-2 border-blue-600 text-blue-600 hover:bg-blue-50 rounded-md font-medium transition-colors cursor-pointer flex items-center space-x-2 ${
+                    restoreInProgress ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {restoreInProgress ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5 text-blue-600"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <span>Restoring...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                      <span>Choose Backup File</span>
+                    </>
+                  )}
+                </label>
+                <input
+                  id="restore-file"
+                  type="file"
+                  accept=".json"
+                  onChange={handleRestoreData}
+                  disabled={restoreInProgress}
+                  className="hidden"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Only JSON backup files are supported
+              </p>
+            </div>
+
+            {/* Warning Note */}
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start space-x-2">
+                <svg
+                  className="w-5 h-5 text-yellow-600 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <div>
+                  <p className="text-sm font-medium text-yellow-800">
+                    Important
+                  </p>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    Always keep your backup files in a safe place. We recommend
+                    storing them in multiple locations (cloud storage, external
+                    drive, etc.) to prevent data loss.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Troubleshooting Section */}
