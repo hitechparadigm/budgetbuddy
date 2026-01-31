@@ -5,6 +5,7 @@ export const TransactionSchema = z.object({
   familyId: z.string(),
   budgetMonth: z.string(), // YYYY-MM format
   amount: z.number().positive(),
+  currency: z.string().length(3).default('USD'), // ISO 4217 currency code
   type: z.enum(['income', 'expense']),
   categoryId: z.string(),
   categoryName: z.string(),

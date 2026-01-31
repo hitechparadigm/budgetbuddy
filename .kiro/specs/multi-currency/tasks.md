@@ -101,19 +101,19 @@ Implement multi-currency support for BudgetBuddy, allowing users to select and m
     - Test budget response includes currency
     - _Requirements: 4.1, 4.3_
 
-- [ ] 5. Update Transaction Schema
-  - [ ] 5.1 Update transaction DynamoDB schema
+- [x] 5. Update Transaction Schema
+  - [x] 5.1 Update transaction DynamoDB schema
     - Add `currency` field to transaction
     - Update TypeScript types
     - _Requirements: 4.2, 4.3_
 
-  - [ ] 5.2 Update transaction Lambda function
+  - [x] 5.2 Update transaction Lambda function
     - Add currency to transaction creation
     - Add currency to transaction response
     - Use budget's currency as default
     - _Requirements: 4.2, 4.3_
 
-  - [ ] 5.3 Update transaction Lambda tests
+  - [x] 5.3 Update transaction Lambda tests
     - Test transaction creation with currency
     - Test transaction response includes currency
     - _Requirements: 4.2, 4.3_

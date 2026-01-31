@@ -2,7 +2,7 @@
 
 ## [1.6.0] - 2026-01-31
 
-### 🌍 ADDED - Multi-Currency Support (Phase 1-4 - Complete Data Model Integration)
+### 🌍 ADDED - Multi-Currency Support (Phase 1-5 - Complete Backend Integration)
 
 - **Currency Utility Module**: Comprehensive currency formatting and validation system
   - Support for 6 major currencies: USD, EUR, GBP, CAD, AUD, JPY
@@ -43,6 +43,13 @@
   - Budget responses include currency field
   - Supports currency override in budget creation request
 
+- **Transaction Schema Update** (Phase 5): Currency fields added to transactions
+  - Added `currency` field to Transaction TypeScript interface
+  - Transaction Lambda fetches budget's currency
+  - Transaction creation uses budget's default currency
+  - Transaction responses include currency field
+  - Supports currency override in transaction creation request
+
 ### 📦 Technical Details
 
 **Files Added**:
@@ -61,8 +68,10 @@
 - `packages/web-app/package.json` - Added @testing-library dependencies
 - `packages/shared/src/types/user.ts` - Added currency and locale fields to UserSchema
 - `packages/shared/src/types/budget.ts` - Added currency field to MonthlyBudget interface
+- `packages/shared/src/types/transaction.ts` - Added currency field to TransactionSchema
 - `backend/functions/auth/index.js` - Added currency handling in registration and Google Sign-In
 - `backend/functions/budget/index.js` - Added currency fetching from user profile and budget creation
+- `backend/functions/transactions/index.js` - Added currency fetching from budget and transaction creation
 - `.kiro/steering/00-global.md` - Updated autonomous workflow to prevent validation duplication
 
 **Functions Implemented**:
@@ -88,13 +97,13 @@
 - All 6 currencies tested with proper decimal places and separators
 - Edge cases: very large amounts, very small amounts, negative amounts, zero
 
-### 📋 Next Steps (Phase 5-6)
+### 📋 Next Steps (Phase 6-9)
 
-- Update transaction schema with currency field
-- Update transaction Lambda functions to handle currency
 - Integrate currency selector into onboarding flow
 - Add currency management to settings page
 - Update budget/transaction display with currency formatting
+- Mobile app integration (React Native component)
+- Data migration for existing users (default to USD)
 
 ## [1.5.7] - 2026-01-31
 
