@@ -153,7 +153,7 @@ export class NotificationStack extends cdk.Stack {
     // 7. Create CloudWatch dashboard
     this.createDashboard();
 
-    // 8. Export Lambda function ARNs
+    // 8. Export Lambda function ARNs for API Gateway integration
     new cdk.CfnOutput(this, 'NotificationFunctionArn', {
       value: this.notificationFunction.functionArn,
       description: 'ARN of the Notification Service Lambda function',
