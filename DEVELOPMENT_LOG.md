@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-02-01 - Family Lambda & Auth Token Fixes (Session 47)
+
+### Session Summary
+
+**Duration**: 20 minutes
+**Focus**: Fixed Family Lambda 502 and auth profile token handling
+**Outcome**: Both endpoints now work with various token configurations
+
+### Problems
+
+1. Family Lambda returned 502 because it required authorizer claims that weren't always present
+2. PUT /auth/profile used different userId extraction than GET, causing mismatched user lookups
+
+### Solutions
+
+1. **Family Lambda**: Added fallback to parse JWT directly and look up familyId from DynamoDB
+2. **Auth Lambda**: Aligned PUT profile handler with GET profile handler's token parsing logic
+
+### Files Changed
+
+- `backend/functions/family/index.js` - Added fallback token parsing
+- `backend/functions/auth/index.js` - Fixed PUT profile userId extraction
+
+---
+
 ## 2026-02-01 - Profile API Fix (Session 46)
 
 ### Session Summary
