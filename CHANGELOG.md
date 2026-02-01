@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.9.30] - 2026-02-01
+
+### 🔧 Infrastructure Fix - API Stack Resource Limit
+
+- **Problem**: API stack exceeded CloudFormation 500 resource limit (536 resources)
+- **Solution**: Reduced API routes to health-only endpoints for new features
+- **Affected Features**:
+  - Plaid: Only /plaid/health endpoint exposed (full routes pending stack split)
+  - Reconciliation: Only /reconcile/health endpoint exposed (full routes pending stack split)
+  - Admin: Only /admin/health endpoint exposed (full routes pending stack split)
+
+- **Lambda Functions Still Deployed**:
+  - `budgetbuddy-plaid` - Bank sync with mock mode (14 tests)
+  - `budgetbuddy-reconciliation` - Receipt-to-bank matching (11 tests)
+  - `budgetbuddy-admin` - User management and dashboard (13 tests)
+
+- **Next Steps**: Split API stack into multiple stacks to enable full route deployment
+
+### 🚀 NEW FEATURE - Admin Dashboard Backend (Task 7)
+
+- **Backend Implementation**
+  - Updated `backend/functions/admin/index.js` - Full admin functionality
+  - Created `backend/functions/admin/admin.test.js` - Unit tests (13 tests passing)
+
+- **Features Implemented**
+  - Dashboard metrics (users, budgets, transactions, premium conversion)
+  - User search by email, name, or userId
+  - User details with stats
+  - Disable/enable user accounts
+  - Password reset trigger
+  - System health status
+  - Audit logging for all admin actions
+
 ## [1.9.29] - 2026-02-01
 
 ### 🚀 NEW FEATURE - Receipt-to-Bank Reconciliation (Task 6)
