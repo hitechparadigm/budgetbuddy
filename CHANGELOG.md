@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.9.23] - 2026-02-01
+
+### ✅ TESTING - Phase 9 Integration Tests Complete
+
+- **Task 9.1 - Invitation Flow Tests** - Comprehensive tests for family invitation system
+  - Send invitation as primary user
+  - Reject duplicate pending invitations
+  - Accept valid invitation
+  - Reject expired/invalid tokens
+  - Verify family membership after acceptance
+  - **File**: `backend/functions/family/index.test.js`
+
+- **Task 9.2 - Permission Enforcement Tests** - Role-based access control validation
+  - Primary user: can invite, update roles, remove members
+  - Spouse user: can view members, leave family, cannot manage
+  - Viewer user: can view members, leave family, cannot manage
+  - **File**: `backend/functions/family/index.test.js`
+
+- **Task 9.3 - Member Management Tests** - Role changes and member operations
+  - Change spouse to viewer and vice versa
+  - Reject invalid role changes
+  - Remove members from family
+  - Leave family creates new family
+  - **File**: `backend/functions/family/index.test.js`
+
+- **Task 9.4 - Concurrent Edits Tests** - Last-write-wins validation
+  - Fixed budget test mocks for proper FamilyIdResolver handling
+  - Concurrent updates both succeed with last-write-wins
+  - Each update gets unique updatedAt timestamp
+  - **File**: `backend/functions/budget/budget.test.js`
+
+- **Test Results**: 49 family tests + 18 budget tests = 67 tests passing
+
 ## [1.9.22] - 2026-02-01
 
 ### 🐛 BUGFIX - Family Lambda & Auth Profile Token Handling
