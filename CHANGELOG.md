@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.9.38] - 2026-02-01
+
+### 🔗 Feature - Goal Category Linking (Task 2.4)
+
+- **Auto-update goals from transactions** - Goals linked to categories now auto-update when transactions are added
+- **Savings category detection** - Transactions with "saving" in category ID or income type trigger goal updates
+- **Milestone tracking** - Automatic milestone detection (25%, 50%, 75%, 100%) on goal updates
+- **Contribution logging** - Auto-contributions logged with "category-link" source
+- **10 new tests** - Linked goals logic tests added to transaction.test.js (23 total)
+
+**How it works:**
+
+1. Create a goal with `linkedCategoryId` set to a category
+2. When transactions are created/updated/deleted for that category, the goal auto-updates
+3. Progress, milestones, and completion status are automatically calculated
+
 ## [1.9.37] - 2026-02-01
 
 ### 🚀 NEW FEATURE - Educational Content Lambda (Task 10)

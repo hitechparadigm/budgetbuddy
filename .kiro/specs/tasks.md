@@ -63,9 +63,9 @@
   - [x] 2.3.1 Calculate progress percentage
   - [x] 2.3.2 Calculate monthly required amount
   - [x] 2.3.3 Track milestone achievements (25%, 50%, 75%, 100%)
-- [ ] 2.4 Implement category linking
-  - [ ] 2.4.1 Link savings category to goal
-  - [ ] 2.4.2 Auto-update goal when linked category transaction added
+- [x] 2.4 Implement category linking
+  - [x] 2.4.1 Link savings category to goal
+  - [x] 2.4.2 Auto-update goal when linked category transaction added
 - [ ] 2.5 Implement goal notifications
   - [ ] 2.5.1 Weekly progress update notification
   - [ ] 2.5.2 Milestone celebration notification

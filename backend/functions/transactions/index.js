@@ -29,6 +29,136 @@ const { updateBudgetCalculations } = require("./budget-service");
 const { checkPermission } = require("/opt/nodejs/shared");
 
 /**
+ * Update linked goals when a savings transaction is created
+ * @param {string} familyId - Family ID
+ * @param {string} categoryId - Category ID of the transaction
+ * @param {number} amount - Transaction amount
+ * @param {string} operation - 'add' or 'subtract'
+ */
+async function updateLinkedGoals(familyId, categoryId, amount, operation) {
+  try {
+    // Find goals linked to this category
+    const goals = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+      FilterExpression:
+        "entityType = :entityType AND linkedCategoryId = :categoryId AND #status = :active AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: {
+        ":entityType": "GOAL",
+        ":categoryId": categoryId,
+        ":active": "active",
+        ":false": false,
+      },
+    });
+
+    if (goals.length === 0) {
+      return; // No linked goals
+    }
+
+    const currentTime = new Date().toISOString();
+
+    for (const goal of goals) {
+      const currentAmount = goal.currentAmount || 0;
+      const newAmount =
+        operation === "add"
+          ? currentAmount + amount
+          : Math.max(0, currentAmount - amount);
+
+      // Calculate new progress
+      const progressPercent = Math.min(
+        100,
+        Math.round((newAmount / goal.targetAmount) * 100),
+      );
+
+      // Check for milestone achievements
+      const milestoneThresholds = [25, 50, 75, 100];
+      const updatedMilestones = { ...(goal.milestones || {}) };
+      const newMilestones = [];
+
+      for (const threshold of milestoneThresholds) {
+        const key = String(threshold);
+        if (!updatedMilestones[key]) {
+          updatedMilestones[key] = { reached: false, date: null };
+        }
+
+        if (progressPercent >= threshold && !updatedMilestones[key].reached) {
+          updatedMilestones[key] = { reached: true, date: currentTime };
+          newMilestones.push(threshold);
+        }
+      }
+
+      // Check if goal is complete
+      let status = goal.status;
+      let completedAt = goal.completedAt;
+      if (progressPercent >= 100 && status === "active") {
+        status = "completed";
+        completedAt = currentTime;
+      }
+
+      // Calculate monthly required
+      let monthlyRequired = null;
+      if (goal.targetDate && newAmount < goal.targetAmount) {
+        const today = new Date();
+        const targetDate = new Date(goal.targetDate);
+        const monthsRemaining = Math.max(
+          1,
+          (targetDate.getFullYear() - today.getFullYear()) * 12 +
+            (targetDate.getMonth() - today.getMonth()),
+        );
+        const amountRemaining = goal.targetAmount - newAmount;
+        monthlyRequired = Math.ceil(amountRemaining / monthsRemaining);
+      }
+
+      // Create contribution record for auto-updates
+      const contributions = [...(goal.contributions || [])];
+      if (operation === "add") {
+        contributions.push({
+          date: currentTime.split("T")[0],
+          amount,
+          source: "category-link",
+          note: `Auto-added from linked category transaction`,
+        });
+      }
+
+      // Update the goal
+      await dynamoHelpers.updateItem(
+        `FAMILY#${familyId}`,
+        `GOAL#${goal.goalId}`,
+        {
+          currentAmount: newAmount,
+          progressPercent,
+          monthlyRequired,
+          milestones: updatedMilestones,
+          contributions,
+          status,
+          completedAt,
+          updatedAt: currentTime,
+        },
+      );
+
+      logger.info("Linked goal updated from transaction", {
+        goalId: goal.goalId,
+        familyId,
+        categoryId,
+        operation,
+        amount,
+        newAmount,
+        progressPercent,
+        newMilestones,
+      });
+    }
+  } catch (error) {
+    // Log but don't fail the transaction if goal update fails
+    logger.error("Failed to update linked goals", {
+      familyId,
+      categoryId,
+      amount,
+      operation,
+      error: error.message,
+    });
+  }
+}
+
+/**
  * Main Lambda handler for transaction operations
  * Routes requests to appropriate handlers based on HTTP method and path
  */
@@ -273,6 +403,19 @@ async function createTransaction(event, user) {
     requestBody.amount,
     "add",
   );
+
+  // Update linked goals if this is a savings/income transaction
+  if (
+    requestBody.type === "income" ||
+    requestBody.categoryId.toLowerCase().includes("saving")
+  ) {
+    await updateLinkedGoals(
+      familyId,
+      requestBody.categoryId,
+      requestBody.amount,
+      "add",
+    );
+  }
 
   logger.info("Transaction created successfully", {
     transactionId,
@@ -599,6 +742,14 @@ async function updateTransaction(event, user, transactionId) {
       "subtract",
     );
 
+    // Update linked goals for old category (subtract)
+    if (
+      oldType === "income" ||
+      oldCategoryId.toLowerCase().includes("saving")
+    ) {
+      await updateLinkedGoals(familyId, oldCategoryId, oldAmount, "subtract");
+    }
+
     // Add new transaction impact
     const newAmount = updatedTransaction.amount;
     const newType = updatedTransaction.type;
@@ -613,6 +764,14 @@ async function updateTransaction(event, user, transactionId) {
       newAmount,
       "add",
     );
+
+    // Update linked goals for new category (add)
+    if (
+      newType === "income" ||
+      newCategoryId.toLowerCase().includes("saving")
+    ) {
+      await updateLinkedGoals(familyId, newCategoryId, newAmount, "add");
+    }
   }
 
   logger.info("Transaction updated successfully", {
@@ -696,6 +855,19 @@ async function deleteTransaction(event, user, transactionId) {
     existingTransaction.amount,
     "subtract",
   );
+
+  // Update linked goals if this was a savings/income transaction
+  if (
+    existingTransaction.type === "income" ||
+    existingTransaction.categoryId.toLowerCase().includes("saving")
+  ) {
+    await updateLinkedGoals(
+      familyId,
+      existingTransaction.categoryId,
+      existingTransaction.amount,
+      "subtract",
+    );
+  }
 
   logger.info("Transaction deleted successfully", {
     transactionId,
