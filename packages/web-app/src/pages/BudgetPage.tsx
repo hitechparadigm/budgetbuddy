@@ -1486,9 +1486,9 @@ export const BudgetPage: React.FC = () => {
               </a>
             </li>
             <li>
-              <a
-                href="#"
-                className={`flex items-center ${
+              <button
+                onClick={() => navigate("/accounts")}
+                className={`w-full flex items-center ${
                   sidebarCollapsed && !isMobile
                     ? "justify-center px-2"
                     : "space-x-3 px-3"
@@ -1503,7 +1503,7 @@ export const BudgetPage: React.FC = () => {
                     </span>
                   </>
                 )}
-              </a>
+              </button>
             </li>
             <li>
               <a
@@ -2579,7 +2579,10 @@ export const BudgetPage: React.FC = () => {
                 </div>
 
                 {/* Connect Bank Button */}
-                <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+                <button
+                  onClick={() => navigate("/accounts")}
+                  className="mt-8 w-full p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors text-left"
+                >
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs">🏦</span>
@@ -2589,11 +2592,11 @@ export const BudgetPage: React.FC = () => {
                         Connect Your Bank
                       </div>
                       <div className="text-xs text-blue-700">
-                        Try the premium version of BudgetBuddy
+                        Link accounts to auto-import transactions
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               </>
             )}
           </div>

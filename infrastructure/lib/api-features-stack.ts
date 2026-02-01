@@ -99,8 +99,61 @@ export class ApiFeaturesStack extends cdk.Stack {
     // Set up API routes
     this.setupApiRoutes(authorizer);
 
+    // Add Gateway Responses for CORS on 4XX errors (including 401 from authorizer)
+    this.addGatewayResponses();
+
     // Create outputs
     this.createOutputs();
+  }
+
+  private addGatewayResponses(): void {
+    // Add CORS headers to 401 Unauthorized responses (from Cognito authorizer)
+    this.api.addGatewayResponse('UnauthorizedResponse', {
+      type: apigateway.ResponseType.UNAUTHORIZED,
+      statusCode: '401',
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+        'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+        'Access-Control-Allow-Methods': "'GET,POST,PUT,DELETE,OPTIONS'",
+      },
+      templates: {
+        'application/json': '{"success":false,"message":"Unauthorized - Please log in","error":{"code":"UNAUTHORIZED"}}',
+      },
+    });
+
+    // Add CORS headers to 403 Forbidden responses
+    this.api.addGatewayResponse('ForbiddenResponse', {
+      type: apigateway.ResponseType.ACCESS_DENIED,
+      statusCode: '403',
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+        'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+        'Access-Control-Allow-Methods': "'GET,POST,PUT,DELETE,OPTIONS'",
+      },
+      templates: {
+        'application/json': '{"success":false,"message":"Access denied","error":{"code":"FORBIDDEN"}}',
+      },
+    });
+
+    // Add CORS headers to 4XX default responses
+    this.api.addGatewayResponse('Default4XXResponse', {
+      type: apigateway.ResponseType.DEFAULT_4XX,
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+        'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+        'Access-Control-Allow-Methods': "'GET,POST,PUT,DELETE,OPTIONS'",
+      },
+    });
+
+    // Add CORS headers to 5XX default responses
+    this.api.addGatewayResponse('Default5XXResponse', {
+      type: apigateway.ResponseType.DEFAULT_5XX,
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+        'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+        'Access-Control-Allow-Methods': "'GET,POST,PUT,DELETE,OPTIONS'",
+      },
+    });
   }
 
   private createLambdaFunctions(

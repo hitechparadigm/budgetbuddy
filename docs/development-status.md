@@ -1,10 +1,32 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-01 (Plaid Bank Sync Integration)
+**Last Updated**: 2026-02-01 (CORS Fix for API Gateway)
 **Current Phase**: Competitive Features Implementation
-**Overall Progress**: 95% Core + 35% Competitive Features
+**Overall Progress**: 95% Core + 40% Competitive Features
 
-## 🏦 NEW - Plaid Bank Sync Integration (Sandbox Mode)
+## 🔧 LATEST - CORS Fix for API Gateway Authorizer
+
+### Problem Fixed ✅
+
+When calling Plaid API endpoints from the web app, 401 Unauthorized errors from the Cognito authorizer didn't include CORS headers. This caused browser CORS errors that masked the actual authentication issue.
+
+### Solution
+
+Added Gateway Responses to Features API Gateway:
+
+- `UnauthorizedResponse` (401) - Returns CORS headers with JSON error
+- `ForbiddenResponse` (403) - Returns CORS headers with JSON error
+- `Default4XXResponse` - CORS headers for all 4XX errors
+- `Default5XXResponse` - CORS headers for all 5XX errors
+
+### UI Navigation Fixed
+
+- "Accounts" sidebar link now navigates to `/accounts`
+- "Connect Your Bank" card is now clickable
+
+---
+
+## 🏦 Plaid Bank Sync Integration (Sandbox Mode)
 
 ### Implementation Complete ✅
 
