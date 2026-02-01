@@ -1,5 +1,36 @@
 # Development Log
 
+## 2026-02-01 - API Stack Split (Session 56)
+
+### Session Summary
+
+**Duration**: 20 minutes
+**Focus**: Split API stack to stay under CloudFormation 500 resource limit
+**Outcome**: Created api-features-stack with separate API Gateway, CDK synth passes
+
+### Work Completed
+
+1. **API Stack Split (Task 0)**:
+   - Created `infrastructure/lib/api-features-stack.ts`
+   - Moved Plaid and Reconciliation Lambdas to new stack
+   - Created separate API Gateway for features (avoids cyclic dependencies)
+   - Updated `bin/app.ts` with new stack and dependencies
+   - CDK synth passes successfully
+
+### Technical Details
+
+- Separate API Gateway required to avoid cyclic dependencies when sharing routes
+- Features API will have different base URL than main API
+- Clients need to be updated to use both API URLs
+
+### Files Created/Modified
+
+- `infrastructure/lib/api-features-stack.ts` (created)
+- `infrastructure/lib/api-stack.ts` (removed Plaid/Reconciliation)
+- `infrastructure/bin/app.ts` (added ApiFeaturesStack)
+
+---
+
 ## 2026-02-01 - Admin Backend & API Stack Fix (Session 55)
 
 ### Session Summary

@@ -329,33 +329,7 @@ export class ApiStack extends cdk.Stack {
       description: 'BudgetBuddy receipt handler for AI-powered receipt scanning and extraction',
     });
 
-    /**
-     * Plaid Bank Sync Functions
-     * Handle bank account linking, transaction sync, and mock mode for development
-     */
-    this.functions.plaidHandler = new lambda.Function(this, 'PlaidHandler', {
-      ...commonProps,
-      functionName: 'budgetbuddy-plaid',
-      code: lambda.Code.fromAsset('../backend/functions/plaid'),
-      handler: 'index.handler',
-      description: 'BudgetBuddy Plaid handler for bank account sync with daily rate limiting',
-      environment: {
-        ...commonEnvironment,
-        PLAID_MOCK_MODE: 'true', // Enable mock mode by default for development
-      },
-    });
-
-    /**
-     * Receipt-to-Bank Reconciliation Functions
-     * Handle matching receipts with bank transactions using confidence scoring
-     */
-    this.functions.reconciliationHandler = new lambda.Function(this, 'ReconciliationHandler', {
-      ...commonProps,
-      functionName: 'budgetbuddy-reconciliation',
-      code: lambda.Code.fromAsset('../backend/functions/reconciliation'),
-      handler: 'index.handler',
-      description: 'BudgetBuddy reconciliation handler for receipt-to-bank transaction matching',
-    });
+    // Note: Plaid and Reconciliation Lambdas moved to ApiFeaturesStack
 
     // Grant DynamoDB permissions to all functions
     Object.values(this.functions).forEach(func => {
@@ -992,21 +966,7 @@ export class ApiStack extends cdk.Stack {
       operationName: 'GetReceipt',
     });
 
-    // Plaid routes (protected) - Health only for now (full routes pending API stack split)
-    const plaidResource = this.api.root.addResource('plaid');
-    const plaidHealthResource = plaidResource.addResource('health');
-    plaidHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
-      methodResponses: [{ statusCode: '200' }],
-      operationName: 'PlaidHealthCheck',
-    });
-
-    // Reconciliation routes (protected) - Health only for now (full routes pending API stack split)
-    const reconcileResource = this.api.root.addResource('reconcile');
-    const reconcileHealthResource = reconcileResource.addResource('health');
-    reconcileHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.reconciliationHandler), {
-      methodResponses: [{ statusCode: '200' }],
-      operationName: 'ReconciliationHealthCheck',
-    });
+    // Note: Plaid and Reconciliation routes moved to ApiFeaturesStack
 
     // Email routes (public for webhooks, protected for sending)
     const emailResource = this.api.root.addResource('email');

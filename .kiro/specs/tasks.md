@@ -249,6 +249,24 @@
 
 ---
 
+## Priority Task: API Stack Split (BLOCKING)
+
+### Task 0: Split API Stack to Stay Under CloudFormation Limits
+
+**Problem**: API stack has 536 resources, exceeding CloudFormation's 500 resource limit.
+
+- [x] 0.1 Create separate API stacks by domain
+  - [x] 0.1.1 Create `api-features-stack.ts` for Plaid and Reconciliation
+  - [x] 0.1.2 Move Plaid and Reconciliation Lambdas to new stack
+  - [x] 0.1.3 Create separate API Gateway for features stack
+- [x] 0.2 Update stack dependencies in bin/app.ts
+- [x] 0.3 Test CDK synth with all stacks
+- [ ] 0.4 Deploy and verify all routes work
+
+**Status**: CDK synth passes, ready for deployment
+
+---
+
 ## Phase 4: Engagement Features (Sprint 4)
 
 ### Task 7: Admin Web Application (Requirement 47)
