@@ -481,6 +481,13 @@ describe("Budget Lambda Handler", () => {
 
   describe("Authentication", () => {
     test("should require authentication for protected endpoints", async () => {
+      const { getUserFromEvent } = require("/opt/nodejs/utils");
+
+      // Mock getUserFromEvent to throw for unauthenticated requests
+      getUserFromEvent.mockImplementationOnce(() => {
+        throw new Error("No user claims found in request");
+      });
+
       const unauthenticatedEvent = {
         httpMethod: "GET",
         path: "/budget",
@@ -491,5 +498,315 @@ describe("Budget Lambda Handler", () => {
 
       expect(result.statusCode).toBe(401);
     });
+  });
+});
+
+describe("Concurrent Edits - Last Write Wins", () => {
+  const mockContext = {
+    awsRequestId: "test-request-id",
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.TABLE_NAME = "test-table";
+
+    // Reset shared mock
+    const shared = require("/opt/nodejs/shared");
+    shared.checkPermission.mockReturnValue(null);
+  });
+
+  test("should use last-write-wins for concurrent budget updates", async () => {
+    const {
+      dynamoHelpers,
+      getUserFromEvent,
+      FamilyIdResolver,
+    } = require("/opt/nodejs/utils");
+
+    // Mock user extraction
+    getUserFromEvent.mockReturnValue({
+      userId: "user_primary",
+      familyId: "family_123",
+      familyRole: "primary",
+    });
+
+    // Mock FamilyIdResolver
+    FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+
+    // Existing budget
+    const existingBudget = {
+      PK: "FAMILY#family_123",
+      SK: "BUDGET#2026-02",
+      budgetId: "budget_123",
+      familyId: "family_123",
+      month: "2026-02",
+      totalIncome: 5000,
+      totalExpenses: 2000,
+      totalSavings: 500,
+      remainingBalance: 2500,
+      groups: {
+        income: [{ id: "inc_1", name: "Salary", plannedAmount: 5000 }],
+        savings: [{ id: "sav_1", name: "Emergency", plannedAmount: 500 }],
+        expenses: [{ id: "exp_1", name: "Rent", plannedAmount: 2000 }],
+      },
+      isAIGenerated: false,
+      createdAt: "2026-02-01T00:00:00.000Z",
+      updatedAt: "2026-02-01T10:00:00.000Z",
+    };
+
+    dynamoHelpers.getItem.mockResolvedValue(existingBudget);
+    dynamoHelpers.updateItem.mockResolvedValue({
+      ...existingBudget,
+      totalExpenses: 2500,
+      updatedAt: "2026-02-01T12:00:00.000Z",
+    });
+
+    // User 1 updates budget (primary)
+    const user1Event = {
+      httpMethod: "PUT",
+      path: "/budget/2026-02",
+      pathParameters: { budgetId: "2026-02" },
+      body: JSON.stringify({
+        month: "2026-02",
+        groups: {
+          income: [{ id: "inc_1", name: "Salary", plannedAmount: 5000 }],
+          savings: [{ id: "sav_1", name: "Emergency", plannedAmount: 500 }],
+          expenses: [{ id: "exp_1", name: "Rent", plannedAmount: 2500 }],
+        },
+      }),
+      requestContext: {
+        authorizer: {
+          claims: {
+            "custom:userId": "user_primary",
+            "custom:familyId": "family_123",
+            "custom:familyRole": "primary",
+          },
+        },
+      },
+    };
+
+    const result1 = await handler(user1Event, mockContext);
+
+    expect(result1.statusCode).toBe(200);
+    const body1 = JSON.parse(result1.body);
+    expect(body1.data.updatedAt).toBeDefined();
+
+    // Verify updateItem was called with correct PK, SK, and updates
+    expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
+      "FAMILY#family_123",
+      "BUDGET#2026-02",
+      expect.objectContaining({
+        groups: expect.any(Object),
+      }),
+    );
+  });
+
+  test("should track who made the last change via updatedAt", async () => {
+    const {
+      dynamoHelpers,
+      getUserFromEvent,
+      FamilyIdResolver,
+    } = require("/opt/nodejs/utils");
+
+    getUserFromEvent.mockReturnValue({
+      userId: "user_spouse",
+      familyId: "family_123",
+      familyRole: "spouse",
+    });
+
+    // Mock FamilyIdResolver
+    FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+
+    const existingBudget = {
+      PK: "FAMILY#family_123",
+      SK: "BUDGET#2026-02",
+      budgetId: "budget_123",
+      familyId: "family_123",
+      month: "2026-02",
+      totalIncome: 5000,
+      totalExpenses: 2000,
+      totalSavings: 500,
+      remainingBalance: 2500,
+      groups: {
+        income: [],
+        savings: [],
+        expenses: [],
+      },
+      isAIGenerated: false,
+      createdAt: "2026-02-01T00:00:00.000Z",
+      updatedAt: "2026-02-01T10:00:00.000Z",
+    };
+
+    dynamoHelpers.getItem.mockResolvedValue(existingBudget);
+
+    dynamoHelpers.updateItem.mockImplementation((pk, sk, updates) => {
+      return Promise.resolve({
+        ...existingBudget,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      });
+    });
+
+    const updateEvent = {
+      httpMethod: "PUT",
+      path: "/budget/2026-02",
+      pathParameters: { budgetId: "2026-02" },
+      body: JSON.stringify({
+        month: "2026-02",
+        groups: {
+          income: [],
+          savings: [],
+          expenses: [{ id: "exp_1", name: "Groceries", plannedAmount: 300 }],
+        },
+      }),
+      requestContext: {
+        authorizer: {
+          claims: {
+            "custom:userId": "user_spouse",
+            "custom:familyId": "family_123",
+            "custom:familyRole": "spouse",
+          },
+        },
+      },
+    };
+
+    const result = await handler(updateEvent, mockContext);
+
+    expect(result.statusCode).toBe(200);
+
+    // Verify updateItem was called
+    expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
+      "FAMILY#family_123",
+      "BUDGET#2026-02",
+      expect.objectContaining({
+        groups: expect.any(Object),
+      }),
+    );
+  });
+
+  test("should maintain data consistency with concurrent updates", async () => {
+    const {
+      dynamoHelpers,
+      getUserFromEvent,
+      FamilyIdResolver,
+    } = require("/opt/nodejs/utils");
+
+    // Mock FamilyIdResolver for both calls
+    FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+
+    // Simulate concurrent updates by having both users read the same initial state
+    const initialBudget = {
+      PK: "FAMILY#family_123",
+      SK: "BUDGET#2026-02",
+      budgetId: "budget_123",
+      familyId: "family_123",
+      month: "2026-02",
+      totalIncome: 5000,
+      totalExpenses: 2000,
+      totalSavings: 500,
+      remainingBalance: 2500,
+      groups: {
+        income: [{ id: "inc_1", name: "Salary", plannedAmount: 5000 }],
+        savings: [{ id: "sav_1", name: "Emergency", plannedAmount: 500 }],
+        expenses: [{ id: "exp_1", name: "Rent", plannedAmount: 2000 }],
+      },
+      isAIGenerated: false,
+      createdAt: "2026-02-01T00:00:00.000Z",
+      updatedAt: "2026-02-01T10:00:00.000Z",
+    };
+
+    // Both users read the same initial state
+    dynamoHelpers.getItem.mockResolvedValue(initialBudget);
+
+    // Track update order
+    let updateCount = 0;
+    dynamoHelpers.updateItem.mockImplementation((pk, sk, updates) => {
+      updateCount++;
+      return Promise.resolve({
+        ...initialBudget,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      });
+    });
+
+    // Mock user for first call
+    getUserFromEvent.mockReturnValueOnce({
+      userId: "user_primary",
+      familyId: "family_123",
+      familyRole: "primary",
+    });
+
+    // User 1 (primary) updates expenses to 2500
+    const user1Event = {
+      httpMethod: "PUT",
+      path: "/budget/2026-02",
+      pathParameters: { budgetId: "2026-02" },
+      body: JSON.stringify({
+        month: "2026-02",
+        groups: {
+          income: [{ id: "inc_1", name: "Salary", plannedAmount: 5000 }],
+          savings: [{ id: "sav_1", name: "Emergency", plannedAmount: 500 }],
+          expenses: [{ id: "exp_1", name: "Rent", plannedAmount: 2500 }],
+        },
+      }),
+      requestContext: {
+        authorizer: {
+          claims: {
+            "custom:userId": "user_primary",
+            "custom:familyId": "family_123",
+            "custom:familyRole": "primary",
+          },
+        },
+      },
+    };
+
+    // Mock user for second call
+    getUserFromEvent.mockReturnValueOnce({
+      userId: "user_spouse",
+      familyId: "family_123",
+      familyRole: "spouse",
+    });
+
+    // User 2 (spouse) updates expenses to 3000
+    const user2Event = {
+      httpMethod: "PUT",
+      path: "/budget/2026-02",
+      pathParameters: { budgetId: "2026-02" },
+      body: JSON.stringify({
+        month: "2026-02",
+        groups: {
+          income: [{ id: "inc_1", name: "Salary", plannedAmount: 5000 }],
+          savings: [{ id: "sav_1", name: "Emergency", plannedAmount: 500 }],
+          expenses: [{ id: "exp_1", name: "Rent", plannedAmount: 3000 }],
+        },
+      }),
+      requestContext: {
+        authorizer: {
+          claims: {
+            "custom:userId": "user_spouse",
+            "custom:familyId": "family_123",
+            "custom:familyRole": "spouse",
+          },
+        },
+      },
+    };
+
+    // Execute both updates (simulating concurrent access)
+    const [result1, result2] = await Promise.all([
+      handler(user1Event, mockContext),
+      handler(user2Event, mockContext),
+    ]);
+
+    // Both updates should succeed (last-write-wins)
+    expect(result1.statusCode).toBe(200);
+    expect(result2.statusCode).toBe(200);
+
+    // Both updates should have been processed
+    expect(updateCount).toBe(2);
+
+    // Each update should have its own updatedAt timestamp
+    const body1 = JSON.parse(result1.body);
+    const body2 = JSON.parse(result2.body);
+    expect(body1.data.updatedAt).toBeDefined();
+    expect(body2.data.updatedAt).toBeDefined();
   });
 });

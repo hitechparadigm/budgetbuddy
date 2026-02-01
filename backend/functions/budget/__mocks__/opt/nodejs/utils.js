@@ -29,7 +29,8 @@ module.exports = {
   parseRequestBody: jest.fn((body) => JSON.parse(body)),
   getUserFromEvent: jest.fn(() => ({
     userId: "user_123456789",
-    familyId: null, // Simulates missing custom:familyId in JWT token
+    familyId: "family_user_123456789",
+    familyRole: "primary",
     firstName: "John",
     lastName: "Doe",
     email: "test@example.com",
@@ -50,7 +51,7 @@ module.exports = {
   },
   FamilyIdResolver: {
     resolveFamilyId: jest.fn(
-      async (userId, familyId) => familyId || `FAMILY#${userId}`,
+      async (userId, familyId) => familyId || `family_${userId}`,
     ),
     logFamilyIdResolution: jest.fn(),
   },
