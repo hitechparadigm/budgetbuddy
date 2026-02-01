@@ -1,5 +1,65 @@
 # Development Log
 
+## 2026-02-01 - Plaid Bank Sync Integration (Session 61)
+
+### Session Summary
+
+**Duration**: 60 minutes
+**Focus**: Implement real Plaid SDK integration with sandbox mode
+**Outcome**: Full Plaid bank sync functionality ready for testing
+
+### Work Completed
+
+1. **Stored Plaid Credentials in AWS Secrets Manager**:
+   - Created secret `budgetbuddy/plaid/sandbox` with client_id, secret, and environment
+   - Credentials securely stored and retrieved at runtime
+
+2. **Implemented Real Plaid SDK Integration**:
+   - Replaced mock mode with actual Plaid SDK calls
+   - Link token creation for Plaid Link UI
+   - Public token exchange for access tokens
+   - Transaction sync using cursor-based incremental sync
+   - Account balance refresh
+
+3. **Added Sandbox Testing Endpoint**:
+   - `POST /plaid/sandbox/create-item` - Creates test bank account without Link UI
+   - Uses Plaid's `sandboxPublicTokenCreate` API
+   - Perfect for automated testing
+
+4. **Pending Transaction Workflow**:
+   - Synced transactions go to "pending" status first
+   - Users can review, approve, or reject transactions
+   - Approved transactions become real budget transactions
+
+### Files Modified
+
+- `backend/functions/plaid/index.js` - Complete rewrite with Plaid SDK
+- `backend/functions/plaid/package.json` - Added plaid and secrets-manager deps
+- `backend/functions/plaid/plaid.test.js` - Updated tests with mocks
+- `infrastructure/lib/api-features-stack.ts` - Added IAM permissions and routes
+
+### API Endpoints
+
+| Method | Endpoint                   | Description              |
+| ------ | -------------------------- | ------------------------ |
+| POST   | /plaid/link-token          | Create Plaid Link token  |
+| POST   | /plaid/exchange-token      | Exchange public token    |
+| GET    | /plaid/accounts            | Get linked accounts      |
+| DELETE | /plaid/accounts/{id}       | Unlink account           |
+| POST   | /plaid/sync                | Sync all accounts        |
+| GET    | /plaid/pending             | Get pending transactions |
+| POST   | /plaid/pending/approve     | Approve transactions     |
+| POST   | /plaid/pending/reject      | Reject transactions      |
+| POST   | /plaid/sandbox/create-item | Create test account      |
+
+### Next Steps
+
+- Deploy via CI/CD
+- Test sandbox bank linking
+- Add frontend UI for bank sync
+
+---
+
 ## 2026-02-01 - Critical Bug Fixes (Session 60)
 
 ### Session Summary

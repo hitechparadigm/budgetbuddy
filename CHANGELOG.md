@@ -1,5 +1,50 @@
 # Changelog
 
+## [1.9.40] - 2026-02-01
+
+### 🏦 Feature - Plaid Bank Sync Integration (Sandbox Mode)
+
+**Real Plaid SDK Integration**:
+
+- Implemented full Plaid SDK integration with sandbox environment
+- Stored Plaid credentials securely in AWS Secrets Manager (`budgetbuddy/plaid/sandbox`)
+- Added support for link token creation, token exchange, and transaction sync
+
+**New Endpoints**:
+
+- `POST /plaid/link-token` - Create Plaid Link token for account linking
+- `POST /plaid/exchange-token` - Exchange public token for access token
+- `GET /plaid/accounts` - Get all linked bank accounts with live balance refresh
+- `DELETE /plaid/accounts/{accountId}` - Unlink a bank account
+- `POST /plaid/sync` - Sync transactions for all accounts
+- `POST /plaid/accounts/{accountId}/sync` - Sync specific account
+- `GET /plaid/pending` - Get pending transactions awaiting approval
+- `POST /plaid/pending/approve` - Approve pending transactions
+- `POST /plaid/pending/reject` - Reject pending transactions
+- `GET /plaid/sync-status` - Get sync status for all accounts
+- `POST /plaid/sandbox/create-item` - Create test bank account (sandbox only)
+
+**Features**:
+
+- Automatic balance refresh when fetching accounts
+- Transaction categorization from Plaid's personal finance categories
+- Pending transaction review workflow (approve/reject before adding to budget)
+- Daily sync limit (4 syncs per account per day in sandbox)
+- Cursor-based incremental transaction sync
+- Support for US and Canadian banks
+
+**Infrastructure**:
+
+- Updated CDK stack with Secrets Manager permissions
+- Increased Lambda timeout to 60s for Plaid API calls
+- Added sandbox-specific endpoint for testing
+
+**Files Changed**:
+
+- `backend/functions/plaid/index.js` - Complete rewrite with real Plaid SDK
+- `backend/functions/plaid/package.json` - Added plaid and @aws-sdk/client-secrets-manager
+- `infrastructure/lib/api-features-stack.ts` - Added IAM permissions and new routes
+
 ## [1.9.39] - 2026-02-01
 
 ### 🐛 BUGFIX - Three Critical User-Reported Issues

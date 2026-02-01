@@ -2,10 +2,22 @@
  * BudgetBuddy Plaid Integration Lambda Function
  *
  * Handles bank account linking via Plaid, transaction sync, and account management.
- * Supports mock mode for development without Plaid credentials.
+ * Supports sandbox mode for development and production mode for live bank connections.
  *
- * Version: 1.0.0
+ * Version: 2.0.0
  */
+
+const {
+  Configuration,
+  PlaidApi,
+  PlaidEnvironments,
+  Products,
+  CountryCode,
+} = require("plaid");
+const {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} = require("@aws-sdk/client-secrets-manager");
 
 const {
   successResponse,
@@ -20,11 +32,52 @@ const {
 
 const { checkPermission } = require("/opt/nodejs/shared");
 
-// Mock mode flag - set via environment variable
-const MOCK_MODE = process.env.PLAID_MOCK_MODE === "true";
+// Environment configuration
+const PLAID_ENV = process.env.PLAID_ENV || "sandbox";
+const PLAID_SECRET_NAME =
+  process.env.PLAID_SECRET_NAME || "budgetbuddy/plaid/sandbox";
+const SYNCS_PER_DAY_PER_ACCOUNT = 4; // Increased for sandbox testing
 
-// Sync limits
-const SYNCS_PER_DAY_PER_ACCOUNT = 1;
+// Plaid client singleton
+let plaidClient = null;
+let plaidConfig = null;
+
+/**
+ * Initialize Plaid client with credentials from Secrets Manager
+ */
+async function getPlaidClient() {
+  if (plaidClient) return plaidClient;
+
+  const secretsClient = new SecretsManagerClient({
+    region: process.env.AWS_REGION || "us-east-1",
+  });
+
+  try {
+    const response = await secretsClient.send(
+      new GetSecretValueCommand({ SecretId: PLAID_SECRET_NAME }),
+    );
+    plaidConfig = JSON.parse(response.SecretString);
+
+    const configuration = new Configuration({
+      basePath: PlaidEnvironments[plaidConfig.environment || "sandbox"],
+      baseOptions: {
+        headers: {
+          "PLAID-CLIENT-ID": plaidConfig.client_id,
+          "PLAID-SECRET": plaidConfig.secret,
+        },
+      },
+    });
+
+    plaidClient = new PlaidApi(configuration);
+    logger.info("Plaid client initialized", {
+      environment: plaidConfig.environment,
+    });
+    return plaidClient;
+  } catch (error) {
+    logger.error("Failed to initialize Plaid client", error);
+    throw new Error("Failed to initialize Plaid integration");
+  }
+}
 
 /**
  * Main Lambda handler for Plaid operations
@@ -34,7 +87,7 @@ exports.handler = async (event, context) => {
     httpMethod: event.httpMethod,
     path: event.path,
     requestId: context.awsRequestId,
-    mockMode: MOCK_MODE,
+    environment: PLAID_ENV,
   });
 
   try {
@@ -46,8 +99,8 @@ exports.handler = async (event, context) => {
         {
           status: "healthy",
           service: "plaid",
-          version: "1.0.0",
-          mockMode: MOCK_MODE,
+          version: "2.0.0",
+          environment: PLAID_ENV,
         },
         "Plaid service is healthy",
       );
@@ -110,8 +163,17 @@ exports.handler = async (event, context) => {
       return await approvePendingTransactions(event, user);
     }
 
+    if (httpMethod === "POST" && path === "/plaid/pending/reject") {
+      return await rejectPendingTransactions(event, user);
+    }
+
     if (httpMethod === "GET" && path === "/plaid/sync-status") {
       return await getSyncStatus(event, user);
+    }
+
+    // Sandbox-only: Create test item without Link
+    if (httpMethod === "POST" && path === "/plaid/sandbox/create-item") {
+      return await createSandboxItem(event, user);
     }
 
     return errorResponse.notFound(`Route ${httpMethod} ${path} not found`);
@@ -143,27 +205,44 @@ async function createLinkToken(event, user) {
     dynamoHelpers,
   );
 
-  logger.info("Creating link token", { familyId, mockMode: MOCK_MODE });
+  logger.info("Creating link token", { familyId, environment: PLAID_ENV });
 
-  if (MOCK_MODE) {
-    // Return mock link token for development
+  try {
+    const client = await getPlaidClient();
+
+    const request = {
+      user: {
+        client_user_id: familyId,
+      },
+      client_name: "BudgetBuddy",
+      products: [Products.Transactions],
+      country_codes: [CountryCode.Us, CountryCode.Ca],
+      language: "en",
+      // For sandbox, we don't need a webhook URL
+      // webhook: process.env.PLAID_WEBHOOK_URL,
+    };
+
+    const response = await client.linkTokenCreate(request);
+
+    logger.info("Link token created successfully", {
+      familyId,
+      expiration: response.data.expiration,
+    });
+
     return successResponse(
       {
-        linkToken: `mock-link-token-${Date.now()}`,
-        expiration: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-        mockMode: true,
+        linkToken: response.data.link_token,
+        expiration: response.data.expiration,
+        environment: PLAID_ENV,
       },
-      "Link token created (mock mode)",
+      "Link token created successfully",
+    );
+  } catch (error) {
+    logger.error("Failed to create link token", error);
+    return errorResponse.internalError(
+      "Failed to create link token: " + error.message,
     );
   }
-
-  // In production, this would call Plaid API
-  // const plaidClient = getPlaidClient();
-  // const response = await plaidClient.linkTokenCreate({...});
-
-  return errorResponse.badRequest(
-    "Plaid integration not configured. Enable mock mode for development.",
-  );
 }
 
 /**
@@ -179,64 +258,240 @@ async function exchangePublicToken(event, user) {
     user.familyId,
     dynamoHelpers,
   );
-
   const body = parseRequestBody(event.body);
 
-  if (!body.publicToken && !MOCK_MODE) {
+  if (!body.publicToken) {
     return errorResponse.badRequest("publicToken is required");
   }
 
-  logger.info("Exchanging public token", { familyId, mockMode: MOCK_MODE });
+  logger.info("Exchanging public token", { familyId });
 
-  const currentTime = new Date().toISOString();
-  const accountId = generateId.custom("acct");
+  try {
+    const client = await getPlaidClient();
 
-  if (MOCK_MODE) {
-    // Create mock linked account
-    const mockAccount = {
-      PK: `FAMILY#${familyId}`,
-      SK: `PLAID_ACCOUNT#${accountId}`,
-      entityType: "PLAID_ACCOUNT",
-      accountId,
+    // Exchange public token for access token
+    const exchangeResponse = await client.itemPublicTokenExchange({
+      public_token: body.publicToken,
+    });
+
+    const accessToken = exchangeResponse.data.access_token;
+    const itemId = exchangeResponse.data.item_id;
+
+    // Get account details
+    const accountsResponse = await client.accountsGet({
+      access_token: accessToken,
+    });
+    const accounts = accountsResponse.data.accounts;
+    const institution = accountsResponse.data.item.institution_id;
+
+    // Get institution details
+    let institutionName = "Unknown Bank";
+    try {
+      const instResponse = await client.institutionsGetById({
+        institution_id: institution,
+        country_codes: [CountryCode.Us, CountryCode.Ca],
+      });
+      institutionName = instResponse.data.institution.name;
+    } catch (_error) {
+      logger.warn("Could not fetch institution name", { institution });
+    }
+
+    const currentTime = new Date().toISOString();
+    const linkedAccounts = [];
+
+    // Store each account
+    for (const account of accounts) {
+      const accountId = generateId.custom("acct");
+
+      const accountRecord = {
+        PK: `FAMILY#${familyId}`,
+        SK: `PLAID_ACCOUNT#${accountId}`,
+        entityType: "PLAID_ACCOUNT",
+        accountId,
+        familyId,
+        plaidItemId: itemId,
+        plaidAccountId: account.account_id,
+        accessToken, // In production, store in Secrets Manager
+        institutionId: institution,
+        institutionName,
+        accountName: account.name,
+        officialName: account.official_name,
+        accountType: account.type,
+        accountSubtype: account.subtype,
+        accountMask: account.mask,
+        currentBalance: account.balances.current,
+        availableBalance: account.balances.available,
+        isoCurrencyCode: account.balances.iso_currency_code || "USD",
+        lastSyncAt: null,
+        syncCursor: null,
+        status: "active",
+        createdBy: user.userId,
+        createdAt: currentTime,
+        updatedAt: currentTime,
+      };
+
+      await dynamoHelpers.putItem(accountRecord);
+      linkedAccounts.push({
+        accountId,
+        institutionName,
+        accountName: account.name,
+        accountType: account.type,
+        accountMask: account.mask,
+        currentBalance: account.balances.current,
+      });
+    }
+
+    logger.info("Accounts linked successfully", {
       familyId,
-      institutionId: "mock-institution",
-      institutionName: body.institutionName || "Mock Bank",
-      accountName: body.accountName || "Mock Checking",
-      accountType: body.accountType || "checking",
-      accountMask: "1234",
-      currentBalance: 5000.0,
-      availableBalance: 4500.0,
-      lastSyncAt: null,
-      syncCursor: null,
-      status: "active",
-      createdBy: user.userId,
-      createdAt: currentTime,
-      updatedAt: currentTime,
-    };
-
-    await dynamoHelpers.putItem(mockAccount);
+      accountCount: linkedAccounts.length,
+      itemId,
+    });
 
     return successResponse(
       {
-        accountId,
-        institutionName: mockAccount.institutionName,
-        accountName: mockAccount.accountName,
-        accountType: mockAccount.accountType,
-        mockMode: true,
+        itemId,
+        accounts: linkedAccounts,
+        institutionName,
+        environment: PLAID_ENV,
       },
-      "Account linked successfully (mock mode)",
+      "Bank accounts linked successfully",
+    );
+  } catch (error) {
+    logger.error("Failed to exchange token", error);
+    return errorResponse.internalError(
+      "Failed to link bank account: " + error.message,
+    );
+  }
+}
+
+/**
+ * Create sandbox item without Link (for testing)
+ * POST /plaid/sandbox/create-item
+ */
+async function createSandboxItem(event, user) {
+  if (PLAID_ENV !== "sandbox") {
+    return errorResponse.badRequest(
+      "This endpoint is only available in sandbox mode",
     );
   }
 
-  // In production, this would:
-  // 1. Exchange public token for access token via Plaid API
-  // 2. Store access token in Secrets Manager
-  // 3. Fetch account details
-  // 4. Store account record in DynamoDB
+  const permissionError = checkPermission(event, "transaction:create");
+  if (permissionError) return permissionError;
 
-  return errorResponse.badRequest(
-    "Plaid integration not configured. Enable mock mode for development.",
+  const familyId = await FamilyIdResolver.resolveFamilyId(
+    user.userId,
+    user.familyId,
+    dynamoHelpers,
   );
+  const body = parseRequestBody(event.body);
+
+  // Default to Chase bank in sandbox
+  const institutionId = body.institutionId || "ins_3";
+
+  logger.info("Creating sandbox item", { familyId, institutionId });
+
+  try {
+    const client = await getPlaidClient();
+
+    // Create sandbox public token
+    const sandboxResponse = await client.sandboxPublicTokenCreate({
+      institution_id: institutionId,
+      initial_products: [Products.Transactions],
+    });
+
+    const publicToken = sandboxResponse.data.public_token;
+
+    // Exchange for access token
+    const exchangeResponse = await client.itemPublicTokenExchange({
+      public_token: publicToken,
+    });
+
+    const accessToken = exchangeResponse.data.access_token;
+    const itemId = exchangeResponse.data.item_id;
+
+    // Get account details
+    const accountsResponse = await client.accountsGet({
+      access_token: accessToken,
+    });
+    const accounts = accountsResponse.data.accounts;
+
+    // Get institution name
+    let institutionName = "Sandbox Bank";
+    try {
+      const instResponse = await client.institutionsGetById({
+        institution_id: institutionId,
+        country_codes: [CountryCode.Us, CountryCode.Ca],
+      });
+      institutionName = instResponse.data.institution.name;
+    } catch (_error) {
+      logger.warn("Could not fetch institution name", { institutionId });
+    }
+
+    const currentTime = new Date().toISOString();
+    const linkedAccounts = [];
+
+    for (const account of accounts) {
+      const accountId = generateId.custom("acct");
+
+      const accountRecord = {
+        PK: `FAMILY#${familyId}`,
+        SK: `PLAID_ACCOUNT#${accountId}`,
+        entityType: "PLAID_ACCOUNT",
+        accountId,
+        familyId,
+        plaidItemId: itemId,
+        plaidAccountId: account.account_id,
+        accessToken,
+        institutionId,
+        institutionName,
+        accountName: account.name,
+        officialName: account.official_name,
+        accountType: account.type,
+        accountSubtype: account.subtype,
+        accountMask: account.mask,
+        currentBalance: account.balances.current,
+        availableBalance: account.balances.available,
+        isoCurrencyCode: account.balances.iso_currency_code || "USD",
+        lastSyncAt: null,
+        syncCursor: null,
+        status: "active",
+        createdBy: user.userId,
+        createdAt: currentTime,
+        updatedAt: currentTime,
+      };
+
+      await dynamoHelpers.putItem(accountRecord);
+      linkedAccounts.push({
+        accountId,
+        institutionName,
+        accountName: account.name,
+        accountType: account.type,
+        accountMask: account.mask,
+        currentBalance: account.balances.current,
+      });
+    }
+
+    logger.info("Sandbox item created", {
+      familyId,
+      accountCount: linkedAccounts.length,
+    });
+
+    return successResponse(
+      {
+        itemId,
+        accounts: linkedAccounts,
+        institutionName,
+        environment: "sandbox",
+        message: "Sandbox bank account created for testing",
+      },
+      "Sandbox bank account linked successfully",
+    );
+  } catch (error) {
+    logger.error("Failed to create sandbox item", error);
+    return errorResponse.internalError(
+      "Failed to create sandbox item: " + error.message,
+    );
+  }
 }
 
 /**
@@ -262,11 +517,48 @@ async function getLinkedAccounts(event, user) {
     },
   });
 
+  // Optionally refresh balances from Plaid
+  const refreshedAccounts = [];
+  for (const account of accounts) {
+    try {
+      if (account.accessToken) {
+        const client = await getPlaidClient();
+        const balanceResponse = await client.accountsBalanceGet({
+          access_token: account.accessToken,
+          options: { account_ids: [account.plaidAccountId] },
+        });
+
+        const plaidAccount = balanceResponse.data.accounts[0];
+        if (plaidAccount) {
+          account.currentBalance = plaidAccount.balances.current;
+          account.availableBalance = plaidAccount.balances.available;
+
+          // Update in DynamoDB
+          await dynamoHelpers.updateItem(
+            `FAMILY#${familyId}`,
+            `PLAID_ACCOUNT#${account.accountId}`,
+            {
+              currentBalance: account.currentBalance,
+              availableBalance: account.availableBalance,
+              updatedAt: new Date().toISOString(),
+            },
+          );
+        }
+      }
+    } catch (error) {
+      logger.warn("Could not refresh balance", {
+        accountId: account.accountId,
+        error: error.message,
+      });
+    }
+    refreshedAccounts.push(formatAccountResponse(account));
+  }
+
   return successResponse(
     {
-      accounts: accounts.map(formatAccountResponse),
-      count: accounts.length,
-      mockMode: MOCK_MODE,
+      accounts: refreshedAccounts,
+      count: refreshedAccounts.length,
+      environment: PLAID_ENV,
     },
     "Linked accounts retrieved successfully",
   );
@@ -295,18 +587,28 @@ async function unlinkAccount(event, user, accountId) {
     return errorResponse.notFound("Account not found");
   }
 
+  // Remove access from Plaid
+  if (account.accessToken) {
+    try {
+      const client = await getPlaidClient();
+      await client.itemRemove({ access_token: account.accessToken });
+      logger.info("Plaid item removed", { itemId: account.plaidItemId });
+    } catch (error) {
+      logger.warn("Could not remove Plaid item", { error: error.message });
+    }
+  }
+
   // Soft delete
   await dynamoHelpers.updateItem(
     `FAMILY#${familyId}`,
     `PLAID_ACCOUNT#${accountId}`,
     {
       status: "unlinked",
+      accessToken: null, // Clear access token
       unlinkedAt: new Date().toISOString(),
       unlinkedBy: user.userId,
     },
   );
-
-  // In production, would also revoke Plaid access token
 
   logger.info("Account unlinked", { accountId, familyId });
 
@@ -327,7 +629,6 @@ async function syncTransactions(event, user) {
     dynamoHelpers,
   );
 
-  // Get all active accounts
   const accounts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
     FilterExpression: "entityType = :entityType AND #status = :active",
     ExpressionAttributeNames: { "#status": "status" },
@@ -345,21 +646,22 @@ async function syncTransactions(event, user) {
   const today = new Date().toISOString().split("T")[0];
 
   for (const account of accounts) {
-    // Check if already synced today (1 sync per day per account limit)
+    // Check daily sync limit
+    const syncCount = account.syncCountToday || 0;
     const lastSyncDate = account.lastSyncAt
       ? account.lastSyncAt.split("T")[0]
       : null;
+    const todaySyncCount = lastSyncDate === today ? syncCount : 0;
 
-    if (lastSyncDate === today) {
+    if (todaySyncCount >= SYNCS_PER_DAY_PER_ACCOUNT) {
       results.push({
         accountId: account.accountId,
         status: "skipped",
-        reason: "Already synced today (limit: 1 sync/day/account)",
+        reason: `Daily sync limit reached (${SYNCS_PER_DAY_PER_ACCOUNT} syncs/day)`,
       });
       continue;
     }
 
-    // Sync this account
     const syncResult = await syncSingleAccount(familyId, account, user.userId);
     results.push(syncResult);
   }
@@ -397,21 +699,180 @@ async function syncAccountTransactions(event, user, accountId) {
     return errorResponse.notFound("Account not found");
   }
 
-  // Check daily sync limit
-  const today = new Date().toISOString().split("T")[0];
-  const lastSyncDate = account.lastSyncAt
-    ? account.lastSyncAt.split("T")[0]
-    : null;
-
-  if (lastSyncDate === today) {
-    return errorResponse.badRequest(
-      `Account already synced today. Limit: ${SYNCS_PER_DAY_PER_ACCOUNT} sync per day per account.`,
-    );
-  }
-
   const result = await syncSingleAccount(familyId, account, user.userId);
 
   return successResponse(result, "Account sync completed");
+}
+
+/**
+ * Sync a single account using Plaid transactions/sync
+ */
+async function syncSingleAccount(familyId, account, _userId) {
+  const currentTime = new Date().toISOString();
+
+  if (!account.accessToken) {
+    return {
+      accountId: account.accountId,
+      status: "error",
+      reason: "No access token available",
+    };
+  }
+
+  try {
+    const client = await getPlaidClient();
+
+    let cursor = account.syncCursor;
+    let hasMore = true;
+    let addedCount = 0;
+    let modifiedCount = 0;
+    let removedCount = 0;
+
+    while (hasMore) {
+      const request = {
+        access_token: account.accessToken,
+        cursor,
+        count: 100,
+      };
+
+      const response = await client.transactionsSync(request);
+      const data = response.data;
+
+      // Process added transactions
+      for (const txn of data.added) {
+        const pendingId = generateId.custom("pend");
+        await dynamoHelpers.putItem({
+          PK: `FAMILY#${familyId}`,
+          SK: `PENDING_TRANSACTION#${pendingId}`,
+          entityType: "PENDING_TRANSACTION",
+          pendingId,
+          familyId,
+          plaidAccountId: account.accountId,
+          plaidTransactionId: txn.transaction_id,
+          amount: txn.amount * -1, // Plaid uses positive for debits, we use negative for expenses
+          description: txn.name,
+          merchant: txn.merchant_name || txn.name,
+          date: txn.date,
+          categoryName:
+            txn.personal_finance_category?.primary || "Uncategorized",
+          categoryDetailed: txn.personal_finance_category?.detailed,
+          isPending: txn.pending,
+          paymentChannel: txn.payment_channel,
+          location: txn.location
+            ? {
+                city: txn.location.city,
+                region: txn.location.region,
+                country: txn.location.country,
+              }
+            : null,
+          status: "pending",
+          createdAt: currentTime,
+        });
+        addedCount++;
+      }
+
+      // Process modified transactions (update existing pending)
+      for (const txn of data.modified) {
+        // Find and update existing pending transaction
+        const existing = await findPendingByPlaidId(
+          familyId,
+          txn.transaction_id,
+        );
+        if (existing) {
+          await dynamoHelpers.updateItem(
+            `FAMILY#${familyId}`,
+            `PENDING_TRANSACTION#${existing.pendingId}`,
+            {
+              amount: txn.amount * -1,
+              description: txn.name,
+              merchant: txn.merchant_name || txn.name,
+              date: txn.date,
+              isPending: txn.pending,
+              updatedAt: currentTime,
+            },
+          );
+          modifiedCount++;
+        }
+      }
+
+      // Process removed transactions
+      for (const txn of data.removed) {
+        const existing = await findPendingByPlaidId(
+          familyId,
+          txn.transaction_id,
+        );
+        if (existing && existing.status === "pending") {
+          await dynamoHelpers.updateItem(
+            `FAMILY#${familyId}`,
+            `PENDING_TRANSACTION#${existing.pendingId}`,
+            { status: "removed", removedAt: currentTime },
+          );
+          removedCount++;
+        }
+      }
+
+      cursor = data.next_cursor;
+      hasMore = data.has_more;
+    }
+
+    // Update account with new cursor and sync time
+    const today = new Date().toISOString().split("T")[0];
+    const lastSyncDate = account.lastSyncAt
+      ? account.lastSyncAt.split("T")[0]
+      : null;
+    const newSyncCount =
+      lastSyncDate === today ? (account.syncCountToday || 0) + 1 : 1;
+
+    await dynamoHelpers.updateItem(
+      `FAMILY#${familyId}`,
+      `PLAID_ACCOUNT#${account.accountId}`,
+      {
+        syncCursor: cursor,
+        lastSyncAt: currentTime,
+        syncCountToday: newSyncCount,
+        updatedAt: currentTime,
+      },
+    );
+
+    logger.info("Account synced", {
+      accountId: account.accountId,
+      added: addedCount,
+      modified: modifiedCount,
+      removed: removedCount,
+    });
+
+    return {
+      accountId: account.accountId,
+      status: "success",
+      transactionsAdded: addedCount,
+      transactionsModified: modifiedCount,
+      transactionsRemoved: removedCount,
+    };
+  } catch (error) {
+    logger.error("Sync failed", {
+      accountId: account.accountId,
+      error: error.message,
+    });
+    return {
+      accountId: account.accountId,
+      status: "error",
+      reason: error.message,
+    };
+  }
+}
+
+/**
+ * Find pending transaction by Plaid transaction ID
+ */
+async function findPendingByPlaidId(familyId, plaidTransactionId) {
+  const results = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    FilterExpression:
+      "entityType = :entityType AND plaidTransactionId = :plaidTxnId",
+    ExpressionAttributeValues: {
+      ":entityType": "PENDING_TRANSACTION",
+      ":plaidTxnId": plaidTransactionId,
+    },
+  });
+  return results[0] || null;
 }
 
 /**
@@ -459,7 +920,6 @@ async function approvePendingTransactions(event, user) {
     user.familyId,
     dynamoHelpers,
   );
-
   const body = parseRequestBody(event.body);
 
   if (!body.transactionIds || !Array.isArray(body.transactionIds)) {
@@ -497,8 +957,11 @@ async function approvePendingTransactions(event, user) {
         familyId,
         type: pending.amount < 0 ? "expense" : "income",
         amount: Math.abs(pending.amount),
-        categoryId: pending.categoryId || null,
-        categoryName: pending.categoryName || "Uncategorized",
+        categoryId: body.categoryMappings?.[pendingId]?.categoryId || null,
+        categoryName:
+          body.categoryMappings?.[pendingId]?.categoryName ||
+          pending.categoryName ||
+          "Uncategorized",
         description: pending.description,
         merchant: pending.merchant,
         date: pending.date,
@@ -543,6 +1006,73 @@ async function approvePendingTransactions(event, user) {
 }
 
 /**
+ * Reject pending transactions
+ * POST /plaid/pending/reject
+ */
+async function rejectPendingTransactions(event, user) {
+  const permissionError = checkPermission(event, "transaction:delete");
+  if (permissionError) return permissionError;
+
+  const familyId = await FamilyIdResolver.resolveFamilyId(
+    user.userId,
+    user.familyId,
+    dynamoHelpers,
+  );
+  const body = parseRequestBody(event.body);
+
+  if (!body.transactionIds || !Array.isArray(body.transactionIds)) {
+    return errorResponse.badRequest("transactionIds array is required");
+  }
+
+  const currentTime = new Date().toISOString();
+  const rejected = [];
+  const failed = [];
+
+  for (const pendingId of body.transactionIds) {
+    try {
+      const pending = await dynamoHelpers.getItem(
+        `FAMILY#${familyId}`,
+        `PENDING_TRANSACTION#${pendingId}`,
+      );
+
+      if (!pending || pending.status !== "pending") {
+        failed.push({
+          id: pendingId,
+          reason: "Not found or already processed",
+        });
+        continue;
+      }
+
+      await dynamoHelpers.updateItem(
+        `FAMILY#${familyId}`,
+        `PENDING_TRANSACTION#${pendingId}`,
+        {
+          status: "rejected",
+          rejectedAt: currentTime,
+          rejectedBy: user.userId,
+          rejectionReason: body.reason || "User rejected",
+        },
+      );
+
+      rejected.push({ pendingId });
+    } catch (error) {
+      logger.error("Failed to reject transaction", error, { pendingId });
+      failed.push({ id: pendingId, reason: error.message });
+    }
+  }
+
+  return successResponse(
+    {
+      rejected,
+      failed,
+      rejectedCount: rejected.length,
+      failedCount: failed.length,
+    },
+    "Transactions rejected",
+  );
+}
+
+/**
  * Get sync status for all accounts
  * GET /plaid/sync-status
  */
@@ -571,13 +1101,17 @@ async function getSyncStatus(event, user) {
     const lastSyncDate = account.lastSyncAt
       ? account.lastSyncAt.split("T")[0]
       : null;
-    const canSync = lastSyncDate !== today;
+    const todaySyncCount =
+      lastSyncDate === today ? account.syncCountToday || 0 : 0;
+    const canSync = todaySyncCount < SYNCS_PER_DAY_PER_ACCOUNT;
 
     return {
       accountId: account.accountId,
       institutionName: account.institutionName,
       accountName: account.accountName,
       lastSyncAt: account.lastSyncAt,
+      syncsToday: todaySyncCount,
+      syncsRemaining: SYNCS_PER_DAY_PER_ACCOUNT - todaySyncCount,
       canSync,
       nextSyncAvailable: canSync ? "Now" : getNextMidnight(),
     };
@@ -587,110 +1121,13 @@ async function getSyncStatus(event, user) {
     {
       accounts: status,
       dailyLimit: SYNCS_PER_DAY_PER_ACCOUNT,
-      mockMode: MOCK_MODE,
+      environment: PLAID_ENV,
     },
     "Sync status retrieved successfully",
   );
 }
 
 // ============ Helper Functions ============
-
-/**
- * Sync a single account
- */
-async function syncSingleAccount(familyId, account, _userId) {
-  const currentTime = new Date().toISOString();
-
-  if (MOCK_MODE) {
-    // Generate mock transactions
-    const mockTransactions = generateMockTransactions(account.accountId);
-
-    // Store as pending transactions
-    for (const txn of mockTransactions) {
-      const pendingId = generateId.custom("pend");
-      await dynamoHelpers.putItem({
-        PK: `FAMILY#${familyId}`,
-        SK: `PENDING_TRANSACTION#${pendingId}`,
-        entityType: "PENDING_TRANSACTION",
-        pendingId,
-        familyId,
-        plaidAccountId: account.accountId,
-        plaidTransactionId: txn.plaidTransactionId,
-        amount: txn.amount,
-        description: txn.description,
-        merchant: txn.merchant,
-        date: txn.date,
-        categoryName: txn.suggestedCategory,
-        status: "pending",
-        createdAt: currentTime,
-      });
-    }
-
-    // Update account last sync time
-    await dynamoHelpers.updateItem(
-      `FAMILY#${familyId}`,
-      `PLAID_ACCOUNT#${account.accountId}`,
-      {
-        lastSyncAt: currentTime,
-        updatedAt: currentTime,
-      },
-    );
-
-    return {
-      accountId: account.accountId,
-      status: "success",
-      transactionsFound: mockTransactions.length,
-      mockMode: true,
-    };
-  }
-
-  // In production, would call Plaid transactions/sync API
-  return {
-    accountId: account.accountId,
-    status: "error",
-    reason: "Plaid integration not configured",
-  };
-}
-
-/**
- * Generate mock transactions for development
- */
-function generateMockTransactions(_accountId) {
-  const merchants = [
-    { name: "Amazon", category: "Shopping" },
-    { name: "Whole Foods", category: "Groceries" },
-    { name: "Shell Gas Station", category: "Transportation" },
-    { name: "Netflix", category: "Entertainment" },
-    { name: "Starbucks", category: "Dining" },
-    { name: "Target", category: "Shopping" },
-    { name: "Uber", category: "Transportation" },
-    { name: "Spotify", category: "Entertainment" },
-  ];
-
-  const transactions = [];
-  const today = new Date();
-
-  // Generate 5-10 random transactions from the past week
-  const count = Math.floor(Math.random() * 6) + 5;
-
-  for (let i = 0; i < count; i++) {
-    const merchant = merchants[Math.floor(Math.random() * merchants.length)];
-    const daysAgo = Math.floor(Math.random() * 7);
-    const date = new Date(today);
-    date.setDate(date.getDate() - daysAgo);
-
-    transactions.push({
-      plaidTransactionId: `mock-txn-${Date.now()}-${i}`,
-      amount: -(Math.random() * 100 + 5).toFixed(2) * 1, // Negative for expenses
-      description: merchant.name,
-      merchant: merchant.name,
-      date: date.toISOString().split("T")[0],
-      suggestedCategory: merchant.category,
-    });
-  }
-
-  return transactions;
-}
 
 /**
  * Get next midnight timestamp
@@ -710,10 +1147,13 @@ function formatAccountResponse(account) {
     accountId: account.accountId,
     institutionName: account.institutionName,
     accountName: account.accountName,
+    officialName: account.officialName,
     accountType: account.accountType,
+    accountSubtype: account.accountSubtype,
     accountMask: account.accountMask,
     currentBalance: account.currentBalance,
     availableBalance: account.availableBalance,
+    isoCurrencyCode: account.isoCurrencyCode,
     lastSyncAt: account.lastSyncAt,
     status: account.status,
     createdAt: account.createdAt,
@@ -732,6 +1172,10 @@ function formatPendingTransaction(pending) {
     merchant: pending.merchant,
     date: pending.date,
     suggestedCategory: pending.categoryName,
+    categoryDetailed: pending.categoryDetailed,
+    isPending: pending.isPending,
+    paymentChannel: pending.paymentChannel,
+    location: pending.location,
     status: pending.status,
     createdAt: pending.createdAt,
   };
