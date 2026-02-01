@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.9.25] - 2026-02-01
+
+### 🔧 Task Status Updates
+
+- **Family Collaboration** - Updated all parent task markers to reflect completion
+  - Phase 1: DynamoDB Schema ✅
+  - Phase 2: Family Lambda ✅
+  - Phase 3: Permission System ✅
+  - Phase 5: Web UI ✅
+  - Phase 6: Invitation Acceptance ✅
+  - Phase 7: Mobile UI ✅
+  - Phase 8: API Gateway ✅
+  - Phase 9: Integration Testing ✅
+  - Phase 10: Property-Based Testing ✅
+  - Phase 11: Documentation ✅
+  - Remaining: Manual email testing (4.4), Production deployment (12.3, 12.4)
+
+- **Root Tasks** - Marked Task 24 (Data Export and Backup System) as complete
+  - All sub-tasks (CSV export, PDF export, JSON backup) were already complete
+
+### ✅ Test Verification
+
+- Family Lambda: 62 tests passing (49 unit/integration + 13 PBT)
+- Budget Lambda: 38 tests passing
+- Transaction Lambda: 29 tests passing
+
 ## [1.9.24] - 2026-02-01
 
 ### ✅ TESTING - Phase 10 Property-Based Tests Complete
