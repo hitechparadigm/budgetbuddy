@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.34] - 2026-02-01
+
+### 🔐 Feature - Admin Cognito Group (Task 7.5.2)
+
+- **Created Admins Cognito group** - Users in this group have admin dashboard access
+- **Updated Admin Lambda** - Now checks for both 'admin' role and 'Admins' Cognito group
+- **Infrastructure** - Added `CfnUserPoolGroup` to auth-stack.ts
+
 ## [1.9.33] - 2026-02-01
 
 ### 🔧 Fix - Health Check Script for Features API

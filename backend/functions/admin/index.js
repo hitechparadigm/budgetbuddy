@@ -147,9 +147,11 @@ async function checkAdminRole(user) {
     return true;
   }
 
-  // Also check Cognito groups if available
-  if (user.groups && user.groups.includes(ADMIN_ROLE)) {
-    return true;
+  // Check Cognito groups if available (supports both 'admin' and 'Admins' group names)
+  if (user.groups) {
+    if (user.groups.includes(ADMIN_ROLE) || user.groups.includes("Admins")) {
+      return true;
+    }
   }
 
   return false;
