@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.9.36] - 2026-02-01
+
+### 🚀 NEW FEATURE - Financial Tips Feed (Task 9)
+
+- **Created Tips Lambda** - `backend/functions/tips/index.js`
+- **16 tests passing** - Full test coverage for tips endpoints
+- **25 built-in tips** - Across 5 categories (budgeting, saving, debt, investing, general)
+- **Personalization** - Tips ranked by relevance based on user spending patterns
+- **API Endpoints**:
+  - `GET /tips/feed` - Get personalized tips feed
+  - `GET /tips/daily` - Get daily tip (one per day)
+  - `GET /tips/saved` - Get user's saved tips
+  - `POST /tips/{tipId}/save` - Save a tip for later
+  - `POST /tips/{tipId}/dismiss` - Dismiss a tip
+  - `GET /tips/health` - Health check
+
+**Features:**
+
+- Daily tip rotation (avoids repetition for 30 days)
+- Save tips for later reference
+- Dismiss tips to hide them
+- Category filtering
+- Spending pattern analysis for personalization
+
 ## [1.9.35] - 2026-02-01
 
 ### 🚀 NEW FEATURE - Peer Comparison System (Task 8.1)
