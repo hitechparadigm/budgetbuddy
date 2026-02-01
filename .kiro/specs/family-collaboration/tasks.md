@@ -193,26 +193,26 @@ Implement family account sharing with invitation system, role-based permissions,
 ### Phase 6: Invitation Acceptance Flow (Week 2)
 
 - [ ] 6. Create Invitation Acceptance Page
-  - [ ] 6.1 Create AcceptInvitation page
+  - [x] 6.1 Create AcceptInvitation page
     - Parse token from URL
     - Display invitation details
     - Show accept/decline buttons
     - _Requirements: US-2_
 
-  - [ ] 6.2 Implement acceptance flow
+  - [x] 6.2 Implement acceptance flow
     - Call accept API
     - Handle success (redirect to budget)
     - Handle errors (expired, invalid)
     - _Requirements: US-2_
 
-  - [ ] 6.3 Handle new user registration
+  - [x] 6.3 Handle new user registration
     - Show registration form if not logged in
     - Create account
     - Accept invitation
     - Redirect to budget
     - _Requirements: US-2_
 
-  - [ ] 6.4 Handle existing user linking
+  - [x] 6.4 Handle existing user linking
     - Show login form if not logged in
     - Authenticate user
     - Accept invitation
