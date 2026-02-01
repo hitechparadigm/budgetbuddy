@@ -123,7 +123,7 @@ Implement family account sharing with invitation system, role-based permissions,
 ### Phase 4: Email Service Integration (Week 1)
 
 - [ ] 4. Configure SES for Invitations
-  - [-] 4.1 Set up SES in CDK
+  - [x] 4.1 Set up SES in CDK
     - Verify email domain
     - Create SES identity
     - Configure sending limits
