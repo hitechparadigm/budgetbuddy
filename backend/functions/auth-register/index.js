@@ -244,7 +244,30 @@ exports.handler = async (event) => {
       },
     };
 
-    // Create both user and family records in a transaction
+    // Create family member record for the primary user
+    // This is required for the family/members endpoint to work correctly
+    const familyMember = {
+      PK: {
+        S: `FAMILY#${familyId}`,
+      },
+      SK: {
+        S: `MEMBER#${userId}`,
+      },
+      userId: {
+        S: userId,
+      },
+      role: {
+        S: "primary",
+      },
+      joinedAt: {
+        S: currentTime,
+      },
+      addedBy: {
+        S: userId,
+      },
+    };
+
+    // Create user, family, and member records in a transaction
     const transactItems = [
       {
         Put: {
@@ -260,6 +283,13 @@ exports.handler = async (event) => {
           ConditionExpression: "attribute_not_exists(PK)",
         },
       },
+      {
+        Put: {
+          TableName: TABLE_NAME,
+          Item: familyMember,
+          ConditionExpression: "attribute_not_exists(PK)",
+        },
+      },
     ];
 
     const transactCommand = new TransactWriteItemsCommand({
@@ -267,7 +297,7 @@ exports.handler = async (event) => {
     });
 
     await dynamoClient.send(transactCommand);
-    console.log("User profile and family created in DynamoDB");
+    console.log("User profile, family, and member record created in DynamoDB");
 
     // Return success response
     return {

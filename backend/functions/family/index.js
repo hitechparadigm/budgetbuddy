@@ -529,7 +529,62 @@ async function handleGetMembers(familyId) {
       }),
     );
 
-    if (!membersResult.Items || membersResult.Items.length === 0) {
+    // Get family metadata to find primary user
+    const familyResult = await dynamodb.send(
+      new GetCommand({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `FAMILY#${familyId}`,
+          SK: "METADATA",
+        },
+      }),
+    );
+
+    const family = familyResult.Item;
+    const existingMembers = membersResult.Items || [];
+
+    // Check if primary user has a MEMBER record
+    // If not, we need to create one (for backwards compatibility with existing users)
+    if (family && family.primaryUserId) {
+      const primaryUserHasMemberRecord = existingMembers.some(
+        (m) => m.userId === family.primaryUserId,
+      );
+
+      if (!primaryUserHasMemberRecord) {
+        console.log(
+          "Primary user missing MEMBER record, creating one:",
+          family.primaryUserId,
+        );
+
+        // Create the missing MEMBER record for the primary user
+        const now = new Date().toISOString();
+        await dynamodb.send(
+          new PutCommand({
+            TableName: TABLE_NAME,
+            Item: {
+              PK: `FAMILY#${familyId}`,
+              SK: `MEMBER#${family.primaryUserId}`,
+              userId: family.primaryUserId,
+              role: "primary",
+              joinedAt: family.createdAt || now,
+              addedBy: family.primaryUserId,
+            },
+          }),
+        );
+
+        // Add the primary user to the members list
+        existingMembers.push({
+          userId: family.primaryUserId,
+          role: "primary",
+          joinedAt: family.createdAt || now,
+          addedBy: family.primaryUserId,
+        });
+
+        console.log("Created missing MEMBER record for primary user");
+      }
+    }
+
+    if (existingMembers.length === 0) {
       return successResponse({
         familyId,
         members: [],
@@ -538,7 +593,7 @@ async function handleGetMembers(familyId) {
 
     // Get user details for each member
     const members = await Promise.all(
-      membersResult.Items.map(async (member) => {
+      existingMembers.map(async (member) => {
         // Get user profile
         const userResult = await dynamodb.send(
           new GetCommand({

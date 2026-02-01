@@ -1,8 +1,34 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-01 (Savings Goals Feature)
+**Last Updated**: 2026-02-01 (Critical Bug Fixes)
 **Current Phase**: Competitive Features Implementation
 **Overall Progress**: 95% Core + 20% Competitive Features
+
+## 🐛 CRITICAL BUG FIXES - 2026-02-01
+
+### Three User-Reported Issues Fixed
+
+**Issue 1: Settings Not Persisting After Onboarding** ✅
+
+- **Problem**: Location and currency selected during onboarding not saved
+- **Solution**: Updated `/auth/onboarding` to save location and currency to user profile
+- **File**: `backend/functions/auth/index.js`
+
+**Issue 2: Geolocation Detecting Wrong Country** ✅
+
+- **Problem**: User in Canada detected as USA
+- **Solution**: Forward client IP from `X-Forwarded-For` header to ipapi.co
+- **File**: `backend/functions/auth/index.js`
+
+**Issue 3: Family Collaboration - Can't Send Invites** ✅
+
+- **Problem**: Primary user not showing in family members list
+- **Solution**: Add MEMBER record during registration + backwards-compatibility fix
+- **Files**: `backend/functions/auth/index.js`, `backend/functions/auth-register/index.js`, `backend/functions/family/index.js`
+
+**Tests**: 49 family unit tests passing
+
+---
 
 ## 🚀 NEW - Competitive Features Sprint Started
 

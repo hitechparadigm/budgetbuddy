@@ -334,7 +334,30 @@ exports.handler = async (event, _context) => {
           },
         };
 
-        // Create both user and family records in a transaction
+        // Create family member record for the primary user
+        // This is required for the family/members endpoint to work correctly
+        const familyMember = {
+          PK: {
+            S: `FAMILY#${familyId}`,
+          },
+          SK: {
+            S: `MEMBER#${userId}`,
+          },
+          userId: {
+            S: userId,
+          },
+          role: {
+            S: "primary",
+          },
+          joinedAt: {
+            S: currentTime,
+          },
+          addedBy: {
+            S: userId,
+          },
+        };
+
+        // Create user, family, and member records in a transaction
         const transactItems = [
           {
             Put: {
@@ -347,6 +370,13 @@ exports.handler = async (event, _context) => {
             Put: {
               TableName: TABLE_NAME,
               Item: userProfile,
+              ConditionExpression: "attribute_not_exists(PK)",
+            },
+          },
+          {
+            Put: {
+              TableName: TABLE_NAME,
+              Item: familyMember,
               ConditionExpression: "attribute_not_exists(PK)",
             },
           },
@@ -613,7 +643,18 @@ exports.handler = async (event, _context) => {
             updatedAt: { S: currentTime },
           };
 
-          // Create both user and family records in a transaction
+          // Create family member record for the primary user
+          // This is required for the family/members endpoint to work correctly
+          const familyMember = {
+            PK: { S: `FAMILY#${familyId}` },
+            SK: { S: `MEMBER#${userId}` },
+            userId: { S: userId },
+            role: { S: "primary" },
+            joinedAt: { S: currentTime },
+            addedBy: { S: userId },
+          };
+
+          // Create user, family, and member records in a transaction
           const transactItems = [
             {
               Put: {
@@ -629,6 +670,13 @@ exports.handler = async (event, _context) => {
                 ConditionExpression: "attribute_not_exists(PK)",
               },
             },
+            {
+              Put: {
+                TableName: TABLE_NAME,
+                Item: familyMember,
+                ConditionExpression: "attribute_not_exists(PK)",
+              },
+            },
           ];
 
           const transactCommand = new TransactWriteItemsCommand({
@@ -636,7 +684,9 @@ exports.handler = async (event, _context) => {
           });
 
           await dynamoClient.send(transactCommand);
-          console.log("User profile and family created in DynamoDB");
+          console.log(
+            "User profile, family, and member record created in DynamoDB",
+          );
         }
 
         // For Google users, generate JWT tokens using a temporary password
@@ -1142,8 +1192,15 @@ exports.handler = async (event, _context) => {
           `BUDGET#${requestBody.currentMonth}`,
         );
 
-        // Update user profile to mark onboarding as completed
+        // Update user profile to mark onboarding as completed AND save location/currency
         const { UpdateItemCommand } = require("@aws-sdk/client-dynamodb");
+
+        // Build location object from onboarding data
+        const locationData = {
+          city: requestBody.city,
+          country: requestBody.country,
+          zipCode: "", // Not collected during onboarding
+        };
 
         const updateCommand = new UpdateItemCommand({
           TableName: TABLE_NAME,
@@ -1152,16 +1209,27 @@ exports.handler = async (event, _context) => {
             SK: { S: "PROFILE" },
           },
           UpdateExpression:
-            "SET onboardingCompleted = :completed, updatedAt = :updatedAt",
+            "SET onboardingCompleted = :completed, updatedAt = :updatedAt, #loc = :location, currency = :currency",
+          ExpressionAttributeNames: {
+            "#loc": "location",
+          },
           ExpressionAttributeValues: {
             ":completed": { BOOL: true },
             ":updatedAt": { S: currentTime },
+            ":location": { S: JSON.stringify(locationData) },
+            ":currency": { S: requestBody.currency || "USD" },
           },
           ReturnValues: "ALL_NEW",
         });
 
         await dynamoClient.send(updateCommand);
-        console.log("User profile updated - onboarding completed");
+        console.log(
+          "User profile updated - onboarding completed with location and currency:",
+          {
+            location: locationData,
+            currency: requestBody.currency || "USD",
+          },
+        );
 
         console.log("ONBOARDING DEBUG - Starting budget creation process");
         console.log("  - familyId:", familyId);
@@ -1575,8 +1643,41 @@ exports.handler = async (event, _context) => {
       console.log("Geolocation detection endpoint hit");
 
       try {
-        // Fetch location from ipapi.co on behalf of the client
-        const response = await fetch("https://ipapi.co/json/", {
+        // Get the client's real IP address from various headers
+        // API Gateway sets these headers with the original client IP
+        const clientIp =
+          event.headers["X-Forwarded-For"]?.split(",")[0]?.trim() ||
+          event.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+          event.requestContext?.identity?.sourceIp ||
+          null;
+
+        console.log("Client IP detection:", {
+          xForwardedFor:
+            event.headers["X-Forwarded-For"] ||
+            event.headers["x-forwarded-for"],
+          sourceIp: event.requestContext?.identity?.sourceIp,
+          resolvedClientIp: clientIp,
+        });
+
+        // Build the ipapi.co URL - use client IP if available, otherwise let ipapi detect
+        let ipapiUrl = "https://ipapi.co/json/";
+        if (
+          clientIp &&
+          clientIp !== "127.0.0.1" &&
+          !clientIp.startsWith("10.") &&
+          !clientIp.startsWith("192.168.")
+        ) {
+          // Use the client's IP address for geolocation
+          ipapiUrl = `https://ipapi.co/${clientIp}/json/`;
+          console.log("Using client IP for geolocation:", clientIp);
+        } else {
+          console.log(
+            "No valid client IP found, using default ipapi.co detection",
+          );
+        }
+
+        // Fetch location from ipapi.co using the client's IP
+        const response = await fetch(ipapiUrl, {
           method: "GET",
           headers: {
             Accept: "application/json",
@@ -1594,6 +1695,13 @@ exports.handler = async (event, _context) => {
         if (data.error) {
           throw new Error(data.reason || "Geolocation detection failed");
         }
+
+        console.log("Geolocation result:", {
+          city: data.city,
+          country: data.country_name,
+          countryCode: data.country_code,
+          ip: data.ip,
+        });
 
         return {
           statusCode: 200,

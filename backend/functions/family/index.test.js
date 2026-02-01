@@ -351,6 +351,14 @@ describe("Family Lambda Handler", () => {
         ],
       });
 
+      // Mock Get (family metadata)
+      mockSend.mockResolvedValueOnce({
+        Item: {
+          primaryUserId: "user123",
+          createdAt: "2026-01-01T00:00:00Z",
+        },
+      });
+
       // Mock Get (user profile)
       mockSend.mockResolvedValueOnce({
         Item: {
@@ -807,6 +815,13 @@ describe("Family Lambda Handler", () => {
             },
           ],
         });
+        // Mock Get (family metadata)
+        mockSend.mockResolvedValueOnce({
+          Item: {
+            primaryUserId: "primary-user-123",
+            createdAt: "2026-01-01T00:00:00Z",
+          },
+        });
         // Mock Get (primary user profile)
         mockSend.mockResolvedValueOnce({
           Item: {
@@ -957,9 +972,18 @@ describe("Family Lambda Handler", () => {
           requestContext: { authorizer: { claims: spouseUser } },
         };
 
+        // Mock Query (family members)
         mockSend.mockResolvedValueOnce({
           Items: [{ userId: "primary-user-123", role: "primary" }],
         });
+        // Mock Get (family metadata)
+        mockSend.mockResolvedValueOnce({
+          Item: {
+            primaryUserId: "primary-user-123",
+            createdAt: "2024-01-01T00:00:00Z",
+          },
+        });
+        // Mock Get (user profile)
         mockSend.mockResolvedValueOnce({
           Item: { email: "primary@example.com", firstName: "John" },
         });
@@ -1031,9 +1055,18 @@ describe("Family Lambda Handler", () => {
           requestContext: { authorizer: { claims: viewerUser } },
         };
 
+        // Mock QueryCommand for members
         mockSend.mockResolvedValueOnce({
           Items: [{ userId: "primary-user-123", role: "primary" }],
         });
+        // Mock GetCommand for family metadata
+        mockSend.mockResolvedValueOnce({
+          Item: {
+            primaryUserId: "primary-user-123",
+            createdAt: "2024-01-01T00:00:00Z",
+          },
+        });
+        // Mock GetCommand for user profile
         mockSend.mockResolvedValueOnce({
           Item: { email: "primary@example.com", firstName: "John" },
         });

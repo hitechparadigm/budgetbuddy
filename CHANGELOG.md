@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.9.39] - 2026-02-01
+
+### 🐛 BUGFIX - Three Critical User-Reported Issues
+
+**Issue 1: Settings not persisting after onboarding**
+
+- **Problem**: Location and currency selected during onboarding were not saved to user profile
+- **Root Cause**: `/auth/onboarding` endpoint only set `onboardingCompleted=true`, didn't save location/currency
+- **Solution**: Updated onboarding endpoint to save location and currency to user profile
+- **Files**: `backend/functions/auth/index.js`
+
+**Issue 2: Geolocation detecting wrong country (USA instead of Canada)**
+
+- **Problem**: IP geolocation was detecting Lambda's IP (us-east-1) instead of user's IP
+- **Root Cause**: Backend Lambda called ipapi.co without forwarding client's IP address
+- **Solution**: Extract client IP from `X-Forwarded-For` header and pass to ipapi.co
+- **Files**: `backend/functions/auth/index.js`
+
+**Issue 3: Family collaboration - can't send invites**
+
+- **Problem**: Family members list was empty, preventing invitations
+- **Root Cause**: Primary user was never added as a MEMBER record when family was created
+- **Solution**:
+  - Added MEMBER record creation during registration (email and Google Sign-In)
+  - Added backwards-compatibility fix in `handleGetMembers` to auto-create missing MEMBER records
+- **Files**: `backend/functions/auth/index.js`, `backend/functions/auth-register/index.js`, `backend/functions/family/index.js`
+
+**Tests Updated**:
+
+- Updated 4 family Lambda tests to handle new family metadata query
+- All 49 family unit tests passing
+
 ## [1.9.38] - 2026-02-01
 
 ### 🔗 Feature - Goal Category Linking (Task 2.4)
