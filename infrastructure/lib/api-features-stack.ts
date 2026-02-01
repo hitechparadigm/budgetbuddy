@@ -145,6 +145,15 @@ export class ApiFeaturesStack extends cdk.Stack {
       handler: 'index.handler',
       description: 'BudgetBuddy comparison handler for peer spending comparisons',
     });
+
+    // Tips Lambda
+    this.functions.tipsHandler = new lambda.Function(this, 'TipsHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-tips',
+      code: lambda.Code.fromAsset('../backend/functions/tips'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy tips handler for personalized financial tips',
+    });
   }
 
   private setupApiRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -159,6 +168,9 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Comparison routes
     this.setupComparisonRoutes(authorizer);
+
+    // Tips routes
+    this.setupTipsRoutes(authorizer);
   }
 
   private setupPlaidRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -360,6 +372,53 @@ export class ApiFeaturesStack extends cdk.Stack {
     comparisonHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.comparisonHandler), {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'ComparisonHealthCheck',
+    });
+  }
+
+  private setupTipsRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const tipsResource = this.api.root.addResource('tips');
+
+    // Feed endpoint
+    const tipsFeedResource = tipsResource.addResource('feed');
+    tipsFeedResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.tipsHandler), {
+      authorizer,
+      operationName: 'GetTipsFeed',
+    });
+
+    // Daily tip endpoint
+    const tipsDailyResource = tipsResource.addResource('daily');
+    tipsDailyResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.tipsHandler), {
+      authorizer,
+      operationName: 'GetDailyTip',
+    });
+
+    // Saved tips endpoint
+    const tipsSavedResource = tipsResource.addResource('saved');
+    tipsSavedResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.tipsHandler), {
+      authorizer,
+      operationName: 'GetSavedTips',
+    });
+
+    // Individual tip actions
+    const tipIdResource = tipsResource.addResource('{tipId}');
+
+    const tipSaveResource = tipIdResource.addResource('save');
+    tipSaveResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.tipsHandler), {
+      authorizer,
+      operationName: 'SaveTip',
+    });
+
+    const tipDismissResource = tipIdResource.addResource('dismiss');
+    tipDismissResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.tipsHandler), {
+      authorizer,
+      operationName: 'DismissTip',
+    });
+
+    // Health endpoint
+    const tipsHealthResource = tipsResource.addResource('health');
+    tipsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.tipsHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'TipsHealthCheck',
     });
   }
 

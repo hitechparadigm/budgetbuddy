@@ -1,0 +1,13 @@
+{
+  "name": "@budgetbuddy/tips",
+  "version": "1.0.0",
+  "description": "BudgetBuddy financial tips Lambda function",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
