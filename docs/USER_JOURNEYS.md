@@ -16,6 +16,9 @@
 8. [Settings & Preferences Journey](#8-settings--preferences-journey)
 9. [Component Gap Analysis](#9-component-gap-analysis)
 10. [UI/UX Best Practices Applied](#10-uiux-best-practices-applied)
+11. [Requirements-to-Tasks Reconciliation](#11-requirements-to-tasks-reconciliation)
+12. [UI/UX Implementation Checklist](#12-uiux-implementation-checklist)
+13. [Implementation Priority Matrix](#13-implementation-priority-matrix)
 
 ---
 
@@ -815,38 +818,257 @@ xl: 32px  (major sections)
 
 ---
 
-## Appendix: Requirements Traceability
+## 11. Requirements-to-Tasks Reconciliation
 
-| Requirement              | Journey       | Frontend | Backend | Status       |
-| ------------------------ | ------------- | -------- | ------- | ------------ |
-| R1: Authentication       | Onboarding    | ✅       | ✅      | Complete     |
-| R2: Budget Management    | Daily         | ✅       | ✅      | Complete     |
-| R3: Transactions         | Daily         | ✅       | ✅      | Complete     |
-| R4: Month Navigation     | Daily         | ✅       | ✅      | Complete     |
-| R5: Summary              | Daily         | ✅       | ✅      | Complete     |
-| R6: Responsive Design    | All           | ✅       | N/A     | Complete     |
-| R7: Data Persistence     | All           | ✅       | ✅      | Complete     |
-| R17: Family Management   | Family        | ✅       | ✅      | Complete     |
-| R22-25: Mobile Apps      | All           | ✅       | ✅      | Complete     |
-| R26: Export/Backup       | Settings      | ✅       | ✅      | Complete     |
-| R29: Notifications       | Notifications | ✅       | ✅      | Complete     |
-| R30: Multi-Currency      | Settings      | ✅       | ✅      | Complete     |
-| R35: Subscriptions       | Insights      | ❌       | ❌      | Not started  |
-| R36: Bill Reminders      | Notifications | ❌       | ❌      | Not started  |
-| R37: Debt Payoff         | Goals         | ❌       | ❌      | Not started  |
-| R38: Savings Goals       | Goals         | ❌       | ❌      | Not started  |
-| R39: Spending Insights   | Insights      | ❌       | ✅      | Backend only |
-| R40: Rollover Budgets    | Daily         | ❌       | ❌      | Not started  |
-| R41: Net Worth           | Goals         | ❌       | ❌      | Not started  |
-| R42: Bank Sync (Plaid)   | Bank          | ✅       | ✅      | Complete     |
-| R43: Credit Score        | Insights      | ❌       | ❌      | Not started  |
-| R44: Receipt Scanning    | Daily         | ❌       | ❌      | Not started  |
-| R45: Investments         | Goals         | ❌       | ❌      | Not started  |
-| R46: Peer Comparison     | Insights      | ❌       | ✅      | Backend only |
-| R47: Educational Content | Insights      | ❌       | ✅      | Backend only |
-| R48: Admin Dashboard     | Admin         | ❌       | ✅      | Backend only |
+### Document Maintenance
+
+> ⚠️ **IMPORTANT**: This document must be updated whenever a feature is implemented.
+> A Kiro hook (`update-user-journeys`) automatically reminds developers to update this document.
+
+### Complete Requirements Mapping
+
+#### Core Features (Requirements 1-17) - ✅ COMPLETE
+
+| Req    | Name               | Journey    | Task | Frontend | Backend | UI/UX Status |
+| ------ | ------------------ | ---------- | ---- | -------- | ------- | ------------ |
+| R1     | Authentication     | Onboarding | N/A  | ✅       | ✅      | ✅ Complete  |
+| R2     | Budget Management  | Daily      | N/A  | ✅       | ✅      | ✅ Complete  |
+| R3     | Transactions       | Daily      | N/A  | ✅       | ✅      | ✅ Complete  |
+| R4     | Month Navigation   | Daily      | N/A  | ✅       | ✅      | ✅ Complete  |
+| R5     | Summary            | Daily      | N/A  | ✅       | ✅      | ✅ Complete  |
+| R6     | Responsive Design  | All        | N/A  | ✅       | N/A     | ✅ Complete  |
+| R7     | Data Persistence   | All        | N/A  | ✅       | ✅      | ✅ Complete  |
+| R8     | Enhanced Month Nav | Daily      | N/A  | ✅       | N/A     | ✅ Complete  |
+| R9     | Budget Reset       | Daily      | N/A  | ✅       | ✅      | ✅ Complete  |
+| R10-16 | Bug Fixes          | Various    | N/A  | ✅       | ✅      | ✅ Complete  |
+| R17    | Family Management  | Family     | N/A  | ✅       | ✅      | ✅ Complete  |
+
+#### Mobile & Platform (Requirements 22-34) - ✅ MOSTLY COMPLETE
+
+| Req | Name                | Journey       | Task   | Frontend | Backend | UI/UX Status    |
+| --- | ------------------- | ------------- | ------ | -------- | ------- | --------------- |
+| R22 | Native Mobile Apps  | All           | N/A    | ✅       | ✅      | ✅ Complete     |
+| R23 | Mobile UX           | All           | N/A    | ✅       | N/A     | ✅ Complete     |
+| R24 | Offline Capability  | All           | N/A    | ✅       | N/A     | ✅ Complete     |
+| R25 | Mobile Security     | All           | N/A    | ✅       | ✅      | ✅ Complete     |
+| R26 | Export/Backup       | Settings      | N/A    | ✅       | ✅      | ✅ Complete     |
+| R27 | Onboarding Tutorial | Onboarding    | N/A    | ⚠️       | N/A     | ⚠️ Needs polish |
+| R28 | Search & Filtering  | Daily         | N/A    | ❌       | ⚠️      | ❌ Missing      |
+| R29 | Notifications       | Notifications | N/A    | ✅       | ✅      | ✅ Complete     |
+| R30 | Multi-Currency      | Settings      | N/A    | ✅       | ✅      | ✅ Complete     |
+| R31 | Basic Reporting     | Insights      | Task 3 | ❌       | ✅      | ❌ Missing      |
+| R32 | Category Management | Daily         | N/A    | ⚠️       | ✅      | ⚠️ Basic only   |
+| R33 | Quick Actions       | Daily         | N/A    | ❌       | N/A     | ❌ Missing      |
+| R34 | Enhanced Security   | Settings      | N/A    | ⚠️       | ✅      | ⚠️ No 2FA UI    |
+
+#### Competitive Features (Requirements 35-48) - 🔄 IN PROGRESS
+
+| Req | Name                  | Journey       | Task    | Frontend | Backend | UI/UX Status    |
+| --- | --------------------- | ------------- | ------- | -------- | ------- | --------------- |
+| R35 | Subscription Tracking | Insights      | -       | ❌       | ❌      | ❌ Not started  |
+| R36 | Bill Reminders        | Notifications | Task 1  | ❌       | ✅      | ❌ Missing UI   |
+| R37 | Debt Payoff           | Goals         | -       | ❌       | ❌      | ❌ Not started  |
+| R38 | Savings Goals         | Goals         | Task 2  | ❌       | ✅      | ❌ Missing UI   |
+| R39 | Spending Insights     | Insights      | Task 3  | ❌       | ✅      | ❌ Missing UI   |
+| R40 | Rollover Budgets      | Daily         | -       | ❌       | ❌      | ❌ Not started  |
+| R41 | Net Worth             | Goals         | -       | ❌       | ❌      | ❌ Not started  |
+| R42 | Bank Sync (Plaid)     | Bank          | Task 5  | ✅       | ✅      | ✅ Complete     |
+| R43 | Credit Score          | Insights      | -       | ❌       | ❌      | ❌ External API |
+| R44 | Receipt Scanning      | Daily         | Task 4  | ❌       | ✅      | ❌ Missing UI   |
+| R45 | Investments           | Goals         | -       | ❌       | ❌      | ❌ Not started  |
+| R46 | Peer Comparison       | Insights      | Task 8  | ❌       | ✅      | ❌ Missing UI   |
+| R47 | Educational Content   | Insights      | Task 10 | ❌       | ✅      | ❌ Missing UI   |
+| R48 | Admin Dashboard       | Admin         | Task 7  | ❌       | ✅      | ❌ Missing UI   |
+
+---
+
+## 12. UI/UX Implementation Checklist
+
+### Per-Feature UI/UX Requirements
+
+#### 🔴 HIGH PRIORITY - Backend Ready, UI Missing
+
+**1. Insights Page (R31, R39)**
+
+- [ ] Dashboard layout with card grid
+- [ ] Weekly insight card with AI-generated text
+- [ ] Spending trend chart (line/area chart)
+- [ ] Category breakdown (pie/donut chart)
+- [ ] Month-over-month comparison bars
+- [ ] "Ask AI" chat interface
+- [ ] Loading skeletons for async data
+- [ ] Empty state for new users
+- [ ] Pull-to-refresh (mobile)
+
+**2. Tips Feed (R47)**
+
+- [ ] Scrollable feed layout (like social media)
+- [ ] Tip card with icon, title, body, action
+- [ ] Save/dismiss swipe gestures
+- [ ] Category filter tabs
+- [ ] Daily tip highlight card
+- [ ] Saved tips section
+- [ ] Read/unread indicators
+
+**3. Goals Page (R38)**
+
+- [ ] Goal cards with progress bars
+- [ ] Animated progress on contribution
+- [ ] Create goal modal with templates
+- [ ] Goal icon/emoji picker
+- [ ] Target date picker
+- [ ] Drag-and-drop reordering
+- [ ] Milestone celebration (confetti)
+- [ ] Archive completed goals
+
+**4. Peer Comparison (R46)**
+
+- [ ] Opt-in/opt-out toggle
+- [ ] Category comparison bars
+- [ ] Percentile indicators (better/worse than X%)
+- [ ] Financial health score gauge
+- [ ] Achievement badges display
+- [ ] Privacy explanation modal
+
+**5. Bills Page (R36)**
+
+- [ ] Bills list sorted by due date
+- [ ] Calendar view toggle
+- [ ] Bill card with status (paid/unpaid/overdue)
+- [ ] Quick "Mark Paid" button
+- [ ] Add bill modal with recurrence
+- [ ] Due date countdown
+- [ ] Color-coded urgency (green/yellow/red)
+
+**6. Receipt Scanner (R44)**
+
+- [ ] Camera capture button
+- [ ] Image preview with crop/rotate
+- [ ] Processing spinner with status
+- [ ] Extracted data confirmation form
+- [ ] Category suggestion dropdown
+- [ ] Retry on failure
+- [ ] Usage limit indicator
+
+**7. Educational Content (R47)**
+
+- [ ] Course catalog grid
+- [ ] Course detail page with lessons
+- [ ] Lesson viewer (text + video)
+- [ ] Quiz component with feedback
+- [ ] Progress bar per course
+- [ ] Badge showcase
+- [ ] Streak indicator
+
+**8. Admin Dashboard (R48)**
+
+- [ ] Metrics cards (users, revenue, etc.)
+- [ ] User search with filters
+- [ ] User detail modal
+- [ ] Action buttons (disable, reset password)
+- [ ] System health indicators
+- [ ] Audit log table with pagination
+
+#### 🟡 MEDIUM PRIORITY - Enhancements
+
+**9. Search & Filtering (R28)**
+
+- [ ] Search bar in transaction list
+- [ ] Filter dropdown (date, category, amount)
+- [ ] Search results highlighting
+- [ ] Recent searches
+- [ ] Clear filters button
+
+**10. Quick Actions (R33)**
+
+- [ ] Recent transactions quick-add
+- [ ] Favorite categories
+- [ ] Transaction templates
+- [ ] Keyboard shortcuts (web)
+- [ ] Voice input (mobile)
+
+**11. Notification Center**
+
+- [ ] Bell icon with badge count
+- [ ] Notification dropdown/drawer
+- [ ] Mark as read
+- [ ] Notification grouping
+- [ ] Deep links to relevant screens
+
+---
+
+## 13. Implementation Priority Matrix
+
+### Immediate (This Sprint)
+
+| Feature            | Journey       | Effort | Impact | Dependencies  |
+| ------------------ | ------------- | ------ | ------ | ------------- |
+| InsightsPage       | Insights      | 3 days | HIGH   | Backend ready |
+| TipsFeed           | Insights      | 1 day  | MEDIUM | Backend ready |
+| NotificationCenter | Notifications | 2 days | HIGH   | Backend ready |
+
+### Next Sprint
+
+| Feature        | Journey       | Effort | Impact | Dependencies  |
+| -------------- | ------------- | ------ | ------ | ------------- |
+| GoalsPage      | Goals         | 3 days | HIGH   | Backend ready |
+| BillsPage      | Notifications | 2 days | HIGH   | Backend ready |
+| PeerComparison | Insights      | 1 day  | MEDIUM | Backend ready |
+
+### Future Sprints
+
+| Feature         | Journey  | Effort | Impact | Dependencies  |
+| --------------- | -------- | ------ | ------ | ------------- |
+| ReceiptScanner  | Daily    | 3 days | MEDIUM | Camera API    |
+| LearnPage       | Insights | 3 days | MEDIUM | Backend ready |
+| AdminDashboard  | Admin    | 4 days | LOW    | Internal only |
+| DebtCalculator  | Goals    | 3 days | HIGH   | New backend   |
+| NetWorthTracker | Goals    | 4 days | MEDIUM | New backend   |
+
+---
+
+## Appendix: Quick Reference
+
+### Status Legend
+
+| Symbol | Meaning             |
+| ------ | ------------------- |
+| ✅     | Complete and tested |
+| ⚠️     | Partial/needs work  |
+| ❌     | Not started         |
+| 🔄     | In progress         |
+
+### Journey Abbreviations
+
+| Code          | Journey                   |
+| ------------- | ------------------------- |
+| Onboarding    | New User Onboarding       |
+| Daily         | Daily Budget Management   |
+| Bank          | Bank Account Connection   |
+| Family        | Family Collaboration      |
+| Insights      | Financial Insights        |
+| Goals         | Debt & Savings Goals      |
+| Notifications | Notifications & Reminders |
+| Settings      | Settings & Preferences    |
+| Admin         | Admin Dashboard           |
+
+### Task References
+
+Tasks are defined in `.kiro/specs/tasks.md`:
+
+- Task 1: Bill Reminders
+- Task 2: Savings Goals
+- Task 3: Spending Insights
+- Task 4: Receipt Scanning
+- Task 5: Bank Sync (Plaid)
+- Task 6: Reconciliation
+- Task 7: Admin Dashboard
+- Task 8: Peer Comparison
+- Task 9: Financial Tips
+- Task 10: Educational Content
 
 ---
 
 _Document maintained by BudgetBuddy Development Team_
 _Last reviewed: 2026-02-01_
+_Hook: `update-user-journeys` enforces updates on feature completion_
