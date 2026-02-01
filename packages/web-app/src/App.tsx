@@ -22,6 +22,7 @@ import { AIBudgetGenerationPage } from "./pages/AIBudgetGenerationPage";
 import { AcceptInvitationPage } from "./pages/AcceptInvitationPage";
 import { AccountsPage } from "./pages/AccountsPage";
 import { TipsFeedPage } from "./pages/TipsFeedPage";
+import { InsightsPage } from "./pages/InsightsPage";
 import { initMockAuth } from "./utils/mockAuth";
 
 const App: React.FC = () => {
@@ -88,6 +89,16 @@ const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <TipsFeedPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Insights Page */}
+                <Route
+                  path="/insights"
+                  element={
+                    <ProtectedRoute>
+                      <InsightsPage />
                     </ProtectedRoute>
                   }
                 />
