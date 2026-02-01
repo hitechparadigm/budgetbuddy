@@ -329,6 +329,34 @@ export class ApiStack extends cdk.Stack {
       description: 'BudgetBuddy receipt handler for AI-powered receipt scanning and extraction',
     });
 
+    /**
+     * Plaid Bank Sync Functions
+     * Handle bank account linking, transaction sync, and mock mode for development
+     */
+    this.functions.plaidHandler = new lambda.Function(this, 'PlaidHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-plaid',
+      code: lambda.Code.fromAsset('../backend/functions/plaid'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy Plaid handler for bank account sync with daily rate limiting',
+      environment: {
+        ...commonEnvironment,
+        PLAID_MOCK_MODE: 'true', // Enable mock mode by default for development
+      },
+    });
+
+    /**
+     * Receipt-to-Bank Reconciliation Functions
+     * Handle matching receipts with bank transactions using confidence scoring
+     */
+    this.functions.reconciliationHandler = new lambda.Function(this, 'ReconciliationHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-reconciliation',
+      code: lambda.Code.fromAsset('../backend/functions/reconciliation'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy reconciliation handler for receipt-to-bank transaction matching',
+    });
+
     // Grant DynamoDB permissions to all functions
     Object.values(this.functions).forEach(func => {
       props.table.grantReadWriteData(func);
@@ -966,6 +994,131 @@ export class ApiStack extends cdk.Stack {
     receiptIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
       authorizer,
       operationName: 'GetReceipt',
+    });
+
+    // Plaid routes (protected)
+    const plaidResource = this.api.root.addResource('plaid');
+
+    // Plaid link token endpoint
+    const plaidLinkResource = plaidResource.addResource('link-token');
+    plaidLinkResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
+      authorizer,
+      operationName: 'CreatePlaidLinkToken',
+    });
+
+    // Plaid exchange token endpoint
+    const plaidExchangeResource = plaidResource.addResource('exchange-token');
+    plaidExchangeResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
+      authorizer,
+      operationName: 'ExchangePlaidToken',
+    });
+
+    // Plaid accounts endpoint
+    const plaidAccountsResource = plaidResource.addResource('accounts');
+    plaidAccountsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
+      authorizer,
+      operationName: 'GetPlaidAccounts',
+    });
+
+    // Individual Plaid account routes
+    const plaidAccountIdResource = plaidAccountsResource.addResource('{accountId}');
+    plaidAccountIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
+      authorizer,
+      operationName: 'RemovePlaidAccount',
+    });
+
+    // Plaid sync endpoint
+    const plaidSyncResource = plaidResource.addResource('sync');
+    plaidSyncResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
+      authorizer,
+      operationName: 'SyncPlaidTransactions',
+    });
+
+    // Plaid pending transactions endpoint
+    const plaidPendingResource = plaidResource.addResource('pending');
+    plaidPendingResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
+      authorizer,
+      operationName: 'GetPendingTransactions',
+    });
+
+    // Plaid approve pending transaction endpoint
+    const plaidApproveResource = plaidPendingResource.addResource('approve');
+    plaidApproveResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
+      authorizer,
+      operationName: 'ApprovePendingTransaction',
+    });
+
+    // Plaid reject pending transaction endpoint
+    const plaidRejectResource = plaidPendingResource.addResource('reject');
+    plaidRejectResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
+      authorizer,
+      operationName: 'RejectPendingTransaction',
+    });
+
+    // Plaid health endpoint
+    const plaidHealthResource = plaidResource.addResource('health');
+    plaidHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'PlaidHealthCheck',
+    });
+
+    // Reconciliation routes (protected)
+    const reconcileResource = this.api.root.addResource('reconcile');
+
+    // Reconciliation status endpoint
+    const reconcileStatusResource = reconcileResource.addResource('status');
+    reconcileStatusResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.reconciliationHandler), {
+      authorizer,
+      operationName: 'GetReconciliationStatus',
+    });
+
+    // Reconciliation unmatched items endpoint
+    const reconcileUnmatchedResource = reconcileResource.addResource('unmatched');
+    reconcileUnmatchedResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.reconciliationHandler), {
+      authorizer,
+      operationName: 'GetUnmatchedItems',
+    });
+
+    // Reconciliation suggestions endpoint
+    const reconcileSuggestionsResource = reconcileResource.addResource('suggestions');
+    reconcileSuggestionsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.reconciliationHandler), {
+      authorizer,
+      operationName: 'GetMatchSuggestions',
+    });
+
+    // Reconciliation match endpoint
+    const reconcileMatchResource = reconcileResource.addResource('match');
+    reconcileMatchResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.reconciliationHandler), {
+      authorizer,
+      operationName: 'CreateMatch',
+    });
+
+    // Reconciliation unmatch endpoint
+    const reconcileUnmatchResource = reconcileResource.addResource('unmatch');
+    reconcileUnmatchResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.reconciliationHandler), {
+      authorizer,
+      operationName: 'RemoveMatch',
+    });
+
+    // Reconciliation auto endpoint
+    const reconcileAutoResource = reconcileResource.addResource('auto');
+    reconcileAutoResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.reconciliationHandler), {
+      authorizer,
+      operationName: 'AutoReconcile',
+    });
+
+    // Reconciliation health endpoint
+    const reconcileHealthResource = reconcileResource.addResource('health');
+    reconcileHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.reconciliationHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'ReconciliationHealthCheck',
+    });
+
+    // Individual match routes
+    const reconcileMatchIdResource = reconcileResource.addResource('{matchId}');
+    reconcileMatchIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.reconciliationHandler), {
+      authorizer,
+      operationName: 'GetMatch',
     });
 
     // Email routes (public for webhooks, protected for sending)

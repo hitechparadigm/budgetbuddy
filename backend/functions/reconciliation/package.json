@@ -1,0 +1,22 @@
+{
+  "name": "budgetbuddy-reconciliation-function",
+  "version": "1.0.0",
+  "description": "BudgetBuddy Receipt-to-Bank Reconciliation Lambda Function",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "keywords": [
+    "budgetbuddy",
+    "reconciliation",
+    "matching",
+    "lambda"
+  ],
+  "author": "BudgetBuddy Team",
+  "license": "MIT"
+}

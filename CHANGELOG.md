@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.9.29] - 2026-02-01
+
+### 🚀 NEW FEATURE - Receipt-to-Bank Reconciliation (Task 6)
+
+- **Backend Implementation**
+  - Created `backend/functions/reconciliation/index.js` - Full reconciliation with confidence scoring
+  - Created `backend/functions/reconciliation/package.json` - Lambda function configuration
+  - Created `backend/functions/reconciliation/reconciliation.test.js` - Unit tests (11 tests passing)
+
+- **API Endpoints Added**
+  - `GET /reconcile/status` - Get reconciliation overview (matched/unmatched counts)
+  - `GET /reconcile/unmatched` - Get unmatched receipts and transactions
+  - `GET /reconcile/suggestions` - Get match suggestions for a receipt or transaction
+  - `POST /reconcile/match` - Create a match between receipt and transaction
+  - `POST /reconcile/unmatch` - Remove an existing match
+  - `POST /reconcile/auto` - Auto-reconcile all high-confidence matches
+  - `GET /reconcile/{matchId}` - Get specific match details
+  - `GET /reconcile/health` - Health check endpoint
+
+- **Key Features**
+  - Confidence scoring algorithm with weighted factors:
+    - Amount matching (±$0.50 tolerance) - 50% weight
+    - Date matching (±2 days tolerance) - 30% weight
+    - Merchant fuzzy matching - 20% weight
+  - High/Medium/Low confidence levels (85%/60% thresholds)
+  - Auto-reconciliation with configurable minimum confidence
+  - Manual match/unmatch workflow
+  - Links receipts and transactions bidirectionally
+
+- **CDK Infrastructure**
+  - Added Plaid Lambda to api-stack.ts with API routes
+  - Added Reconciliation Lambda to api-stack.ts with API routes
+
 ## [1.9.28] - 2026-02-01
 
 ### 🚀 NEW FEATURE - Bank Account Sync with Plaid (Task 5)
