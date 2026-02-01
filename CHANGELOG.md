@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.9.35] - 2026-02-01
+
+### 🚀 NEW FEATURE - Peer Comparison System (Task 8.1)
+
+- **Created Comparison Lambda** - `backend/functions/comparison/index.js`
+- **12 tests passing** - Full test coverage for comparison endpoints
+- **Privacy-first design** - Minimum 50 users per group, opt-out support
+- **API Endpoints**:
+  - `GET /comparison/summary` - Get spending comparison vs similar households
+  - `GET /comparison/preferences` - Get user's comparison preferences
+  - `PUT /comparison/preferences` - Update preferences (opt-out, share data)
+  - `GET /comparison/health` - Health check
+
+**Features:**
+
+- Compare spending by category against similar households
+- Group by region, family size, and income bracket
+- Percentile rankings and vs-average calculations
+- Full opt-out support for privacy
+
 ## [1.9.34] - 2026-02-01
 
 ### 🔐 Feature - Admin Cognito Group (Task 7.5.2)

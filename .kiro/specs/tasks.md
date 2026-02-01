@@ -296,11 +296,11 @@
   - [ ] 7.4.3 Create UserDetailPage
   - [ ] 7.4.4 Create SystemHealthPage
   - [ ] 7.4.5 Create AuditLogPage
-- [ ] 7.5 Add admin CDK infrastructure
+- [x] 7.5 Add admin CDK infrastructure
   - [x] 7.5.1 Create admin Lambda (already exists)
   - [x] 7.5.2 Create admin Cognito group
   - [x] 7.5.3 Add admin API Gateway routes (in api-features-stack)
-  - [ ] 7.5.4 Create S3 bucket for admin app hosting
+  - [x] 7.5.4 Create S3 bucket for admin app hosting (already exists in hosting-stack)
 - [x] 7.6 Write tests for admin feature
   - [x] 7.6.1 Unit tests for admin service (13 tests passing)
   - [ ] 7.6.2 Integration tests for admin API
@@ -308,10 +308,10 @@
 
 ### Task 8: Peer Comparison System (Requirement 48)
 
-- [ ] 8.1 Create comparison Lambda function
-  - [ ] 8.1.1 Create `backend/functions/comparison/index.js`
-  - [ ] 8.1.2 Create `backend/functions/comparison/aggregator.js`
-  - [ ] 8.1.3 Create `backend/functions/comparison/package.json`
+- [x] 8.1 Create comparison Lambda function
+  - [x] 8.1.1 Create `backend/functions/comparison/index.js`
+  - [x] 8.1.2 Create `backend/functions/comparison/aggregator.js` (integrated in index.js)
+  - [x] 8.1.3 Create `backend/functions/comparison/package.json`
 - [ ] 8.2 Implement data aggregation
   - [ ] 8.2.1 Create daily aggregation job
   - [ ] 8.2.2 Group users by region, family size, income
