@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.33] - 2026-02-01
+
+### 🔧 Fix - Health Check Script for Features API
+
+- **Updated `scripts/check-deployment.sh`** - Now checks Features API for admin, plaid, reconcile health endpoints
+- **Separate API checks** - Main API and Features API health checks are now separate
+- **Fixes CI/CD failure** - Health check was failing because admin moved to Features API
+
 ## [1.9.32] - 2026-02-01
 
 ### 🏗️ Infrastructure - Admin Lambda to Features Stack

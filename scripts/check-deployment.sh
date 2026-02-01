@@ -104,6 +104,7 @@ main() {
     print_status "Retrieving deployment outputs..."
 
     local api_url=$(get_stack_output "budgetbuddy-$environment-api" "ApiUrl")
+    local features_api_url=$(get_stack_output "budgetbuddy-$environment-api-features" "FeaturesApiUrl")
     local user_pool_id=$(get_stack_output "budgetbuddy-$environment-auth" "UserPoolId")
     local user_pool_client_id=$(get_stack_output "budgetbuddy-$environment-auth" "UserPoolClientId")
     local table_name=$(get_stack_output "budgetbuddy-$environment-database" "TableName")
@@ -111,6 +112,7 @@ main() {
     local admin_domain=$(get_stack_output "budgetbuddy-$environment-hosting" "AdminDistributionDomainName")
 
     echo "API URL: $api_url"
+    echo "Features API URL: $features_api_url"
     echo "User Pool ID: $user_pool_id"
     echo "User Pool Client ID: $user_pool_client_id"
     echo "DynamoDB Table: $table_name"
@@ -146,8 +148,8 @@ main() {
             ((errors++))
         fi
 
-        # Test other service endpoints
-        local services=("transactions" "ai" "family" "email" "admin")
+        # Test other service endpoints (main API)
+        local services=("transactions" "ai" "family" "email")
         for service in "${services[@]}"; do
             if test_api_endpoint "$api_url" "/$service/health"; then
                 print_success "$service service working"
@@ -167,6 +169,23 @@ main() {
     else
         print_error "API URL not found - cannot test endpoints"
         ((errors++))
+    fi
+
+    # Test Features API endpoints (admin, plaid, reconciliation)
+    if [ -n "$features_api_url" ]; then
+        print_status "Testing Features API endpoints..."
+
+        local features_services=("admin" "plaid" "reconcile")
+        for service in "${features_services[@]}"; do
+            if test_api_endpoint "$features_api_url" "/$service/health"; then
+                print_success "$service service working (Features API)"
+            else
+                print_error "$service service failed (Features API)"
+                ((errors++))
+            fi
+        done
+    else
+        print_warning "Features API URL not found - skipping features API health checks"
     fi
 
     echo ""
