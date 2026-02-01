@@ -95,13 +95,13 @@ const hostingStack = new HostingStack(app, `${stackPrefix}-hosting`, {
 /**
  * Notification Stack - Push notifications and daily reminders
  * Handles device registration, budget alerts, and daily reminders
+ * Now creates its own SharedLayer to avoid cross-stack dependency issues
  */
 const notificationStack = new NotificationStack(app, `${stackPrefix}-notification`, {
   env,
   description: 'BudgetBuddy notification infrastructure with Lambda functions for push notifications and reminders',
   table: databaseStack.table,
   commonLayer: apiStack.commonLayer,
-  sharedLayer: apiStack.sharedLayer,
   expoAccessToken: process.env.EXPO_ACCESS_TOKEN || 'placeholder-token-configure-in-aws',
 });
 

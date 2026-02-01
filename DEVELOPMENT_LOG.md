@@ -4,50 +4,51 @@
 
 ### Session Summary
 
-**Duration**: 90 minutes
-**Focus**: Investigated and resolved multiple CloudFormation export dependency issues
-**Outcome**: Updated CI/CD pipeline to automatically resolve all deployment order issues
+**Duration**: 120 minutes
+**Focus**: Investigated and resolved CloudFormation export dependency issues by updating notification stack
+**Outcome**: Notification stack now creates its own SharedLayer, breaking cross-stack dependency
 
 ### Problem Statement
 
 **Initial Deployment Failure**:
 
 - Multiple deployment attempts failing with CloudFormation export errors
-- Error 1: "Cannot delete export budgetbuddy-dev-auth:ExportsOutputRefAuthSharedLayer5BE359A433E00034 as it is in use by budgetbuddy-dev-auth-onboarding"
-- Error 2: "Cannot update export budgetbuddy-dev-api:ExportsOutputRefSharedLayer27DFABF0C2CA2696 as it is in use by budgetbuddy-dev-notification"
+- Error: "Cannot update export budgetbuddy-dev-api:ExportsOutputRefSharedLayer27DFABF0C2CA2696 as it is in use by budgetbuddy-dev-notification"
 
 **Root Cause**:
 
-- Multiple stacks were previously deployed with cross-stack layer imports
-- Auth-onboarding imported AuthSharedLayer from auth stack
-- Notification imported SharedLayer from API stack
-- Updated code so each stack creates its own layers (no imports)
-- However, EXISTING CloudFormation stacks still had the imports
-- CloudFormation won't allow removing exports while imports exist
-- CDK deploys stacks alphabetically, causing exporting stacks to deploy before importing stacks
+- Notification stack was importing SharedLayer from API stack via props
+- Even though CI/CD deployed notification stack first with `--exclusively`, it had "no changes"
+- The notification stack code still referenced `props.sharedLayer` from API stack
+- CloudFormation wouldn't allow API stack to remove export while notification still imported it
 
 ### Solution Implemented
 
+**Updated Notification Stack**: `infrastructure/lib/notification-stack.ts`
+
+- Removed `sharedLayer` from NotificationStackProps interface
+- Added local SharedLayer creation in notification stack constructor
+- Updated all three Lambda functions to use local sharedLayer instead of props.sharedLayer
+- This completely breaks the cross-stack dependency
+
+**Updated CDK App**: `infrastructure/bin/app.ts`
+
+- Removed `sharedLayer: apiStack.sharedLayer` from notification stack instantiation
+- Added comment explaining the change
+
 **Updated CI/CD Pipeline**: `.github/workflows/deploy-dev.yml`
 
-- Modified deployment step to deploy stacks in specific order:
-  1. Deploy auth-onboarding first to remove AuthSharedLayer import
-  2. Deploy notification second to remove SharedLayer import
-  3. Deploy all remaining stacks (including auth and API)
-- This breaks all CloudFormation export dependencies automatically
-- Provides permanent fix for future deployments
-
-**Created Documentation**:
-
-- `.kiro/DEPLOYMENT_FAILURE_SUMMARY.md` - Complete analysis and solutions
-- `.kiro/CLOUDFORMATION_EXPORT_BLOCKER.md` - Updated with latest failure details
-- `.kiro/SESSION_41_SUMMARY.md` - Detailed session summary
+- Simplified to two-step deployment:
+  1. Deploy notification stack exclusively (now removes import)
+  2. Deploy all remaining stacks (API can now remove export)
 
 ### Technical Changes
 
 **Files Modified**:
 
-- `.github/workflows/deploy-dev.yml` - Added three-step deployment process
+- `infrastructure/lib/notification-stack.ts` - Creates own SharedLayer
+- `infrastructure/bin/app.ts` - Removes sharedLayer prop
+- `.github/workflows/deploy-dev.yml` - Simplified deployment order
   - Step 1: Deploy auth-onboarding to remove AuthSharedLayer import
   - Step 2: Deploy notification to remove SharedLayer import
   - Step 3: Deploy all remaining stacks
