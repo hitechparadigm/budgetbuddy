@@ -137,16 +137,22 @@ jobs:
         run: |
           echo "Deploying BudgetBuddy infrastructure to development environment..."
 
-          # Deploy auth-onboarding first to break CloudFormation export dependency
-          # This is required because auth-onboarding previously imported AuthSharedLayer from auth stack
-          # We need to deploy auth-onboarding first to remove the import before auth can remove the export
+          # Deploy stacks in specific order to break CloudFormation export dependencies
+          # This is required because some stacks previously imported layers from other stacks
+          # We need to deploy importing stacks first to remove imports before exporting stacks can remove exports
+
           echo "Step 1: Deploying auth-onboarding stack first..."
           npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-auth-onboarding \
             --require-approval never \
             --context environment=${{ env.ENVIRONMENT }}
 
+          echo "Step 2: Deploying notification stack to remove SharedLayer import..."
+          npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-notification \
+            --require-approval never \
+            --context environment=${{ env.ENVIRONMENT }}
+
           # Now deploy all remaining stacks
-          echo "Step 2: Deploying all remaining stacks..."
+          echo "Step 3: Deploying all remaining stacks..."
           npx cdk deploy --all \
             --require-approval never \
             --context environment=${{ env.ENVIRONMENT }} \

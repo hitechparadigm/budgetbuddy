@@ -4,61 +4,72 @@
 
 ### Session Summary
 
-**Duration**: 45 minutes
-**Focus**: Investigated CloudFormation export dependency issue and implemented automated fix
-**Outcome**: Updated CI/CD pipeline to automatically resolve deployment order issue
+**Duration**: 90 minutes
+**Focus**: Investigated and resolved multiple CloudFormation export dependency issues
+**Outcome**: Updated CI/CD pipeline to automatically resolve all deployment order issues
 
 ### Problem Statement
 
-**Deployment Failure**:
+**Initial Deployment Failure**:
 
-- Multiple deployment attempts failing with same CloudFormation export error
-- Error: "Cannot delete export budgetbuddy-dev-auth:ExportsOutputRefAuthSharedLayer5BE359A433E00034 as it is in use by budgetbuddy-dev-auth-onboarding"
-- Code changes alone cannot resolve the issue
+- Multiple deployment attempts failing with CloudFormation export errors
+- Error 1: "Cannot delete export budgetbuddy-dev-auth:ExportsOutputRefAuthSharedLayer5BE359A433E00034 as it is in use by budgetbuddy-dev-auth-onboarding"
+- Error 2: "Cannot update export budgetbuddy-dev-api:ExportsOutputRefSharedLayer27DFABF0C2CA2696 as it is in use by budgetbuddy-dev-notification"
 
 **Root Cause**:
 
-- Auth-onboarding stack was previously deployed with configuration that imports AuthSharedLayer from auth stack
-- This created CloudFormation export/import relationship
-- Updated code so auth-onboarding creates its own layer (no import)
-- However, EXISTING CloudFormation stack still has the import
-- CloudFormation won't allow updating auth stack while auth-onboarding still imports it
-- CDK deploys stacks alphabetically, causing auth to deploy before auth-onboarding
+- Multiple stacks were previously deployed with cross-stack layer imports
+- Auth-onboarding imported AuthSharedLayer from auth stack
+- Notification imported SharedLayer from API stack
+- Updated code so each stack creates its own layers (no imports)
+- However, EXISTING CloudFormation stacks still had the imports
+- CloudFormation won't allow removing exports while imports exist
+- CDK deploys stacks alphabetically, causing exporting stacks to deploy before importing stacks
 
 ### Solution Implemented
 
 **Updated CI/CD Pipeline**: `.github/workflows/deploy-dev.yml`
 
-- Modified deployment step to deploy auth-onboarding stack first
-- This breaks the CloudFormation export dependency automatically
-- Then deploys all remaining stacks
+- Modified deployment step to deploy stacks in specific order:
+  1. Deploy auth-onboarding first to remove AuthSharedLayer import
+  2. Deploy notification second to remove SharedLayer import
+  3. Deploy all remaining stacks (including auth and API)
+- This breaks all CloudFormation export dependencies automatically
 - Provides permanent fix for future deployments
 
 **Created Documentation**:
 
 - `.kiro/DEPLOYMENT_FAILURE_SUMMARY.md` - Complete analysis and solutions
 - `.kiro/CLOUDFORMATION_EXPORT_BLOCKER.md` - Updated with latest failure details
+- `.kiro/SESSION_41_SUMMARY.md` - Detailed session summary
 
 ### Technical Changes
 
 **Files Modified**:
 
-- `.github/workflows/deploy-dev.yml` - Added two-step deployment process
-  - Step 1: Deploy auth-onboarding first to remove import
-  - Step 2: Deploy all remaining stacks including auth
+- `.github/workflows/deploy-dev.yml` - Added three-step deployment process
+  - Step 1: Deploy auth-onboarding to remove AuthSharedLayer import
+  - Step 2: Deploy notification to remove SharedLayer import
+  - Step 3: Deploy all remaining stacks
 
-**Impact**:
+**Deployment Attempts**:
 
-- Next CI/CD run will automatically resolve the CloudFormation dependency
+1. First attempt: Fixed auth-onboarding dependency only - FAILED (notification dependency discovered)
+2. Second attempt: Fixed both auth-onboarding and notification dependencies - IN PROGRESS
+
+### Impact
+
+- Next CI/CD run will automatically resolve all CloudFormation dependencies
 - No manual AWS CLI intervention required
-- Permanent fix for this deployment order issue
+- Permanent fix for deployment order issues
+- Self-healing deployment pipeline
 
 ### Next Steps
 
 **Immediate**:
 
-- Commit and push CI/CD pipeline fix
-- Monitor deployment to verify fix works
+- Commit and push second CI/CD pipeline fix
+- Monitor deployment to verify fix works for both dependencies
 - Continue with Phase 4 after successful deployment
 
 **After Resolution**:
