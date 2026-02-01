@@ -317,6 +317,18 @@ export class ApiStack extends cdk.Stack {
       description: 'BudgetBuddy insights handler for spending analytics and AI-generated insights',
     });
 
+    /**
+     * Receipt Scanning Functions
+     * Handle receipt upload, AI extraction using Claude Haiku, and transaction creation
+     */
+    this.functions.receiptHandler = new lambda.Function(this, 'ReceiptHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-receipt',
+      code: lambda.Code.fromAsset('../backend/functions/receipt'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy receipt handler for AI-powered receipt scanning and extraction',
+    });
+
     // Grant DynamoDB permissions to all functions
     Object.values(this.functions).forEach(func => {
       props.table.grantReadWriteData(func);
@@ -909,6 +921,58 @@ export class ApiStack extends cdk.Stack {
     insightsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'InsightsHealthCheck',
+    });
+
+    // Receipt routes (protected)
+    const receiptResource = this.api.root.addResource('receipt');
+    receiptResource.addMethod('OPTIONS', new apigateway.MockIntegration({
+      integrationResponses: [{ statusCode: '200' }],
+      passthroughBehavior: apigateway.PassthroughBehavior.NEVER,
+      requestTemplates: { 'application/json': '{"statusCode": 200}' },
+    }), {
+      methodResponses: [{ statusCode: '200' }],
+    });
+
+    // Receipt upload endpoint
+    const receiptUploadResource = receiptResource.addResource('upload');
+    receiptUploadResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      authorizer,
+      operationName: 'GetReceiptUploadUrl',
+    });
+
+    // Receipt process endpoint
+    const receiptProcessResource = receiptResource.addResource('process');
+    receiptProcessResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      authorizer,
+      operationName: 'ProcessReceipt',
+    });
+
+    // Receipt usage endpoint
+    const receiptUsageResource = receiptResource.addResource('usage');
+    receiptUsageResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      authorizer,
+      operationName: 'GetReceiptUsage',
+    });
+
+    // Receipt history endpoint
+    const receiptHistoryResource = receiptResource.addResource('history');
+    receiptHistoryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      authorizer,
+      operationName: 'GetReceiptHistory',
+    });
+
+    // Receipt health endpoint
+    const receiptHealthResource = receiptResource.addResource('health');
+    receiptHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'ReceiptHealthCheck',
+    });
+
+    // Individual receipt routes
+    const receiptIdResource = receiptResource.addResource('{receiptId}');
+    receiptIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      authorizer,
+      operationName: 'GetReceipt',
     });
 
     // Email routes (public for webhooks, protected for sending)

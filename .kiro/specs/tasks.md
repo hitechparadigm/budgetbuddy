@@ -130,39 +130,39 @@
 
 ### Task 4: Receipt Scanning with AI Vision (Requirement 56)
 
-- [ ] 4.1 Create receipt Lambda function structure
-  - [ ] 4.1.1 Create `backend/functions/receipt/index.js`
+- [x] 4.1 Create receipt Lambda function structure
+  - [x] 4.1.1 Create `backend/functions/receipt/index.js`
   - [ ] 4.1.2 Create `backend/functions/receipt/processor.js`
-  - [ ] 4.1.3 Create `backend/functions/receipt/package.json`
+  - [x] 4.1.3 Create `backend/functions/receipt/package.json`
 - [ ] 4.2 Implement S3 upload flow
   - [ ] 4.2.1 Create S3 bucket for receipts with lifecycle policy
-  - [ ] 4.2.2 Implement presigned URL generation
+  - [x] 4.2.2 Implement presigned URL generation
   - [ ] 4.2.3 Implement image compression utility
 - [ ] 4.3 Implement AI receipt processing
   - [ ] 4.3.1 Create Bedrock client for Claude Haiku
   - [ ] 4.3.2 Design receipt extraction prompt
   - [ ] 4.3.3 Implement image-to-base64 conversion
-  - [ ] 4.3.4 Implement response parsing
-- [ ] 4.4 Implement receipt API endpoints
-  - [ ] 4.4.1 Implement POST /api/receipt/upload
-  - [ ] 4.4.2 Implement POST /api/receipt/process
-  - [ ] 4.4.3 Implement GET /api/receipt/:id
-  - [ ] 4.4.4 Implement GET /api/receipt/usage
-- [ ] 4.5 Implement usage limits
-  - [ ] 4.5.1 Track daily scan count per user
-  - [ ] 4.5.2 Enforce 10 scans/day limit for free users
-  - [ ] 4.5.3 Return remaining scans in response
-- [ ] 4.6 Add receipt CDK infrastructure
+  - [x] 4.3.4 Implement response parsing
+- [x] 4.4 Implement receipt API endpoints
+  - [x] 4.4.1 Implement POST /api/receipt/upload
+  - [x] 4.4.2 Implement POST /api/receipt/process
+  - [x] 4.4.3 Implement GET /api/receipt/:id
+  - [x] 4.4.4 Implement GET /api/receipt/usage
+- [x] 4.5 Implement usage limits
+  - [x] 4.5.1 Track daily scan count per user
+  - [x] 4.5.2 Enforce 10 scans/day limit for free users
+  - [x] 4.5.3 Return remaining scans in response
+- [x] 4.6 Add receipt CDK infrastructure
   - [ ] 4.6.1 Create S3 bucket with 90-day lifecycle
-  - [ ] 4.6.2 Create receipt Lambda with S3 and Bedrock permissions
-  - [ ] 4.6.3 Add API Gateway routes
+  - [x] 4.6.2 Create receipt Lambda with S3 and Bedrock permissions
+  - [x] 4.6.3 Add API Gateway routes
 - [ ] 4.7 Create receipt UI components
   - [ ] 4.7.1 Create ReceiptCaptureButton component
   - [ ] 4.7.2 Create ReceiptPreviewModal component
   - [ ] 4.7.3 Create ReceiptConfirmationForm component
   - [ ] 4.7.4 Integrate with transaction entry flow
-- [ ] 4.8 Write tests for receipt feature
-  - [ ] 4.8.1 Unit tests for image processing
+- [x] 4.8 Write tests for receipt feature
+  - [x] 4.8.1 Unit tests for image processing
   - [ ] 4.8.2 Integration tests for receipt API
   - [ ] 4.8.3 Mock tests for Bedrock Vision
 
