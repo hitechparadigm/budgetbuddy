@@ -1,0 +1,22 @@
+{
+  "name": "budgetbuddy-plaid-function",
+  "version": "1.0.0",
+  "description": "BudgetBuddy Plaid Integration Lambda Function",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "keywords": [
+    "budgetbuddy",
+    "plaid",
+    "bank-sync",
+    "lambda"
+  ],
+  "author": "BudgetBuddy Team",
+  "license": "MIT"
+}

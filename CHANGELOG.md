@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.9.28] - 2026-02-01
+
+### 🚀 NEW FEATURE - Bank Account Sync with Plaid (Task 5)
+
+- **Backend Implementation**
+  - Created `backend/functions/plaid/index.js` - Full Plaid integration with mock mode
+  - Created `backend/functions/plaid/package.json` - Lambda function configuration
+  - Created `backend/functions/plaid/plaid.test.js` - Unit tests (14 tests passing)
+
+- **API Endpoints Added**
+  - `POST /plaid/link-token` - Create Plaid Link token
+  - `POST /plaid/exchange-token` - Exchange public token for access token
+  - `GET /plaid/accounts` - List linked bank accounts
+  - `DELETE /plaid/accounts/{accountId}` - Unlink a bank account
+  - `POST /plaid/sync` - Sync transactions for all accounts
+  - `POST /plaid/accounts/{accountId}/sync` - Sync specific account
+  - `GET /plaid/pending` - Get pending transactions awaiting approval
+  - `POST /plaid/pending/approve` - Approve pending transactions
+  - `GET /plaid/sync-status` - Get sync status for all accounts
+  - `GET /plaid/health` - Health check endpoint
+
+- **Key Features**
+  - Mock mode for development (PLAID_MOCK_MODE=true)
+  - Daily sync limit: 1 sync per day per account (cost control)
+  - Pending transaction queue for user approval
+  - Auto-categorization suggestions
+  - Account balance tracking
+
+### 🔧 Bug Fixes
+
+- Fixed duplicate OPTIONS method in receipt API routes
+
 ## [1.9.27] - 2026-02-01
 
 ### 🚀 NEW FEATURE - Receipt Scanning with AI Vision (Task 4)
