@@ -925,13 +925,6 @@ export class ApiStack extends cdk.Stack {
 
     // Receipt routes (protected)
     const receiptResource = this.api.root.addResource('receipt');
-    receiptResource.addMethod('OPTIONS', new apigateway.MockIntegration({
-      integrationResponses: [{ statusCode: '200' }],
-      passthroughBehavior: apigateway.PassthroughBehavior.NEVER,
-      requestTemplates: { 'application/json': '{"statusCode": 200}' },
-    }), {
-      methodResponses: [{ statusCode: '200' }],
-    });
 
     // Receipt upload endpoint
     const receiptUploadResource = receiptResource.addResource('upload');

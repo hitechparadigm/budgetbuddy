@@ -172,32 +172,32 @@
 
 ### Task 5: Bank Account Sync - Plaid (Requirement 55)
 
-- [ ] 5.1 Create Plaid Lambda function structure
-  - [ ] 5.1.1 Create `backend/functions/plaid/index.js`
+- [x] 5.1 Create Plaid Lambda function structure
+  - [x] 5.1.1 Create `backend/functions/plaid/index.js`
   - [ ] 5.1.2 Create `backend/functions/plaid/service.js`
   - [ ] 5.1.3 Create `backend/functions/plaid/mock-service.js`
-  - [ ] 5.1.4 Create `backend/functions/plaid/package.json`
-- [ ] 5.2 Implement Plaid Link flow
-  - [ ] 5.2.1 Implement link token generation
-  - [ ] 5.2.2 Implement public token exchange
+  - [x] 5.1.4 Create `backend/functions/plaid/package.json`
+- [x] 5.2 Implement Plaid Link flow
+  - [x] 5.2.1 Implement link token generation
+  - [x] 5.2.2 Implement public token exchange
   - [ ] 5.2.3 Store access token in Secrets Manager
-- [ ] 5.3 Implement account management
-  - [ ] 5.3.1 Implement GET /api/plaid/accounts
-  - [ ] 5.3.2 Implement DELETE /api/plaid/accounts/:id
+- [x] 5.3 Implement account management
+  - [x] 5.3.1 Implement GET /api/plaid/accounts
+  - [x] 5.3.2 Implement DELETE /api/plaid/accounts/:id
   - [ ] 5.3.3 Implement account balance refresh
-- [ ] 5.4 Implement transaction sync
-  - [ ] 5.4.1 Implement daily sync job
-  - [ ] 5.4.2 Implement 1 sync/day/account limit
+- [x] 5.4 Implement transaction sync
+  - [x] 5.4.1 Implement daily sync job
+  - [x] 5.4.2 Implement 1 sync/day/account limit
   - [ ] 5.4.3 Implement transaction cursor management
-  - [ ] 5.4.4 Implement pending transaction queue
+  - [x] 5.4.4 Implement pending transaction queue
 - [ ] 5.5 Implement AI categorization
   - [ ] 5.5.1 Create categorization prompt
   - [ ] 5.5.2 Implement batch categorization
   - [ ] 5.5.3 Cache merchant-category mappings
-- [ ] 5.6 Implement mock mode
-  - [ ] 5.6.1 Create mock accounts data
-  - [ ] 5.6.2 Create mock transactions generator
-  - [ ] 5.6.3 Toggle via PLAID_MOCK_MODE env var
+- [x] 5.6 Implement mock mode
+  - [x] 5.6.1 Create mock accounts data
+  - [x] 5.6.2 Create mock transactions generator
+  - [x] 5.6.3 Toggle via PLAID_MOCK_MODE env var
 - [ ] 5.7 Add Plaid CDK infrastructure
   - [ ] 5.7.1 Create Plaid Lambda with Secrets Manager access
   - [ ] 5.7.2 Add API Gateway routes
@@ -208,9 +208,9 @@
   - [ ] 5.8.2 Create LinkedAccountsList component
   - [ ] 5.8.3 Create PendingTransactionsQueue component
   - [ ] 5.8.4 Create SyncStatusIndicator component
-- [ ] 5.9 Write tests for Plaid feature
-  - [ ] 5.9.1 Unit tests for sync logic
-  - [ ] 5.9.2 Integration tests with mock mode
+- [x] 5.9 Write tests for Plaid feature
+  - [x] 5.9.1 Unit tests for sync logic
+  - [x] 5.9.2 Integration tests with mock mode
   - [ ] 5.9.3 Property tests for rate limiting
 
 ### Task 6: Receipt-to-Bank Reconciliation (Requirement 57)
