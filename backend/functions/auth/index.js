@@ -795,13 +795,13 @@ exports.handler = async (event, _context) => {
         const profile = {
           userId: result.Item.userId.S,
           email: result.Item.email.S,
-          firstName: result.Item.firstName.S,
-          lastName: result.Item.lastName.S,
+          firstName: result.Item.firstName?.S || "",
+          lastName: result.Item.lastName?.S || "",
           familyId: result.Item.familyId.S,
           familyRole: result.Item.familyRole.S,
-          accountType: result.Item.accountType.S,
-          subscriptionTier: result.Item.subscriptionTier.S,
-          onboardingCompleted: result.Item.onboardingCompleted.BOOL,
+          accountType: result.Item.accountType?.S || "single",
+          subscriptionTier: result.Item.subscriptionTier?.S || "free",
+          onboardingCompleted: result.Item.onboardingCompleted?.BOOL || false,
           location: result.Item.location?.S
             ? JSON.parse(result.Item.location.S)
             : null,
@@ -810,8 +810,8 @@ exports.handler = async (event, _context) => {
           settings: result.Item.settings?.S
             ? JSON.parse(result.Item.settings.S)
             : null,
-          createdAt: result.Item.createdAt.S,
-          updatedAt: result.Item.updatedAt.S,
+          createdAt: result.Item.createdAt?.S || new Date().toISOString(),
+          updatedAt: result.Item.updatedAt?.S || new Date().toISOString(),
         };
 
         return {
