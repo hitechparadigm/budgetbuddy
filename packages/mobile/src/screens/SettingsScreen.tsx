@@ -12,6 +12,7 @@ import { Card, Button } from "../components/ui";
 import { ExportModal } from "../components/ExportModal";
 import { BackupModal } from "../components/BackupModal";
 import NotificationSettings from "../components/NotificationSettings";
+import FamilySettings from "../components/FamilySettings";
 import CurrencySelector, {
   CurrencyDisplay,
 } from "../components/CurrencySelector";
@@ -54,6 +55,7 @@ export default function SettingsScreen() {
   const [notificationSettingsVisible, setNotificationSettingsVisible] =
     useState(false);
   const [currencySelectorVisible, setCurrencySelectorVisible] = useState(false);
+  const [familySettingsVisible, setFamilySettingsVisible] = useState(false);
 
   const handleSignOut = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -154,6 +156,16 @@ export default function SettingsScreen() {
       type: "navigation",
       onPress: () =>
         Alert.alert("Profile", "Profile settings will be implemented soon."),
+    },
+    {
+      id: "family",
+      title: "Family Settings",
+      subtitle: "Manage family members and invitations",
+      type: "navigation",
+      onPress: async () => {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setFamilySettingsVisible(true);
+      },
     },
     {
       id: "currency",
@@ -436,6 +448,21 @@ export default function SettingsScreen() {
         onCurrencySelect={handleCurrencyChange}
         selectedCurrency={selectedCurrency}
       />
+
+      {familySettingsVisible && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: colors.background,
+          }}
+        >
+          <FamilySettings onClose={() => setFamilySettingsVisible(false)} />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
