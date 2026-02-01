@@ -154,6 +154,15 @@ export class ApiFeaturesStack extends cdk.Stack {
       handler: 'index.handler',
       description: 'BudgetBuddy tips handler for personalized financial tips',
     });
+
+    // Learn Lambda
+    this.functions.learnHandler = new lambda.Function(this, 'LearnHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-learn',
+      code: lambda.Code.fromAsset('../backend/functions/learn'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy learn handler for educational content and gamification',
+    });
   }
 
   private setupApiRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -171,6 +180,9 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Tips routes
     this.setupTipsRoutes(authorizer);
+
+    // Learn routes
+    this.setupLearnRoutes(authorizer);
   }
 
   private setupPlaidRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -419,6 +431,67 @@ export class ApiFeaturesStack extends cdk.Stack {
     tipsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.tipsHandler), {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'TipsHealthCheck',
+    });
+  }
+
+  private setupLearnRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const learnResource = this.api.root.addResource('learn');
+
+    // Courses endpoints
+    const coursesResource = learnResource.addResource('courses');
+    coursesResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.learnHandler), {
+      authorizer,
+      operationName: 'GetCourses',
+    });
+
+    const courseIdResource = coursesResource.addResource('{courseId}');
+    courseIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.learnHandler), {
+      authorizer,
+      operationName: 'GetCourse',
+    });
+
+    // Lessons endpoints
+    const lessonsResource = learnResource.addResource('lessons');
+    const lessonIdResource = lessonsResource.addResource('{lessonId}');
+    lessonIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.learnHandler), {
+      authorizer,
+      operationName: 'GetLesson',
+    });
+
+    const lessonCompleteResource = lessonIdResource.addResource('complete');
+    lessonCompleteResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.learnHandler), {
+      authorizer,
+      operationName: 'CompleteLesson',
+    });
+
+    // Quiz endpoints
+    const quizResource = learnResource.addResource('quiz');
+    const quizIdResource = quizResource.addResource('{quizId}');
+    const quizSubmitResource = quizIdResource.addResource('submit');
+    quizSubmitResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.learnHandler), {
+      authorizer,
+      operationName: 'SubmitQuiz',
+    });
+
+    // Progress endpoint
+    const progressResource = learnResource.addResource('progress');
+    progressResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.learnHandler), {
+      authorizer,
+      operationName: 'GetProgress',
+    });
+
+    // Badges endpoint
+    const badgesResource = learnResource.addResource('badges');
+    badgesResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.learnHandler), {
+      authorizer,
+      operationName: 'GetBadges',
+    });
+
+    // Health endpoint
+    const learnHealthResource = learnResource.addResource('health');
+    learnHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.learnHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'LearnHealthCheck',
     });
   }
 
