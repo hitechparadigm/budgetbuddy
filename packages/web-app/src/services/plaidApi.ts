@@ -7,7 +7,8 @@ const FEATURES_API_BASE = 'https://0poeu07vth.execute-api.us-east-1.amazonaws.co
 
 // Get token from localStorage
 function getToken(): string | null {
-  return localStorage.getItem('budgetbuddy_access_token');
+  // Use ID token for API Gateway Cognito authorizer
+  return localStorage.getItem('budgetbuddy_id_token');
 }
 
 // API Error class
