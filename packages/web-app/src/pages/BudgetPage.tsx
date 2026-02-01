@@ -1560,6 +1560,19 @@ export const BudgetPage: React.FC = () => {
               </a>
             </li>
             <li>
+              <button
+                onClick={() => navigate("/tips")}
+                className={`w-full flex items-center ${
+                  sidebarCollapsed && !isMobile
+                    ? "justify-center px-2"
+                    : "space-x-3 px-3"
+                } text-gray-600 hover:text-gray-900 py-2 rounded-lg hover:bg-gray-50`}
+              >
+                <span>💡</span>
+                {(!sidebarCollapsed || isMobile) && <span>Tips</span>}
+              </button>
+            </li>
+            <li>
               <a
                 href="#"
                 className={`flex items-center ${
