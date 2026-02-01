@@ -1,7 +1,7 @@
 # BudgetBuddy Implementation Tasks
 
 **Last Updated**: 2026-02-01
-**Status**: Planning Complete
+**Status**: In Progress
 **Scope**: Competitive Features Implementation
 
 ---
@@ -10,59 +10,59 @@
 
 ### Task 1: Bill Reminders System (Requirement 52)
 
-- [ ] 1.1 Create bills Lambda function structure
-  - [ ] 1.1.1 Create `backend/functions/bills/index.js` with CRUD handlers
+- [x] 1.1 Create bills Lambda function structure
+  - [x] 1.1.1 Create `backend/functions/bills/index.js` with CRUD handlers
   - [ ] 1.1.2 Create `backend/functions/bills/service.js` for business logic
-  - [ ] 1.1.3 Create `backend/functions/bills/package.json`
-- [ ] 1.2 Implement bill data model and API endpoints
-  - [ ] 1.2.1 Implement GET /api/bills - list all bills
-  - [ ] 1.2.2 Implement POST /api/bills - create bill reminder
-  - [ ] 1.2.3 Implement PUT /api/bills/:id - update bill
-  - [ ] 1.2.4 Implement POST /api/bills/:id/pay - mark bill as paid
-  - [ ] 1.2.5 Implement GET /api/bills/upcoming - next 30 days
+  - [x] 1.1.3 Create `backend/functions/bills/package.json`
+- [x] 1.2 Implement bill data model and API endpoints
+  - [x] 1.2.1 Implement GET /api/bills - list all bills
+  - [x] 1.2.2 Implement POST /api/bills - create bill reminder
+  - [x] 1.2.3 Implement PUT /api/bills/:id - update bill
+  - [x] 1.2.4 Implement POST /api/bills/:id/pay - mark bill as paid
+  - [x] 1.2.5 Implement GET /api/bills/upcoming - next 30 days
 - [ ] 1.3 Implement bill notification scheduler
   - [ ] 1.3.1 Create EventBridge rule for daily bill check (8AM)
   - [ ] 1.3.2 Implement 7-day reminder notification
   - [ ] 1.3.3 Implement 3-day reminder notification
   - [ ] 1.3.4 Implement due-day notification
   - [ ] 1.3.5 Implement overdue notification
-- [ ] 1.4 Implement recurring bill auto-scheduling
-  - [ ] 1.4.1 Calculate next due date based on frequency
-  - [ ] 1.4.2 Auto-create next bill occurrence when paid
-- [ ] 1.5 Implement transaction creation on bill payment
-  - [ ] 1.5.1 Create transaction when bill marked paid
-  - [ ] 1.5.2 Link transaction to bill record
-- [ ] 1.6 Add bills CDK infrastructure
-  - [ ] 1.6.1 Create bills Lambda in api-stack.ts
-  - [ ] 1.6.2 Add API Gateway routes for /api/bills/\*
+- [x] 1.4 Implement recurring bill auto-scheduling
+  - [x] 1.4.1 Calculate next due date based on frequency
+  - [x] 1.4.2 Auto-create next bill occurrence when paid
+- [x] 1.5 Implement transaction creation on bill payment
+  - [x] 1.5.1 Create transaction when bill marked paid
+  - [x] 1.5.2 Link transaction to bill record
+- [x] 1.6 Add bills CDK infrastructure
+  - [x] 1.6.1 Create bills Lambda in api-stack.ts
+  - [x] 1.6.2 Add API Gateway routes for /api/bills/\*
   - [ ] 1.6.3 Add EventBridge rules for notifications
 - [ ] 1.7 Create bills UI components
   - [ ] 1.7.1 Create BillsPage/BillsScreen component
   - [ ] 1.7.2 Create BillCard component with status indicators
   - [ ] 1.7.3 Create AddBillModal component
   - [ ] 1.7.4 Create BillCalendarView component
-- [ ] 1.8 Write tests for bills feature
-  - [ ] 1.8.1 Unit tests for bill service logic
+- [x] 1.8 Write tests for bills feature
+  - [x] 1.8.1 Unit tests for bill service logic
   - [ ] 1.8.2 Integration tests for bill API endpoints
   - [ ] 1.8.3 Property tests for recurring date calculations
 
 ### Task 2: Savings Goals System (Requirement 54)
 
-- [ ] 2.1 Create goals Lambda function structure
-  - [ ] 2.1.1 Create `backend/functions/goals/index.js` with CRUD handlers
+- [x] 2.1 Create goals Lambda function structure
+  - [x] 2.1.1 Create `backend/functions/goals/index.js` with CRUD handlers
   - [ ] 2.1.2 Create `backend/functions/goals/service.js` for business logic
-  - [ ] 2.1.3 Create `backend/functions/goals/package.json`
-- [ ] 2.2 Implement goals data model and API endpoints
-  - [ ] 2.2.1 Implement GET /api/goals - list all goals
-  - [ ] 2.2.2 Implement POST /api/goals - create goal
-  - [ ] 2.2.3 Implement PUT /api/goals/:id - update goal
-  - [ ] 2.2.4 Implement DELETE /api/goals/:id - delete goal
-  - [ ] 2.2.5 Implement POST /api/goals/:id/contribute - add contribution
-  - [ ] 2.2.6 Implement PUT /api/goals/reorder - reorder priorities
-- [ ] 2.3 Implement progress calculation
-  - [ ] 2.3.1 Calculate progress percentage
-  - [ ] 2.3.2 Calculate monthly required amount
-  - [ ] 2.3.3 Track milestone achievements (25%, 50%, 75%, 100%)
+  - [x] 2.1.3 Create `backend/functions/goals/package.json`
+- [x] 2.2 Implement goals data model and API endpoints
+  - [x] 2.2.1 Implement GET /api/goals - list all goals
+  - [x] 2.2.2 Implement POST /api/goals - create goal
+  - [x] 2.2.3 Implement PUT /api/goals/:id - update goal
+  - [x] 2.2.4 Implement DELETE /api/goals/:id - delete goal
+  - [x] 2.2.5 Implement POST /api/goals/:id/contribute - add contribution
+  - [x] 2.2.6 Implement PUT /api/goals/reorder - reorder priorities
+- [x] 2.3 Implement progress calculation
+  - [x] 2.3.1 Calculate progress percentage
+  - [x] 2.3.2 Calculate monthly required amount
+  - [x] 2.3.3 Track milestone achievements (25%, 50%, 75%, 100%)
 - [ ] 2.4 Implement category linking
   - [ ] 2.4.1 Link savings category to goal
   - [ ] 2.4.2 Auto-update goal when linked category transaction added
@@ -70,9 +70,9 @@
   - [ ] 2.5.1 Weekly progress update notification
   - [ ] 2.5.2 Milestone celebration notification
   - [ ] 2.5.3 Behind schedule reminder notification
-- [ ] 2.6 Add goals CDK infrastructure
-  - [ ] 2.6.1 Create goals Lambda in api-stack.ts
-  - [ ] 2.6.2 Add API Gateway routes for /api/goals/\*
+- [x] 2.6 Add goals CDK infrastructure
+  - [x] 2.6.1 Create goals Lambda in api-stack.ts
+  - [x] 2.6.2 Add API Gateway routes for /api/goals/\*
 - [ ] 2.7 Create goals UI components
   - [ ] 2.7.1 Create GoalsPage/GoalsScreen component
   - [ ] 2.7.2 Create GoalCard component with progress bar
@@ -80,8 +80,8 @@
   - [ ] 2.7.4 Create ContributeModal component
   - [ ] 2.7.5 Implement drag-and-drop reordering
   - [ ] 2.7.6 Add confetti animation for goal completion
-- [ ] 2.8 Write tests for goals feature
-  - [ ] 2.8.1 Unit tests for progress calculations
+- [x] 2.8 Write tests for goals feature
+  - [x] 2.8.1 Unit tests for progress calculations
   - [ ] 2.8.2 Integration tests for goals API
   - [ ] 2.8.3 Property tests for milestone triggers
 
@@ -91,31 +91,31 @@
 
 ### Task 3: Spending Insights & Analytics (Requirement 53)
 
-- [ ] 3.1 Create insights Lambda function structure
-  - [ ] 3.1.1 Create `backend/functions/insights/index.js`
+- [x] 3.1 Create insights Lambda function structure
+  - [x] 3.1.1 Create `backend/functions/insights/index.js`
   - [ ] 3.1.2 Create `backend/functions/insights/service.js`
   - [ ] 3.1.3 Create `backend/functions/insights/ai-generator.js`
-  - [ ] 3.1.4 Create `backend/functions/insights/package.json`
-- [ ] 3.2 Implement insights aggregation
-  - [ ] 3.2.1 Implement weekly spending aggregation
-  - [ ] 3.2.2 Implement category breakdown calculation
-  - [ ] 3.2.3 Implement month-over-month comparison
-  - [ ] 3.2.4 Implement spending pattern detection
+  - [x] 3.1.4 Create `backend/functions/insights/package.json`
+- [x] 3.2 Implement insights aggregation
+  - [x] 3.2.1 Implement weekly spending aggregation
+  - [x] 3.2.2 Implement category breakdown calculation
+  - [x] 3.2.3 Implement month-over-month comparison
+  - [x] 3.2.4 Implement spending pattern detection
 - [ ] 3.3 Implement AI insight generation
   - [ ] 3.3.1 Create Bedrock client for Claude
   - [ ] 3.3.2 Design insight generation prompt
   - [ ] 3.3.3 Implement insight parsing and storage
-- [ ] 3.4 Implement insights API endpoints
-  - [ ] 3.4.1 Implement GET /api/insights/weekly
-  - [ ] 3.4.2 Implement GET /api/insights/monthly
-  - [ ] 3.4.3 Implement GET /api/insights/trends
-  - [ ] 3.4.4 Implement POST /api/insights/ask (AI chat)
+- [x] 3.4 Implement insights API endpoints
+  - [x] 3.4.1 Implement GET /api/insights/weekly
+  - [x] 3.4.2 Implement GET /api/insights/monthly
+  - [x] 3.4.3 Implement GET /api/insights/trends
+  - [x] 3.4.4 Implement POST /api/insights/ask (AI chat)
 - [ ] 3.5 Implement scheduled insight generation
   - [ ] 3.5.1 Create EventBridge rule for weekly generation
   - [ ] 3.5.2 Implement batch processing for all users
-- [ ] 3.6 Add insights CDK infrastructure
-  - [ ] 3.6.1 Create insights Lambda with Bedrock permissions
-  - [ ] 3.6.2 Add API Gateway routes
+- [x] 3.6 Add insights CDK infrastructure
+  - [x] 3.6.1 Create insights Lambda with Bedrock permissions
+  - [x] 3.6.2 Add API Gateway routes
   - [ ] 3.6.3 Add EventBridge scheduled rule
 - [ ] 3.7 Create insights UI components
   - [ ] 3.7.1 Create InsightsPage/InsightsScreen
@@ -123,8 +123,8 @@
   - [ ] 3.7.3 Create SpendingTrendChart component
   - [ ] 3.7.4 Create CategoryBreakdownChart component
   - [ ] 3.7.5 Create AskAIModal component
-- [ ] 3.8 Write tests for insights feature
-  - [ ] 3.8.1 Unit tests for aggregation logic
+- [x] 3.8 Write tests for insights feature
+  - [x] 3.8.1 Unit tests for aggregation logic
   - [ ] 3.8.2 Integration tests for insights API
   - [ ] 3.8.3 Mock tests for Bedrock integration
 

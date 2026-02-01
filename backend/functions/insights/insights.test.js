@@ -238,10 +238,10 @@ describe("Insights Lambda Handler", () => {
     it("should return spending patterns", async () => {
       const transactions = [
         { type: "expense", amount: 50, merchant: "Amazon", date: "2026-01-15" },
-        { type: "expense", amount: 30, merchant: "Amazon", date: "2026-01-20" },
+        { type: "expense", amount: 60, merchant: "Amazon", date: "2026-01-20" },
         {
           type: "expense",
-          amount: 100,
+          amount: 40,
           merchant: "Costco",
           date: "2026-01-25",
         },
@@ -260,6 +260,7 @@ describe("Insights Lambda Handler", () => {
       expect(result.statusCode).toBe(200);
       expect(body.data.patterns.dayOfWeek).toBeDefined();
       expect(body.data.patterns.topMerchants).toBeDefined();
+      // Amazon has higher total ($110) than Costco ($40)
       expect(body.data.patterns.topMerchants[0].name).toBe("Amazon");
     });
   });
