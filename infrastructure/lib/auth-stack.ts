@@ -39,6 +39,12 @@ export class AuthStack extends cdk.Stack {
    */
   public readonly authSharedLayer: lambda.LayerVersion;
 
+  /**
+   * Admin group for administrative users
+   * Users in this group have access to admin dashboard
+   */
+  public readonly adminGroup: cognito.CfnUserPoolGroup;
+
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -265,6 +271,25 @@ export class AuthStack extends cdk.Stack {
       value: this.userPool.userPoolId,
       description: 'Cognito User Pool ID for BudgetBuddy client authentication configuration',
       exportName: 'budgetbuddy-user-pool-id',
+    });
+
+    /**
+     * Admin User Group
+     *
+     * Users in this group have access to the admin dashboard and
+     * administrative functions like user management and system monitoring.
+     */
+    this.adminGroup = new cognito.CfnUserPoolGroup(this, 'AdminGroup', {
+      userPoolId: this.userPool.userPoolId,
+      groupName: 'Admins',
+      description: 'Administrative users with access to admin dashboard and user management',
+      precedence: 1, // Higher precedence (lower number) for admin role
+    });
+
+    // Output Admin Group name for reference
+    new cdk.CfnOutput(this, 'AdminGroupName', {
+      value: this.adminGroup.groupName || 'Admins',
+      description: 'Cognito Admin Group name for administrative user management',
     });
 
     // Output User Pool Client ID for client configuration

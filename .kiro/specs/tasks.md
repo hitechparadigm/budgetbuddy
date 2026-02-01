@@ -298,8 +298,8 @@
   - [ ] 7.4.5 Create AuditLogPage
 - [ ] 7.5 Add admin CDK infrastructure
   - [x] 7.5.1 Create admin Lambda (already exists)
-  - [ ] 7.5.2 Create admin Cognito group
-  - [ ] 7.5.3 Add admin API Gateway routes (can now add to api-features-stack)
+  - [x] 7.5.2 Create admin Cognito group
+  - [x] 7.5.3 Add admin API Gateway routes (in api-features-stack)
   - [ ] 7.5.4 Create S3 bucket for admin app hosting
 - [x] 7.6 Write tests for admin feature
   - [x] 7.6.1 Unit tests for admin service (13 tests passing)
