@@ -1,5 +1,53 @@
 # Development Log
 
+## 2026-02-01 - Educational Content Lambda (Session 58)
+
+### Session Summary
+
+**Duration**: 20 minutes
+**Focus**: Complete Task 10 - Educational Content Lambda
+**Outcome**: Learn Lambda deployed with 17 tests passing
+
+### Work Completed
+
+1. **Learn Lambda Implementation (Task 10)**:
+   - 3 courses: Budgeting 101, Debt Freedom, Emergency Fund Basics
+   - 6 badges: First Steps, Course Graduate, Quiz Master, On a Roll, Week Warrior, Financial Scholar
+   - Learning streaks with consecutive day tracking
+   - Quiz grading with pass/fail
+   - Course progress tracking
+   - 17 tests passing
+
+2. **API Endpoints**:
+   - GET /learn/courses - Get all courses with progress
+   - GET /learn/courses/{courseId} - Get course with lessons
+   - GET /learn/lessons/{lessonId} - Get lesson details
+   - POST /learn/lessons/{lessonId}/complete - Mark lesson complete
+   - POST /learn/quiz/{quizId}/submit - Submit quiz answers
+   - GET /learn/progress - Get user's learning progress
+   - GET /learn/badges - Get all badges with earned status
+   - GET /learn/health - Health check
+
+3. **Infrastructure**:
+   - Added Learn Lambda to api-features-stack
+   - Added all Learn routes with Cognito authorization
+   - Updated health check script
+
+### Files Created/Modified
+
+- `backend/functions/learn/index.js` (created)
+- `backend/functions/learn/learn.test.js` (created)
+- `backend/functions/learn/package.json` (created)
+- `backend/functions/learn/jest.config.js` (created)
+- `backend/functions/learn/__mocks__/opt/nodejs/utils.js` (created)
+- `backend/functions/learn/__mocks__/opt/nodejs/shared.js` (created)
+- `infrastructure/lib/api-features-stack.ts` (updated)
+- `scripts/check-deployment.sh` (updated)
+- `.kiro/specs/tasks.md` (updated)
+- `CHANGELOG.md` (updated)
+
+---
+
 ## 2026-02-01 - Admin Lambda to Features Stack (Session 57)
 
 ### Session Summary

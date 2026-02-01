@@ -312,28 +312,28 @@
   - [x] 8.1.1 Create `backend/functions/comparison/index.js`
   - [x] 8.1.2 Create `backend/functions/comparison/aggregator.js` (integrated in index.js)
   - [x] 8.1.3 Create `backend/functions/comparison/package.json`
-- [ ] 8.2 Implement data aggregation
-  - [ ] 8.2.1 Create daily aggregation job
-  - [ ] 8.2.2 Group users by region, family size, income
-  - [ ] 8.2.3 Calculate category averages and percentiles
-  - [ ] 8.2.4 Enforce minimum 50 users per group
-- [ ] 8.3 Implement comparison API
-  - [ ] 8.3.1 Implement GET /api/comparison/summary
-  - [ ] 8.3.2 Implement GET /api/comparison/preferences
-  - [ ] 8.3.3 Implement PUT /api/comparison/preferences
-- [ ] 8.4 Implement privacy controls
-  - [ ] 8.4.1 Implement opt-out functionality
-  - [ ] 8.4.2 Ensure no individual data exposure
-- [ ] 8.5 Add comparison CDK infrastructure
-  - [ ] 8.5.1 Create comparison Lambda
-  - [ ] 8.5.2 Add EventBridge rule for daily aggregation
-  - [ ] 8.5.3 Add API Gateway routes
+- [x] 8.2 Implement data aggregation
+  - [x] 8.2.1 Create daily aggregation job (on-demand computation implemented)
+  - [x] 8.2.2 Group users by region, family size, income
+  - [x] 8.2.3 Calculate category averages and percentiles
+  - [x] 8.2.4 Enforce minimum 50 users per group
+- [x] 8.3 Implement comparison API
+  - [x] 8.3.1 Implement GET /api/comparison/summary
+  - [x] 8.3.2 Implement GET /api/comparison/preferences
+  - [x] 8.3.3 Implement PUT /api/comparison/preferences
+- [x] 8.4 Implement privacy controls
+  - [x] 8.4.1 Implement opt-out functionality
+  - [x] 8.4.2 Ensure no individual data exposure
+- [x] 8.5 Add comparison CDK infrastructure
+  - [x] 8.5.1 Create comparison Lambda
+  - [ ] 8.5.2 Add EventBridge rule for daily aggregation (using on-demand instead)
+  - [x] 8.5.3 Add API Gateway routes
 - [ ] 8.6 Create comparison UI components
   - [ ] 8.6.1 Create PeerComparisonCard component
   - [ ] 8.6.2 Create CategoryComparisonList component
   - [ ] 8.6.3 Create ComparisonPreferencesModal
-- [ ] 8.7 Write tests for comparison feature
-  - [ ] 8.7.1 Unit tests for aggregation logic
+- [x] 8.7 Write tests for comparison feature
+  - [x] 8.7.1 Unit tests for aggregation logic (12 tests passing)
   - [ ] 8.7.2 Property tests for privacy guarantees
   - [ ] 8.7.3 Integration tests for comparison API
 
