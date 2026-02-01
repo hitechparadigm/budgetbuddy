@@ -222,32 +222,32 @@ Implement family account sharing with invitation system, role-based permissions,
 ### Phase 7: Mobile UI Implementation (Week 2)
 
 - [ ] 7. Create Family Settings Screen (Mobile)
-  - [ ] 7.1 Create FamilySettings component
+  - [x] 7.1 Create FamilySettings component
     - Create screen file
     - Add to Settings navigation
     - Implement native layout
     - _Requirements: US-5_
 
-  - [ ] 7.2 Implement invite form (mobile)
+  - [x] 7.2 Implement invite form (mobile)
     - Email input
     - Role picker
     - Send button
     - Native alerts for success/error
     - _Requirements: US-1_
 
-  - [ ] 7.3 Implement member list (mobile)
+  - [x] 7.3 Implement member list (mobile)
     - FlatList with members
     - Show roles and dates
     - Touch-optimized layout
     - _Requirements: US-5_
 
-  - [ ] 7.4 Implement member management (mobile)
+  - [x] 7.4 Implement member management (mobile)
     - Role change picker
     - Remove member action
     - Native confirmation dialogs
     - _Requirements: US-5_
 
-  - [ ] 7.5 Implement leave family (mobile)
+  - [x] 7.5 Implement leave family (mobile)
     - Leave button
     - Native confirmation dialog
     - Handle leave response
@@ -273,38 +273,40 @@ Implement family account sharing with invitation system, role-based permissions,
   - [x] 8.3 Add JWT authorizer
     - Protect all family endpoints
     - Extract familyId from token
+    - Note: Implemented directly in Family Lambda with fallback token parsing
     - _Requirements: NFR-2_
 
-  - [ ] 8.4 Deploy API changes
+  - [x] 8.4 Deploy API changes
     - Update api-stack.ts
     - Deploy to dev environment
     - Test all endpoints
+    - Note: Deployed via CI/CD pipeline
     - _Requirements: All API requirements_
 
 ### Phase 9: Testing and Validation (Week 3)
 
 - [ ] 9. Integration Testing
-  - [ ] 9.1 Test invitation flow
+  - [x] 9.1 Test invitation flow
     - Send invitation
     - Verify email received
     - Accept invitation
     - Verify family membership
     - _Requirements: US-1, US-2_
 
-  - [ ] 9.2 Test permission enforcement
+  - [x] 9.2 Test permission enforcement
     - Test primary permissions
     - Test spouse permissions
     - Test viewer permissions
     - Test permission violations
     - _Requirements: US-3, FR-3_
 
-  - [ ] 9.3 Test member management
+  - [x] 9.3 Test member management
     - Test role changes
     - Test member removal
     - Test leave family
     - _Requirements: US-5, US-6_
 
-  - [ ] 9.4 Test concurrent edits
+  - [x] 9.4 Test concurrent edits
     - Simulate concurrent budget updates
     - Verify last-write-wins
     - Test data consistency

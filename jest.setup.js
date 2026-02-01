@@ -1,23 +1,7 @@
 // Jest setup file for global test configuration
 
-// Mock AWS SDK - only if modules exist
-try {
-  jest.mock("@aws-sdk/client-dynamodb");
-} catch (e) {
-  // Module not installed, skip mock
-}
-
-try {
-  jest.mock("@aws-sdk/client-cognito-identity-provider");
-} catch (e) {
-  // Module not installed, skip mock
-}
-
-try {
-  jest.mock("@aws-sdk/client-bedrock-runtime");
-} catch (e) {
-  // Module not installed, skip mock
-}
+// Note: AWS SDK mocks are handled in individual test files
+// to allow for custom mock implementations
 
 // Mock environment variables
 process.env.NODE_ENV = "test";
