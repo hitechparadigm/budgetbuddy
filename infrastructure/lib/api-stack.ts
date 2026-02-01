@@ -269,17 +269,7 @@ export class ApiStack extends cdk.Stack {
       memorySize: 1024, // More memory for processing large datasets
     });
 
-    /**
-     * Admin Dashboard Functions
-     * Handle admin operations and analytics
-     */
-    this.functions.adminHandler = new lambda.Function(this, 'AdminHandler', {
-      ...commonProps,
-      functionName: 'budgetbuddy-admin',
-      code: lambda.Code.fromAsset('../backend/functions/admin'),
-      handler: 'index.handler',
-      description: 'BudgetBuddy admin handler for dashboard operations, user management, and analytics',
-    });
+    // Note: Admin Lambda moved to ApiFeaturesStack
 
     /**
      * Bill Reminders Functions
@@ -762,15 +752,7 @@ export class ApiStack extends cdk.Stack {
       operationName: 'StripeWebhook',
     });
 
-    // Admin routes (protected with additional role checking)
-    const adminResource = this.api.root.addResource('admin');
-
-    // Admin health endpoint
-    const adminHealthResource = adminResource.addResource('health');
-    adminHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.adminHandler), {
-      methodResponses: [{ statusCode: '200' }],
-      operationName: 'AdminHealthCheck',
-    });
+    // Note: Admin routes moved to ApiFeaturesStack
 
     // Bills routes (protected)
     const billsResource = this.api.root.addResource('bills');

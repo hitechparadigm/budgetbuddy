@@ -249,7 +249,7 @@
 
 ---
 
-## Priority Task: API Stack Split (BLOCKING)
+## Priority Task: API Stack Split (COMPLETE)
 
 ### Task 0: Split API Stack to Stay Under CloudFormation Limits
 
@@ -261,9 +261,9 @@
   - [x] 0.1.3 Create separate API Gateway for features stack
 - [x] 0.2 Update stack dependencies in bin/app.ts
 - [x] 0.3 Test CDK synth with all stacks
-- [ ] 0.4 Deploy and verify all routes work
+- [x] 0.4 Deploy and verify all routes work
 
-**Status**: CDK synth passes, ready for deployment
+**Status**: COMPLETE - Deployed successfully
 
 ---
 
@@ -296,17 +296,15 @@
   - [ ] 7.4.3 Create UserDetailPage
   - [ ] 7.4.4 Create SystemHealthPage
   - [ ] 7.4.5 Create AuditLogPage
-- [-] 7.5 Add admin CDK infrastructure (BLOCKED - API stack resource limit)
+- [ ] 7.5 Add admin CDK infrastructure
   - [x] 7.5.1 Create admin Lambda (already exists)
-  - [-] 7.5.2 Create admin Cognito group
-  - [-] 7.5.3 Add admin API Gateway routes (BLOCKED - 536/500 resources)
+  - [ ] 7.5.2 Create admin Cognito group
+  - [ ] 7.5.3 Add admin API Gateway routes (can now add to api-features-stack)
   - [ ] 7.5.4 Create S3 bucket for admin app hosting
 - [x] 7.6 Write tests for admin feature
   - [x] 7.6.1 Unit tests for admin service (13 tests passing)
   - [ ] 7.6.2 Integration tests for admin API
   - [ ] 7.6.3 Auth tests for admin-only access
-
-**BLOCKER**: API stack has exceeded CloudFormation 500 resource limit (currently 536). Need to split API stack into multiple stacks before adding more routes.
 
 ### Task 8: Peer Comparison System (Requirement 48)
 

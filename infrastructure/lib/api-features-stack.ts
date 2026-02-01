@@ -4,6 +4,7 @@
  * Contains Lambda functions and API routes for competitive features:
  * - Plaid (bank sync)
  * - Reconciliation (receipt-to-bank matching)
+ * - Admin (admin dashboard)
  *
  * This stack has its own API Gateway to avoid cyclic dependencies
  * with the main API stack.
@@ -34,7 +35,7 @@ export class ApiFeaturesStack extends cdk.Stack {
     // Create separate API Gateway for features
     this.api = new apigateway.RestApi(this, 'FeaturesApi', {
       restApiName: 'budgetbuddy-features-api',
-      description: 'BudgetBuddy Features API for Plaid, Reconciliation, and other integrations',
+      description: 'BudgetBuddy Features API for Plaid, Reconciliation, Admin, and other integrations',
       defaultCorsPreflightOptions: {
         allowOrigins: [
           'http://localhost:3000',
@@ -102,7 +103,7 @@ export class ApiFeaturesStack extends cdk.Stack {
   }
 
   private createLambdaFunctions(
-    props: ApiFeaturesStackProps,
+    _props: ApiFeaturesStackProps,
     commonProps: any
   ): void {
     // Plaid Lambda
@@ -126,10 +127,29 @@ export class ApiFeaturesStack extends cdk.Stack {
       handler: 'index.handler',
       description: 'BudgetBuddy reconciliation handler for receipt-to-bank matching',
     });
+
+    // Admin Lambda
+    this.functions.adminHandler = new lambda.Function(this, 'AdminHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-admin',
+      code: lambda.Code.fromAsset('../backend/functions/admin'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy admin handler for dashboard and user management',
+    });
   }
 
   private setupApiRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
     // Plaid routes
+    this.setupPlaidRoutes(authorizer);
+
+    // Reconciliation routes
+    this.setupReconciliationRoutes(authorizer);
+
+    // Admin routes
+    this.setupAdminRoutes(authorizer);
+  }
+
+  private setupPlaidRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
     const plaidResource = this.api.root.addResource('plaid');
 
     const plaidLinkResource = plaidResource.addResource('link-token');
@@ -185,8 +205,9 @@ export class ApiFeaturesStack extends cdk.Stack {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'PlaidHealthCheck',
     });
+  }
 
-    // Reconciliation routes
+  private setupReconciliationRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
     const reconcileResource = this.api.root.addResource('reconcile');
 
     const reconcileStatusResource = reconcileResource.addResource('status');
@@ -238,10 +259,73 @@ export class ApiFeaturesStack extends cdk.Stack {
     });
   }
 
+  private setupAdminRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const adminResource = this.api.root.addResource('admin');
+
+    // Dashboard endpoint
+    const adminDashboardResource = adminResource.addResource('dashboard');
+    adminDashboardResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.adminHandler), {
+      authorizer,
+      operationName: 'GetDashboardMetrics',
+    });
+
+    // Users endpoints
+    const adminUsersResource = adminResource.addResource('users');
+    adminUsersResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.adminHandler), {
+      authorizer,
+      operationName: 'SearchUsers',
+    });
+
+    const adminUserIdResource = adminUsersResource.addResource('{userId}');
+    adminUserIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.adminHandler), {
+      authorizer,
+      operationName: 'GetUserDetails',
+    });
+
+    const adminDisableResource = adminUserIdResource.addResource('disable');
+    adminDisableResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.adminHandler), {
+      authorizer,
+      operationName: 'DisableUser',
+    });
+
+    const adminEnableResource = adminUserIdResource.addResource('enable');
+    adminEnableResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.adminHandler), {
+      authorizer,
+      operationName: 'EnableUser',
+    });
+
+    const adminResetPasswordResource = adminUserIdResource.addResource('reset-password');
+    adminResetPasswordResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.adminHandler), {
+      authorizer,
+      operationName: 'ResetUserPassword',
+    });
+
+    // System health endpoint
+    const adminSystemHealthResource = adminResource.addResource('system-health');
+    adminSystemHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.adminHandler), {
+      authorizer,
+      operationName: 'GetSystemHealth',
+    });
+
+    // Audit log endpoint
+    const adminAuditResource = adminResource.addResource('audit');
+    adminAuditResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.adminHandler), {
+      authorizer,
+      operationName: 'GetAuditLog',
+    });
+
+    // Health endpoint
+    const adminHealthResource = adminResource.addResource('health');
+    adminHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.adminHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'AdminHealthCheck',
+    });
+  }
+
   private createOutputs(): void {
     new cdk.CfnOutput(this, 'FeaturesApiUrl', {
       value: this.api.url,
-      description: 'Features API Gateway URL for Plaid and Reconciliation endpoints',
+      description: 'Features API Gateway URL for Plaid, Reconciliation, and Admin endpoints',
       exportName: 'budgetbuddy-features-api-url',
     });
   }
