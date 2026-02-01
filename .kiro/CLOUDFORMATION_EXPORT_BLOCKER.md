@@ -2,6 +2,12 @@
 
 ## Status: BLOCKED - Requires Manual Intervention
 
+## Latest Deployment Failure
+
+**Date**: 2026-01-31 22:57 PM (CI/CD Run #21552297317)
+**Status**: UPDATE_ROLLBACK_COMPLETE
+**Commit**: 22dc2896e9d766612d5cba62be20c356034d8fc5
+
 ## Problem
 
 The deployment is failing because of a CloudFormation export dependency issue that cannot be resolved through code changes alone.
@@ -22,41 +28,53 @@ The deployment is failing because of a CloudFormation export dependency issue th
 ### Option 1: Deploy Stacks Individually (RECOMMENDED)
 
 ```bash
+# Navigate to infrastructure directory
+cd infrastructure
+
 # Deploy auth-onboarding first to remove the import
-npx cdk deploy budgetbuddy-dev-auth-onboarding --require-approval never
+npx cdk deploy budgetbuddy-dev-auth-onboarding --require-approval never --profile hitechparadigm
 
 # Then deploy auth to remove the export
-npx cdk deploy budgetbuddy-dev-auth --require-approval never
+npx cdk deploy budgetbuddy-dev-auth --require-approval never --profile hitechparadigm
 
 # Then deploy the rest
-npx cdk deploy --all --require-approval never
+npx cdk deploy --all --require-approval never --profile hitechparadigm
 ```
 
-### Option 2: Manually Delete and Recreate Stacks
-
-```bash
-# Delete auth-onboarding stack
-aws cloudformation delete-stack --stack-name budgetbuddy-dev-auth-onboarding
-
-# Wait for deletion to complete
-aws cloudformation wait stack-delete-complete --stack-name budgetbuddy-dev-auth-onboarding
-
-# Then deploy all stacks
-npx cdk deploy --all --require-approval never
-```
-
-### Option 3: Update CI/CD Pipeline
+### Option 2: Update CI/CD Pipeline (AUTOMATED)
 
 Modify `.github/workflows/deploy-dev.yml` to deploy stacks in the correct order:
 
 ```yaml
 - name: Deploy infrastructure stacks
   run: |
-    echo "Deploying auth-onboarding first..."
+    cd infrastructure
+    echo "Deploying auth-onboarding first to break dependency..."
     npx cdk deploy budgetbuddy-dev-auth-onboarding --require-approval never
 
     echo "Deploying remaining stacks..."
     npx cdk deploy --all --require-approval never
+  env:
+    AWS_REGION: ${{ env.AWS_REGION }}
+    ENVIRONMENT: ${{ env.ENVIRONMENT }}
+```
+
+Then commit and push to trigger automated deployment.
+
+### Option 3: Manually Delete and Recreate Stacks (DESTRUCTIVE)
+
+**WARNING**: This will delete all data in the auth-onboarding stack!
+
+```bash
+# Delete auth-onboarding stack
+aws cloudformation delete-stack --stack-name budgetbuddy-dev-auth-onboarding --profile hitechparadigm
+
+# Wait for deletion to complete
+aws cloudformation wait stack-delete-complete --stack-name budgetbuddy-dev-auth-onboarding --profile hitechparadigm
+
+# Then deploy all stacks
+cd infrastructure
+npx cdk deploy --all --require-approval never --profile hitechparadigm
 ```
 
 ## Impact
