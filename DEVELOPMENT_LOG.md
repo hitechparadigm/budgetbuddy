@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-02-01 - Profile API Fix (Session 46)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Fixed CORS error on profile API
+**Outcome**: Profile API now handles missing fields gracefully
+
+### Problem
+
+Settings page was getting CORS errors when calling GET /auth/profile. The error was actually a Lambda crash due to accessing undefined fields.
+
+### Root Cause
+
+The GET profile endpoint accessed fields like `result.Item.firstName.S` directly without optional chaining. If these fields didn't exist in the database, the Lambda would crash before returning CORS headers.
+
+### Solution
+
+Added optional chaining (`?.`) and default values for all profile fields in the GET /auth/profile response.
+
+### Files Changed
+
+- `backend/functions/auth/index.js` - Added null safety to profile response
+
+---
+
 ## 2026-02-01 - Mobile Family Settings (Session 45)
 
 ### Session Summary

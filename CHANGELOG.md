@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.9.21] - 2026-02-01
+
+### 🐛 BUGFIX - Profile API Null Field Handling
+
+- **Fixed GET /auth/profile CORS error** - Added optional chaining for all profile fields
+  - **Root Cause**: Profile fields accessed without null checks caused Lambda to crash
+  - **Solution**: Added optional chaining (`?.`) and default values for all profile fields
+  - **File**: `backend/functions/auth/index.js`
+  - **Impact**: Profile API now handles missing fields gracefully
+
 ## [1.9.20] - 2026-02-01
 
 ### 📱 MOBILE - Family Settings Screen (Phase 7)
