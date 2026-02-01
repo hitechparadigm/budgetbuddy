@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.9.32] - 2026-02-01
+
+### 🏗️ Infrastructure - Admin Lambda to Features Stack
+
+- **Moved Admin Lambda** - Admin Lambda and routes moved from api-stack to api-features-stack
+- **API Stack Reduced** - Main API stack now at 425 resources (down from 536)
+- **Full Admin Routes** - All admin endpoints now deployed in features API
+
+**Admin API Endpoints (Features API):**
+
+- Dashboard: `GET /admin/dashboard`
+- Users: `GET /admin/users`, `GET /admin/users/{userId}`
+- User Actions: `POST /admin/users/{userId}/disable`, `POST /admin/users/{userId}/enable`, `POST /admin/users/{userId}/reset-password`
+- System: `GET /admin/system-health`, `GET /admin/audit`, `GET /admin/health`
+
+**Note:** Admin endpoints are on the Features API (separate base URL from main API).
+
 ## [1.9.31] - 2026-02-01
 
 ### 🏗️ Infrastructure - API Stack Split

@@ -1,5 +1,31 @@
 # Development Log
 
+## 2026-02-01 - Admin Lambda to Features Stack (Session 57)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Move Admin Lambda and routes to api-features-stack
+**Outcome**: Admin fully deployed, API stack at 425 resources
+
+### Work Completed
+
+1. **Admin Lambda Migration**:
+   - Moved Admin Lambda definition from api-stack to api-features-stack
+   - Moved Admin routes from api-stack to api-features-stack
+   - All admin endpoints now deployed
+
+2. **API Stack Optimization**:
+   - Main API stack reduced from 536 to 425 resources
+   - Well under CloudFormation 500 resource limit
+
+### Files Modified
+
+- `infrastructure/lib/api-stack.ts` (removed Admin Lambda and routes)
+- `infrastructure/lib/api-features-stack.ts` (added Admin Lambda and routes)
+
+---
+
 ## 2026-02-01 - API Stack Split (Session 56)
 
 ### Session Summary
