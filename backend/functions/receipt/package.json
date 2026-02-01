@@ -1,0 +1,23 @@
+{
+  "name": "budgetbuddy-receipt-function",
+  "version": "1.0.0",
+  "description": "BudgetBuddy Receipt Scanning Lambda Function",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "keywords": [
+    "budgetbuddy",
+    "receipt",
+    "ocr",
+    "ai",
+    "lambda"
+  ],
+  "author": "BudgetBuddy Team",
+  "license": "MIT"
+}

@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.9.27] - 2026-02-01
+
+### 🚀 NEW FEATURE - Receipt Scanning with AI Vision (Task 4)
+
+- **Backend Implementation**
+  - Created `backend/functions/receipt/index.js` - Receipt upload and AI extraction
+  - Created `backend/functions/receipt/package.json` - Lambda function configuration
+  - Created `backend/functions/receipt/receipt.test.js` - Unit tests (12 tests passing)
+
+- **API Endpoints Added**
+  - `POST /receipt/upload` - Get presigned URL for receipt upload
+  - `POST /receipt/process` - Process receipt with AI extraction
+  - `GET /receipt/{receiptId}` - Get specific receipt details
+  - `GET /receipt/usage` - Get daily usage statistics
+  - `GET /receipt/history` - Get receipt history
+  - `GET /receipt/health` - Health check endpoint
+
+- **Key Features**
+  - AI-powered receipt extraction (mock for now, Claude Haiku ready)
+  - Daily scan limits (10 free, 50 premium)
+  - Usage tracking with automatic TTL cleanup
+  - Presigned URL generation for S3 uploads
+  - Extracted data includes: merchant, date, total, items, tax, payment method
+  - Confidence scoring for extraction quality
+
+- **Infrastructure**
+  - Added receiptHandler Lambda to api-stack.ts
+  - Added all receipt API routes with Cognito authorization
+
+### 🔧 Improvements
+
+- Fixed insights test for merchant pattern sorting
+- Updated tasks.md with completed task status
+
 ## [1.9.26] - 2026-02-01
 
 ### 🚀 NEW FEATURE - Bill Reminders System (Task 1)
