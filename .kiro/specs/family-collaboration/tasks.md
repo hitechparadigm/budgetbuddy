@@ -256,7 +256,7 @@ Implement family account sharing with invitation system, role-based permissions,
 ### Phase 8: API Gateway Integration (Week 2)
 
 - [ ] 8. Add Family API Routes
-  - [ ] 8.1 Add family routes to API Gateway
+  - [x] 8.1 Add family routes to API Gateway
     - POST /family/invite
     - POST /family/accept-invitation
     - GET /family/members
@@ -265,12 +265,12 @@ Implement family account sharing with invitation system, role-based permissions,
     - POST /family/leave
     - _Requirements: All API requirements_
 
-  - [ ] 8.2 Configure CORS
+  - [x] 8.2 Configure CORS
     - Add family routes to CORS config
     - Test preflight requests
     - _Requirements: All API requirements_
 
-  - [ ] 8.3 Add JWT authorizer
+  - [x] 8.3 Add JWT authorizer
     - Protect all family endpoints
     - Extract familyId from token
     - _Requirements: NFR-2_
