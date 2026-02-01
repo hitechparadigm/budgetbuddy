@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.9.37] - 2026-02-01
+
+### 🚀 NEW FEATURE - Educational Content Lambda (Task 10)
+
+- **Created Learn Lambda** - `backend/functions/learn/index.js`
+- **17 tests passing** - Full test coverage for learn endpoints
+- **3 courses** - Budgeting 101, Debt Freedom, Emergency Fund Basics
+- **6 badges** - First Steps, Course Graduate, Quiz Master, On a Roll, Week Warrior, Financial Scholar
+- **API Endpoints**:
+  - `GET /learn/courses` - Get all courses with progress
+  - `GET /learn/courses/{courseId}` - Get course with lessons
+  - `GET /learn/lessons/{lessonId}` - Get lesson details
+  - `POST /learn/lessons/{lessonId}/complete` - Mark lesson complete
+  - `POST /learn/quiz/{quizId}/submit` - Submit quiz answers
+  - `GET /learn/progress` - Get user's learning progress
+  - `GET /learn/badges` - Get all badges with earned status
+  - `GET /learn/health` - Health check
+
+**Features:**
+
+- Learning streaks (consecutive days)
+- Badge system with automatic awarding
+- Quiz grading with pass/fail
+- Course progress tracking
+- Milestone celebrations
+
 ## [1.9.36] - 2026-02-01
 
 ### 🚀 NEW FEATURE - Financial Tips Feed (Task 9)

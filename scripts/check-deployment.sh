@@ -175,7 +175,7 @@ main() {
     if [ -n "$features_api_url" ]; then
         print_status "Testing Features API endpoints..."
 
-        local features_services=("admin" "plaid" "reconcile" "comparison" "tips")
+        local features_services=("admin" "plaid" "reconcile" "comparison" "tips" "learn")
         for service in "${features_services[@]}"; do
             if test_api_endpoint "$features_api_url" "/$service/health"; then
                 print_success "$service service working (Features API)"
