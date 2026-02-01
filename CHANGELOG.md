@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.9.20] - 2026-02-01
+
+### 📱 MOBILE - Family Settings Screen (Phase 7)
+
+- **Created FamilySettings component for mobile** - Complete family management UI
+  - **Features**:
+    - View family members with role badges (Primary/Spouse/Viewer)
+    - Send invitations with email input and role picker
+    - Change member roles (primary only)
+    - Remove members with confirmation dialog
+    - Leave family option for non-primary users
+    - Pull-to-refresh for member list
+    - Native haptic feedback on actions
+  - **File**: `packages/mobile/src/components/FamilySettings.tsx`
+  - **Integration**: Added to SettingsScreen.tsx
+  - **Tasks**: 7.1, 7.2, 7.3, 7.4, 7.5 complete
+
 ## [1.9.19] - 2026-02-01
 
 ### 🐛 BUGFIX - Settings Persistence to Backend
