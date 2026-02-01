@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.9.44] - 2026-02-01
+
+### 📚 Documentation - Comprehensive User Journeys Document
+
+**New Document**: `docs/USER_JOURNEYS.md`
+
+Created a comprehensive user journeys document that:
+
+- Maps all 8 major user journeys with visual flow diagrams
+- Identifies frontend/backend component status for each feature
+- Highlights gaps between existing backend APIs and missing frontend components
+- Provides UI/UX best practices and design system guidelines
+- Includes requirements traceability matrix
+
+**Key Findings**:
+
+- HIGH PRIORITY gaps: Insights page, Tips feed, Notification center (backends ready)
+- MEDIUM PRIORITY gaps: Goals/Debt tracking, Subscription management
+- 48 requirements tracked with implementation status
+
+**User Journeys Documented**:
+
+1. New User Onboarding
+2. Daily Budget Management
+3. Bank Account Connection (Plaid)
+4. Family Collaboration
+5. Financial Insights
+6. Debt & Savings Goals
+7. Notifications & Reminders
+8. Settings & Preferences
+
 ## [1.9.43] - 2026-02-01
 
 ### 🔧 Fix - CORS Headers for API Gateway 401/403 Responses

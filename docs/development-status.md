@@ -1,8 +1,38 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-01 (CORS Fix for API Gateway)
+**Last Updated**: 2026-02-01 (User Journeys Documentation)
 **Current Phase**: Competitive Features Implementation
 **Overall Progress**: 95% Core + 40% Competitive Features
+
+## 📚 NEW - User Journeys Documentation
+
+### Comprehensive Analysis Complete ✅
+
+Created `docs/USER_JOURNEYS.md` documenting:
+
+- 8 major user journeys with visual flows
+- Frontend/backend component mapping
+- Gap analysis with priorities
+- UI/UX best practices
+- Requirements traceability (48 requirements)
+
+### Key Gaps Identified
+
+**HIGH PRIORITY (Backend Ready, Frontend Missing)**:
+| Feature | Backend | Frontend | Effort |
+|---------|---------|----------|--------|
+| Insights Page | ✅ | ❌ | 2-3 days |
+| Tips Feed | ✅ | ❌ | 1 day |
+| Notification Center | ✅ | ❌ | 1-2 days |
+| Peer Comparison | ✅ | ❌ | 1 day |
+
+**MEDIUM PRIORITY (Not Started)**:
+
+- Goals & Debt Tracking
+- Subscription Management
+- Bill Reminders
+
+---
 
 ## 🔧 LATEST - CORS Fix for API Gateway Authorizer
 
