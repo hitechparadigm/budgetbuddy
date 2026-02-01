@@ -16,6 +16,7 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
 
 export interface ApiFeaturesStackProps extends cdk.StackProps {
@@ -113,11 +114,20 @@ export class ApiFeaturesStack extends cdk.Stack {
       code: lambda.Code.fromAsset('../backend/functions/plaid'),
       handler: 'index.handler',
       description: 'BudgetBuddy Plaid handler for bank account sync',
+      timeout: cdk.Duration.seconds(60), // Increased for Plaid API calls
       environment: {
         ...commonProps.environment,
-        PLAID_MOCK_MODE: 'true',
+        PLAID_ENV: 'sandbox',
+        PLAID_SECRET_NAME: 'budgetbuddy/plaid/sandbox',
       },
     });
+
+    // Grant Plaid Lambda permission to read secrets
+    this.functions.plaidHandler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['secretsmanager:GetSecretValue'],
+      resources: [`arn:aws:secretsmanager:${this.region}:${this.account}:secret:budgetbuddy/plaid/*`],
+    }));
 
     // Reconciliation Lambda
     this.functions.reconciliationHandler = new lambda.Function(this, 'ReconciliationHandler', {
@@ -240,6 +250,21 @@ export class ApiFeaturesStack extends cdk.Stack {
     plaidHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'PlaidHealthCheck',
+    });
+
+    // Sandbox-only endpoint for creating test items
+    const plaidSandboxResource = plaidResource.addResource('sandbox');
+    const plaidSandboxCreateResource = plaidSandboxResource.addResource('create-item');
+    plaidSandboxCreateResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
+      authorizer,
+      operationName: 'CreateSandboxItem',
+    });
+
+    // Sync status endpoint
+    const plaidSyncStatusResource = plaidResource.addResource('sync-status');
+    plaidSyncStatusResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.plaidHandler), {
+      authorizer,
+      operationName: 'GetPlaidSyncStatus',
     });
   }
 

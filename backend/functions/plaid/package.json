@@ -1,13 +1,16 @@
 {
   "name": "budgetbuddy-plaid-function",
-  "version": "1.0.0",
-  "description": "BudgetBuddy Plaid Integration Lambda Function",
+  "version": "2.0.0",
+  "description": "BudgetBuddy Plaid Integration Lambda Function with real Plaid SDK",
   "main": "index.js",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch"
   },
-  "dependencies": {},
+  "dependencies": {
+    "plaid": "^26.0.0",
+    "@aws-sdk/client-secrets-manager": "^3.400.0"
+  },
   "devDependencies": {
     "jest": "^29.7.0"
   },
@@ -15,7 +18,8 @@
     "budgetbuddy",
     "plaid",
     "bank-sync",
-    "lambda"
+    "lambda",
+    "sandbox"
   ],
   "author": "BudgetBuddy Team",
   "license": "MIT"
