@@ -440,7 +440,49 @@ export class ApiStack extends cdk.Stack {
     // Store authorizer for use in route setup
     (api as any).authorizer = authorizer;
 
+    // Add Gateway Responses for CORS on error responses
+    this.addGatewayResponses(api);
+
     return api;
+  }
+
+  /**
+   * Add Gateway Responses to handle CORS for error responses
+   * This ensures CORS headers are present on 401, 403, 4XX, and 5XX responses
+   */
+  private addGatewayResponses(api: apigateway.RestApi): void {
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': "'*'",
+      'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+      'Access-Control-Allow-Methods': "'GET,POST,PUT,DELETE,OPTIONS'",
+      'Access-Control-Allow-Credentials': "'true'",
+    };
+
+    // 401 Unauthorized (Cognito authorizer failures)
+    api.addGatewayResponse('Unauthorized', {
+      type: apigateway.ResponseType.UNAUTHORIZED,
+      statusCode: '401',
+      responseHeaders: corsHeaders,
+    });
+
+    // 403 Forbidden (IAM/resource policy denials)
+    api.addGatewayResponse('AccessDenied', {
+      type: apigateway.ResponseType.ACCESS_DENIED,
+      statusCode: '403',
+      responseHeaders: corsHeaders,
+    });
+
+    // 4XX Client Errors
+    api.addGatewayResponse('Default4XX', {
+      type: apigateway.ResponseType.DEFAULT_4XX,
+      responseHeaders: corsHeaders,
+    });
+
+    // 5XX Server Errors
+    api.addGatewayResponse('Default5XX', {
+      type: apigateway.ResponseType.DEFAULT_5XX,
+      responseHeaders: corsHeaders,
+    });
   }
 
   /**
