@@ -1,5 +1,35 @@
 # Development Log
 
+## 2026-02-01 - Goal Category Linking (Session 59)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Implement Task 2.4 - Category Linking for Goals
+**Outcome**: Goals now auto-update when linked category transactions are added
+
+### Work Completed
+
+1. **Category Linking Implementation (Task 2.4)**:
+   - Added `updateLinkedGoals` function to transactions Lambda
+   - Auto-updates goals when savings/income transactions are created
+   - Handles transaction updates (old category subtract, new category add)
+   - Handles transaction deletes (subtract from linked goal)
+   - Automatic milestone detection and completion
+
+2. **Tests Added**:
+   - 10 new tests for linked goals logic
+   - Total: 23 tests passing in transaction.test.js
+
+### Files Modified
+
+- `backend/functions/transactions/index.js` (added updateLinkedGoals function)
+- `backend/functions/transactions/transaction.test.js` (added linked goals tests)
+- `.kiro/specs/tasks.md` (marked Task 2.4 complete)
+- `CHANGELOG.md` (added entry)
+
+---
+
 ## 2026-02-01 - Educational Content Lambda (Session 58)
 
 ### Session Summary
