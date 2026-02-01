@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.9.43] - 2026-02-01
+
+### 🔧 Fix - CORS Headers for API Gateway 401/403 Responses
+
+**Problem**: When calling Plaid API endpoints from the web app, 401 Unauthorized errors from the Cognito authorizer didn't include CORS headers, causing browser CORS errors that masked the actual authentication issue.
+
+**Solution**: Added Gateway Responses to the Features API Gateway to include CORS headers on all 4XX and 5XX responses:
+
+- `UnauthorizedResponse` (401) - Returns proper CORS headers with JSON error body
+- `ForbiddenResponse` (403) - Returns proper CORS headers with JSON error body
+- `Default4XXResponse` - CORS headers for all other 4XX errors
+- `Default5XXResponse` - CORS headers for all 5XX errors
+
+**UI Improvements**:
+
+- Made "Accounts" sidebar link functional (navigates to `/accounts`)
+- Made "Connect Your Bank" card clickable (navigates to `/accounts`)
+- Updated card text to "Link accounts to auto-import transactions"
+
+**Files Modified**:
+
+- `infrastructure/lib/api-features-stack.ts` - Added `addGatewayResponses()` method
+- `packages/web-app/src/pages/BudgetPage.tsx` - Fixed navigation links
+
 ## [1.9.42] - 2026-02-01
 
 ### 🏦 Feature - Bank Accounts UI (Plaid Integration Frontend)

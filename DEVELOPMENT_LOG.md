@@ -1,5 +1,48 @@
 # Development Log
 
+## 2026-02-01 - CORS Fix for API Gateway Authorizer (Session 64)
+
+### Session Summary
+
+**Duration**: 20 minutes
+**Focus**: Fix CORS errors when API Gateway Cognito authorizer returns 401
+**Outcome**: Added Gateway Responses with CORS headers, fixed UI navigation
+
+### Problem
+
+When calling Plaid API endpoints from the web app, 401 Unauthorized errors from the Cognito authorizer didn't include CORS headers. This caused browser CORS errors that masked the actual authentication issue, making debugging difficult.
+
+### Solution
+
+Added Gateway Responses to the Features API Gateway:
+
+- `UnauthorizedResponse` (401) - CORS headers + JSON error body
+- `ForbiddenResponse` (403) - CORS headers + JSON error body
+- `Default4XXResponse` - CORS headers for all 4XX errors
+- `Default5XXResponse` - CORS headers for all 5XX errors
+
+### UI Fixes
+
+- Made "Accounts" sidebar link navigate to `/accounts` (was `href="#"`)
+- Made "Connect Your Bank" card clickable with navigation
+- Updated card text to be more descriptive
+
+### Files Modified
+
+- `infrastructure/lib/api-features-stack.ts` - Added `addGatewayResponses()` method
+- `packages/web-app/src/pages/BudgetPage.tsx` - Fixed navigation links
+
+### Testing
+
+After deployment:
+
+1. Log in to web app
+2. Click "Accounts" in sidebar → should navigate to /accounts
+3. Click "Connect Your Bank" card → should navigate to /accounts
+4. On Accounts page, click "Create Test Account" → should work or show proper error
+
+---
+
 ## 2026-02-01 - Bank Accounts UI Implementation (Session 63)
 
 ### Session Summary
