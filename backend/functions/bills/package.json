@@ -1,0 +1,15 @@
+{
+  "_comment": "Bill reminders Lambda function - Handles bill CRUD, payment tracking, and recurring bills",
+  "name": "budgetbuddy-bills-function",
+  "version": "1.0.0",
+  "description": "BudgetBuddy bill reminders Lambda function for bill management and due date tracking",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "local": "sam local start-api"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

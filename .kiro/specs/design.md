@@ -1,4596 +1,1483 @@
-# BudgetBuddy Design Document
+# BudgetBuddy Technical Design Document
 
-**Last Updated**: 2025-12-28
-**Status**: Market-Ready MVP Design Complete
-**Architecture**: AWS Serverless with React Web App + React Native Mobile Apps
+**Last Updated**: 2026-02-01
+**Status**: Active Development
+**Scope**: Core Platform + Competitive Features
 
 ## Overview
 
-BudgetBuddy is a comprehensive zero-based budgeting platform with both web and native mobile applications built on AWS serverless architecture. The design follows EveryDollar's clean, intuitive interface while providing advanced features like recurring budget planning, offline capability, multi-currency support, and comprehensive data export options.
+This design document covers the technical architecture for BudgetBuddy's core platform and new competitive features including Admin Web App, Peer Comparison, Financial Tips Feed, and Educational Content.
 
-**Core Design Principle:** Users should manage their budget effortlessly across all devices with minimal clicks, maximum clarity, and complete data ownership.
+---
 
-## Architecture
-
-### High-Level Architecture
+## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Client Layer                              │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  React Web App (Vite + TypeScript + Tailwind CSS)       │  │
-│  │  - Desktop & Tablet Experience                           │  │
-│  │  - Advanced Features & Admin                             │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  React Native Mobile Apps (iOS + Android)               │  │
-│  │  - Mobile-First Experience                               │  │
-│  │  - Offline Capability                                    │  │
-│  │  - Device-Level Security Integration                     │  │
-│  │  - Push Notifications                                    │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓ HTTPS
-┌─────────────────────────────────────────────────────────────────┐
-│                      AWS Infrastructure                          │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  CloudFront CDN (Static Asset Delivery)                  │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                              ↓                                   │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  API Gateway (REST API)                                   │  │
-│  │  - /auth/* endpoints                                      │  │
-│  │  - /budget/* endpoints                                    │  │
-│  │  - /export/* endpoints (NEW)                             │  │
-│  │  - /notifications/* endpoints (NEW)                      │  │
-│  │  - JWT token validation                                   │  │
-│  │  - CORS configuration                                     │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                              ↓                                   │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Lambda Functions (Node.js 20)                           │  │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐        │  │
-│  │  │ Auth       │  │ Budget     │  │ Transaction│        │  │
-│  │  │ Handler    │  │ Handler    │  │ Handler    │        │  │
-│  │  └────────────┘  └────────────┘  └────────────┘        │  │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐        │  │
-│  │  │ Export     │  │ Notification│  │ Currency   │        │  │
-│  │  │ Handler    │  │ Handler    │  │ Handler    │        │  │
-│  │  └────────────┘  └────────────┘  └────────────┘        │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                              ↓                                   │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Amazon Cognito (User Authentication)                    │  │
-│  │  - User pools                                             │  │
-│  │  - JWT token generation                                   │  │
-│  │  - Password management                                    │  │
-│  │  - MFA support (NEW)                                     │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                              ↓                                   │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  DynamoDB (Data Storage)                                  │  │
-│  │  - Single table design                                    │  │
-│  │  - User data                                              │  │
-│  │  - Budget data with recurring logic                      │  │
-│  │  - Transaction data                                       │  │
-│  │  - Notification preferences (NEW)                        │  │
-│  │  - Export history (NEW)                                  │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                              ↓                                   │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Additional AWS Services                                  │  │
-│  │  - SNS (Push Notifications)                              │  │
-│  │  - SES (Email Notifications)                             │  │
-│  │  - S3 (Export File Storage)                              │  │
-│  │  - EventBridge (Scheduled Notifications)                 │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              Client Layer                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Web App        │  Mobile App       │  Admin App                            │
+│  (React/Vite)   │  (React Native)   │  (React/Vite)                         │
+│  - Budget UI    │  - Budget UI      │  - User Management                    │
+│  - Tips Feed    │  - Tips Feed      │  - Metrics Dashboard                  │
+│  - Learn        │  - Learn          │  - System Health                      │
+│  - Comparison   │  - Comparison     │  - Audit Logs                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           API Gateway Layer                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  /api/budget/*     │  /api/tips/*      │  /admin/*                          │
+│  /api/transactions │  /api/learn/*     │  (Admin-only endpoints)            │
+│  /api/comparison/* │  /api/feed/*      │                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Lambda Functions                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  budget-lambda     │  tips-lambda      │  admin-lambda                      │
+│  transactions      │  learn-lambda     │  comparison-lambda                 │
+│  auth-lambda       │  feed-lambda      │  analytics-lambda                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            Data Layer                                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  DynamoDB          │  S3               │  Secrets Manager                   │
+│  - Users           │  - Tip Content    │  - API Keys                        │
+│  - Budgets         │  - Course Assets  │  - Admin Secrets                   │
+│  - Transactions    │  - Exports        │                                    │
+│  - Comparison Data │                   │                                    │
+│  - Learning Progress                   │                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Application Flow
+---
+
+## Feature Designs
+
+### 1. Admin Web Application (Requirement 47)
+
+#### 1.1 Architecture
 
 ```
-┌──────────┐    ┌──────────┐    ┌─────────────────┐
-│ Register │ -> │  Login   │ -> │  Budget Screen  │
-│          │    │          │    │  (main app)     │
-└──────────┘    └──────────┘    └─────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    Admin Web App                             │
+│                   (packages/admin)                           │
+├─────────────────────────────────────────────────────────────┤
+│  Pages:                                                      │
+│  - Dashboard (metrics overview)                              │
+│  - Users (search, view, manage)                              │
+│  - System Health (API stats, errors)                         │
+│  - Audit Log (admin actions)                                 │
+└─────────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   Admin API Endpoints                        │
+│                 (backend/functions/admin)                    │
+├─────────────────────────────────────────────────────────────┤
+│  GET  /admin/dashboard     - Platform metrics                │
+│  GET  /admin/users         - Search/list users               │
+│  GET  /admin/users/:id     - User details                    │
+│  POST /admin/users/:id/disable - Disable account             │
+│  POST /admin/users/:id/enable  - Enable account              │
+│  POST /admin/users/:id/reset-password - Trigger reset        │
+│  GET  /admin/health        - System health metrics           │
+│  GET  /admin/audit         - Audit log entries               │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Technical Stack
+#### 1.2 Data Model
 
-### Frontend - Web Application
-
-- **Framework**: React 18 with TypeScript
-- **Build Tool**: Vite (fast development and optimized builds)
-- **Styling**: Tailwind CSS (utility-first CSS framework)
-- **Routing**: React Router v6 (client-side routing)
-- **State Management**: React useState/useEffect + React Query (API caching)
-- **HTTP Client**: Fetch API with custom wrapper
-- **Icons**: Emoji-based (no icon library needed)
-
-### Frontend - Mobile Applications
-
-- **Framework**: React Native with Expo (managed workflow)
-- **Language**: TypeScript
-- **Navigation**: React Navigation 6 (bottom tabs + stack navigation)
-- **State Management**: Zustand (lightweight state) + React Query (API caching)
-- **UI Components**: React Native Elements + Native Base
-- **Animations**: React Native Reanimated 3
-- **Offline Storage**: AsyncStorage + SQLite (for complex queries)
-- **Security**: Expo SecureStore (token storage) + Device-level authentication
-- **Notifications**: Expo Notifications
-- **Network**: NetInfo (connection detection)
-
-### Backend
-
-- **API**: AWS API Gateway (REST API)
-- **Compute**: AWS Lambda (Node.js 20)
-- **Authentication**: AWS Cognito User Pools
-- **Database**: Amazon DynamoDB (single-table design)
-- **Storage**: Amazon S3 (static assets, export files)
-- **CDN**: Amazon CloudFront (global content delivery)
-- **Notifications**: Amazon SNS (push notifications) + SES (email)
-- **Scheduling**: Amazon EventBridge (recurring notifications)
-- **Infrastructure**: AWS CDK (TypeScript)
-
-### Development Tools
-
-- **Package Manager**: npm
-- **Linting**: ESLint with TypeScript support
-- **Formatting**: Prettier
-- **Testing**: Jest (unit tests) + Detox (E2E mobile testing)
-- **Mobile Builds**: EAS Build (Expo Application Services)
-- **CI/CD**: GitHub Actions
-- **Version Control**: Git with GitHub
-
-## Data Models
-
-### User Entity
-
-```typescript
-interface User {
-  userId: string; // Cognito user ID
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  timezone: string; // NEW: IANA timezone (e.g., "America/New_York")
-  currency: string; // NEW: Primary currency (USD, EUR, etc.)
-  location?: {
-    // NEW: User's location
-    country: string;
-    city: string;
-    zipCode: string;
-  };
-  preferences: {
-    // NEW: User preferences
-    notifications: NotificationPreferences;
-    theme: "light" | "dark" | "system";
-    language: string;
-  };
-  subscription: {
-    // NEW: Subscription info
-    tier: "free" | "premium";
-    expiresAt?: string;
-    features: string[];
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface NotificationPreferences {
-  pushEnabled: boolean;
-  emailEnabled: boolean;
-  budgetAlerts: boolean;
-  overspendingAlerts: boolean;
-  billReminders: boolean;
-  dailyExpenseReminder: boolean;
-  dailyReminderTime: string; // HH:MM format
-  weeklyReports: boolean;
-  monthlyReports: boolean;
-}
-```
-
-### Budget Entity
-
-```typescript
-interface Budget {
-  id: string; // budget_<timestamp>
-  userId: string; // Owner's Cognito ID
-  month: string; // YYYY-MM format
-  groups: BudgetGroup[]; // Income, Savings, Expenses
-  isAIGenerated: boolean; // Future: AI-generated flag
-  createdAt: string;
-  updatedAt: string;
-}
-```
-
-### Budget Group
-
-```typescript
-interface BudgetGroup {
-  id: string;
-  name: string; // "Income", "Savings", "Expenses"
-  type: "income" | "savings" | "expense";
-  icon: string; // Emoji
-  categories: BudgetCategory[];
-  isCollapsed: boolean;
-  order: number;
-}
-```
-
-### Budget Category
-
-```typescript
-interface BudgetCategory {
-  id: string;
-  name: string; // e.g., "Salary", "Groceries"
-  icon: string; // Emoji
-  color?: string; // NEW: Custom color
-
-  // Recurring settings (NEW)
-  isRecurring: boolean;
-  recurringFrequency?:
-    | "weekly"
-    | "bi-weekly"
-    | "monthly"
-    | "quarterly"
-    | "annually";
-  baseAmount: number; // Amount per occurrence
-  startDate?: string; // When recurring started (first expected date)
-  endDate?: string; // When recurring ends (optional)
-  nextExpectedDate?: string; // Next expected occurrence
-  expectedDates?: string[]; // All expected dates for current month
-  isPaused: boolean; // Whether recurring is paused
-
-  // Calculated amounts
-  plannedMonthlyAmount: number; // Calculated from baseAmount * occurrences
-  actualAmount: number; // Sum of all transactions (renamed from spentAmount)
-  variance: number; // actualAmount - plannedMonthlyAmount
-
-  transactions: Transaction[];
-  order: number;
-
-  // Category management (NEW)
-  isCustom: boolean; // User-created vs system category
-  parentCategoryId?: string; // For subcategories
-  isArchived: boolean; // Hidden but preserved
-  usageCount: number; // How often used
-  lastUsed?: string; // Last transaction date
-}
-```
-
-### Transaction
-
-```typescript
-interface Transaction {
-  id: string;
-  categoryId: string;
-  amount: number;
-  description: string;
-  merchant?: string; // NEW: Merchant/payee name
-  date: string; // YYYY-MM-DD
-  currency?: string; // NEW: Transaction currency (if different from user default)
-  exchangeRate?: number; // NEW: Exchange rate used for conversion
-  location?: {
-    // NEW: Transaction location
-    latitude: number;
-    longitude: number;
-    address?: string;
-  };
-  tags?: string[]; // NEW: User-defined tags
-  receiptUrl?: string; // NEW: Receipt image URL
-  isRecurring?: boolean; // NEW: Part of recurring transaction
-  recurringTemplateId?: string; // NEW: Link to recurring template
-  syncStatus: "synced" | "pending" | "failed"; // NEW: Offline sync status
-  createdAt: string;
-  updatedAt?: string; // NEW: For transaction editing
-}
-```
-
-## Database Design (DynamoDB)
-
-### Single-Table Design
-
-BudgetBuddy uses a single DynamoDB table with a single-table design pattern for cost optimization and performance.
-
-**Table Name**: `budgetbuddy-dev-main`
-
-**Primary Key**:
-
-- **Partition Key (PK)**: String - Entity identifier
-- **Sort Key (SK)**: String - Entity type or relationship
-
-**Billing Mode**: On-demand (pay per request)
-
-**Features**:
-
-- Point-in-time recovery enabled
-- Encryption at rest with AWS managed keys
-- CloudWatch metrics enabled
-
-### Access Patterns
-
-#### 1. User Data
-
-```
-PK: USER#<userId>
-SK: METADATA
-Attributes: email, firstName, lastName, createdAt, updatedAt
-```
-
-#### 2. Budget Data
-
-```
-PK: USER#<userId>
-SK: BUDGET#<month>
-Attributes: budgetId, month, groups (JSON), isAIGenerated, createdAt, updatedAt
-```
-
-**Example**:
-
-```json
+```javascript
+// Admin Audit Log Entry
 {
-  "PK": "USER#abc123",
-  "SK": "BUDGET#2025-11",
-  "budgetId": "budget_1732147200000",
-  "month": "2025-11",
-  "groups": [
+  PK: "AUDIT#2026-02",
+  SK: "ACTION#1706745600000#admin123",
+  adminId: "admin123",
+  adminEmail: "admin@budgetbuddy.com",
+  action: "USER_DISABLED",
+  targetUserId: "user456",
+  targetEmail: "user@example.com",
+  details: { reason: "Suspicious activity" },
+  ipAddress: "192.168.1.1",
+  timestamp: "2026-02-01T12:00:00Z",
+  GSI1PK: "ADMIN#admin123",
+  GSI1SK: "2026-02-01T12:00:00Z"
+}
+
+// Platform Metrics (aggregated daily)
+{
+  PK: "METRICS#DAILY",
+  SK: "2026-02-01",
+  totalUsers: 1250,
+  activeUsers7d: 890,
+  newRegistrations30d: 156,
+  totalBudgets: 3420,
+  totalTransactions: 45600,
+  apiCalls24h: 125000,
+  errorRate24h: 0.02,
+  avgResponseTime: 245
+}
+```
+
+#### 1.3 Security
+
+- **Authentication**: Cognito admin user pool group
+- **Authorization**: JWT with `admin` role claim
+- **Audit**: All admin actions logged with timestamp, IP, admin ID
+- **Rate Limiting**: 100 requests/minute per admin
+
+#### 1.4 Correctness Properties
+
+```
+Property 1.1: Admin Authentication Required
+  ∀ request to /admin/* endpoints:
+    request.headers.authorization MUST contain valid admin JWT
+    AND JWT.claims.groups MUST include "admin"
+
+Property 1.2: Audit Log Completeness
+  ∀ admin action (disable, enable, reset-password):
+    audit log entry MUST be created with:
+      - adminId, action, targetUserId, timestamp, ipAddress
+
+Property 1.3: User Search Consistency
+  ∀ user search query:
+    results MUST match users where:
+      email CONTAINS query OR userId CONTAINS query OR name CONTAINS query
+```
+
+---
+
+### 2. Peer Comparison System (Requirement 48)
+
+#### 2.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  Comparison Service                          │
+│              (backend/functions/comparison)                  │
+├─────────────────────────────────────────────────────────────┤
+│  Aggregation Job (EventBridge - daily):                      │
+│  1. Query all users with opt-in                              │
+│  2. Group by: region, familySize, incomeRange                │
+│  3. Calculate category averages per group                    │
+│  4. Store aggregated stats (no individual data)              │
+├─────────────────────────────────────────────────────────────┤
+│  Comparison API:                                             │
+│  GET /api/comparison/summary                                 │
+│  - Returns user's spending vs peer group averages            │
+│  - Calculates percentile rankings                            │
+│  - Generates personalized tips                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 2.2 Data Model
+
+```javascript
+// Aggregated Peer Group Stats (anonymized)
+{
+  PK: "PEERGROUP#us-northeast#family-2#income-50k-75k",
+  SK: "STATS#2026-02",
+  region: "us-northeast",
+  familySize: 2,
+  incomeRange: "50k-75k",
+  userCount: 156,  // Must be >= 50 for privacy
+  categoryAverages: {
+    housing: { avg: 1850, median: 1750, p25: 1400, p75: 2100 },
+    groceries: { avg: 650, median: 600, p25: 450, p75: 800 },
+    transportation: { avg: 450, median: 400, p25: 250, p75: 600 },
+    utilities: { avg: 180, median: 165, p25: 120, p75: 220 },
+    entertainment: { avg: 200, median: 150, p25: 80, p75: 280 }
+  },
+  totalSpendingAvg: 4200,
+  savingsRateAvg: 0.12,
+  lastUpdated: "2026-02-01T00:00:00Z"
+}
+
+// User Comparison Preferences
+{
+  PK: "USER#user123",
+  SK: "COMPARISON_PREFS",
+  optedIn: true,
+  incomeRange: "50k-75k",  // User-provided, optional
+  showComparison: true,
+  lastComparisonView: "2026-02-01T10:30:00Z"
+}
+```
+
+#### 2.3 Comparison Response
+
+```javascript
+// GET /api/comparison/summary response
+{
+  peerGroup: {
+    region: "us-northeast",
+    familySize: 2,
+    incomeRange: "50k-75k",
+    userCount: 156
+  },
+  categories: [
     {
-      "id": "income-group",
-      "name": "Income",
-      "type": "income",
-      "categories": [...]
+      name: "Groceries",
+      userSpending: 750,
+      peerAverage: 650,
+      percentile: 72,
+      status: "above_average",  // below_average, average, above_average
+      indicator: "🔴",
+      tip: "You spend 15% more than similar households. Try meal planning to reduce grocery costs."
+    },
+    {
+      name: "Entertainment",
+      userSpending: 120,
+      peerAverage: 200,
+      percentile: 35,
+      status: "below_average",
+      indicator: "🟢",
+      tip: "Great job! You're spending less than 65% of similar households on entertainment."
     }
   ],
-  "isAIGenerated": false,
-  "createdAt": "2025-11-21T10:00:00Z",
-  "updatedAt": "2025-11-21T15:30:00Z"
-}
-```
-
-### Query Patterns
-
-#### Get User Profile
-
-```typescript
-const params = {
-  TableName: "budgetbuddy-dev-main",
-  Key: {
-    PK: `USER#${userId}`,
-    SK: "METADATA",
+  overallSavingsRate: {
+    user: 0.18,
+    peerAverage: 0.12,
+    percentile: 78,
+    status: "above_average",
+    message: "You're in the top 22% of savers in your peer group!"
   },
-};
-```
-
-#### Get All Budgets for User
-
-```typescript
-const params = {
-  TableName: "budgetbuddy-dev-main",
-  KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
-  ExpressionAttributeValues: {
-    ":pk": `USER#${userId}`,
-    ":sk": "BUDGET#",
-  },
-};
-```
-
-#### Get Specific Month Budget
-
-```typescript
-const params = {
-  TableName: "budgetbuddy-dev-main",
-  Key: {
-    PK: `USER#${userId}`,
-    SK: `BUDGET#${month}`, // e.g., "BUDGET#2025-11"
-  },
-};
-```
-
-#### Create/Update Budget
-
-```typescript
-const params = {
-  TableName: "budgetbuddy-dev-main",
-  Item: {
-    PK: `USER#${userId}`,
-    SK: `BUDGET#${month}`,
-    budgetId: `budget_${Date.now()}`,
-    month: month,
-    groups: budgetGroups,
-    isAIGenerated: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-};
-```
-
-### Data Storage Strategy
-
-**Embedded Documents**: Budget groups, categories, and transactions are stored as nested JSON within the budget item. This approach:
-
-- Reduces query complexity (single read for entire budget)
-- Minimizes DynamoDB costs (fewer read/write operations)
-- Simplifies data consistency (atomic updates)
-- Matches the application's access patterns (always fetch complete budget)
-
-**Trade-offs**:
-
-- Item size limit: 400KB (sufficient for typical monthly budgets)
-- No individual transaction queries (acceptable for MVP)
-- Updates require full budget item replacement (acceptable for MVP)
-
-### Performance Characteristics
-
-**Read Operations**:
-
-- Get user profile: 1 read unit
-- Get single month budget: 1 read unit
-- Get all user budgets: 1 read unit per month
-
-**Write Operations**:
-
-- Create budget: 1 write unit
-- Update budget: 1 write unit
-- Delete budget: 1 write unit
-
-**Cost Optimization**:
-
-- On-demand billing: Pay only for actual usage
-- Single-table design: Reduced table management overhead
-- Embedded documents: Fewer operations per user action
-
-### Backup and Recovery
-
-- **Point-in-time Recovery**: Enabled for 35-day retention
-- **On-demand Backups**: Manual backups before major changes
-- **Disaster Recovery**: Cross-region replication (future enhancement)
-
-## Mobile Application Architecture
-
-### React Native + Expo Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    React Native App Structure                    │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   Navigation    │  │   State Mgmt    │  │   API Layer     │ │
-│  │                 │  │                 │  │                 │ │
-│  │ • Bottom Tabs   │  │ • Zustand       │  │ • React Query   │ │
-│  │ • Stack Nav     │  │ • AsyncStorage  │  │ • Offline Queue │ │
-│  │ • Deep Linking  │  │ • Secure Store  │  │ • Auto Retry    │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-│                                                                 │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   UI Layer      │  │   Security      │  │   Platform      │ │
-│  │                 │  │                 │  │                 │ │
-│  │ • Native Base   │  │ • Device Auth   │  │ • iOS Specific  │ │
-│  │ • Reanimated    │  │ • Keychain      │  │ • Android Spec  │ │
-│  │ • Gestures      │  │ • App Lock      │  │ • Permissions   │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-│                                                                 │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   Features      │  │   Offline       │  │   Notifications │ │
-│  │                 │  │                 │  │                 │ │
-│  │ • Budget CRUD   │  │ • Local DB      │  │ • Push Notifs   │ │
-│  │ • Transactions  │  │ • Sync Queue    │  │ • Local Notifs  │ │
-│  │ • Export/Import │  │ • Conflict Res  │  │ • Scheduling    │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Navigation Structure
-
-```typescript
-// Bottom Tab Navigator (Main App)
-type RootTabParamList = {
-  Budget: undefined;
-  Transactions: undefined;
-  Summary: undefined;
-  Settings: undefined;
-};
-
-// Stack Navigators for each tab
-type BudgetStackParamList = {
-  BudgetList: undefined;
-  BudgetDetail: { budgetId: string };
-  AddCategory: { groupType: "income" | "savings" | "expense" };
-  EditCategory: { categoryId: string };
-};
-
-type TransactionStackParamList = {
-  TransactionList: undefined;
-  AddTransaction: { categoryId?: string };
-  EditTransaction: { transactionId: string };
-  TransactionDetail: { transactionId: string };
-};
-```
-
-### Offline Data Strategy
-
-```typescript
-// Local Database Schema (SQLite)
-interface LocalBudget {
-  id: string;
-  month: string;
-  data: Budget;
-  lastSynced: string;
-  isDirty: boolean; // Has local changes
-}
-
-interface LocalTransaction {
-  id: string;
-  budgetId: string;
-  data: Transaction;
-  syncStatus: "synced" | "pending" | "failed";
-  createdLocally: boolean;
-  lastSyncAttempt?: string;
-}
-
-// Sync Queue Management
-interface SyncQueue {
-  id: string;
-  type: "CREATE" | "UPDATE" | "DELETE";
-  entity: "budget" | "transaction" | "category";
-  entityId: string;
-  data: any;
-  attempts: number;
-  lastAttempt?: string;
-  error?: string;
-}
-```
-
-### Security Implementation
-
-```typescript
-// Device-Level Authentication
-interface DeviceAuth {
-  isDeviceSecure(): Promise<boolean>;
-  requiresAuthentication(): boolean;
-  getSecurityLevel(): Promise<"none" | "pin" | "biometric">;
-}
-
-// Secure Storage
-interface SecureStorage {
-  setItem(key: string, value: string): Promise<void>;
-  getItem(key: string): Promise<string | null>;
-  removeItem(key: string): Promise<void>;
-  clear(): Promise<void>;
-}
-
-// App Lock Management
-interface AppLock {
-  isLocked: boolean;
-  lockTimeout: number; // minutes
-  requiresAuth: boolean;
-  lastActivity: Date;
-}
-```
-
-### Main Budget Screen Layout
-
-**Three-Column Layout** (Desktop):
-
-```
-┌──────────────┬─────────────────────────────────────┬──────────────────┐
-│ SIDEBAR      │ BUDGET CATEGORIES                   │ SUMMARY/TRANS    │
-│ (240px)      │ (flex-1)                            │ (400px resizable)│
-├──────────────┼─────────────────────────────────────┼──────────────────┤
-│ Logo         │ ◄ Oct Nov Dec [January 2025] Feb   │ [Summary] Trans  │
-│ BudgetBuddy  │                                     │                  │
-│              │ ● Income for January           ▼    │ Income: $4,000   │
-│ 📊 Budget    │   💰 Salary         $4,000    $0   │ Planned: $3,800  │
-│ 🏦 Accounts  │   + Add Item                        │ Spent: $620      │
-│ 🗺️ Roadmap   │                                     │ Remaining: $3,180│
-│ 💳 Paycheck  │ ● Savings for January          ▼    │                  │
-│ 🎯 Goals     │   💾 Emergency Fund  $400     $0   │ [Circular Chart] │
-│ 📈 Insights  │   🎓 RRSP/401k      $400     $0   │                  │
-│ 📰 My Feed   │   + Add Item                        │ Category Details │
-│ ❓ Help      │                                     │ ● Savings (20%)  │
-│ ⚙️ Settings  │ ● Expenses for January         ▼    │   Emergency $400 │
-│              │   🏠 Rent          $1,200    $620  │ ● Expenses (80%) │
-│ [User]       │   🛒 Groceries      $400     $0   │   Rent $1,200    │
-│ Sign out     │   🚗 Transportation  $200     $0   │   Groceries $400 │
-└──────────────┴─────────────────────────────────────┴──────────────────┘
-```
-
-**Responsive Behavior**:
-
-- **Desktop (≥1024px)**: Full three-column layout
-- **Tablet (768-1023px)**: Collapsible sidebar, two-column main area
-- **Mobile Landscape (≥640px)**: Hamburger menu, single column with tabs
-
-### Month Navigation Design
-
-**Centered Navigation Bar**:
-
-```
-◄  [Oct] [Nov] [Dec] [January 2025 - $3,180 left] [Feb] [Mar] [Apr]  ►
-```
-
-**Features**:
-
-- 7 months visible (3 before, current, 3 after)
-- Selected month: larger, green border, shows remaining budget
-- Non-selected months: smaller, gray border
-- Fixed dimensions prevent layout jumping
-- Horizontal scroll on mobile
-- Arrow buttons for quick navigation
-
-### Color Scheme
-
-**Primary Colors**:
-
-- Green: `#10b981` (success, positive balance, income)
-- Red: `#ef4444` (overspent, negative balance, expenses)
-- Blue: `#3b82f6` (interactive elements, links)
-- Gray: `#6b7280` (text, borders, neutral elements)
-
-**Background Colors**:
-
-- White: `#ffffff` (main background)
-- Light Gray: `#f9fafb` (secondary background)
-- Green Tint: `#f0fdf4` (selected month, positive indicators)
-- Red Tint: `#fef2f2` (overspent categories)
-
-### Typography
-
-- **Font Family**: System fonts (-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto')
-- **Headings**:
-  - H1: 24px, font-bold
-  - H2: 18px, font-semibold
-  - H3: 16px, font-medium
-- **Body**: 14px, font-normal
-- **Small**: 12px, font-normal
-
-## Component Architecture
-
-### Page Components
-
-1. **AuthPage** (`/auth`)
-
-   - Login form
-   - Register form
-   - Password validation
-   - Error handling
-
-2. **BudgetPage** (`/budget`)
-
-   - Main application interface
-   - Three-column layout
-   - Budget management
-   - Transaction recording
-   - Summary visualization
-
-3. **SettingsPage** (`/settings`)
-   - User profile
-   - Account settings
-   - Preferences
-
-### Feature Components
-
-1. **Sidebar Navigation**
-
-   - Logo and branding
-   - Navigation menu
-   - User profile section
-   - Collapsible on mobile
-
-2. **Month Navigation**
-
-   - Month pills (7 visible)
-   - Previous/Next arrows
-   - Current month highlight
-   - Remaining budget display
-
-3. **Budget Groups**
-
-   - Income group
-   - Savings group
-   - Expenses group
-   - Collapsible sections
-   - Add item buttons
-
-4. **Budget Categories**
-
-   - Category name and icon
-   - Planned vs spent amounts
-   - Progress indicators
-   - Edit/delete buttons (on hover)
-   - Overspent highlighting
-
-5. **Transaction Modal**
-
-   - Category selection
-   - Amount input
-   - Description field
-   - Date picker
-   - Submit/cancel buttons
-
-6. **Budget Item Modal**
-
-   - Name input
-   - Icon picker (emoji)
-   - Amount input
-   - Recurring options
-   - Frequency selector
-
-7. **Summary View**
-
-   - Circular progress chart
-   - Key metrics display
-   - Category breakdown
-   - Percentage calculations
-   - Color-coded groups
-
-8. **Transactions List**
-
-   - Transaction items
-   - Category labels
-   - Amount display
-   - Delete buttons
-   - Empty state message
-
-9. **Floating Action Button (FAB)**
-   - Expandable menu
-   - Income option
-   - Expense option
-   - Smooth animations
-
-## API Design
-
-### Authentication Endpoints
-
-```
-POST /auth/register
-Request: { email, password, firstName, lastName }
-Response: { message, userId }
-
-POST /auth/login
-Request: { email, password }
-Response: { accessToken, refreshToken, idToken, expiresIn }
-
-GET /auth/profile
-Headers: Authorization: Bearer <token>
-Response: { userId, email, firstName, lastName }
-```
-
-### Budget Endpoints
-
-```
-POST /budget
-Headers: Authorization: Bearer <token>
-Request: { month, groups, isAIGenerated }
-Response: { budget }
-
-GET /budget
-Headers: Authorization: Bearer <token>
-Query: ?month=YYYY-MM (optional)
-Response: { budgets: Budget[] }
-
-PUT /budget
-Headers: Authorization: Bearer <token>
-Request: { month, groups }
-Response: { budget }
-
-DELETE /budget/{budgetId}
-Headers: Authorization: Bearer <token>
-Response: { message }
-```
-
-## State Management
-
-### Local State (React useState)
-
-- Current month selection
-- Modal visibility states
-- Form input values
-- UI interaction states (hover, focus)
-- Sidebar collapse state
-
-### Persistent State (localStorage)
-
-- JWT tokens (access, refresh, ID)
-- Token expiration time
-- User preferences (future)
-
-### Server State (API)
-
-- User profile data
-- Budget data
-- Transaction data
-
-## Security Design
-
-### Authentication Flow
-
-1. User submits credentials
-2. Frontend sends to `/auth/login`
-3. Lambda validates with Cognito
-4. Cognito returns JWT tokens
-5. Frontend stores tokens in localStorage
-6. All subsequent requests include `Authorization: Bearer <token>` header
-
-### Token Management
-
-- Access token: Short-lived (1 hour)
-- Refresh token: Long-lived (30 days)
-- ID token: Contains user claims
-- Automatic refresh before expiration
-
-### API Security
-
-- All endpoints require authentication (except /auth/register and /auth/login)
-- JWT validation on API Gateway
-- CORS configured for specific origins
-- HTTPS only
-
-## Performance Optimizations
-
-### Frontend
-
-- Code splitting with React.lazy
-- Optimized bundle size with Vite
-- Minimal dependencies
-- Efficient re-renders with React.memo (where needed)
-- Debounced API calls for updates
-
-### Backend
-
-- Lambda cold start optimization
-- DynamoDB single-table design
-- Efficient query patterns
-- CloudFront caching for static assets
-- API Gateway caching (future)
-
-### Data Loading
-
-- Load budget data on mount
-- Optimistic UI updates
-- Error boundaries for graceful failures
-- Loading states for async operations
-
-## Accessibility
-
-- Semantic HTML elements
-- ARIA labels for interactive elements
-- Keyboard navigation support
-- Focus indicators
-- Color contrast ratios meet WCAG AA standards
-- Screen reader friendly
-
-## Browser Compatibility
-
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
-
-## Future Enhancements
-
-1. **AI Budget Generation**: AWS Bedrock integration for personalized budgets
-2. **Family Accounts**: Multi-user collaboration
-3. **Mobile Apps**: React Native iOS/Android
-4. **Bank Integration**: Plaid API for automatic transactions
-5. **Reports**: Historical analysis and trends
-6. **Goals**: Savings goals and debt payoff tracking
-7. **Notifications**: Bill reminders and budget alerts
-8. **Export**: PDF/CSV export functionality
-
----
-
-## Enhanced Month Navigation UI Design
-
-### Overview
-
-Redesign the month navigation interface to match the EveryDollar style with a cleaner header layout, "Today" button, arrow navigation, and future month handling with budget copying functionality.
-
-### Components
-
-#### 1. Month Header Component
-
-**Location**: Top of budget page (desktop/tablet view)
-
-**Layout**:
-
-```
-[Month Year]                    [Today] [<] [>]
-$X,XXX.XX left to budget
-                    [⚠️ You are viewing a future month]
-```
-
-**Elements**:
-
-- **Month Title**: Large heading (text-3xl) showing "Month YYYY" (e.g., "December 2025")
-- **Budget Remaining**: Subtitle showing amount left to budget with color coding:
-  - Green: Positive remaining
-  - Red: Negative (over budget)
-- **Today Button**: Blue outlined button that navigates to current month
-- **Arrow Buttons**: Left/right arrows for prev/next month navigation
-- **Future Month Badge**: Orange warning badge (only shown for future months)
-
-#### 2. Empty State Component
-
-**Trigger**: When viewing a future month with no existing budget
-
-**Layout**:
-
-```
-        [Circular Icon]
-
-Hey there, looks like you need a budget for December.
-
-We'll copy November's budget to get you started.
-
-    [Start Planning for December]
-```
-
-**Elements**:
-
-- **Icon**: Large circular border with document/arrow icon (w-48 h-48)
-- **Heading**: "Hey there, looks like you need a budget for [Month]"
-- **Subtext**: "We'll copy [Previous Month]'s budget to get you started"
-- **Action Button**: Blue button "Start Planning for [Month]"
-
-### Data Flow
-
-#### Month Navigation Flow
-
-```
-User clicks arrow/Today
-  ↓
-Update currentMonth state
-  ↓
-loadBudget() called
-  ↓
-Check if budget exists for month
-  ↓
-If exists: Display budget
-If not + future: Show empty state
-If not + past: Show empty budget
-```
-
-#### Copy Previous Month Flow
-
-```
-User clicks "Start Planning"
-  ↓
-Fetch previous month's budget from API
-  ↓
-Copy budget structure:
-  - Keep: categories, planned amounts, icons
-  - Reset: spent amounts = 0, transactions = []
-  - New: budget ID, month, timestamps
-  ↓
-Save new budget to DynamoDB
-  ↓
-Display new budget
-```
-
-### API Integration
-
-**Endpoints Used**:
-
-- `GET /budget` - Fetch all budgets for user
-- `POST /budget` - Create new budget
-- `PUT /budget/{id}` - Update existing budget
-
-**Budget Copy Logic**:
-
-```typescript
-const copyPreviousMonthBudget = async () => {
-  // 1. Calculate previous month
-  const prevMonth = getPreviousMonth(currentMonth);
-
-  // 2. Fetch previous budget
-  const prevBudget = await fetchBudget(prevMonth);
-
-  // 3. Create new budget with copied structure
-  const newBudget = {
-    ...prevBudget,
-    id: generateId(),
-    month: currentMonth,
-    groups: prevBudget.groups.map((group) => ({
-      ...group,
-      categories: group.categories.map((cat) => ({
-        ...cat,
-        id: generateId(),
-        spentAmount: 0,
-        transactions: [],
-      })),
-    })),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  // 4. Save to backend
-  await saveBudgetToBackend(newBudget);
-
-  // 5. Update UI
-  setBudget(newBudget);
-};
-```
-
-### State Management
-
-**New State Variables**:
-
-- None (uses existing `currentMonth` state)
-
-**New Functions**:
-
-- `goToToday()` - Navigate to current month
-- `isFutureMonth()` - Check if viewing future month
-- `copyPreviousMonthBudget()` - Copy previous month's budget
-
-### UI/UX Considerations
-
-1. **Visual Hierarchy**: Month name is prominent, controls are secondary
-2. **Color Coding**:
-   - Green: Positive budget remaining
-   - Red: Over budget
-   - Orange: Future month warning
-   - Blue: Action buttons
-3. **Responsive**: Header adapts to mobile with simplified layout
-4. **Loading States**: Show loading indicator while copying budget
-5. **Error Handling**: Display error if previous month has no budget
-
-### Testing Strategy
-
-**Unit Tests**:
-
-- Test `isFutureMonth()` with various dates
-- Test `copyPreviousMonthBudget()` with mock data
-- Test month navigation state updates
-
-**Integration Tests**:
-
-- Test full flow: navigate to future month → copy budget → verify data saved
-- Test "Today" button returns to current month
-- Test arrow navigation updates month correctly
-
-**Property-Based Tests**:
-
-- Property 1: For any future month, copying previous month should create valid budget
-- Property 2: For any month navigation, budget data should persist correctly
-
----
-
-## Budget Reset and Recurring Category Settings Design
-
-### Overview
-
-Add functionality to reset the current budget and restart the AI setup process, plus preserve recurring category settings (like bi-weekly salary) when copying budgets to future months. This ensures users don't have to reconfigure recurring items every month.
-
-### Components
-
-#### 1. Reset Budget Button
-
-**Location**: Budget page header, near the month navigation controls
-
-**UI Design**:
-
-```
-[Month Year]  $X left to budget    [Reset] [Today] [<] [>]
-```
-
-**Behavior**:
-
-- Clicking "Reset" opens a confirmation modal
-- Modal asks: "Are you sure you want to reset this budget? This will delete all categories and transactions for [Month]."
-- Options: "Cancel" (gray) and "Reset Budget" (red)
-- On confirm: Delete budget, navigate to AI budget generation page
-
-#### 2. Recurring Category Settings
-
-**Data Model Updates**:
-
-```typescript
-interface BudgetCategory {
-  id: string;
-  name: string;
-  icon: string;
-  plannedAmount: number;
-  spentAmount: number;
-  transactions: Transaction[];
-  order: number;
-  isRecurring: boolean; // NEW
-  recurringFrequency?: "weekly" | "bi-weekly" | "monthly" | "annually"; // NEW
-  nextDueDate?: string; // NEW - ISO date string
-}
-```
-
-**UI Updates**:
-
-- Add checkbox "Make this recurring" when adding/editing categories
-- Add dropdown for frequency (weekly, bi-weekly, monthly, annually)
-- Show recurring badge on category items (e.g., "🔄 Bi-weekly")
-
-#### 3. Smart Budget Copying
-
-**Logic Flow**:
-
-```
-User clicks "Start Planning for [Month]"
-  ↓
-Find most recent past month with budget
-  ↓
-Copy ONLY recurring categories
-  ↓
-For each recurring category:
-  - Copy: name, icon, plannedAmount, isRecurring, recurringFrequency
-  - Reset: spentAmount = 0, transactions = []
-  - Calculate: nextDueDate based on frequency
-  - Generate: new category ID
-  ↓
-Save new budget to DynamoDB
-  ↓
-Display new budget
-```
-
-### API Integration
-
-**No new endpoints needed** - uses existing:
-
-- `GET /budget` - Fetch budgets
-- `POST /budget` - Create new budget
-- `PUT /budget/{id}` - Update budget
-- `DELETE /budget/{id}` - Delete budget (for reset)
-
-### State Management
-
-**New State Variables**:
-
-- `showResetModal: boolean` - Control reset confirmation modal
-- None for recurring settings (stored in category data)
-
-**Updated Functions**:
-
-- `copyPreviousMonthBudget()` - Filter to only recurring categories
-- `handleBudgetItemSubmit()` - Save recurring settings
-- `handleResetBudget()` - Delete budget and navigate to AI flow
-
-### Recurring Frequency Calculations
-
-**Next Due Date Logic**:
-
-```typescript
-const calculateNextDueDate = (
-  currentDate: Date,
-  frequency: "weekly" | "bi-weekly" | "monthly" | "annually"
-): string => {
-  const next = new Date(currentDate);
-
-  switch (frequency) {
-    case "weekly":
-      next.setDate(next.getDate() + 7);
-      break;
-    case "bi-weekly":
-      next.setDate(next.getDate() + 14);
-      break;
-    case "monthly":
-      next.setMonth(next.getMonth() + 1);
-      break;
-    case "annually":
-      next.setFullYear(next.getFullYear() + 1);
-      break;
+  monthOverMonth: {
+    improved: ["Groceries", "Dining"],
+    declined: ["Transportation"],
+    unchanged: ["Housing", "Utilities"]
   }
-
-  return next.toISOString();
-};
-```
-
-### UI/UX Considerations
-
-1. **Reset Button Placement**: Near month navigation for easy access
-2. **Confirmation Modal**: Prevent accidental budget deletion
-3. **Recurring Badge**: Visual indicator on recurring categories
-4. **Smart Copying**: Only copy recurring items to reduce clutter
-5. **Frequency Options**: Common patterns (weekly, bi-weekly, monthly, annually)
-
-### Testing Strategy
-
-**Unit Tests**:
-
-- Test `calculateNextDueDate()` with various frequencies
-- Test `copyPreviousMonthBudget()` filters recurring categories
-- Test reset confirmation modal shows/hides correctly
-
-**Integration Tests**:
-
-- Test full reset flow: click → confirm → navigate to AI page
-- Test recurring category creation and copying
-- Test budget copy preserves recurring settings
-
-**Manual Testing**:
-
-- Create budget with recurring salary (bi-weekly)
-- Navigate to future month and create budget
-- Verify salary is copied with bi-weekly setting
-- Test reset button deletes budget and restarts AI flow
-
----
-
-## Transaction and Budget Item Clarity Design
-
-### Overview
-
-Improve UI clarity by distinguishing between actual transactions (recorded income/expenses) and planned budget items (future allocations). This prevents user confusion about whether they're recording real activity or planning future spending.
-
-### UI Label Updates
-
-#### Transaction Form (FAB)
-
-**Current**: "Plan an Expense" / "Plan an Income"
-**New**: "Record Actual Expense" / "Record Actual Income"
-
-**Modal Title Logic**:
-
-```typescript
-const getTransactionModalTitle = (
-  type: "income" | "expense",
-  isEdit: boolean
-) => {
-  if (isEdit) return "Edit Transaction";
-  return type === "income" ? "Record Actual Income" : "Record Actual Expense";
-};
-```
-
-#### Budget Item Form (Add Item Button)
-
-**Current**: Generic "Add Item"
-**New**: "Add Planned Income Item" / "Add Planned Expense Item" / "Add Planned Savings Item"
-
-**Modal Title Logic**:
-
-```typescript
-const getBudgetItemModalTitle = (
-  groupType: "income" | "savings" | "expense",
-  isEdit: boolean
-) => {
-  if (isEdit) return "Edit Budget Item";
-
-  const typeLabel = {
-    income: "Income",
-    savings: "Savings",
-    expense: "Expense",
-  }[groupType];
-
-  return `Add Planned ${typeLabel} Item`;
-};
-```
-
-### Terminology Consistency
-
-**Throughout the application**:
-
-- Use "Transaction" or "Actual" for recorded activity
-- Use "Budget Item" or "Planned" for future allocations
-- Use "Spent" for actual amounts in categories
-- Use "Planned" for budgeted amounts in categories
-
-### Component Updates
-
-1. **TransactionForm.tsx**: Update header to show "Record Actual [Type]"
-2. **BudgetItemModal.tsx**: Update header to show "Add Planned [Type] Item"
-3. **TransactionList.tsx**: Ensure "Transactions" label is used consistently
-4. **BudgetDashboard.tsx**: Use "Planned" vs "Actual" labels in summaries
-
----
-
-## Transaction Date Validation and Warnings Design
-
-### Overview
-
-Prevent users from accidentally adding transactions to the wrong month by validating transaction dates against the currently selected budget month and providing clear warnings with actionable options.
-
-### Validation Logic
-
-```typescript
-interface DateValidationResult {
-  isValid: boolean;
-  warning?: string;
-  suggestedMonth?: string;
 }
-
-const validateTransactionDate = (
-  transactionDate: string,
-  currentBudgetMonth: string // Format: "YYYY-MM"
-): DateValidationResult => {
-  const txDate = new Date(transactionDate);
-  const txMonth = `${txDate.getFullYear()}-${String(
-    txDate.getMonth() + 1
-  ).padStart(2, "0")}`;
-
-  if (txMonth === currentBudgetMonth) {
-    return { isValid: true };
-  }
-
-  const txMonthName = txDate.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-  const currentMonthName = new Date(
-    currentBudgetMonth + "-01"
-  ).toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-
-  return {
-    isValid: false,
-    warning: `This transaction date (${txMonthName}) is outside the current budget month (${currentMonthName})`,
-    suggestedMonth: txMonth,
-  };
-};
 ```
 
-### Warning UI Component
+#### 2.4 Privacy Safeguards
 
-**Location**: Below date input field in TransactionForm
+1. **Minimum Group Size**: No comparison shown if peer group < 50 users
+2. **Aggregation Only**: Only store/return averages, medians, percentiles
+3. **No Individual Data**: Never expose individual user spending
+4. **Opt-Out**: Users can disable comparison data collection
+5. **Income Optional**: Income range is user-provided and optional
 
-**Design**:
+#### 2.5 Correctness Properties
+
+```
+Property 2.1: Privacy Minimum Group Size
+  ∀ comparison request:
+    IF peerGroup.userCount < 50 THEN
+      response MUST NOT include comparison data
+      response MUST include message "Not enough data for comparison"
+
+Property 2.2: Anonymization Guarantee
+  ∀ aggregated stats stored:
+    stats MUST NOT contain any individual user identifiers
+    stats MUST NOT contain any individual transaction data
+
+Property 2.3: Opt-Out Respect
+  ∀ user with optedIn = false:
+    user's spending data MUST NOT be included in aggregation
+    user MUST NOT receive comparison insights
+
+Property 2.4: Percentile Accuracy
+  ∀ percentile calculation:
+    percentile = (users spending less than user / total users) * 100
+    percentile MUST be between 0 and 100
+```
+
+---
+
+### 3. Financial Tips Feed (Requirement 49)
+
+#### 3.1 Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ ⚠️ Warning: Date Outside Current Month                      │
-│                                                              │
-│ This transaction date (December 2025) is outside the        │
-│ current budget month (November 2025).                       │
-│                                                              │
-│ What would you like to do?                                  │
-│                                                              │
-│ [Continue with Nov 2025]  [Switch to Dec 2025]  [Cancel]   │
+│                    Tips Feed Service                         │
+│                (backend/functions/tips)                      │
+├─────────────────────────────────────────────────────────────┤
+│  Content Sources:                                            │
+│  1. Static tip library (S3 JSON files)                       │
+│  2. AI-generated personalized tips (Bedrock)                 │
+│  3. Curated news feed (RSS aggregation - Phase 2)            │
+├─────────────────────────────────────────────────────────────┤
+│  API Endpoints:                                              │
+│  GET /api/tips/feed         - Paginated tip feed             │
+│  GET /api/tips/daily        - Today's personalized tip       │
+│  POST /api/tips/:id/save    - Bookmark a tip                 │
+│  POST /api/tips/:id/dismiss - Mark as not helpful            │
+│  GET /api/tips/saved        - User's saved tips              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Styling**:
+#### 3.2 Data Model
 
-- Background: Orange/yellow warning color (`bg-yellow-900 bg-opacity-30`)
-- Border: Orange (`border-yellow-600`)
-- Icon: Warning emoji or icon
-- Buttons: Primary action (Switch), Secondary (Continue), Tertiary (Cancel)
-
-### User Flow
-
-```
-User selects date in transaction form
-  ↓
-Date validation runs on change
-  ↓
-If date outside current month:
-  - Show warning banner
-  - Highlight date field with warning color
-  - Disable submit until user makes choice
-  ↓
-User chooses action:
-  - Continue: Record in current month (dismiss warning)
-  - Switch: Navigate to correct month, keep form data
-  - Cancel: Close warning, allow date change
-```
-
-### State Management
-
-```typescript
-interface TransactionFormState {
-  formData: TransactionFormData;
-  dateValidation: DateValidationResult;
-  showDateWarning: boolean;
-  userDateChoice: "continue" | "switch" | null;
-}
-```
-
-### API Integration
-
-No API changes needed - validation is client-side only. Transaction is recorded in the currently selected budget month regardless of transaction date.
-
----
-
-## Transaction Editing Design
-
-### Overview
-
-Enable users to edit existing transactions by double-clicking on them in the transaction list. This provides a seamless way to correct mistakes without deleting and re-adding transactions.
-
-### UI Interaction
-
-**Transaction List Item**:
-
-- Add `cursor-pointer` class on hover
-- Add `onDoubleClick` event handler
-- Show visual feedback (slight background change) on hover
-- Maintain existing delete button functionality
-
-**CSS Updates**:
-
-```css
-.transaction-item {
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.transaction-item:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-```
-
-### Edit Flow
-
-```
-User double-clicks transaction
-  ↓
-Open TransactionForm in edit mode
-  ↓
-Pre-populate form with transaction data
-  ↓
-User modifies fields
-  ↓
-User clicks "Update Transaction"
-  ↓
-Validate form
-  ↓
-Calculate category spent amount changes
-  ↓
-Update transaction in database
-  ↓
-Update affected categories' spent amounts
-  ↓
-Refresh UI
-  ↓
-Close modal
-```
-
-### Category Spent Amount Updates
-
-When editing a transaction, we need to handle three scenarios:
-
-**1. Amount Changed (same category)**:
-
-```typescript
-const oldSpent = category.spentAmount;
-const newSpent = oldSpent - oldTransaction.amount + newTransaction.amount;
-```
-
-**2. Category Changed (same amount)**:
-
-```typescript
-// Old category
-oldCategory.spentAmount -= transaction.amount;
-
-// New category
-newCategory.spentAmount += transaction.amount;
-```
-
-**3. Both Amount and Category Changed**:
-
-```typescript
-// Old category
-oldCategory.spentAmount -= oldTransaction.amount;
-
-// New category
-newCategory.spentAmount += newTransaction.amount;
-```
-
-### Component Updates
-
-**TransactionList.tsx**:
-
-```typescript
-<div
-  className="transaction-item"
-  onDoubleClick={() => onEdit(transaction)}
-  style={{ cursor: "pointer" }}
->
-  {/* Transaction content */}
-</div>
-```
-
-**TransactionForm.tsx**:
-
-```typescript
-interface TransactionFormProps {
-  transaction?: Transaction; // If provided, form is in edit mode
-  onSubmit: (data: TransactionFormData) => Promise<void>;
-  onCancel: () => void;
-  loading?: boolean;
-}
-
-// In component
-const isEditMode = !!transaction;
-const modalTitle = isEditMode
-  ? "Edit Transaction"
-  : getTransactionModalTitle(formData.type);
-const submitButtonText = isEditMode ? "Update Transaction" : "Add Transaction";
-```
-
-**BudgetDashboard.tsx** (or parent component):
-
-```typescript
-const [editingTransaction, setEditingTransaction] =
-  useState<Transaction | null>(null);
-
-const handleEditTransaction = (transaction: Transaction) => {
-  setEditingTransaction(transaction);
-  setShowTransactionModal(true);
-};
-
-const handleUpdateTransaction = async (data: TransactionFormData) => {
-  if (!editingTransaction) return;
-
-  // Calculate category changes
-  const oldCategoryId = editingTransaction.categoryId;
-  const newCategoryId = data.categoryId;
-  const oldAmount = editingTransaction.amount;
-  const newAmount = data.amount;
-
-  // Update transaction
-  const updatedTransaction = {
-    ...editingTransaction,
-    ...data,
-    updatedAt: new Date().toISOString(),
-  };
-
-  // Update categories
-  if (oldCategoryId === newCategoryId) {
-    // Same category, just update amount
-    updateCategorySpent(oldCategoryId, -oldAmount + newAmount);
-  } else {
-    // Different category, update both
-    updateCategorySpent(oldCategoryId, -oldAmount);
-    updateCategorySpent(newCategoryId, newAmount);
-  }
-
-  // Save to backend
-  await updateTransactionAPI(updatedTransaction);
-
-  // Refresh UI
-  loadBudget();
-  setEditingTransaction(null);
-  setShowTransactionModal(false);
-};
-```
-
-### Error Handling
-
-**Validation Errors**:
-
-- Show inline errors for invalid fields
-- Keep modal open with user's changes
-- Highlight problematic fields
-
-**API Errors**:
-
-- Show error toast/notification
-- Keep modal open with user's changes
-- Allow retry or cancel
-
-**Optimistic Updates**:
-
-- Update UI immediately
-- Revert if API call fails
-- Show error message
-
-### Testing Strategy
-
-**Unit Tests**:
-
-- Test category spent amount calculations for all scenarios
-- Test form validation in edit mode
-- Test double-click event handler
-
-**Integration Tests**:
-
-- Test full edit flow: double-click → edit → save → verify
-- Test category changes update spent amounts correctly
-- Test error handling and rollback
-
-**Manual Testing**:
-
-- Double-click various transactions
-- Edit amount, category, description, date
-- Verify spent amounts update correctly
-- Test with transactions in different categories
-- Test error scenarios (network failure, validation errors)
-
----
-
-## User Timezone and Location Management Design
-
-### Overview
-
-Implement proper timezone handling to ensure users see the correct current month and dates based on their local timezone, not UTC or server time. This fixes the critical bug where users see the wrong month (e.g., December instead of November on Nov 30 at 7:22 PM EST).
-
-### Problem Analysis
-
-**Current Bug**:
-
-- Date: November 30, 2025, 7:22 PM EST
-- Expected: Show November budget
-- Actual: Shows December budget
-- Root Cause: Application using UTC time (which is already December 1, 2025 at 00:22 UTC)
-
-**UTC vs EST Conversion**:
-
-```
-November 30, 2025, 7:22 PM EST = November 30, 2025, 19:22 EST
-UTC Time: December 1, 2025, 00:22 UTC (5 hours ahead)
-```
-
-### Solution Architecture
-
-#### 1. User Timezone Detection and Storage
-
-**Registration Flow**:
-
-```typescript
-// During user registration
-const detectUserTimezone = (): string => {
-  // Primary: Browser timezone API
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  // Fallback: Geolocation-based timezone detection
-  if (!timezone) {
-    return detectTimezoneFromLocation();
-  }
-
-  return timezone; // e.g., "America/New_York", "America/Toronto"
-};
-
-// Store in user profile
-interface User {
-  userId: string;
-  email: string;
-  timezone: string; // IANA timezone identifier
-  location?: {
-    country: string;
-    city: string;
-    zipCode: string;
-  };
-  // ... other fields
-}
-```
-
-**User Profile API Updates**:
-
-```typescript
-// Update user profile endpoint
-PUT /auth/profile
+```javascript
+// Tip Content (S3 or DynamoDB)
 {
-  "timezone": "America/New_York",
-  "location": {
-    "country": "United States",
-    "city": "New York",
-    "zipCode": "10001"
-  }
+  PK: "TIP#tip-001",
+  SK: "CONTENT",
+  tipId: "tip-001",
+  title: "The 50/30/20 Rule Explained",
+  content: "A simple budgeting framework: 50% needs, 30% wants, 20% savings...",
+  category: "budgeting_basics",
+  tags: ["budgeting", "beginner", "savings"],
+  readTimeMinutes: 2,
+  difficulty: "beginner",
+  actionable: true,
+  relatedCategories: ["savings", "expenses"],
+  createdAt: "2026-01-15T00:00:00Z"
+}
+
+// Personalized Tip Triggers
+{
+  trigger: "overspending_dining",
+  condition: "user.categorySpending.dining > user.categoryBudget.dining * 1.2",
+  tipTemplate: "You've spent {overspentPercent}% more on dining this month. Here are 5 ways to cut back without sacrificing enjoyment...",
+  tips: ["meal-prep-basics", "restaurant-alternatives", "lunch-packing"]
+}
+
+// User Tip Interaction
+{
+  PK: "USER#user123",
+  SK: "TIP_INTERACTION#tip-001",
+  tipId: "tip-001",
+  action: "saved",  // saved, dismissed, viewed
+  timestamp: "2026-02-01T10:30:00Z"
 }
 ```
 
-#### 2. Timezone-Aware Date Calculations
+#### 3.3 Personalization Logic
 
-**Current Month Calculation**:
+```javascript
+// Tip selection algorithm
+function selectDailyTip(user, spendingData) {
+  const triggers = [
+    { condition: isOverspendingCategory, priority: 1 },
+    { condition: hasNoEmergencyFund, priority: 2 },
+    { condition: highDebtToIncomeRatio, priority: 3 },
+    { condition: lowSavingsRate, priority: 4 },
+    { condition: newUser, priority: 5 },
+  ];
 
-```typescript
-// Replace getCurrentMonthString() with timezone-aware version
-const getCurrentMonthString = (userTimezone: string): string => {
-  const now = new Date();
-
-  // Convert to user's timezone
-  const userDate = new Date(
-    now.toLocaleString("en-US", {
-      timeZone: userTimezone,
-    })
-  );
-
-  const year = userDate.getFullYear();
-  const month = String(userDate.getMonth() + 1).padStart(2, "0");
-
-  return `${year}-${month}`;
-};
-
-// Usage in components
-const currentMonth = getCurrentMonthString(user.timezone);
-```
-
-**Today String Calculation**:
-
-```typescript
-const getTodayString = (userTimezone: string): string => {
-  const now = new Date();
-
-  // Convert to user's timezone
-  const userDate = new Date(
-    now.toLocaleString("en-US", {
-      timeZone: userTimezone,
-    })
-  );
-
-  return userDate.toISOString().split("T")[0]; // YYYY-MM-DD
-};
-```
-
-#### 3. Settings Page for Location Management
-
-**Location Settings Component**:
-
-```typescript
-interface LocationSettings {
-  country: string;
-  city: string;
-  zipCode: string;
-  timezone: string; // Auto-calculated from location
-}
-
-const LocationSettingsForm: React.FC = () => {
-  const [location, setLocation] = useState<LocationSettings>();
-  const [loading, setLoading] = useState(false);
-
-  const handleLocationUpdate = async (newLocation: LocationSettings) => {
-    setLoading(true);
-
-    // Auto-detect timezone from location
-    const timezone = await getTimezoneFromLocation(newLocation);
-
-    // Update user profile
-    await updateUserProfile({
-      ...newLocation,
-      timezone,
-    });
-
-    // Refresh current month calculation
-    window.location.reload(); // Force recalculation
-
-    setLoading(false);
-  };
-
-  return (
-    <form onSubmit={handleLocationUpdate}>
-      <input name="country" placeholder="Country" />
-      <input name="city" placeholder="City" />
-      <input name="zipCode" placeholder="Zip Code" />
-      <button type="submit" disabled={loading}>
-        Update Location
-      </button>
-    </form>
-  );
-};
-```
-
-#### 4. Timezone Service Integration
-
-**Timezone Detection Service**:
-
-```typescript
-// Use external service for location-to-timezone mapping
-const getTimezoneFromLocation = async (location: {
-  country: string;
-  city: string;
-  zipCode: string;
-}): Promise<string> => {
-  try {
-    // Option 1: Use Google Maps Timezone API
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${API_KEY}`
-    );
-
-    // Option 2: Use TimeZoneDB API
-    // Option 3: Use built-in browser geolocation + timezone mapping
-
-    return response.timeZoneId; // e.g., "America/New_York"
-  } catch (error) {
-    console.error("Timezone detection failed:", error);
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // Find highest priority matching trigger
+  for (const trigger of triggers) {
+    if (trigger.condition(user, spendingData)) {
+      return selectTipForTrigger(trigger, user.viewedTips);
+    }
   }
-};
+
+  // Default: random tip from unviewed pool
+  return selectRandomUnviewedTip(user.viewedTips);
+}
 ```
 
-### Implementation Strategy
-
-#### Phase 1: Fix Current Month Bug (Critical)
-
-1. Update `getCurrentMonthString()` to use user's timezone
-2. Store timezone in user profile during registration
-3. Load timezone from user profile on app startup
-4. Test with EST, PST, UTC edge cases
-
-#### Phase 2: Location Settings (High Priority)
-
-1. Add Settings page with location form
-2. Implement timezone auto-detection from location
-3. Add timezone change handling with app refresh
-4. Test location updates and timezone changes
-
-#### Phase 3: Edge Case Handling (Medium Priority)
-
-1. Handle daylight saving time transitions
-2. Handle users traveling across timezones
-3. Add timezone validation and error handling
-4. Implement offline timezone caching
-
-### Data Flow
+#### 3.4 Correctness Properties
 
 ```
-User Registration
-  ↓
-Detect Browser Timezone
-  ↓
-Store in User Profile
-  ↓
-App Startup
-  ↓
-Load User Timezone
-  ↓
-Calculate Current Month (Timezone-Aware)
-  ↓
-Display Correct Budget Month
-```
+Property 3.1: Tip Freshness
+  ∀ daily tip request:
+    returned tip MUST NOT be in user's last 30 viewed tips
+    OR all tips have been viewed (cycle through)
 
-### Testing Strategy
+Property 3.2: Personalization Relevance
+  ∀ personalized tip:
+    tip.relatedCategories MUST intersect with user's active budget categories
 
-**Critical Test Cases**:
-
-```typescript
-// Test timezone edge cases
-describe("Timezone Handling", () => {
-  test("EST user at 11:30 PM Nov 30 sees November budget", () => {
-    const mockDate = new Date("2025-11-30T23:30:00-05:00"); // EST
-    const currentMonth = getCurrentMonthString("America/New_York");
-    expect(currentMonth).toBe("2025-11");
-  });
-
-  test("UTC user at 4:30 AM Dec 1 sees December budget", () => {
-    const mockDate = new Date("2025-12-01T04:30:00Z"); // UTC
-    const currentMonth = getCurrentMonthString("UTC");
-    expect(currentMonth).toBe("2025-12");
-  });
-
-  test("PST user at 9:30 PM Nov 30 sees November budget", () => {
-    const mockDate = new Date("2025-11-30T21:30:00-08:00"); // PST
-    const currentMonth = getCurrentMonthString("America/Los_Angeles");
-    expect(currentMonth).toBe("2025-11");
-  });
-});
+Property 3.3: Save/Dismiss Persistence
+  ∀ tip save or dismiss action:
+    action MUST be persisted to user's tip interactions
+    subsequent feed requests MUST respect saved/dismissed status
 ```
 
 ---
 
-## Critical Bug Fixes Design - Requirements 42-45
+### 4. Educational Content (Requirement 50)
 
-### Requirement 42: Fix Onboarding Budget Creation Month Mismatch
-
-#### Problem Analysis
-
-**Current Bug**:
-
-- Frontend sends: `currentMonth: "2026-01"`
-- Backend creates budget with: `month: "2026-02"`
-- User cannot find their budget after onboarding
-
-**Root Cause Investigation**:
-Based on the auth service code, the issue appears to be in how `currentMonth` is being processed. The debug logs show extensive month verification, but the mismatch still occurs.
-
-#### Solution Design
-
-**1. Backend Month Handling Fix**:
-
-```javascript
-// In auth service onboarding endpoint
-const handleOnboardingRequest = async (requestBody) => {
-  // CRITICAL: Use the exact month value from frontend
-  const currentMonth = requestBody.currentMonth;
-
-  // Validation: Ensure month format is YYYY-MM
-  if (!/^\d{4}-\d{2}$/.test(currentMonth)) {
-    throw new Error(`Invalid month format: ${currentMonth}. Expected YYYY-MM`);
-  }
-
-  // NO DATE MANIPULATION - use exact value
-  console.log("MONTH DEBUG - Using exact frontend value:", currentMonth);
-
-  const budget = {
-    PK: `FAMILY#${familyId}`,
-    SK: `BUDGET#${currentMonth}`, // Use exact value
-    month: currentMonth, // Use exact value
-    // ... rest of budget object
-  };
-
-  // Additional validation before save
-  if (budget.month !== requestBody.currentMonth) {
-    throw new Error(
-      `Month mismatch detected: expected ${requestBody.currentMonth}, got ${budget.month}`
-    );
-  }
-
-  await dynamoHelpers.putItem(budget);
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: "Onboarding completed successfully",
-      budgetCreated: true,
-      month: currentMonth, // Return exact value used
-      debugInfo: {
-        receivedMonth: requestBody.currentMonth,
-        savedMonth: budget.month,
-        monthsMatch: budget.month === requestBody.currentMonth,
-      },
-    }),
-  };
-};
-```
-
-**2. Frontend Month Consistency**:
-
-```typescript
-// Ensure frontend sends consistent month format
-const completeOnboarding = async (selections: OnboardingSelections) => {
-  const currentMonth = getCurrentMonthString(); // Must return YYYY-MM format
-
-  console.log("Frontend sending currentMonth:", currentMonth);
-
-  const response = await fetch("/auth/onboarding", {
-    method: "POST",
-    body: JSON.stringify({
-      ...selections,
-      currentMonth: currentMonth, // Exact format: "2026-01"
-    }),
-  });
-
-  const result = await response.json();
-
-  // Verify month consistency in response
-  if (result.month !== currentMonth) {
-    console.error("Month mismatch in response:", {
-      sent: currentMonth,
-      received: result.month,
-    });
-  }
-
-  return result;
-};
-```
-
-**3. Enhanced Debugging**:
-
-```javascript
-// Add comprehensive logging throughout the flow
-const debugMonthFlow = (stage, data) => {
-  console.log(`MONTH DEBUG [${stage}]:`, {
-    timestamp: new Date().toISOString(),
-    stage: stage,
-    data: data,
-    type: typeof data.month || typeof data.currentMonth,
-  });
-};
-
-// Usage throughout onboarding flow
-debugMonthFlow("REQUEST_RECEIVED", requestBody);
-debugMonthFlow("BUDGET_CREATED", budget);
-debugMonthFlow("RESPONSE_SENT", responseData);
-```
-
-#### Testing Strategy
-
-**Unit Tests**:
-
-```javascript
-describe("Onboarding Month Handling", () => {
-  test("should preserve exact month value from frontend", () => {
-    const requestBody = { currentMonth: "2026-01" };
-    const budget = createBudgetFromOnboarding(requestBody);
-    expect(budget.month).toBe("2026-01");
-  });
-
-  test("should reject invalid month formats", () => {
-    const requestBody = { currentMonth: "January 2026" };
-    expect(() => createBudgetFromOnboarding(requestBody)).toThrow();
-  });
-});
-```
-
-### Requirement 43: Add User Logout Functionality
-
-#### Problem Analysis
-
-**Current Issue**: No visible logout option on budget page, users cannot log out
-
-#### Solution Design
-
-**1. Header Layout Update**:
-
-```typescript
-// Add logout to budget page header
-const BudgetPageHeader: React.FC = () => {
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    // Clear authentication tokens
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("idToken");
-
-    // Clear any cached user data
-    localStorage.removeItem("userData");
-    localStorage.removeItem("currentBudget");
-
-    // Redirect to login
-    navigate("/auth");
-  };
-
-  return (
-    <header className="budget-header">
-      <div className="header-left">
-        <h1>
-          {monthName} {year}
-        </h1>
-        <p className="remaining-budget">${remainingAmount} left to budget</p>
-      </div>
-
-      <div className="header-right">
-        <button onClick={goToToday} className="today-btn">
-          Today
-        </button>
-        <button onClick={goToPrevMonth} className="nav-btn">
-          ←
-        </button>
-        <button onClick={goToNextMonth} className="nav-btn">
-          →
-        </button>
-        <button onClick={handleLogout} className="logout-btn">
-          Sign Out
-        </button>
-      </div>
-    </header>
-  );
-};
-```
-
-**2. Sidebar Logout Option**:
-
-```typescript
-// Add logout to sidebar navigation
-const Sidebar: React.FC = () => {
-  return (
-    <aside className="sidebar">
-      {/* Navigation items */}
-      <nav className="sidebar-nav">
-        <a href="/budget">📊 Budget</a>
-        <a href="/accounts">🏦 Accounts</a>
-        <a href="/settings">⚙️ Settings</a>
-      </nav>
-
-      {/* User section at bottom */}
-      <div className="sidebar-user">
-        <div className="user-info">
-          <span className="user-name">{user.firstName}</span>
-          <span className="user-email">{user.email}</span>
-        </div>
-        <button onClick={handleLogout} className="logout-link">
-          Sign out
-        </button>
-      </div>
-    </aside>
-  );
-};
-```
-
-**3. Logout Confirmation (Optional)**:
-
-```typescript
-const LogoutConfirmModal: React.FC<{
-  isOpen: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}> = ({ isOpen, onConfirm, onCancel }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h3>Sign Out</h3>
-        <p>Are you sure you want to sign out?</p>
-        <div className="modal-actions">
-          <button onClick={onCancel} className="btn-secondary">
-            Cancel
-          </button>
-          <button onClick={onConfirm} className="btn-primary">
-            Sign Out
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-```
-
-**4. Styling**:
-
-```css
-.logout-btn {
-  background: transparent;
-  border: 1px solid #e5e7eb;
-  color: #6b7280;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.logout-btn:hover {
-  background: #f9fafb;
-  color: #374151;
-}
-
-.logout-link {
-  background: none;
-  border: none;
-  color: #6b7280;
-  cursor: pointer;
-  font-size: 14px;
-  text-decoration: underline;
-}
-
-.logout-link:hover {
-  color: #374151;
-}
-```
-
-### Requirement 44: Improve Onboarding Error Handling
-
-#### Problem Analysis
-
-**Current Issues**:
-
-- Generic error messages
-- No retry options
-- User input lost on errors
-- No clear guidance on what went wrong
-
-#### Solution Design
-
-**1. Enhanced Error Handling**:
-
-```typescript
-interface OnboardingError {
-  type: "network" | "validation" | "server" | "budget_creation";
-  message: string;
-  details?: string;
-  retryable: boolean;
-  supportContact?: boolean;
-}
-
-const handleOnboardingError = (error: any): OnboardingError => {
-  // Network errors
-  if (error.name === "NetworkError" || !navigator.onLine) {
-    return {
-      type: "network",
-      message: "Connection problem. Please check your internet and try again.",
-      retryable: true,
-    };
-  }
-
-  // Validation errors
-  if (error.status === 400) {
-    return {
-      type: "validation",
-      message: "Please check your selections and try again.",
-      details: error.message,
-      retryable: true,
-    };
-  }
-
-  // Server errors
-  if (error.status >= 500) {
-    return {
-      type: "server",
-      message: "Server error. Our team has been notified.",
-      retryable: true,
-      supportContact: true,
-    };
-  }
-
-  // Budget creation specific
-  if (error.message?.includes("budget")) {
-    return {
-      type: "budget_creation",
-      message: "There was a problem creating your budget. Please try again.",
-      retryable: true,
-      supportContact: true,
-    };
-  }
-
-  // Generic fallback
-  return {
-    type: "server",
-    message: "Something went wrong. Please try again.",
-    retryable: true,
-    supportContact: true,
-  };
-};
-```
-
-**2. Error Display Component**:
-
-```typescript
-const OnboardingErrorDisplay: React.FC<{
-  error: OnboardingError;
-  onRetry: () => void;
-  onContactSupport: () => void;
-}> = ({ error, onRetry, onContactSupport }) => {
-  return (
-    <div className="error-container">
-      <div className="error-icon">⚠️</div>
-      <h3 className="error-title">Oops! Something went wrong</h3>
-      <p className="error-message">{error.message}</p>
-
-      {error.details && (
-        <details className="error-details">
-          <summary>Technical details</summary>
-          <pre>{error.details}</pre>
-        </details>
-      )}
-
-      <div className="error-actions">
-        {error.retryable && (
-          <button onClick={onRetry} className="btn-primary">
-            Try Again
-          </button>
-        )}
-
-        {error.supportContact && (
-          <button onClick={onContactSupport} className="btn-secondary">
-            Contact Support
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
-```
-
-**3. State Preservation**:
-
-```typescript
-const OnboardingPage: React.FC = () => {
-  const [selections, setSelections] = useState<OnboardingSelections>(() => {
-    // Restore from localStorage on error recovery
-    const saved = localStorage.getItem("onboarding_draft");
-    return saved ? JSON.parse(saved) : getDefaultSelections();
-  });
-
-  const [error, setError] = useState<OnboardingError | null>(null);
-
-  // Save draft on every change
-  useEffect(() => {
-    localStorage.setItem("onboarding_draft", JSON.stringify(selections));
-  }, [selections]);
-
-  const handleSubmit = async () => {
-    try {
-      setError(null);
-      await completeOnboarding(selections);
-
-      // Clear draft on success
-      localStorage.removeItem("onboarding_draft");
-
-      navigate("/budget");
-    } catch (err) {
-      const onboardingError = handleOnboardingError(err);
-      setError(onboardingError);
-
-      // Keep selections for retry
-      // Don't clear localStorage
-    }
-  };
-
-  const handleRetry = () => {
-    setError(null);
-    handleSubmit();
-  };
-
-  return (
-    <div className="onboarding-page">
-      {error ? (
-        <OnboardingErrorDisplay
-          error={error}
-          onRetry={handleRetry}
-          onContactSupport={() => window.open("mailto:support@budgetbuddy.com")}
-        />
-      ) : (
-        <OnboardingForm
-          selections={selections}
-          onChange={setSelections}
-          onSubmit={handleSubmit}
-        />
-      )}
-    </div>
-  );
-};
-```
-
-### Requirement 45: Validate Month Consistency Across Services
-
-#### Problem Analysis
-
-**Current Issues**:
-
-- Month format inconsistencies between services
-- No validation at API boundaries
-- Timezone-related month calculation errors
-- Difficult to debug month-related issues
-
-#### Solution Design
-
-**1. Month Format Validation Middleware**:
-
-```typescript
-// Shared validation utility
-export const validateMonthFormat = (month: string): boolean => {
-  const monthRegex = /^\d{4}-\d{2}$/;
-  if (!monthRegex.test(month)) return false;
-
-  const [year, monthNum] = month.split("-").map(Number);
-  return year >= 2020 && year <= 2030 && monthNum >= 1 && monthNum <= 12;
-};
-
-// API Gateway middleware
-const monthValidationMiddleware = (req: any, res: any, next: any) => {
-  const monthFields = ["month", "currentMonth", "targetMonth"];
-
-  for (const field of monthFields) {
-    if (req.body[field] && !validateMonthFormat(req.body[field])) {
-      return res.status(400).json({
-        error: "Invalid month format",
-        field: field,
-        value: req.body[field],
-        expected: 'YYYY-MM format (e.g., "2026-01")',
-      });
-    }
-  }
-
-  next();
-};
-```
-
-**2. Timezone-Aware Month Calculation**:
-
-```typescript
-// Centralized month calculation service
-class MonthService {
-  static getCurrentMonth(timezone: string): string {
-    const now = new Date();
-    const userDate = new Date(
-      now.toLocaleString("en-US", { timeZone: timezone })
-    );
-
-    const year = userDate.getFullYear();
-    const month = String(userDate.getMonth() + 1).padStart(2, "0");
-
-    const result = `${year}-${month}`;
-
-    // Log for debugging
-    console.log("MonthService.getCurrentMonth:", {
-      timezone,
-      utcTime: now.toISOString(),
-      userTime: userDate.toISOString(),
-      calculatedMonth: result,
-    });
-
-    return result;
-  }
-
-  static validateMonthConsistency(
-    frontendMonth: string,
-    backendMonth: string,
-    context: string
-  ): void {
-    if (frontendMonth !== backendMonth) {
-      const error = new Error(`Month mismatch in ${context}`);
-      console.error("Month consistency validation failed:", {
-        context,
-        frontendMonth,
-        backendMonth,
-        timestamp: new Date().toISOString(),
-      });
-      throw error;
-    }
-  }
-}
-```
-
-**3. Enhanced Logging and Debugging**:
-
-```typescript
-// Month operation audit logger
-class MonthAuditLogger {
-  static logMonthOperation(operation: string, data: any): void {
-    const logEntry = {
-      timestamp: new Date().toISOString(),
-      operation,
-      data,
-      userAgent:
-        typeof window !== "undefined" ? window.navigator.userAgent : "server",
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    };
-
-    console.log("MONTH_AUDIT:", JSON.stringify(logEntry, null, 2));
-
-    // In production, send to monitoring service
-    if (process.env.NODE_ENV === "production") {
-      // Send to CloudWatch, DataDog, etc.
-    }
-  }
-}
-
-// Usage throughout the application
-MonthAuditLogger.logMonthOperation("BUDGET_CREATION", {
-  requestedMonth: requestBody.currentMonth,
-  calculatedMonth: currentMonth,
-  userTimezone: user.timezone,
-});
-```
-
-**4. Admin Debugging Tools**:
-
-```typescript
-// Admin endpoint for month debugging
-app.get("/admin/debug/month/:userId", async (req, res) => {
-  const { userId } = req.params;
-
-  try {
-    const user = await getUserById(userId);
-    const currentMonth = MonthService.getCurrentMonth(user.timezone);
-    const budgets = await getBudgetsForUser(userId);
-
-    const debugInfo = {
-      user: {
-        id: userId,
-        timezone: user.timezone,
-        location: user.location,
-      },
-      time: {
-        utc: new Date().toISOString(),
-        userLocal: new Date().toLocaleString("en-US", {
-          timeZone: user.timezone,
-        }),
-        calculatedMonth: currentMonth,
-      },
-      budgets: budgets.map((b) => ({
-        id: b.id,
-        month: b.month,
-        createdAt: b.createdAt,
-      })),
-    };
-
-    res.json(debugInfo);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-```
-
-### Implementation Priority
-
-**Phase 1 (Critical - Week 1)**:
-
-1. Fix onboarding month mismatch (Requirement 42)
-2. Add logout functionality (Requirement 43)
-
-**Phase 2 (High Priority - Week 2)**: 3. Improve error handling (Requirement 44) 4. Add month validation (Requirement 45)
-
-**Testing Strategy**:
-
-- Unit tests for each component
-- Integration tests for complete flows
-- Manual testing with different timezones
-- Error scenario testing
-- Performance testing for validation middleware
-  November 30, 2025, 19:22 EST = December 1, 2025, 00:22 UTC (5 hours ahead)
-
-````
-
-### Data Model Updates
-
-#### User Profile Extension
-
-```typescript
-interface User {
-  userId: string;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  timezone: string;           // NEW: IANA timezone (e.g., "America/New_York")
-  location?: {                // NEW: User's location
-    country: string;
-    city: string;
-    zipCode: string;
-    coordinates?: {
-      latitude: number;
-      longitude: number;
-    };
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-````
-
-### Timezone Detection on Registration
-
-**Flow**:
-
-```
-User registers
-  ↓
-Detect timezone using browser API
-  ↓
-Optionally: Request geolocation for more accuracy
-  ↓
-Store timezone in user profile
-  ↓
-Use timezone for all date operations
-```
-
-**Implementation**:
-
-```typescript
-const detectUserTimezone = (): string => {
-  // Use Intl API to get IANA timezone
-  return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  // Returns: "America/New_York", "America/Toronto", etc.
-};
-
-const detectUserLocation = async (): Promise<Location | null> => {
-  if (!navigator.geolocation) {
-    return null;
-  }
-
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        // Use reverse geocoding API to get location details
-        resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      () => resolve(null)
-    );
-  });
-};
-```
-
-### Current Month Calculation
-
-**Problem**: Current implementation likely uses:
-
-```typescript
-// WRONG - Uses UTC
-const currentMonth = new Date().getUTCMonth();
-const currentYear = new Date().getUTCFullYear();
-```
-
-**Solution**: Use user's timezone:
-
-```typescript
-// CORRECT - Uses user's local timezone
-const getCurrentMonthInTimezone = (
-  timezone: string
-): { month: number; year: number } => {
-  const now = new Date();
-
-  // Format date in user's timezone
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-  });
-
-  const parts = formatter.formatToParts(now);
-  const year = parseInt(parts.find((p) => p.type === "year")?.value || "0");
-  const month = parseInt(parts.find((p) => p.type === "month")?.value || "0");
-
-  return { month, year };
-};
-
-// Usage
-const userTimezone = "America/New_York";
-const { month, year } = getCurrentMonthInTimezone(userTimezone);
-// On Nov 30, 2025 7:22 PM EST: month = 11, year = 2025 ✓
-```
-
-### Timezone Utility Functions
-
-Create `packages/web-app/src/utils/timezoneHelpers.ts`:
-
-````typescript
-/**
- * Gets the current date/time in a specific timezone
- */
-
----
-
-## Family ID Mismatch Fix Design - Requirement 46
-
-### Problem Analysis
-
-**Critical Issue**: Users complete onboarding successfully but cannot access their AI-generated budgets due to family ID mismatch between services.
-
-**Root Cause**:
-- **Auth Service** (onboarding): Uses `familyId` from user's DynamoDB profile → `FAMILY#family_user_1767574326611_5kyfa7d61`
-- **Budget Service** (retrieval): Uses `familyId` from JWT (often null) or fallback → `FAMILY#family_94c8e448-3021-702b-57bb-6eaac79e1ab0`
-- **Result**: Different partition keys cause "No budgets exist in backend" despite successful creation
-
-**Impact**:
-- Users cannot access budgets after onboarding completion
-- 2+ days of troubleshooting with partial fixes applied
-- Critical P0 bug blocking user onboarding flow
-
-### Solution Design
-
-**1. Centralized Family ID Resolution Service**:
-
-```typescript
-// Create shared utility: backend/layers/utils/familyIdResolver.js
-class FamilyIdResolver {
-  static async resolveFamilyId(
-    userId: string,
-    jwtFamilyId?: string,
-    dynamoHelpers?: any
-  ): Promise<string> {
-    console.log("FamilyIdResolver.resolveFamilyId:", {
-      userId,
-      jwtFamilyId,
-      timestamp: new Date().toISOString()
-    });
-
-    // Step 1: Try JWT familyId if available
-    if (jwtFamilyId) {
-      console.log("Using familyId from JWT:", jwtFamilyId);
-      return jwtFamilyId;
-    }
-
-    // Step 2: Lookup familyId from user profile in DynamoDB
-    if (dynamoHelpers) {
-      try {
-        const userProfile = await dynamoHelpers.getItem(
-          `USER#${userId}`,
-          "PROFILE"
-        );
-        if (userProfile?.familyId) {
-          console.log("Using familyId from DynamoDB profile:", userProfile.familyId);
-          return userProfile.familyId;
-        }
-      } catch (error) {
-        console.error("Failed to lookup familyId from DynamoDB:", error);
-      }
-    }
-
-    // Step 3: Consistent fallback pattern
-    const fallbackFamilyId = `family_${userId}`;
-    console.log("Using fallback familyId:", fallbackFamilyId);
-    return fallbackFamilyId;
-  }
-
-  static logFamilyIdResolution(
-    service: string,
-    operation: string,
-    userId: string,
-    familyId: string,
-    source: 'jwt' | 'dynamodb' | 'fallback'
-  ): void {
-    console.log("FAMILY_ID_RESOLUTION:", {
-      service,
-      operation,
-      userId,
-      familyId,
-      source,
-      partitionKey: `FAMILY#${familyId}`,
-      timestamp: new Date().toISOString()
-    });
-  }
-}
-
-module.exports = { FamilyIdResolver };
-````
-
-**2. Auth Service Integration**:
-
-```javascript
-// Update backend/functions/auth/index.js onboarding endpoint
-const { FamilyIdResolver } = require("/opt/nodejs/familyIdResolver");
-
-// In onboarding completion handler
-const handleOnboardingCompletion = async (event, userId) => {
-  const requestBody = JSON.parse(event.body);
-
-  // Use centralized family ID resolution
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    userId,
-    null, // JWT doesn't have familyId during onboarding
-    dynamoHelpers
-  );
-
-  FamilyIdResolver.logFamilyIdResolution(
-    "auth-service",
-    "onboarding-budget-creation",
-    userId,
-    familyId,
-    "dynamodb"
-  );
-
-  // Create budget with resolved familyId
-  const budget = {
-    PK: `FAMILY#${familyId}`,
-    SK: `BUDGET#${requestBody.currentMonth}`,
-    entityType: "BUDGET",
-    budgetId: generateId.budget(),
-    familyId: familyId,
-    month: requestBody.currentMonth,
-    // ... rest of budget data
-  };
-
-  await dynamoHelpers.putItem(budget);
-
-  // CRITICAL: Immediate verification
-  const verification = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
-    `BUDGET#${requestBody.currentMonth}`
-  );
-
-  if (!verification) {
-    console.error("BUDGET_VERIFICATION_FAILED:", {
-      familyId,
-      month: requestBody.currentMonth,
-      partitionKey: `FAMILY#${familyId}`,
-      sortKey: `BUDGET#${requestBody.currentMonth}`,
-    });
-
-    throw new Error("Budget creation verification failed");
-  }
-
-  console.log("BUDGET_VERIFICATION_SUCCESS:", {
-    familyId,
-    month: requestBody.currentMonth,
-    budgetId: verification.budgetId,
-  });
-
-  return {
-    statusCode: 200,
-    headers: getCorsHeaders(origin),
-    body: JSON.stringify({
-      message: "Onboarding completed successfully",
-      budgetCreated: true,
-      familyId: familyId,
-      month: requestBody.currentMonth,
-      debugInfo: {
-        partitionKey: `FAMILY#${familyId}`,
-        sortKey: `BUDGET#${requestBody.currentMonth}`,
-        verified: true,
-      },
-    }),
-  };
-};
-```
-
-**3. Budget Service Integration**:
-
-```javascript
-// Update backend/functions/budget/index.js
-const { FamilyIdResolver } = require("/opt/nodejs/familyIdResolver");
-
-// Update getBudgets function
-async function getBudgets(event, user) {
-  logger.info("Getting budgets for family", {
-    userId: user.userId,
-    familyId: user.familyId,
-  });
-
-  // Use centralized family ID resolution
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId, // From JWT
-    dynamoHelpers
-  );
-
-  FamilyIdResolver.logFamilyIdResolution(
-    "budget-service",
-    "get-budgets",
-    user.userId,
-    familyId,
-    user.familyId ? "jwt" : "dynamodb"
-  );
-
-  // Query with resolved familyId
-  const budgets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
-    FilterExpression: "entityType = :entityType",
-    ExpressionAttributeValues: {
-      ":entityType": "BUDGET",
-    },
-  });
-
-  console.log("BUDGET_QUERY_RESULT:", {
-    familyId,
-    partitionKey: `FAMILY#${familyId}`,
-    budgetsFound: budgets.length,
-    budgetMonths: budgets.map((b) => b.month),
-  });
-
-  // Transform and return budgets
-  const formattedBudgets = budgets.map((budget) => ({
-    budgetId: budget.budgetId,
-    familyId: budget.familyId,
-    month: budget.month,
-    totalIncome: budget.totalIncome,
-    totalSavings: budget.totalSavings,
-    totalExpenses: budget.totalExpenses,
-    remainingBalance: budget.remainingBalance,
-    groups: budget.groups,
-    isAIGenerated: budget.isAIGenerated,
-    createdAt: budget.createdAt,
-    updatedAt: budget.updatedAt,
-  }));
-
-  formattedBudgets.sort((a, b) => b.month.localeCompare(a.month));
-
-  return successResponse(
-    {
-      budgets: formattedBudgets,
-      count: formattedBudgets.length,
-      debugInfo: {
-        familyId,
-        partitionKey: `FAMILY#${familyId}`,
-        queryMethod: user.familyId ? "jwt" : "dynamodb-lookup",
-      },
-    },
-    "Budgets retrieved successfully"
-  );
-}
-
-// Apply same pattern to all budget functions:
-// - createBudget, getCurrentBudget, getBudget, updateBudget, deleteBudget
-```
-
-### Implementation Priority
-
-**Phase 1 (Critical - Immediate)**:
-
-1. Create `FamilyIdResolver` utility in shared layer
-2. Update Auth service onboarding endpoint
-3. Update Budget service `getBudgets` function
-4. Add comprehensive logging
-
-**Phase 2 (High Priority - Next)**:
-
-1. Update remaining Budget service functions (createBudget, getCurrentBudget, etc.)
-2. Add error handling and validation
-3. Implement backward compatibility
-4. Add monitoring and alerting
-
-### Success Criteria
-
-- ✅ Users can access AI-generated budgets immediately after onboarding
-- ✅ Auth and Budget services use identical familyId resolution logic
-- ✅ Comprehensive logging enables quick troubleshooting
-- ✅ Backward compatibility maintained for existing users
-- ✅ Zero family ID mismatch errors in production logs
-
----
-
-### Timezone Utility Functions (Continued)
-
-Create `packages/web-app/src/utils/timezoneHelpers.ts`:
-
-```typescript
-/**
- * Gets the current date/time in a specific timezone
- */
-export const getCurrentDateInTimezone = (timezone: string): Date => {
-  const now = new Date();
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-    hour12: false,
-  });
-
-  const parts = formatter.formatToParts(now);
-  const year = parseInt(parts.find((p) => p.type === "year")?.value || "0");
-  const month =
-    parseInt(parts.find((p) => p.type === "month")?.value || "1") - 1;
-  const day = parseInt(parts.find((p) => p.type === "day")?.value || "1");
-  const hour = parseInt(parts.find((p) => p.type === "hour")?.value || "0");
-  const minute = parseInt(parts.find((p) => p.type === "minute")?.value || "0");
-  const second = parseInt(parts.find((p) => p.type === "second")?.value || "0");
-
-  return new Date(year, month, day, hour, minute, second);
-};
-
-/**
- * Gets the current month and year in a specific timezone
- */
-export const getCurrentMonthInTimezone = (
-  timezone: string
-): { month: number; year: number } => {
-  const date = getCurrentDateInTimezone(timezone);
-  return {
-    month: date.getMonth() + 1, // 1-12
-    year: date.getFullYear(),
-  };
-};
-
-/**
- * Formats a date in a specific timezone
- */
-export const formatDateInTimezone = (
-  date: Date,
-  timezone: string,
-  format: Intl.DateTimeFormatOptions
-): string => {
-  return new Intl.DateTimeFormat("en-US", {
-    ...format,
-    timeZone: timezone,
-  }).format(date);
-};
-
-/**
- * Checks if a date is "today" in a specific timezone
- */
-export const isTodayInTimezone = (date: Date, timezone: string): boolean => {
-  const today = getCurrentDateInTimezone(timezone);
-  const checkDate = new Date(date);
-
-  return (
-    checkDate.getFullYear() === today.getFullYear() &&
-    checkDate.getMonth() === today.getMonth() &&
-    checkDate.getDate() === today.getDate()
-  );
-};
-```
-
-### Settings Page - Location Update
-
-**UI Design**:
-
-```
-┌─────────────────────────────────────────────────────────┐
-│ Settings                                                 │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│ Location & Timezone                                      │
-│                                                          │
-│ Country:        [United States          ▼]              │
-│ City:           [New York                ]              │
-│ Zip/Postal:     [10001                   ]              │
-│                                                          │
-│ Detected Timezone: America/New_York (EST)               │
-│ Current Local Time: Nov 30, 2025 7:22 PM                │
-│                                                          │
-│ [Update Location]                                        │
-│                                                          │
-└─────────────────────────────────────────────────────────┘
-```
-
-**Location to Timezone Mapping**:
-
-- Use a timezone lookup library (e.g., `geo-tz` or `tzlookup`)
-- Or use a geocoding API (Google Maps, OpenStreetMap)
-- Store mapping of zip codes to timezones
-
-```typescript
-const getTimezoneFromLocation = async (
-  country: string,
-  city: string,
-  zipCode: string
-): Promise<string> => {
-  // Option 1: Use a library
-  // import { find } from 'geo-tz';
-  // const timezone = find(latitude, longitude)[0];
-
-  // Option 2: Use a lookup table for common locations
-  const locationTimezoneMap: Record<string, string> = {
-    "US-10001": "America/New_York",
-    "US-90001": "America/Los_Angeles",
-    "CA-M5H": "America/Toronto",
-    // ... more mappings
-  };
-
-  const key = `${country}-${zipCode}`;
-  return locationTimezoneMap[key] || "America/New_York"; // Default fallback
-};
-```
-
-### State Management
-
-**User Context**:
-
-```typescript
-interface UserContext {
-  user: User;
-  timezone: string;
-  updateLocation: (location: Location) => Promise<void>;
-  getCurrentMonth: () => { month: number; year: number };
-}
-
-const UserProvider: React.FC = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [timezone, setTimezone] = useState<string>("America/New_York");
-
-  useEffect(() => {
-    // Load user profile with timezone
-    loadUserProfile().then((profile) => {
-      setUser(profile);
-      setTimezone(profile.timezone || detectUserTimezone());
-    });
-  }, []);
-
-  const updateLocation = async (location: Location) => {
-    const newTimezone = await getTimezoneFromLocation(
-      location.country,
-      location.city,
-      location.zipCode
-    );
-
-    // Update user profile
-    await updateUserProfile({
-      ...user,
-      location,
-      timezone: newTimezone,
-    });
-
-    setTimezone(newTimezone);
-  };
-
-  const getCurrentMonth = () => {
-    return getCurrentMonthInTimezone(timezone);
-  };
-
-  return (
-    <UserContext.Provider
-      value={{ user, timezone, updateLocation, getCurrentMonth }}
-    >
-      {children}
-    </UserContext.Provider>
-  );
-};
-```
-
-### API Updates
-
-**User Profile Endpoint**:
-
-```typescript
-// GET /user/profile
-Response: {
-  userId: string;
-  email: string;
-  timezone: string;
-  location?: {
-    country: string;
-    city: string;
-    zipCode: string;
-  };
-}
-
-// PUT /user/profile
-Request: {
-  timezone?: string;
-  location?: {
-    country: string;
-    city: string;
-    zipCode: string;
-  };
-}
-```
-
-### Migration Strategy
-
-**For Existing Users**:
-
-1. Detect timezone on next login
-2. Prompt user to confirm/update location
-3. Store timezone in profile
-4. Use detected timezone going forward
-
-**Default Behavior**:
-
-- If no timezone stored: Detect from browser
-- If detection fails: Use UTC with warning
-- Prompt user to set location in settings
-
-### Testing Strategy
-
-**Unit Tests**:
-
-- Test `getCurrentMonthInTimezone()` with various timezones
-- Test edge cases: midnight, month boundaries, DST transitions
-- Test timezone detection
-
-**Integration Tests**:
-
-- Test full flow: register → detect timezone → show correct month
-- Test location update → timezone change → UI updates
-- Test with different timezones (EST, PST, UTC, etc.)
-
-**Manual Testing**:
-
-- Test on Nov 30, 2025 at 7:22 PM EST → Should show November
-- Test on Nov 30, 2025 at 11:59 PM EST → Should show November
-- Test on Dec 1, 2025 at 12:00 AM EST → Should show December
-- Test timezone change → Verify month updates immediately
-
-### Edge Cases
-
-1. **Daylight Saving Time**: Use IANA timezones which handle DST automatically
-2. **Traveling Users**: Allow manual timezone override in settings
-3. **Invalid Locations**: Fallback to browser-detected timezone
-4. **No Geolocation Permission**: Use browser timezone API only
-5. **Ambiguous Zip Codes**: Prompt user to select from multiple options
-
-### Performance Considerations
-
-- Cache timezone calculations
-- Avoid repeated timezone conversions
-- Store formatted dates when possible
-- Use memoization for expensive operations
-
----
-
-## Transaction Date Validation Design (Critical Bug Fix)
-
-### Overview
-
-Implement real-time date validation in the transaction modal to prevent users from accidentally adding transactions to the wrong month's budget. This addresses a critical bug where transactions with dates outside the current month are added without warning.
-
-### Validation Logic
-
-```typescript
-interface DateValidationResult {
-  isValid: boolean;
-  warning?: string;
-  transactionMonth?: string;
-  transactionMonthName?: string;
-  currentMonthName?: string;
-}
-
-const validateTransactionDate = (
-  transactionDate: string, // YYYY-MM-DD format
-  currentBudgetMonth: string // YYYY-MM format
-): DateValidationResult => {
-  if (!transactionDate || !currentBudgetMonth) {
-    return { isValid: true };
-  }
-
-  // Extract month from transaction date
-  const txDate = new Date(transactionDate);
-  const txMonth = `${txDate.getFullYear()}-${String(
-    txDate.getMonth() + 1
-  ).padStart(2, "0")}`;
-
-  // Check if transaction month matches current budget month
-  if (txMonth === currentBudgetMonth) {
-    return { isValid: true };
-  }
-
-  // Format month names for display
-  const txMonthName = txDate.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-
-  const currentMonthName = new Date(
-    currentBudgetMonth + "-01"
-  ).toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-
-  return {
-    isValid: false,
-    warning: `This transaction date (${txMonthName}) is outside the current budget month (${currentMonthName})`,
-    transactionMonth: txMonth,
-    transactionMonthName: txMonthName,
-    currentMonthName: currentMonthName,
-  };
-};
-```
-
-### UI Components
-
-#### Warning Banner Component
-
-**Location**: Below date input field in transaction modal
-
-**Layout**:
+#### 4.1 Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ ⚠️ This transaction date (December 2025) is outside the    │
-│    current budget month (November 2025)                     │
-│                                                             │
-│ [Add to Current Month] [Switch to December] [Change Date]  │
+│                  Learning Service                            │
+│               (backend/functions/learn)                      │
+├─────────────────────────────────────────────────────────────┤
+│  Content Structure:                                          │
+│  Course → Modules → Lessons → Quiz                           │
+├─────────────────────────────────────────────────────────────┤
+│  API Endpoints:                                              │
+│  GET /api/learn/courses           - List all courses         │
+│  GET /api/learn/courses/:id       - Course details           │
+│  GET /api/learn/lessons/:id       - Lesson content           │
+│  POST /api/learn/lessons/:id/complete - Mark complete        │
+│  POST /api/learn/quiz/:id/submit  - Submit quiz answers      │
+│  GET /api/learn/progress          - User's learning progress │
+│  GET /api/learn/badges            - User's earned badges     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Styling**:
+#### 4.2 Data Model
 
-- Background: Orange/yellow (`bg-yellow-50`)
-- Border: Orange (`border-yellow-300`)
-- Icon: Warning icon in orange
-- Buttons: Three action buttons with distinct styling
+```javascript
+// Course Definition
+{
+  PK: "COURSE#budgeting-101",
+  SK: "METADATA",
+  courseId: "budgeting-101",
+  title: "Budgeting 101",
+  description: "Master the fundamentals of zero-based budgeting",
+  difficulty: "beginner",
+  estimatedMinutes: 45,
+  moduleCount: 5,
+  lessonCount: 12,
+  badge: {
+    id: "budgeting-master",
+    name: "Budgeting Master",
+    icon: "🎓"
+  },
+  prerequisites: [],
+  recommendedFor: ["new_users", "no_budget_history"]
+}
 
-#### Date Input Highlighting
+// Lesson Content
+{
+  PK: "COURSE#budgeting-101",
+  SK: "LESSON#01-01",
+  lessonId: "01-01",
+  moduleId: "01",
+  title: "What is Zero-Based Budgeting?",
+  content: "Zero-based budgeting means giving every dollar a job...",
+  readTimeMinutes: 3,
+  hasQuiz: true,
+  resources: [
+    { type: "checklist", title: "Budget Setup Checklist", url: "..." }
+  ],
+  nextLesson: "01-02"
+}
 
-**When date is outside current month**:
+// User Learning Progress
+{
+  PK: "USER#user123",
+  SK: "LEARN_PROGRESS#budgeting-101",
+  courseId: "budgeting-101",
+  completedLessons: ["01-01", "01-02", "01-03"],
+  quizScores: { "01": 80, "02": 100 },
+  progressPercent: 25,
+  startedAt: "2026-01-20T10:00:00Z",
+  lastActivityAt: "2026-02-01T14:30:00Z",
+  streak: 5  // consecutive days
+}
 
-- Border color: Orange (`border-yellow-500`)
-- Border width: 2px
-- Add warning icon next to input
+// Badge Award
+{
+  PK: "USER#user123",
+  SK: "BADGE#budgeting-master",
+  badgeId: "budgeting-master",
+  name: "Budgeting Master",
+  icon: "🎓",
+  earnedAt: "2026-02-01T15:00:00Z",
+  courseId: "budgeting-101"
+}
+```
 
-**When date is valid**:
+#### 4.3 Course Catalog (Phase 1)
 
-- Normal border color: Gray (`border-gray-300`)
-- No warning icon
+| Course ID           | Title               | Lessons | Est. Time | Difficulty   |
+| ------------------- | ------------------- | ------- | --------- | ------------ |
+| budgeting-101       | Budgeting 101       | 12      | 45 min    | Beginner     |
+| debt-freedom        | Debt Freedom        | 10      | 35 min    | Intermediate |
+| emergency-fund      | Emergency Fund      | 8       | 25 min    | Beginner     |
+| investing-basics    | Investing Basics    | 15      | 60 min    | Intermediate |
+| retirement-planning | Retirement Planning | 10      | 40 min    | Advanced     |
 
-### User Flow
+#### 4.4 Gamification
+
+```javascript
+// Badge Types
+const badges = [
+  { id: "first-lesson", name: "First Steps", condition: "complete 1 lesson" },
+  { id: "course-complete", name: "Graduate", condition: "complete any course" },
+  { id: "streak-7", name: "Week Warrior", condition: "7-day learning streak" },
+  {
+    id: "streak-30",
+    name: "Monthly Master",
+    condition: "30-day learning streak",
+  },
+  { id: "quiz-ace", name: "Quiz Ace", condition: "100% on any quiz" },
+  {
+    id: "all-courses",
+    name: "Financial Scholar",
+    condition: "complete all courses",
+  },
+];
+
+// Streak Calculation
+function calculateStreak(user) {
+  const today = new Date().toISOString().split("T")[0];
+  const lastActivity = user.lastActivityAt.split("T")[0];
+
+  if (today === lastActivity) return user.streak;
+  if (daysBetween(lastActivity, today) === 1) return user.streak + 1;
+  return 1; // Reset streak
+}
+```
+
+#### 4.5 Correctness Properties
 
 ```
-User enters transaction date
-  ↓
-Validate date against current month
-  ↓
-If date outside current month:
-  ↓
-  Display warning banner
-  ↓
-  Disable submit button
-  ↓
-  User selects action:
-    ├─ "Add to Current Month" → Record in current month, close modal
-    ├─ "Switch to [Month]" → Navigate to correct month, preserve form data
-    └─ "Change Date" → Dismiss warning, allow date modification
-  ↓
-If date within current month:
-  ↓
-  No warning, allow submission
+Property 4.1: Progress Accuracy
+  ∀ user progress:
+    progressPercent = (completedLessons.length / course.lessonCount) * 100
+
+Property 4.2: Badge Award Conditions
+  ∀ badge award:
+    badge.condition MUST be satisfied before award
+    badge MUST NOT be awarded twice to same user
+
+Property 4.3: Lesson Sequence
+  ∀ lesson completion:
+    IF lesson has prerequisites THEN
+      all prerequisites MUST be completed first
+
+Property 4.4: Quiz Scoring
+  ∀ quiz submission:
+    score = (correctAnswers / totalQuestions) * 100
+    score MUST be between 0 and 100
 ```
-
-### State Management
-
-**New State Variables**:
-
-```typescript
-const [dateValidation, setDateValidation] = useState<DateValidationResult>({
-  isValid: true,
-});
-const [showDateWarning, setShowDateWarning] = useState(false);
-```
-
-**Validation Trigger**:
-
-- On date input change (real-time validation)
-- On form mount (if editing existing transaction)
-- On month change (if modal is open)
-
-### Integration Points
-
-1. **Transaction Modal**: Add validation logic to date input handler
-2. **Month Navigation**: Pass current month to transaction modal
-3. **Form Submission**: Block submission if date warning is active
-4. **Month Switching**: Implement callback to switch months from modal
 
 ---
 
-## Empty Month Budget Display Fix (Critical Bug Fix)
+## API Endpoints Summary
 
-### Overview
+### New Endpoints
 
-Fix the critical bug where budget data from other months is incorrectly displayed when viewing months without budgets. This ensures users only see budget data for months where they explicitly created budgets.
+| Method | Endpoint                        | Description      | Auth  |
+| ------ | ------------------------------- | ---------------- | ----- |
+| GET    | /admin/dashboard                | Platform metrics | Admin |
+| GET    | /admin/users                    | Search users     | Admin |
+| GET    | /admin/users/:id                | User details     | Admin |
+| POST   | /admin/users/:id/disable        | Disable account  | Admin |
+| POST   | /admin/users/:id/enable         | Enable account   | Admin |
+| POST   | /admin/users/:id/reset-password | Trigger reset    | Admin |
+| GET    | /admin/health                   | System health    | Admin |
+| GET    | /admin/audit                    | Audit log        | Admin |
+| GET    | /api/comparison/summary         | Peer comparison  | User  |
+| GET    | /api/comparison/preferences     | Get prefs        | User  |
+| PUT    | /api/comparison/preferences     | Update prefs     | User  |
+| GET    | /api/tips/feed                  | Tip feed         | User  |
+| GET    | /api/tips/daily                 | Daily tip        | User  |
+| POST   | /api/tips/:id/save              | Save tip         | User  |
+| POST   | /api/tips/:id/dismiss           | Dismiss tip      | User  |
+| GET    | /api/tips/saved                 | Saved tips       | User  |
+| GET    | /api/learn/courses              | List courses     | User  |
+| GET    | /api/learn/courses/:id          | Course details   | User  |
+| GET    | /api/learn/lessons/:id          | Lesson content   | User  |
+| POST   | /api/learn/lessons/:id/complete | Complete lesson  | User  |
+| POST   | /api/learn/quiz/:id/submit      | Submit quiz      | User  |
+| GET    | /api/learn/progress             | User progress    | User  |
+| GET    | /api/learn/badges               | User badges      | User  |
 
-### Root Cause Analysis
+---
 
-**Current Issue**:
+## DynamoDB Table Updates
 
-- User navigates to a month without a budget
-- Budget state is not properly cleared
-- Previous month's budget data remains displayed
-- OR: Budget loading logic is not filtering by month correctly
+### New Access Patterns
 
-**Expected Behavior**:
+| Access Pattern             | PK                                       | SK                           | GSI                   |
+| -------------------------- | ---------------------------------------- | ---------------------------- | --------------------- |
+| Get peer group stats       | PEERGROUP#{region}#{familySize}#{income} | STATS#{month}                | -                     |
+| Get user comparison prefs  | USER#{userId}                            | COMPARISON_PREFS             | -                     |
+| Get tip by ID              | TIP#{tipId}                              | CONTENT                      | -                     |
+| Get user tip interactions  | USER#{userId}                            | TIP_INTERACTION#{tipId}      | -                     |
+| Get course metadata        | COURSE#{courseId}                        | METADATA                     | -                     |
+| Get lesson content         | COURSE#{courseId}                        | LESSON#{lessonId}            | -                     |
+| Get user learning progress | USER#{userId}                            | LEARN_PROGRESS#{courseId}    | -                     |
+| Get user badges            | USER#{userId}                            | BADGE#{badgeId}              | -                     |
+| Get audit logs by date     | AUDIT#{month}                            | ACTION#{timestamp}#{adminId} | -                     |
+| Get audit logs by admin    | -                                        | -                            | GSI1: ADMIN#{adminId} |
+| Get daily metrics          | METRICS#DAILY                            | {date}                       | -                     |
 
-- When no budget exists for a month, display empty state
-- Only show budget data that matches the exact month being viewed
-- Clear previous budget data when switching months
+---
 
-### Fix Implementation
+## Implementation Phases
 
-#### 1. Budget Loading Logic
+### Phase 1: Foundation (Week 1-2)
 
-```typescript
-const loadBudget = async () => {
-  try {
-    setLoading(true);
+- Admin Web App MVP (user management, basic metrics)
+- Tips Feed with static content library
+- Basic comparison data aggregation job
 
-    // Clear previous budget data immediately
-    setBudget(null);
+### Phase 2: Engagement (Week 3-4)
 
-    // Fetch all budgets for user
-    const response = await fetch(`${API_BASE_URL}/budget`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("budgetbuddy_id_token")}`,
-        "Content-Type": "application/json",
-      },
-    });
+- Peer comparison UI and API
+- Personalized tips with AI (Bedrock)
+- Educational content structure and first course
 
-    if (response.ok) {
-      const data = await response.json();
+### Phase 3: Polish (Week 5-6)
 
-      if (data.budgets && data.budgets.length > 0) {
-        // Find budget for the EXACT month being viewed
-        const monthBudget = data.budgets.find(
-          (b: Budget) => b.month === currentMonth
-        );
+- Gamification (badges, streaks)
+- Additional courses
+- Advanced admin features
 
-        if (monthBudget) {
-          // Verify the budget month matches (double-check)
-          if (monthBudget.month === currentMonth) {
-            setBudget(monthBudget);
-          } else {
-            console.error(
-              "Budget month mismatch:",
-              monthBudget.month,
-              currentMonth
-            );
-            setBudget(null);
-          }
-        } else {
-          // No budget found for this month - set to null
-          setBudget(null);
-        }
-      } else {
-        // No budgets at all
-        setBudget(null);
-      }
-    } else {
-      // API error
-      setBudget(null);
+---
+
+## Testing Strategy
+
+### Property-Based Tests
+
+1. **Admin Auth**: All admin endpoints require valid admin JWT
+2. **Privacy**: Peer comparison never exposes individual data
+3. **Personalization**: Tips are relevant to user's spending patterns
+4. **Progress**: Learning progress calculations are accurate
+5. **Badges**: Badge conditions are correctly evaluated
+
+### Integration Tests
+
+1. Admin user management flow
+2. Peer comparison aggregation and retrieval
+3. Tip feed personalization
+4. Course completion and badge award
+
+---
+
+## Security Considerations
+
+1. **Admin Access**: Separate Cognito group, audit logging, IP allowlisting
+2. **Peer Data**: Anonymization, minimum group sizes, opt-out support
+3. **Content**: Sanitize all user-generated content (tip feedback)
+4. **Rate Limiting**: Prevent abuse of comparison and tips endpoints
+
+---
+
+### 5. Bill Reminders System (Requirement 52)
+
+#### 5.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Bills Service                             │
+│               (backend/functions/bills)                      │
+├─────────────────────────────────────────────────────────────┤
+│  API Endpoints:                                              │
+│  GET  /api/bills              - List all bills               │
+│  POST /api/bills              - Create bill reminder         │
+│  PUT  /api/bills/:id          - Update bill                  │
+│  POST /api/bills/:id/pay      - Mark bill as paid            │
+│  GET  /api/bills/calendar     - Calendar view data           │
+│  GET  /api/bills/upcoming     - Next 30 days bills           │
+├─────────────────────────────────────────────────────────────┤
+│  Scheduled Jobs (EventBridge):                               │
+│  - Daily 8AM: Check bills due in 7 days → notify             │
+│  - Daily 8AM: Check bills due in 3 days → notify             │
+│  - Daily 8AM: Check bills due today → notify                 │
+│  - Daily 1AM: Auto-schedule next recurring bills             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 5.2 Data Model
+
+```javascript
+// Bill Reminder
+{
+  PK: "FAMILY#family123",
+  SK: "BILL#bill-uuid-001",
+  billId: "bill-uuid-001",
+  name: "Electric Bill",
+  amount: 150.00,
+  dueDate: "2026-02-15",
+  categoryId: "cat-utilities",
+  status: "unpaid",  // unpaid, paid, overdue
+  isRecurring: true,
+  frequency: "monthly",  // weekly, bi-weekly, monthly, quarterly, annually
+  nextDueDate: "2026-03-15",
+  remindersSent: ["7day", "3day"],
+  paidDate: null,
+  transactionId: null,  // linked when paid
+  notes: "Account #12345",
+  createdAt: "2026-01-01T00:00:00Z",
+  GSI1PK: "BILLS#2026-02",  // For calendar queries
+  GSI1SK: "2026-02-15#bill-uuid-001"
+}
+```
+
+#### 5.3 Notification Schedule
+
+| Trigger        | Timing        | Message                              |
+| -------------- | ------------- | ------------------------------------ |
+| 7-day reminder | 7 days before | "Electric Bill ($150) due in 7 days" |
+| 3-day reminder | 3 days before | "Electric Bill ($150) due in 3 days" |
+| Due today      | On due date   | "Electric Bill ($150) is due today!" |
+| Overdue        | 1 day after   | "⚠️ Electric Bill ($150) is overdue" |
+
+#### 5.4 Correctness Properties
+
+```
+Property 5.1: Bill Status Transitions
+  Valid transitions: unpaid → paid, unpaid → overdue, overdue → paid
+  Invalid: paid → unpaid, paid → overdue
+
+Property 5.2: Recurring Bill Scheduling
+  WHEN bill is marked paid AND isRecurring = true:
+    nextDueDate MUST be calculated based on frequency
+    new bill record MUST be created for next occurrence
+
+Property 5.3: Transaction Creation on Payment
+  WHEN bill is marked paid:
+    transaction MUST be created with same amount, category, date
+    bill.transactionId MUST reference created transaction
+```
+
+---
+
+### 6. Spending Insights & Analytics (Requirement 53)
+
+#### 6.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  Insights Service                            │
+│              (backend/functions/insights)                    │
+├─────────────────────────────────────────────────────────────┤
+│  Aggregation Job (EventBridge - weekly):                     │
+│  1. Query user's transactions for period                     │
+│  2. Calculate category totals, trends, patterns              │
+│  3. Generate AI insights via Bedrock                         │
+│  4. Store insights for quick retrieval                       │
+├─────────────────────────────────────────────────────────────┤
+│  API Endpoints:                                              │
+│  GET /api/insights/weekly      - This week's insights        │
+│  GET /api/insights/monthly     - Monthly summary             │
+│  GET /api/insights/trends      - 6-month trend data          │
+│  GET /api/insights/patterns    - Spending patterns           │
+│  POST /api/insights/ask        - Ask AI about spending       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 6.2 Data Model
+
+```javascript
+// Weekly Insight
+{
+  PK: "USER#user123",
+  SK: "INSIGHT#2026-W05",
+  weekNumber: "2026-W05",
+  period: { start: "2026-01-27", end: "2026-02-02" },
+  summary: {
+    totalSpent: 1250.00,
+    totalIncome: 5000.00,
+    savingsRate: 0.18,
+    transactionCount: 45
+  },
+  categoryBreakdown: [
+    { category: "Groceries", amount: 320, change: -5, trend: "down" },
+    { category: "Dining", amount: 180, change: 25, trend: "up" },
+    { category: "Gas", amount: 85, change: 0, trend: "stable" }
+  ],
+  aiInsights: [
+    {
+      type: "alert",
+      icon: "⚠️",
+      title: "Dining spending up 25%",
+      message: "You spent $180 on dining this week, up from $144 last week.",
+      actionable: "Try meal prepping to reduce dining costs."
+    },
+    {
+      type: "positive",
+      icon: "🎉",
+      title: "Great savings rate!",
+      message: "You're saving 18% of income, above the recommended 15%."
     }
-  } catch (error) {
-    console.error("Error loading budget:", error);
-    setBudget(null);
-  } finally {
-    setLoading(false);
-  }
-};
-```
-
-#### 2. Month Change Handler
-
-```typescript
-const changeMonth = (direction: "prev" | "next") => {
-  // Clear current budget immediately
-  setBudget(null);
-
-  // Calculate new month
-  const [year, month] = currentMonth.split("-").map(Number);
-  const offset = direction === "prev" ? -1 : 1;
-  const date = new Date(year, month - 1 + offset, 1);
-  const newMonth = date.toISOString().slice(0, 7);
-
-  // Update month state (triggers useEffect to load budget)
-  setCurrentMonth(newMonth);
-};
-```
-
-#### 3. Empty State Display Logic
-
-```typescript
-// In render logic
-if (loading) {
-  return <LoadingSpinner />;
+  ],
+  patterns: {
+    peakSpendingDay: "Saturday",
+    topMerchant: "Amazon",
+    avgTransactionSize: 27.78
+  },
+  generatedAt: "2026-02-02T08:00:00Z"
 }
+```
 
-if (!budget) {
-  // Check if future month
-  if (isFutureMonth(currentMonth)) {
-    return <FutureMonthEmptyState />;
+#### 6.3 AI Insight Generation (Bedrock)
+
+```javascript
+// Prompt for Claude to generate insights
+const insightPrompt = `
+Analyze this user's weekly spending data and provide 3-5 actionable insights:
+
+Spending Summary:
+- Total spent: $${summary.totalSpent}
+- Categories: ${JSON.stringify(categoryBreakdown)}
+- Compared to last week: ${comparisonData}
+
+Generate insights in JSON format:
+[
+  {"type": "alert|positive|tip", "title": "...", "message": "...", "actionable": "..."}
+]
+
+Focus on: unusual patterns, opportunities to save, positive reinforcement.
+Keep messages friendly and encouraging, not judgmental.
+`;
+```
+
+#### 6.4 Trend Charts Data
+
+```javascript
+// GET /api/insights/trends response
+{
+  months: ["Sep", "Oct", "Nov", "Dec", "Jan", "Feb"],
+  spending: [3200, 3450, 3100, 4200, 3300, 3150],
+  income: [5000, 5000, 5000, 5500, 5000, 5000],
+  savings: [1800, 1550, 1900, 1300, 1700, 1850],
+  categoryTrends: {
+    groceries: [350, 380, 340, 420, 360, 320],
+    dining: [200, 180, 220, 350, 190, 180],
+    entertainment: [150, 120, 180, 280, 140, 100]
   }
+}
+```
 
-  // Past or current month with no budget
-  return (
-    <div className="text-center py-12">
-      <h2 className="text-xl font-semibold text-gray-700 mb-2">
-        No budget found for {getMonthName(currentMonth)}
-      </h2>
-      <p className="text-gray-500 mb-6">
-        You haven't created a budget for this month yet.
-      </p>
-      <button
-        onClick={() => navigate("/onboarding")}
-        className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-      >
-        Create Budget
-      </button>
-    </div>
+---
+
+### 7. Savings Goals System (Requirement 54)
+
+#### 7.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Goals Service                              │
+│               (backend/functions/goals)                      │
+├─────────────────────────────────────────────────────────────┤
+│  API Endpoints:                                              │
+│  GET  /api/goals              - List all goals               │
+│  POST /api/goals              - Create goal                  │
+│  PUT  /api/goals/:id          - Update goal                  │
+│  DELETE /api/goals/:id        - Delete goal                  │
+│  POST /api/goals/:id/contribute - Add contribution           │
+│  PUT  /api/goals/reorder      - Reorder priorities           │
+│  GET  /api/goals/:id/history  - Contribution history         │
+├─────────────────────────────────────────────────────────────┤
+│  Scheduled Jobs:                                             │
+│  - Weekly: Calculate progress, send updates                  │
+│  - On milestone: Send celebration notification               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 7.2 Data Model
+
+```javascript
+// Savings Goal
+{
+  PK: "FAMILY#family123",
+  SK: "GOAL#goal-uuid-001",
+  goalId: "goal-uuid-001",
+  name: "Emergency Fund",
+  icon: "🚨",
+  targetAmount: 10000.00,
+  currentAmount: 4500.00,
+  targetDate: "2026-12-31",
+  priority: 1,
+  status: "active",  // active, completed, paused, archived
+  linkedCategoryId: "cat-savings-emergency",
+  progressPercent: 45,
+  monthlyRequired: 500.00,  // to reach goal on time
+  milestones: {
+    "25": { reached: true, date: "2026-01-15" },
+    "50": { reached: false },
+    "75": { reached: false },
+    "100": { reached: false }
+  },
+  contributions: [
+    { date: "2026-02-01", amount: 500, source: "manual" },
+    { date: "2026-01-15", amount: 500, source: "category_link" }
+  ],
+  createdAt: "2025-10-01T00:00:00Z",
+  completedAt: null
+}
+```
+
+#### 7.3 Goal Templates
+
+```javascript
+const goalTemplates = [
+  {
+    id: "emergency",
+    name: "Emergency Fund",
+    icon: "🚨",
+    suggestedAmount: "3-6 months expenses",
+  },
+  { id: "vacation", name: "Vacation", icon: "✈️", suggestedAmount: null },
+  { id: "car", name: "New Car", icon: "🚗", suggestedAmount: null },
+  {
+    id: "home",
+    name: "Home Down Payment",
+    icon: "🏠",
+    suggestedAmount: "20% of home price",
+  },
+  { id: "wedding", name: "Wedding", icon: "💍", suggestedAmount: null },
+  { id: "education", name: "Education", icon: "🎓", suggestedAmount: null },
+  { id: "purchase", name: "Big Purchase", icon: "💻", suggestedAmount: null },
+  { id: "holiday", name: "Holiday Gifts", icon: "🎁", suggestedAmount: null },
+  { id: "custom", name: "Custom Goal", icon: "🎯", suggestedAmount: null },
+];
+```
+
+#### 7.4 Progress Calculation
+
+```javascript
+function calculateGoalProgress(goal) {
+  const progressPercent = Math.min(
+    100,
+    (goal.currentAmount / goal.targetAmount) * 100,
   );
-}
 
-// Only render budget UI if budget exists
-return <BudgetDisplay budget={budget} />;
+  let monthlyRequired = null;
+  if (goal.targetDate) {
+    const monthsRemaining = monthsBetween(
+      new Date(),
+      new Date(goal.targetDate),
+    );
+    const amountRemaining = goal.targetAmount - goal.currentAmount;
+    monthlyRequired =
+      monthsRemaining > 0 ? amountRemaining / monthsRemaining : amountRemaining;
+  }
+
+  return { progressPercent, monthlyRequired };
+}
 ```
 
-### Testing Strategy
+#### 7.5 Correctness Properties
 
-**Test Cases**:
+```
+Property 7.1: Progress Accuracy
+  progressPercent = (currentAmount / targetAmount) * 100
+  progressPercent MUST be capped at 100
 
-1. Navigate to month with budget → Should display budget
-2. Navigate to month without budget → Should display empty state
-3. Navigate from month with budget to month without → Should clear previous budget
-4. Create first budget in November → Past months should be empty
-5. Navigate to future month without budget → Should show "Start Planning" state
-6. Switch rapidly between months → Should not show wrong month's data
+Property 7.2: Milestone Triggers
+  WHEN progressPercent crosses 25, 50, 75, or 100:
+    milestone notification MUST be sent
+    milestone.reached MUST be set to true with date
 
-**Verification**:
+Property 7.3: Category Link Sync
+  WHEN transaction added to linkedCategoryId:
+    goal.currentAmount MUST increase by transaction amount
+    contribution record MUST be created with source="category_link"
+```
 
-- Check `budget.month` matches `currentMonth` in console
-- Verify budget state is null when no budget exists
-- Confirm no budget data from other months is displayed
+---
+
+### 8. Bank Account Sync - Plaid Integration (Requirement 55)
+
+#### 8.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Plaid Service                             │
+│               (backend/functions/plaid)                      │
+├─────────────────────────────────────────────────────────────┤
+│  Link Flow:                                                  │
+│  1. Frontend requests link token                             │
+│  2. User completes Plaid Link                                │
+│  3. Frontend sends public_token                              │
+│  4. Backend exchanges for access_token                       │
+│  5. Store encrypted token in Secrets Manager                 │
+├─────────────────────────────────────────────────────────────┤
+│  API Endpoints:                                              │
+│  POST /api/plaid/link-token    - Get Plaid Link token        │
+│  POST /api/plaid/exchange      - Exchange public token       │
+│  GET  /api/plaid/accounts      - List connected accounts     │
+│  POST /api/plaid/sync          - Manual sync trigger         │
+│  DELETE /api/plaid/accounts/:id - Disconnect account         │
+│  GET  /api/plaid/pending       - Pending transactions        │
+├─────────────────────────────────────────────────────────────┤
+│  Scheduled Sync (EventBridge - daily 3AM UTC):               │
+│  1. Get all users with connected accounts                    │
+│  2. Batch sync (1 request per account per day)               │
+│  3. AI categorize new transactions                           │
+│  4. Add to pending review queue                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 8.2 Data Model
+
+```javascript
+// Connected Bank Account
+{
+  PK: "USER#user123",
+  SK: "PLAID_ACCOUNT#acc-uuid-001",
+  accountId: "acc-uuid-001",
+  plaidAccountId: "plaid_acc_xxx",
+  institutionId: "ins_123",
+  institutionName: "Chase",
+  accountName: "Checking ****1234",
+  accountType: "checking",  // checking, savings, credit
+  currentBalance: 5432.10,
+  availableBalance: 5200.00,
+  lastSynced: "2026-02-01T03:00:00Z",
+  nextSyncAvailable: "2026-02-02T03:00:00Z",
+  status: "active",  // active, error, disconnected
+  accessTokenRef: "plaid/user123/acc-uuid-001",  // Secrets Manager ref
+  cursor: "CAoQAhgCIg...",  // Plaid sync cursor
+  createdAt: "2026-01-15T10:00:00Z"
+}
+
+// Pending Transaction (from Plaid)
+{
+  PK: "USER#user123",
+  SK: "PENDING_TXN#txn-uuid-001",
+  transactionId: "txn-uuid-001",
+  plaidTransactionId: "plaid_txn_xxx",
+  accountId: "acc-uuid-001",
+  amount: 45.67,
+  merchantName: "AMAZON.COM",
+  date: "2026-02-01",
+  suggestedCategory: "Shopping",
+  categoryConfidence: 0.92,
+  status: "pending_review",  // pending_review, approved, rejected
+  importedAt: "2026-02-01T03:15:00Z"
+}
+```
+
+#### 8.3 Cost Control Implementation
+
+```javascript
+// Daily sync limit enforcement
+async function canSyncAccount(userId, accountId) {
+  const account = await getAccount(userId, accountId);
+  const now = new Date();
+  const nextSync = new Date(account.nextSyncAvailable);
+
+  if (now < nextSync) {
+    const hoursRemaining = Math.ceil((nextSync - now) / (1000 * 60 * 60));
+    return {
+      allowed: false,
+      message: `Next sync available in ${hoursRemaining} hours`,
+    };
+  }
+  return { allowed: true };
+}
+
+// After successful sync
+async function updateSyncTimestamp(userId, accountId) {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(3, 0, 0, 0); // Next 3AM UTC
+
+  await updateAccount(userId, accountId, {
+    lastSynced: new Date().toISOString(),
+    nextSyncAvailable: tomorrow.toISOString(),
+  });
+}
+```
+
+#### 8.4 Mock Mode (Development)
+
+```javascript
+// Environment variable: PLAID_MOCK_MODE=true
+const mockTransactions = [
+  {
+    merchant: "WALMART",
+    amount: 87.43,
+    category: "Groceries",
+    date: "2026-02-01",
+  },
+  { merchant: "SHELL GAS", amount: 45.0, category: "Gas", date: "2026-02-01" },
+  {
+    merchant: "NETFLIX",
+    amount: 15.99,
+    category: "Entertainment",
+    date: "2026-01-28",
+  },
+  {
+    merchant: "STARBUCKS",
+    amount: 6.75,
+    category: "Dining",
+    date: "2026-01-28",
+  },
+  {
+    merchant: "AMAZON.COM",
+    amount: 34.99,
+    category: "Shopping",
+    date: "2026-01-27",
+  },
+];
+
+const mockAccounts = [
+  { name: "Chase Checking ****1234", type: "checking", balance: 5432.1 },
+  { name: "Chase Savings ****5678", type: "savings", balance: 12500.0 },
+  { name: "Amex ****9012", type: "credit", balance: -1234.56 },
+];
+```
+
+#### 8.5 AI Categorization
+
+```javascript
+// Prompt for transaction categorization
+const categorizationPrompt = `
+Categorize this bank transaction:
+Merchant: ${transaction.merchantName}
+Amount: $${transaction.amount}
+
+Categories: Groceries, Dining, Gas, Shopping, Entertainment, Healthcare,
+Utilities, Transportation, Housing, Personal Care, Education, Other
+
+Return JSON: {"category": "...", "confidence": 0.0-1.0}
+`;
+```
+
+---
+
+### 9. Receipt Scanning with AI Vision (Requirement 56)
+
+#### 9.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  Receipt Service                             │
+│              (backend/functions/receipt)                     │
+├─────────────────────────────────────────────────────────────┤
+│  Flow:                                                       │
+│  1. Mobile app captures receipt image                        │
+│  2. Image compressed and uploaded to S3                      │
+│  3. Lambda invokes Claude Haiku via Bedrock                  │
+│  4. AI extracts merchant, amount, date, category             │
+│  5. Return extracted data for user confirmation              │
+├─────────────────────────────────────────────────────────────┤
+│  API Endpoints:                                              │
+│  POST /api/receipt/upload      - Get presigned S3 URL        │
+│  POST /api/receipt/process     - Process uploaded receipt    │
+│  GET  /api/receipt/:id         - Get receipt image           │
+│  GET  /api/receipt/usage       - Daily scan usage            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 9.2 Data Model
+
+```javascript
+// Receipt Record
+{
+  PK: "USER#user123",
+  SK: "RECEIPT#rcpt-uuid-001",
+  receiptId: "rcpt-uuid-001",
+  s3Key: "receipts/user123/2026-02/rcpt-uuid-001.jpg",
+  extractedData: {
+    merchant: "Costco",
+    amount: 156.78,
+    date: "2026-02-01",
+    category: "Groceries",
+    confidence: 0.95
+  },
+  status: "processed",  // uploading, processing, processed, failed
+  transactionId: "txn-uuid-001",  // linked after confirmation
+  processedAt: "2026-02-01T14:30:00Z",
+  expiresAt: "2026-05-01T00:00:00Z",  // 90-day retention
+  createdAt: "2026-02-01T14:29:00Z"
+}
+
+// Daily Usage Tracking
+{
+  PK: "USER#user123",
+  SK: "RECEIPT_USAGE#2026-02-01",
+  date: "2026-02-01",
+  scansUsed: 3,
+  scansLimit: 10,  // Free tier limit
+  isPremium: false
+}
+```
+
+#### 9.3 AI Processing (Claude Haiku)
+
+```javascript
+// Receipt processing with Bedrock
+async function processReceipt(imageBase64) {
+  const prompt = `Extract from this receipt image:
+- merchant: store/business name
+- amount: total amount as number (e.g., 45.67)
+- date: purchase date as YYYY-MM-DD
+- category: one of [Groceries, Dining, Gas, Shopping, Entertainment, Healthcare, Utilities, Other]
+
+Return ONLY valid JSON: {"merchant":"","amount":0.00,"date":"","category":""}
+If unreadable, return: {"error":"Unable to extract receipt data"}`;
+
+  const response = await bedrockClient.invokeModel({
+    modelId: "anthropic.claude-3-haiku-20240307-v1:0",
+    body: JSON.stringify({
+      anthropic_version: "bedrock-2023-05-31",
+      max_tokens: 200,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: "image/jpeg",
+                data: imageBase64,
+              },
+            },
+            { type: "text", text: prompt },
+          ],
+        },
+      ],
+    }),
+  });
+
+  return JSON.parse(response.body).content[0].text;
+}
+```
+
+#### 9.4 Cost Control
+
+```javascript
+// Check daily limit before processing
+async function checkReceiptLimit(userId) {
+  const today = new Date().toISOString().split("T")[0];
+  const usage = await getUsage(userId, today);
+
+  const limit = usage?.isPremium ? Infinity : 10;
+  const used = usage?.scansUsed || 0;
+
+  if (used >= limit) {
+    return {
+      allowed: false,
+      message:
+        "Daily scan limit reached. Upgrade to Premium for unlimited scans.",
+    };
+  }
+  return { allowed: true, remaining: limit - used };
+}
+
+// Image compression before AI processing
+async function compressImage(imageBuffer) {
+  // Resize to max 1024px, compress to 80% quality
+  // Reduces token cost by ~60%
+  return sharp(imageBuffer)
+    .resize(1024, 1024, { fit: "inside" })
+    .jpeg({ quality: 80 })
+    .toBuffer();
+}
+```
+
+---
+
+### 10. Receipt-to-Bank Reconciliation (Requirement 57)
+
+#### 10.1 Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│               Reconciliation Service                         │
+│           (backend/functions/reconciliation)                 │
+├─────────────────────────────────────────────────────────────┤
+│  Triggered by:                                               │
+│  1. After Plaid sync imports new transactions                │
+│  2. After receipt is processed and confirmed                 │
+│  3. Manual reconciliation request                            │
+├─────────────────────────────────────────────────────────────┤
+│  API Endpoints:                                              │
+│  GET  /api/reconcile/status    - Reconciliation summary      │
+│  GET  /api/reconcile/unmatched - Unmatched items             │
+│  POST /api/reconcile/match     - Manual match                │
+│  POST /api/reconcile/unmatch   - Undo match                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 10.2 Matching Algorithm
+
+```javascript
+async function reconcileTransactions(userId) {
+  const bankTxns = await getPendingBankTransactions(userId);
+  const receiptTxns = await getUnmatchedReceiptTransactions(userId);
+
+  const matches = [];
+  const unmatched = { bank: [], receipt: [] };
+
+  for (const bankTxn of bankTxns) {
+    const match = findBestMatch(bankTxn, receiptTxns);
+
+    if (match.confidence >= 0.9) {
+      // Auto-match high confidence
+      matches.push({
+        bank: bankTxn,
+        receipt: match.receipt,
+        confidence: match.confidence,
+        auto: true,
+      });
+      receiptTxns.splice(receiptTxns.indexOf(match.receipt), 1);
+    } else if (match.confidence >= 0.6) {
+      // Suggest match for review
+      matches.push({
+        bank: bankTxn,
+        receipt: match.receipt,
+        confidence: match.confidence,
+        auto: false,
+      });
+    } else {
+      unmatched.bank.push(bankTxn);
+    }
+  }
+
+  unmatched.receipt = receiptTxns; // Remaining unmatched receipts
+  return { matches, unmatched };
+}
+
+function findBestMatch(bankTxn, receiptTxns) {
+  let bestMatch = { receipt: null, confidence: 0 };
+
+  for (const receipt of receiptTxns) {
+    let confidence = 0;
+
+    // Amount matching (40% weight)
+    const amountDiff = Math.abs(bankTxn.amount - receipt.amount);
+    if (amountDiff === 0) confidence += 0.4;
+    else if (amountDiff <= 0.5)
+      confidence += 0.3; // Tip tolerance
+    else if (amountDiff <= 2.0) confidence += 0.1;
+
+    // Date matching (30% weight)
+    const daysDiff = Math.abs(daysBetween(bankTxn.date, receipt.date));
+    if (daysDiff === 0) confidence += 0.3;
+    else if (daysDiff <= 1) confidence += 0.2;
+    else if (daysDiff <= 2) confidence += 0.1; // Pending transaction delay
+
+    // Merchant matching (30% weight)
+    const merchantSimilarity = fuzzyMatch(bankTxn.merchant, receipt.merchant);
+    confidence += merchantSimilarity * 0.3;
+
+    if (confidence > bestMatch.confidence) {
+      bestMatch = { receipt, confidence };
+    }
+  }
+
+  return bestMatch;
+}
+```
+
+#### 10.3 Data Model
+
+```javascript
+// Reconciliation Record
+{
+  PK: "USER#user123",
+  SK: "RECONCILE#2026-02-01#txn-001",
+  bankTransactionId: "bank-txn-001",
+  receiptTransactionId: "rcpt-txn-001",
+  matchConfidence: 0.95,
+  matchType: "auto",  // auto, manual, suggested
+  status: "verified",  // verified, mismatch, pending_review
+  amountDifference: 0.00,
+  reconciledAt: "2026-02-01T15:00:00Z"
+}
+
+// Transaction Status Extension
+{
+  // Added to existing transaction record
+  reconciliationStatus: "verified",  // verified, bank_only, receipt_only, mismatch
+  linkedReceiptId: "rcpt-uuid-001",
+  linkedBankTxnId: "bank-txn-001"
+}
+```
+
+#### 10.4 UI Status Indicators
+
+| Status       | Icon | Description                      |
+| ------------ | ---- | -------------------------------- |
+| Verified     | ✅   | Receipt matches bank transaction |
+| Bank Only    | 🏦   | Imported from bank, no receipt   |
+| Receipt Only | 📸   | Scanned receipt, not in bank yet |
+| Mismatch     | ⚠️   | Amount differs between sources   |
+| Pending      | ⏳   | Awaiting bank transaction        |
+
+---
+
+## New API Endpoints Summary (Features 5-10)
+
+| Method | Endpoint                  | Description            | Auth |
+| ------ | ------------------------- | ---------------------- | ---- |
+| GET    | /api/bills                | List all bills         | User |
+| POST   | /api/bills                | Create bill reminder   | User |
+| PUT    | /api/bills/:id            | Update bill            | User |
+| POST   | /api/bills/:id/pay        | Mark bill paid         | User |
+| GET    | /api/bills/calendar       | Calendar view          | User |
+| GET    | /api/bills/upcoming       | Next 30 days           | User |
+| GET    | /api/insights/weekly      | Weekly insights        | User |
+| GET    | /api/insights/monthly     | Monthly summary        | User |
+| GET    | /api/insights/trends      | 6-month trends         | User |
+| POST   | /api/insights/ask         | Ask AI                 | User |
+| GET    | /api/goals                | List goals             | User |
+| POST   | /api/goals                | Create goal            | User |
+| PUT    | /api/goals/:id            | Update goal            | User |
+| POST   | /api/goals/:id/contribute | Add contribution       | User |
+| PUT    | /api/goals/reorder        | Reorder priorities     | User |
+| POST   | /api/plaid/link-token     | Get Plaid Link token   | User |
+| POST   | /api/plaid/exchange       | Exchange token         | User |
+| GET    | /api/plaid/accounts       | List accounts          | User |
+| POST   | /api/plaid/sync           | Manual sync            | User |
+| DELETE | /api/plaid/accounts/:id   | Disconnect             | User |
+| GET    | /api/plaid/pending        | Pending transactions   | User |
+| POST   | /api/receipt/upload       | Get S3 presigned URL   | User |
+| POST   | /api/receipt/process      | Process receipt        | User |
+| GET    | /api/receipt/:id          | Get receipt image      | User |
+| GET    | /api/receipt/usage        | Daily usage            | User |
+| GET    | /api/reconcile/status     | Reconciliation summary | User |
+| GET    | /api/reconcile/unmatched  | Unmatched items        | User |
+| POST   | /api/reconcile/match      | Manual match           | User |
+
+---
+
+## New DynamoDB Access Patterns (Features 5-10)
+
+| Access Pattern           | PK                | SK                        | GSI                 |
+| ------------------------ | ----------------- | ------------------------- | ------------------- |
+| Get user bills           | FAMILY#{familyId} | BILL#{billId}             | -                   |
+| Get bills by month       | -                 | -                         | GSI1: BILLS#{month} |
+| Get user insights        | USER#{userId}     | INSIGHT#{week}            | -                   |
+| Get user goals           | FAMILY#{familyId} | GOAL#{goalId}             | -                   |
+| Get Plaid accounts       | USER#{userId}     | PLAID_ACCOUNT#{accountId} | -                   |
+| Get pending transactions | USER#{userId}     | PENDING_TXN#{txnId}       | -                   |
+| Get receipts             | USER#{userId}     | RECEIPT#{receiptId}       | -                   |
+| Get receipt usage        | USER#{userId}     | RECEIPT_USAGE#{date}      | -                   |
+| Get reconciliation       | USER#{userId}     | RECONCILE#{date}#{txnId}  | -                   |
+
+---
+
+## Cost Estimates Summary
+
+| Feature           | Service          | Monthly Cost (1000 users) |
+| ----------------- | ---------------- | ------------------------- |
+| Bill Reminders    | SNS, EventBridge | ~$5                       |
+| Spending Insights | Bedrock (Claude) | ~$20-30                   |
+| Savings Goals     | DynamoDB         | ~$2                       |
+| Bank Sync (Plaid) | Plaid API        | ~$600-1000 (mock: $0)     |
+| Receipt Scanning  | Bedrock (Haiku)  | ~$10-20                   |
+| Reconciliation    | Lambda           | ~$2                       |
+| **Total**         |                  | **~$640-1060**            |
+
+**Cost Optimization Notes:**
+
+- Plaid: 1 sync/day/account limit saves ~70% vs real-time
+- Receipts: Claude Haiku saves ~90% vs Textract
+- Insights: Weekly batch processing vs real-time
+- Mock mode: $0 for development/testing
 
 ---
 
 ## Implementation Priority
 
-**Critical Bug Fixes** (Implement immediately):
+### Sprint 1 (Week 1-2): Foundation
 
-1. Empty Month Budget Display Fix (Requirement 15)
-2. Transaction Date Validation (Requirement 14)
+1. Bill Reminders (Req 52) - Extends existing notification system
+2. Savings Goals (Req 54) - New feature, high engagement
 
-**Rationale**:
+### Sprint 2 (Week 3-4): Intelligence
 
-- Empty month bug causes data integrity issues and user confusion
-- Date validation bug causes transactions to be added to wrong months
-- Both bugs significantly impact core functionality
-- Both are relatively quick fixes with high impact
+3. Spending Insights (Req 53) - AI integration
+4. Receipt Scanning (Req 56) - AI Vision
 
----
+### Sprint 3 (Week 5-6): Integration
 
-## AI Budget Persistence After Month Navigation Fix (Requirement 16)
-
-### Problem Analysis
-
-**Current Bug Symptoms**:
-
-1. User completes AI onboarding for November
-2. Budget saves successfully (409 conflict = already exists)
-3. User switches to October (empty state - correct)
-4. User switches back to November
-5. `loadBudget()` calls GET /budget
-6. Backend returns "No budgets exist in backend"
-7. Frontend redirects to onboarding (incorrect)
-
-**Root Cause**:
-The backend `getBudgets` function IS working correctly and returning budgets. The issue is in the frontend logic:
-
-1. **Backend is correct**: The `getBudgets` function queries DynamoDB with `FAMILY#${familyId}` and returns all budgets
-2. **Frontend issue**: After the AI budget is saved and localStorage is cleared, when the user navigates back to November, the frontend checks:
-   - Backend returns budgets ✓
-   - Finds budget for November ✓
-   - BUT the console shows "No budgets exist in backend" - this is a logging issue
-3. **Actual problem**: The 409 conflict response is not being handled properly - the frontend treats it as an error instead of success
-
-### Solution Design
-
-#### Backend Changes
-
-**No changes needed** - the backend is working correctly:
-
-- `POST /budget` returns 409 when budget exists (correct behavior)
-- `GET /budget` returns all budgets for the family (working)
-- DynamoDB queries are correct
-
-#### Frontend Changes
-
-**1. Handle 409 Conflict as Success**
-
-In `saveBudgetToBackend()`:
-
-```typescript
-const saveBudgetToBackend = async (budgetData: Budget) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/budget`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        month: budgetData.month,
-        groups: budgetData.groups,
-        isAIGenerated: budgetData.isAIGenerated,
-      }),
-    });
-
-    // CRITICAL FIX: Treat 409 conflict as success (budget already exists)
-    if (response.ok || response.status === 409) {
-      console.log("[saveBudgetToBackend] Budget saved or already exists");
-
-      // Clear AI budget from localStorage after successful save
-      localStorage.removeItem("ai-generated-budget");
-
-      // If 409, fetch the existing budget to update local state
-      if (response.status === 409) {
-        console.log(
-          "[saveBudgetToBackend] Budget already exists, fetching from backend"
-        );
-        await loadBudget(); // Reload to get the existing budget
-      } else {
-        const savedBudget = await response.json();
-        if (savedBudget.data) {
-          setBudget(savedBudget.data);
-        }
-      }
-    } else {
-      const errorText = await response.text();
-      console.error("[saveBudgetToBackend] Failed to save budget:", errorText);
-    }
-  } catch (error) {
-    console.error("[saveBudgetToBackend] Error saving budget:", error);
-  }
-};
-```
-
-**2. Improve Budget Loading Logic**
-
-In `loadBudget()`:
-
-```typescript
-const loadBudget = async () => {
-  try {
-    // Clear budget state immediately
-    setBudget(null);
-    setLoading(true);
-
-    console.log("[loadBudget] Loading budget for month:", currentMonth);
-
-    // Fetch all budgets from backend
-    const response = await fetch(`${API_BASE_URL}/budget`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("budgetbuddy_id_token")}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      console.error("[loadBudget] Failed to fetch budgets:", response.status);
-      setLoading(false);
-      return;
-    }
-
-    const data = await response.json();
-    console.log("[loadBudget] Backend response:", data);
-
-    // Check if we have budgets
-    if (data.data && data.data.budgets && data.data.budgets.length > 0) {
-      console.log("[loadBudget] Found", data.data.budgets.length, "budgets");
-
-      // Find budget for the EXACT month being viewed
-      const monthBudget = data.data.budgets.find(
-        (b: Budget) => b.month === currentMonth
-      );
-
-      if (monthBudget) {
-        console.log("[loadBudget] Found budget for", currentMonth);
-        setBudget(monthBudget);
-        setLoading(false);
-        return;
-      }
-
-      // No budget for this month - show empty state
-      console.log("[loadBudget] No budget found for", currentMonth);
-      setBudget(null);
-      setLoading(false);
-      return;
-    }
-
-    // No budgets exist at all
-    console.log("[loadBudget] No budgets exist in backend");
-
-    // Only check for AI budget if this is the current month
-    const isCurrentMonth = currentMonth === getCurrentMonthString();
-    if (isCurrentMonth) {
-      const aiGeneratedBudget = localStorage.getItem("ai-generated-budget");
-
-      if (aiGeneratedBudget) {
-        console.log("[loadBudget] Using AI-generated budget for current month");
-        const parsedBudget = JSON.parse(aiGeneratedBudget);
-        const budget = createBudgetFromAIData(parsedBudget, currentMonth);
-
-        setBudget(budget);
-        await saveBudgetToBackend(budget);
-        setLoading(false);
-        return;
-      } else {
-        // No AI budget - redirect to onboarding
-        navigate("/onboarding");
-        return;
-      }
-    }
-
-    // Not current month and no budgets - show empty state
-    setBudget(null);
-    setLoading(false);
-  } catch (error) {
-    console.error("[loadBudget] Error loading budget:", error);
-    setBudget(null);
-    setLoading(false);
-  }
-};
-```
-
-**3. Add Helper Function**
-
-```typescript
-const createBudgetFromAIData = (parsedBudget: any, month: string): Budget => {
-  return {
-    id: `budget_${Date.now()}`,
-    userId: "mock_user_id",
-    month: month,
-    groups: [
-      {
-        id: "income-group",
-        name: "Income",
-        type: "income",
-        icon: "💰",
-        isCollapsed: false,
-        order: 1,
-        categories:
-          parsedBudget.income?.map((cat: any, index: number) => ({
-            ...cat,
-            spentAmount: 0,
-            transactions: [],
-            order: index + 1,
-            isRecurring: false,
-          })) || [],
-      },
-      {
-        id: "savings-group",
-        name: "Savings",
-        type: "savings",
-        icon: "💾",
-        isCollapsed: false,
-        order: 2,
-        categories:
-          parsedBudget.savings?.map((cat: any, index: number) => ({
-            ...cat,
-            spentAmount: 0,
-            transactions: [],
-            order: index + 1,
-            isRecurring: false,
-          })) || [],
-      },
-      {
-        id: "expenses-group",
-        name: "Expenses",
-        type: "expense",
-        icon: "💸",
-        isCollapsed: false,
-        order: 3,
-        categories:
-          parsedBudget.expenses?.map((cat: any, index: number) => ({
-            ...cat,
-            spentAmount: 0,
-            transactions: [],
-            order: index + 1,
-            isRecurring: false,
-          })) || [],
-      },
-    ],
-    isAIGenerated: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-};
-```
-
-### Data Flow
-
-**Correct Flow**:
-
-```
-1. User completes AI onboarding
-   ↓
-2. AI budget saved to localStorage
-   ↓
-3. Navigate to /budget
-   ↓
-4. loadBudget() called
-   ↓
-5. Backend returns empty (no budgets yet)
-   ↓
-6. Check localStorage for AI budget
-   ↓
-7. Create budget from AI data
-   ↓
-8. POST to backend (saves successfully)
-   ↓
-9. Clear localStorage
-   ↓
-10. User switches to October
-   ↓
-11. loadBudget() called
-   ↓
-12. Backend returns 1 budget (November)
-   ↓
-13. No match for October → show empty state
-   ↓
-14. User switches back to November
-   ↓
-15. loadBudget() called
-   ↓
-16. Backend returns 1 budget (November)
-   ↓
-17. Match found → display budget ✓
-```
-
-### API Response Structure
-
-**Backend Response Format**:
-
-```json
-{
-  "success": true,
-  "data": {
-    "budgets": [
-      {
-        "budgetId": "budget_1732147200000",
-        "familyId": "family_user123",
-        "month": "2025-11",
-        "totalIncome": 4000,
-        "totalSavings": 800,
-        "totalExpenses": 3200,
-        "remainingBalance": 0,
-        "groups": { ... },
-        "isAIGenerated": true,
-        "createdAt": "2025-11-21T10:00:00Z",
-        "updatedAt": "2025-11-21T10:00:00Z"
-      }
-    ],
-    "count": 1
-  },
-  "message": "Budgets retrieved successfully",
-  "timestamp": "2025-12-01T03:24:35.057Z"
-}
-```
-
-**Frontend Must Access**: `data.data.budgets` (not `data.budgets`)
-
-### Testing Strategy
-
-**Unit Tests**:
-
-- Test `saveBudgetToBackend()` handles 409 as success
-- Test `loadBudget()` correctly parses backend response structure
-- Test `createBudgetFromAIData()` creates valid budget object
-
-**Integration Tests**:
-
-- Test full flow: AI onboarding → save → navigate away → navigate back
-- Test 409 conflict handling when budget already exists
-- Test localStorage clearing after successful save
-
-**Manual Testing**:
-
-1. Complete AI onboarding for November
-2. Verify budget displays correctly
-3. Switch to October (should be empty)
-4. Switch back to November (should show saved budget)
-5. Refresh page (should still show November budget)
-6. Check console for "No budgets exist" - should NOT appear when budgets exist
-
-### Success Criteria
-
-- User creates AI budget → navigates away → returns → sees saved budget
-- No "No budgets exist in backend" logs when budgets actually exist
-- 409 conflicts handled gracefully without errors
-- localStorage AI budget cleared after successful save
-- Budget persists across page refreshes and month navigation
-
-## Correctness Properties
-
-_A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
-
-### Property 1: Mobile App Platform Compatibility
-
-_For any_ supported mobile platform (iOS/Android), the app should build successfully and provide the same core functionality as the web version
-**Validates: Requirements 22.1, 22.3**
-
-### Property 2: API Compatibility Across Platforms
-
-_For any_ API endpoint, requests from mobile apps should return the same data structure and status codes as requests from the web app
-**Validates: Requirements 22.2, 22.5**
-
-### Property 3: Offline Transaction Persistence
-
-_For any_ transaction added while offline, it should be stored locally and successfully synced to the server when connection is restored
-**Validates: Requirements 24.2, 24.3**
-
-### Property 4: Biometric Authentication Fallback
-
-_For any_ device where biometric authentication is unavailable or fails, the system should provide PIN authentication as a working alternative
-**Validates: Requirements 25.1, 25.2**
-
-### Property 5: Secure Token Storage
-
-_For any_ authentication token, it should be stored using platform-specific secure storage (Keychain/Keystore) and retrieved correctly across app sessions
-**Validates: Requirements 25.3**
-
-### Property 6: Data Export Completeness
-
-_For any_ user data export request, the exported file should contain all user budgets, transactions, and categories without data loss
-**Validates: Requirements 26.1, 26.6**
-
-### Property 7: Search Result Accuracy
-
-_For any_ search query, all returned results should match the search criteria and no matching items should be omitted
-**Validates: Requirements 28.1, 28.2**
-
-### Property 8: Notification Delivery
-
-_For any_ budget alert condition (overspending, approaching limits), the system should send notifications to users who have enabled that notification type
-**Validates: Requirements 29.1, 29.2**
-
-### Property 9: Currency Conversion Consistency
-
-_For any_ transaction in a non-primary currency, the converted amount should be calculated using the current exchange rate and displayed consistently across all views
-**Validates: Requirements 30.1, 30.4**
-
-### Property 10: Recurring Budget Calculation Accuracy
-
-_For any_ recurring budget item with bi-weekly frequency, the monthly planned amount should equal the base amount multiplied by the correct number of occurrences in that specific month
-**Validates: Requirements 18.1, 18.2, 20.8, 20.9**
-
-### Property 11: Planned vs Actual Variance Calculation
-
-_For any_ budget category, the variance should always equal the actual amount minus the planned amount, and be displayed with correct positive/negative indicators
-**Validates: Requirements 19.1, 19.6**
-
-### Property 12: Offline Data Synchronization
-
-_For any_ data modified while offline, when connection is restored, the local changes should be successfully merged with server data without data loss
-**Validates: Requirements 24.6, 24.7**
-
-### Property 13: Cross-Platform Feature Parity
-
-_For any_ core budgeting feature available on web, the same feature should be available and function identically on mobile platforms
-**Validates: Requirements 22.3, 35.10**
-
-### Property 14: Security Session Management
-
-_For any_ user session, the app should automatically lock after the configured inactivity period and require re-authentication
-**Validates: Requirements 25.4, 25.5**
-
-### Property 15: Export Data Integrity Round Trip
-
-_For any_ exported budget data, importing it back into the system should recreate the exact same budget structure and amounts
-**Validates: Requirements 26.4, 26.5**
-
-### Property 16: Consistent Family ID Resolution Across Services
-
-_For any_ user with a given userId and JWT token state, both Auth service and Budget service should resolve to the identical familyId when using the same resolution logic
-**Validates: Requirements 46.1, 46.2, 46.5**
-
-### Property 17: Complete Family ID Fallback Chain
-
-_For any_ user authentication scenario (JWT with familyId, JWT without familyId, or no JWT), the system should consistently follow the fallback chain: JWT → DynamoDB lookup → pattern fallback (`family_${userId}`)
-**Validates: Requirements 46.3, 46.4**
-
-### Property 18: Budget Creation Verification Round Trip
-
-_For any_ budget created during onboarding, immediately querying DynamoDB with the same partition key and sort key should return the created budget, or the creation should fail with appropriate error handling
-**Validates: Requirements 46.6, 46.8**
-
-### Property 19: Comprehensive Family ID Debugging
-
-_For any_ family ID resolution operation, the system should log the resolution source (JWT/DynamoDB/fallback) and return debugging information including the exact partition key used
-**Validates: Requirements 46.9, 46.10**
-
-### Property 20: Budget Creation Error Handling
-
-_For any_ budget creation failure during onboarding, the system should prevent onboarding completion and return an error response with detailed failure information
-**Validates: Requirements 46.7**
-
-## Error Handling
-
-### Mobile App Error Handling
-
-- **Network Errors**: Graceful degradation to offline mode with user notification
-- **Authentication Errors**: Automatic token refresh with fallback to login screen
-- **Sync Conflicts**: User-friendly conflict resolution with data preservation
-- **Storage Errors**: Fallback storage mechanisms with error reporting
-
-### API Error Handling
-
-- **Rate Limiting**: Exponential backoff with user feedback
-- **Server Errors**: Retry logic with circuit breaker pattern
-- **Validation Errors**: Field-specific error messages with correction guidance
-- **Currency API Errors**: Fallback to cached exchange rates
-
-### Data Consistency
-
-- **Offline Sync**: Conflict resolution with user choice for critical data
-- **Concurrent Updates**: Optimistic locking with rollback capability
-- **Export Failures**: Partial export recovery with retry options
-- **Import Validation**: Schema validation with detailed error reporting
-
-## Testing Strategy
-
-### Mobile Testing Approach
-
-- **Unit Tests**: Core business logic and utility functions (Jest)
-- **Component Tests**: React Native component behavior (React Native Testing Library)
-- **Integration Tests**: API integration and offline sync (Detox E2E)
-- **Device Testing**: Real device testing on iOS and Android
-- **Performance Testing**: Memory usage, battery impact, and load times
-
-### Property-Based Testing Configuration
-
-- **Framework**: fast-check for JavaScript/TypeScript property testing
-- **Test Iterations**: Minimum 100 iterations per property test
-- **Mobile-Specific**: Test across different device configurations and network conditions
-- **Cross-Platform**: Verify properties hold on both iOS and Android
-
-### Testing Tags Format
-
-Each property test must reference its design document property:
-
-- **Feature: market-ready-mvp, Property 1**: Mobile App Platform Compatibility
-- **Feature: market-ready-mvp, Property 10**: Recurring Budget Calculation Accuracy
-
-### Dual Testing Strategy
-
-- **Unit Tests**: Specific examples, edge cases, error conditions, mobile-specific scenarios
-- **Property Tests**: Universal properties across all inputs, cross-platform consistency
-- **Integration Tests**: End-to-end workflows, offline/online transitions, multi-device sync
-
-## Performance Optimizations
-
-### Mobile Performance
-
-- **Bundle Size**: Code splitting and lazy loading for React Native
-- **Memory Management**: Efficient image handling and data caching
-- **Battery Optimization**: Background task management and efficient sync
-- **Startup Time**: Optimized app launch and authentication flow
-
-### Cross-Platform Optimization
-
-- **API Caching**: Shared cache strategy between web and mobile
-- **Offline Storage**: Efficient local database with sync optimization
-- **Network Usage**: Minimal data transfer with delta sync
-- **Real-time Updates**: WebSocket connections for live budget updates
-
-## Security Design
-
-### Mobile Security
-
-- **Biometric Integration**: Platform-specific biometric APIs with secure fallback
-- **Secure Storage**: Keychain (iOS) and Keystore (Android) for sensitive data
-- **App Backgrounding**: Privacy screen and data clearing when app is backgrounded
-- **Certificate Pinning**: SSL certificate validation for API communications
-
-### Data Protection
-
-- **Encryption**: End-to-end encryption for sensitive financial data
-- **Privacy Controls**: User-controlled data sharing and deletion
-- **Audit Logging**: Security event tracking with user access
-- **Compliance**: GDPR, CCPA, and financial data protection standards
-
-## Future Enhancements
-
-### Mobile-Specific Features
-
-- **Receipt Scanning**: OCR integration for automatic transaction entry
-- **Voice Input**: Voice-to-text for transaction descriptions
-- **Apple Pay/Google Pay**: Integration for transaction tracking
-- **Widgets**: Home screen widgets for quick budget overview
-
-### Advanced Features
-
-- **AI Insights**: Machine learning for spending pattern analysis
-- **Bank Integration**: Open banking APIs for automatic transaction import
-- **Receipt Scanning**: OCR integration for automatic transaction entry
-- **Voice Input**: Voice-to-text for transaction descriptions
-- **Apple Pay/Google Pay**: Integration for transaction tracking
-- **Widgets**: Home screen widgets for quick budget overview
-
----
-
-## Admin Dashboard Design
-
-### Overview
-
-A comprehensive admin dashboard for platform management, user support, and system monitoring. Built as a separate web application with role-based access control and real-time monitoring capabilities.
-
-### Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Admin Dashboard Architecture                  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   Admin Web     │  │   Admin API     │  │   Monitoring    │ │
-│  │   Application   │  │   Gateway       │  │   Services      │ │
-│  │                 │  │                 │  │                 │ │
-│  │ • React + TS    │  │ • Separate API  │  │ • CloudWatch    │ │
-│  │ • Admin UI      │  │ • Admin Auth    │  │ • Custom Metrics│ │
-│  │ • Role-based    │  │ • Rate Limiting │  │ • Alerts        │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-│                                                                 │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐ │
-│  │   User Mgmt     │  │   System Health │  │   Support       │ │
-│  │   Lambda        │  │   Lambda        │  │   Lambda        │ │
-│  │                 │  │                 │  │                 │ │
-│  │ • CRUD Users    │  │ • Metrics       │  │ • Tickets       │ │
-│  │ • Bulk Ops      │  │ • Performance   │  │ • Notifications │ │
-│  │ • Audit Logs    │  │ • Alerts        │  │ • Email         │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Data Models
-
-#### Admin User
-
-```typescript
-interface AdminUser {
-  adminId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: "super_admin" | "support_admin" | "read_only";
-  permissions: AdminPermission[];
-  lastLogin?: string;
-  isActive: boolean;
-  createdAt: string;
-  createdBy: string;
-}
-
-interface AdminPermission {
-  resource: "users" | "system" | "support" | "billing";
-  actions: ("read" | "write" | "delete")[];
-}
-```
-
-#### Support Ticket
-
-```typescript
-interface SupportTicket {
-  ticketId: string;
-  userId: string;
-  userEmail: string;
-  subject: string;
-  description: string;
-  category: "technical" | "billing" | "feature_request" | "bug_report";
-  priority: "low" | "medium" | "high" | "urgent";
-  status: "open" | "in_progress" | "resolved" | "closed";
-  assignedTo?: string;
-  resolution?: string;
-  createdAt: string;
-  updatedAt: string;
-  resolvedAt?: string;
-}
-```
-
-#### System Metrics
-
-```typescript
-interface SystemMetrics {
-  timestamp: string;
-  totalUsers: number;
-  activeUsers: number;
-  newRegistrations: number;
-  subscriptionConversions: number;
-  apiResponseTime: number;
-  errorRate: number;
-  databaseConnections: number;
-  memoryUsage: number;
-  cpuUsage: number;
-}
-```
-
-### UI Components
-
-#### Dashboard Overview
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ BudgetBuddy Admin Dashboard                    [Admin Name ▼]   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ 📊 Overview    👥 Users    🎫 Support    💰 Billing    ⚙️ System │
-│                                                                 │
-│ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐│
-│ │ Total Users │ │Active Users │ │New Today    │ │Conversions  ││
-│ │   12,847    │ │   3,421     │ │    127      │ │    23       ││
-│ └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘│
-│                                                                 │
-│ ┌─────────────────────────────────────────────────────────────┐ │
-│ │ System Health                                               │ │
-│ │ API Response Time: 245ms  Error Rate: 0.12%  Uptime: 99.9% │ │
-│ │ [Real-time Chart]                                           │ │
-│ └─────────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│ ┌─────────────────────────────────────────────────────────────┐ │
-│ │ Recent Activity                                             │ │
-│ │ • User john@example.com upgraded to Premium                 │ │
-│ │ • Support ticket #1234 resolved                            │ │
-│ │ • System alert: High memory usage resolved                 │ │
-│ └─────────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-#### User Management
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ User Management                                                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│ [Search users...] [Filter ▼] [Export] [Bulk Actions ▼]        │
-│                                                                 │
-│ ┌─────────────────────────────────────────────────────────────┐ │
-│ │ Email              │ Name        │ Status │ Plan │ Last Login││
-│ │ john@example.com   │ John Smith  │ Active │ Free │ 2 hrs ago ││
-│ │ jane@example.com   │ Jane Doe    │ Active │ Pro  │ 1 day ago ││
-│ │ bob@example.com    │ Bob Johnson │ Disabled│ Free │ 1 week ago││
-│ └─────────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│ [Previous] Page 1 of 128 [Next]                                │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### API Endpoints
-
-#### Admin Authentication
-
-```
-POST /admin/auth/login
-Request: { email, password, mfaCode? }
-Response: { accessToken, refreshToken, adminUser }
-
-GET /admin/auth/profile
-Headers: Authorization: Bearer <admin_token>
-Response: { adminUser, permissions }
-```
-
-#### User Management
-
-```
-GET /admin/users
-Query: ?search=email&status=active&plan=premium&page=1&limit=50
-Response: { users: User[], total: number, page: number }
-
-GET /admin/users/{userId}
-Response: { user: User, budgets: Budget[], transactions: Transaction[] }
-
-PUT /admin/users/{userId}/status
-Request: { status: 'active' | 'disabled', reason: string }
-Response: { success: boolean }
-
-DELETE /admin/users/{userId}
-Request: { reason: string, exportData: boolean }
-Response: { success: boolean, exportUrl?: string }
-```
-
-#### System Monitoring
-
-```
-GET /admin/metrics/overview
-Response: {
-  totalUsers, activeUsers, newRegistrations,
-  subscriptionConversions, systemHealth
-}
-
-GET /admin/metrics/performance
-Query: ?timeRange=24h&metric=response_time
-Response: { dataPoints: MetricPoint[], summary: MetricSummary }
-
-GET /admin/alerts
-Response: { alerts: SystemAlert[], count: number }
-```
-
-#### Support Management
-
-```
-GET /admin/support/tickets
-Query: ?status=open&priority=high&assignedTo=admin123
-Response: { tickets: SupportTicket[], total: number }
-
-POST /admin/support/tickets
-Request: { userId, subject, description, category, priority }
-Response: { ticket: SupportTicket }
-
-PUT /admin/support/tickets/{ticketId}
-Request: { status, assignedTo, resolution }
-Response: { ticket: SupportTicket }
-```
-
-### Security Implementation
-
-#### Role-Based Access Control
-
-```typescript
-const AdminPermissions = {
-  super_admin: {
-    users: ["read", "write", "delete"],
-    system: ["read", "write"],
-    support: ["read", "write"],
-    billing: ["read", "write"],
-  },
-  support_admin: {
-    users: ["read", "write"],
-    support: ["read", "write"],
-    billing: ["read"],
-  },
-  read_only: {
-    users: ["read"],
-    system: ["read"],
-    support: ["read"],
-    billing: ["read"],
-  },
-};
-
-const checkPermission = (
-  adminUser: AdminUser,
-  resource: string,
-  action: string
-): boolean => {
-  const permissions = AdminPermissions[adminUser.role];
-  return permissions[resource]?.includes(action) || false;
-};
-```
-
-#### Admin Authentication
-
-- Separate admin user pool in Cognito
-- Multi-factor authentication required
-- Session timeout: 4 hours
-- IP whitelisting for super admins
-- Audit logging for all admin actions
-
-### Monitoring and Alerts
-
-#### Real-time Metrics
-
-- User registration rate
-- API error rates and response times
-- Database performance metrics
-- Memory and CPU usage
-- Active user sessions
-
-#### Alert Conditions
-
-- Error rate > 1%
-- API response time > 1000ms
-- New user registrations spike (>500% increase)
-- Database connection pool exhaustion
-- Failed payment processing > 5%
-
-#### Notification Channels
-
-- Email alerts to admin team
-- Slack integration for critical alerts
-- SMS for urgent system issues
-- In-dashboard notifications
-
-### Implementation Priority
-
-**Phase 1 (Essential)**:
-
-- Basic admin authentication
-- User management (view, search, disable)
-- System health dashboard
-- Basic support ticket system
-
-**Phase 2 (Enhanced)**:
-
-- Advanced user operations (bulk actions, data export)
-- Detailed system metrics and monitoring
-- Role-based access control
-- Audit logging
-
-**Phase 3 (Advanced)**:
-
-- Real-time alerts and notifications
-- Advanced analytics and reporting
-- Automated user lifecycle management
-- Integration with external support tools
-
-### Testing Strategy
-
-**Security Testing**:
-
-- Role-based access control validation
-- Admin authentication flow testing
-- Permission boundary testing
-- Audit log integrity verification
-
-**Performance Testing**:
-
-- Large dataset handling (10k+ users)
-- Real-time metrics performance
-- Bulk operation efficiency
-- Dashboard load times
-
-**Integration Testing**:
-
-- Admin API with main application APIs
-- Monitoring system integration
-- Alert notification delivery
-- Data export functionality
-- **Investment Tracking**: Portfolio integration with budget planning
-- **Family Collaboration**: Real-time collaborative budgeting
-
-### Platform Expansion
-
-- **Apple Watch**: Quick transaction entry and budget monitoring
-- **Android Wear**: Spending alerts and budget summaries
-- **Desktop Apps**: Native desktop applications for power users
-- **Web Extensions**: Browser extensions for online purchase tracking
-
-## Data Export and Backup System Design
-
-### Export Service Architecture
-
-```typescript
-interface ExportService {
-  generateCSVExport(
-    userId: string,
-    options: ExportOptions
-  ): Promise<ExportResult>;
-  generatePDFReport(userId: string, month: string): Promise<ExportResult>;
-  createDataBackup(userId: string): Promise<BackupResult>;
-  restoreFromBackup(userId: string, backupFile: File): Promise<RestoreResult>;
-}
-
-interface ExportOptions {
-  format: "csv" | "pdf" | "json";
-  dateRange: {
-    startDate: string;
-    endDate: string;
-  };
-  categories?: string[];
-  includeTransactions: boolean;
-  includeBudgets: boolean;
-}
-
-interface ExportResult {
-  fileUrl: string;
-  fileName: string;
-  fileSize: number;
-  expiresAt: string;
-  downloadCount: number;
-}
-```
-
-### CSV Export Implementation
-
-```typescript
-class CSVExporter {
-  async generateBudgetCSV(
-    budgets: Budget[],
-    transactions: Transaction[]
-  ): Promise<string> {
-    const headers = [
-      "Date",
-      "Category",
-      "Description",
-      "Amount",
-      "Type",
-      "Budget Month",
-      "Transaction ID",
-      "Currency",
-    ];
-
-    const rows = transactions.map((transaction) => [
-      transaction.date,
-      transaction.categoryName,
-      transaction.description,
-      transaction.amount.toString(),
-      transaction.type,
-      transaction.budgetMonth,
-      transaction.id,
-      transaction.currency || "USD",
-    ]);
-
-    return this.formatCSV(headers, rows);
-  }
-}
-```
-
-### PDF Report Generation
-
-```typescript
-class PDFGenerator {
-  async generateMonthlyReport(
-    budget: Budget,
-    transactions: Transaction[]
-  ): Promise<Buffer> {
-    const doc = new PDFDocument();
-
-    // Header with logo and title
-    this.addHeader(doc, budget.month);
-
-    // Budget summary section
-    this.addBudgetSummary(doc, budget);
-
-    // Category breakdown with charts
-    this.addCategoryBreakdown(doc, budget);
-
-    // Transaction details
-    this.addTransactionDetails(doc, transactions);
-
-    // Footer with generation date
-    this.addFooter(doc);
-
-    return doc;
-  }
-}
-```
-
-## Multi-Currency System Design
-
-### Currency Service Architecture
-
-```typescript
-interface CurrencyService {
-  getSupportedCurrencies(): Promise<Currency[]>;
-  getExchangeRates(baseCurrency: string): Promise<ExchangeRates>;
-  convertAmount(
-    amount: number,
-    fromCurrency: string,
-    toCurrency: string
-  ): Promise<ConversionResult>;
-  formatCurrency(amount: number, currency: string, locale: string): string;
-}
-
-interface Currency {
-  code: string; // ISO 4217 code (USD, EUR, etc.)
-  name: string;
-  symbol: string;
-  decimalPlaces: number;
-  countries: string[];
-}
-
-interface ExchangeRates {
-  baseCurrency: string;
-  rates: Record<string, number>;
-  lastUpdated: string;
-  source: string;
-}
-
-interface ConversionResult {
-  originalAmount: number;
-  originalCurrency: string;
-  convertedAmount: number;
-  convertedCurrency: string;
-  exchangeRate: number;
-  conversionDate: string;
-}
-```
-
-### Multi-Currency Transaction Model
-
-```typescript
-interface MultiCurrencyTransaction extends Transaction {
-  originalAmount?: number;
-  originalCurrency?: string;
-  exchangeRate?: number;
-  conversionDate?: string;
-  isConverted: boolean;
-}
-
-interface CurrencyPreferences {
-  primaryCurrency: string;
-  displayCurrency: string;
-  autoConvert: boolean;
-  showOriginalAmounts: boolean;
-  preferredExchangeRateSource: string;
-}
-```
-
-## Push Notifications System Design
-
-### Notification Service Architecture
-
-```typescript
-interface NotificationService {
-  sendBudgetAlert(userId: string, alert: BudgetAlert): Promise<void>;
-  sendDailyReminder(userId: string): Promise<void>;
-  sendMonthlySummary(userId: string, summary: MonthlySummary): Promise<void>;
-  scheduleRecurringNotifications(
-    userId: string,
-    preferences: NotificationPreferences
-  ): Promise<void>;
-}
-
-interface BudgetAlert {
-  type: "overspending" | "approaching_limit" | "large_transaction";
-  categoryId: string;
-  categoryName: string;
-  currentAmount: number;
-  budgetAmount: number;
-  percentage: number;
-  severity: "low" | "medium" | "high";
-}
-
-interface NotificationPreferences {
-  budgetAlerts: {
-    enabled: boolean;
-    thresholds: number[]; // [80, 90, 100]
-  };
-  dailyReminders: {
-    enabled: boolean;
-    time: string; // HH:MM format
-    timezone: string;
-  };
-  monthlySummary: {
-    enabled: boolean;
-    dayOfMonth: number;
-  };
-  quietHours: {
-    enabled: boolean;
-    startTime: string;
-    endTime: string;
-  };
-}
-```
-
-### AWS SNS Integration
-
-```typescript
-class AWSNotificationService implements NotificationService {
-  private sns: AWS.SNS;
-  private topicArn: string;
-
-  async sendPushNotification(
-    deviceToken: string,
-    notification: PushNotification
-  ): Promise<void> {
-    const message = {
-      default: notification.body,
-      APNS: JSON.stringify({
-        aps: {
-          alert: {
-            title: notification.title,
-            body: notification.body,
-          },
-          badge: notification.badge,
-          sound: notification.sound,
-        },
-        data: notification.data,
-      }),
-      GCM: JSON.stringify({
-        data: {
-          title: notification.title,
-          body: notification.body,
-          ...notification.data,
-        },
-      }),
-    };
-
-    await this.sns
-      .publish({
-        TargetArn: deviceToken,
-        Message: JSON.stringify(message),
-        MessageStructure: "json",
-      })
-      .promise();
-  }
-}
-```
+5. Bank Sync with Mock Mode (Req 55) - Plaid foundation
+6. Reconciliation (Req 57) - Ties receipts + bank together

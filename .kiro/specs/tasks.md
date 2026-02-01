@@ -1,337 +1,414 @@
-# Implementation Plan: BudgetBuddy Market-Ready MVP
+# BudgetBuddy Implementation Tasks
 
-## Overview
+**Last Updated**: 2026-02-01
+**Status**: Planning Complete
+**Scope**: Competitive Features Implementation
 
-This comprehensive implementation plan covers the complete BudgetBuddy application - a market-ready MVP with web and native mobile apps, AWS serverless backend, and enterprise-grade features. The plan includes 41+ requirements covering core budgeting, mobile apps, security, data export, multi-currency support, and business model implementation.
+---
 
-**Architecture**: AWS Serverless (Lambda + DynamoDB + Cognito) + React Web App + React Native Mobile Apps
-**Timeline**: 2-week MVP focus with ongoing enhancements
-**Status**: Core features implemented, mobile apps and advanced features in progress
+## Phase 1: Foundation Features (Sprint 1)
 
-## Tasks
+### Task 1: Bill Reminders System (Requirement 52)
 
-### Phase 1: Core Authentication & User Management ✅ COMPLETE
+- [ ] 1.1 Create bills Lambda function structure
+  - [ ] 1.1.1 Create `backend/functions/bills/index.js` with CRUD handlers
+  - [ ] 1.1.2 Create `backend/functions/bills/service.js` for business logic
+  - [ ] 1.1.3 Create `backend/functions/bills/package.json`
+- [ ] 1.2 Implement bill data model and API endpoints
+  - [ ] 1.2.1 Implement GET /api/bills - list all bills
+  - [ ] 1.2.2 Implement POST /api/bills - create bill reminder
+  - [ ] 1.2.3 Implement PUT /api/bills/:id - update bill
+  - [ ] 1.2.4 Implement POST /api/bills/:id/pay - mark bill as paid
+  - [ ] 1.2.5 Implement GET /api/bills/upcoming - next 30 days
+- [ ] 1.3 Implement bill notification scheduler
+  - [ ] 1.3.1 Create EventBridge rule for daily bill check (8AM)
+  - [ ] 1.3.2 Implement 7-day reminder notification
+  - [ ] 1.3.3 Implement 3-day reminder notification
+  - [ ] 1.3.4 Implement due-day notification
+  - [ ] 1.3.5 Implement overdue notification
+- [ ] 1.4 Implement recurring bill auto-scheduling
+  - [ ] 1.4.1 Calculate next due date based on frequency
+  - [ ] 1.4.2 Auto-create next bill occurrence when paid
+- [ ] 1.5 Implement transaction creation on bill payment
+  - [ ] 1.5.1 Create transaction when bill marked paid
+  - [ ] 1.5.2 Link transaction to bill record
+- [ ] 1.6 Add bills CDK infrastructure
+  - [ ] 1.6.1 Create bills Lambda in api-stack.ts
+  - [ ] 1.6.2 Add API Gateway routes for /api/bills/\*
+  - [ ] 1.6.3 Add EventBridge rules for notifications
+- [ ] 1.7 Create bills UI components
+  - [ ] 1.7.1 Create BillsPage/BillsScreen component
+  - [ ] 1.7.2 Create BillCard component with status indicators
+  - [ ] 1.7.3 Create AddBillModal component
+  - [ ] 1.7.4 Create BillCalendarView component
+- [ ] 1.8 Write tests for bills feature
+  - [ ] 1.8.1 Unit tests for bill service logic
+  - [ ] 1.8.2 Integration tests for bill API endpoints
+  - [ ] 1.8.3 Property tests for recurring date calculations
 
-- [x] 1. User Authentication System
-  - ✅ AWS Cognito User Pool integration
-  - ✅ JWT token management with automatic refresh
-  - ✅ Protected routes and authentication guards
-  - ✅ Registration and login flows
-  - ✅ Password validation and security
-  - _Requirements: 1.1-1.8_
+### Task 2: Savings Goals System (Requirement 54)
 
-- [x] 2. Google Sign-In Integration
-  - ✅ Google OAuth 2.0 integration (web, iOS, Android)
-  - ✅ Cross-platform authentication with PKCE flow
-  - ✅ Secure token storage using Expo SecureStore
-  - ✅ Account linking and unlinking functionality
-  - ✅ Production-ready credential management
-  - _Requirements: 40.1-40.10_
+- [ ] 2.1 Create goals Lambda function structure
+  - [ ] 2.1.1 Create `backend/functions/goals/index.js` with CRUD handlers
+  - [ ] 2.1.2 Create `backend/functions/goals/service.js` for business logic
+  - [ ] 2.1.3 Create `backend/functions/goals/package.json`
+- [ ] 2.2 Implement goals data model and API endpoints
+  - [ ] 2.2.1 Implement GET /api/goals - list all goals
+  - [ ] 2.2.2 Implement POST /api/goals - create goal
+  - [ ] 2.2.3 Implement PUT /api/goals/:id - update goal
+  - [ ] 2.2.4 Implement DELETE /api/goals/:id - delete goal
+  - [ ] 2.2.5 Implement POST /api/goals/:id/contribute - add contribution
+  - [ ] 2.2.6 Implement PUT /api/goals/reorder - reorder priorities
+- [ ] 2.3 Implement progress calculation
+  - [ ] 2.3.1 Calculate progress percentage
+  - [ ] 2.3.2 Calculate monthly required amount
+  - [ ] 2.3.3 Track milestone achievements (25%, 50%, 75%, 100%)
+- [ ] 2.4 Implement category linking
+  - [ ] 2.4.1 Link savings category to goal
+  - [ ] 2.4.2 Auto-update goal when linked category transaction added
+- [ ] 2.5 Implement goal notifications
+  - [ ] 2.5.1 Weekly progress update notification
+  - [ ] 2.5.2 Milestone celebration notification
+  - [ ] 2.5.3 Behind schedule reminder notification
+- [ ] 2.6 Add goals CDK infrastructure
+  - [ ] 2.6.1 Create goals Lambda in api-stack.ts
+  - [ ] 2.6.2 Add API Gateway routes for /api/goals/\*
+- [ ] 2.7 Create goals UI components
+  - [ ] 2.7.1 Create GoalsPage/GoalsScreen component
+  - [ ] 2.7.2 Create GoalCard component with progress bar
+  - [ ] 2.7.3 Create AddGoalModal with templates
+  - [ ] 2.7.4 Create ContributeModal component
+  - [ ] 2.7.5 Implement drag-and-drop reordering
+  - [ ] 2.7.6 Add confetti animation for goal completion
+- [ ] 2.8 Write tests for goals feature
+  - [ ] 2.8.1 Unit tests for progress calculations
+  - [ ] 2.8.2 Integration tests for goals API
+  - [ ] 2.8.3 Property tests for milestone triggers
 
-- [x] 3. User Profile Management
-  - ✅ User profile creation and storage in DynamoDB
-  - ✅ Profile endpoint with JWT authentication
-  - ✅ Onboarding completion tracking
-  - ✅ Family auto-creation for new users
-  - ✅ Legacy user token compatibility
-  - _Requirements: 17.1-17.8_
+---
 
-### Phase 2: Core Budget Management ✅ COMPLETE
+## Phase 2: Intelligence Features (Sprint 2)
 
-- [x] 4. Budget Creation and Management
-  - ✅ Three-column layout (sidebar, budget, transactions)
-  - ✅ Income, Savings, and Expenses groups
-  - ✅ Category creation with icons and planned amounts
-  - ✅ Zero-based budgeting calculations
-  - ✅ Real-time balance updates
-  - ✅ DynamoDB persistence with API integration
-  - _Requirements: 2.1-2.11_
+### Task 3: Spending Insights & Analytics (Requirement 53)
 
-- [x] 5. Transaction Recording and Tracking
-  - ✅ Floating Action Button (FAB) for quick entry
-  - ✅ Income and expense transaction modals
-  - ✅ Category selection and amount tracking
-  - ✅ Transaction list with color coding
-  - ✅ Delete functionality with budget updates
-  - ✅ Real-time spent amount calculations
-  - _Requirements: 3.1-3.10_
+- [ ] 3.1 Create insights Lambda function structure
+  - [ ] 3.1.1 Create `backend/functions/insights/index.js`
+  - [ ] 3.1.2 Create `backend/functions/insights/service.js`
+  - [ ] 3.1.3 Create `backend/functions/insights/ai-generator.js`
+  - [ ] 3.1.4 Create `backend/functions/insights/package.json`
+- [ ] 3.2 Implement insights aggregation
+  - [ ] 3.2.1 Implement weekly spending aggregation
+  - [ ] 3.2.2 Implement category breakdown calculation
+  - [ ] 3.2.3 Implement month-over-month comparison
+  - [ ] 3.2.4 Implement spending pattern detection
+- [ ] 3.3 Implement AI insight generation
+  - [ ] 3.3.1 Create Bedrock client for Claude
+  - [ ] 3.3.2 Design insight generation prompt
+  - [ ] 3.3.3 Implement insight parsing and storage
+- [ ] 3.4 Implement insights API endpoints
+  - [ ] 3.4.1 Implement GET /api/insights/weekly
+  - [ ] 3.4.2 Implement GET /api/insights/monthly
+  - [ ] 3.4.3 Implement GET /api/insights/trends
+  - [ ] 3.4.4 Implement POST /api/insights/ask (AI chat)
+- [ ] 3.5 Implement scheduled insight generation
+  - [ ] 3.5.1 Create EventBridge rule for weekly generation
+  - [ ] 3.5.2 Implement batch processing for all users
+- [ ] 3.6 Add insights CDK infrastructure
+  - [ ] 3.6.1 Create insights Lambda with Bedrock permissions
+  - [ ] 3.6.2 Add API Gateway routes
+  - [ ] 3.6.3 Add EventBridge scheduled rule
+- [ ] 3.7 Create insights UI components
+  - [ ] 3.7.1 Create InsightsPage/InsightsScreen
+  - [ ] 3.7.2 Create InsightCard component
+  - [ ] 3.7.3 Create SpendingTrendChart component
+  - [ ] 3.7.4 Create CategoryBreakdownChart component
+  - [ ] 3.7.5 Create AskAIModal component
+- [ ] 3.8 Write tests for insights feature
+  - [ ] 3.8.1 Unit tests for aggregation logic
+  - [ ] 3.8.2 Integration tests for insights API
+  - [ ] 3.8.3 Mock tests for Bedrock integration
 
-- [x] 6. Month Navigation System
-  - ✅ 7-month navigation bar (3 before, current, 3 after)
-  - ✅ Current month highlighting and selection
-  - ✅ Previous/next arrow navigation
-  - ✅ Year boundary handling
-  - ✅ Remaining budget display
-  - ✅ Centered layout with smooth transitions
-  - _Requirements: 4.1-4.10_
+### Task 4: Receipt Scanning with AI Vision (Requirement 56)
 
-- [x] 7. Budget Summary and Visualization
-  - ✅ Summary tab with circular progress charts
-  - ✅ Planned, Spent, and Remaining metrics
-  - ✅ Color-coded category breakdown with percentages
-  - ✅ Overspent category highlighting
-  - ✅ Category grouping and detailed views
-  - ✅ Toggle between Summary and Transactions
-  - _Requirements: 5.1-5.9_
+- [ ] 4.1 Create receipt Lambda function structure
+  - [ ] 4.1.1 Create `backend/functions/receipt/index.js`
+  - [ ] 4.1.2 Create `backend/functions/receipt/processor.js`
+  - [ ] 4.1.3 Create `backend/functions/receipt/package.json`
+- [ ] 4.2 Implement S3 upload flow
+  - [ ] 4.2.1 Create S3 bucket for receipts with lifecycle policy
+  - [ ] 4.2.2 Implement presigned URL generation
+  - [ ] 4.2.3 Implement image compression utility
+- [ ] 4.3 Implement AI receipt processing
+  - [ ] 4.3.1 Create Bedrock client for Claude Haiku
+  - [ ] 4.3.2 Design receipt extraction prompt
+  - [ ] 4.3.3 Implement image-to-base64 conversion
+  - [ ] 4.3.4 Implement response parsing
+- [ ] 4.4 Implement receipt API endpoints
+  - [ ] 4.4.1 Implement POST /api/receipt/upload
+  - [ ] 4.4.2 Implement POST /api/receipt/process
+  - [ ] 4.4.3 Implement GET /api/receipt/:id
+  - [ ] 4.4.4 Implement GET /api/receipt/usage
+- [ ] 4.5 Implement usage limits
+  - [ ] 4.5.1 Track daily scan count per user
+  - [ ] 4.5.2 Enforce 10 scans/day limit for free users
+  - [ ] 4.5.3 Return remaining scans in response
+- [ ] 4.6 Add receipt CDK infrastructure
+  - [ ] 4.6.1 Create S3 bucket with 90-day lifecycle
+  - [ ] 4.6.2 Create receipt Lambda with S3 and Bedrock permissions
+  - [ ] 4.6.3 Add API Gateway routes
+- [ ] 4.7 Create receipt UI components
+  - [ ] 4.7.1 Create ReceiptCaptureButton component
+  - [ ] 4.7.2 Create ReceiptPreviewModal component
+  - [ ] 4.7.3 Create ReceiptConfirmationForm component
+  - [ ] 4.7.4 Integrate with transaction entry flow
+- [ ] 4.8 Write tests for receipt feature
+  - [ ] 4.8.1 Unit tests for image processing
+  - [ ] 4.8.2 Integration tests for receipt API
+  - [ ] 4.8.3 Mock tests for Bedrock Vision
 
-### Phase 3: Enhanced Budget Features ✅ COMPLETE
+---
 
-- [x] 8. Recurring Budget Planning
-  - ✅ Date-dependent recurring calculations
-  - ✅ Bi-weekly, monthly, weekly, quarterly, annually frequencies
-  - ✅ Start date specification for first occurrence
-  - ✅ Cross-platform calculation consistency (shared utility)
-  - ✅ Timezone handling fixes (Windows compatibility)
-  - ✅ Comprehensive test suite (26 tests passing)
-  - _Requirements: 18.1-18.9_
+## Phase 3: Integration Features (Sprint 3)
 
-- [x] 9. Enhanced Month Navigation UI
-  - ✅ Large month heading with year display
-  - ✅ Remaining budget amount below heading
-  - ✅ "Today" button for current month navigation
-  - ✅ Left/right arrow buttons for month navigation
-  - ✅ Future month warning badge
-  - ✅ Empty state for future months with copy-previous functionality
-  - _Requirements: 8.1-8.10_
+### Task 5: Bank Account Sync - Plaid (Requirement 55)
 
-- [x] 10. AI-Powered Onboarding System
-  - ✅ Location-based expense category suggestions (348 cities, 9 countries)
-  - ✅ Family size and demographic customization
-  - ✅ Cost-of-living adjustments by city
-  - ✅ Auto-budget creation from onboarding selections
-  - ✅ Seamless integration with authentication flow
-  - ✅ Manual location selection with searchable dropdown
-  - _Requirements: 39.1-39.10_
+- [ ] 5.1 Create Plaid Lambda function structure
+  - [ ] 5.1.1 Create `backend/functions/plaid/index.js`
+  - [ ] 5.1.2 Create `backend/functions/plaid/service.js`
+  - [ ] 5.1.3 Create `backend/functions/plaid/mock-service.js`
+  - [ ] 5.1.4 Create `backend/functions/plaid/package.json`
+- [ ] 5.2 Implement Plaid Link flow
+  - [ ] 5.2.1 Implement link token generation
+  - [ ] 5.2.2 Implement public token exchange
+  - [ ] 5.2.3 Store access token in Secrets Manager
+- [ ] 5.3 Implement account management
+  - [ ] 5.3.1 Implement GET /api/plaid/accounts
+  - [ ] 5.3.2 Implement DELETE /api/plaid/accounts/:id
+  - [ ] 5.3.3 Implement account balance refresh
+- [ ] 5.4 Implement transaction sync
+  - [ ] 5.4.1 Implement daily sync job
+  - [ ] 5.4.2 Implement 1 sync/day/account limit
+  - [ ] 5.4.3 Implement transaction cursor management
+  - [ ] 5.4.4 Implement pending transaction queue
+- [ ] 5.5 Implement AI categorization
+  - [ ] 5.5.1 Create categorization prompt
+  - [ ] 5.5.2 Implement batch categorization
+  - [ ] 5.5.3 Cache merchant-category mappings
+- [ ] 5.6 Implement mock mode
+  - [ ] 5.6.1 Create mock accounts data
+  - [ ] 5.6.2 Create mock transactions generator
+  - [ ] 5.6.3 Toggle via PLAID_MOCK_MODE env var
+- [ ] 5.7 Add Plaid CDK infrastructure
+  - [ ] 5.7.1 Create Plaid Lambda with Secrets Manager access
+  - [ ] 5.7.2 Add API Gateway routes
+  - [ ] 5.7.3 Add EventBridge rule for daily sync
+  - [ ] 5.7.4 Store Plaid credentials in Secrets Manager
+- [ ] 5.8 Create Plaid UI components
+  - [ ] 5.8.1 Create ConnectBankButton component
+  - [ ] 5.8.2 Create LinkedAccountsList component
+  - [ ] 5.8.3 Create PendingTransactionsQueue component
+  - [ ] 5.8.4 Create SyncStatusIndicator component
+- [ ] 5.9 Write tests for Plaid feature
+  - [ ] 5.9.1 Unit tests for sync logic
+  - [ ] 5.9.2 Integration tests with mock mode
+  - [ ] 5.9.3 Property tests for rate limiting
 
-### Phase 4: Critical Bug Fixes ✅ COMPLETE
+### Task 6: Receipt-to-Bank Reconciliation (Requirement 57)
 
-- [x] 11. Fix Critical Onboarding Budget Persistence Bug
-  - ✅ Fixed field name mismatch (plannedAmount vs planned)
-  - ✅ Added missing transactions array and order field
-  - ✅ Comprehensive error handling around budget creation
-  - ✅ Immediate verification step after budget creation
-  - ✅ Detailed logging for debugging budget creation
-  - _Requirements: 42.1, 42.2, 42.4_
+- [ ] 6.1 Create reconciliation Lambda function
+  - [ ] 6.1.1 Create `backend/functions/reconciliation/index.js`
+  - [ ] 6.1.2 Create `backend/functions/reconciliation/matcher.js`
+  - [ ] 6.1.3 Create `backend/functions/reconciliation/package.json`
+- [ ] 6.2 Implement matching algorithm
+  - [ ] 6.2.1 Implement amount matching (±$0.50 tolerance)
+  - [ ] 6.2.2 Implement date matching (±2 days)
+  - [ ] 6.2.3 Implement merchant fuzzy matching
+  - [ ] 6.2.4 Calculate confidence scores
+- [ ] 6.3 Implement reconciliation API
+  - [ ] 6.3.1 Implement GET /api/reconcile/status
+  - [ ] 6.3.2 Implement GET /api/reconcile/unmatched
+  - [ ] 6.3.3 Implement POST /api/reconcile/match
+  - [ ] 6.3.4 Implement POST /api/reconcile/unmatch
+- [ ] 6.4 Implement auto-reconciliation triggers
+  - [ ] 6.4.1 Trigger after Plaid sync
+  - [ ] 6.4.2 Trigger after receipt confirmation
+- [ ] 6.5 Add reconciliation CDK infrastructure
+  - [ ] 6.5.1 Create reconciliation Lambda
+  - [ ] 6.5.2 Add API Gateway routes
+- [ ] 6.6 Create reconciliation UI components
+  - [ ] 6.6.1 Create ReconciliationStatusBadge component
+  - [ ] 6.6.2 Create UnmatchedItemsList component
+  - [ ] 6.6.3 Create ManualMatchModal component
+- [ ] 6.7 Write tests for reconciliation
+  - [ ] 6.7.1 Unit tests for matching algorithm
+  - [ ] 6.7.2 Property tests for confidence scoring
+  - [ ] 6.7.3 Integration tests for reconciliation flow
 
-- [x] 12. Add Missing Logout Functionality
-  - ✅ Logout button in budget page header
-  - ✅ Logout option in sidebar navigation
-  - ✅ Token clearing and redirect to login
-  - ✅ Logout functionality across all pages
-  - _Requirements: 43.1, 43.2, 43.3_
+---
 
-- [x] 13. Fix User Profile Creation Issues
-  - ✅ Token parsing graceful handling
-  - ✅ Token validation utilities
-  - ✅ TokenDiagnostics component for self-diagnosis
-  - ✅ Token diagnostics tool in Settings page
-  - _Requirements: 17.1, 17.2, 17.3_
+## Phase 4: Engagement Features (Sprint 4)
 
-- [x] 14. **CRITICAL SECURITY ALERT** - Remove Exposed Secrets
-  - ✅ Removed auth-logs.txt file with real JWT tokens
-  - ✅ Updated .gitignore to prevent future exposure
-  - ✅ Replaced hardcoded passwords with environment variables
-  - ✅ Updated mock tokens with development-only identifiers
-  - ✅ Comprehensive security validation pipeline
-  - _Requirements: Security compliance, data protection_
+### Task 7: Admin Web Application (Requirement 47)
 
-- [x] 15. Fix Family ID Mismatch Between Auth and Budget Services
-  - ✅ Created centralized FamilyIdResolver utility
-  - ✅ Updated Auth service onboarding endpoint
-  - ✅ Updated Budget service functions (getBudgets, createBudget, etc.)
-  - ✅ Added comprehensive logging and debugging
-  - ✅ Immediate budget verification after creation
-  - _Requirements: 46.1-46.10_
+- [ ] 7.1 Create admin app package structure
+  - [ ] 7.1.1 Create `packages/admin/` directory
+  - [ ] 7.1.2 Initialize React + Vite project
+  - [ ] 7.1.3 Configure Tailwind CSS
+  - [ ] 7.1.4 Set up routing
+- [ ] 7.2 Create admin Lambda function
+  - [ ] 7.2.1 Create `backend/functions/admin/index.js`
+  - [ ] 7.2.2 Implement admin authentication middleware
+  - [ ] 7.2.3 Implement audit logging
+- [ ] 7.3 Implement admin API endpoints
+  - [ ] 7.3.1 Implement GET /admin/dashboard
+  - [ ] 7.3.2 Implement GET /admin/users (search)
+  - [ ] 7.3.3 Implement GET /admin/users/:id
+  - [ ] 7.3.4 Implement POST /admin/users/:id/disable
+  - [ ] 7.3.5 Implement POST /admin/users/:id/enable
+  - [ ] 7.3.6 Implement POST /admin/users/:id/reset-password
+  - [ ] 7.3.7 Implement GET /admin/health
+  - [ ] 7.3.8 Implement GET /admin/audit
+- [ ] 7.4 Create admin UI pages
+  - [ ] 7.4.1 Create DashboardPage with metrics
+  - [ ] 7.4.2 Create UsersPage with search
+  - [ ] 7.4.3 Create UserDetailPage
+  - [ ] 7.4.4 Create SystemHealthPage
+  - [ ] 7.4.5 Create AuditLogPage
+- [ ] 7.5 Add admin CDK infrastructure
+  - [ ] 7.5.1 Create admin Lambda
+  - [ ] 7.5.2 Create admin Cognito group
+  - [ ] 7.5.3 Add admin API Gateway routes
+  - [ ] 7.5.4 Create S3 bucket for admin app hosting
+- [ ] 7.6 Write tests for admin feature
+  - [ ] 7.6.1 Unit tests for admin service
+  - [ ] 7.6.2 Integration tests for admin API
+  - [ ] 7.6.3 Auth tests for admin-only access
 
-### Phase 5: Responsive Design & Web Features ✅ COMPLETE
+### Task 8: Peer Comparison System (Requirement 48)
 
-- [x] 16. Responsive Design Implementation
-  - ✅ Collapsible sidebar for tablet and mobile
-  - ✅ Hamburger menu button on smaller screens
-  - ✅ Responsive column layouts for different screen sizes
-  - ✅ Horizontal scrolling for month navigation on mobile
-  - ✅ Mobile-optimized header with centered month display
-  - _Requirements: 6.1-6.8_
+- [ ] 8.1 Create comparison Lambda function
+  - [ ] 8.1.1 Create `backend/functions/comparison/index.js`
+  - [ ] 8.1.2 Create `backend/functions/comparison/aggregator.js`
+  - [ ] 8.1.3 Create `backend/functions/comparison/package.json`
+- [ ] 8.2 Implement data aggregation
+  - [ ] 8.2.1 Create daily aggregation job
+  - [ ] 8.2.2 Group users by region, family size, income
+  - [ ] 8.2.3 Calculate category averages and percentiles
+  - [ ] 8.2.4 Enforce minimum 50 users per group
+- [ ] 8.3 Implement comparison API
+  - [ ] 8.3.1 Implement GET /api/comparison/summary
+  - [ ] 8.3.2 Implement GET /api/comparison/preferences
+  - [ ] 8.3.3 Implement PUT /api/comparison/preferences
+- [ ] 8.4 Implement privacy controls
+  - [ ] 8.4.1 Implement opt-out functionality
+  - [ ] 8.4.2 Ensure no individual data exposure
+- [ ] 8.5 Add comparison CDK infrastructure
+  - [ ] 8.5.1 Create comparison Lambda
+  - [ ] 8.5.2 Add EventBridge rule for daily aggregation
+  - [ ] 8.5.3 Add API Gateway routes
+- [ ] 8.6 Create comparison UI components
+  - [ ] 8.6.1 Create PeerComparisonCard component
+  - [ ] 8.6.2 Create CategoryComparisonList component
+  - [ ] 8.6.3 Create ComparisonPreferencesModal
+- [ ] 8.7 Write tests for comparison feature
+  - [ ] 8.7.1 Unit tests for aggregation logic
+  - [ ] 8.7.2 Property tests for privacy guarantees
+  - [ ] 8.7.3 Integration tests for comparison API
 
-- [x] 17. Data Persistence and API Integration
-  - ✅ AWS DynamoDB integration via API Gateway
-  - ✅ Real-time budget data loading and saving
-  - ✅ Authentication tokens in all API requests
-  - ✅ Multiple budgets per user (one per month)
-  - ✅ Automatic budget creation for new months
-  - ✅ Graceful error handling with user-friendly messages
-  - _Requirements: 7.1-7.8_
+### Task 9: Financial Tips Feed (Requirement 49)
 
-### Phase 6: Security Infrastructure ✅ COMPLETE
+- [ ] 9.1 Create tips Lambda function
+  - [ ] 9.1.1 Create `backend/functions/tips/index.js`
+  - [ ] 9.1.2 Create `backend/functions/tips/personalizer.js`
+  - [ ] 9.1.3 Create `backend/functions/tips/package.json`
+- [ ] 9.2 Create tip content library
+  - [ ] 9.2.1 Create budgeting tips JSON
+  - [ ] 9.2.2 Create saving tips JSON
+  - [ ] 9.2.3 Create debt tips JSON
+  - [ ] 9.2.4 Create investing tips JSON
+- [ ] 9.3 Implement tips API
+  - [ ] 9.3.1 Implement GET /api/tips/feed
+  - [ ] 9.3.2 Implement GET /api/tips/daily
+  - [ ] 9.3.3 Implement POST /api/tips/:id/save
+  - [ ] 9.3.4 Implement POST /api/tips/:id/dismiss
+  - [ ] 9.3.5 Implement GET /api/tips/saved
+- [ ] 9.4 Implement personalization
+  - [ ] 9.4.1 Analyze user spending patterns
+  - [ ] 9.4.2 Select relevant tips based on behavior
+  - [ ] 9.4.3 Track viewed tips to avoid repetition
+- [ ] 9.5 Add tips CDK infrastructure
+  - [ ] 9.5.1 Create tips Lambda
+  - [ ] 9.5.2 Add API Gateway routes
+  - [ ] 9.5.3 Store tip content in S3
+- [ ] 9.6 Create tips UI components
+  - [ ] 9.6.1 Create TipsFeedPage/TipsFeedScreen
+  - [ ] 9.6.2 Create TipCard component
+  - [ ] 9.6.3 Create SavedTipsPage
+- [ ] 9.7 Write tests for tips feature
+  - [ ] 9.7.1 Unit tests for personalization logic
+  - [ ] 9.7.2 Integration tests for tips API
 
-- [x] 18. Comprehensive Security Pipeline
-  - ✅ Enterprise-grade security infrastructure
-  - ✅ 4 TypeScript security modules (SecurityConfigManager, DevToolController, etc.)
-  - ✅ 3 cross-platform security scripts (Windows PowerShell + Linux/Mac Bash)
-  - ✅ CI/CD security pipeline with automated validation
-  - ✅ 37 property-based security tests (33/37 passing)
-  - ✅ Zero npm audit vulnerabilities
-  - _Requirements: 34.1-34.10_
+### Task 10: Educational Content (Requirement 50)
 
-- [x] 19. Pre-commit Security Validation
-  - ✅ Husky pre-commit hooks with security checks
-  - ✅ Staged file scanning for secrets and credentials
-  - ✅ JWT token detection with mock exclusions
-  - ✅ AWS credentials and private key detection
-  - ✅ Development tool safety validation
-  - _Requirements: 34.1-34.10_
+- [ ] 10.1 Create learn Lambda function
+  - [ ] 10.1.1 Create `backend/functions/learn/index.js`
+  - [ ] 10.1.2 Create `backend/functions/learn/progress.js`
+  - [ ] 10.1.3 Create `backend/functions/learn/package.json`
+- [ ] 10.2 Create course content
+  - [ ] 10.2.1 Create Budgeting 101 course content
+  - [ ] 10.2.2 Create Debt Freedom course content
+  - [ ] 10.2.3 Create Emergency Fund course content
+  - [ ] 10.2.4 Create quiz questions for each course
+- [ ] 10.3 Implement learn API
+  - [ ] 10.3.1 Implement GET /api/learn/courses
+  - [ ] 10.3.2 Implement GET /api/learn/courses/:id
+  - [ ] 10.3.3 Implement GET /api/learn/lessons/:id
+  - [ ] 10.3.4 Implement POST /api/learn/lessons/:id/complete
+  - [ ] 10.3.5 Implement POST /api/learn/quiz/:id/submit
+  - [ ] 10.3.6 Implement GET /api/learn/progress
+  - [ ] 10.3.7 Implement GET /api/learn/badges
+- [ ] 10.4 Implement gamification
+  - [ ] 10.4.1 Track learning streaks
+  - [ ] 10.4.2 Award badges on milestones
+  - [ ] 10.4.3 Calculate course progress
+- [ ] 10.5 Add learn CDK infrastructure
+  - [ ] 10.5.1 Create learn Lambda
+  - [ ] 10.5.2 Add API Gateway routes
+  - [ ] 10.5.3 Store course content in S3
+- [ ] 10.6 Create learn UI components
+  - [ ] 10.6.1 Create LearnPage/LearnScreen
+  - [ ] 10.6.2 Create CourseCard component
+  - [ ] 10.6.3 Create LessonViewer component
+  - [ ] 10.6.4 Create QuizComponent
+  - [ ] 10.6.5 Create BadgeDisplay component
+  - [ ] 10.6.6 Create StreakIndicator component
+- [ ] 10.7 Write tests for learn feature
+  - [ ] 10.7.1 Unit tests for progress tracking
+  - [ ] 10.7.2 Property tests for badge conditions
+  - [ ] 10.7.3 Integration tests for learn API
 
-### Phase 7: Native Mobile Apps 🚨 **2-WEEK MVP PRIORITY**
+---
 
-- [x] 20. React Native Mobile App Foundation
-  - ✅ React Native + Expo project setup
-  - ✅ Cross-platform navigation (iOS + Android)
-  - ✅ Bottom tab navigation with stack navigation
-  - ✅ Native UI components and theming
-  - ✅ TypeScript configuration and type safety
-  - _Requirements: 22.1-22.10_
+## Summary
 
-- [x] 21. Mobile Authentication & Security
-  - ✅ JWT token storage using Expo SecureStore
-  - ✅ Device-level security integration (Face ID, Touch ID, PIN)
-  - ✅ Google Sign-In for mobile platforms
-  - ✅ Biometric authentication setup screens
-  - ✅ Secure logout with token clearing
-  - _Requirements: 25.1-25.10_
+| Phase | Tasks | Features                       | Est. Duration |
+| ----- | ----- | ------------------------------ | ------------- |
+| 1     | 1-2   | Bills, Goals                   | 2 weeks       |
+| 2     | 3-4   | Insights, Receipts             | 2 weeks       |
+| 3     | 5-6   | Plaid, Reconciliation          | 2 weeks       |
+| 4     | 7-10  | Admin, Comparison, Tips, Learn | 3 weeks       |
 
-- [x] 22. Mobile Budget Management
-  - [x] 22.1 Implement mobile budget screens
-    - Port BudgetScreen with touch-optimized interface
-    - Large, touch-friendly buttons and input fields
-    - Native mobile gestures (swipe, pull-to-refresh)
-    - _Requirements: 23.1-23.10_
+**Total Estimated Duration**: 9 weeks
 
-  - [x] 22.2 Mobile transaction entry
-    - Quick-add transaction flow optimized for mobile
-    - Camera integration for receipt scanning (future)
-    - Voice input for transaction descriptions
-    - _Requirements: 23.1-23.10_
+**Priority Order**:
 
-  - [x] 22.3 Mobile month navigation
-    - Touch-optimized month selector
-    - Swipe gestures for month navigation
-    - Mobile-appropriate date pickers
-    - _Requirements: 23.1-23.10_
-
-- [x] 23. Offline Data Capability
-  - [x] 23.1 Implement offline storage
-    - ✅ AsyncStorage for budget and transaction data
-    - ✅ Offline transaction queue with sync capability
-    - ✅ Connection status detection and display
-    - ✅ SQLite database with comprehensive schema
-    - ✅ Offline storage service with conflict resolution
-    - ✅ Connection status component and offline banner
-    - ✅ Offline settings screen for data management
-    - _Requirements: 24.1-24.10_
-
-  - [x] 23.2 Data synchronization
-    - ✅ Automatic sync when connection restored
-    - ✅ Comprehensive SyncService with bidirectional sync
-    - ✅ Conflict resolution for offline changes (server_wins, client_wins, merge)
-    - ✅ Manual sync option in settings
-    - ✅ Batch processing and retry logic
-    - ✅ Network state monitoring and app state sync triggers
-    - ✅ Advanced sync settings screen with conflict resolution options
-    - _Requirements: 24.1-24.10_
-
-  - [x] 23.3 Offline functionality testing
-    - ✅ 7+ days offline capability validation with comprehensive test suite
-    - ✅ Offline transaction entry and budget viewing tests
-    - ✅ Sync conflict handling and resolution validation
-    - ✅ Performance tests with 200+ transactions and 10+ budgets
-    - ✅ Data integrity tests for concurrent offline operations
-    - ✅ Property-based tests for robustness validation
-    - ✅ Integration tests for complete offline-to-online workflow
-    - ✅ Automated test runner with detailed reporting
-    - _Requirements: 24.1-24.10_
-
-### Phase 8: Advanced Features 📱 **HIGH PRIORITY**
-
-- [x] 24. Data Export and Backup System
-  - [x] 24.1 Implement CSV export functionality
-    - Export all budget data (categories, transactions, summaries)
-    - Date range selection for exports
-    - Standard, readable CSV format
-    - _Requirements: 26.1-26.10_
-
-  - [x] 24.2 Implement PDF export functionality
-    - Monthly budget reports in PDF format
-    - Professional formatting and layout
-    - Include charts and visualizations
-    - _Requirements: 26.1-26.10_
-
-  - [x] 24.3 Full data backup system
-    - Complete data backup in JSON format
-    - Restore functionality from backup files
-    - Scheduled automatic backups (weekly/monthly)
-    - _Requirements: 26.1-26.10_
-
-- [x] 25. Multi-Currency Support
-  - [x] 25.1 Currency selection and management
-    - ✅ Support for 6 major currencies (USD, EUR, GBP, CAD, AUD, JPY)
-    - ✅ Currency selection during onboarding
-    - ✅ Currency change functionality in settings
-    - ✅ Currency selector components (web and mobile)
-    - ✅ 186 tests passing across all currency features
-    - _Requirements: 30.1-30.10_
-
-  - [ ] 25.2 Currency conversion system (Phase 2)
-    - Daily exchange rate updates from reliable source
-    - Multi-currency transaction support
-    - Offline currency conversion with cached rates
-    - _Requirements: 30.1-30.10_
-
-  - [x] 25.3 Localized currency formatting
-    - ✅ Currency formatting according to locale
-    - ✅ Proper symbols and decimal places
-    - ✅ Locale-aware thousands and decimal separators
-    - ✅ 50 formatting tests passing
-    - _Requirements: 30.1-30.10_
-
-- [x] 26. Push Notifications and Reminders
-  - [x] 26.1 Notification infrastructure
-    - AWS SNS integration for push notifications
-    - Expo push notification setup
-    - Notification permission handling
-    - _Requirements: 29.1-29.13_
-
-  - [x] 26.2 Budget alert notifications
-    - Overspent category alerts
-    - Budget limit warnings (80%, 90%, 100%)
-    - Monthly budget summary notifications
-    - _Requirements: 29.1-29.13_
-
-  - [x] 26.3 Daily expense reminders
-    - Configurable daily reminder times (default 7:00 PM)
-    - Quiet hours settings
-    - Reminder to add transactions if none recorded for 3+ days
-    - _Requirements: 29.1-29.13_
-
-## Notes
-
-- **Critical Path**: Mobile apps (Phase 7) are 2-week MVP priority
-- **Security**: Comprehensive security pipeline already implemented (Phase 6)
-- **Testing**: Property-based tests validate correctness across all features
-- **Cross-Platform**: Shared utilities ensure consistency between web and mobile
-- **Scalability**: AWS serverless architecture supports growth
-- **Business Model**: Freemium approach with premium features
-
-## Success Criteria
-
-- **User Acquisition**: 1000+ downloads in first month
-- **User Retention**: 40%+ monthly active users after 3 months
-- **Core Functionality**: User can complete full budget cycle in < 5 minutes
-- **Mobile Performance**: App loads in < 3 seconds, 60fps animations
-- **Offline Capability**: 7+ days offline functionality without data loss
-- **Security**: Zero security incidents, 100% data encryption
-- **Export/Backup**: 95%+ successful data exports
-- **Multi-Platform**: Feature parity between web and mobile (95%+)
-- **Premium Conversion**: 5%+ free-to-premium conversion rate
-- **App Store Rating**: 4.0+ stars on both iOS and Android
-
-This comprehensive implementation plan covers all 41+ requirements and provides a clear roadmap for completing the market-ready BudgetBuddy MVP.
+1. Bills (high user value, extends existing system)
+2. Goals (high engagement, standalone feature)
+3. Insights (AI differentiator)
+4. Receipts (convenience, AI showcase)
+5. Plaid (most requested, complex)
+6. Reconciliation (ties features together)
+7. Admin (operational necessity)
+8. Comparison (engagement)
+9. Tips (content)
+10. Learn (retention)

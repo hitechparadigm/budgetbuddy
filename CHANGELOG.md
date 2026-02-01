@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.9.26] - 2026-02-01
+
+### 🚀 NEW FEATURE - Bill Reminders System (Task 1)
+
+- **Backend Implementation**
+  - Created `backend/functions/bills/index.js` - Full CRUD operations for bill reminders
+  - Created `backend/functions/bills/package.json` - Lambda function configuration
+  - Created `backend/functions/bills/bills.test.js` - Unit tests for bills functionality
+
+- **API Endpoints Added**
+  - `GET /bills` - List all bills for a family
+  - `POST /bills` - Create a new bill reminder
+  - `PUT /bills/{billId}` - Update an existing bill
+  - `DELETE /bills/{billId}` - Delete a bill (soft delete)
+  - `POST /bills/{billId}/pay` - Mark bill as paid (creates transaction)
+  - `GET /bills/upcoming` - Get bills due in next 30 days
+  - `GET /bills/calendar` - Get bills calendar view for a month
+  - `GET /bills/health` - Health check endpoint
+
+- **Key Features**
+  - Recurring bill support (weekly, bi-weekly, monthly, quarterly, annually)
+  - Auto-create next occurrence when recurring bill is paid
+  - Auto-create transaction when bill is marked paid
+  - Status indicators (🔴 overdue, 🟡 due soon, 🟢 upcoming, ✅ paid)
+  - Days until due calculation
+  - Calendar view with monthly summary
+
+- **Infrastructure**
+  - Added billsHandler Lambda to api-stack.ts
+  - Added all bills API routes with Cognito authorization
+
+### 📋 Spec Updates
+
+- Created comprehensive competitive features spec
+  - `.kiro/specs/requirements.md` - Added Requirements 47-57
+  - `.kiro/specs/design.md` - Technical design for all features
+  - `.kiro/specs/tasks.md` - Implementation task breakdown
+
 ## [1.9.25] - 2026-02-01
 
 ### 🔧 Task Status Updates
