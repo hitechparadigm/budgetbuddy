@@ -281,6 +281,18 @@ export class ApiStack extends cdk.Stack {
       description: 'BudgetBuddy admin handler for dashboard operations, user management, and analytics',
     });
 
+    /**
+     * Bill Reminders Functions
+     * Handle bill CRUD, payment tracking, and recurring bills
+     */
+    this.functions.billsHandler = new lambda.Function(this, 'BillsHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-bills',
+      code: lambda.Code.fromAsset('../backend/functions/bills'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy bills handler for bill reminders, due date tracking, and recurring bill management',
+    });
+
     // Grant DynamoDB permissions to all functions
     Object.values(this.functions).forEach(func => {
       props.table.grantReadWriteData(func);
@@ -724,6 +736,56 @@ export class ApiStack extends cdk.Stack {
     adminHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.adminHandler), {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'AdminHealthCheck',
+    });
+
+    // Bills routes (protected)
+    const billsResource = this.api.root.addResource('bills');
+    billsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.billsHandler), {
+      authorizer,
+      operationName: 'GetBills',
+    });
+    billsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.billsHandler), {
+      authorizer,
+      operationName: 'CreateBill',
+    });
+
+    // Bills upcoming endpoint
+    const billsUpcomingResource = billsResource.addResource('upcoming');
+    billsUpcomingResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.billsHandler), {
+      authorizer,
+      operationName: 'GetUpcomingBills',
+    });
+
+    // Bills calendar endpoint
+    const billsCalendarResource = billsResource.addResource('calendar');
+    billsCalendarResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.billsHandler), {
+      authorizer,
+      operationName: 'GetBillsCalendar',
+    });
+
+    // Bills health endpoint
+    const billsHealthResource = billsResource.addResource('health');
+    billsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.billsHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'BillsHealthCheck',
+    });
+
+    // Individual bill routes
+    const billIdResource = billsResource.addResource('{billId}');
+    billIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.billsHandler), {
+      authorizer,
+      operationName: 'UpdateBill',
+    });
+    billIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.billsHandler), {
+      authorizer,
+      operationName: 'DeleteBill',
+    });
+
+    // Bill pay endpoint
+    const billPayResource = billIdResource.addResource('pay');
+    billPayResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.billsHandler), {
+      authorizer,
+      operationName: 'MarkBillPaid',
     });
 
     // Email routes (public for webhooks, protected for sending)

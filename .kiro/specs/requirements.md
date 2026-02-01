@@ -1257,3 +1257,594 @@ The following features are not included in the current MVP:
 **Implementation Status**: Not started
 **Priority**: High (User engagement and retention)
 **Technology**: AWS SNS, Expo Push Notifications, EventBridge scheduling
+
+---
+
+## New Competitive Features (February 2026)
+
+The following requirements address market differentiation features identified through competitive analysis. These features will help BudgetBuddy compete with established apps like Monarch Money, YNAB, and NerdWallet.
+
+---
+
+### Requirement 47: Admin Web Application 🔧 **HIGH PRIORITY**
+
+**User Story:** As a platform administrator, I want a simple web-based admin panel so that I can manage users, view platform metrics, and handle basic support tasks without direct database access.
+
+#### Acceptance Criteria
+
+1. THE Admin_App SHALL be a separate React web application accessible only to authorized administrators
+2. THE Admin_App SHALL authenticate administrators using AWS Cognito with admin-specific user pool group
+3. THE Admin_App SHALL display a dashboard with key metrics: total users, active users (7-day), new registrations (30-day)
+4. THE Admin_App SHALL provide user search functionality by email, user ID, or name
+5. THE Admin_App SHALL display user details: registration date, last login, subscription status, family members
+6. THE Admin_App SHALL allow administrators to disable/enable user accounts
+7. THE Admin_App SHALL allow administrators to trigger password reset emails for users
+8. THE Admin_App SHALL display recent user activity logs (logins, budget creations, errors)
+9. THE Admin_App SHALL show system health status: API response times, error rates, Lambda invocations
+10. THE Admin_App SHALL provide a simple audit log of all admin actions with timestamps
+
+**Implementation Notes:**
+
+- Phase 1 (MVP): User management, basic metrics, account actions
+- Phase 2 (Future): Subscription management, advanced analytics, bulk operations
+- Technology: React + Vite, separate from main web app, admin-only API endpoints
+- Security: Admin Cognito group, IP allowlisting (optional), audit logging
+
+**Implementation Status**: Not started
+**Priority**: High (Platform management essential for growth)
+
+---
+
+### Requirement 48: Peer Comparison and Benchmarking 📊 **HIGH PRIORITY**
+
+**User Story:** As a user, I want to see how my spending compares to others in similar situations (location, family size, income bracket), so that I can understand if my budget is reasonable and identify areas for improvement.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL display peer comparison insights on the Summary page showing how user spending compares to similar users
+2. THE Comparison_Service SHALL group users by: location (city/region), family size, and income bracket (optional, user-provided)
+3. THE BudgetBuddy SHALL show category-by-category comparison: "You spend X% more/less on Groceries than similar households"
+4. THE BudgetBuddy SHALL display comparison using friendly visual indicators:
+   - 🟢 "Below average" (spending less than peers)
+   - 🟡 "About average" (within 10% of peers)
+   - 🔴 "Above average" (spending more than peers)
+5. THE BudgetBuddy SHALL show percentile ranking: "Your grocery spending is in the 75th percentile for your area"
+6. THE Comparison_Service SHALL use anonymized, aggregated data only - never expose individual user data
+7. THE BudgetBuddy SHALL require minimum 50 users in a comparison group before showing peer data (privacy protection)
+8. THE BudgetBuddy SHALL allow users to opt-out of peer comparison data collection in privacy settings
+9. THE BudgetBuddy SHALL display comparison for top spending categories: Housing, Food, Transportation, Utilities, Entertainment
+10. THE BudgetBuddy SHALL provide actionable tips based on comparison: "Users who spend less on dining out typically cook 4+ meals at home per week"
+
+**Engagement Features:**
+
+- Monthly "How You Compare" summary notification
+- Gamification: "You're in the top 20% of savers in your city!"
+- Progress tracking: "Your grocery spending improved from 80th to 65th percentile this month"
+
+**Privacy Safeguards:**
+
+- All comparisons use aggregated, anonymized data
+- No individual user data is ever exposed
+- Users can opt-out completely
+- Minimum group size requirements prevent identification
+
+**Implementation Status**: Not started
+**Priority**: High (Strong engagement driver, competitive differentiator)
+
+---
+
+### Requirement 49: Financial Tips and Investment News Feed 💡 **HIGH PRIORITY**
+
+**User Story:** As a user, I want to see personalized financial tips and curated investment news in my app, so that I can learn about money management and stay informed about financial topics relevant to my situation.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL display a "Tips & News" feed accessible from the main navigation
+2. THE Feed_Service SHALL provide daily financial tips personalized to user's spending patterns and goals
+3. THE Feed_Service SHALL curate investment news from reputable financial sources (RSS feeds, financial APIs)
+4. THE BudgetBuddy SHALL categorize content into sections:
+   - 💡 **Daily Tips**: Quick, actionable budgeting advice
+   - 📈 **Investment Basics**: Beginner-friendly investment education
+   - 📰 **Market News**: Curated financial news (optional, can be hidden)
+   - 🎯 **Personalized**: Tips based on user's specific budget situation
+5. THE Feed_Service SHALL generate personalized tips based on user behavior:
+   - "You've been overspending on dining - here are 5 meal prep tips"
+   - "Great job staying under budget on entertainment this month!"
+   - "Your savings rate is 15% - here's how to reach 20%"
+6. THE BudgetBuddy SHALL allow users to save/bookmark helpful tips for later reference
+7. THE BudgetBuddy SHALL allow users to mark tips as "not helpful" to improve personalization
+8. THE Feed_Service SHALL refresh content daily with new tips and articles
+9. THE BudgetBuddy SHALL show reading time estimates for longer articles
+10. THE BudgetBuddy SHALL track which tips users engage with to improve recommendations
+
+**Content Categories:**
+
+- Budgeting basics and zero-based budgeting tips
+- Saving strategies (emergency fund, retirement, goals)
+- Debt payoff strategies (snowball vs avalanche)
+- Investment fundamentals (stocks, bonds, index funds)
+- Tax tips and deductions
+- Frugal living and money-saving hacks
+
+**Implementation Notes:**
+
+- Phase 1: Static tip library + basic personalization
+- Phase 2: AI-generated personalized tips using Bedrock
+- Phase 3: Curated news feed integration
+
+**Implementation Status**: Not started
+**Priority**: High (Engagement and retention driver)
+
+---
+
+### Requirement 50: Educational Content and Financial Courses 📚 **MEDIUM PRIORITY**
+
+**User Story:** As a user who wants to improve my financial literacy, I want access to structured educational content and mini-courses, so that I can learn budgeting skills and build better money habits over time.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide an "Learn" section with structured financial education content
+2. THE Education_Service SHALL offer mini-courses on key financial topics:
+   - **Budgeting 101**: Zero-based budgeting fundamentals (5 lessons)
+   - **Debt Freedom**: Strategies to pay off debt faster (4 lessons)
+   - **Emergency Fund**: Building your financial safety net (3 lessons)
+   - **Investing Basics**: Getting started with investing (6 lessons)
+   - **Retirement Planning**: Planning for your future (4 lessons)
+3. THE BudgetBuddy SHALL track user progress through courses with completion percentages
+4. THE BudgetBuddy SHALL award badges/achievements for completing courses and milestones
+5. THE BudgetBuddy SHALL provide interactive quizzes at the end of each lesson to reinforce learning
+6. THE BudgetBuddy SHALL offer "Quick Tips" - bite-sized lessons that take < 2 minutes to read
+7. THE BudgetBuddy SHALL personalize course recommendations based on user's financial situation:
+   - High debt → Recommend "Debt Freedom" course
+   - No emergency fund → Recommend "Emergency Fund" course
+   - New to budgeting → Recommend "Budgeting 101" course
+8. THE BudgetBuddy SHALL provide downloadable resources (checklists, worksheets, templates)
+9. THE BudgetBuddy SHALL send weekly "Learning Reminder" notifications (configurable)
+10. THE BudgetBuddy SHALL display estimated time to complete each course/lesson
+
+**Gamification Elements:**
+
+- 🏆 Course completion badges
+- 🔥 Learning streaks (consecutive days of learning)
+- 📊 Progress leaderboard (optional, anonymized)
+- 🎯 Personal learning goals
+
+**Content Delivery:**
+
+- Text-based lessons with illustrations
+- Infographics and visual guides
+- Interactive calculators (debt payoff, compound interest)
+- Video content (Phase 2)
+
+**Implementation Status**: Not started
+**Priority**: Medium (Differentiator, builds user loyalty)
+
+---
+
+### Requirement 51: Credit Score Monitoring 📈 **NICE TO HAVE - ON HOLD**
+
+**User Story:** As a user, I want to see my credit score and understand factors affecting it, so that I can monitor my credit health and take steps to improve it.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL display user's credit score on a dedicated Credit Score page
+2. THE Credit_Service SHALL integrate with a credit bureau partner (TransUnion, Equifax, or Experian)
+3. THE BudgetBuddy SHALL update credit score weekly with change indicators (+/- from last week)
+4. THE BudgetBuddy SHALL display credit score factors:
+   - Payment history impact
+   - Credit utilization percentage
+   - Length of credit history
+   - Credit mix
+   - Recent inquiries
+5. THE BudgetBuddy SHALL provide personalized tips to improve credit score based on factors
+6. THE BudgetBuddy SHALL show credit score history chart (last 12 months)
+7. THE BudgetBuddy SHALL send notifications for significant credit score changes (±20 points)
+8. THE BudgetBuddy SHALL explain credit score ranges (Poor, Fair, Good, Very Good, Excellent)
+9. THE BudgetBuddy SHALL provide credit score simulator: "What if I pay off this card?"
+10. THE BudgetBuddy SHALL never store full credit reports - only scores and factors
+
+**Partnership Requirements:**
+
+- Credit bureau API integration (requires business partnership)
+- User identity verification (SSN, address verification)
+- Compliance with FCRA regulations
+
+**Implementation Status**: On Hold
+**Priority**: Nice to Have (Requires partnership, regulatory compliance)
+**Blocker**: Requires credit bureau partnership agreement
+
+---
+
+## Updated Implementation Phases
+
+### Phase 1: Quick Wins (Current Sprint)
+
+- **Requirement 47**: Admin Web App (MVP) - Essential for platform management
+- **Requirement 49**: Financial Tips Feed - High engagement, low complexity
+
+### Phase 2: Engagement Features (Next Sprint)
+
+- **Requirement 48**: Peer Comparison - Strong differentiator
+- **Requirement 50**: Educational Content - User retention
+
+### Phase 3: Advanced Features (Future)
+
+- **Requirement 51**: Credit Score Monitoring - Requires partnerships
+
+---
+
+## Updated Competitive Positioning
+
+After implementing these features, BudgetBuddy will offer:
+
+| Feature              | BudgetBuddy | Monarch | YNAB | NerdWallet | Goodbudget |
+| -------------------- | ----------- | ------- | ---- | ---------- | ---------- |
+| Zero-based budgeting | ✅          | ✅      | ✅   | ❌         | ✅         |
+| AI budget generation | ✅          | ❌      | ❌   | ❌         | ❌         |
+| Peer comparison      | ✅          | ❌      | ❌   | ✅         | ❌         |
+| Financial tips feed  | ✅          | ❌      | ✅   | ✅         | ❌         |
+| Educational courses  | ✅          | ❌      | ✅   | ✅         | ✅         |
+| Admin dashboard      | ✅          | ✅      | ✅   | ✅         | ✅         |
+| Multi-currency       | ✅          | ❌      | ❌   | ❌         | ❌         |
+| Offline capability   | ✅          | ❌      | ❌   | ❌         | ✅         |
+| Free tier            | ✅          | ❌      | ❌   | ✅         | ✅         |
+| Credit score         | 🔜          | ❌      | ❌   | ✅         | ❌         |
+
+**Unique Value Proposition:**
+
+1. AI-powered budget generation (348 cities, location-based)
+2. Peer comparison with privacy-first approach
+3. Personalized financial tips based on actual spending
+4. Comprehensive free tier with premium upgrades
+5. Multi-currency + offline capability for global users
+
+---
+
+### Requirement 52: Bill Reminders with Due Dates 📅 **HIGH PRIORITY**
+
+**User Story:** As a user, I want to set up bill reminders with due dates and get notified before bills are due, so that I never miss a payment and avoid late fees.
+
+#### Acceptance Criteria
+
+1. WHEN a user creates a budget item, THE BudgetBuddy SHALL allow setting a due date for the bill
+2. THE BudgetBuddy SHALL display a dedicated "Bills" section showing all upcoming bills sorted by due date
+3. THE BudgetBuddy SHALL display for each bill:
+   - Bill name and category
+   - Amount due
+   - Due date and days until due
+   - Payment status (paid/unpaid)
+   - Recurring frequency (if applicable)
+4. THE BudgetBuddy SHALL send push notifications for upcoming bills:
+   - 7 days before due date
+   - 3 days before due date
+   - On due date (if still unpaid)
+5. THE BudgetBuddy SHALL allow users to mark bills as "paid" with one tap
+6. WHEN a bill is marked paid, THE BudgetBuddy SHALL automatically create a transaction for that amount
+7. THE BudgetBuddy SHALL support recurring bills (weekly, bi-weekly, monthly, quarterly, annually)
+8. THE BudgetBuddy SHALL automatically schedule the next occurrence when a recurring bill is marked paid
+9. THE BudgetBuddy SHALL display a calendar view of upcoming bills for the month
+10. THE BudgetBuddy SHALL calculate and display total bills due this month and total paid
+
+**Bill Status Indicators:**
+
+- 🔴 Overdue (past due date, unpaid)
+- 🟡 Due Soon (within 3 days)
+- 🟢 Upcoming (more than 3 days away)
+- ✅ Paid
+
+**Implementation Status**: Not started
+**Priority**: High (Core utility feature, reduces user anxiety)
+
+---
+
+### Requirement 53: Spending Insights and Analytics 📊 **HIGH PRIORITY**
+
+**User Story:** As a user, I want AI-generated insights about my spending patterns and trends, so that I can make better financial decisions and identify areas for improvement.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL generate weekly spending insights automatically
+2. THE BudgetBuddy SHALL analyze and report:
+   - Top spending categories this week/month
+   - Spending compared to last week/month (% change)
+   - Unusual spending patterns (spikes or drops)
+   - Categories where user is under/over budget
+3. THE BudgetBuddy SHALL provide personalized AI recommendations:
+   - "You spent 40% more on dining this month than last month"
+   - "You're on track to save $X this month - great job!"
+   - "Your grocery spending is 20% higher than similar households"
+4. THE BudgetBuddy SHALL display spending trends over time with charts:
+   - Monthly spending by category (bar chart)
+   - Spending trend over 6 months (line chart)
+   - Category breakdown (pie chart)
+5. THE BudgetBuddy SHALL show month-over-month comparison for each category
+6. THE BudgetBuddy SHALL identify spending patterns by:
+   - Day of week (e.g., "You spend most on weekends")
+   - Time of month (e.g., "Spending spikes after payday")
+   - Merchant frequency (e.g., "You shop at Amazon 8 times/month")
+7. THE BudgetBuddy SHALL send weekly insight notifications (configurable)
+8. THE BudgetBuddy SHALL use AI (AWS Bedrock) for natural language insights
+9. THE BudgetBuddy SHALL provide an "Ask about my spending" feature for custom questions
+10. THE BudgetBuddy SHALL highlight actionable opportunities to save money
+
+**Insight Categories:**
+
+- 💡 Weekly Summary: Overview of the week's spending
+- 📈 Trends: How spending is changing over time
+- ⚠️ Alerts: Unusual patterns or overspending warnings
+- 🎯 Goals: Progress toward savings goals
+- 💰 Opportunities: Ways to save money
+
+**Implementation Status**: Not started
+**Priority**: High (Differentiator, increases engagement)
+
+---
+
+### Requirement 54: Savings Goals with Progress Tracking 🎯 **HIGH PRIORITY**
+
+**User Story:** As a user, I want to create savings goals with target amounts and deadlines, so that I can track my progress toward financial objectives and stay motivated.
+
+#### Acceptance Criteria
+
+1. WHEN a user creates a savings goal, THE BudgetBuddy SHALL collect:
+   - Goal name (e.g., "Emergency Fund", "Vacation", "New Car")
+   - Target amount
+   - Target date (optional)
+   - Goal icon/emoji
+   - Priority level (high, medium, low)
+2. THE BudgetBuddy SHALL display goal progress as:
+   - Current amount saved (from linked savings category)
+   - Percentage complete (visual progress bar)
+   - Amount remaining
+   - Days until target date (if set)
+3. THE BudgetBuddy SHALL calculate required monthly savings to reach goal on time
+4. THE BudgetBuddy SHALL allow manual contributions to goals
+5. THE BudgetBuddy SHALL auto-link savings category transactions to goals
+6. THE BudgetBuddy SHALL support multiple concurrent goals (up to 10)
+7. THE BudgetBuddy SHALL allow prioritizing goals with drag-and-drop ordering
+8. THE BudgetBuddy SHALL send encouragement notifications:
+   - Weekly progress updates
+   - Milestone celebrations (25%, 50%, 75%, 100%)
+   - "You're behind schedule" gentle reminders
+9. THE BudgetBuddy SHALL display all goals on a dedicated Goals dashboard
+10. THE BudgetBuddy SHALL archive completed goals with celebration animation
+
+**Goal Templates:**
+
+- 🚨 Emergency Fund (3-6 months expenses)
+- ✈️ Vacation
+- 🚗 New Car
+- 🏠 Home Down Payment
+- 💍 Wedding
+- 🎓 Education
+- 💻 Big Purchase
+- 🎁 Holiday Gifts
+
+**Gamification:**
+
+- 🎉 Confetti animation on goal completion
+- 🏆 Badges for completing goals
+- 🔥 Savings streaks
+
+**Implementation Status**: Not started
+**Priority**: High (Strong engagement and retention feature)
+
+---
+
+### Requirement 55: Bank Account Sync (Plaid Integration) 🏦 **HIGH PRIORITY**
+
+**User Story:** As a user, I want to connect my bank accounts to automatically import transactions, so that I don't have to manually enter every expense and my budget stays up-to-date automatically.
+
+#### Acceptance Criteria
+
+1. WHEN a user wants to connect a bank account, THE BudgetBuddy SHALL display Plaid Link for secure authentication
+2. THE BudgetBuddy SHALL support connecting:
+   - Checking accounts
+   - Savings accounts
+   - Credit cards
+3. THE BudgetBuddy SHALL import transactions automatically (daily sync)
+4. THE BudgetBuddy SHALL auto-categorize imported transactions using AI based on merchant name
+5. THE BudgetBuddy SHALL allow users to review and confirm imported transactions before adding to budget
+6. THE BudgetBuddy SHALL handle duplicate detection (prevent importing same transaction twice)
+7. THE BudgetBuddy SHALL display account balances from connected accounts
+8. THE BudgetBuddy SHALL support multiple bank connections per user (up to 5)
+9. THE BudgetBuddy SHALL handle connection errors gracefully with re-authentication prompts
+10. THE BudgetBuddy SHALL provide a "Pending Review" queue for uncategorized transactions
+
+**Transaction Import Flow:**
+
+1. Plaid syncs new transactions daily
+2. AI categorizes transactions based on merchant
+3. User reviews pending transactions
+4. User confirms or re-categorizes
+5. Transactions added to budget
+
+**Mock Mode (Development):**
+
+- THE BudgetBuddy SHALL support a mock mode for development without Plaid credentials
+- Mock mode SHALL generate realistic sample transactions
+- Mock mode SHALL simulate bank account balances
+- Mock mode SHALL be toggleable via environment variable
+
+**Security Requirements:**
+
+- Plaid access tokens stored in AWS Secrets Manager
+- No bank credentials stored in BudgetBuddy
+- Encrypted data transmission
+- User can disconnect accounts at any time
+
+**Implementation Status**: Not started
+**Priority**: High (#1 requested feature)
+**Note**: Initial implementation will use mock data until Plaid account is set up
+
+---
+
+## Updated Feature Priority Matrix
+
+### HIGH PRIORITY (Implement First)
+
+| Req | Feature             | Complexity | Impact    | Status      |
+| --- | ------------------- | ---------- | --------- | ----------- |
+| 47  | Admin Web App       | Medium     | High      | Not Started |
+| 48  | Peer Comparison     | Medium     | High      | Not Started |
+| 49  | Financial Tips Feed | Low        | Medium    | Not Started |
+| 52  | Bill Reminders      | Medium     | High      | Not Started |
+| 53  | Spending Insights   | High       | High      | Not Started |
+| 54  | Savings Goals       | Medium     | High      | Not Started |
+| 55  | Bank Sync (Plaid)   | High       | Very High | Not Started |
+
+### MEDIUM PRIORITY (Implement Second)
+
+| Req | Feature             | Complexity | Impact | Status      |
+| --- | ------------------- | ---------- | ------ | ----------- |
+| 50  | Educational Content | Medium     | Medium | Not Started |
+
+### NICE TO HAVE (On Hold)
+
+| Req | Feature      | Complexity | Impact | Status  |
+| --- | ------------ | ---------- | ------ | ------- |
+| 51  | Credit Score | High       | Medium | On Hold |
+
+---
+
+### Requirement 56: Receipt Scanning with AI Vision 📸 **MEDIUM PRIORITY**
+
+**User Story:** As a user, I want to take photos of receipts and have the app automatically extract transaction details using AI, so that I can quickly record expenses without manual data entry.
+
+#### Acceptance Criteria
+
+1. THE BudgetBuddy SHALL provide a camera button in the transaction entry flow
+2. WHEN a user takes a photo of a receipt, THE Receipt_AI_Service SHALL extract:
+   - Merchant/store name
+   - Total amount
+   - Date of purchase
+   - Suggested category based on merchant type
+3. THE BudgetBuddy SHALL display extracted data for user confirmation before creating transaction
+4. THE BudgetBuddy SHALL allow users to correct any incorrectly extracted fields
+5. THE BudgetBuddy SHALL auto-suggest category based on merchant name and type
+6. THE BudgetBuddy SHALL store receipt images in S3 with 90-day retention (compressed)
+7. THE BudgetBuddy SHALL link receipt images to transactions for future reference
+8. THE BudgetBuddy SHALL support common receipt formats (thermal paper, digital receipts, invoices)
+9. THE BudgetBuddy SHALL handle poor quality images with "Unable to read" feedback and manual entry fallback
+10. THE BudgetBuddy SHALL process receipts within 3-5 seconds
+
+**AI Extraction Fields:**
+
+- 🏪 Merchant name (required)
+- 💰 Total amount (required)
+- 📅 Date (required)
+- 🏷️ Suggested category (auto-detected)
+
+**Supported Formats:**
+
+- Printed thermal receipts
+- Digital/email receipts (screenshot)
+- Invoices and bills
+- Handwritten receipts (best effort)
+
+**Technology: Claude Haiku via AWS Bedrock (Cost-Optimized)**
+
+| Option                  | Cost per Receipt | Notes                                        |
+| ----------------------- | ---------------- | -------------------------------------------- |
+| AWS Textract            | ~$0.015          | High accuracy but expensive                  |
+| Claude Haiku (Bedrock)  | ~$0.001-0.002    | **Recommended** - 10x cheaper, good accuracy |
+| Claude Sonnet (Bedrock) | ~$0.003-0.005    | Better for complex receipts                  |
+
+**Cost Control Strategy:**
+
+1. Use Claude Haiku as primary (lowest cost ~$0.001/receipt)
+2. Compress images before sending (reduce token cost)
+3. Limit to 10 receipt scans per day for free users
+4. Cache merchant → category mappings to skip AI for known merchants
+5. Premium users: Unlimited scans
+
+**AI Prompt (Optimized for Haiku):**
+
+```
+Extract from receipt: merchant name, total amount (number), date (YYYY-MM-DD), category (Groceries/Dining/Gas/Shopping/Entertainment/Healthcare/Other).
+Return JSON only: {"merchant":"","amount":0.00,"date":"","category":""}
+If unreadable: {"error":"Unable to read"}
+```
+
+**Estimated Monthly Costs:**
+
+- 1000 users × 10 receipts = 10,000 scans
+- Claude Haiku: ~$10-20/month
+- Textract equivalent: ~$150/month
+- **Savings: 85-90%**
+
+**Implementation Status**: Not started
+**Priority**: Medium (Convenience feature, reduces friction)
+
+---
+
+### Requirement 57: Receipt-to-Bank Transaction Reconciliation 🔄 **MEDIUM PRIORITY**
+
+**User Story:** As a user who scans receipts and connects bank accounts, I want the app to automatically match my scanned receipts with imported bank transactions, so that I don't have duplicate entries and can verify my spending.
+
+#### Acceptance Criteria
+
+1. WHEN bank transactions are imported via Plaid, THE Reconciliation_Service SHALL attempt to match with existing receipt-based transactions
+2. THE Reconciliation_Service SHALL match transactions based on:
+   - Amount (exact match or within $0.50 tolerance for tips/rounding)
+   - Date (same day or within 2 days for pending transactions)
+   - Merchant name (fuzzy matching)
+3. WHEN a match is found, THE BudgetBuddy SHALL:
+   - Link the receipt image to the bank transaction
+   - Mark the transaction as "Verified" ✓
+   - NOT create a duplicate transaction
+4. WHEN no match is found for a bank transaction, THE BudgetBuddy SHALL add it as a new transaction pending review
+5. WHEN no match is found for a receipt transaction, THE BudgetBuddy SHALL flag it as "Not in bank statement" for user review
+6. THE BudgetBuddy SHALL display reconciliation status on transactions:
+   - ✅ Verified (receipt + bank match)
+   - 🏦 Bank Only (imported, no receipt)
+   - 📸 Receipt Only (scanned, not in bank yet)
+   - ⚠️ Mismatch (amount differs between receipt and bank)
+7. THE BudgetBuddy SHALL allow users to manually match/unmatch transactions
+8. THE BudgetBuddy SHALL provide a "Reconciliation" view showing unmatched items
+9. THE BudgetBuddy SHALL handle split transactions (one bank charge, multiple receipts)
+10. THE BudgetBuddy SHALL learn from user corrections to improve future matching
+
+**Matching Algorithm:**
+
+```
+1. Exact amount + same date + similar merchant → Auto-match (high confidence)
+2. Amount within $0.50 + within 2 days + similar merchant → Suggest match
+3. Same merchant + same date + different amount → Flag for review
+4. No match found → Add as new or flag as unmatched
+```
+
+**Implementation Status**: Not started
+**Priority**: Medium (Depends on Req 55 Bank Sync and Req 56 Receipt Scanning)
+**Dependencies**: Requirement 55 (Bank Sync), Requirement 56 (Receipt Scanning)
+
+---
+
+### Requirement 55 (Updated): Bank Account Sync - Cost Optimization 🏦
+
+**Additional Acceptance Criteria for Cost Control:**
+
+11. THE Plaid_Service SHALL limit sync requests to 1 per day per account per user
+12. THE BudgetBuddy SHALL display "Last synced: [timestamp]" for each connected account
+13. THE BudgetBuddy SHALL allow users to manually trigger sync (counts toward daily limit)
+14. THE BudgetBuddy SHALL queue sync requests and batch process them during off-peak hours (2-4 AM UTC)
+15. THE BudgetBuddy SHALL cache account balances and only refresh during daily sync
+16. THE BudgetBuddy SHALL track Plaid API usage and alert admins if approaching cost thresholds
+17. THE BudgetBuddy SHALL provide admin dashboard metrics for Plaid API calls and costs
+18. IF user requests sync and daily limit reached, THE BudgetBuddy SHALL display "Next sync available in X hours"
+19. THE BudgetBuddy SHALL prioritize syncing accounts with recent activity
+20. THE BudgetBuddy SHALL support "sync all accounts" as a single daily action (not per-account)
+
+**Cost Control Strategy:**
+
+- Daily sync limit: 1 request per account per user per day
+- Batch processing: Aggregate syncs during off-peak hours
+- Caching: Store balances locally, refresh only during sync
+- Monitoring: Track API usage, set cost alerts
+- Premium option (future): More frequent syncs for premium users
+
+**Estimated Costs:**
+
+- Plaid API: ~$0.30-0.50 per account per month (daily sync)
+- 1000 users × 2 accounts = ~$600-1000/month at scale
+- Mock mode: $0 (development/testing)
