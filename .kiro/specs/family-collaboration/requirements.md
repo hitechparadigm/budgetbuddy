@@ -6,36 +6,52 @@ Implement family account sharing and collaboration features to enable couples to
 
 ## User Stories
 
-### US-1: Partner Invitation
+### US-1: Family Member Invitation
 
 **As a** primary account holder
-**I want to** invite my spouse/partner to join my family account
-**So that** we can manage our budget together
+**I want to** invite other users to access my budget
+**So that** we can collaborate on budget management or provide oversight
 
 **Acceptance Criteria:**
 
 1. Primary user SHALL be able to send invitation via email
-2. Invitation SHALL include secure token with 7-day expiration
-3. Invitation SHALL be sent via email with clear instructions
-4. System SHALL prevent duplicate invitations to same email
-5. System SHALL limit family to 2 adult members maximum
-6. Invitation SHALL be revocable before acceptance
+2. Primary user SHALL be able to select role: "spouse" (editor) or "viewer" (read-only)
+3. Invitation SHALL include secure token with 7-day expiration
+4. Invitation SHALL be sent via email with clear instructions
+5. System SHALL prevent duplicate invitations to same email
+6. System SHALL limit family to 2 members with edit permissions (primary + spouse)
+7. System SHALL allow unlimited viewer members
+8. Invitation SHALL be revocable before acceptance
+9. Invitation email SHALL clearly state the role and permissions being granted
 
-### US-2: Partner Acceptance
+### US-2: Invitation Acceptance
 
-**As an** invited partner
-**I want to** accept the family invitation
-**So that** I can access our shared budget
+**As an** invited user
+**I want to** accept the invitation
+**So that** I can access the shared budget with appropriate permissions
 
 **Acceptance Criteria:**
 
-1. Partner SHALL receive email with invitation link
-2. Partner SHALL be able to accept invitation via secure link
-3. Partner SHALL be able to create account if new user
-4. Partner SHALL be able to link existing account if registered
-5. System SHALL validate invitation token before acceptance
-6. System SHALL update family membership upon acceptance
-7. Partner SHALL immediately see shared budget after acceptance
+1. Invited user SHALL receive email with invitation link containing secure token
+2. Invited user SHALL be able to accept invitation via secure link
+3. **NEW USER FLOW**: User without account SHALL see registration form by default
+4. **NEW USER FLOW**: User SHALL be able to create account during invitation acceptance
+5. **NEW USER FLOW**: System SHALL automatically accept invitation after successful registration
+6. **EXISTING USER FLOW**: User with account SHALL be able to switch to login form
+7. **EXISTING USER FLOW**: User SHALL be able to link existing account if registered
+8. **EXISTING USER FLOW**: System SHALL automatically accept invitation after successful login
+9. System SHALL validate invitation token before acceptance
+10. System SHALL check token expiration (7 days)
+11. System SHALL update family membership upon acceptance
+12. System SHALL check editor limit (max 2) before accepting "spouse" invitations
+13. System SHALL allow unlimited viewer members
+14. User SHALL immediately see shared budget after acceptance
+15. System SHALL redirect to budget page with success message
+16. System SHALL handle expired tokens with clear error message
+17. System SHALL handle invalid tokens with clear error message
+18. System SHALL handle "family full" error for editor invitations only (not viewers)
+19. System SHALL store authentication tokens correctly (budgetbuddy_access_token)
+20. System SHALL store user data correctly (budgetbuddy_user with userId)
 
 ### US-3: Role-Based Permissions
 
@@ -70,18 +86,21 @@ Implement family account sharing and collaboration features to enable couples to
 ### US-5: Family Management
 
 **As a** primary account holder
-**I want to** manage family members
+**I want to** manage all family members and viewers
 **So that** I can control access to our budget
 
 **Acceptance Criteria:**
 
-1. Primary user SHALL be able to view all family members
-2. Primary user SHALL be able to change member roles
-3. Primary user SHALL be able to remove family members
-4. System SHALL prevent primary user from removing themselves
-5. System SHALL require confirmation for member removal
-6. Removed member SHALL lose access immediately
-7. System SHALL notify removed member via email
+1. Primary user SHALL be able to view all family members (editors and viewers)
+2. Primary user SHALL be able to change member roles (spouse ↔ viewer)
+3. Primary user SHALL NOT be able to promote viewers to spouse if already at 2 editor limit
+4. Primary user SHALL be able to remove any family member
+5. System SHALL prevent primary user from removing themselves
+6. System SHALL require confirmation for member removal
+7. Removed member SHALL lose access immediately
+8. System SHALL notify removed member via email
+9. System SHALL display member type (editor/viewer) in family list
+10. System SHALL show current editor count (X/2) in UI
 
 ### US-6: Leave Family
 
@@ -98,6 +117,24 @@ Implement family account sharing and collaboration features to enable couples to
 5. System SHALL notify primary user of departure
 6. Leaving member SHALL retain their transaction history
 
+### US-7: Authentication Token Consistency
+
+**As a** developer
+**I want** consistent token storage across all components
+**So that** authentication works reliably throughout the application
+
+**Acceptance Criteria:**
+
+1. System SHALL use consistent localStorage keys for tokens
+2. All components SHALL use `budgetbuddy_access_token` for access token
+3. All components SHALL use `budgetbuddy_refresh_token` for refresh token
+4. All components SHALL use `budgetbuddy_id_token` for ID token
+5. All components SHALL use `budgetbuddy_user` for user data (JSON with userId, email)
+6. FamilySettings component SHALL retrieve tokens using correct keys
+7. AcceptInvitation page SHALL store tokens using correct keys
+8. System SHALL NOT use legacy `token` or `userId` keys
+9. Authentication SHALL work consistently across login, registration, and invitation flows
+
 ## Functional Requirements
 
 ### FR-1: Invitation System
@@ -112,9 +149,11 @@ Implement family account sharing and collaboration features to enable couples to
 
 1. System SHALL maintain family records in DynamoDB
 2. System SHALL link users to families via familyId
-3. System SHALL store family member roles
+3. System SHALL store family member roles (primary, spouse, viewer)
 4. System SHALL track family creation date
-5. System SHALL support maximum 2 adult members
+5. System SHALL support maximum 2 members with edit permissions (primary + spouse)
+6. System SHALL support unlimited viewer members
+7. System SHALL track editor count for validation
 
 ### FR-3: Permission Enforcement
 
@@ -167,12 +206,13 @@ Implement family account sharing and collaboration features to enable couples to
 
 ## Out of Scope
 
-1. Child accounts (adults only)
-2. More than 2 family members
-3. Multiple families per user
-4. Family budget templates
-5. Family spending reports
-6. Family goals and challenges
+1. Multiple families per user
+2. Family budget templates
+3. Family spending reports
+4. Family goals and challenges
+5. Granular permission controls (custom roles)
+6. Time-limited access for viewers
+7. Audit logs for viewer access
 
 ## Success Criteria
 
@@ -199,7 +239,13 @@ Implement family account sharing and collaboration features to enable couples to
 ## Glossary
 
 - **Primary User**: The user who created the family account
-- **Spouse**: Partner with full budget permissions
+- **Spouse/Partner**: Family member with full budget permissions (edit/create/delete)
 - **Viewer**: Family member with read-only permissions
-- **Family**: Group of up to 2 adult users sharing a budget
+- **Family**: Group of up to 2 members with edit permissions + unlimited viewers
 - **Invitation Token**: Secure token for accepting family invitation
+
+## Family Size Limits
+
+- **Edit Permissions (Primary + Spouse)**: Maximum 2 members
+- **View-Only (Viewers)**: Unlimited members
+- **Total Family Size**: 2 editors + N viewers

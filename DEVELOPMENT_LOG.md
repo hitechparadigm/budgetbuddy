@@ -8,7 +8,35 @@
 **Focus**: Completed Phase 5 and Phase 6 Web UI implementation for family collaboration
 **Outcome**: FamilySettings component and AcceptInvitation page fully functional
 
-### Part 4: AcceptInvitation Page Implementation (Phase 6)
+### Part 4: Authentication Token Fix
+
+**Problem Statement**:
+
+- FamilySettings component showing "Not authenticated" error
+- User unable to send invitations despite being logged in
+
+**Root Cause**:
+
+- Inconsistent localStorage key usage across the app
+- AuthContext stores token as `budgetbuddy_access_token`
+- FamilySettings was looking for `token` key
+- Similar issue with userId storage
+
+**Solution Implemented**:
+
+1. **Updated FamilySettings Component**:
+   - Changed all `localStorage.getItem("token")` to `localStorage.getItem("budgetbuddy_access_token")`
+   - Fixed userId retrieval to use `budgetbuddy_user` and parse JSON
+   - Updated all 5 API call functions (loadFamilyMembers, handleSendInvitation, handleChangeRole, handleRemoveMember, handleLeaveFamily)
+
+2. **Consistent Token Management**:
+   - Now uses same keys as AuthContext
+   - Access token: `budgetbuddy_access_token`
+   - User data: `budgetbuddy_user` (JSON stringified)
+
+**Result**: ✅ FamilySettings now properly authenticated, users can send invitations
+
+### Part 5: AcceptInvitation Page Implementation (Phase 6)
 
 **Implemented**:
 
