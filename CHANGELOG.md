@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.9.42] - 2026-02-01
+
+### 🏦 Feature - Bank Accounts UI (Plaid Integration Frontend)
+
+**New Pages and Components**:
+
+- `AccountsPage` - Dedicated page for managing connected bank accounts
+- `BankAccounts` component - Full UI for Plaid bank account management
+- `plaidApi` service - API client for Plaid endpoints
+
+**Features**:
+
+- View all connected bank accounts with balances
+- Create sandbox test accounts (checking + credit card) for testing
+- Sync transactions from connected accounts
+- Review pending transactions before adding to budget
+- Approve or reject imported transactions
+- Unlink accounts when no longer needed
+- Visual feedback for sync status and errors
+
+**Navigation**:
+
+- Added `/accounts` route to App.tsx
+- Added "Manage Bank Accounts" button in Settings page
+- Back navigation to Budget page
+
+**Files Added**:
+
+- `packages/web-app/src/pages/AccountsPage.tsx`
+- `packages/web-app/src/components/BankAccounts.tsx`
+- `packages/web-app/src/services/plaidApi.ts`
+
+**Files Modified**:
+
+- `packages/web-app/src/App.tsx` - Added AccountsPage route
+- `packages/web-app/src/pages/SettingsPage.tsx` - Added Bank Accounts section
+- `.kiro/specs/competitive-features/requirements.md` - Updated Requirement 42 with frontend criteria
+
 ## [1.9.41] - 2026-02-01
 
 ### 📊 Status Update - All Competitive Feature Backends Verified

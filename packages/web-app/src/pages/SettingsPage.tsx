@@ -509,6 +509,36 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
 
+        {/* Bank Accounts Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            🏦 Connected Bank Accounts
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Link your bank accounts to automatically import transactions and
+            track your spending.
+          </p>
+          <button
+            onClick={() => navigate("/accounts")}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors flex items-center space-x-2"
+          >
+            <span>Manage Bank Accounts</span>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
+
         {/* Profile Section (Placeholder) */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile</h2>
