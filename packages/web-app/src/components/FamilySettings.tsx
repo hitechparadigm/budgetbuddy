@@ -53,7 +53,7 @@ export const FamilySettings: React.FC = () => {
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("budgetbuddy_access_token");
       if (!token) {
         throw new Error("Not authenticated");
       }
@@ -73,8 +73,10 @@ export const FamilySettings: React.FC = () => {
       setPendingInvitations(data.pendingInvitations || []);
 
       // Get current user role from token or response
+      const userData = localStorage.getItem("budgetbuddy_user");
+      const currentUserId = userData ? JSON.parse(userData).userId : null;
       const currentUser = data.members.find(
-        (m: FamilyMember) => m.userId === localStorage.getItem("userId"),
+        (m: FamilyMember) => m.userId === currentUserId,
       );
       if (currentUser) {
         setCurrentUserRole(currentUser.role);
@@ -95,7 +97,7 @@ export const FamilySettings: React.FC = () => {
     setSuccess(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("budgetbuddy_access_token");
       if (!token) {
         throw new Error("Not authenticated");
       }
@@ -140,7 +142,7 @@ export const FamilySettings: React.FC = () => {
     setSuccess(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("budgetbuddy_access_token");
       if (!token) {
         throw new Error("Not authenticated");
       }
@@ -182,7 +184,7 @@ export const FamilySettings: React.FC = () => {
     setSuccess(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("budgetbuddy_access_token");
       if (!token) {
         throw new Error("Not authenticated");
       }
@@ -219,7 +221,7 @@ export const FamilySettings: React.FC = () => {
     setSuccess(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("budgetbuddy_access_token");
       if (!token) {
         throw new Error("Not authenticated");
       }
@@ -401,8 +403,9 @@ export const FamilySettings: React.FC = () => {
         ) : (
           members.map((member) => {
             const roleInfo = getRoleDisplay(member.role);
-            const isCurrentUser =
-              member.userId === localStorage.getItem("userId");
+            const userData = localStorage.getItem("budgetbuddy_user");
+            const currentUserId = userData ? JSON.parse(userData).userId : null;
+            const isCurrentUser = member.userId === currentUserId;
 
             return (
               <div

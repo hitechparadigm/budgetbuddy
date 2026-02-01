@@ -22,7 +22,8 @@ interface Family {
   familyId: string; // UUID
   primaryUserId: string; // User who created the family
   createdAt: string; // ISO 8601 timestamp
-  memberCount: number; // Current member count (max 2)
+  editorCount: number; // Current editor count (max 2: primary + spouse)
+  viewerCount: number; // Current viewer count (unlimited)
   subscriptionTier: string; // "free" | "premium"
 }
 ```
@@ -97,7 +98,7 @@ Send invitation to join family.
 
 - 400: Invalid email or role
 - 403: Not primary user
-- 409: Family full or invitation already exists
+- 409: Editor limit reached (max 2) or invitation already exists
 - 429: Too many invitations
 
 ### POST /family/accept-invitation
@@ -130,7 +131,7 @@ Accept family invitation.
 
 - 400: Invalid or expired token
 - 404: Invitation not found
-- 409: Family full
+- 409: Editor limit reached (max 2 editors) - only for spouse invitations
 
 ### GET /family/members
 
@@ -271,23 +272,96 @@ function checkPermission(requiredRole, action) {
 ### Send Invitation
 
 1. Validate user is primary
-2. Check family not full (< 2 members)
-3. Check no pending invitation for email
-4. Generate secure token
-5. Create invitation record
-6. Send email via SES
-7. Return invitation details
+2. Check editor limit if inviting as "spouse" (< 2 editors)
+3. No limit check for "viewer" invitations
+4. Check no pending invitation for email
+5. Generate secure token
+6. Create invitation record
+7. Send email via SES
+8. Return invitation details
 
 ### Accept Invitation
 
-1. Validate token
-2. Check invitation not expired
-3. Check family not full
-4. Get or create user account
-5. Add user to family
-6. Update invitation status
-7. Copy budget to user's context
-8. Return family details
+**Flow Overview:**
+
+The invitation acceptance flow handles three scenarios:
+
+1. **New User (No Account)**: Default flow - shows registration form
+2. **Existing User (Has Account)**: Shows login form
+3. **Already Authenticated**: Direct acceptance
+
+**Detailed Steps:**
+
+1. **Parse Token from URL**
+   - Extract token from query parameter `?token=xxx`
+   - Validate token exists
+   - Display error if missing
+
+2. **Check Authentication State**
+   - Check for `budgetbuddy_access_token` in localStorage
+   - If authenticated: Show accept/decline buttons
+   - If not authenticated: Show auth form (default to registration)
+
+3. **New User Registration Flow**
+   - Display registration form by default (most common case)
+   - Collect: firstName, lastName, email, password
+   - Validate password (min 8 characters)
+   - Call POST /auth/register with user data
+   - On success: Automatically log in user
+   - Store tokens: `budgetbuddy_access_token`, `budgetbuddy_refresh_token`, `budgetbuddy_id_token`
+   - Store user data: `budgetbuddy_user` (JSON with userId, email)
+   - Proceed to step 5 (Accept Invitation)
+
+4. **Existing User Login Flow**
+   - User switches to "Login" tab
+   - Display login form
+   - Collect: email, password
+   - Call POST /auth/login with credentials
+   - On success: Store authentication tokens (same as registration)
+   - Proceed to step 5 (Accept Invitation)
+
+5. **Accept Invitation API Call**
+   - Call POST /family/accept-invitation with token
+   - Include Authorization header with access token
+   - Validate invitation not expired (7 days)
+   - If role is "spouse": Validate editor limit not reached (< 2 editors)
+   - If role is "viewer": No limit check (unlimited viewers)
+   - Add user to family with specified role
+   - Update invitation status to "accepted"
+   - Increment editorCount or viewerCount accordingly
+
+6. **Post-Acceptance**
+   - Redirect to /budget page
+   - Display success message: "Successfully joined family! You are now a [role]."
+   - User immediately sees shared family budget
+
+**Error Handling:**
+
+- **Invalid Token**: Display error, offer link to home page
+- **Expired Token**: Display error with expiration date, suggest requesting new invitation
+- **Editor Limit Reached**: Display error for spouse invitations only, explain 2-editor limit
+- **Registration Failed**: Display error message, allow retry
+- **Login Failed**: Display error message, allow retry
+- **Network Error**: Display error, offer retry button
+
+**Token Storage Consistency:**
+
+All components MUST use these localStorage keys:
+
+- `budgetbuddy_access_token` - Access token for API calls
+- `budgetbuddy_refresh_token` - Refresh token for token renewal
+- `budgetbuddy_id_token` - ID token from Cognito
+- `budgetbuddy_user` - JSON object with { userId, email, ... }
+
+**UI/UX Considerations:**
+
+- Default to registration form (most invitees are new users)
+- Provide clear toggle between "Create Account" and "Login"
+- Show informative message about what happens after acceptance
+- Display role information (Spouse vs Viewer permissions)
+- Use loading states during API calls
+- Provide confirmation for decline action
+- Mobile-responsive design
 
 ### Email Template
 

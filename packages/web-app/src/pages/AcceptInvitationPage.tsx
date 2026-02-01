@@ -31,9 +31,13 @@ export const AcceptInvitationPage: React.FC = () => {
 
   useEffect(() => {
     // Check if user is already authenticated
-    const accessToken = localStorage.getItem("token");
+    const accessToken = localStorage.getItem("budgetbuddy_access_token");
     if (accessToken) {
       setIsAuthenticated(true);
+    } else {
+      // If not authenticated, show auth form by default for new users
+      setShowAuthForm(true);
+      setAuthMode("register"); // Default to register for invited users
     }
 
     // Validate token exists
@@ -63,7 +67,7 @@ export const AcceptInvitationPage: React.FC = () => {
     setError(null);
 
     try {
-      const accessToken = localStorage.getItem("token");
+      const accessToken = localStorage.getItem("budgetbuddy_access_token");
       if (!accessToken) {
         throw new Error("Not authenticated");
       }
@@ -131,8 +135,17 @@ export const AcceptInvitationPage: React.FC = () => {
       const data = await response.json();
 
       // Store token
-      localStorage.setItem("token", data.accessToken);
-      localStorage.setItem("userId", data.userId);
+      localStorage.setItem("budgetbuddy_access_token", data.accessToken);
+      if (data.refreshToken) {
+        localStorage.setItem("budgetbuddy_refresh_token", data.refreshToken);
+      }
+      if (data.idToken) {
+        localStorage.setItem("budgetbuddy_id_token", data.idToken);
+      }
+      if (data.userId) {
+        const userData = { userId: data.userId, email: email };
+        localStorage.setItem("budgetbuddy_user", JSON.stringify(userData));
+      }
 
       setIsAuthenticated(true);
       setShowAuthForm(false);
@@ -228,12 +241,37 @@ export const AcceptInvitationPage: React.FC = () => {
           </div>
         )}
 
-        {/* Auth Form */}
+        {/* Auth Form - Show by default for non-authenticated users */}
         {showAuthForm && !isAuthenticated ? (
           <div className="space-y-6">
+            {/* Info Message */}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                {authMode === "register"
+                  ? "Create your BudgetBuddy account to accept this invitation and start managing your family budget together."
+                  : "Log in to your BudgetBuddy account to accept this invitation."}
+              </p>
+            </div>
+
             <div className="flex space-x-2 mb-4">
               <button
-                onClick={() => setAuthMode("login")}
+                onClick={() => {
+                  setAuthMode("register");
+                  setAuthError(null);
+                }}
+                className={`flex-1 px-4 py-2 rounded-lg font-medium ${
+                  authMode === "register"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Create Account
+              </button>
+              <button
+                onClick={() => {
+                  setAuthMode("login");
+                  setAuthError(null);
+                }}
                 className={`flex-1 px-4 py-2 rounded-lg font-medium ${
                   authMode === "login"
                     ? "bg-blue-600 text-white"
@@ -241,16 +279,6 @@ export const AcceptInvitationPage: React.FC = () => {
                 }`}
               >
                 Login
-              </button>
-              <button
-                onClick={() => setAuthMode("register")}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium ${
-                  authMode === "register"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                Register
               </button>
             </div>
 
@@ -260,7 +288,94 @@ export const AcceptInvitationPage: React.FC = () => {
               </div>
             )}
 
-            {authMode === "login" ? (
+            {authMode === "register" ? (
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label
+                      htmlFor="firstName"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      First Name
+                    </label>
+                    <input
+                      id="firstName"
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="lastName"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      Last Name
+                    </label>
+                    <input
+                      id="lastName"
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="registerEmail"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Email
+                  </label>
+                  <input
+                    id="registerEmail"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="your@email.com"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="registerPassword"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
+                    Password
+                  </label>
+                  <input
+                    id="registerPassword"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Minimum 8 characters
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={authenticating}
+                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium"
+                >
+                  {authenticating
+                    ? "Creating account..."
+                    : "Create Account & Join Family"}
+                </button>
+              </form>
+            ) : (
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label
@@ -304,90 +419,6 @@ export const AcceptInvitationPage: React.FC = () => {
                   {authenticating
                     ? "Logging in..."
                     : "Login & Accept Invitation"}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleRegister} className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="firstName"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    First Name
-                  </label>
-                  <input
-                    id="firstName"
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="lastName"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Last Name
-                  </label>
-                  <input
-                    id="lastName"
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="registerEmail"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Email
-                  </label>
-                  <input
-                    id="registerEmail"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="registerPassword"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Password
-                  </label>
-                  <input
-                    id="registerPassword"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={8}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Minimum 8 characters
-                  </p>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={authenticating}
-                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium"
-                >
-                  {authenticating
-                    ? "Creating account..."
-                    : "Register & Accept Invitation"}
                 </button>
               </form>
             )}
