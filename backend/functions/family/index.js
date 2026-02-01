@@ -63,15 +63,86 @@ exports.handler = async (event) => {
       return successResponse({ status: "healthy", service: "family" });
     }
 
-    // Extract user info from JWT token (added by authorizer)
-    const user = event.requestContext?.authorizer?.claims;
-    if (!user) {
-      return errorResponse(401, "Unauthorized - No user context");
+    // Extract user info from JWT token
+    // Try authorizer claims first, then fall back to parsing the Authorization header
+    let userId, familyId, familyRole;
+
+    const authorizerClaims = event.requestContext?.authorizer?.claims;
+
+    if (authorizerClaims && authorizerClaims["custom:userId"]) {
+      // Use authorizer claims if available
+      userId = authorizerClaims["custom:userId"];
+      familyId = authorizerClaims["custom:familyId"];
+      familyRole = authorizerClaims["custom:familyRole"] || "primary";
+    } else {
+      // Fall back to parsing the Authorization header directly
+      const authHeader =
+        event.headers?.Authorization || event.headers?.authorization;
+      if (!authHeader) {
+        return errorResponse(401, "Unauthorized - No authorization header");
+      }
+
+      try {
+        const token = authHeader.replace("Bearer ", "");
+        const tokenParts = token.split(".");
+        if (tokenParts.length !== 3) {
+          return errorResponse(401, "Unauthorized - Invalid token format");
+        }
+
+        const payload = JSON.parse(
+          Buffer.from(tokenParts[1], "base64").toString(),
+        );
+
+        // Try custom:userId first, fall back to sub
+        userId = payload["custom:userId"] || payload.sub;
+        familyId = payload["custom:familyId"];
+        familyRole = payload["custom:familyRole"] || "primary";
+
+        if (!userId) {
+          return errorResponse(401, "Unauthorized - No user ID in token");
+        }
+
+        // If familyId is not in token, look it up from DynamoDB
+        if (!familyId) {
+          console.log(
+            "familyId not in token, looking up from DynamoDB for user:",
+            userId,
+          );
+          const userResult = await dynamodb.send(
+            new GetCommand({
+              TableName: TABLE_NAME,
+              Key: {
+                PK: `USER#${userId}`,
+                SK: "PROFILE",
+              },
+            }),
+          );
+
+          if (userResult.Item) {
+            familyId = userResult.Item.familyId;
+            familyRole = userResult.Item.familyRole || "primary";
+            console.log("Found familyId from DynamoDB:", familyId);
+          } else {
+            // Create a default family for the user if none exists
+            familyId = `family_${userId}`;
+            familyRole = "primary";
+            console.log(
+              "No user profile found, using default familyId:",
+              familyId,
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing authorization token:", error);
+        return errorResponse(401, "Unauthorized - Failed to parse token");
+      }
     }
 
-    const userId = user["custom:userId"];
-    const familyId = user["custom:familyId"];
-    const familyRole = user["custom:familyRole"] || "primary";
+    console.log("Family Lambda - User context:", {
+      userId,
+      familyId,
+      familyRole,
+    });
 
     // Route to appropriate handler
     const { httpMethod, path, pathParameters } = event;
@@ -503,7 +574,6 @@ async function handleGetMembers(familyId) {
   }
 }
 
-
 /**
  * Update member role
  *
@@ -547,7 +617,7 @@ async function handleUpdateRole(
           PK: `FAMILY#${familyId}`,
           SK: `MEMBER#${targetUserId}`,
         },
-      })
+      }),
     );
 
     if (!memberResult.Item) {
@@ -572,7 +642,7 @@ async function handleUpdateRole(
           ":role": role,
           ":updatedAt": updatedAt,
         },
-      })
+      }),
     );
 
     console.log(
@@ -619,7 +689,7 @@ async function handleRemoveMember(userId, familyId, familyRole, targetUserId) {
           PK: `FAMILY#${familyId}`,
           SK: `MEMBER#${targetUserId}`,
         },
-      })
+      }),
     );
 
     if (!memberResult.Item) {
@@ -634,7 +704,7 @@ async function handleRemoveMember(userId, familyId, familyRole, targetUserId) {
           PK: `FAMILY#${familyId}`,
           SK: `MEMBER#${targetUserId}`,
         },
-      })
+      }),
     );
 
     // Update family member count
@@ -649,7 +719,7 @@ async function handleRemoveMember(userId, familyId, familyRole, targetUserId) {
         ExpressionAttributeValues: {
           ":dec": 1,
         },
-      })
+      }),
     );
 
     // TODO: Send notification email (will be implemented in Phase 4)
@@ -702,7 +772,7 @@ async function handleLeaveFamily(userId, familyId, familyRole) {
           memberCount: 1,
           subscriptionTier: "free",
         },
-      })
+      }),
     );
 
     // Add user as primary member of new family
@@ -717,7 +787,7 @@ async function handleLeaveFamily(userId, familyId, familyRole) {
           joinedAt: now,
           addedBy: userId,
         },
-      })
+      }),
     );
 
     // Remove user from old family
@@ -728,7 +798,7 @@ async function handleLeaveFamily(userId, familyId, familyRole) {
           PK: `FAMILY#${familyId}`,
           SK: `MEMBER#${userId}`,
         },
-      })
+      }),
     );
 
     // Update old family member count
@@ -743,7 +813,7 @@ async function handleLeaveFamily(userId, familyId, familyRole) {
         ExpressionAttributeValues: {
           ":dec": 1,
         },
-      })
+      }),
     );
 
     // TODO: Copy current budget to new family (will be implemented later)

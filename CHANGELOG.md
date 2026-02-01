@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.9.22] - 2026-02-01
+
+### 🐛 BUGFIX - Family Lambda & Auth Profile Token Handling
+
+- **Fixed Family Lambda 502 error** - Added fallback token parsing when authorizer claims missing
+  - **Root Cause**: Family Lambda required `custom:userId` and `custom:familyId` from authorizer claims, but these aren't always present
+  - **Solution**: Parse JWT token directly and look up familyId from DynamoDB if not in token
+  - **File**: `backend/functions/family/index.js`
+
+- **Fixed PUT /auth/profile userId extraction** - Aligned with GET profile handler
+  - **Root Cause**: PUT handler used `payload.sub` while GET handler used `custom:userId` with fallback
+  - **Solution**: Use consistent token parsing logic across both handlers
+  - **File**: `backend/functions/auth/index.js`
+
 ## [1.9.21] - 2026-02-01
 
 ### 🐛 BUGFIX - Profile API Null Field Handling
