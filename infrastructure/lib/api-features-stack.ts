@@ -114,11 +114,12 @@ export class ApiFeaturesStack extends cdk.Stack {
       code: lambda.Code.fromAsset('../backend/functions/plaid', {
         bundling: {
           image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          user: 'root',
           command: [
             'bash', '-c', [
               'cp -r /asset-input/* /asset-output/',
               'cd /asset-output',
-              'npm install --production',
+              'npm install --production --no-optional',
             ].join(' && '),
           ],
         },
