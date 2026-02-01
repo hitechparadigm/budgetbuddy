@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.9.15] - 2026-02-01
+
+### 🔧 INFRASTRUCTURE - CloudFormation Export Blocker Documentation
+
+- **Documented Deployment Blocker** - CloudFormation export dependency issue
+  - **Issue**: Cannot update auth stack export while auth-onboarding imports it
+  - **Root Cause**: Cross-stack layer reference creates automatic CloudFormation export
+  - **Solution**: Deploy stacks individually or update CI/CD pipeline
+  - **Impact**: Blocks Phase 4 (Email Service Integration) and infrastructure changes
+  - **File**: `.kiro/CLOUDFORMATION_EXPORT_BLOCKER.md` with detailed resolution steps
+
 ## [1.9.14] - 2026-01-31
 
 ### 🔒 SECURITY - Budget Lambda Permission Integration (Task 3.2)

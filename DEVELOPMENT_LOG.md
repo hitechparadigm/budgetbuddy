@@ -1,5 +1,61 @@
 # Development Log
 
+## 2026-02-01 - CloudFormation Export Blocker Investigation (Session 41)
+
+### Session Summary
+
+**Duration**: 30 minutes
+**Focus**: Investigated persistent CloudFormation export dependency issue
+**Outcome**: Documented blocker requiring manual AWS intervention
+
+### Problem Statement
+
+**Deployment Failure**:
+
+- Multiple deployment attempts failing with same CloudFormation export error
+- Error: "Cannot delete export budgetbuddy-dev-auth:ExportsOutputRefAuthSharedLayer5BE359A433E00034 as it is in use by budgetbuddy-dev-auth-onboarding"
+- Code changes alone cannot resolve the issue
+
+**Root Cause**:
+
+- Auth-onboarding stack was previously deployed with configuration that imports AuthSharedLayer from auth stack
+- This created CloudFormation export/import relationship
+- Updated code so auth-onboarding creates its own layer (no import)
+- However, EXISTING CloudFormation stack still has the import
+- CloudFormation won't allow updating auth stack while auth-onboarding still imports it
+- CDK deploys stacks alphabetically, causing auth to deploy before auth-onboarding
+
+### Solution: Manual Intervention Required
+
+**Created Documentation**: `.kiro/CLOUDFORMATION_EXPORT_BLOCKER.md`
+
+**Resolution Options**:
+
+1. Deploy stacks individually in correct order (auth-onboarding first, then auth)
+2. Manually delete and recreate stacks
+3. Update CI/CD pipeline to deploy in specific order
+
+**Impact**:
+
+- Blocks Phase 4 (Email Service Integration) and all infrastructure changes
+- Can continue with non-infrastructure tasks (documentation, planning, frontend work)
+
+### Next Steps
+
+**Immediate**:
+
+- User needs to manually resolve CloudFormation export dependency
+- Continue with non-infrastructure tasks while blocked
+
+**After Resolution**:
+
+- Continue with Phase 4: Email Service Integration
+- Complete remaining family collaboration tasks
+
+### Files Created
+
+- `.kiro/CLOUDFORMATION_EXPORT_BLOCKER.md` - Detailed blocker documentation with resolution steps
+
 ## 2026-01-31 - Family Collaboration Permission System + CloudFormation Fix (Session 40)
 
 ### Session Summary
