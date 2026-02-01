@@ -980,3 +980,294 @@ curl -X POST https://api.budgetbuddy.com/v1/transactions \
 - Historical exchange rate tracking
 - Additional currencies (50+ total)
 - Cryptocurrency support (BTC, ETH, etc.)
+
+## Family Collaboration
+
+### Overview
+
+BudgetBuddy supports family account sharing with role-based permissions. Families can have up to 2 members (primary + spouse/partner). The primary user manages invitations and member roles.
+
+### Roles and Permissions
+
+| Role    | Invite | Update Roles | Remove Members | View Members | Leave Family |
+| ------- | ------ | ------------ | -------------- | ------------ | ------------ |
+| Primary | ✅     | ✅           | ✅             | ✅           | ❌           |
+| Spouse  | ❌     | ❌           | ❌             | ✅           | ✅           |
+| Viewer  | ❌     | ❌           | ❌             | ✅           | ✅           |
+
+### GET /family/health
+
+Health check for family service.
+
+**Response**: `200 OK`
+
+```json
+{
+  "status": "healthy",
+  "service": "family"
+}
+```
+
+### POST /family/invite
+
+Send an invitation to join the family.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Permissions**: Primary user only
+
+**Request Body**:
+
+```json
+{
+  "email": "partner@example.com",
+  "role": "spouse"
+}
+```
+
+**Response**: `201 Created`
+
+```json
+{
+  "invitationId": "inv_123",
+  "email": "partner@example.com",
+  "role": "spouse",
+  "status": "pending",
+  "expiresAt": "2026-02-07T10:00:00Z",
+  "token": "abc123..."
+}
+```
+
+**Error Responses**:
+
+- `400 Bad Request`: Invalid email or role
+- `403 Forbidden`: Only primary user can send invitations
+- `409 Conflict`: Family is full (max 2 members) or pending invitation exists
+
+**Role Values**:
+
+- `spouse`: Full access to budgets and transactions (read/write)
+- `viewer`: Read-only access to budgets and transactions
+
+### POST /family/accept-invitation
+
+Accept a family invitation.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Request Body**:
+
+```json
+{
+  "token": "abc123..."
+}
+```
+
+**Response**: `200 OK`
+
+```json
+{
+  "familyId": "family_456",
+  "role": "spouse",
+  "family": {
+    "primaryUserId": "user_123",
+    "memberCount": 2,
+    "subscriptionTier": "free"
+  }
+}
+```
+
+**Error Responses**:
+
+- `400 Bad Request`: Token is required or invitation has expired
+- `404 Not Found`: Invitation not found or already used
+- `409 Conflict`: Family is full
+
+### GET /family/members
+
+Get all family members.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Permissions**: All family members
+
+**Response**: `200 OK`
+
+```json
+{
+  "familyId": "family_456",
+  "members": [
+    {
+      "userId": "user_123",
+      "email": "primary@example.com",
+      "name": "John Doe",
+      "role": "primary",
+      "joinedAt": "2026-01-01T00:00:00Z"
+    },
+    {
+      "userId": "user_456",
+      "email": "partner@example.com",
+      "name": "Jane Doe",
+      "role": "spouse",
+      "joinedAt": "2026-01-31T12:00:00Z"
+    }
+  ]
+}
+```
+
+### PUT /family/members/{userId}
+
+Update a family member's role.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Permissions**: Primary user only
+
+**Request Body**:
+
+```json
+{
+  "role": "viewer"
+}
+```
+
+**Response**: `200 OK`
+
+```json
+{
+  "userId": "user_456",
+  "role": "viewer",
+  "updatedAt": "2026-01-31T14:00:00Z"
+}
+```
+
+**Error Responses**:
+
+- `400 Bad Request`: Invalid role or cannot change own role
+- `403 Forbidden`: Only primary user can change roles
+- `404 Not Found`: Member not found
+
+### DELETE /family/members/{userId}
+
+Remove a family member.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Permissions**: Primary user only
+
+**Response**: `200 OK`
+
+```json
+{
+  "message": "Member removed successfully",
+  "userId": "user_456"
+}
+```
+
+**Error Responses**:
+
+- `400 Bad Request`: Cannot remove yourself
+- `403 Forbidden`: Only primary user can remove members
+- `404 Not Found`: Member not found
+
+### POST /family/leave
+
+Leave the current family and create a new one.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Permissions**: Spouse and Viewer only (Primary cannot leave)
+
+**Response**: `200 OK`
+
+```json
+{
+  "message": "Left family successfully",
+  "newFamilyId": "family_789"
+}
+```
+
+**Error Responses**:
+
+- `403 Forbidden`: Primary user cannot leave family
+
+### Invitation Flow
+
+1. **Primary sends invitation**: `POST /family/invite` with email and role
+2. **Invitation email sent**: Contains link with secure token (valid 7 days)
+3. **Recipient accepts**: `POST /family/accept-invitation` with token
+4. **User joins family**: Gets assigned role, can access shared budgets
+
+### Family Limits
+
+- **Maximum members**: 2 (primary + 1 spouse/viewer)
+- **Invitation expiry**: 7 days
+- **Pending invitations**: 1 per email per family
+
+### Data Sharing
+
+When a user joins a family:
+
+- They can view all family budgets
+- They can view all family transactions
+- Spouse role can create/edit budgets and transactions
+- Viewer role can only view (read-only)
+
+### Testing
+
+**Send Invitation**:
+
+```bash
+TOKEN="your_jwt_token_here"
+
+curl -X POST https://api.budgetbuddy.com/v1/family/invite \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "partner@example.com",
+    "role": "spouse"
+  }'
+```
+
+**Accept Invitation**:
+
+```bash
+curl -X POST https://api.budgetbuddy.com/v1/family/accept-invitation \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "token": "invitation_token_here"
+  }'
+```
+
+**Get Family Members**:
+
+```bash
+curl -X GET https://api.budgetbuddy.com/v1/family/members \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Update Member Role**:
+
+```bash
+curl -X PUT https://api.budgetbuddy.com/v1/family/members/user_456 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "role": "viewer"
+  }'
+```
+
+**Remove Member**:
+
+```bash
+curl -X DELETE https://api.budgetbuddy.com/v1/family/members/user_456 \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Leave Family**:
+
+```bash
+curl -X POST https://api.budgetbuddy.com/v1/family/leave \
+  -H "Authorization: Bearer $TOKEN"
+```
