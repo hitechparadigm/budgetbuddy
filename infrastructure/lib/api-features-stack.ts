@@ -107,11 +107,22 @@ export class ApiFeaturesStack extends cdk.Stack {
     _props: ApiFeaturesStackProps,
     commonProps: any
   ): void {
-    // Plaid Lambda
+    // Plaid Lambda - with bundling to install npm dependencies
     this.functions.plaidHandler = new lambda.Function(this, 'PlaidHandler', {
       ...commonProps,
       functionName: 'budgetbuddy-plaid',
-      code: lambda.Code.fromAsset('../backend/functions/plaid'),
+      code: lambda.Code.fromAsset('../backend/functions/plaid', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          command: [
+            'bash', '-c', [
+              'cp -r /asset-input/* /asset-output/',
+              'cd /asset-output',
+              'npm install --production',
+            ].join(' && '),
+          ],
+        },
+      }),
       handler: 'index.handler',
       description: 'BudgetBuddy Plaid handler for bank account sync',
       timeout: cdk.Duration.seconds(60), // Increased for Plaid API calls
