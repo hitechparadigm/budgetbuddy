@@ -313,7 +313,7 @@ Implement family account sharing with invitation system, role-based permissions,
     - _Requirements: US-4, FR-4_
 
 - [ ] 10. Property-Based Testing
-  - [ ] 10.1 Test permission matrix
+  - [-] 10.1 Test permission matrix
     - Generate random role/action combinations
     - Verify permissions always enforced correctly
     - Minimum 100 iterations
