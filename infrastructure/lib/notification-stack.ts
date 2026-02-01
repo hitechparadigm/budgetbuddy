@@ -10,7 +10,6 @@ import { Construct } from 'constructs';
 export interface NotificationStackProps extends cdk.StackProps {
   table: dynamodb.Table;
   commonLayer: lambda.LayerVersion;
-  sharedLayer: lambda.LayerVersion;
   expoAccessToken: string;
 }
 
@@ -22,13 +21,20 @@ export class NotificationStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: NotificationStackProps) {
     super(scope, id, props);
 
+    // Create SharedLayer for this stack (no longer importing from API stack)
+    const sharedLayer = new lambda.LayerVersion(this, 'SharedLayer', {
+      code: lambda.Code.fromAsset('../backend/layers/shared/nodejs'),
+      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      description: 'Shared utilities layer for notification functions',
+    });
+
     // 1. Create Notification Service Lambda
     this.notificationFunction = new lambda.Function(this, 'NotificationFunction', {
       functionName: `budgetbuddy-${this.node.tryGetContext('environment') || 'dev'}-notifications`,
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/notifications'),
-      layers: [props.commonLayer, props.sharedLayer],
+      layers: [props.commonLayer, sharedLayer],
       environment: {
         TABLE_NAME: props.table.tableName,
         EXPO_ACCESS_TOKEN: props.expoAccessToken,
@@ -47,7 +53,7 @@ export class NotificationStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/budget-alerts'),
-      layers: [props.commonLayer, props.sharedLayer],
+      layers: [props.commonLayer, sharedLayer],
       environment: {
         TABLE_NAME: props.table.tableName,
         NOTIFICATION_FUNCTION_ARN: this.notificationFunction.functionArn,
@@ -70,7 +76,7 @@ export class NotificationStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/daily-reminders'),
-      layers: [props.commonLayer, props.sharedLayer],
+      layers: [props.commonLayer, sharedLayer],
       environment: {
         TABLE_NAME: props.table.tableName,
         NOTIFICATION_FUNCTION_ARN: this.notificationFunction.functionArn,
