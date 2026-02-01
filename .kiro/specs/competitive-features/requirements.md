@@ -305,6 +305,8 @@ Based on competitive analysis of top budget apps (Monarch Money, YNAB, Quicken S
 
 #### Acceptance Criteria
 
+**Backend (API) - ✅ COMPLETE**:
+
 1. WHEN a user connects a bank account, THE BudgetBuddy SHALL use Plaid Link for secure authentication
 2. THE BudgetBuddy SHALL support connecting:
    - Checking accounts
@@ -320,12 +322,17 @@ Based on competitive analysis of top budget apps (Monarch Money, YNAB, Quicken S
 9. THE BudgetBuddy SHALL handle connection errors gracefully (re-auth prompts)
 10. THE BudgetBuddy SHALL comply with financial data security requirements
 
+**Frontend (Web UI) - IN PROGRESS**: 11. THE BudgetBuddy SHALL display a "Connected Accounts" section in Settings or dedicated Accounts page 12. THE BudgetBuddy SHALL provide a "Connect Bank Account" button that launches Plaid Link 13. THE BudgetBuddy SHALL display all connected accounts with: - Institution name and logo - Account name and type (Checking, Savings, Credit Card) - Account mask (last 4 digits) - Current balance - Last sync time 14. THE BudgetBuddy SHALL allow users to manually trigger a sync for each account 15. THE BudgetBuddy SHALL display pending transactions awaiting approval 16. THE BudgetBuddy SHALL allow users to approve or reject pending transactions 17. THE BudgetBuddy SHALL allow users to assign categories to pending transactions before approval 18. THE BudgetBuddy SHALL allow users to disconnect/unlink accounts 19. THE BudgetBuddy SHALL show sync status and any errors 20. THE BudgetBuddy SHALL support sandbox mode for testing with test accounts (Plaid sandbox)
+
+**Sandbox Testing**: 21. THE BudgetBuddy SHALL provide a "Create Test Account" button in sandbox mode 22. THE BudgetBuddy SHALL create test checking and credit card accounts using Plaid sandbox API 23. THE BudgetBuddy SHALL generate sample transactions for testing the sync workflow
+
 **Implementation Notes:**
 
-- Plaid API integration (separate Lambda)
-- Store Plaid access tokens securely (Secrets Manager)
+- Plaid API integration (separate Lambda) - ✅ COMPLETE
+- Store Plaid access tokens securely (Secrets Manager) - ✅ COMPLETE
+- Frontend uses Plaid Link SDK (@plaid/link) for secure bank connection
 - Premium feature: Bank sync
-- Phase 2 implementation (after MVP)
+- Sandbox credentials stored in AWS Secrets Manager
 
 ---
 
