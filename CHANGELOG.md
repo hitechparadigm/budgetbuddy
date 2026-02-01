@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.9.31] - 2026-02-01
+
+### 🏗️ Infrastructure - API Stack Split
+
+- **Created `api-features-stack.ts`** - New CDK stack for Plaid and Reconciliation
+- **Separate API Gateway** - Features stack has its own API Gateway to avoid cyclic dependencies
+- **Moved Lambdas** - Plaid and Reconciliation Lambdas moved from api-stack to api-features-stack
+- **Full API Routes** - All Plaid and Reconciliation routes now deployed
+
+**API Endpoints (Features API):**
+
+- Plaid: `/plaid/link-token`, `/plaid/exchange-token`, `/plaid/accounts`, `/plaid/sync`, `/plaid/pending`, `/plaid/health`
+- Reconciliation: `/reconcile/status`, `/reconcile/unmatched`, `/reconcile/suggestions`, `/reconcile/match`, `/reconcile/unmatch`, `/reconcile/auto`, `/reconcile/{matchId}`, `/reconcile/health`
+
+**Note:** Features API has a separate base URL from the main API. Clients need to use both API URLs.
+
 ## [1.9.30] - 2026-02-01
 
 ### 🔧 Infrastructure Fix - API Stack Resource Limit

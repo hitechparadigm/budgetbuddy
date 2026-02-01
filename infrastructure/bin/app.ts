@@ -22,6 +22,7 @@ import { DatabaseStack } from '../lib/database-stack';
 import { AuthStack } from '../lib/auth-stack';
 import { AuthOnboardingStack } from '../lib/auth-onboarding-stack';
 import { ApiStack } from '../lib/api-stack';
+import { ApiFeaturesStack } from '../lib/api-features-stack';
 import { HostingStack } from '../lib/hosting-stack';
 import { MonitoringStack } from '../lib/monitoring-stack';
 import { NotificationStack } from '../lib/notification-stack';
@@ -70,7 +71,7 @@ const authOnboardingStack = new AuthOnboardingStack(app, `${stackPrefix}-auth-on
 
 /**
  * API Stack - API Gateway and Lambda functions
- * Contains all backend business logic and API endpoints
+ * Contains core backend business logic and API endpoints
  * Depends on database and auth stacks
  */
 const apiStack = new ApiStack(app, `${stackPrefix}-api`, {
@@ -81,6 +82,20 @@ const apiStack = new ApiStack(app, `${stackPrefix}-api`, {
   userPool: authStack.userPool,
   userPoolClient: authStack.userPoolClient,
   authOnboardingFunction: authOnboardingStack.onboardingFunction,
+});
+
+/**
+ * API Features Stack - Additional Lambda functions for competitive features
+ * Contains Plaid, Reconciliation, and other feature Lambdas
+ * Has its own API Gateway to avoid CloudFormation resource limits
+ */
+const apiFeaturesStack = new ApiFeaturesStack(app, `${stackPrefix}-api-features`, {
+  env,
+  description: 'BudgetBuddy API features stack with Plaid, Reconciliation, and other feature Lambdas',
+  table: databaseStack.table,
+  userPool: authStack.userPool,
+  commonLayer: apiStack.commonLayer,
+  sharedLayer: apiStack.sharedLayer,
 });
 
 /**
@@ -125,11 +140,15 @@ authOnboardingStack.addDependency(databaseStack);
 apiStack.addDependency(databaseStack);
 apiStack.addDependency(authStack);
 apiStack.addDependency(authOnboardingStack);
+apiFeaturesStack.addDependency(databaseStack);
+apiFeaturesStack.addDependency(authStack);
+apiFeaturesStack.addDependency(apiStack);
 notificationStack.addDependency(databaseStack);
 notificationStack.addDependency(apiStack);
 monitoringStack.addDependency(databaseStack);
 monitoringStack.addDependency(authStack);
 monitoringStack.addDependency(apiStack);
+monitoringStack.addDependency(apiFeaturesStack);
 monitoringStack.addDependency(notificationStack);
 
 // Add comprehensive tags to all resources for cost tracking and organization
