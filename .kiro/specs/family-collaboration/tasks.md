@@ -313,25 +313,25 @@ Implement family account sharing with invitation system, role-based permissions,
     - _Requirements: US-4, FR-4_
 
 - [ ] 10. Property-Based Testing
-  - [-] 10.1 Test permission matrix
+  - [x] 10.1 Test permission matrix
     - Generate random role/action combinations
     - Verify permissions always enforced correctly
     - Minimum 100 iterations
     - _Requirements: US-3, FR-3_
 
-  - [ ] 10.2 Test invitation expiration
+  - [x] 10.2 Test invitation expiration
     - Generate random invitation timestamps
     - Verify expiration logic
     - Test edge cases (exactly 7 days)
     - _Requirements: FR-1.2, NFR-2.2_
 
-  - [ ] 10.3 Test family size limits
+  - [x] 10.3 Test family size limits
     - Generate random member additions
     - Verify family never exceeds 2 members
     - Test boundary conditions
     - _Requirements: FR-2.5_
 
-  - [ ] 10.4 Test data isolation
+  - [x] 10.4 Test data isolation
     - Generate random family/user combinations
     - Verify users can only access their family data
     - Test cross-family access attempts

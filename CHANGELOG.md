@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.9.24] - 2026-02-01
+
+### ✅ TESTING - Phase 10 Property-Based Tests Complete
+
+- **Task 10.1 - Permission Matrix PBT** - Random role/action combinations (100 iterations)
+  - Verifies permission matrix enforced for all role/action combinations
+  - Tests self-removal prevention across all roles
+  - Tests self-role-change prevention across all roles
+  - **Validates**: Requirements US-3, FR-3
+
+- **Task 10.2 - Invitation Expiration PBT** - Random timestamps (100 iterations)
+  - Accepts invitations < 7 days old
+  - Rejects invitations >= 7 days old
+  - Edge case: exactly 7 days = expired
+  - **Validates**: Requirements FR-1.2, NFR-2.2
+
+- **Task 10.3 - Family Size Limits PBT** - Random member counts (100 iterations)
+  - Rejects invitations when family has 2+ members
+  - Allows invitations when family has < 2 members
+  - Rejects accepting invitation when family is full
+  - **Validates**: Requirements FR-2.5
+
+- **Task 10.4 - Data Isolation PBT** - Random family/user combinations (100 iterations)
+  - Users only see members from their own family
+  - Cannot modify members from other families
+  - Cannot remove members from other families
+  - **Validates**: Requirements NFR-2.4
+
+- **Test Results**: 13 PBT tests passing (100+ iterations each)
+- **File**: `backend/functions/family/family.pbt.test.js`
+
 ## [1.9.23] - 2026-02-01
 
 ### ✅ TESTING - Phase 9 Integration Tests Complete
