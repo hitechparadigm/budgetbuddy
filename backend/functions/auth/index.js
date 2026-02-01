@@ -852,12 +852,26 @@ exports.handler = async (event, _context) => {
       }
 
       try {
+        // Parse the ID token to get userId - use same logic as GET profile
         const token = authHeader.replace("Bearer ", "");
-        const base64Payload = token.split(".")[1];
+        const tokenParts = token.split(".");
+        if (tokenParts.length !== 3) {
+          throw new Error("Invalid token format");
+        }
+
         const payload = JSON.parse(
-          Buffer.from(base64Payload, "base64").toString(),
+          Buffer.from(tokenParts[1], "base64").toString(),
         );
-        const userId = payload.sub || payload.username;
+
+        // Try to get userId from custom attribute, fallback to sub (Cognito user ID)
+        // This matches the GET profile handler logic for consistency
+        let userId = payload["custom:userId"];
+        if (!userId) {
+          console.log(
+            "PUT profile: custom:userId not found in token, using sub as fallback",
+          );
+          userId = payload.sub;
+        }
 
         if (!userId) {
           return {
@@ -869,6 +883,8 @@ exports.handler = async (event, _context) => {
             }),
           };
         }
+
+        console.log("PUT profile: Using userId:", userId);
 
         // Parse request body
         const body = JSON.parse(event.body || "{}");
