@@ -1,5 +1,74 @@
 # Changelog
 
+## [1.9.18] - 2026-02-01
+
+### 🐛 BUGFIX - Family Lambda 502 Error Resolution
+
+- **Fixed Family Lambda 502 Error** - Resolved deployment health check failure
+  - **Root Cause**: Lambda was using AWS SDK v2 (`aws-sdk`) which is not included in Node.js 18+ runtime
+  - **Solution**: Migrated to AWS SDK v3 (`@aws-sdk/client-dynamodb`, `@aws-sdk/lib-dynamodb`)
+  - **Files Changed**:
+    - `backend/functions/family/index.js` - Full SDK v3 migration
+    - `backend/functions/family/package.json` - Updated dependencies
+    - `backend/functions/family/index.test.js` - Updated mocks for SDK v3
+  - **Tests**: All 18 unit tests passing
+  - **Impact**: Family Lambda health endpoint now returns 200 OK
+
+## [1.9.17] - 2026-02-01
+
+### 🔧 INFRASTRUCTURE - API Gateway Family Routes (Phase 8)
+
+- **Added Family API Routes** - Complete API Gateway integration for family collaboration
+  - **Routes Added**:
+    - POST `/family/invite` - Send invitation (primary only)
+    - POST `/family/accept-invitation` - Accept invitation
+    - GET `/family/members` - Get all family members
+    - PUT `/family/members/{userId}/role` - Update member role (primary only)
+    - DELETE `/family/members/{userId}` - Remove member (primary only)
+    - POST `/family/leave` - Leave family (non-primary only)
+  - **Authorization**: All routes protected with Cognito JWT authorizer
+  - **CORS**: Already configured for web/mobile clients
+  - **File**: `infrastructure/lib/api-stack.ts`
+  - **Tasks**: 8.1, 8.2, 8.3 complete
+
+### 🎨 FRONTEND - Invitation Acceptance Page (Phase 6)
+
+- **Created AcceptInvitationPage** - Complete invitation acceptance flow
+  - **Features**:
+    - Parse invitation token from URL query parameter
+    - Display invitation details with role information
+    - Accept/Decline buttons with confirmation dialogs
+    - Integrated authentication (login/register forms)
+    - Automatic invitation acceptance after authentication
+    - Redirect to budget page on success
+  - **Authentication Flow**:
+    - Default to registration form for new users
+    - Login form available via toggle
+    - Proper token storage using `budgetbuddy_access_token`
+  - **File**: `packages/web-app/src/pages/AcceptInvitationPage.tsx`
+  - **Route**: `/family/accept` added to App.tsx
+  - **Tasks**: 6.1, 6.2, 6.3, 6.4 complete
+
+### 🐛 BUGFIX - Authentication Token Consistency
+
+- **Fixed Token Storage Keys** - Resolved "Not authenticated" error in FamilySettings
+  - **Issue**: FamilySettings used `token` key, AuthContext uses `budgetbuddy_access_token`
+  - **Solution**: Updated all 5 API call functions to use consistent keys
+  - **Keys Used**:
+    - Access token: `budgetbuddy_access_token`
+    - User data: `budgetbuddy_user` (JSON stringified)
+  - **File**: `packages/web-app/src/components/FamilySettings.tsx`
+  - **Impact**: Users can now send invitations without authentication errors
+
+### 📋 SPECS - Family Collaboration Requirements Update
+
+- **Updated Requirements** - Clarified family size limits and removed age-specific logic
+  - **Family Size**: 2 editors (Primary + Spouse) + unlimited viewers
+  - **Roles**: Primary, Spouse, Viewer (no age-based restrictions)
+  - **Use Cases**: US-1 through US-7 updated with acceptance criteria
+  - **Files**: `.kiro/specs/family-collaboration/requirements.md`, `design.md`
+  - **Impact**: System is role-based only, not age-based
+
 ## [1.9.16] - 2026-02-01
 
 ### 🎨 FRONTEND - Family Settings UI (Task 5.1)

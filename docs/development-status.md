@@ -1,8 +1,53 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-01 (CloudFormation Export Blocker - Requires Manual Intervention)
-**Current Phase**: Production-Ready + E2E Testing Complete
-**Overall Progress**: 97% (All E2E notification tests complete, validation fixed)
+**Last Updated**: 2026-02-01 (Family Lambda 502 Fix)
+**Current Phase**: Production-Ready + Family Collaboration In Progress
+**Overall Progress**: 97% (Family Lambda 502 error resolved, deployment should succeed)
+
+## 👨‍👩‍👧 FAMILY COLLABORATION - PHASES 5, 6, 8 COMPLETE ✅
+
+### Web UI and API Gateway Integration
+
+**Status**: ✅ Phases 5, 6, 8 complete (Web UI + API routes)
+
+**Spec**: `.kiro/specs/family-collaboration/`
+
+**Completed Phases**:
+
+1. **Phase 5 - Web UI Implementation** ✅
+   - FamilySettings component with invite form, member list, role management
+   - Leave family button for non-primary users
+   - Role indicators (Primary/Spouse/Viewer badges)
+   - File: `packages/web-app/src/components/FamilySettings.tsx`
+
+2. **Phase 6 - Invitation Acceptance Flow** ✅
+   - AcceptInvitationPage with token parsing from URL
+   - Login/Register forms for authentication
+   - Automatic invitation acceptance after auth
+   - Redirect to budget page on success
+   - File: `packages/web-app/src/pages/AcceptInvitationPage.tsx`
+
+3. **Phase 8 - API Gateway Integration** ✅
+   - All family routes added to API Gateway
+   - Routes: `/family/invite`, `/family/accept-invitation`, `/family/members`, `/family/members/{userId}/role`, `/family/members/{userId}`, `/family/leave`
+   - JWT authorizer configured for all routes
+   - File: `infrastructure/lib/api-stack.ts`
+
+**Bug Fixes**:
+
+- Fixed authentication token consistency (budgetbuddy_access_token vs token)
+- Fixed userId retrieval from budgetbuddy_user JSON
+
+**Remaining Phases**:
+
+- Phase 7: Mobile UI Implementation (Tasks 7.1-7.5)
+- Phase 9: Integration Testing (Tasks 9.1-9.4)
+- Phase 10: Property-Based Testing (Tasks 10.1-10.4)
+- Phase 11: Documentation and Deployment (Tasks 11.1-11.4, 12.1-12.4)
+
+**Known Issue**: Family Lambda 502 error (documented in `.kiro/FAMILY_LAMBDA_502_BLOCKER.md`)
+
+---
 
 ## 🧪 E2E NOTIFICATION TESTS - COMPLETE ✅
 

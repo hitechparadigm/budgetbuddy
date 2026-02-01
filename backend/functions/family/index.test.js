@@ -2,42 +2,28 @@
  * Unit tests for Family Lambda Function
  */
 
+// Mock AWS SDK v3 before requiring the handler
+const mockSend = jest.fn();
+
+jest.mock("@aws-sdk/client-dynamodb", () => ({
+  DynamoDBClient: jest.fn(() => ({})),
+}));
+
+jest.mock("@aws-sdk/lib-dynamodb", () => ({
+  DynamoDBDocumentClient: {
+    from: jest.fn(() => ({
+      send: mockSend,
+    })),
+  },
+  GetCommand: jest.fn((params) => ({ type: "Get", params })),
+  PutCommand: jest.fn((params) => ({ type: "Put", params })),
+  UpdateCommand: jest.fn((params) => ({ type: "Update", params })),
+  DeleteCommand: jest.fn((params) => ({ type: "Delete", params })),
+  QueryCommand: jest.fn((params) => ({ type: "Query", params })),
+  ScanCommand: jest.fn((params) => ({ type: "Scan", params })),
+}));
+
 const { handler } = require("./index");
-
-// Mock AWS SDK
-jest.mock("aws-sdk", () => {
-  const mockDocumentClient = {
-    get: jest.fn(),
-    put: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    query: jest.fn(),
-    scan: jest.fn(),
-  };
-
-  return {
-    DynamoDB: {
-      DocumentClient: jest.fn(() => ({
-        get: (params) => ({ promise: () => mockDocumentClient.get(params) }),
-        put: (params) => ({ promise: () => mockDocumentClient.put(params) }),
-        update: (params) => ({
-          promise: () => mockDocumentClient.update(params),
-        }),
-        delete: (params) => ({
-          promise: () => mockDocumentClient.delete(params),
-        }),
-        query: (params) => ({
-          promise: () => mockDocumentClient.query(params),
-        }),
-        scan: (params) => ({ promise: () => mockDocumentClient.scan(params) }),
-      })),
-    },
-    mockDocumentClient,
-  };
-});
-
-const AWS = require("aws-sdk");
-const mockDB = AWS.mockDocumentClient;
 
 describe("Family Lambda Handler", () => {
   beforeEach(() => {
@@ -124,18 +110,21 @@ describe("Family Lambda Handler", () => {
         },
       };
 
-      mockDB.get.mockResolvedValueOnce({
+      // Mock Get (family metadata)
+      mockSend.mockResolvedValueOnce({
         Item: {
           familyId: "family123",
           memberCount: 1,
         },
       });
 
-      mockDB.query.mockResolvedValueOnce({
+      // Mock Query (existing invitations)
+      mockSend.mockResolvedValueOnce({
         Items: [],
       });
 
-      mockDB.put.mockResolvedValueOnce({});
+      // Mock Put (create invitation)
+      mockSend.mockResolvedValueOnce({});
 
       const result = await handler(event);
 
@@ -180,7 +169,7 @@ describe("Family Lambda Handler", () => {
         },
       };
 
-      mockDB.get.mockResolvedValueOnce({
+      mockSend.mockResolvedValueOnce({
         Item: {
           familyId: "family123",
           memberCount: 2,
@@ -253,7 +242,8 @@ describe("Family Lambda Handler", () => {
         Date.now() + 24 * 60 * 60 * 1000,
       ).toISOString();
 
-      mockDB.scan.mockResolvedValueOnce({
+      // Mock Scan (find invitation)
+      mockSend.mockResolvedValueOnce({
         Items: [
           {
             PK: "INVITATION#inv123",
@@ -268,7 +258,8 @@ describe("Family Lambda Handler", () => {
         ],
       });
 
-      mockDB.get.mockResolvedValueOnce({
+      // Mock Get (family metadata)
+      mockSend.mockResolvedValueOnce({
         Item: {
           familyId: "family123",
           memberCount: 1,
@@ -277,9 +268,12 @@ describe("Family Lambda Handler", () => {
         },
       });
 
-      mockDB.put.mockResolvedValueOnce({});
-      mockDB.update.mockResolvedValueOnce({});
-      mockDB.update.mockResolvedValueOnce({});
+      // Mock Put (add member)
+      mockSend.mockResolvedValueOnce({});
+      // Mock Update (member count)
+      mockSend.mockResolvedValueOnce({});
+      // Mock Update (invitation status)
+      mockSend.mockResolvedValueOnce({});
 
       const result = await handler(event);
 
@@ -303,7 +297,8 @@ describe("Family Lambda Handler", () => {
 
       const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-      mockDB.scan.mockResolvedValueOnce({
+      // Mock Scan (find invitation)
+      mockSend.mockResolvedValueOnce({
         Items: [
           {
             PK: "INVITATION#inv123",
@@ -317,7 +312,8 @@ describe("Family Lambda Handler", () => {
         ],
       });
 
-      mockDB.update.mockResolvedValueOnce({});
+      // Mock Update (set expired status)
+      mockSend.mockResolvedValueOnce({});
 
       const result = await handler(event);
 
@@ -344,7 +340,8 @@ describe("Family Lambda Handler", () => {
         },
       };
 
-      mockDB.query.mockResolvedValueOnce({
+      // Mock Query (family members)
+      mockSend.mockResolvedValueOnce({
         Items: [
           {
             userId: "user123",
@@ -354,7 +351,8 @@ describe("Family Lambda Handler", () => {
         ],
       });
 
-      mockDB.get.mockResolvedValueOnce({
+      // Mock Get (user profile)
+      mockSend.mockResolvedValueOnce({
         Item: {
           email: "user@example.com",
           firstName: "John",
@@ -391,14 +389,16 @@ describe("Family Lambda Handler", () => {
         },
       };
 
-      mockDB.get.mockResolvedValueOnce({
+      // Mock Get (member exists)
+      mockSend.mockResolvedValueOnce({
         Item: {
           userId: "user456",
           role: "spouse",
         },
       });
 
-      mockDB.update.mockResolvedValueOnce({});
+      // Mock Update (role)
+      mockSend.mockResolvedValueOnce({});
 
       const result = await handler(event);
 
@@ -448,15 +448,18 @@ describe("Family Lambda Handler", () => {
         },
       };
 
-      mockDB.get.mockResolvedValueOnce({
+      // Mock Get (member exists)
+      mockSend.mockResolvedValueOnce({
         Item: {
           userId: "user456",
           role: "spouse",
         },
       });
 
-      mockDB.delete.mockResolvedValueOnce({});
-      mockDB.update.mockResolvedValueOnce({});
+      // Mock Delete (member)
+      mockSend.mockResolvedValueOnce({});
+      // Mock Update (member count)
+      mockSend.mockResolvedValueOnce({});
 
       const result = await handler(event);
 
@@ -502,10 +505,14 @@ describe("Family Lambda Handler", () => {
         },
       };
 
-      mockDB.put.mockResolvedValueOnce({});
-      mockDB.put.mockResolvedValueOnce({});
-      mockDB.delete.mockResolvedValueOnce({});
-      mockDB.update.mockResolvedValueOnce({});
+      // Mock Put (new family metadata)
+      mockSend.mockResolvedValueOnce({});
+      // Mock Put (new family member)
+      mockSend.mockResolvedValueOnce({});
+      // Mock Delete (old family member)
+      mockSend.mockResolvedValueOnce({});
+      // Mock Update (old family member count)
+      mockSend.mockResolvedValueOnce({});
 
       const result = await handler(event);
 

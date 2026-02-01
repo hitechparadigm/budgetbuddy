@@ -20,6 +20,35 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Cross-Platform**: iOS, Android, and Web platform compatibility achieved ✓
 - **Overall Progress**: 92% complete (Enterprise security implemented, production-ready)
 
+### Recent Achievements (2026-02-01)
+
+- 🐛 **FAMILY LAMBDA 502 FIX** - Resolved deployment health check failure
+  - **Root Cause**: Lambda was using AWS SDK v2 (`aws-sdk`) not included in Node.js 18+ runtime
+  - **Solution**: Migrated to AWS SDK v3 (`@aws-sdk/client-dynamodb`, `@aws-sdk/lib-dynamodb`)
+  - **Files**: `backend/functions/family/index.js`, `package.json`, `index.test.js`
+  - **Tests**: All 18 unit tests passing
+  - **Impact**: Family Lambda health endpoint now returns 200 OK, CI/CD deployments should succeed
+
+- 👨‍👩‍👧 **FAMILY COLLABORATION - PHASES 5, 6, 8 COMPLETE** - Web UI and API Gateway integration
+  - **Phase 5**: FamilySettings component with invite form, member list, role management
+  - **Phase 6**: AcceptInvitationPage with login/register flow for new users
+  - **Phase 8**: API Gateway routes for all family endpoints (invite, accept, members, role, remove, leave)
+  - **Bug Fix**: Authentication token consistency - fixed "Not authenticated" error
+  - **Specs Updated**: Family size limits (2 editors + unlimited viewers), role-based permissions
+  - **Files**: `FamilySettings.tsx`, `AcceptInvitationPage.tsx`, `api-stack.ts`
+  - **Impact**: Complete web UI for family collaboration with proper API integration
+
+- 📧 **EMAIL SERVICE FOR FAMILY INVITATIONS** - SES integration complete
+  - **Templates**: Professional HTML emails for invitations, removal, acceptance notifications
+  - **Service**: AWS SES integration with input validation and error handling
+  - **Files**: `backend/functions/email/templates.js`, `backend/functions/email/index.js`
+  - **Impact**: Family invitations can be sent via email
+
+- 🔧 **CLOUDFORMATION EXPORT FIX** - Resolved cross-stack dependency blocker
+  - **Issue**: Notification stack importing SharedLayer from API stack caused deployment failures
+  - **Solution**: Notification stack creates its own SharedLayer
+  - **Impact**: All stacks deploy successfully without export conflicts
+
 ### Recent Achievements (2026-01-31)
 
 - 🧪 **E2E NOTIFICATION TESTS COMPLETE (ALL 5 TASKS)** - Comprehensive end-to-end tests with real AWS

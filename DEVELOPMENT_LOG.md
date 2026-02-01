@@ -1,5 +1,99 @@
 # Development Log
 
+## 2026-02-01 - Family Lambda 502 Fix (Session 43)
+
+### Session Summary
+
+**Duration**: 30 minutes
+**Focus**: Fixed Family Lambda 502 error blocking CI/CD deployments
+**Outcome**: Family Lambda index.js now uses AWS SDK v3, all tests passing
+
+### Problem
+
+Family Lambda health endpoint returned 502 Bad Gateway during deployment health checks, blocking all CI/CD deployments.
+
+### Root Cause
+
+The Family Lambda was using AWS SDK v2 (`aws-sdk`), which is NOT included in the Lambda runtime by default for Node.js 18+. All other Lambdas (auth, budget, transactions) use AWS SDK v3.
+
+### Solution
+
+Migrated Family Lambda from AWS SDK v2 to v3:
+
+- Changed imports from `aws-sdk` to `@aws-sdk/client-dynamodb` and `@aws-sdk/lib-dynamodb`
+- Updated all DynamoDB operations to use command pattern (`send(new GetCommand(...))`)
+- Updated package.json dependencies
+- Updated test file mocks for SDK v3
+
+### Files Changed
+
+- `backend/functions/family/index.js` - Full SDK v3 migration
+- `backend/functions/family/package.json` - Updated dependencies
+- `backend/functions/family/index.test.js` - Updated mocks
+- `.kiro/FAMILY_LAMBDA_502_BLOCKER.md` - Marked as resolved
+
+### Verification
+
+All 18 unit tests pass after migration.
+
+---
+
+## 2026-02-01 - Documentation Update + Family Collaboration Continuation (Session 42)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Fixed missing mandatory documentation updates, continuing family collaboration work
+**Outcome**: All 4 mandatory documentation files updated
+
+### Documentation Fix
+
+**Problem Statement**:
+
+- User reported CHANGELOG not updated despite mandatory requirement
+- Previous session completed significant work but documentation wasn't updated
+- Root cause: Context transfer didn't include reminder to update all mandatory docs
+
+**Root Cause Analysis**:
+
+The documentation validation system was working correctly, but the previous session ended without committing the documentation updates. The context transfer summary focused on the technical work (API routes, AcceptInvitation page) but didn't include the documentation update step.
+
+**Solution Implemented**:
+
+Updated all 4 mandatory documentation files:
+
+1. **CHANGELOG.md** - Added version 1.9.17 with:
+   - API Gateway family routes (Phase 8)
+   - AcceptInvitationPage (Phase 6)
+   - Authentication token consistency fix
+   - Specs update for family size limits
+
+2. **README.md** - Updated Recent Achievements (2026-02-01) with:
+   - Family collaboration phases 5, 6, 8 complete
+   - Email service for family invitations
+   - CloudFormation export fix
+
+3. **docs/development-status.md** - Updated with:
+   - Last Updated field to current date
+   - Family collaboration status section
+   - Remaining phases listed
+
+4. **DEVELOPMENT_LOG.md** - Added session 42 entry
+
+**Lesson Learned**:
+
+- Always update documentation BEFORE ending a session
+- Context transfer should include documentation status
+- Validation system catches issues but can't fix them retroactively
+
+### Next Steps
+
+- Continue with family collaboration Phase 7 (Mobile UI) or Phase 9 (Integration Testing)
+- Monitor CI/CD deployment for API Gateway changes
+- Investigate Family Lambda 502 error if time permits
+
+---
+
 ## 2026-02-01 - Family Collaboration Web UI Implementation (Session 41 Continued)
 
 ### Session Summary
