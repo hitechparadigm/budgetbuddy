@@ -614,6 +614,48 @@ export class ApiStack extends cdk.Stack {
       operationName: 'CreateFamily',
     });
 
+    // Family invite endpoint (protected - primary only)
+    const familyInviteResource = familyResource.addResource('invite');
+    familyInviteResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+      authorizer,
+      operationName: 'InviteFamilyMember',
+    });
+
+    // Family accept invitation endpoint (protected)
+    const familyAcceptResource = familyResource.addResource('accept-invitation');
+    familyAcceptResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+      authorizer,
+      operationName: 'AcceptFamilyInvitation',
+    });
+
+    // Family members endpoint (protected)
+    const familyMembersResource = familyResource.addResource('members');
+    familyMembersResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+      authorizer,
+      operationName: 'GetFamilyMembers',
+    });
+
+    // Family member by ID endpoints (protected)
+    const familyMemberIdResource = familyMembersResource.addResource('{userId}');
+    familyMemberIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+      authorizer,
+      operationName: 'RemoveFamilyMember',
+    });
+
+    // Family member role endpoint (protected - primary only)
+    const familyMemberRoleResource = familyMemberIdResource.addResource('role');
+    familyMemberRoleResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+      authorizer,
+      operationName: 'UpdateFamilyMemberRole',
+    });
+
+    // Family leave endpoint (protected - non-primary only)
+    const familyLeaveResource = familyResource.addResource('leave');
+    familyLeaveResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+      authorizer,
+      operationName: 'LeaveFamily',
+    });
+
     // Data Export routes (protected)
     const exportResource = this.api.root.addResource('export');
     exportResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.exportHandler), {

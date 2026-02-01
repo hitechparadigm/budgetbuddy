@@ -5,10 +5,44 @@
 ### Session Summary
 
 **Duration**: Ongoing
-**Focus**: Completed Phase 5 and Phase 6 Web UI implementation for family collaboration
-**Outcome**: FamilySettings component and AcceptInvitation page fully functional
+**Focus**: Completed Phase 5, Phase 6, and Phase 8 (API Gateway) for family collaboration
+**Outcome**: FamilySettings, AcceptInvitation page, and API routes fully functional
 
-### Part 4: Authentication Token Fix
+### Part 6: API Gateway Family Routes (Phase 8)
+
+**Problem Statement**:
+
+- "Failed to fetch" error when trying to send invitations
+- API Gateway missing family-specific endpoints
+
+**Root Cause**:
+
+- API Gateway only had basic GET/POST on `/family`
+- Missing endpoints: `/family/invite`, `/family/members`, `/family/accept-invitation`, etc.
+
+**Solution Implemented**:
+
+Added all required family routes to `infrastructure/lib/api-stack.ts`:
+
+- POST `/family/invite` - Send invitation (primary only)
+- POST `/family/accept-invitation` - Accept invitation
+- GET `/family/members` - Get all family members
+- PUT `/family/members/{userId}/role` - Update member role (primary only)
+- DELETE `/family/members/{userId}` - Remove member (primary only)
+- POST `/family/leave` - Leave family (non-primary only)
+
+**Phase 8 Tasks Completed**:
+
+- ✅ Task 8.1: Add family routes to API Gateway
+- ✅ Task 8.2: Configure CORS (already configured)
+- ✅ Task 8.3: Add JWT authorizer (already configured)
+- ⏳ Task 8.4: Deploy API changes (pending CI/CD)
+
+**Result**: ✅ All family API routes configured, awaiting deployment
+
+---
+
+### Part 5: Authentication Token Consistency Fix
 
 **Problem Statement**:
 
