@@ -1,0 +1,15 @@
+{
+  "_comment": "Spending Insights Lambda function - Handles analytics, AI insights, and trend analysis",
+  "name": "budgetbuddy-insights-function",
+  "version": "1.0.0",
+  "description": "BudgetBuddy spending insights Lambda function for analytics and AI-generated insights",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "local": "sam local start-api"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
