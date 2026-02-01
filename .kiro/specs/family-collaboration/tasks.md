@@ -153,38 +153,38 @@ Implement family account sharing with invitation system, role-based permissions,
 ### Phase 5: Web UI Implementation (Week 2)
 
 - [ ] 5. Create Family Settings Page
-  - [ ] 5.1 Create FamilySettings component
+  - [x] 5.1 Create FamilySettings component
     - Create component file
     - Add to Settings page
     - Implement layout
     - _Requirements: US-5_
 
-  - [ ] 5.2 Implement invite form
+  - [x] 5.2 Implement invite form
     - Email input field
     - Role selector
     - Send invitation button
     - Success/error messages
     - _Requirements: US-1_
 
-  - [ ] 5.3 Implement member list
+  - [x] 5.3 Implement member list
     - Display all family members
     - Show roles and join dates
     - Show pending invitations
     - _Requirements: US-5_
 
-  - [ ] 5.4 Implement member management
+  - [x] 5.4 Implement member management
     - Change role dropdown (primary only)
     - Remove member button (primary only)
     - Confirmation dialogs
     - _Requirements: US-5_
 
-  - [ ] 5.5 Implement leave family button
+  - [x] 5.5 Implement leave family button
     - Leave family button (non-primary only)
     - Confirmation dialog with warning
     - Handle leave response
     - _Requirements: US-6_
 
-  - [ ] 5.6 Add role indicators
+  - [x] 5.6 Add role indicators
     - Show user's role in header
     - Disable actions based on role
     - Show permission tooltips

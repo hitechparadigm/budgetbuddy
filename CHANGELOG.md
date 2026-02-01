@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.9.16] - 2026-02-01
+
+### 🎨 FRONTEND - Family Settings UI (Task 5.1)
+
+- **Created FamilySettings Component** - Web UI for family member management
+  - **Features**: Invite form, member list, role management, leave family button
+  - **Permissions**: Primary-only actions (invite, change role, remove)
+  - **Integration**: Added to SettingsPage
+  - **File**: `packages/web-app/src/components/FamilySettings.tsx`
+
+### 📧 EMAIL - SES Integration Complete (Tasks 4.2-4.3)
+
+- **Email Templates** - Professional HTML emails for family invitations
+  - **Templates**: Invitation, removal notification, acceptance notification
+  - **Design**: Responsive HTML with plain text fallback
+  - **File**: `backend/functions/email/templates.js`
+
+- **Email Service** - AWS SES integration for sending emails
+  - **Endpoints**: `/email/send-invitation`, `/email/send-removal`, `/email/send-acceptance`
+  - **Validation**: Input validation for all required fields
+  - **File**: `backend/functions/email/index.js`
+
+### 🔧 INFRASTRUCTURE - CloudFormation Export Fix
+
+- **Resolved Export Dependency** - Notification stack now creates own SharedLayer
+  - **Issue**: Cross-stack dependency prevented API stack from updating
+  - **Solution**: Notification stack creates local SharedLayer instead of importing
+  - **Files**: `infrastructure/lib/notification-stack.ts`, `infrastructure/bin/app.ts`
+  - **Result**: All stacks deploy successfully
+
 ## [1.9.15] - 2026-02-01
 
 ### 🔧 INFRASTRUCTURE - CloudFormation Export Blocker Documentation
