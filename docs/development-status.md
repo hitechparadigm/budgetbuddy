@@ -1,48 +1,52 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-01 (Bill Reminders Feature)
+**Last Updated**: 2026-02-01 (Savings Goals Feature)
 **Current Phase**: Competitive Features Implementation
-**Overall Progress**: 95% Core + 10% Competitive Features
+**Overall Progress**: 95% Core + 20% Competitive Features
 
 ## 🚀 NEW - Competitive Features Sprint Started
 
 **Current Focus**: Implementing market differentiation features to compete with Monarch Money, YNAB, etc.
 
-### Bill Reminders System (Task 1) - IN PROGRESS ✅
+### Bill Reminders System (Task 1) - COMPLETE ✅
 
-**Status**: Backend implementation complete, pending deployment
+**Status**: Backend implementation complete, deployed
+
+**Features**: Full CRUD, recurring bills, auto-transaction creation, calendar view
+**Tests**: 11 passing
+
+### Savings Goals System (Task 2) - COMPLETE ✅
+
+**Status**: Backend implementation complete
 
 **Features Implemented**:
 
-- Full CRUD operations for bill reminders
-- Recurring bill support (weekly, bi-weekly, monthly, quarterly, annually)
-- Auto-create transaction when bill is paid
-- Auto-schedule next occurrence for recurring bills
-- Calendar view and upcoming bills endpoints
-- Status indicators (🔴 overdue, 🟡 due soon, 🟢 upcoming, ✅ paid)
+- Full CRUD operations for savings goals
+- Goal templates (Emergency Fund, Vacation, Car, Home, etc.)
+- Progress tracking with percentage and visual indicators
+- Milestone celebrations (25%, 50%, 75%, 100%)
+- Monthly required amount calculation
+- Category linking for auto-contributions
+- Max 10 active goals per family
+- Drag-and-drop priority reordering
 
 **API Endpoints**:
 
-- `GET /bills` - List all bills
-- `POST /bills` - Create bill
-- `PUT /bills/{billId}` - Update bill
-- `DELETE /bills/{billId}` - Delete bill
-- `POST /bills/{billId}/pay` - Mark paid
-- `GET /bills/upcoming` - Next 30 days
-- `GET /bills/calendar` - Calendar view
+- `GET /goals` - List all goals with summary
+- `POST /goals` - Create goal
+- `GET /goals/{goalId}` - Get goal
+- `PUT /goals/{goalId}` - Update goal
+- `DELETE /goals/{goalId}` - Delete goal
+- `POST /goals/{goalId}/contribute` - Add contribution
+- `PUT /goals/reorder` - Reorder priorities
+- `GET /goals/templates` - Get templates
 
-**Files Created**:
-
-- `backend/functions/bills/index.js`
-- `backend/functions/bills/package.json`
-- `backend/functions/bills/bills.test.js`
-- Updated `infrastructure/lib/api-stack.ts`
+**Tests**: 11 passing
 
 ### Upcoming Tasks
 
 | Task | Feature             | Priority | Status      |
 | ---- | ------------------- | -------- | ----------- |
-| 2    | Savings Goals       | High     | Not Started |
 | 3    | Spending Insights   | High     | Not Started |
 | 4    | Receipt Scanning    | Medium   | Not Started |
 | 5    | Bank Sync (Plaid)   | High     | Not Started |
