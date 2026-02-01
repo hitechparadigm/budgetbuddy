@@ -1,8 +1,29 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-01 (Family Lambda 502 Fix)
+**Last Updated**: 2026-02-01 (Settings Persistence Fix)
 **Current Phase**: Production-Ready + Family Collaboration In Progress
-**Overall Progress**: 97% (Family Lambda 502 error resolved, deployment should succeed)
+**Overall Progress**: 97% (Settings persistence fixed, Family Lambda 502 resolved)
+
+## 🐛 BUG FIX - Settings Persistence ✅
+
+**Issue**: Location, timezone, and currency settings were not persisting after navigating away from Settings page.
+
+**Root Cause**: SettingsPage only saved to localStorage, not backend API.
+
+**Solution**:
+
+- Added PUT `/auth/profile` endpoint to auth Lambda
+- Updated GET `/auth/profile` to return location, timezone, currency, settings
+- Added profileApi to web-app API service
+- Updated SettingsPage to load from and save to backend
+
+**Files Changed**:
+
+- `backend/functions/auth/index.js`
+- `packages/web-app/src/services/api.ts`
+- `packages/web-app/src/pages/SettingsPage.tsx`
+
+---
 
 ## 👨‍👩‍👧 FAMILY COLLABORATION - PHASES 5, 6, 8 COMPLETE ✅
 

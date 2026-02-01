@@ -212,3 +212,26 @@ export const budgetApi = {
 };
 
 export { TokenManager };
+
+// Profile API
+export const profileApi = {
+  async getProfile() {
+    const response = await apiCall('/auth/profile');
+    return response;
+  },
+
+  async updateProfile(data: {
+    firstName?: string;
+    lastName?: string;
+    location?: { country: string; city: string; zipCode: string };
+    timezone?: string;
+    currency?: string;
+    settings?: Record<string, any>;
+  }) {
+    const response = await apiCall('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    return response;
+  },
+};

@@ -15,6 +15,7 @@ import { CurrencySelector } from "../components/CurrencySelector";
 import { getCurrencyConfig } from "@budget-buddy/shared/src/utils/currency";
 import { NotificationSettings } from "../components/NotificationSettings";
 import { FamilySettings } from "../components/FamilySettings";
+import { profileApi } from "../services/api";
 
 interface LocationForm {
   country: string;
@@ -43,15 +44,37 @@ export const SettingsPage: React.FC = () => {
   const [restoreInProgress, setRestoreInProgress] = useState(false);
 
   useEffect(() => {
-    // Detect and set current timezone
-    const detectedTimezone = detectUserTimezone();
-    setTimezone(detectedTimezone);
+    // Load user profile from API
+    const loadProfile = async () => {
+      try {
+        const profile = await profileApi.getProfile();
 
-    // TODO: Load user profile from API to get saved location and currency
-    // For now, just use detected timezone and default USD
-    // In a real implementation:
-    // const profile = await apiClient.getUserProfile();
-    // setCurrency(profile.currency || "USD");
+        // Set timezone from profile or detect
+        if (profile.timezone) {
+          setTimezone(profile.timezone);
+        } else {
+          const detectedTimezone = detectUserTimezone();
+          setTimezone(detectedTimezone);
+        }
+
+        // Set currency from profile
+        if (profile.currency) {
+          setCurrency(profile.currency);
+        }
+
+        // Set location from profile
+        if (profile.location) {
+          setLocationForm(profile.location);
+        }
+      } catch (error) {
+        console.error("Failed to load profile:", error);
+        // Fallback to detected timezone
+        const detectedTimezone = detectUserTimezone();
+        setTimezone(detectedTimezone);
+      }
+    };
+
+    loadProfile();
   }, []);
 
   const getCurrentLocalTime = () => {
@@ -89,17 +112,18 @@ export const SettingsPage: React.FC = () => {
     setMessage(null);
 
     try {
-      // TODO: Implement timezone lookup from location
-      // For now, just show success message
-
-      // TODO: Save to backend API
-      // await updateUserProfile({ location: locationForm, timezone: newTimezone });
+      // Save location to backend API
+      await profileApi.updateProfile({
+        location: locationForm,
+        timezone: timezone,
+      });
 
       setMessage({
         type: "success",
-        text: "Location updated successfully! Timezone will be updated once backend integration is complete.",
+        text: "Location updated successfully!",
       });
     } catch (error) {
+      console.error("Failed to update location:", error);
       setMessage({
         type: "error",
         text: "Failed to update location. Please try again.",
@@ -123,8 +147,8 @@ export const SettingsPage: React.FC = () => {
     setShowCurrencyConfirm(false);
 
     try {
-      // TODO: Save to backend API
-      // await apiClient.updateUserProfile({ currency: pendingCurrency });
+      // Save currency to backend API
+      await profileApi.updateProfile({ currency: pendingCurrency });
 
       setCurrency(pendingCurrency);
       setMessage({
@@ -132,6 +156,7 @@ export const SettingsPage: React.FC = () => {
         text: `Currency updated to ${getCurrencyConfig(pendingCurrency).name}. New budgets and transactions will use this currency.`,
       });
     } catch (error) {
+      console.error("Failed to update currency:", error);
       setMessage({
         type: "error",
         text: "Failed to update currency. Please try again.",
