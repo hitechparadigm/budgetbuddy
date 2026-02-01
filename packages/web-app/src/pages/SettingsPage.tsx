@@ -14,6 +14,7 @@ import TokenDiagnostics from "../components/TokenDiagnostics";
 import { CurrencySelector } from "../components/CurrencySelector";
 import { getCurrencyConfig } from "@budget-buddy/shared/src/utils/currency";
 import { NotificationSettings } from "../components/NotificationSettings";
+import { FamilySettings } from "../components/FamilySettings";
 
 interface LocationForm {
   country: string;
@@ -673,6 +674,11 @@ export const SettingsPage: React.FC = () => {
         {/* Notification Settings Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <NotificationSettings userId={localStorage.getItem("userId") || ""} />
+        </div>
+
+        {/* Family Settings Section */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <FamilySettings />
         </div>
 
         {/* Troubleshooting Section */}
