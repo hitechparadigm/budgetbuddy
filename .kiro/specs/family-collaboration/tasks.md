@@ -130,14 +130,14 @@ Implement family account sharing with invitation system, role-based permissions,
     - Add to infrastructure
     - _Requirements: FR-1.3_
 
-  - [ ] 4.2 Create email templates
+  - [x] 4.2 Create email templates
     - Create invitation email template
     - Create removal notification template
     - Create acceptance notification template
     - Test email rendering
     - _Requirements: FR-1.3_
 
-  - [ ] 4.3 Implement email service
+  - [x] 4.3 Implement email service
     - Create sendInvitationEmail function
     - Create sendRemovalEmail function
     - Create sendAcceptanceEmail function
