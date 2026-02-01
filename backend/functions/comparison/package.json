@@ -1,0 +1,13 @@
+{
+  "name": "@budgetbuddy/comparison",
+  "version": "1.0.0",
+  "description": "BudgetBuddy peer comparison Lambda function",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

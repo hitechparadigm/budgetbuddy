@@ -136,6 +136,15 @@ export class ApiFeaturesStack extends cdk.Stack {
       handler: 'index.handler',
       description: 'BudgetBuddy admin handler for dashboard and user management',
     });
+
+    // Comparison Lambda
+    this.functions.comparisonHandler = new lambda.Function(this, 'ComparisonHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-comparison',
+      code: lambda.Code.fromAsset('../backend/functions/comparison'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy comparison handler for peer spending comparisons',
+    });
   }
 
   private setupApiRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -147,6 +156,9 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Admin routes
     this.setupAdminRoutes(authorizer);
+
+    // Comparison routes
+    this.setupComparisonRoutes(authorizer);
   }
 
   private setupPlaidRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -319,6 +331,35 @@ export class ApiFeaturesStack extends cdk.Stack {
     adminHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.adminHandler), {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'AdminHealthCheck',
+    });
+  }
+
+  private setupComparisonRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const comparisonResource = this.api.root.addResource('comparison');
+
+    // Summary endpoint
+    const comparisonSummaryResource = comparisonResource.addResource('summary');
+    comparisonSummaryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.comparisonHandler), {
+      authorizer,
+      operationName: 'GetComparisonSummary',
+    });
+
+    // Preferences endpoints
+    const comparisonPreferencesResource = comparisonResource.addResource('preferences');
+    comparisonPreferencesResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.comparisonHandler), {
+      authorizer,
+      operationName: 'GetComparisonPreferences',
+    });
+    comparisonPreferencesResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.comparisonHandler), {
+      authorizer,
+      operationName: 'UpdateComparisonPreferences',
+    });
+
+    // Health endpoint
+    const comparisonHealthResource = comparisonResource.addResource('health');
+    comparisonHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.comparisonHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'ComparisonHealthCheck',
     });
   }
 
