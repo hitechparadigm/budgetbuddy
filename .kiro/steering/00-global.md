@@ -328,6 +328,30 @@ For each task:
 
 **DO NOT** wait for user confirmation between tasks in autonomous mode. Keep working until you hit a blocker or complete all available tasks.
 
+**CRITICAL - NO SUMMARIES IN AUTONOMOUS MODE**:
+
+- DO NOT provide task summaries unless explicitly asked
+- DO NOT provide "what I accomplished" messages
+- DO NOT provide "next steps" lists
+- DO NOT stop to report completion
+- ONLY provide summaries when:
+  1. User explicitly asks "what did you do?" or "summarize"
+  2. User says "session is ending" or "stop"
+  3. You hit a TRUE blocker (not a known/documented issue)
+- After completing a task: IMMEDIATELY start the next task
+- After deployment succeeds: IMMEDIATELY start the next task
+- After deployment fails with KNOWN issue: IMMEDIATELY start the next task
+
+**KNOWN ISSUES THAT ARE NOT BLOCKERS**:
+
+- Family Lambda 502 error (documented in .kiro/FAMILY_LAMBDA_502_BLOCKER.md)
+- Health check failures that don't prevent infrastructure deployment
+- Any issue documented in .kiro/\*BLOCKER.md files
+
+If you encounter a known issue: acknowledge it briefly (1 sentence) and CONTINUE to next task. 2. Related tasks that build on what you just completed 3. Next phase in a multi-phase feature 4. Most logical next step based on project priorities
+
+**DO NOT** wait for user confirmation between tasks in autonomous mode. Keep working until you hit a blocker or complete all available tasks.
+
 ## Interaction Guidelines
 
 ### Before Writing Code
