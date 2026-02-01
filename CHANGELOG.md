@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.9.41] - 2026-02-01
+
+### 📊 Status Update - All Competitive Feature Backends Verified
+
+**Backend Services Health Check**:
+All competitive feature backends are deployed and operational:
+
+| Service             | Endpoint                 | Status     |
+| ------------------- | ------------------------ | ---------- |
+| Plaid Bank Sync     | `GET /plaid/health`      | ✅ Healthy |
+| Spending Insights   | `GET /insights/health`   | ✅ Healthy |
+| Receipt Scanning    | `GET /receipt/health`    | ✅ Healthy |
+| Reconciliation      | `GET /reconcile/health`  | ✅ Healthy |
+| Peer Comparison     | `GET /comparison/health` | ✅ Healthy |
+| Financial Tips      | `GET /tips/health`       | ✅ Healthy |
+| Educational Content | `GET /learn/health`      | ✅ Healthy |
+| Admin Dashboard     | `GET /admin/health`      | ✅ Healthy |
+
+**API URLs**:
+
+- Main API: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/`
+- Features API: `https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1/`
+
+**Next Priority**: Frontend UI integration for these features
+
 ## [1.9.40] - 2026-02-01
 
 ### 🏦 Feature - Plaid Bank Sync Integration (Sandbox Mode)
