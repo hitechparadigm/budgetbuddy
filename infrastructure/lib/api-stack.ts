@@ -305,6 +305,18 @@ export class ApiStack extends cdk.Stack {
       description: 'BudgetBuddy goals handler for savings goals, progress tracking, and milestone celebrations',
     });
 
+    /**
+     * Spending Insights Functions
+     * Handle analytics, AI insights, and trend analysis
+     */
+    this.functions.insightsHandler = new lambda.Function(this, 'InsightsHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-insights',
+      code: lambda.Code.fromAsset('../backend/functions/insights'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy insights handler for spending analytics and AI-generated insights',
+    });
+
     // Grant DynamoDB permissions to all functions
     Object.values(this.functions).forEach(func => {
       props.table.grantReadWriteData(func);
@@ -852,6 +864,51 @@ export class ApiStack extends cdk.Stack {
     goalContributeResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
       authorizer,
       operationName: 'ContributeToGoal',
+    });
+
+    // Insights routes (protected)
+    const insightsResource = this.api.root.addResource('insights');
+
+    // Insights weekly endpoint
+    const insightsWeeklyResource = insightsResource.addResource('weekly');
+    insightsWeeklyResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      authorizer,
+      operationName: 'GetWeeklyInsights',
+    });
+
+    // Insights monthly endpoint
+    const insightsMonthlyResource = insightsResource.addResource('monthly');
+    insightsMonthlyResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      authorizer,
+      operationName: 'GetMonthlyInsights',
+    });
+
+    // Insights trends endpoint
+    const insightsTrendsResource = insightsResource.addResource('trends');
+    insightsTrendsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      authorizer,
+      operationName: 'GetSpendingTrends',
+    });
+
+    // Insights patterns endpoint
+    const insightsPatternsResource = insightsResource.addResource('patterns');
+    insightsPatternsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      authorizer,
+      operationName: 'GetSpendingPatterns',
+    });
+
+    // Insights ask endpoint (AI)
+    const insightsAskResource = insightsResource.addResource('ask');
+    insightsAskResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      authorizer,
+      operationName: 'AskAboutSpending',
+    });
+
+    // Insights health endpoint
+    const insightsHealthResource = insightsResource.addResource('health');
+    insightsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'InsightsHealthCheck',
     });
 
     // Email routes (public for webhooks, protected for sending)
