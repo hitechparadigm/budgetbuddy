@@ -1547,9 +1547,9 @@ export const BudgetPage: React.FC = () => {
               </a>
             </li>
             <li>
-              <a
-                href="#"
-                className={`flex items-center ${
+              <button
+                onClick={() => navigate("/insights")}
+                className={`w-full flex items-center ${
                   sidebarCollapsed && !isMobile
                     ? "justify-center px-2"
                     : "space-x-3 px-3"
@@ -1557,7 +1557,7 @@ export const BudgetPage: React.FC = () => {
               >
                 <span>📈</span>
                 {(!sidebarCollapsed || isMobile) && <span>Insights</span>}
-              </a>
+              </button>
             </li>
             <li>
               <button

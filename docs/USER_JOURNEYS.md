@@ -426,9 +426,9 @@ _"As a user, I want to understand my spending patterns so I can make better fina
 
 | Feature         | Frontend Component | Backend API               | Status           |
 | --------------- | ------------------ | ------------------------- | ---------------- |
-| Insights Page   | ❌ Missing         | `GET /insights/summary`   | ✅ Backend ready |
-| Weekly Insights | ❌ Missing         | `GET /insights/weekly`    | ✅ Backend ready |
-| Spending Trends | ❌ Missing         | `GET /insights/trends`    | ✅ Backend ready |
+| Insights Page   | ✅ Complete        | `GET /insights/summary`   | ✅ Complete      |
+| Weekly Insights | ✅ Complete        | `GET /insights/weekly`    | ✅ Complete      |
+| Spending Trends | ✅ Complete        | `GET /insights/trends`    | ✅ Complete      |
 | Peer Comparison | ❌ Missing         | `GET /comparison/summary` | ✅ Backend ready |
 | Achievements    | ❌ Missing         | `GET /comparison/badges`  | ⚠️ Partial       |
 | Tips Feed       | ✅ Complete        | `GET /tips/feed`          | ✅ Complete      |
@@ -446,9 +446,6 @@ _"As a user, I want to understand my spending patterns so I can make better fina
 
 | Component                  | Priority | Description                    |
 | -------------------------- | -------- | ------------------------------ |
-| `InsightsPage.tsx`         | HIGH     | Main insights dashboard        |
-| `SpendingTrendChart.tsx`   | HIGH     | 6-month spending visualization |
-| `WeeklyInsightCard.tsx`    | HIGH     | AI-generated weekly insight    |
 | `PeerComparisonWidget.tsx` | MEDIUM   | Anonymous benchmark comparison |
 | `AchievementBadges.tsx`    | MEDIUM   | Gamification badges display    |
 
@@ -702,14 +699,11 @@ _"As a user, I want to customize my app experience and manage my account setting
 
 #### 🔴 HIGH PRIORITY (Missing Frontend for Existing Backend)
 
-| Component                | Journey            | Backend Status | Effort   |
-| ------------------------ | ------------------ | -------------- | -------- |
-| `InsightsPage.tsx`       | Financial Insights | ✅ Ready       | 2-3 days |
-| `SpendingTrendChart.tsx` | Financial Insights | ✅ Ready       | 1 day    |
-| `WeeklyInsightCard.tsx`  | Financial Insights | ✅ Ready       | 0.5 day  |
-| `PlaidLinkButton.tsx`    | Bank Connection    | ✅ Ready       | 1 day    |
-| `NotificationCenter.tsx` | Notifications      | ✅ Ready       | 1-2 days |
-| `TransactionSearch.tsx`  | Daily Management   | ⚠️ Partial     | 1 day    |
+| Component                | Journey          | Backend Status | Effort   |
+| ------------------------ | ---------------- | -------------- | -------- |
+| `PlaidLinkButton.tsx`    | Bank Connection  | ✅ Ready       | 1 day    |
+| `NotificationCenter.tsx` | Notifications    | ✅ Ready       | 1-2 days |
+| `TransactionSearch.tsx`  | Daily Management | ⚠️ Partial     | 1 day    |
 
 #### 🟡 MEDIUM PRIORITY (New Features)
 
@@ -1002,7 +996,7 @@ xl: 32px  (major sections)
 | Feature            | Journey       | Effort | Impact | Dependencies  | Status      |
 | ------------------ | ------------- | ------ | ------ | ------------- | ----------- |
 | TipsFeed           | Insights      | 1 day  | MEDIUM | Backend ready | ✅ Complete |
-| InsightsPage       | Insights      | 3 days | HIGH   | Backend ready | ❌ Pending  |
+| InsightsPage       | Insights      | 3 days | HIGH   | Backend ready | ✅ Complete |
 | NotificationCenter | Notifications | 2 days | HIGH   | Backend ready | ❌ Pending  |
 
 ### Next Sprint
