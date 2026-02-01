@@ -19,6 +19,13 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-02-01)
 
+- 🐛 **THREE CRITICAL BUG FIXES** - User-reported issues resolved
+  - **Settings Persistence**: Location and currency now saved during onboarding
+  - **Geolocation Fix**: Now correctly detects user's IP location (not Lambda's)
+  - **Family Invites**: Primary user now properly added as family member
+  - **Files**: `backend/functions/auth/index.js`, `backend/functions/family/index.js`
+  - **Impact**: Onboarding flow and family collaboration now work correctly
+
 - ✅ **PHASE 10 PROPERTY-BASED TESTS COMPLETE** - 13 PBT tests with 100+ iterations each
   - **Task 10.1**: Permission matrix - all role/action combinations verified
   - **Task 10.2**: Invitation expiration - 7-day boundary logic validated

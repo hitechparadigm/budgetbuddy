@@ -1,5 +1,44 @@
 # Development Log
 
+## 2026-02-01 - Critical Bug Fixes (Session 60)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Fix three user-reported critical issues
+**Outcome**: All three issues fixed and ready for deployment
+
+### Issues Fixed
+
+1. **Settings Not Persisting After Onboarding**:
+   - User reported location and currency not showing in Settings after onboarding
+   - Root cause: `/auth/onboarding` endpoint didn't save location/currency to profile
+   - Fix: Updated onboarding to save location and currency to user profile
+
+2. **Geolocation Detecting Wrong Country**:
+   - User in London, Ontario (Canada) was detected as being in USA
+   - Root cause: Lambda was calling ipapi.co without forwarding client's IP
+   - Fix: Extract client IP from `X-Forwarded-For` header and pass to ipapi.co
+
+3. **Family Collaboration - Can't Send Invites**:
+   - User couldn't send family invitations
+   - Root cause: Primary user never added as MEMBER record when family created
+   - Fix: Added MEMBER record creation during registration + backwards-compatibility fix
+
+### Files Modified
+
+- `backend/functions/auth/index.js` (onboarding + geolocation fixes)
+- `backend/functions/auth-register/index.js` (member record creation)
+- `backend/functions/family/index.js` (backwards-compatibility fix)
+- `backend/functions/family/index.test.js` (updated 4 tests)
+
+### Tests
+
+- 49 family unit tests passing
+- All syntax checks pass
+
+---
+
 ## 2026-02-01 - Goal Category Linking (Session 59)
 
 ### Session Summary
