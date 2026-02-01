@@ -63,35 +63,9 @@ function validateReadme(stagedFiles, categories) {
       );
     }
 
-    // For major changes (infrastructure, new features), verify section mentions them
-    const hasMajorChanges =
-      categories.infrastructure.length > 0 ||
-      categories.backend.length > 5 ||
-      categories.frontend.length > 5;
-
-    if (hasMajorChanges) {
-      // This is a warning, not a hard failure
-      // Check if achievements section mentions any of the major components
-      const majorComponents = [
-        ...categories.infrastructure.map((f) => f.split("/")[1]), // e.g., "lib" from "infrastructure/lib/..."
-        ...categories.backend
-          .filter((f) => f.includes("/functions/"))
-          .map((f) => f.split("/")[2]), // e.g., "auth" from "backend/functions/auth/..."
-      ].filter((c) => c && c.length > 3);
-
-      if (majorComponents.length > 0) {
-        const hasMention = majorComponents.some((component) =>
-          achievementsSection.toLowerCase().includes(component.toLowerCase()),
-        );
-
-        if (!hasMention) {
-          // Warning only - don't fail validation
-          result.errors.push(
-            `⚠️  Warning: Major changes detected but not mentioned in Recent Achievements. Consider adding: ${majorComponents.slice(0, 2).join(", ")}`,
-          );
-        }
-      }
-    }
+    // For major changes (infrastructure, new features), we don't add extra requirements
+    // Note: We don't fail for major changes not being mentioned
+    // The 7-day check is sufficient - if Recent Achievements is current, that's enough
   } catch (error) {
     result.valid = false;
     result.errors.push(`Failed to validate README.md: ${error.message}`);

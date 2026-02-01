@@ -10,10 +10,23 @@
  * All endpoints require JWT authentication and enforce role-based permissions.
  */
 
-const AWS = require("aws-sdk");
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const {
+  DynamoDBDocumentClient,
+  GetCommand,
+  PutCommand,
+  UpdateCommand,
+  DeleteCommand,
+  QueryCommand,
+  ScanCommand,
+} = require("@aws-sdk/lib-dynamodb");
 const { v4: uuidv4 } = require("uuid");
+const crypto = require("crypto");
 
-const dynamodb = new AWS.DynamoDB.DocumentClient();
+// Initialize DynamoDB Document Client
+const client = new DynamoDBClient({});
+const dynamodb = DynamoDBDocumentClient.from(client);
+
 const TABLE_NAME = process.env.TABLE_NAME || "budgetbuddy-main";
 
 /**
@@ -143,15 +156,15 @@ async function handleInvite(event, userId, familyId, familyRole) {
     }
 
     // Get family metadata to check member count
-    const familyResult = await dynamodb
-      .get({
+    const familyResult = await dynamodb.send(
+      new GetCommand({
         TableName: TABLE_NAME,
         Key: {
           PK: `FAMILY#${familyId}`,
           SK: "METADATA",
         },
-      })
-      .promise();
+      }),
+    );
 
     if (!familyResult.Item) {
       return errorResponse(404, "Family not found");
@@ -165,8 +178,8 @@ async function handleInvite(event, userId, familyId, familyRole) {
     }
 
     // Check for existing pending invitation for this email
-    const existingInvitations = await dynamodb
-      .query({
+    const existingInvitations = await dynamodb.send(
+      new QueryCommand({
         TableName: TABLE_NAME,
         IndexName: "GSI4",
         KeyConditionExpression: "GSI4PK = :email",
@@ -179,8 +192,8 @@ async function handleInvite(event, userId, familyId, familyRole) {
           ":pending": "pending",
           ":familyId": familyId,
         },
-      })
-      .promise();
+      }),
+    );
 
     if (existingInvitations.Items && existingInvitations.Items.length > 0) {
       return errorResponse(
@@ -216,12 +229,12 @@ async function handleInvite(event, userId, familyId, familyRole) {
       expiresAt,
     };
 
-    await dynamodb
-      .put({
+    await dynamodb.send(
+      new PutCommand({
         TableName: TABLE_NAME,
         Item: invitation,
-      })
-      .promise();
+      }),
+    );
 
     console.log("Invitation created:", invitationId);
 
@@ -274,8 +287,8 @@ async function handleAcceptInvitation(event, userId) {
 
     // Find invitation by hashed token
     // We need to scan since token is not a key
-    const scanResult = await dynamodb
-      .scan({
+    const scanResult = await dynamodb.send(
+      new ScanCommand({
         TableName: TABLE_NAME,
         FilterExpression:
           "begins_with(PK, :invPrefix) AND #token = :token AND #status = :pending",
@@ -288,8 +301,8 @@ async function handleAcceptInvitation(event, userId) {
           ":token": hashedToken,
           ":pending": "pending",
         },
-      })
-      .promise();
+      }),
+    );
 
     if (!scanResult.Items || scanResult.Items.length === 0) {
       return errorResponse(404, "Invitation not found or already used");
@@ -303,8 +316,8 @@ async function handleAcceptInvitation(event, userId) {
 
     if (now > expiresAt) {
       // Update invitation status to expired
-      await dynamodb
-        .update({
+      await dynamodb.send(
+        new UpdateCommand({
           TableName: TABLE_NAME,
           Key: {
             PK: invitation.PK,
@@ -317,22 +330,22 @@ async function handleAcceptInvitation(event, userId) {
           ExpressionAttributeValues: {
             ":expired": "expired",
           },
-        })
-        .promise();
+        }),
+      );
 
       return errorResponse(400, "Invitation has expired");
     }
 
     // Get family metadata to check member count
-    const familyResult = await dynamodb
-      .get({
+    const familyResult = await dynamodb.send(
+      new GetCommand({
         TableName: TABLE_NAME,
         Key: {
           PK: `FAMILY#${invitation.familyId}`,
           SK: "METADATA",
         },
-      })
-      .promise();
+      }),
+    );
 
     if (!familyResult.Item) {
       return errorResponse(404, "Family not found");
@@ -348,8 +361,8 @@ async function handleAcceptInvitation(event, userId) {
     // Add user to family
     const joinedAt = new Date().toISOString();
 
-    await dynamodb
-      .put({
+    await dynamodb.send(
+      new PutCommand({
         TableName: TABLE_NAME,
         Item: {
           PK: `FAMILY#${invitation.familyId}`,
@@ -359,12 +372,12 @@ async function handleAcceptInvitation(event, userId) {
           joinedAt,
           addedBy: invitation.invitedBy,
         },
-      })
-      .promise();
+      }),
+    );
 
     // Update family member count
-    await dynamodb
-      .update({
+    await dynamodb.send(
+      new UpdateCommand({
         TableName: TABLE_NAME,
         Key: {
           PK: `FAMILY#${invitation.familyId}`,
@@ -374,12 +387,12 @@ async function handleAcceptInvitation(event, userId) {
         ExpressionAttributeValues: {
           ":inc": 1,
         },
-      })
-      .promise();
+      }),
+    );
 
     // Update invitation status to accepted
-    await dynamodb
-      .update({
+    await dynamodb.send(
+      new UpdateCommand({
         TableName: TABLE_NAME,
         Key: {
           PK: invitation.PK,
@@ -395,8 +408,8 @@ async function handleAcceptInvitation(event, userId) {
           ":acceptedAt": joinedAt,
           ":acceptedBy": userId,
         },
-      })
-      .promise();
+      }),
+    );
 
     // Update user's familyId and role in Cognito
     // This will be handled by the auth service when user logs in next time
@@ -433,8 +446,8 @@ async function handleAcceptInvitation(event, userId) {
 async function handleGetMembers(familyId) {
   try {
     // Query all members of the family
-    const membersResult = await dynamodb
-      .query({
+    const membersResult = await dynamodb.send(
+      new QueryCommand({
         TableName: TABLE_NAME,
         KeyConditionExpression:
           "PK = :familyPK AND begins_with(SK, :memberPrefix)",
@@ -442,8 +455,8 @@ async function handleGetMembers(familyId) {
           ":familyPK": `FAMILY#${familyId}`,
           ":memberPrefix": "MEMBER#",
         },
-      })
-      .promise();
+      }),
+    );
 
     if (!membersResult.Items || membersResult.Items.length === 0) {
       return successResponse({
@@ -456,15 +469,15 @@ async function handleGetMembers(familyId) {
     const members = await Promise.all(
       membersResult.Items.map(async (member) => {
         // Get user profile
-        const userResult = await dynamodb
-          .get({
+        const userResult = await dynamodb.send(
+          new GetCommand({
             TableName: TABLE_NAME,
             Key: {
               PK: `USER#${member.userId}`,
               SK: "PROFILE",
             },
-          })
-          .promise();
+          }),
+        );
 
         const user = userResult.Item || {};
 
@@ -489,6 +502,7 @@ async function handleGetMembers(familyId) {
     return errorResponse(500, "Failed to get family members", error.message);
   }
 }
+
 
 /**
  * Update member role
@@ -526,15 +540,15 @@ async function handleUpdateRole(
     }
 
     // Check if member exists
-    const memberResult = await dynamodb
-      .get({
+    const memberResult = await dynamodb.send(
+      new GetCommand({
         TableName: TABLE_NAME,
         Key: {
           PK: `FAMILY#${familyId}`,
           SK: `MEMBER#${targetUserId}`,
         },
       })
-      .promise();
+    );
 
     if (!memberResult.Item) {
       return errorResponse(404, "Member not found");
@@ -543,8 +557,8 @@ async function handleUpdateRole(
     // Update member role
     const updatedAt = new Date().toISOString();
 
-    await dynamodb
-      .update({
+    await dynamodb.send(
+      new UpdateCommand({
         TableName: TABLE_NAME,
         Key: {
           PK: `FAMILY#${familyId}`,
@@ -559,7 +573,7 @@ async function handleUpdateRole(
           ":updatedAt": updatedAt,
         },
       })
-      .promise();
+    );
 
     console.log(
       `User ${userId} updated role of ${targetUserId} to ${role} in family ${familyId}`,
@@ -598,34 +612,34 @@ async function handleRemoveMember(userId, familyId, familyRole, targetUserId) {
     }
 
     // Check if member exists
-    const memberResult = await dynamodb
-      .get({
+    const memberResult = await dynamodb.send(
+      new GetCommand({
         TableName: TABLE_NAME,
         Key: {
           PK: `FAMILY#${familyId}`,
           SK: `MEMBER#${targetUserId}`,
         },
       })
-      .promise();
+    );
 
     if (!memberResult.Item) {
       return errorResponse(404, "Member not found");
     }
 
     // Remove member from family
-    await dynamodb
-      .delete({
+    await dynamodb.send(
+      new DeleteCommand({
         TableName: TABLE_NAME,
         Key: {
           PK: `FAMILY#${familyId}`,
           SK: `MEMBER#${targetUserId}`,
         },
       })
-      .promise();
+    );
 
     // Update family member count
-    await dynamodb
-      .update({
+    await dynamodb.send(
+      new UpdateCommand({
         TableName: TABLE_NAME,
         Key: {
           PK: `FAMILY#${familyId}`,
@@ -636,7 +650,7 @@ async function handleRemoveMember(userId, familyId, familyRole, targetUserId) {
           ":dec": 1,
         },
       })
-      .promise();
+    );
 
     // TODO: Send notification email (will be implemented in Phase 4)
     console.log(
@@ -676,8 +690,8 @@ async function handleLeaveFamily(userId, familyId, familyRole) {
     const newFamilyId = uuidv4();
     const now = new Date().toISOString();
 
-    await dynamodb
-      .put({
+    await dynamodb.send(
+      new PutCommand({
         TableName: TABLE_NAME,
         Item: {
           PK: `FAMILY#${newFamilyId}`,
@@ -689,11 +703,11 @@ async function handleLeaveFamily(userId, familyId, familyRole) {
           subscriptionTier: "free",
         },
       })
-      .promise();
+    );
 
     // Add user as primary member of new family
-    await dynamodb
-      .put({
+    await dynamodb.send(
+      new PutCommand({
         TableName: TABLE_NAME,
         Item: {
           PK: `FAMILY#${newFamilyId}`,
@@ -704,22 +718,22 @@ async function handleLeaveFamily(userId, familyId, familyRole) {
           addedBy: userId,
         },
       })
-      .promise();
+    );
 
     // Remove user from old family
-    await dynamodb
-      .delete({
+    await dynamodb.send(
+      new DeleteCommand({
         TableName: TABLE_NAME,
         Key: {
           PK: `FAMILY#${familyId}`,
           SK: `MEMBER#${userId}`,
         },
       })
-      .promise();
+    );
 
     // Update old family member count
-    await dynamodb
-      .update({
+    await dynamodb.send(
+      new UpdateCommand({
         TableName: TABLE_NAME,
         Key: {
           PK: `FAMILY#${familyId}`,
@@ -730,7 +744,7 @@ async function handleLeaveFamily(userId, familyId, familyRole) {
           ":dec": 1,
         },
       })
-      .promise();
+    );
 
     // TODO: Copy current budget to new family (will be implemented later)
     // TODO: Send notification email to primary user (will be implemented in Phase 4)
@@ -783,7 +797,6 @@ function errorResponse(statusCode, message, details = null) {
  * Generate cryptographically secure token (32 bytes)
  */
 function generateSecureToken() {
-  const crypto = require("crypto");
   return crypto.randomBytes(32).toString("hex");
 }
 
@@ -791,7 +804,6 @@ function generateSecureToken() {
  * Hash token using SHA-256
  */
 function hashToken(token) {
-  const crypto = require("crypto");
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 

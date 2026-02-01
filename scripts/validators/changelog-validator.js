@@ -5,11 +5,7 @@
  * and mentions relevant changes based on staged files.
  */
 
-const {
-  readFile,
-  findDatesInContent,
-  containsKeywords,
-} = require("../utils/content-parser");
+const { readFile, containsKeywords } = require("../utils/content-parser");
 const { getTodayString, isToday } = require("../utils/date-utils");
 
 /**
