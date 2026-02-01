@@ -802,6 +802,14 @@ exports.handler = async (event, _context) => {
           accountType: result.Item.accountType.S,
           subscriptionTier: result.Item.subscriptionTier.S,
           onboardingCompleted: result.Item.onboardingCompleted.BOOL,
+          location: result.Item.location?.S
+            ? JSON.parse(result.Item.location.S)
+            : null,
+          timezone: result.Item.timezone?.S || null,
+          currency: result.Item.currency?.S || "USD",
+          settings: result.Item.settings?.S
+            ? JSON.parse(result.Item.settings.S)
+            : null,
           createdAt: result.Item.createdAt.S,
           updatedAt: result.Item.updatedAt.S,
         };
@@ -819,6 +827,151 @@ exports.handler = async (event, _context) => {
           body: JSON.stringify({
             error: "Internal Server Error",
             message: "Failed to get user profile",
+            details: error.message,
+          }),
+        };
+      }
+    }
+
+    // Handle profile update endpoint - PUT user profile
+    if (httpMethod === "PUT" && path === "/auth/profile") {
+      console.log("Update profile endpoint hit");
+
+      // Extract userId from Authorization header
+      const authHeader =
+        event.headers.Authorization || event.headers.authorization;
+      if (!authHeader) {
+        return {
+          statusCode: 401,
+          headers: getCorsHeaders(origin),
+          body: JSON.stringify({
+            error: "Unauthorized",
+            message: "Authorization header is required",
+          }),
+        };
+      }
+
+      try {
+        const token = authHeader.replace("Bearer ", "");
+        const base64Payload = token.split(".")[1];
+        const payload = JSON.parse(
+          Buffer.from(base64Payload, "base64").toString(),
+        );
+        const userId = payload.sub || payload.username;
+
+        if (!userId) {
+          return {
+            statusCode: 401,
+            headers: getCorsHeaders(origin),
+            body: JSON.stringify({
+              error: "Unauthorized",
+              message: "Invalid token - no user ID found",
+            }),
+          };
+        }
+
+        // Parse request body
+        const body = JSON.parse(event.body || "{}");
+
+        // Build update expression for allowed fields
+        const allowedFields = [
+          "firstName",
+          "lastName",
+          "location",
+          "timezone",
+          "currency",
+          "settings",
+        ];
+        const updateExpressions = [];
+        const expressionAttributeNames = {};
+        const expressionAttributeValues = {};
+
+        for (const field of allowedFields) {
+          if (body[field] !== undefined) {
+            updateExpressions.push(`#${field} = :${field}`);
+            expressionAttributeNames[`#${field}`] = field;
+
+            // Handle different field types
+            if (typeof body[field] === "object") {
+              expressionAttributeValues[`:${field}`] = {
+                S: JSON.stringify(body[field]),
+              };
+            } else if (typeof body[field] === "boolean") {
+              expressionAttributeValues[`:${field}`] = { BOOL: body[field] };
+            } else {
+              expressionAttributeValues[`:${field}`] = {
+                S: String(body[field]),
+              };
+            }
+          }
+        }
+
+        if (updateExpressions.length === 0) {
+          return {
+            statusCode: 400,
+            headers: getCorsHeaders(origin),
+            body: JSON.stringify({
+              error: "Bad Request",
+              message: "No valid fields to update",
+            }),
+          };
+        }
+
+        // Add updatedAt
+        updateExpressions.push("#updatedAt = :updatedAt");
+        expressionAttributeNames["#updatedAt"] = "updatedAt";
+        expressionAttributeValues[":updatedAt"] = {
+          S: new Date().toISOString(),
+        };
+
+        // Update user profile in DynamoDB
+        const updateCommand = new UpdateItemCommand({
+          TableName: TABLE_NAME,
+          Key: {
+            PK: { S: `USER#${userId}` },
+            SK: { S: "PROFILE" },
+          },
+          UpdateExpression: `SET ${updateExpressions.join(", ")}`,
+          ExpressionAttributeNames: expressionAttributeNames,
+          ExpressionAttributeValues: expressionAttributeValues,
+          ReturnValues: "ALL_NEW",
+        });
+
+        const result = await dynamoClient.send(updateCommand);
+        console.log("Profile updated successfully");
+
+        // Convert DynamoDB item to JSON
+        const updatedProfile = {
+          userId: result.Attributes.userId.S,
+          email: result.Attributes.email.S,
+          firstName: result.Attributes.firstName?.S || "",
+          lastName: result.Attributes.lastName?.S || "",
+          familyId: result.Attributes.familyId.S,
+          familyRole: result.Attributes.familyRole.S,
+          location: result.Attributes.location?.S
+            ? JSON.parse(result.Attributes.location.S)
+            : null,
+          timezone: result.Attributes.timezone?.S || null,
+          currency: result.Attributes.currency?.S || "USD",
+          settings: result.Attributes.settings?.S
+            ? JSON.parse(result.Attributes.settings.S)
+            : null,
+          updatedAt: result.Attributes.updatedAt.S,
+        };
+
+        return {
+          statusCode: 200,
+          headers: getCorsHeaders(origin),
+          body: JSON.stringify(updatedProfile),
+        };
+      } catch (error) {
+        console.error("Error updating profile:", error);
+        return {
+          statusCode: 500,
+          headers: getCorsHeaders(origin),
+          body: JSON.stringify({
+            error: "Internal Server Error",
+            message: "Failed to update user profile",
             details: error.message,
           }),
         };

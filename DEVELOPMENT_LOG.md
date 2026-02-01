@@ -1,5 +1,40 @@
 # Development Log
 
+## 2026-02-01 - Settings Persistence Bug Fix (Session 44)
+
+### Session Summary
+
+**Duration**: 20 minutes
+**Focus**: Fixed settings not persisting to backend
+**Outcome**: Location, timezone, and currency settings now save to backend API
+
+### Problem
+
+User reported that location settings were not being saved after navigating away from the Settings page.
+
+### Root Cause
+
+The SettingsPage component only saved settings to localStorage, not to the backend API. There was no PUT endpoint for updating user profile.
+
+### Solution
+
+1. Added PUT `/auth/profile` endpoint to auth Lambda
+2. Updated GET `/auth/profile` to return location, timezone, currency, settings fields
+3. Added profileApi to web-app API service
+4. Updated SettingsPage to load from and save to backend API
+
+### Files Changed
+
+- `backend/functions/auth/index.js` - Added PUT profile endpoint
+- `packages/web-app/src/services/api.ts` - Added profileApi
+- `packages/web-app/src/pages/SettingsPage.tsx` - Integrated with profileApi
+
+### Verification
+
+Web app builds successfully.
+
+---
+
 ## 2026-02-01 - Family Lambda 502 Fix (Session 43)
 
 ### Session Summary
