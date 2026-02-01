@@ -31,6 +31,37 @@
   - Added billsHandler Lambda to api-stack.ts
   - Added all bills API routes with Cognito authorization
 
+### 🚀 NEW FEATURE - Savings Goals System (Task 2)
+
+- **Backend Implementation**
+  - Created `backend/functions/goals/index.js` - Full CRUD operations for savings goals
+  - Created `backend/functions/goals/package.json` - Lambda function configuration
+  - Created `backend/functions/goals/goals.test.js` - Unit tests (11 tests passing)
+
+- **API Endpoints Added**
+  - `GET /goals` - List all goals with summary stats
+  - `POST /goals` - Create a new savings goal
+  - `GET /goals/{goalId}` - Get specific goal details
+  - `PUT /goals/{goalId}` - Update a goal
+  - `DELETE /goals/{goalId}` - Delete a goal (soft delete)
+  - `POST /goals/{goalId}/contribute` - Add contribution to goal
+  - `PUT /goals/reorder` - Reorder goals by priority
+  - `GET /goals/templates` - Get goal templates
+  - `GET /goals/health` - Health check endpoint
+
+- **Key Features**
+  - Goal templates (Emergency Fund, Vacation, Car, Home, Wedding, etc.)
+  - Progress tracking with percentage and visual indicators
+  - Milestone celebrations (25%, 50%, 75%, 100%)
+  - Monthly required amount calculation
+  - Category linking for auto-contributions
+  - Max 10 active goals per family
+  - Drag-and-drop priority reordering
+
+- **Infrastructure**
+  - Added goalsHandler Lambda to api-stack.ts
+  - Added all goals API routes with Cognito authorization
+
 ### 📋 Spec Updates
 
 - Created comprehensive competitive features spec

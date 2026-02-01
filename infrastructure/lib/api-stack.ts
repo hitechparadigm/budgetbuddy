@@ -293,6 +293,18 @@ export class ApiStack extends cdk.Stack {
       description: 'BudgetBuddy bills handler for bill reminders, due date tracking, and recurring bill management',
     });
 
+    /**
+     * Savings Goals Functions
+     * Handle goal CRUD, progress tracking, and milestone celebrations
+     */
+    this.functions.goalsHandler = new lambda.Function(this, 'GoalsHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-goals',
+      code: lambda.Code.fromAsset('../backend/functions/goals'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy goals handler for savings goals, progress tracking, and milestone celebrations',
+    });
+
     // Grant DynamoDB permissions to all functions
     Object.values(this.functions).forEach(func => {
       props.table.grantReadWriteData(func);
@@ -786,6 +798,60 @@ export class ApiStack extends cdk.Stack {
     billPayResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.billsHandler), {
       authorizer,
       operationName: 'MarkBillPaid',
+    });
+
+    // Goals routes (protected)
+    const goalsResource = this.api.root.addResource('goals');
+    goalsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
+      authorizer,
+      operationName: 'GetGoals',
+    });
+    goalsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
+      authorizer,
+      operationName: 'CreateGoal',
+    });
+
+    // Goals templates endpoint
+    const goalsTemplatesResource = goalsResource.addResource('templates');
+    goalsTemplatesResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
+      authorizer,
+      operationName: 'GetGoalTemplates',
+    });
+
+    // Goals reorder endpoint
+    const goalsReorderResource = goalsResource.addResource('reorder');
+    goalsReorderResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
+      authorizer,
+      operationName: 'ReorderGoals',
+    });
+
+    // Goals health endpoint
+    const goalsHealthResource = goalsResource.addResource('health');
+    goalsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'GoalsHealthCheck',
+    });
+
+    // Individual goal routes
+    const goalIdResource = goalsResource.addResource('{goalId}');
+    goalIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
+      authorizer,
+      operationName: 'GetGoal',
+    });
+    goalIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
+      authorizer,
+      operationName: 'UpdateGoal',
+    });
+    goalIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
+      authorizer,
+      operationName: 'DeleteGoal',
+    });
+
+    // Goal contribute endpoint
+    const goalContributeResource = goalIdResource.addResource('contribute');
+    goalContributeResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
+      authorizer,
+      operationName: 'ContributeToGoal',
     });
 
     // Email routes (public for webhooks, protected for sending)
