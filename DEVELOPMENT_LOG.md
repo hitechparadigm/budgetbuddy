@@ -1,5 +1,83 @@
 # Development Log
 
+## 2026-02-02 - AI Prompt Engineering (Session 105)
+
+### Session Summary
+
+**Duration**: 60 minutes
+**Focus**: Implement AI prompt builder for AWS Bedrock integration
+**Outcome**: Complete prompt builder with 30 passing unit tests
+
+### Work Completed
+
+1. **AI Prompt Builder Implementation**:
+   - Created `ai-prompt-builder.js` with 5 core functions
+   - `buildPatternDetectionPrompt()` - Construct pattern detection prompt
+   - `buildBudgetPlanningPrompt()` - Construct budget planning prompt
+   - `validatePatternDetectionPrompt()` - Validate prompt completeness
+   - `validateBudgetPlanningPrompt()` - Validate budget prompt completeness
+   - `extractJsonFromResponse()` - Extract JSON from AI responses
+
+2. **Pattern Detection Prompt**:
+   - Includes transaction history (last N months)
+   - Instructions for frequency detection (weekly, bi-weekly, monthly, quarterly, annual)
+   - JSON schema with all required fields (merchantName, suggestedBillName, averageAmount, etc.)
+   - Example output for guidance
+   - Focus on common recurring bills (rent, mortgage, insurance, utilities, subscriptions)
+   - Converts negative amounts to positive
+   - Handles transactions without merchant names (uses description)
+
+3. **Budget Planning Prompt**:
+   - Includes recurring bills with frequency and amounts
+   - Past 3 months spending by category
+   - Target month formatting (e.g., "April 2024")
+   - Instructions for frequency handling (bi-weekly: 2 or 3 occurrences, monthly: 1, quarterly/annual: prorate)
+   - JSON schema with breakdown and confidence scores
+   - Example output with multiple categories (Housing, Entertainment)
+   - Handles empty bills and spending history
+
+4. **Prompt Validation**:
+   - Validates all required fields present
+   - Returns validation result with missing fields list
+   - Ensures prompts are complete before sending to AI
+
+5. **JSON Extraction**:
+   - Parses valid JSON directly
+   - Extracts JSON from markdown code blocks (`json ... `)
+   - Extracts JSON arrays from text
+   - Extracts JSON objects from text
+   - Handles extra whitespace
+   - Throws error for invalid JSON
+
+6. **Testing**:
+   - Created comprehensive unit test suite with 30 tests
+   - All tests passing
+   - Test coverage: prompt construction, validation, JSON extraction, edge cases
+   - Edge cases: missing merchant names, negative amounts, empty data, markdown responses
+
+7. **Files Created**:
+   - `backend/functions/pattern-detection/ai-prompt-builder.js` (280 lines)
+   - `backend/functions/pattern-detection/ai-prompt-builder.test.js` (420 lines, 30 tests)
+
+### Technical Details
+
+- Prompts include detailed instructions for AI
+- JSON schema ensures structured responses
+- Example outputs guide AI to correct format
+- Validation prevents incomplete prompts
+- JSON extraction handles various AI response formats
+- Supports all 12 months with proper formatting
+
+### Next Steps
+
+- Task 6: Implement AWS Bedrock integration
+  - Create Bedrock client with retry logic
+  - Implement response validation against JSON schema
+  - Add cost estimation and logging
+  - Handle errors with exponential backoff
+
+---
+
 ## 2026-02-02 - Pattern Detection Algorithm (Session 104)
 
 ### Session Summary

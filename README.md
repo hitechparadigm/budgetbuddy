@@ -19,6 +19,15 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-02-02)
 
+- 🤖 **AI PROMPT ENGINEERING** - Prompt builder for AWS Bedrock (Claude 3.5 Sonnet)
+  - **Pattern Detection Prompts**: Transaction data, JSON schema, example outputs, instructions
+  - **Budget Planning Prompts**: Bills, spending history, target month, frequency handling
+  - **Prompt Validation**: Ensures all required fields present before sending to AI
+  - **JSON Extraction**: Handles markdown code blocks, extra text, whitespace
+  - **Testing**: 30 unit tests passing with comprehensive coverage
+  - **Files**: `backend/functions/pattern-detection/ai-prompt-builder.js` + tests
+  - **Impact**: Ready for AWS Bedrock integration with structured prompts
+
 - 🤖 **PATTERN DETECTION ALGORITHM** - Core algorithm for detecting recurring payment patterns
   - **Frequency Detection**: Weekly (7±2), bi-weekly (14±3), monthly (30±3), quarterly (91±7), annual (365±14)
   - **Amount Analysis**: Mean, median, stdDev calculation with 30% variance threshold

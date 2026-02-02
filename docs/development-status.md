@@ -4,7 +4,61 @@
 **Current Phase**: Feature Complete - Maintenance Mode
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - Pattern Detection Algorithm
+## ✨ LATEST - AI Prompt Engineering
+
+### Prompt Builder for AWS Bedrock Integration
+
+- Pattern detection prompts with transaction data and JSON schema
+- Budget planning prompts with bills and spending history
+- Prompt validation to ensure completeness
+- JSON extraction from AI responses (handles markdown, extra text)
+- 30 unit tests with comprehensive coverage
+
+**Core Functions**:
+
+1. `buildPatternDetectionPrompt()` - Construct pattern detection prompt with transactions
+2. `buildBudgetPlanningPrompt()` - Construct budget planning prompt with historical data
+3. `validatePatternDetectionPrompt()` - Validate prompt has all required fields
+4. `validateBudgetPlanningPrompt()` - Validate budget prompt completeness
+5. `extractJsonFromResponse()` - Extract JSON from AI response (handles markdown, extra text)
+
+**Pattern Detection Prompt Includes**:
+
+- Transaction history (last N months)
+- Instructions for frequency detection (weekly, bi-weekly, monthly, quarterly, annual)
+- JSON schema with all required fields
+- Example output for guidance
+- Focus on common recurring bills (rent, mortgage, insurance, utilities, subscriptions)
+
+**Budget Planning Prompt Includes**:
+
+- Recurring bills with frequency and amounts
+- Past 3 months spending by category
+- Target month formatting (e.g., "April 2024")
+- Instructions for frequency handling (bi-weekly, monthly, quarterly, annual)
+- JSON schema with breakdown and confidence scores
+- Example output with multiple categories
+
+**Edge Cases Handled**:
+
+- Transactions without merchant names (uses description)
+- Negative amounts converted to positive
+- Empty bills and spending history
+- AI responses with markdown code blocks
+- AI responses with extra text around JSON
+
+**Requirements Completed**:
+
+- R10.1 Prompt Structure Completeness - ✅ Complete
+- R10.2 JSON Schema in Prompts - ✅ Complete
+- R10.3 Example Outputs - ✅ Complete
+- R10.5 Historical Context - ✅ Complete
+- Task 5.1 Create ai-prompt-builder.js - ✅ Complete
+- Task 5.3 Write unit tests for prompt validation - ✅ Complete
+
+---
+
+## ✨ Pattern Detection Algorithm
 
 ### Core Algorithm for Recurring Payment Detection
 
