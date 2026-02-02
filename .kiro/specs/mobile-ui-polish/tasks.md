@@ -187,21 +187,19 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
   - [x] 5.2.5 Handle verification errors
   - **Validates: Requirement 5.2**
 
-- [ ] 5.3 Update login flow
-  - [ ] 5.3.1 Detect MFA challenge from Cognito
-  - [ ] 5.3.2 Show TwoFactorVerify on challenge
-  - [ ] 5.3.3 Complete authentication after verify
-  - [ ] 5.3.4 Add "Use backup code" option
+- [x] 5.3 Update login flow
+  - [x] 5.3.1 Detect MFA challenge from Cognito
+  - [x] 5.3.2 Show TwoFactorVerify on challenge
+  - [x] 5.3.3 Complete authentication after verify
+  - [x] 5.3.4 Add "Use backup code" option
   - **Validates: Requirement 5.3**
-  - **Note**: Requires AuthContext integration
 
-- [ ] 5.4 Add to Settings screen
-  - [ ] 5.4.1 Add 2FA section to SettingsScreen
-  - [ ] 5.4.2 Show enable/disable toggle
-  - [ ] 5.4.3 Show 2FA status indicator
-  - [ ] 5.4.4 Add "View backup codes" option
+- [x] 5.4 Add to Settings screen
+  - [x] 5.4.1 Add 2FA section to SettingsScreen
+  - [x] 5.4.2 Show enable/disable toggle
+  - [x] 5.4.3 Show 2FA status indicator
+  - [x] 5.4.4 Add "View backup codes" option
   - **Validates: Requirement 5.4**
-  - **Note**: Requires SettingsScreen integration
 
 ---
 
@@ -248,18 +246,18 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
 
 ## Documentation Tasks
 
-- [ ] D.1 Update component documentation
-  - [ ] D.1.1 Add JSDoc comments to all new components
-  - [ ] D.1.2 Update mobile README with new features
+- [x] D.1 Update component documentation
+  - [x] D.1.1 Add JSDoc comments to all new components
+  - [x] D.1.2 Update mobile README with new features
 
-- [ ] D.2 Update user documentation
-  - [ ] D.2.1 Document gesture interactions
-  - [ ] D.2.2 Document 2FA setup process for mobile
+- [x] D.2 Update user documentation
+  - [x] D.2.1 Document gesture interactions
+  - [x] D.2.2 Document 2FA setup process for mobile
 
-- [ ] D.3 Update project documentation
-  - [ ] D.3.1 Update CHANGELOG.md
-  - [ ] D.3.2 Update development-status.md
-  - [ ] D.3.3 Update USER_JOURNEYS.md
+- [x] D.3 Update project documentation
+  - [x] D.3.1 Update CHANGELOG.md
+  - [x] D.3.2 Update development-status.md
+  - [x] D.3.3 Update USER_JOURNEYS.md
 
 ---
 
@@ -289,11 +287,11 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
 
 ## Definition of Done
 
-- [ ] All components implemented
-- [ ] All components have accessibility labels
-- [ ] Haptic feedback working on iOS and Android
-- [ ] Animations at 60fps
-- [ ] AsyncStorage operations tested
-- [ ] API integrations working
-- [ ] Documentation updated
+- [x] All components implemented
+- [x] All components have accessibility labels
+- [x] Haptic feedback working on iOS and Android
+- [x] Animations at 60fps
+- [x] AsyncStorage operations tested
+- [x] API integrations working
+- [x] Documentation updated
 - [ ] Tested on iOS and Android devices
