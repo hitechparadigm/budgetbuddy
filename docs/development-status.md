@@ -1,10 +1,42 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-02 (Mobile FAB Enhancement)
+**Last Updated**: 2026-02-02 (Mobile Transaction Templates)
 **Current Phase**: Mobile UI Polish
-**Overall Progress**: 95% Core + 90% Competitive Features + 100% UI Polish (Web) + 15% UI Polish (Mobile)
+**Overall Progress**: 95% Core + 90% Competitive Features + 100% UI Polish (Web) + 30% UI Polish (Mobile)
 
-## ✨ LATEST - Mobile Quick Actions FAB Enhancement
+## ✨ LATEST - Mobile Transaction Templates
+
+### Task 2 Complete
+
+**New useTemplates Hook**:
+
+- AsyncStorage persistence
+- CRUD operations for templates
+- Max 10 templates with auto-cleanup
+- Recent categories tracking (last 5)
+
+**New TransactionTemplateModal**:
+
+- Bottom sheet with template list
+- Template selection with pre-fill
+- Long-press to delete
+- Save as template mode
+- Full accessibility support
+
+### Mobile UI Polish Progress
+
+| Task | Feature                   | Status      |
+| ---- | ------------------------- | ----------- |
+| 1    | Quick Actions FAB         | ✅ Complete |
+| 2    | Transaction Templates     | ✅ Complete |
+| 3    | Search and Filters        | ❌ Pending  |
+| 4    | Goal Reordering           | ❌ Pending  |
+| 5    | Two-Factor Authentication | ❌ Pending  |
+| 6    | Tips Feed Gestures        | ❌ Pending  |
+
+---
+
+## ✨ Mobile Quick Actions FAB Enhancement
 
 ### Task 1 Complete
 
@@ -26,17 +58,6 @@
 
 - `packages/mobile/src/hooks/useHaptics.ts`
 - `packages/mobile/src/components/QuickActionsFAB.tsx`
-
-### Mobile UI Polish Progress
-
-| Task | Feature                   | Status      |
-| ---- | ------------------------- | ----------- |
-| 1    | Quick Actions FAB         | ✅ Complete |
-| 2    | Transaction Templates     | ❌ Pending  |
-| 3    | Search and Filters        | ❌ Pending  |
-| 4    | Goal Reordering           | ❌ Pending  |
-| 5    | Two-Factor Authentication | ❌ Pending  |
-| 6    | Tips Feed Gestures        | ❌ Pending  |
 
 ---
 

@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.9.65] - 2026-02-02
+
+### ✨ Feature - Mobile Transaction Templates
+
+**New Components**:
+
+- `packages/mobile/src/hooks/useTemplates.ts` - Template management hook
+- `packages/mobile/src/components/TransactionTemplateModal.tsx` - Template selection modal
+
+**useTemplates Hook Features**:
+
+- AsyncStorage persistence
+- CRUD operations for templates
+- Max 10 templates limit with auto-cleanup
+- Recent categories tracking (last 5)
+- Unique ID generation
+
+**TransactionTemplateModal Features**:
+
+- Bottom sheet with template list
+- Template selection with pre-fill
+- Long-press to delete templates
+- Save current transaction as template
+- Template name input form
+- Preview card for transaction data
+- Full accessibility support
+
+**Template Schema**:
+
+```typescript
+interface TransactionTemplate {
+  id: string;
+  name: string;
+  description: string;
+  amount: number;
+  categoryId: string;
+  createdAt: string;
+}
+```
+
 ## [1.9.64] - 2026-02-02
 
 ### ✨ Feature - Mobile Quick Actions FAB Enhancement
