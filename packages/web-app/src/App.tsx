@@ -33,6 +33,7 @@ import DebtPayoffPage from "./pages/DebtPayoffPage";
 import DebtFormPage from "./pages/DebtFormPage";
 import { LearnPage } from "./pages/LearnPage";
 import { AboutPage } from "./pages/AboutPage";
+import { HelpCenterPage } from "./pages/HelpCenterPage";
 import { initMockAuth } from "./utils/mockAuth";
 
 const App: React.FC = () => {
@@ -223,6 +224,15 @@ const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <AboutPage />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Help Center Page */}
+                <Route
+                  path="/help"
+                  element={
+                    <ProtectedRoute>
+                      <HelpCenterPage />
                     </ProtectedRoute>
                   }
                 />
