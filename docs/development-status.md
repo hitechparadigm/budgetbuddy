@@ -4,7 +4,40 @@
 **Current Phase**: Feature Complete - Maintenance Mode
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - Tutorial Integration
+## ✨ LATEST - Fuzzy Matching Algorithm
+
+### Fuzzy Matching for Merchant Name Normalization
+
+- Levenshtein distance-based similarity calculation
+- Merchant name normalization (lowercase, remove special chars)
+- Configurable similarity threshold (default 80%)
+- Best match finder from candidate list
+- 37 unit tests with comprehensive edge case coverage
+
+**Core Functions**:
+
+1. `levenshteinDistance()` - Calculate edit distance between strings
+2. `normalizeMerchantName()` - Normalize merchant names for comparison
+3. `calculateSimilarity()` - Calculate similarity percentage (0-100)
+4. `fuzzyMatch()` - Check if two names match above threshold
+5. `findBestMatch()` - Find best matching name from candidates
+
+**Algorithm Details**:
+
+- Dynamic programming implementation (O(n\*m) complexity)
+- Similarity formula: `((maxLength - distance) / maxLength) * 100`
+- Handles edge cases: empty strings, special characters, numbers, unicode
+- Example: "Netflix Inc" vs "Netflix" = 63.64% similarity
+
+**Requirements Completed**:
+
+- R6.2 Fuzzy Merchant Matching - ✅ Complete
+- Task 3.1 Create fuzzy-matching-utils.js - ✅ Complete
+- Task 3.3 Write unit tests for edge cases - ✅ Complete
+
+---
+
+## ✨ Tutorial Integration
 
 ### TutorialOverlay Integrated into BudgetPage
 
