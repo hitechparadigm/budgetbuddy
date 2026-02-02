@@ -1,0 +1,13 @@
+{
+  "name": "bills-scheduler",
+  "version": "1.0.0",
+  "description": "BudgetBuddy Bill Notification Scheduler Lambda",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
