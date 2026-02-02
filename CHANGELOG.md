@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.9.69] - 2026-02-02
+
+### ✨ Feature - Mobile Two-Factor Authentication UI
+
+**New Components**:
+
+- `packages/mobile/src/components/TwoFactorSetup.tsx` - 2FA setup wizard
+- `packages/mobile/src/components/TwoFactorVerify.tsx` - 2FA verification screen
+
+**TwoFactorSetup Features**:
+
+- Step wizard (Intro → QR → Verify → Backup)
+- QR code display for authenticator apps
+- Manual secret code entry with copy button
+- 6-digit verification code input
+- Backup codes display with copy all
+- Progress indicator
+- Full haptic feedback
+
+**TwoFactorVerify Features**:
+
+- 6-digit code input with auto-submit
+- Backup code option toggle
+- Auto-focus and keyboard handling
+- Error display
+- Cancel option
+
+**Completes**: Mobile UI Polish Task 5.1-5.2 (2FA Components)
+
 ## [1.9.68] - 2026-02-02
 
 ### ✨ Feature - Mobile Goal Reordering
