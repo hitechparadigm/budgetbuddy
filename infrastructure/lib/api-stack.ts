@@ -308,6 +308,18 @@ export class ApiStack extends cdk.Stack {
     });
 
     /**
+     * Debt Payoff Calculator Functions
+     * Handle debt tracking, payoff calculations, and payment recording
+     */
+    this.functions.debtPayoffHandler = new lambda.Function(this, 'DebtPayoffHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-debt-payoff',
+      code: lambda.Code.fromAsset('../backend/functions/debt-payoff'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy debt payoff handler for debt tracking, snowball/avalanche calculations, and payment recording',
+    });
+
+    /**
      * Spending Insights Functions
      * Handle analytics, AI insights, and trend analysis
      */
@@ -975,6 +987,56 @@ export class ApiStack extends cdk.Stack {
     subscriptionStatusResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
       authorizer,
       operationName: 'UpdateSubscriptionStatus',
+    });
+
+    // Debts routes (protected)
+    const debtsResource = this.api.root.addResource('debts');
+    debtsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'GetDebts',
+    });
+    debtsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'CreateDebt',
+    });
+
+    // Debts summary endpoint
+    const debtsSummaryResource = debtsResource.addResource('summary');
+    debtsSummaryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'GetDebtsSummary',
+    });
+
+    // Debts payoff-plan endpoint
+    const debtsPayoffPlanResource = debtsResource.addResource('payoff-plan');
+    debtsPayoffPlanResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'GetPayoffPlan',
+    });
+
+    // Debts health endpoint
+    const debtsHealthResource = debtsResource.addResource('health');
+    debtsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'DebtsHealthCheck',
+    });
+
+    // Individual debt routes
+    const debtIdResource = debtsResource.addResource('{debtId}');
+    debtIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'UpdateDebt',
+    });
+    debtIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'DeleteDebt',
+    });
+
+    // Debt payment endpoint
+    const debtPaymentResource = debtIdResource.addResource('payment');
+    debtPaymentResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'RecordDebtPayment',
     });
 
     // Insights routes (protected)

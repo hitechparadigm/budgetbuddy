@@ -178,19 +178,19 @@
 
 ### Task 5: Debt Payoff Calculator (Requirement 37)
 
-- [ ] 5.1 Backend: Create debt-payoff Lambda function
+- [x] 5.1 Backend: Create debt-payoff Lambda function
   - Create `backend/functions/debt-payoff/` directory
   - Implement CRUD for debts
   - Store with `DEBT#<debtId>` sort key
   - **Validates: Requirement 37.1, 37.2**
 
-- [ ] 5.2 Backend: Implement payoff calculation algorithms
+- [x] 5.2 Backend: Implement payoff calculation algorithms
   - Snowball method (smallest balance first)
   - Avalanche method (highest interest first)
   - Calculate total interest, payoff date
   - **Validates: Requirement 37.3, 37.4**
 
-- [ ] 5.3 Backend: Implement extra payment recalculation
+- [x] 5.3 Backend: Implement extra payment recalculation
   - Recalculate payoff date with extra payments
   - Calculate interest saved
   - **Validates: Requirement 37.6, 37.7**
