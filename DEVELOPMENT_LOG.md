@@ -1,5 +1,54 @@
 # Development Log
 
+## 2026-02-02 - Quick Actions FAB & Keyboard Shortcuts (Session 74)
+
+### Session Summary
+
+**Duration**: 20 minutes
+**Focus**: Implement Quick Actions FAB and keyboard shortcuts (Tasks 1-2 from UI Polish spec)
+**Outcome**: Enhanced FAB component with keyboard shortcuts created and integrated
+
+### Work Completed
+
+1. **Created QuickActionsFAB Component**:
+   - Expandable FAB with animated menu
+   - Actions: Add Income, Add Expense, View Budget, View Goals, View Insights
+   - Optional Scan Receipt action
+   - Keyboard shortcuts integrated
+   - Shortcuts help modal (Ctrl+/)
+   - Accessible with ARIA labels
+
+2. **Created useKeyboardShortcuts Hook**:
+   - Reusable keyboard shortcuts hook
+   - Ctrl/Cmd key detection (Mac support)
+   - Prevents conflicts with browser shortcuts
+   - Ignores shortcuts when typing in inputs
+
+3. **Integrated into BudgetPage**:
+   - Replaced basic FAB with enhanced QuickActionsFAB
+   - Removed unused showFAB state
+   - Connected to existing transaction modal
+
+### Files Created
+
+- `packages/web-app/src/components/QuickActionsFAB.tsx`
+- `packages/web-app/src/hooks/useKeyboardShortcuts.ts`
+
+### Files Modified
+
+- `packages/web-app/src/pages/BudgetPage.tsx`
+- `.kiro/specs/ui-polish-enhancements/tasks.md`
+
+### Tasks Completed
+
+- Task 1.1: Create QuickActionsFAB component (Web) ✅
+- Task 1.3.1: Add FAB to BudgetPage ✅
+- Task 2.1: Create keyboard shortcuts hook ✅
+- Task 2.2: Create shortcuts help modal ✅
+- Task 2.3: Implement core shortcuts ✅
+
+---
+
 ## 2026-02-02 - UI Polish & Enhancements Spec Created (Session 73)
 
 ### Session Summary
