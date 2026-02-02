@@ -2,16 +2,18 @@
  * Login Form Component
  * Handles user authentication with validation and error handling
  * Supports both email/password and Google Sign-In
+ * Includes MFA challenge handling for 2FA-enabled accounts
  */
 
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema } from '../../utils/validation';
-import type { LoginFormData } from '../../types';
-import { useAuth } from '../../contexts/AuthContext';
-import { ApiClientError } from '../../utils/apiClient';
-import { GoogleSignInButton } from './GoogleSignInButton';
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema } from "../../utils/validation";
+import type { LoginFormData } from "../../types";
+import { useAuth } from "../../contexts/AuthContext";
+import { ApiClientError } from "../../utils/apiClient";
+import { GoogleSignInButton } from "./GoogleSignInButton";
+import { TwoFactorVerify } from "../TwoFactorVerify";
 
 // ============================================================================
 // Types
@@ -22,16 +24,23 @@ interface LoginFormProps {
   onSwitchToRegister?: () => void;
 }
 
+interface MFAChallenge {
+  session: string;
+  email: string;
+}
+
 // ============================================================================
 // Login Form Component
 // ============================================================================
 
 export const LoginForm: React.FC<LoginFormProps> = ({
   onSuccess,
-  onSwitchToRegister
+  onSwitchToRegister,
 }) => {
   const { login, loading, error, clearError } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [mfaChallenge, setMfaChallenge] = useState<MFAChallenge | null>(null);
+  const [mfaVerifying, setMfaVerifying] = useState(false);
 
   const {
     register,
@@ -41,8 +50,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
   });
 
@@ -63,20 +72,92 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       // Call success callback
       onSuccess?.();
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
+
+      // Check for MFA challenge
+      if (
+        error instanceof ApiClientError &&
+        error.message.includes("MFA_REQUIRED")
+      ) {
+        // Extract session from error response
+        const sessionMatch = error.message.match(/session:([^,]+)/);
+        if (sessionMatch) {
+          setMfaChallenge({
+            session: sessionMatch[1],
+            email: data.email,
+          });
+          return;
+        }
+      }
 
       if (error instanceof ApiClientError) {
         if (error.isAuthError) {
-          setSubmitError('Invalid email or password. Please try again.');
+          setSubmitError("Invalid email or password. Please try again.");
         } else if (error.isNetworkError) {
-          setSubmitError('Network error. Please check your connection and try again.');
+          setSubmitError(
+            "Network error. Please check your connection and try again.",
+          );
         } else {
           setSubmitError(error.message);
         }
       } else {
-        setSubmitError('An unexpected error occurred. Please try again.');
+        setSubmitError("An unexpected error occurred. Please try again.");
       }
     }
+  };
+
+  const handleMfaVerify = async (code: string) => {
+    if (!mfaChallenge) return;
+
+    try {
+      setMfaVerifying(true);
+      setSubmitError(null);
+
+      const apiUrl =
+        "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+      const response = await fetch(`${apiUrl}/auth/mfa/respond`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          session: mfaChallenge.session,
+          code,
+          email: mfaChallenge.email,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Invalid verification code");
+      }
+
+      const result = await response.json();
+
+      // Store tokens
+      if (result.accessToken) {
+        localStorage.setItem("budgetbuddy_access_token", result.accessToken);
+        localStorage.setItem("budgetbuddy_refresh_token", result.refreshToken);
+        localStorage.setItem("budgetbuddy_id_token", result.idToken);
+      }
+
+      // Clear MFA state and call success
+      setMfaChallenge(null);
+      reset();
+      onSuccess?.();
+    } catch (error) {
+      console.error("MFA verification error:", error);
+      setSubmitError(
+        error instanceof Error ? error.message : "Verification failed",
+      );
+    } finally {
+      setMfaVerifying(false);
+    }
+  };
+
+  const handleMfaCancel = () => {
+    setMfaChallenge(null);
+    setSubmitError(null);
   };
 
   // ============================================================================
@@ -85,6 +166,37 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   const displayError = submitError || error;
 
+  // Show MFA verification screen if challenge is active
+  if (mfaChallenge) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <div className="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+          <div className="mb-6 text-center">
+            <div className="text-4xl mb-4">🔐</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Two-Factor Authentication
+            </h2>
+            <p className="text-gray-600">
+              Enter the 6-digit code from your authenticator app
+            </p>
+          </div>
+
+          {displayError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-800">{displayError}</p>
+            </div>
+          )}
+
+          <TwoFactorVerify
+            onVerify={handleMfaVerify}
+            onCancel={handleMfaCancel}
+            loading={mfaVerifying}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-md mx-auto">
       <div className="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
@@ -92,17 +204,23 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Welcome Back
           </h2>
-          <p className="text-gray-600">
-            Sign in to your BudgetBuddy account
-          </p>
+          <p className="text-gray-600">Sign in to your BudgetBuddy account</p>
         </div>
 
         {displayError && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="h-5 w-5 text-red-400"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <div className="ml-3">
@@ -126,46 +244,60 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             <div className="w-full border-t border-gray-300"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+            <span className="px-2 bg-white text-gray-500">
+              Or continue with email
+            </span>
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Email Field */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Email Address
             </label>
             <input
-              {...register('email')}
+              {...register("email")}
               type="email"
               id="email"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.email ? 'border-red-300' : 'border-gray-300'
-                }`}
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.email ? "border-red-300" : "border-gray-300"
+              }`}
               placeholder="Enter your email"
               disabled={isSubmitting || loading}
             />
             {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
           {/* Password Field */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Password
             </label>
             <input
-              {...register('password')}
+              {...register("password")}
               type="password"
               id="password"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.password ? 'border-red-300' : 'border-gray-300'
-                }`}
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.password ? "border-red-300" : "border-gray-300"
+              }`}
               placeholder="Enter your password"
               disabled={isSubmitting || loading}
             />
             {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.password.message}
+              </p>
             )}
           </div>
 
@@ -174,21 +306,38 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             <button
               type="submit"
               disabled={isSubmitting || loading}
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${isSubmitting || loading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-                }`}
+              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+                isSubmitting || loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              }`}
             >
               {isSubmitting || loading ? (
                 <div className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Signing In...
                 </div>
               ) : (
-                'Sign In'
+                "Sign In"
               )}
             </button>
           </div>
@@ -198,7 +347,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         {onSwitchToRegister && (
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
+              Don't have an account?{" "}
               <button
                 type="button"
                 onClick={onSwitchToRegister}
@@ -219,7 +368,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             disabled={isSubmitting || loading}
             onClick={() => {
               // TODO: Implement forgot password functionality
-              alert('Forgot password functionality coming soon!');
+              alert("Forgot password functionality coming soon!");
             }}
           >
             Forgot your password?

@@ -197,10 +197,10 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - [x] 7.3.3 Show 2FA status indicator
   - **Validates: Requirement 2.8**
 
-- [ ] 7.4 Update login flow
-  - [ ] 7.4.1 Detect MFA challenge from Cognito
-  - [ ] 7.4.2 Show TwoFactorVerify on challenge
-  - [ ] 7.4.3 Complete authentication after verify
+- [x] 7.4 Update login flow
+  - [x] 7.4.1 Detect MFA challenge from Cognito
+  - [x] 7.4.2 Show TwoFactorVerify on challenge
+  - [x] 7.4.3 Complete authentication after verify
   - **Validates: Requirement 2.7**
 
 - [ ] 7.5 Add 2FA to mobile
@@ -215,22 +215,25 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 
 ### Task 8: Tips Feed UI Improvements
 
-- [ ] 8.1 Add category filter tabs
-  - [ ] 8.1.1 Create CategoryTabs component
-  - [ ] 8.1.2 Filter tips by category
-  - [ ] 8.1.3 Persist selected category
+- [x] 8.1 Add category filter tabs
+  - [x] 8.1.1 Create CategoryTabs component
+  - [x] 8.1.2 Filter tips by category
+  - [x] 8.1.3 Persist selected category
+  - **Note**: Already implemented in TipsFeedPage.tsx with CATEGORIES array
   - **Validates: Requirement 4.3**
 
-- [ ] 8.2 Enhance daily tip display
-  - [ ] 8.2.1 Create DailyTipCard component
-  - [ ] 8.2.2 Highlight with special styling
-  - [ ] 8.2.3 Show "Today's Tip" badge
+- [x] 8.2 Enhance daily tip display
+  - [x] 8.2.1 Create DailyTipCard component
+  - [x] 8.2.2 Highlight with special styling
+  - [x] 8.2.3 Show "Today's Tip" badge
+  - **Note**: Already implemented with gradient styling and "Tip of the Day" badge
   - **Validates: Requirement 4.4**
 
-- [ ] 8.3 Add saved tips section
-  - [ ] 8.3.1 Create SavedTipsPage
-  - [ ] 8.3.2 List saved tips
-  - [ ] 8.3.3 Add unsave functionality
+- [x] 8.3 Add saved tips section
+  - [x] 8.3.1 Create SavedTipsPage
+  - [x] 8.3.2 List saved tips
+  - [x] 8.3.3 Add unsave functionality
+  - **Note**: Already implemented as tab in TipsFeedPage
   - **Validates: Requirement 4.5**
 
 - [x] 8.4 Add read/unread indicators
