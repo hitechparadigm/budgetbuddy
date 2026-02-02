@@ -180,13 +180,14 @@ _"As a user, I want to quickly add transactions and see my budget status so I ca
 - **Pull to refresh**: Update budget data (mobile - pending)
 - **Skeleton loading**: ✅ Show placeholders while loading
 
-### Remaining Mobile Tasks
+### Mobile Components (Complete)
 
-| Component                    | Priority | Description                  |
-| ---------------------------- | -------- | ---------------------------- |
-| Mobile Search/Filters        | HIGH     | Search bar with filter sheet |
-| Mobile Transaction Templates | MEDIUM   | Quick-add with templates     |
-| Mobile Swipe Gestures        | LOW      | Swipe to delete transactions |
+| Component                      | Status      | Description               |
+| ------------------------------ | ----------- | ------------------------- |
+| `SearchBar.tsx`                | ✅ Complete | Search bar with debounce  |
+| `FilterSheet.tsx`              | ✅ Complete | Bottom sheet filter panel |
+| `TransactionTemplateModal.tsx` | ✅ Complete | Quick-add with templates  |
+| `QuickActionsFAB.tsx`          | ✅ Complete | Floating action button    |
 
 ---
 
@@ -628,12 +629,13 @@ _"As a user with debt, I want to create a payoff plan and track my savings goals
 - **Calculator preview**: ✅ Show impact of extra payments
 - **Motivational messaging**: ✅ Encourage users at each milestone
 
-### Remaining Mobile Tasks
+### Mobile Components (Complete)
 
-| Component              | Priority | Description              |
-| ---------------------- | -------- | ------------------------ |
-| Mobile Goal Reordering | MEDIUM   | Long-press drag-and-drop |
-| Mobile Haptic Feedback | LOW      | Haptics during drag      |
+| Component               | Status      | Description                    |
+| ----------------------- | ----------- | ------------------------------ |
+| `DraggableGoalList.tsx` | ✅ Complete | Long-press drag-and-drop       |
+| `useGoalReorder.ts`     | ✅ Complete | Hook for goal reorder API      |
+| Haptic Feedback         | ✅ Complete | Haptics during drag operations |
 
 ---
 
@@ -950,6 +952,23 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 | Appearance Settings            | Theme selection in Settings page               | ✅ Done |
 | Replay Tutorial Option         | Reset and replay tutorial from Settings        | ✅ Done |
 
+### Mobile UI Polish Components (2026-02-02)
+
+| Component                      | Description                                    | Status  |
+| ------------------------------ | ---------------------------------------------- | ------- |
+| `QuickActionsFAB.tsx` (Mobile) | Animated FAB with haptic feedback              | ✅ Done |
+| `useHaptics.ts`                | Hook for haptic feedback on iOS/Android        | ✅ Done |
+| `TransactionTemplateModal.tsx` | Bottom sheet with template management          | ✅ Done |
+| `useTemplates.ts`              | Hook for template CRUD with AsyncStorage       | ✅ Done |
+| `SearchBar.tsx` (Mobile)       | Debounced search with clear button             | ✅ Done |
+| `FilterSheet.tsx`              | Bottom sheet with category/date/type filters   | ✅ Done |
+| `DraggableGoalList.tsx`        | Long-press drag-and-drop goal reordering       | ✅ Done |
+| `useGoalReorder.ts`            | Hook for goal reorder API with optimistic UI   | ✅ Done |
+| `TwoFactorSetup.tsx` (Mobile)  | 4-step 2FA wizard with QR code display         | ✅ Done |
+| `TwoFactorVerify.tsx` (Mobile) | 6-digit code input with auto-submit            | ✅ Done |
+| `SwipeableTipCard.tsx`         | Swipe left to save, right to dismiss tips      | ✅ Done |
+| `TipsScreen.tsx`               | Tips feed with pull-to-refresh and read status | ✅ Done |
+
 ---
 
 ## 10. UI/UX Best Practices Applied
@@ -1105,15 +1124,15 @@ xl: 32px  (major sections)
 - [x] Empty state for new users
 - [ ] Pull-to-refresh (mobile)
 
-**2. Tips Feed (R47)**
+**2. Tips Feed (R47)** - ✅ COMPLETE
 
-- [ ] Scrollable feed layout (like social media)
-- [ ] Tip card with icon, title, body, action
-- [ ] Save/dismiss swipe gestures
-- [ ] Category filter tabs
-- [ ] Daily tip highlight card
-- [ ] Saved tips section
-- [ ] Read/unread indicators
+- [x] Scrollable feed layout (like social media)
+- [x] Tip card with icon, title, body, action
+- [x] Save/dismiss swipe gestures
+- [x] Category filter tabs
+- [x] Daily tip highlight card
+- [x] Saved tips section
+- [x] Read/unread indicators
 
 **3. Goals Page (R38)** - ✅ COMPLETE
 
@@ -1122,9 +1141,9 @@ xl: 32px  (major sections)
 - [x] Create goal modal with templates
 - [x] Goal icon/emoji picker
 - [x] Target date picker
-- [x] Drag-and-drop reordering
+- [x] Drag-and-drop reordering (web + mobile)
 - [x] Milestone celebration (confetti + alert)
-- [ ] Archive completed goals
+- [x] Archive completed goals
 
 **4. Peer Comparison (R46)**
 
@@ -1176,22 +1195,22 @@ xl: 32px  (major sections)
 
 #### 🟡 MEDIUM PRIORITY - Enhancements
 
-**9. Search & Filtering (R28)**
+**9. Search & Filtering (R28)** - ✅ COMPLETE
 
-- [ ] Search bar in transaction list
-- [ ] Filter dropdown (date, category, amount)
-- [ ] Search results highlighting
-- [ ] Recent searches
-- [ ] Clear filters button
+- [x] Search bar in transaction list
+- [x] Filter dropdown (date, category, amount)
+- [x] Search results highlighting
+- [x] Recent searches
+- [x] Clear filters button
 
-**10. Quick Actions (R33)** - ✅ PARTIAL
+**10. Quick Actions (R33)** - ✅ COMPLETE
 
-- [ ] Recent transactions quick-add
-- [ ] Favorite categories
-- [ ] Transaction templates
+- [x] Recent transactions quick-add
+- [x] Favorite categories
+- [x] Transaction templates
 - [x] Keyboard shortcuts (web) - Ctrl+N, Ctrl+B, Ctrl+S, Ctrl+/
 - [ ] Voice input (mobile)
-- [x] QuickActionsFAB component with animated menu
+- [x] QuickActionsFAB component with animated menu (web + mobile)
 - [x] Shortcuts help modal
 
 **11. Notification Center** - ✅ COMPLETE
