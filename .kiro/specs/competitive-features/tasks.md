@@ -8,12 +8,12 @@
 
 ### Task 1: Rollover Budgets (Requirement 40)
 
-- [ ] 1.1 Backend: Add rollover fields to budget category schema
+- [x] 1.1 Backend: Add rollover fields to budget category schema
   - Add `rolloverEnabled`, `rolloverAmount`, `rolloverCap` fields
   - Update DynamoDB schema documentation
   - **Validates: Requirement 40.1, 40.2**
 
-- [ ] 1.2 Backend: Implement rollover calculation in month transition
+- [x] 1.2 Backend: Implement rollover calculation in month transition
   - Modify `createBudgetWithRecurringItems()` in `backend/functions/budget/index.js`
   - Calculate rollover: `rollover + (planned - spent)`, respect cap
   - Handle overspent categories (negative rollover)

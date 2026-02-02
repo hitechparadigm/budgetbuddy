@@ -4,7 +4,11 @@
  * Handles budget CRUD operations, category management, and zero-based budgeting calculations.
  * Implements the core budget management system with real-time balance calculations.
  *
- * Version: 1.1.0 - Updated with encoding fixes and manual deployment trigger
+ * Version: 1.3.0 - Added rollover calculation during month transition
+ *   - calculateRollover() function for computing new month's rollover
+ *   - Formula: newRollover = previousRollover + (planned - spent)
+ *   - Supports rollover caps and negative rollover for overspent categories
+ *   - Validates: Requirements 40.4, 40.5
  */
 
 const {
@@ -203,12 +207,14 @@ async function createBudget(event, user) {
     };
 
     if (requestBody.groups) {
-      updates.groups = requestBody.groups;
-      const totals = calculateBudgetTotals(requestBody.groups);
+      // Normalize groups to ensure rollover fields are present
+      updates.groups = normalizeGroupsWithRollover(requestBody.groups);
+      const totals = calculateBudgetTotals(updates.groups);
       updates.totalIncome = totals.totalIncome;
       updates.totalSavings = totals.totalSavings;
       updates.totalExpenses = totals.totalExpenses;
       updates.remainingBalance = totals.remainingBalance;
+      updates.totalRollover = calculateTotalRollover(updates.groups);
     }
 
     // Update the existing budget
@@ -234,6 +240,7 @@ async function createBudget(event, user) {
         totalSavings: updatedBudget.totalSavings,
         totalExpenses: updatedBudget.totalExpenses,
         remainingBalance: updatedBudget.remainingBalance,
+        totalRollover: updatedBudget.totalRollover || 0,
         groups: updatedBudget.groups,
         isAIGenerated: updatedBudget.isAIGenerated,
         createdAt: updatedBudget.createdAt,
@@ -270,12 +277,14 @@ async function createBudget(event, user) {
 
   // If budget data is provided, use it
   if (requestBody.groups) {
-    budget.groups = requestBody.groups;
+    // Normalize groups to ensure rollover fields are present
+    budget.groups = normalizeGroupsWithRollover(requestBody.groups);
     const totals = calculateBudgetTotals(budget.groups);
     budget.totalIncome = totals.totalIncome;
     budget.totalSavings = totals.totalSavings;
     budget.totalExpenses = totals.totalExpenses;
     budget.remainingBalance = totals.remainingBalance;
+    budget.totalRollover = calculateTotalRollover(budget.groups);
   }
 
   await dynamoHelpers.putItem(budget);
@@ -296,6 +305,7 @@ async function createBudget(event, user) {
       totalSavings: budget.totalSavings,
       totalExpenses: budget.totalExpenses,
       remainingBalance: budget.remainingBalance,
+      totalRollover: budget.totalRollover || 0,
       groups: budget.groups,
       isAIGenerated: budget.isAIGenerated,
       createdAt: budget.createdAt,
@@ -394,6 +404,8 @@ async function getBudgets(event, user) {
     totalSavings: budget.totalSavings,
     totalExpenses: budget.totalExpenses,
     remainingBalance: budget.remainingBalance,
+    totalRollover:
+      budget.totalRollover || calculateTotalRollover(budget.groups || {}),
     groups: budget.groups,
     isAIGenerated: budget.isAIGenerated,
     createdAt: budget.createdAt,
@@ -492,6 +504,8 @@ async function getCurrentBudget(event, user) {
       totalSavings: budget.totalSavings,
       totalExpenses: budget.totalExpenses,
       remainingBalance: budget.remainingBalance,
+      totalRollover:
+        budget.totalRollover || calculateTotalRollover(budget.groups || {}),
       groups: budget.groups,
       isAIGenerated: budget.isAIGenerated,
       createdAt: budget.createdAt,
@@ -573,6 +587,8 @@ async function getBudget(event, user, budgetId) {
       totalSavings: budget.totalSavings,
       totalExpenses: budget.totalExpenses,
       remainingBalance: budget.remainingBalance,
+      totalRollover:
+        budget.totalRollover || calculateTotalRollover(budget.groups || {}),
       groups: budget.groups,
       isAIGenerated: budget.isAIGenerated,
       createdAt: budget.createdAt,
@@ -659,12 +675,14 @@ async function updateBudget(event, user, budgetId) {
   const updates = {};
 
   if (requestBody.groups) {
-    updates.groups = requestBody.groups;
-    const totals = calculateBudgetTotals(requestBody.groups);
+    // Normalize groups to ensure rollover fields are present
+    updates.groups = normalizeGroupsWithRollover(requestBody.groups);
+    const totals = calculateBudgetTotals(updates.groups);
     updates.totalIncome = totals.totalIncome;
     updates.totalSavings = totals.totalSavings;
     updates.totalExpenses = totals.totalExpenses;
     updates.remainingBalance = totals.remainingBalance;
+    updates.totalRollover = calculateTotalRollover(updates.groups);
   }
 
   // Update the budget
@@ -689,6 +707,7 @@ async function updateBudget(event, user, budgetId) {
       totalSavings: updatedBudget.totalSavings,
       totalExpenses: updatedBudget.totalExpenses,
       remainingBalance: updatedBudget.remainingBalance,
+      totalRollover: updatedBudget.totalRollover || 0,
       groups: updatedBudget.groups,
       isAIGenerated: updatedBudget.isAIGenerated,
       createdAt: updatedBudget.createdAt,
@@ -815,7 +834,126 @@ function calculateBudgetTotals(groups) {
 }
 
 /**
+ * Normalize category data to ensure rollover fields are present
+ * Adds default values for rolloverEnabled, rolloverAmount, and rolloverCap
+ *
+ * @param {Object} category - The category object to normalize
+ * @returns {Object} - Category with normalized rollover fields
+ */
+function normalizeCategoryWithRollover(category) {
+  return {
+    ...category,
+    // Ensure rollover fields have default values
+    rolloverEnabled: category.rolloverEnabled === true,
+    rolloverAmount:
+      typeof category.rolloverAmount === "number" ? category.rolloverAmount : 0,
+    // rolloverCap is optional - only include if explicitly set
+    ...(category.rolloverCap !== undefined && category.rolloverCap !== null
+      ? { rolloverCap: category.rolloverCap }
+      : {}),
+  };
+}
+
+/**
+ * Normalize all categories in budget groups with rollover fields
+ *
+ * @param {Object} groups - Budget groups (income, savings, expenses)
+ * @returns {Object} - Groups with normalized categories
+ */
+function normalizeGroupsWithRollover(groups) {
+  const normalizedGroups = {};
+
+  ["income", "savings", "expenses"].forEach((groupType) => {
+    if (groups[groupType]) {
+      normalizedGroups[groupType] = groups[groupType].map((group) => ({
+        ...group,
+        categories: group.categories
+          ? group.categories.map(normalizeCategoryWithRollover)
+          : [],
+      }));
+    } else {
+      normalizedGroups[groupType] = [];
+    }
+  });
+
+  return normalizedGroups;
+}
+
+/**
+ * Calculate total rollover amount across all categories
+ *
+ * @param {Object} groups - Budget groups (income, savings, expenses)
+ * @returns {number} - Total rollover amount
+ */
+function calculateTotalRollover(groups) {
+  let totalRollover = 0;
+
+  ["income", "savings", "expenses"].forEach((groupType) => {
+    if (groups[groupType]) {
+      groups[groupType].forEach((group) => {
+        if (group.categories) {
+          group.categories.forEach((category) => {
+            if (category.rolloverEnabled && category.rolloverAmount) {
+              totalRollover += category.rolloverAmount;
+            }
+          });
+        }
+      });
+    }
+  });
+
+  return totalRollover;
+}
+
+/**
+ * Calculate rollover amount for a category during month transition
+ *
+ * Formula: newRollover = previousRollover + (previousPlanned - previousSpent)
+ * - If rolloverEnabled is false, return 0
+ * - If rolloverCap is set, cap the result: Math.min(newRollover, rolloverCap)
+ * - Overspent categories can have negative rollover (debt to next month)
+ *
+ * @param {Object} previousCategory - Category from previous month's budget
+ * @returns {number} - Calculated rollover amount for the new month
+ *
+ * **Validates: Requirement 40.4** - Calculate available budget as: Planned + Rollover - Spent
+ * **Validates: Requirement 40.5** - Deduct overspent from next month's rollover
+ */
+function calculateRollover(previousCategory) {
+  // If rollover is not enabled, return 0
+  if (!previousCategory.rolloverEnabled) {
+    return 0;
+  }
+
+  // Get values with defaults
+  const previousRollover = previousCategory.rolloverAmount || 0;
+  const plannedAmount = previousCategory.plannedAmount || 0;
+  const spentAmount = previousCategory.spentAmount || 0;
+
+  // Calculate unused amount (can be negative if overspent)
+  const unused = plannedAmount - spentAmount;
+
+  // Calculate new rollover: previous rollover + unused amount
+  let newRollover = previousRollover + unused;
+
+  // Apply cap if set (only cap positive rollovers, allow negative for debt)
+  if (
+    previousCategory.rolloverCap !== undefined &&
+    previousCategory.rolloverCap !== null &&
+    newRollover > 0
+  ) {
+    newRollover = Math.min(newRollover, previousCategory.rolloverCap);
+  }
+
+  return newRollover;
+}
+
+/**
  * Create a new budget with recurring items from the previous month
+ * Implements rollover calculation during month transition
+ *
+ * **Validates: Requirement 40.4** - Calculate available budget
+ * **Validates: Requirement 40.5** - Handle overspent categories (negative rollover)
  */
 async function createBudgetWithRecurringItems(familyId, month) {
   try {
@@ -848,6 +986,7 @@ async function createBudgetWithRecurringItems(familyId, month) {
       totalSavings: 0,
       totalExpenses: 0,
       remainingBalance: 0,
+      totalRollover: 0,
 
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -861,7 +1000,7 @@ async function createBudgetWithRecurringItems(familyId, month) {
         currentMonth: month,
       });
 
-      // Copy items from each group
+      // Copy items from each group with rollover calculation
       ["income", "savings", "expenses"].forEach((groupType) => {
         if (previousBudget.groups[groupType]) {
           newBudget.groups[groupType] = previousBudget.groups[groupType].map(
@@ -870,12 +1009,31 @@ async function createBudgetWithRecurringItems(familyId, month) {
               // Reset spent amounts for new month
               totalSpent: 0,
               categories: group.categories
-                ? group.categories.map((category) => ({
-                    ...category,
-                    // Keep planned amount but reset spent amount
-                    spentAmount: 0,
-                    remainingAmount: category.plannedAmount || 0,
-                  }))
+                ? group.categories.map((category) => {
+                    // Calculate new rollover amount based on previous month's spending
+                    const newRolloverAmount = calculateRollover(category);
+
+                    const newCategory = {
+                      ...category,
+                      // Keep planned amount but reset spent amount
+                      spentAmount: 0,
+                      remainingAmount: category.plannedAmount || 0,
+                      // Preserve rollover enabled setting
+                      rolloverEnabled: category.rolloverEnabled || false,
+                      // Set calculated rollover amount (0 if rollover disabled)
+                      rolloverAmount: newRolloverAmount,
+                    };
+
+                    // Only include rolloverCap if it was set in previous month
+                    if (
+                      category.rolloverCap !== undefined &&
+                      category.rolloverCap !== null
+                    ) {
+                      newCategory.rolloverCap = category.rolloverCap;
+                    }
+
+                    return newCategory;
+                  })
                 : [],
             }),
           );
@@ -889,11 +1047,15 @@ async function createBudgetWithRecurringItems(familyId, month) {
       newBudget.totalExpenses = totals.totalExpenses;
       newBudget.remainingBalance = totals.remainingBalance;
 
-      logger.info("Recurring items copied successfully", {
+      // Calculate total rollover across all categories
+      newBudget.totalRollover = calculateTotalRollover(newBudget.groups);
+
+      logger.info("Recurring items copied with rollover calculation", {
         familyId,
         month,
         totalIncome: newBudget.totalIncome,
         totalExpenses: newBudget.totalExpenses,
+        totalRollover: newBudget.totalRollover,
       });
     } else {
       logger.info("No previous budget found, creating empty budget", {
