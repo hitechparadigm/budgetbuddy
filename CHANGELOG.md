@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.9.67] - 2026-02-02
+
+### ✨ Feature - Mobile Search and Filters Integration
+
+**TransactionsScreen Integration**:
+
+- Integrated SearchBar component with debounced search
+- Added filter button with active filter count badge
+- Connected FilterSheet to transaction filtering
+- Implemented comprehensive filter logic (type, category, date range, amount)
+- Added "Clear Filters" button in empty state
+- Added `@react-native-community/datetimepicker` dependency
+
+**Filter Logic**:
+
+- Search by description, merchant, or tags
+- Filter by transaction type (income/expense)
+- Filter by category (multi-select)
+- Filter by date range
+- Filter by amount range
+
+**Completes**: Mobile UI Polish Task 3 (Search and Filters)
+
 ## [1.9.66] - 2026-02-02
 
 ### ✨ Feature - Mobile Search and Filters

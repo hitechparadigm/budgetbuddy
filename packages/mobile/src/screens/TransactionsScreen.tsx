@@ -1,32 +1,44 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
-import * as Haptics from 'expo-haptics';
-import { Card, Button, Input, FloatingActionButton } from '../components/ui';
-import { useTheme } from '../hooks/useTheme';
-import TransactionList from '../components/TransactionList';
-import TransactionForm from '../components/TransactionForm';
+import React, { useState, useCallback, useMemo } from "react";
+import { View, Text, StyleSheet, Alert, Pressable } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { Card, Button, FloatingActionButton } from "../components/ui";
+import { useTheme } from "../hooks/useTheme";
+import TransactionList from "../components/TransactionList";
+import TransactionForm from "../components/TransactionForm";
+import SearchBar from "../components/SearchBar";
+import FilterSheet, {
+  TransactionFilters,
+  DEFAULT_FILTERS,
+} from "../components/FilterSheet";
 import {
   useTransactions,
   useCreateTransaction,
   useUpdateTransaction,
   useDeleteTransaction,
-} from '../services/transaction';
-import { useBudgets } from '../services/budget';
+} from "../services/transaction";
+import { useBudgets } from "../services/budget";
 import {
   Transaction,
   BudgetCategory,
   CreateTransactionRequest,
   UpdateTransactionRequest,
-} from '../types';
+} from "../types";
 
 export default function TransactionsScreen() {
   const { colors } = useTheme();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showTransactionForm, setShowTransactionForm] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>();
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>();
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [filters, setFilters] = useState<TransactionFilters>(DEFAULT_FILTERS);
+  const [editingTransaction, setEditingTransaction] = useState<
+    Transaction | undefined
+  >();
+  const [selectedCategoryId, setSelectedCategoryId] = useState<
+    string | undefined
+  >();
 
   // Queries and mutations
   const {
@@ -35,58 +47,146 @@ export default function TransactionsScreen() {
     refetch: refetchTransactions,
   } = useTransactions();
 
-  const {
-    data: budgets = [],
-  } = useBudgets();
+  const { data: budgets = [] } = useBudgets();
 
   const createTransactionMutation = useCreateTransaction();
   const updateTransactionMutation = useUpdateTransaction();
   const deleteTransactionMutation = useDeleteTransaction();
 
   // Extract categories from budgets
-  const categories: BudgetCategory[] = budgets.flatMap(budget =>
+  const categories: BudgetCategory[] = budgets.flatMap((budget) =>
     // For now, create a simple category structure from budget data
     // This would be replaced with actual category data from the API
-    [{
-      id: budget.id,
-      name: budget.name,
-      icon: budget.type === 'income' ? '💰' : budget.type === 'savings' ? '💾' : '💸',
-      color: budget.type === 'income' ? '#10B981' : budget.type === 'savings' ? '#3B82F6' : '#EF4444',
-      isRecurring: budget.frequency !== 'one-time',
-      recurringFrequency: budget.frequency === 'weekly' ? 'weekly' :
-                         budget.frequency === 'monthly' ? 'monthly' :
-                         budget.frequency === 'quarterly' ? 'quarterly' :
-                         budget.frequency === 'yearly' ? 'annually' : undefined,
-      baseAmount: budget.amount,
-      plannedMonthlyAmount: budget.amount,
-      actualAmount: 0,
-      variance: 0,
-      transactions: [],
-      order: 0,
-      isCustom: false,
-      isArchived: false,
-      usageCount: 0,
-      isPaused: false,
-    }]
+    [
+      {
+        id: budget.id,
+        name: budget.name,
+        icon:
+          budget.type === "income"
+            ? "💰"
+            : budget.type === "savings"
+              ? "💾"
+              : "💸",
+        color:
+          budget.type === "income"
+            ? "#10B981"
+            : budget.type === "savings"
+              ? "#3B82F6"
+              : "#EF4444",
+        isRecurring: budget.frequency !== "one-time",
+        recurringFrequency:
+          budget.frequency === "weekly"
+            ? "weekly"
+            : budget.frequency === "monthly"
+              ? "monthly"
+              : budget.frequency === "quarterly"
+                ? "quarterly"
+                : budget.frequency === "yearly"
+                  ? "annually"
+                  : undefined,
+        baseAmount: budget.amount,
+        plannedMonthlyAmount: budget.amount,
+        actualAmount: 0,
+        variance: 0,
+        transactions: [],
+        order: 0,
+        isCustom: false,
+        isArchived: false,
+        usageCount: 0,
+        isPaused: false,
+      },
+    ],
   );
 
-  // Filter transactions based on search query
-  const filteredTransactions = transactions.filter(transaction => {
-    if (!searchQuery.trim()) return true;
+  // Filter transactions based on search query and filters
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((transaction) => {
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch =
+          transaction.description.toLowerCase().includes(query) ||
+          transaction.merchant?.toLowerCase().includes(query) ||
+          transaction.tags?.some((tag) => tag.toLowerCase().includes(query));
+        if (!matchesSearch) return false;
+      }
 
-    const query = searchQuery.toLowerCase();
-    return (
-      transaction.description.toLowerCase().includes(query) ||
-      transaction.merchant?.toLowerCase().includes(query) ||
-      transaction.tags?.some(tag => tag.toLowerCase().includes(query))
-    );
-  });
+      // Type filter
+      if (filters.type !== "all") {
+        const isIncome = transaction.amount > 0;
+        if (filters.type === "income" && !isIncome) return false;
+        if (filters.type === "expense" && isIncome) return false;
+      }
+
+      // Category filter
+      if (filters.categoryIds.length > 0) {
+        if (!filters.categoryIds.includes(transaction.categoryId)) return false;
+      }
+
+      // Date range filter
+      if (filters.dateRange.start || filters.dateRange.end) {
+        const transactionDate = new Date(transaction.date);
+        if (
+          filters.dateRange.start &&
+          transactionDate < filters.dateRange.start
+        )
+          return false;
+        if (filters.dateRange.end && transactionDate > filters.dateRange.end)
+          return false;
+      }
+
+      // Amount range filter
+      if (
+        filters.amountRange.min !== null ||
+        filters.amountRange.max !== null
+      ) {
+        const amount = Math.abs(transaction.amount);
+        if (
+          filters.amountRange.min !== null &&
+          amount < filters.amountRange.min
+        )
+          return false;
+        if (
+          filters.amountRange.max !== null &&
+          amount > filters.amountRange.max
+        )
+          return false;
+      }
+
+      return true;
+    });
+  }, [transactions, searchQuery, filters]);
+
+  // Calculate active filter count for badge
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.categoryIds.length > 0) count++;
+    if (filters.dateRange.start || filters.dateRange.end) count++;
+    if (filters.amountRange.min !== null || filters.amountRange.max !== null)
+      count++;
+    if (filters.type !== "all") count++;
+    return count;
+  }, [filters]);
+
+  // Filter categories for FilterSheet (convert BudgetCategory to simpler format)
+  const filterCategories = useMemo(() => {
+    return categories.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      type:
+        cat.color === "#10B981"
+          ? ("income" as const)
+          : cat.color === "#3B82F6"
+            ? ("savings" as const)
+            : ("expense" as const),
+    }));
+  }, [categories]);
 
   // Refresh data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       refetchTransactions();
-    }, [refetchTransactions])
+    }, [refetchTransactions]),
   );
 
   const handleAddTransaction = (categoryId?: string) => {
@@ -108,15 +208,17 @@ export default function TransactionsScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       },
       onError: (error) => {
-        console.error('Failed to delete transaction:', error);
-        Alert.alert('Error', 'Failed to delete transaction. Please try again.');
+        console.error("Failed to delete transaction:", error);
+        Alert.alert("Error", "Failed to delete transaction. Please try again.");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       },
     });
   };
 
-  const handleTransactionFormSubmit = (data: CreateTransactionRequest | UpdateTransactionRequest) => {
-    if ('id' in data) {
+  const handleTransactionFormSubmit = (
+    data: CreateTransactionRequest | UpdateTransactionRequest,
+  ) => {
+    if ("id" in data) {
       // Update existing transaction
       updateTransactionMutation.mutate(data, {
         onSuccess: () => {
@@ -125,8 +227,11 @@ export default function TransactionsScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         },
         onError: (error) => {
-          console.error('Failed to update transaction:', error);
-          Alert.alert('Error', 'Failed to update transaction. Please try again.');
+          console.error("Failed to update transaction:", error);
+          Alert.alert(
+            "Error",
+            "Failed to update transaction. Please try again.",
+          );
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         },
       });
@@ -138,8 +243,11 @@ export default function TransactionsScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         },
         onError: (error) => {
-          console.error('Failed to create transaction:', error);
-          Alert.alert('Error', 'Failed to create transaction. Please try again.');
+          console.error("Failed to create transaction:", error);
+          Alert.alert(
+            "Error",
+            "Failed to create transaction. Please try again.",
+          );
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         },
       });
@@ -161,7 +269,7 @@ export default function TransactionsScreen() {
     },
     title: {
       fontSize: 28,
-      fontWeight: 'bold',
+      fontWeight: "bold",
       color: colors.text,
       marginBottom: 8,
       paddingHorizontal: 16,
@@ -174,8 +282,44 @@ export default function TransactionsScreen() {
       paddingHorizontal: 16,
     },
     searchContainer: {
+      flexDirection: "row",
+      alignItems: "center",
       paddingHorizontal: 16,
       marginBottom: 16,
+      gap: 12,
+    },
+    searchBar: {
+      flex: 1,
+    },
+    filterButton: {
+      width: 48,
+      height: 48,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    filterButtonActive: {
+      backgroundColor: colors.primary + "20",
+      borderColor: colors.primary,
+    },
+    filterBadge: {
+      position: "absolute",
+      top: -4,
+      right: -4,
+      backgroundColor: colors.primary,
+      borderRadius: 10,
+      minWidth: 20,
+      height: 20,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    filterBadgeText: {
+      color: colors.background,
+      fontSize: 12,
+      fontWeight: "600",
     },
     summaryCard: {
       backgroundColor: colors.surface,
@@ -183,9 +327,9 @@ export default function TransactionsScreen() {
       marginBottom: 16,
     },
     summaryRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       paddingVertical: 8,
     },
     summaryLabel: {
@@ -194,20 +338,20 @@ export default function TransactionsScreen() {
     },
     summaryValue: {
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     placeholderCard: {
       backgroundColor: colors.surface,
       padding: 24,
-      alignItems: 'center',
+      alignItems: "center",
       marginHorizontal: 16,
       marginBottom: 16,
     },
     placeholderText: {
       fontSize: 16,
       color: colors.textSecondary,
-      textAlign: 'center',
+      textAlign: "center",
       marginBottom: 16,
     },
     placeholderEmoji: {
@@ -216,7 +360,10 @@ export default function TransactionsScreen() {
     },
   });
 
-  const totalAmount = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const totalAmount = filteredTransactions.reduce(
+    (sum, t) => sum + t.amount,
+    0,
+  );
   const transactionCount = filteredTransactions.length;
 
   return (
@@ -225,12 +372,39 @@ export default function TransactionsScreen() {
       <Text style={dynamicStyles.subtitle}>Track your spending</Text>
 
       <View style={dynamicStyles.searchContainer}>
-        <Input
+        <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="Search transactions..."
-          leftIcon="search"
+          style={dynamicStyles.searchBar}
         />
+        <Pressable
+          style={[
+            dynamicStyles.filterButton,
+            activeFilterCount > 0 && dynamicStyles.filterButtonActive,
+          ]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setShowFilterSheet(true);
+          }}
+          accessibilityLabel={`Filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
+          accessibilityRole="button"
+        >
+          <Ionicons
+            name="options-outline"
+            size={24}
+            color={
+              activeFilterCount > 0 ? colors.primary : colors.textSecondary
+            }
+          />
+          {activeFilterCount > 0 && (
+            <View style={dynamicStyles.filterBadge}>
+              <Text style={dynamicStyles.filterBadgeText}>
+                {activeFilterCount}
+              </Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       {transactionCount > 0 && (
@@ -258,14 +432,25 @@ export default function TransactionsScreen() {
           </Card>
         ) : filteredTransactions.length === 0 ? (
           <Card variant="elevated" style={dynamicStyles.placeholderCard}>
-            <Text style={dynamicStyles.placeholderEmoji}>💸</Text>
-            <Text style={dynamicStyles.placeholderText}>
-              {searchQuery.trim()
-                ? `No transactions found matching "${searchQuery}"`
-                : 'Your transactions will appear here once you start adding them.'
-              }
+            <Text style={dynamicStyles.placeholderEmoji}>
+              {searchQuery.trim() || activeFilterCount > 0 ? "🔍" : "💸"}
             </Text>
-            {!searchQuery.trim() && (
+            <Text style={dynamicStyles.placeholderText}>
+              {searchQuery.trim() || activeFilterCount > 0
+                ? "No transactions match your search or filters"
+                : "Your transactions will appear here once you start adding them."}
+            </Text>
+            {searchQuery.trim() || activeFilterCount > 0 ? (
+              <Button
+                title="Clear Filters"
+                variant="outline"
+                onPress={() => {
+                  setSearchQuery("");
+                  setFilters(DEFAULT_FILTERS);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+              />
+            ) : (
               <Button
                 title="Add Your First Transaction"
                 onPress={() => handleAddTransaction()}
@@ -279,7 +464,7 @@ export default function TransactionsScreen() {
             isLoading={transactionsLoading}
             onRefresh={handleRefresh}
             onTransactionPress={(transaction) => {
-              console.log('Transaction pressed:', transaction.description);
+              console.log("Transaction pressed:", transaction.description);
               // Could navigate to transaction details
             }}
             onEditTransaction={handleEditTransaction}
@@ -294,8 +479,8 @@ export default function TransactionsScreen() {
       <FloatingActionButton
         actions={[
           {
-            icon: 'add',
-            label: 'Add Transaction',
+            icon: "add",
+            label: "Add Transaction",
             onPress: () => handleAddTransaction(),
             color: colors.primary,
           },
@@ -315,7 +500,21 @@ export default function TransactionsScreen() {
         transaction={editingTransaction}
         categories={categories}
         selectedCategoryId={selectedCategoryId}
-        isLoading={createTransactionMutation.isPending || updateTransactionMutation.isPending}
+        isLoading={
+          createTransactionMutation.isPending ||
+          updateTransactionMutation.isPending
+        }
+      />
+
+      <FilterSheet
+        visible={showFilterSheet}
+        onClose={() => setShowFilterSheet(false)}
+        filters={filters}
+        onApply={(newFilters) => {
+          setFilters(newFilters);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }}
+        categories={filterCategories}
       />
     </SafeAreaView>
   );
