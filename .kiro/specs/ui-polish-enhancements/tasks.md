@@ -79,28 +79,28 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 
 ### Task 4: Search Bar Component
 
-- [ ] 4.1 Create SearchBar component
-  - [ ] 4.1.1 Create `packages/web-app/src/components/SearchBar.tsx`
-  - [ ] 4.1.2 Implement debounced search input
-  - [ ] 4.1.3 Add clear button
-  - [ ] 4.1.4 Add search icon
-  - [ ] 4.1.5 Style with Tailwind CSS
+- [x] 4.1 Create SearchBar component
+  - [x] 4.1.1 Create `packages/web-app/src/components/SearchBar.tsx`
+  - [x] 4.1.2 Implement debounced search input
+  - [x] 4.1.3 Add clear button
+  - [x] 4.1.4 Add search icon
+  - [x] 4.1.5 Style with Tailwind CSS
   - **Validates: Requirement 5.1-5.2**
 
-- [ ] 4.2 Create TransactionFilters component
-  - [ ] 4.2.1 Create `packages/web-app/src/components/TransactionFilters.tsx`
-  - [ ] 4.2.2 Add category dropdown filter
-  - [ ] 4.2.3 Add date range picker
-  - [ ] 4.2.4 Add amount range inputs
-  - [ ] 4.2.5 Add transaction type toggle
-  - [ ] 4.2.6 Add clear filters button
+- [x] 4.2 Create TransactionFilters component
+  - [x] 4.2.1 Create `packages/web-app/src/components/TransactionFilters.tsx`
+  - [x] 4.2.2 Add category dropdown filter
+  - [x] 4.2.3 Add date range picker
+  - [x] 4.2.4 Add amount range inputs
+  - [x] 4.2.5 Add transaction type toggle
+  - [x] 4.2.6 Add clear filters button
   - **Validates: Requirement 5.3-5.7**
 
-- [ ] 4.3 Create useTransactionFilters hook
-  - [ ] 4.3.1 Create `packages/web-app/src/hooks/useTransactionFilters.ts`
-  - [ ] 4.3.2 Manage filter state
-  - [ ] 4.3.3 Build query parameters
-  - [ ] 4.3.4 Persist filters in session
+- [x] 4.3 Create useTransactionFilters hook
+  - [x] 4.3.1 Create `packages/web-app/src/hooks/useTransactionFilters.ts`
+  - [x] 4.3.2 Manage filter state
+  - [x] 4.3.3 Build query parameters
+  - [x] 4.3.4 Persist filters in session
   - **Validates: Requirement 5.8**
 
 - [ ] 4.4 Integrate filters into TransactionList
