@@ -423,6 +423,19 @@ async function contributeToGoal(event, user, goalId) {
   // Check for milestone achievements
   const milestones = checkMilestones(existingGoal, progress.progressPercent);
 
+  // Send milestone notifications (async, don't block response)
+  if (milestones.newMilestones.length > 0) {
+    sendMilestoneNotifications(
+      familyId,
+      milestones.newMilestones,
+      existingGoal,
+    ).catch((err) =>
+      logger.warn("Failed to send milestone notifications", {
+        error: err.message,
+      }),
+    );
+  }
+
   // Check if goal is complete
   let status = existingGoal.status;
   let completedAt = null;
@@ -654,3 +667,74 @@ function formatGoalResponse(goal) {
     updatedAt: goal.updatedAt,
   };
 }
+
+/**
+ * Send push notifications for milestone achievements
+ * @param {string} familyId - Family ID to send notifications to
+ * @param {Array} newMilestones - Array of milestone objects with threshold and message
+ * @param {Object} goal - The goal object
+ */
+async function sendMilestoneNotifications(familyId, newMilestones, goal) {
+  try {
+    // Get all family members to notify
+    const familyMembers = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+      FilterExpression: "entityType = :type",
+      ExpressionAttributeValues: { ":type": "MEMBER" },
+    });
+
+    // Get user IDs from family members
+    const userIds = familyMembers.map((m) => m.userId).filter(Boolean);
+    if (userIds.length === 0) {
+      logger.info("No family members to notify for milestone");
+      return;
+    }
+
+    // Store notifications in DynamoDB for each milestone
+    const currentTime = new Date().toISOString();
+    const notificationPromises = [];
+
+    for (const milestone of newMilestones) {
+      for (const userId of userIds) {
+        const notificationId = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        const notification = {
+          PK: `USER#${userId}`,
+          SK: `NOTIFICATION#${notificationId}`,
+          entityType: "NOTIFICATION",
+          notificationId,
+          userId,
+          familyId,
+          type: "goal_milestone",
+          title: `🎯 Goal Milestone Reached!`,
+          body: milestone.message,
+          data: {
+            goalId: goal.goalId,
+            goalName: goal.name,
+            milestone: milestone.threshold,
+          },
+          read: false,
+          createdAt: currentTime,
+        };
+
+        notificationPromises.push(dynamoHelpers.putItem(notification));
+      }
+    }
+
+    await Promise.all(notificationPromises);
+    logger.info("Milestone notifications stored", {
+      familyId,
+      milestoneCount: newMilestones.length,
+      userCount: userIds.length,
+    });
+
+    // Note: Push notification delivery would be handled by a separate
+    // notification service that polls for undelivered notifications
+    // or via SNS/SQS integration
+  } catch (error) {
+    logger.error("Error sending milestone notifications", error, { familyId });
+    throw error;
+  }
+}
+
+// Export for testing
+module.exports.sendMilestoneNotifications = sendMilestoneNotifications;

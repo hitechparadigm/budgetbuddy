@@ -105,7 +105,7 @@
   - Update priority field for drag-and-drop
   - **Validates: Requirement 38.7**
 
-- [-] 3.4 Backend: Add goal milestone notifications
+- [x] 3.4 Backend: Add goal milestone notifications
   - Extend notifications for 25%, 50%, 75%, 100% milestones
   - Weekly progress updates
   - **Validates: Requirement 38.8**
