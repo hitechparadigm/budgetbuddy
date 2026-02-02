@@ -238,6 +238,42 @@ export class ApiFeaturesStack extends cdk.Stack {
       handler: 'index.handler',
       description: 'BudgetBuddy learn handler for educational content and gamification',
     });
+
+    // Subscriptions Lambda
+    this.functions.subscriptionsHandler = new lambda.Function(this, 'SubscriptionsHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-subscriptions',
+      code: lambda.Code.fromAsset('../backend/functions/subscriptions'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy subscriptions handler for subscription tracking, detection, and renewal management',
+    });
+
+    // Debt Payoff Lambda
+    this.functions.debtPayoffHandler = new lambda.Function(this, 'DebtPayoffHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-debt-payoff',
+      code: lambda.Code.fromAsset('../backend/functions/debt-payoff'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy debt payoff handler for debt tracking, snowball/avalanche calculations, and payment recording',
+    });
+
+    // Insights Lambda
+    this.functions.insightsHandler = new lambda.Function(this, 'InsightsHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-insights',
+      code: lambda.Code.fromAsset('../backend/functions/insights'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy insights handler for spending analytics and AI-generated insights',
+    });
+
+    // Receipt Lambda
+    this.functions.receiptHandler = new lambda.Function(this, 'ReceiptHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-receipt',
+      code: lambda.Code.fromAsset('../backend/functions/receipt'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy receipt handler for AI-powered receipt scanning and extraction',
+    });
   }
 
   private setupApiRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -258,6 +294,18 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Learn routes
     this.setupLearnRoutes(authorizer);
+
+    // Subscriptions routes
+    this.setupSubscriptionsRoutes(authorizer);
+
+    // Debt Payoff routes
+    this.setupDebtPayoffRoutes(authorizer);
+
+    // Insights routes
+    this.setupInsightsRoutes(authorizer);
+
+    // Receipt routes
+    this.setupReceiptRoutes(authorizer);
   }
 
   private setupPlaidRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -590,6 +638,178 @@ export class ApiFeaturesStack extends cdk.Stack {
       value: this.api.url,
       description: 'Features API Gateway URL for Plaid, Reconciliation, and Admin endpoints',
       exportName: 'budgetbuddy-features-api-url',
+    });
+  }
+
+  private setupSubscriptionsRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const subscriptionsResource = this.api.root.addResource('subscriptions');
+    subscriptionsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'GetSubscriptions',
+    });
+    subscriptionsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'CreateSubscription',
+    });
+
+    const subscriptionsSummaryResource = subscriptionsResource.addResource('summary');
+    subscriptionsSummaryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'GetSubscriptionsSummary',
+    });
+
+    const subscriptionsDetectResource = subscriptionsResource.addResource('detect');
+    subscriptionsDetectResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'DetectSubscriptions',
+    });
+
+    const subscriptionsHealthResource = subscriptionsResource.addResource('health');
+    subscriptionsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'SubscriptionsHealthCheck',
+    });
+
+    const subscriptionIdResource = subscriptionsResource.addResource('{subscriptionId}');
+    subscriptionIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'UpdateSubscription',
+    });
+    subscriptionIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'DeleteSubscription',
+    });
+
+    const subscriptionStatusResource = subscriptionIdResource.addResource('status');
+    subscriptionStatusResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'UpdateSubscriptionStatus',
+    });
+  }
+
+  private setupDebtPayoffRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const debtsResource = this.api.root.addResource('debts');
+    debtsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'GetDebts',
+    });
+    debtsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'CreateDebt',
+    });
+
+    const debtsSummaryResource = debtsResource.addResource('summary');
+    debtsSummaryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'GetDebtsSummary',
+    });
+
+    const debtsPayoffPlanResource = debtsResource.addResource('payoff-plan');
+    debtsPayoffPlanResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'GetPayoffPlan',
+    });
+
+    const debtsHealthResource = debtsResource.addResource('health');
+    debtsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'DebtsHealthCheck',
+    });
+
+    const debtIdResource = debtsResource.addResource('{debtId}');
+    debtIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'UpdateDebt',
+    });
+    debtIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'DeleteDebt',
+    });
+
+    const debtPaymentResource = debtIdResource.addResource('payment');
+    debtPaymentResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      operationName: 'RecordDebtPayment',
+    });
+  }
+
+  private setupInsightsRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const insightsResource = this.api.root.addResource('insights');
+
+    const insightsWeeklyResource = insightsResource.addResource('weekly');
+    insightsWeeklyResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      authorizer,
+      operationName: 'GetWeeklyInsights',
+    });
+
+    const insightsMonthlyResource = insightsResource.addResource('monthly');
+    insightsMonthlyResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      authorizer,
+      operationName: 'GetMonthlyInsights',
+    });
+
+    const insightsTrendsResource = insightsResource.addResource('trends');
+    insightsTrendsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      authorizer,
+      operationName: 'GetSpendingTrends',
+    });
+
+    const insightsPatternsResource = insightsResource.addResource('patterns');
+    insightsPatternsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      authorizer,
+      operationName: 'GetSpendingPatterns',
+    });
+
+    const insightsAskResource = insightsResource.addResource('ask');
+    insightsAskResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      authorizer,
+      operationName: 'AskAboutSpending',
+    });
+
+    const insightsHealthResource = insightsResource.addResource('health');
+    insightsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'InsightsHealthCheck',
+    });
+  }
+
+  private setupReceiptRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const receiptResource = this.api.root.addResource('receipt');
+
+    const receiptUploadResource = receiptResource.addResource('upload');
+    receiptUploadResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      authorizer,
+      operationName: 'GetReceiptUploadUrl',
+    });
+
+    const receiptProcessResource = receiptResource.addResource('process');
+    receiptProcessResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      authorizer,
+      operationName: 'ProcessReceipt',
+    });
+
+    const receiptUsageResource = receiptResource.addResource('usage');
+    receiptUsageResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      authorizer,
+      operationName: 'GetReceiptUsage',
+    });
+
+    const receiptHistoryResource = receiptResource.addResource('history');
+    receiptHistoryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      authorizer,
+      operationName: 'GetReceiptHistory',
+    });
+
+    const receiptHealthResource = receiptResource.addResource('health');
+    receiptHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'ReceiptHealthCheck',
+    });
+
+    const receiptIdResource = receiptResource.addResource('{receiptId}');
+    receiptIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
+      authorizer,
+      operationName: 'GetReceipt',
     });
   }
 }
