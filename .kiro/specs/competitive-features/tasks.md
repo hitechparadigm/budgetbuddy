@@ -344,7 +344,7 @@
   - Mirror web implementation
   - **Validates: Requirement 41**
 
-- [ ] 9.6 Property Test: Net worth calculation
+- [x] 9.6 Property Test: Net worth calculation
   - Net worth = Σ assets - Σ liabilities
   - **Validates: Requirement 41.3**
 
