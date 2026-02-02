@@ -76,7 +76,7 @@
   - Reminder preferences
   - **Validates: Requirement 36.1, 36.8**
 
-- [ ] 2.7 Frontend Mobile: Create BillsScreen
+- [x] 2.7 Frontend Mobile: Create BillsScreen
   - Mirror web implementation
   - Calendar view of upcoming bills
   - **Validates: Requirement 36.9**
