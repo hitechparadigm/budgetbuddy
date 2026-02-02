@@ -720,12 +720,12 @@ _"As a user, I want to customize my app experience and manage my account setting
 
 #### 🟢 LOW PRIORITY (Nice to Have)
 
-| Component               | Journey          | Backend Status | Effort       |
-| ----------------------- | ---------------- | -------------- | ------------ |
-| `CalendarView.tsx`      | Daily Management | ❌ Not started | 2-3 days     |
-| `ReceiptScanner.tsx`    | Daily Management | ❌ Not started | 3-4 days     |
-| `InvestmentTracker.tsx` | Net Worth        | ❌ Not started | 3-4 days     |
-| `CreditScoreWidget.tsx` | Financial Health | ❌ Not started | External API |
+| Component               | Journey          | Backend Status   | Effort       |
+| ----------------------- | ---------------- | ---------------- | ------------ |
+| `CalendarView.tsx`      | Daily Management | ❌ Not started   | 2-3 days     |
+| `ReceiptScanner.tsx`    | Daily Management | ✅ Backend ready | 3-4 days     |
+| `InvestmentTracker.tsx` | Net Worth        | ❌ Not started   | 3-4 days     |
+| `CreditScoreWidget.tsx` | Financial Health | ❌ Not started   | External API |
 
 ### Backend APIs Without Frontend
 
@@ -867,7 +867,7 @@ xl: 32px  (major sections)
 | R41 | Net Worth             | Goals         | -       | ❌       | ❌      | ❌ Not started  |
 | R42 | Bank Sync (Plaid)     | Bank          | Task 5  | ✅       | ✅      | ✅ Complete     |
 | R43 | Credit Score          | Insights      | -       | ❌       | ❌      | ❌ External API |
-| R44 | Receipt Scanning      | Daily         | Task 4  | ❌       | ✅      | ❌ Missing UI   |
+| R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ⚠️ Missing UI   |
 | R45 | Investments           | Goals         | -       | ❌       | ❌      | ❌ Not started  |
 | R46 | Peer Comparison       | Insights      | Task 8  | ✅       | ✅      | ✅ Complete     |
 | R47 | Educational Content   | Insights      | Task 10 | ❌       | ✅      | ❌ Missing UI   |
@@ -1006,11 +1006,11 @@ xl: 32px  (major sections)
 
 ### Next Sprint
 
-| Feature        | Journey  | Effort | Impact | Dependencies  |
-| -------------- | -------- | ------ | ------ | ------------- |
-| PeerComparison | Insights | 1 day  | MEDIUM | Backend ready |
-| ReceiptScanner | Daily    | 3 days | MEDIUM | Camera API    |
-| LearnPage      | Insights | 3 days | MEDIUM | Backend ready |
+| Feature        | Journey  | Effort | Impact | Dependencies     |
+| -------------- | -------- | ------ | ------ | ---------------- |
+| PeerComparison | Insights | 1 day  | MEDIUM | Backend ready    |
+| ReceiptScanner | Daily    | 3 days | MEDIUM | ✅ Backend ready |
+| LearnPage      | Insights | 3 days | MEDIUM | Backend ready    |
 
 ### Future Sprints
 
