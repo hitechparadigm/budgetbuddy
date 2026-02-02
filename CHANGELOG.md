@@ -1,5 +1,47 @@
 # Changelog
 
+## [1.9.75] - 2026-02-02
+
+### ✨ Settings Journey Complete - All Components Implemented
+
+**New Components**:
+
+- `LanguageSelector.tsx` - Multi-language selector with 10 languages
+- `PrivacySettings.tsx` - Data sharing and privacy preferences
+- `RateAppPrompt.tsx` - App store rating prompt with feedback form
+
+**LanguageSelector Features**:
+
+- Dropdown and list variants
+- 10 supported languages (EN, ES, FR, DE, PT, IT, JA, ZH, KO, AR)
+- Flag icons and native language names
+- LocalStorage persistence
+- Accessible with ARIA attributes
+
+**PrivacySettings Features**:
+
+- Toggle switches for all privacy options
+- Data sharing preferences (anonymous data, peer comparison, analytics)
+- Visibility settings (leaderboards)
+- Communication preferences (marketing, product updates)
+- Save button with loading state
+- Link to Privacy Policy
+
+**RateAppPrompt Features**:
+
+- Star rating system (1-5 stars)
+- High rating (4-5) redirects to app store
+- Low rating (1-3) shows feedback form
+- "Remind me later" option (7 days)
+- "Don't ask again" option
+- useRateAppPrompt hook for state management
+- Milestone-based triggering logic
+
+**Settings Journey Status**:
+
+- All Settings Journey components now complete ✅
+- No remaining missing components
+
 ## [1.9.74] - 2026-02-02
 
 ### ✨ Legal Pages - Terms of Service & Privacy Policy
