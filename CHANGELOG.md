@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.9.81] - 2026-02-02
+
+### 🤖 AI Bill Reminders - Pattern Detection Repository Layer
+
+**Backend Implementation**:
+
+- Created pattern detection repository layer with DynamoDB integration
+- Implemented `getTransactionHistory()` for querying transactions by date range
+- Implemented `savePattern()` for storing detected patterns
+- Implemented `getPatternsByFamily()` for retrieving patterns with status filtering
+- Implemented `updatePatternStatus()` for pattern approval/rejection workflow
+
+**Testing**:
+
+- Added 20 unit tests for repository methods (all passing)
+- Test coverage: DynamoDB query construction, error handling, validation
+- Mocked AWS SDK for isolated testing
+
+**Files Created**:
+
+- `backend/functions/pattern-detection/pattern-detection-repository.js`
+- `backend/functions/pattern-detection/pattern-detection-repository.test.js`
+- `backend/functions/pattern-detection/jest.config.js`
+
+**Technical Details**:
+
+- Pattern storage: `PK: FAMILY#{familyId}`, `SK: PATTERN#{patternId}`
+- Status workflow: pending → approved/rejected/ignored
+- Approval metadata: approvedAt, approvedBy, billId (optional)
+
 ## [1.9.80] - 2026-02-02
 
 ### 🤖 AI Bill Reminders Infrastructure Setup
