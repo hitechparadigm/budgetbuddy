@@ -1054,8 +1054,8 @@ xl: 32px  (major sections)
 | R43 | Credit Score          | Insights      | Task 11 | ❌       | ❌      | ❌ External API |
 | R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete     |
 | R45 | Investments           | Goals         | Task 12 | ❌       | ❌      | ❌ Not started  |
-| R46 | Peer Comparison       | Insights      | Task 13 | ❌       | ❌      | ❌ Not started  |
-| R47 | Educational Content   | Insights      | Task 14 | ❌       | ❌      | ❌ Not started  |
+| R46 | Peer Comparison       | Insights      | Task 13 | ✅       | ✅      | ✅ Complete     |
+| R47 | Educational Content   | Insights      | Task 14 | ✅       | ✅      | ✅ Complete     |
 | R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete     |
 
 ---
@@ -1252,8 +1252,8 @@ Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 - Task 10: Bank Sync UI (Plaid) ✅
 - Task 11: Credit Score Monitoring ❌
 - Task 12: Investment Tracking ❌
-- Task 13: Peer Comparison ❌
-- Task 14: Educational Content ❌
+- Task 13: Peer Comparison ✅
+- Task 14: Educational Content ✅
 
 ---
 
