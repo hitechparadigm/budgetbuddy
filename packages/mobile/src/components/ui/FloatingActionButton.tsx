@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   TouchableOpacity,
@@ -6,9 +6,11 @@ import {
   StyleSheet,
   Animated,
   ViewStyle,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+  AccessibilityInfo,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface FABAction {
   icon: keyof typeof Ionicons.glyphMap;
@@ -23,22 +25,26 @@ interface FloatingActionButtonProps {
   mainColor?: string;
   style?: ViewStyle;
   size?: number;
+  /** Whether the FAB is visible */
+  visible?: boolean;
 }
 
 export default function FloatingActionButton({
   actions,
-  mainIcon = 'add',
-  mainColor = '#10b981',
+  mainIcon = "add",
+  mainColor = "#10b981",
   style,
   size = 56,
+  visible = true,
 }: FloatingActionButtonProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [animation] = useState(new Animated.Value(0));
+  const insets = useSafeAreaInsets();
 
   const toggleExpanded = () => {
     const toValue = isExpanded ? 0 : 1;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     Animated.spring(animation, {
       toValue,
@@ -48,11 +54,16 @@ export default function FloatingActionButton({
     }).start();
 
     setIsExpanded(!isExpanded);
+
+    // Announce state change for screen readers
+    AccessibilityInfo.announceForAccessibility(
+      isExpanded ? "Quick actions menu closed" : "Quick actions menu opened",
+    );
   };
 
   const mainButtonRotation = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '45deg'],
+    outputRange: ["0deg", "45deg"],
   });
 
   const actionButtonScale = animation.interpolate({
@@ -66,13 +77,26 @@ export default function FloatingActionButton({
   });
 
   const handleActionPress = (action: FABAction) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     action.onPress();
     toggleExpanded();
   };
 
+  if (!visible) {
+    return null;
+  }
+
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      position: "absolute",
+      bottom: Math.max(24, insets.bottom + 8),
+      right: 24,
+      alignItems: "center",
+    },
+  });
+
   return (
-    <View style={[styles.container, style]}>
+    <View style={[dynamicStyles.container, style]}>
       {/* Action Buttons */}
       {actions.map((action, index) => (
         <Animated.View
@@ -94,6 +118,7 @@ export default function FloatingActionButton({
               opacity: actionButtonOpacity,
             },
           ]}
+          pointerEvents={isExpanded ? "auto" : "none"}
         >
           <View style={styles.labelContainer}>
             <Text style={styles.label}>{action.label}</Text>
@@ -105,17 +130,16 @@ export default function FloatingActionButton({
                 width: size * 0.8,
                 height: size * 0.8,
                 borderRadius: (size * 0.8) / 2,
-                backgroundColor: action.color || '#6b7280',
+                backgroundColor: action.color || "#6b7280",
               },
             ]}
             onPress={() => handleActionPress(action)}
             activeOpacity={0.8}
+            accessibilityLabel={action.label}
+            accessibilityRole="button"
+            accessibilityHint={`Activate to ${action.label.toLowerCase()}`}
           >
-            <Ionicons
-              name={action.icon}
-              size={size * 0.4}
-              color="#ffffff"
-            />
+            <Ionicons name={action.icon} size={size * 0.4} color="#ffffff" />
           </TouchableOpacity>
         </Animated.View>
       ))}
@@ -133,17 +157,17 @@ export default function FloatingActionButton({
         ]}
         onPress={toggleExpanded}
         activeOpacity={0.8}
+        accessibilityLabel="Quick Actions"
+        accessibilityRole="button"
+        accessibilityState={{ expanded: isExpanded }}
+        accessibilityHint="Double tap to open quick actions menu"
       >
         <Animated.View
           style={{
             transform: [{ rotate: mainButtonRotation }],
           }}
         >
-          <Ionicons
-            name={mainIcon}
-            size={size * 0.5}
-            color="#ffffff"
-          />
+          <Ionicons name={mainIcon} size={size * 0.5} color="#ffffff" />
         </Animated.View>
       </TouchableOpacity>
 
@@ -153,6 +177,8 @@ export default function FloatingActionButton({
           style={styles.backdrop}
           onPress={toggleExpanded}
           activeOpacity={1}
+          accessibilityLabel="Close quick actions menu"
+          accessibilityRole="button"
         />
       )}
     </View>
@@ -161,16 +187,16 @@ export default function FloatingActionButton({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 24,
     right: 24,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   mainButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 4,
@@ -181,16 +207,16 @@ const styles = StyleSheet.create({
   },
 
   actionContainer: {
-    position: 'absolute',
-    flexDirection: 'row',
-    alignItems: 'center',
+    position: "absolute",
+    flexDirection: "row",
+    alignItems: "center",
     right: 0,
   },
 
   actionButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -201,7 +227,7 @@ const styles = StyleSheet.create({
   },
 
   labelContainer: {
-    backgroundColor: '#1f2937',
+    backgroundColor: "#1f2937",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -209,17 +235,17 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 
   backdrop: {
-    position: 'absolute',
+    position: "absolute",
     top: -1000,
     left: -1000,
     right: -1000,
     bottom: -1000,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
 });
