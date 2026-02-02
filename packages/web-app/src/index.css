@@ -3,6 +3,19 @@
 @tailwind utilities;
 
 /* Custom styles for BudgetBuddy */
+
+/* Dark mode base styles */
+@layer base {
+    html {
+        @apply transition-colors duration-200;
+    }
+
+    body {
+        @apply bg-gray-50 text-gray-900;
+        @apply dark:bg-gray-900 dark:text-gray-100;
+    }
+}
+
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -36,6 +49,43 @@ code {
 
 .scrollbar-hide::-webkit-scrollbar {
     display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Dark mode component utilities */
+@layer components {
+    /* Cards */
+    .card {
+        @apply bg-white border border-gray-200 rounded-lg shadow-sm;
+        @apply dark:bg-gray-800 dark:border-gray-700;
+    }
+
+    /* Inputs */
+    .input {
+        @apply bg-white border border-gray-300 text-gray-900 rounded-md;
+        @apply dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100;
+        @apply focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+        @apply dark:focus:ring-blue-400 dark:focus:border-blue-400;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        @apply bg-blue-600 text-white hover:bg-blue-700;
+        @apply dark:bg-blue-500 dark:hover:bg-blue-600;
+    }
+
+    .btn-secondary {
+        @apply bg-gray-200 text-gray-900 hover:bg-gray-300;
+        @apply dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
+    }
+
+    /* Text colors */
+    .text-muted {
+        @apply text-gray-600 dark:text-gray-400;
+    }
+
+    .text-heading {
+        @apply text-gray-900 dark:text-gray-100;
+    }
 }
 
 /* Currency Selector Styles */
