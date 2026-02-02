@@ -1,5 +1,41 @@
 # Changelog
 
+## [1.9.80] - 2026-02-02
+
+### 🤖 AI Bill Reminders Infrastructure Setup
+
+**Infrastructure Created**:
+
+- Added Pattern Detection Lambda function with AWS Bedrock integration
+- Added Budget Planning Lambda function with AWS Bedrock integration
+- Created S3 bucket for pattern analysis cache (30-day lifecycle)
+- Configured IAM roles for Bedrock access (Claude 3.5 Sonnet)
+- Added API Gateway routes for pattern detection and budget planning
+
+**API Endpoints**:
+
+- `POST /patterns/detect` - Trigger AI pattern detection analysis
+- `GET /patterns` - Retrieve detected patterns
+- `GET /patterns/{patternId}` - Get specific pattern
+- `PUT /patterns/{patternId}` - Update pattern (approve/reject/edit)
+- `DELETE /patterns/{patternId}` - Delete pattern
+- `POST /budget-planning/suggestions` - Generate AI budget suggestions
+- `POST /budget-planning/apply` - Apply budget suggestions
+
+**Technical Details**:
+
+- Lambda memory: 1024MB for AI processing
+- Lambda timeout: 60 seconds for Bedrock API calls
+- S3 lifecycle: 30-day automatic deletion for cache
+- Bedrock model: anthropic.claude-3-5-sonnet-20241022-v2:0
+
+**Next Steps**:
+
+- Implement pattern detection repository layer
+- Implement fuzzy matching algorithm
+- Implement pattern detection algorithm
+- Implement AI prompt engineering
+
 ## [1.9.79] - 2026-02-02
 
 ### ✨ Tutorial Integration

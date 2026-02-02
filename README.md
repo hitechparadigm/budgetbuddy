@@ -19,6 +19,15 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-02-02)
 
+- 🤖 **AI BILL REMINDERS INFRASTRUCTURE** - AWS infrastructure for AI-powered pattern detection
+  - **Pattern Detection Lambda**: 1024MB memory, 60s timeout, AWS Bedrock access
+  - **Budget Planning Lambda**: 1024MB memory, 60s timeout, AI-powered suggestions
+  - **S3 Pattern Cache**: 30-day lifecycle for pattern analysis results
+  - **API Gateway Routes**: 8 new endpoints for pattern detection and budget planning
+  - **IAM Permissions**: Bedrock model access (Claude 3.5 Sonnet), S3 read/write
+  - **Files**: `infrastructure/lib/api-features-stack.ts`
+  - **Impact**: Infrastructure ready for AI-powered recurring bill detection and future budget planning
+
 - ✨ **UI POLISH & ENHANCEMENTS COMPLETE (WEB)** - All web UI polish tasks done
   - **2FA Integration**: Settings page toggle, login flow MFA challenge handling
   - **Theme System**: Light/dark/system modes with Tailwind dark mode support
