@@ -19,7 +19,7 @@
   - Handle overspent categories (negative rollover)
   - **Validates: Requirement 40.4, 40.5**
 
-- [ ] 1.3 Backend: Add rollover API endpoints
+- [x] 1.3 Backend: Add rollover API endpoints
   - `PUT /budget/categories/{id}/rollover` - Enable/disable rollover
   - `PUT /budget/categories/{id}/rollover/reset` - Reset rollover to 0
   - **Validates: Requirement 40.7**

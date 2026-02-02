@@ -645,6 +645,21 @@ export class ApiStack extends cdk.Stack {
       operationName: 'CreateCategory',
     });
 
+    // Budget category rollover routes (Requirement 40.7)
+    const categoryIdResource = categoriesResource.addResource('{categoryId}');
+    const rolloverResource = categoryIdResource.addResource('rollover');
+    rolloverResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
+      authorizer,
+      operationName: 'UpdateCategoryRollover',
+    });
+
+    // Reset rollover endpoint
+    const rolloverResetResource = rolloverResource.addResource('reset');
+    rolloverResetResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
+      authorizer,
+      operationName: 'ResetCategoryRollover',
+    });
+
     // AI budget generation routes
     const aiResource = budgetResource.addResource('ai-generate');
     aiResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.aiHandler), {

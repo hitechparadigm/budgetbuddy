@@ -1144,3 +1144,514 @@ describe("Budget Rollover Feature", () => {
     });
   });
 });
+
+describe("Rollover API Endpoints", () => {
+  const mockContext = {
+    awsRequestId: "test-request-id",
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.TABLE_NAME = "test-table";
+
+    // Reset shared mock
+    const shared = require("/opt/nodejs/shared");
+    shared.checkPermission.mockReturnValue(null);
+  });
+
+  describe("PUT /budget/categories/{categoryId}/rollover", () => {
+    /**
+     * **Validates: Requirement 40.7** - Enable rollover for a category
+     */
+    test("should enable rollover for a category", async () => {
+      const {
+        dynamoHelpers,
+        getUserFromEvent,
+        FamilyIdResolver,
+      } = require("/opt/nodejs/utils");
+
+      getUserFromEvent.mockReturnValue({
+        userId: "user_123",
+        familyId: "family_123",
+        familyRole: "primary",
+      });
+
+      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+
+      const existingBudget = {
+        budgetId: "budget_123",
+        familyId: "family_123",
+        month: "2026-02",
+        groups: {
+          income: [],
+          savings: [],
+          expenses: [
+            {
+              id: "group_food",
+              name: "Food",
+              categories: [
+                {
+                  id: "cat_groceries",
+                  name: "Groceries",
+                  plannedAmount: 500,
+                  rolloverEnabled: false,
+                  rolloverAmount: 0,
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      dynamoHelpers.getItem.mockResolvedValue(existingBudget);
+      dynamoHelpers.updateItem.mockImplementation((pk, sk, updates) => {
+        return Promise.resolve({
+          ...existingBudget,
+          ...updates,
+          totalRollover: 0,
+        });
+      });
+
+      const event = {
+        httpMethod: "PUT",
+        path: "/budget/categories/cat_groceries/rollover",
+        body: JSON.stringify({
+          month: "2026-02",
+          groupType: "expenses",
+          rolloverEnabled: true,
+          rolloverCap: 200,
+        }),
+        requestContext: {
+          authorizer: {
+            claims: {
+              sub: "user_123",
+              email: "test@example.com",
+            },
+          },
+        },
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(200);
+      const body = JSON.parse(result.body);
+      expect(body.data.categoryId).toBe("cat_groceries");
+      expect(body.data.rolloverEnabled).toBe(true);
+      expect(body.data.rolloverCap).toBe(200);
+
+      // Verify updateItem was called with correct data
+      expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
+        "FAMILY#family_123",
+        "BUDGET#2026-02",
+        expect.objectContaining({
+          groups: expect.objectContaining({
+            expenses: expect.arrayContaining([
+              expect.objectContaining({
+                categories: expect.arrayContaining([
+                  expect.objectContaining({
+                    id: "cat_groceries",
+                    rolloverEnabled: true,
+                    rolloverCap: 200,
+                  }),
+                ]),
+              }),
+            ]),
+          }),
+        }),
+      );
+    });
+
+    /**
+     * **Validates: Requirement 40.7** - Disable rollover for a category
+     */
+    test("should disable rollover and reset amount to 0", async () => {
+      const {
+        dynamoHelpers,
+        getUserFromEvent,
+        FamilyIdResolver,
+      } = require("/opt/nodejs/utils");
+
+      getUserFromEvent.mockReturnValue({
+        userId: "user_123",
+        familyId: "family_123",
+        familyRole: "primary",
+      });
+
+      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+
+      const existingBudget = {
+        budgetId: "budget_123",
+        familyId: "family_123",
+        month: "2026-02",
+        groups: {
+          income: [],
+          savings: [],
+          expenses: [
+            {
+              id: "group_food",
+              name: "Food",
+              categories: [
+                {
+                  id: "cat_groceries",
+                  name: "Groceries",
+                  plannedAmount: 500,
+                  rolloverEnabled: true,
+                  rolloverAmount: 150,
+                  rolloverCap: 200,
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      dynamoHelpers.getItem.mockResolvedValue(existingBudget);
+
+      let savedUpdates = null;
+      dynamoHelpers.updateItem.mockImplementation((pk, sk, updates) => {
+        savedUpdates = updates;
+        return Promise.resolve({
+          ...existingBudget,
+          ...updates,
+          totalRollover: 0,
+        });
+      });
+
+      const event = {
+        httpMethod: "PUT",
+        path: "/budget/categories/cat_groceries/rollover",
+        body: JSON.stringify({
+          month: "2026-02",
+          groupType: "expenses",
+          rolloverEnabled: false,
+        }),
+        requestContext: {
+          authorizer: {
+            claims: {
+              sub: "user_123",
+              email: "test@example.com",
+            },
+          },
+        },
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(200);
+
+      // Verify rolloverAmount is reset to 0 when disabled
+      const updatedCategory = savedUpdates.groups.expenses[0].categories[0];
+      expect(updatedCategory.rolloverEnabled).toBe(false);
+      expect(updatedCategory.rolloverAmount).toBe(0);
+      expect(updatedCategory).not.toHaveProperty("rolloverCap");
+    });
+
+    test("should return 400 for missing month", async () => {
+      const {
+        getUserFromEvent,
+        FamilyIdResolver,
+      } = require("/opt/nodejs/utils");
+
+      getUserFromEvent.mockReturnValue({
+        userId: "user_123",
+        familyId: "family_123",
+        familyRole: "primary",
+      });
+
+      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+
+      const event = {
+        httpMethod: "PUT",
+        path: "/budget/categories/cat_groceries/rollover",
+        body: JSON.stringify({
+          groupType: "expenses",
+          rolloverEnabled: true,
+        }),
+        requestContext: {
+          authorizer: {
+            claims: {
+              sub: "user_123",
+              email: "test@example.com",
+            },
+          },
+        },
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(400);
+      const body = JSON.parse(result.body);
+      expect(body.error).toContain("Month is required");
+    });
+
+    test("should return 400 for invalid groupType", async () => {
+      const {
+        getUserFromEvent,
+        FamilyIdResolver,
+      } = require("/opt/nodejs/utils");
+
+      getUserFromEvent.mockReturnValue({
+        userId: "user_123",
+        familyId: "family_123",
+        familyRole: "primary",
+      });
+
+      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+
+      const event = {
+        httpMethod: "PUT",
+        path: "/budget/categories/cat_groceries/rollover",
+        body: JSON.stringify({
+          month: "2026-02",
+          groupType: "invalid",
+          rolloverEnabled: true,
+        }),
+        requestContext: {
+          authorizer: {
+            claims: {
+              sub: "user_123",
+              email: "test@example.com",
+            },
+          },
+        },
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(400);
+      const body = JSON.parse(result.body);
+      expect(body.error).toContain("groupType must be one of");
+    });
+
+    test("should return 404 for non-existent category", async () => {
+      const {
+        dynamoHelpers,
+        getUserFromEvent,
+        FamilyIdResolver,
+      } = require("/opt/nodejs/utils");
+
+      getUserFromEvent.mockReturnValue({
+        userId: "user_123",
+        familyId: "family_123",
+        familyRole: "primary",
+      });
+
+      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+
+      const existingBudget = {
+        budgetId: "budget_123",
+        familyId: "family_123",
+        month: "2026-02",
+        groups: {
+          income: [],
+          savings: [],
+          expenses: [
+            {
+              id: "group_food",
+              name: "Food",
+              categories: [
+                {
+                  id: "cat_groceries",
+                  name: "Groceries",
+                  plannedAmount: 500,
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      dynamoHelpers.getItem.mockResolvedValue(existingBudget);
+
+      const event = {
+        httpMethod: "PUT",
+        path: "/budget/categories/non_existent_cat/rollover",
+        body: JSON.stringify({
+          month: "2026-02",
+          groupType: "expenses",
+          rolloverEnabled: true,
+        }),
+        requestContext: {
+          authorizer: {
+            claims: {
+              sub: "user_123",
+              email: "test@example.com",
+            },
+          },
+        },
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(404);
+      const body = JSON.parse(result.body);
+      expect(body.error).toContain("not found");
+    });
+  });
+
+  describe("PUT /budget/categories/{categoryId}/rollover/reset", () => {
+    /**
+     * **Validates: Requirement 40.7** - Reset rollover to 0
+     */
+    test("should reset rollover amount to 0", async () => {
+      const {
+        dynamoHelpers,
+        getUserFromEvent,
+        FamilyIdResolver,
+      } = require("/opt/nodejs/utils");
+
+      getUserFromEvent.mockReturnValue({
+        userId: "user_123",
+        familyId: "family_123",
+        familyRole: "primary",
+      });
+
+      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+
+      const existingBudget = {
+        budgetId: "budget_123",
+        familyId: "family_123",
+        month: "2026-02",
+        groups: {
+          income: [],
+          savings: [],
+          expenses: [
+            {
+              id: "group_food",
+              name: "Food",
+              categories: [
+                {
+                  id: "cat_groceries",
+                  name: "Groceries",
+                  plannedAmount: 500,
+                  rolloverEnabled: true,
+                  rolloverAmount: 175,
+                },
+              ],
+            },
+          ],
+        },
+      };
+
+      dynamoHelpers.getItem.mockResolvedValue(existingBudget);
+
+      let savedUpdates = null;
+      dynamoHelpers.updateItem.mockImplementation((pk, sk, updates) => {
+        savedUpdates = updates;
+        return Promise.resolve({
+          ...existingBudget,
+          ...updates,
+          totalRollover: 0,
+        });
+      });
+
+      const event = {
+        httpMethod: "PUT",
+        path: "/budget/categories/cat_groceries/rollover/reset",
+        body: JSON.stringify({
+          month: "2026-02",
+          groupType: "expenses",
+        }),
+        requestContext: {
+          authorizer: {
+            claims: {
+              sub: "user_123",
+              email: "test@example.com",
+            },
+          },
+        },
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(200);
+      const body = JSON.parse(result.body);
+      expect(body.data.categoryId).toBe("cat_groceries");
+      expect(body.data.previousRollover).toBe(175);
+      expect(body.data.newRollover).toBe(0);
+
+      // Verify rolloverAmount is reset to 0
+      const updatedCategory = savedUpdates.groups.expenses[0].categories[0];
+      expect(updatedCategory.rolloverAmount).toBe(0);
+      // rolloverEnabled should remain unchanged
+      expect(updatedCategory.rolloverEnabled).toBe(true);
+    });
+
+    test("should return 400 for missing groupType", async () => {
+      const {
+        getUserFromEvent,
+        FamilyIdResolver,
+      } = require("/opt/nodejs/utils");
+
+      getUserFromEvent.mockReturnValue({
+        userId: "user_123",
+        familyId: "family_123",
+        familyRole: "primary",
+      });
+
+      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+
+      const event = {
+        httpMethod: "PUT",
+        path: "/budget/categories/cat_groceries/rollover/reset",
+        body: JSON.stringify({
+          month: "2026-02",
+        }),
+        requestContext: {
+          authorizer: {
+            claims: {
+              sub: "user_123",
+              email: "test@example.com",
+            },
+          },
+        },
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(400);
+      const body = JSON.parse(result.body);
+      expect(body.error).toContain("groupType is required");
+    });
+
+    test("should return 404 for non-existent budget", async () => {
+      const {
+        dynamoHelpers,
+        getUserFromEvent,
+        FamilyIdResolver,
+      } = require("/opt/nodejs/utils");
+
+      getUserFromEvent.mockReturnValue({
+        userId: "user_123",
+        familyId: "family_123",
+        familyRole: "primary",
+      });
+
+      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      dynamoHelpers.getItem.mockResolvedValue(null);
+
+      const event = {
+        httpMethod: "PUT",
+        path: "/budget/categories/cat_groceries/rollover/reset",
+        body: JSON.stringify({
+          month: "2026-02",
+          groupType: "expenses",
+        }),
+        requestContext: {
+          authorizer: {
+            claims: {
+              sub: "user_123",
+              email: "test@example.com",
+            },
+          },
+        },
+      };
+
+      const result = await handler(event, mockContext);
+
+      expect(result.statusCode).toBe(404);
+      const body = JSON.parse(result.body);
+      expect(body.error).toContain("Budget not found");
+    });
+  });
+});

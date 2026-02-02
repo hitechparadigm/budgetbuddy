@@ -216,6 +216,79 @@ Create a new budget.
 - **Description**: Currency for all amounts in this budget
 - **Note**: Once set, the budget currency cannot be changed
 
+### PUT /budget/categories/{categoryId}/rollover
+
+Enable or disable rollover for a specific budget category.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Request Body**:
+
+```json
+{
+  "month": "2026-02",
+  "groupType": "expenses",
+  "rolloverEnabled": true,
+  "rolloverCap": 200
+}
+```
+
+**Parameters**:
+
+- **month**: String (YYYY-MM) - The budget month to update
+- **groupType**: String - One of: "income", "savings", "expenses"
+- **rolloverEnabled**: Boolean - Enable or disable rollover
+- **rolloverCap**: Number (optional) - Maximum rollover amount
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "categoryId": "cat_groceries",
+    "rolloverEnabled": true,
+    "rolloverCap": 200,
+    "totalRollover": 150
+  },
+  "message": "Category rollover settings updated successfully"
+}
+```
+
+**Validates**: Requirement 40.7 - Enable/disable rollover per category
+
+### PUT /budget/categories/{categoryId}/rollover/reset
+
+Reset the rollover amount to 0 for a specific category (start fresh).
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Request Body**:
+
+```json
+{
+  "month": "2026-02",
+  "groupType": "expenses"
+}
+```
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "categoryId": "cat_groceries",
+    "previousRollover": 175,
+    "newRollover": 0,
+    "totalRollover": 0
+  },
+  "message": "Category rollover reset successfully"
+}
+```
+
+**Validates**: Requirement 40.7 - Reset rollover (start fresh)
+
 ## Transaction Management
 
 ### GET /transactions/health
