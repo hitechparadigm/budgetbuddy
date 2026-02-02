@@ -350,19 +350,19 @@
 
 ### Task 10: Bank Sync UI (Requirement 42)
 
-- [ ] 10.1 Frontend Web: Integrate Plaid Link SDK
+- [x] 10.1 Frontend Web: Integrate Plaid Link SDK
   - Install @plaid/link
   - Create PlaidLinkButton component
   - Handle success/error callbacks
   - **Validates: Requirement 42.12**
 
-- [ ] 10.2 Frontend Web: Create ConnectedAccounts component
+- [x] 10.2 Frontend Web: Create ConnectedAccounts component
   - List connected accounts
   - Show balance, last sync time
   - Manual sync button
   - **Validates: Requirement 42.13, 42.14**
 
-- [ ] 10.3 Frontend Web: Create PendingTransactions component
+- [x] 10.3 Frontend Web: Create PendingTransactions component
   - List pending transactions
   - Approve/reject buttons
   - Category assignment

@@ -256,19 +256,18 @@ _"As a user, I want to connect my bank accounts so transactions are imported aut
 
 ### Component Mapping
 
-| Feature                 | Frontend Component | Backend API                       | Status           |
-| ----------------------- | ------------------ | --------------------------------- | ---------------- |
-| Accounts Page           | `AccountsPage.tsx` | N/A                               | ✅ Complete      |
-| Bank Accounts UI        | `BankAccounts.tsx` | Multiple                          | ✅ Complete      |
-| Plaid API Service       | `plaidApi.ts`      | N/A                               | ✅ Complete      |
-| Create Test Account     | `BankAccounts.tsx` | `POST /plaid/sandbox/create-item` | ✅ Complete      |
-| List Accounts           | `BankAccounts.tsx` | `GET /plaid/accounts`             | ✅ Complete      |
-| Sync Accounts           | `BankAccounts.tsx` | `POST /plaid/sync`                | ✅ Complete      |
-| Pending Transactions    | `BankAccounts.tsx` | `GET /plaid/pending`              | ✅ Complete      |
-| Approve Transactions    | `BankAccounts.tsx` | `POST /plaid/pending/approve`     | ✅ Complete      |
-| Reject Transactions     | `BankAccounts.tsx` | `POST /plaid/pending/reject`      | ✅ Complete      |
-| Unlink Account          | `BankAccounts.tsx` | `DELETE /plaid/accounts/{id}`     | ✅ Complete      |
-| Plaid Link (Production) | ❌ Missing         | `POST /plaid/link-token`          | ⚠️ Backend ready |
+| Feature              | Frontend Component        | Backend API                       | Status      |
+| -------------------- | ------------------------- | --------------------------------- | ----------- |
+| Bank Sync Page       | `BankSyncPage.tsx`        | N/A                               | ✅ Complete |
+| Plaid Link Button    | `PlaidLinkButton.tsx`     | `POST /plaid/link-token`          | ✅ Complete |
+| Plaid API Service    | `plaidApi.ts`             | N/A                               | ✅ Complete |
+| Connected Accounts   | `ConnectedAccounts.tsx`   | `GET /plaid/accounts`             | ✅ Complete |
+| Pending Transactions | `PendingTransactions.tsx` | `GET /plaid/pending`              | ✅ Complete |
+| Create Test Account  | `BankSyncPage.tsx`        | `POST /plaid/sandbox/create-item` | ✅ Complete |
+| Sync Accounts        | `ConnectedAccounts.tsx`   | `POST /plaid/sync`                | ✅ Complete |
+| Approve Transactions | `PendingTransactions.tsx` | `POST /plaid/pending/approve`     | ✅ Complete |
+| Reject Transactions  | `PendingTransactions.tsx` | `POST /plaid/pending/reject`      | ✅ Complete |
+| Unlink Account       | `ConnectedAccounts.tsx`   | `DELETE /plaid/accounts/{id}`     | ✅ Complete |
 
 ### UI/UX Requirements
 
@@ -283,9 +282,8 @@ _"As a user, I want to connect my bank accounts so transactions are imported aut
 
 | Component                   | Priority | Description                       |
 | --------------------------- | -------- | --------------------------------- |
-| `PlaidLinkButton.tsx`       | HIGH     | Production Plaid Link integration |
-| `CategoryMappingModal.tsx`  | HIGH     | Assign categories before approval |
-| `SyncProgressIndicator.tsx` | MEDIUM   | Visual sync progress              |
+| `CategoryMappingModal.tsx`  | MEDIUM   | Assign categories before approval |
+| `SyncProgressIndicator.tsx` | LOW      | Visual sync progress              |
 | `AccountBalanceChart.tsx`   | LOW      | Balance history visualization     |
 
 ---
