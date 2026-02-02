@@ -32,8 +32,9 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 
 - [x] 1.3 Integrate FAB into layouts
   - [x] 1.3.1 Add FAB to BudgetPage
-  - [ ] 1.3.2 Add FAB to TransactionsPage
+  - [x] 1.3.2 Add FAB to TransactionsPage
   - [ ] 1.3.3 Add FAB to mobile screens
+  - **Note**: Transactions are displayed in BudgetPage, no separate TransactionsPage
   - **Validates: Requirement 1.1**
 
 ### Task 2: Keyboard Shortcuts
@@ -103,10 +104,11 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - [x] 4.3.4 Persist filters in session
   - **Validates: Requirement 5.8**
 
-- [ ] 4.4 Integrate filters into TransactionList
+- [x] 4.4 Integrate filters into TransactionList
   - [x] 4.4.1 Update TransactionList to accept filters
   - [x] 4.4.2 Call API with filter parameters
   - [x] 4.4.3 Show active filter indicators
+  - **Note**: Integrated in BudgetPage with TransactionFilters component
   - **Validates: Requirement 5.1-5.8**
 
 - [ ] 4.5 Add search to mobile
