@@ -956,7 +956,7 @@ _"As a user, I want to customize my app experience and manage my account setting
 | Backup/Restore        | `BackupModal.tsx`          | `POST /backup`, `POST /restore`        | ✅ Complete |
 | Theme Toggle          | `ThemeContext.tsx`         | N/A (local)                            | ✅ Complete |
 | Delete Account        | `DeleteAccountModal.tsx`   | `DELETE /auth/account`                 | ✅ Complete |
-| About Page            | `AboutPage.tsx`            | N/A (static)                           | ⚠️ Partial  |
+| About Page            | `AboutPage.tsx`            | N/A (static)                           | ✅ Complete |
 
 ### UI/UX Requirements
 

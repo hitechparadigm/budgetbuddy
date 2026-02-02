@@ -4,9 +4,9 @@
 
 ### Session Summary
 
-**Duration**: 30 minutes
-**Focus**: Implement DeleteAccountModal and complete Settings & Preferences Journey documentation
-**Outcome**: Delete account feature implemented, USER_JOURNEYS.md Section 8 completed
+**Duration**: 45 minutes
+**Focus**: Implement DeleteAccountModal, AboutPage, and complete Settings & Preferences Journey documentation
+**Outcome**: Delete account feature implemented, AboutPage created, USER_JOURNEYS.md Section 8 completed
 
 ### Work Completed
 
@@ -25,15 +25,26 @@
    - Step 3: Type "DELETE" confirmation for safety
    - Integrated into SettingsPage with "Danger Zone" section
 
-3. **Documentation Updates**:
-   - Updated USER_JOURNEYS.md component mapping (DeleteAccountModal ✅)
-   - Removed DeleteAccountModal from missing components list
+3. **AboutPage Component**:
+   - App logo and version display (v1.9.73)
+   - Feature highlights grid (AI, Family, Bank Sync, etc.)
+   - Legal links (Terms, Privacy, Support, FAQ)
+   - Rate app call-to-action section
+   - Full dark mode support
+   - Added route `/about` to App.tsx
+   - Added link from Settings page
+
+4. **Documentation Updates**:
+   - Updated USER_JOURNEYS.md component mapping
+   - Marked DeleteAccountModal and AboutPage as complete
    - Updated CHANGELOG.md with v1.9.73 entry
 
 ### Files Created/Modified
 
 - `packages/web-app/src/components/DeleteAccountModal.tsx` (NEW)
+- `packages/web-app/src/pages/AboutPage.tsx` (NEW)
 - `packages/web-app/src/pages/SettingsPage.tsx` (MODIFIED)
+- `packages/web-app/src/App.tsx` (MODIFIED)
 - `docs/USER_JOURNEYS.md` (MODIFIED)
 - `CHANGELOG.md` (MODIFIED)
 

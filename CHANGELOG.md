@@ -2,13 +2,14 @@
 
 ## [1.9.73] - 2026-02-02
 
-### ✨ Delete Account Feature
+### ✨ Delete Account Feature & About Page
 
-**New Component**:
+**New Components**:
 
 - `DeleteAccountModal.tsx` - Multi-step account deletion wizard
+- `AboutPage.tsx` - App information, version, and legal links
 
-**Features**:
+**DeleteAccountModal Features**:
 
 - 3-step deletion process (warning → export → confirm)
 - Data export option before deletion
@@ -16,15 +17,28 @@
 - Clears all local storage on deletion
 - Redirects to login after account deletion
 
+**AboutPage Features**:
+
+- App logo and version display
+- Feature highlights grid
+- Links to Terms, Privacy, Support, FAQ
+- Rate app call-to-action
+- Dark mode support
+
 **Settings Page Updates**:
 
 - Added "Danger Zone" section with delete account button
+- Added "About" link in Help & Tutorial section
 - Integrated DeleteAccountModal component
+
+**Routing**:
+
+- Added `/about` route to App.tsx
 
 **Documentation**:
 
 - Updated USER_JOURNEYS.md component mapping
-- Removed DeleteAccountModal from missing components list
+- Marked DeleteAccountModal and AboutPage as complete
 
 ## [1.9.72] - 2026-02-02
 
