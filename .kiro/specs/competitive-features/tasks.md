@@ -124,12 +124,12 @@
   - Priority ordering of goals
   - **Validates: Requirement 38.7**
 
-- [ ] 3.8 Frontend Mobile: Create GoalsScreen
+- [x] 3.8 Frontend Mobile: Create GoalsScreen
   - Mirror web implementation
   - Confetti animation on goal completion
   - **Validates: Requirement 38.10**
 
-- [ ] 3.9 Property Test: Goal progress calculation
+- [x] 3.9 Property Test: Goal progress calculation
   - Progress percentage = current / target \* 100
   - Required monthly = (target - current) / months remaining
   - **Validates: Requirement 38.2, 38.3**
