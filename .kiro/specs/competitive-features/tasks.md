@@ -48,29 +48,29 @@
   - Store in DynamoDB with `BILL#<billId>` sort key
   - **Validates: Requirement 36.1, 36.2**
 
-- [-] 2.2 Backend: Implement bill notification scheduler
+- [x] 2.2 Backend: Implement bill notification scheduler
   - Extend daily-reminders Lambda to check bills
   - Send notifications at 7, 3, 0 days before due
   - **Validates: Requirement 36.5**
 
-- [ ] 2.3 Backend: Implement mark-as-paid with auto-transaction
+- [x] 2.3 Backend: Implement mark-as-paid with auto-transaction
   - `PUT /bills/{id}/paid` endpoint
   - Optionally create transaction when marked paid
   - **Validates: Requirement 36.6, 36.7**
 
-- [ ] 2.4 Backend: Add bills to CDK stack
+- [x] 2.4 Backend: Add bills to CDK stack
   - Add Lambda function to api-stack.ts
   - Configure IAM permissions
   - Add API Gateway routes
   - **Validates: Requirement 36**
 
-- [ ] 2.5 Frontend Web: Create BillsPage component
+- [x] 2.5 Frontend Web: Create BillsPage component
   - List bills sorted by due date
   - Show days until due, payment status
   - One-tap mark as paid
   - **Validates: Requirement 36.3, 36.4, 36.6**
 
-- [ ] 2.6 Frontend Web: Add bill creation form
+- [x] 2.6 Frontend Web: Add bill creation form
   - Name, amount, due date, frequency
   - Category selection
   - Reminder preferences
