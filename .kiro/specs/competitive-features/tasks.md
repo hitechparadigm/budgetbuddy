@@ -140,13 +140,13 @@
 
 ### Task 4: Subscription Tracking (Requirement 35)
 
-- [ ] 4.1 Backend: Create subscriptions Lambda function
+- [x] 4.1 Backend: Create subscriptions Lambda function
   - Create `backend/functions/subscriptions/` directory
   - Implement CRUD operations
   - Store with `SUBSCRIPTION#<subscriptionId>` sort key
   - **Validates: Requirement 35.1, 35.5**
 
-- [ ] 4.2 Backend: Implement subscription detection algorithm
+- [x] 4.2 Backend: Implement subscription detection algorithm
   - Analyze transaction patterns
   - Group by merchant, check intervals (25-35 days)
   - Check amount consistency (±10%)
