@@ -133,35 +133,36 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
 
 ### Task 4: Implement Goal Drag-and-Drop
 
-- [ ] 4.1 Set up gesture handling
-  - [ ] 4.1.1 Install/configure react-native-gesture-handler
-  - [ ] 4.1.2 Install/configure react-native-reanimated
-  - [ ] 4.1.3 Create draggable goal card wrapper
+- [x] 4.1 Set up gesture handling
+  - [x] 4.1.1 Install/configure react-native-gesture-handler
+  - [x] 4.1.2 Install/configure react-native-reanimated
+  - [x] 4.1.3 Create draggable goal card wrapper
+  - **Validates: Requirement 4.1**
+  - **Note**: Dependencies already installed in package.json
+
+- [x] 4.2 Implement long-press to drag
+  - [x] 4.2.1 Add LongPressGestureHandler to goal cards
+  - [x] 4.2.2 Show visual feedback on drag start (scale, shadow)
+  - [x] 4.2.3 Add drag handle icon
   - **Validates: Requirement 4.1**
 
-- [ ] 4.2 Implement long-press to drag
-  - [ ] 4.2.1 Add LongPressGestureHandler to goal cards
-  - [ ] 4.2.2 Show visual feedback on drag start (scale, shadow)
-  - [ ] 4.2.3 Add drag handle icon
-  - **Validates: Requirement 4.1**
-
-- [ ] 4.3 Implement drag interaction
-  - [ ] 4.3.1 Track finger position with PanGestureHandler
-  - [ ] 4.3.2 Animate other goals to make space
-  - [ ] 4.3.3 Calculate new index based on position
+- [x] 4.3 Implement drag interaction
+  - [x] 4.3.1 Track finger position with PanGestureHandler
+  - [x] 4.3.2 Animate other goals to make space
+  - [x] 4.3.3 Calculate new index based on position
   - **Validates: Requirement 4.2**
 
-- [ ] 4.4 Add haptic feedback
-  - [ ] 4.4.1 Medium haptic on drag start
-  - [ ] 4.4.2 Light haptic when passing other items
-  - [ ] 4.4.3 Success haptic on drop
+- [x] 4.4 Add haptic feedback
+  - [x] 4.4.1 Medium haptic on drag start
+  - [x] 4.4.2 Light haptic when passing other items
+  - [x] 4.4.3 Success haptic on drop
   - **Validates: Requirement 4.3**
 
-- [ ] 4.5 Implement persistence
-  - [ ] 4.5.1 Call PUT /goals/reorder on drop
-  - [ ] 4.5.2 Implement optimistic update
-  - [ ] 4.5.3 Rollback on API error
-  - [ ] 4.5.4 Show loading indicator during save
+- [x] 4.5 Implement persistence
+  - [x] 4.5.1 Call PUT /goals/reorder on drop
+  - [x] 4.5.2 Implement optimistic update
+  - [x] 4.5.3 Rollback on API error
+  - [x] 4.5.4 Show loading indicator during save
   - **Validates: Requirement 4.4**
 
 ---

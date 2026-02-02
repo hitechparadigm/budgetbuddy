@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.9.68] - 2026-02-02
+
+### ✨ Feature - Mobile Goal Reordering
+
+**New Components**:
+
+- `packages/mobile/src/components/DraggableGoalList.tsx` - Drag-and-drop goal list
+- `packages/mobile/src/hooks/useGoalReorder.ts` - Goal reorder API hook
+
+**DraggableGoalList Features**:
+
+- Long-press to initiate drag
+- Visual feedback (scale, elevation) during drag
+- Drag handle icon for discoverability
+- Smooth animations with react-native-reanimated
+- Haptic feedback (medium on start, light on crossing, success on drop)
+- Optimistic updates with API persistence
+
+**GoalsScreen Updates**:
+
+- Added "Reorder" button in header
+- Toggle between normal and reorder mode
+- Integrated DraggableGoalList component
+
+**Completes**: Mobile UI Polish Task 4 (Goal Reordering)
+
 ## [1.9.67] - 2026-02-02
 
 ### ✨ Feature - Mobile Search and Filters Integration
