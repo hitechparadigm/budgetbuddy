@@ -218,18 +218,18 @@
 
 ### Task 6: Spending Insights Enhancement (Requirement 39)
 
-- [ ] 6.1 Backend: Enhance insights Lambda with AI
+- [x] 6.1 Backend: Enhance insights Lambda with AI
   - Integrate AWS Bedrock for natural language insights
   - Generate personalized recommendations
   - **Validates: Requirement 39.8, 39.9**
 
-- [ ] 6.2 Backend: Add spending pattern analysis
+- [x] 6.2 Backend: Add spending pattern analysis
   - Day of week patterns
   - Time of month patterns
   - Merchant frequency
   - **Validates: Requirement 39.6**
 
-- [ ] 6.3 Backend: Add month-over-month comparison
+- [x] 6.3 Backend: Add month-over-month comparison
   - Calculate spending changes by category
   - Identify unusual spikes
   - **Validates: Requirement 39.2, 39.5**
@@ -244,7 +244,7 @@
   - Mirror web enhancements
   - **Validates: Requirement 39**
 
-- [ ] 6.6 Backend: Add weekly insight notifications
+- [x] 6.6 Backend: Add weekly insight notifications
   - Configurable notification preference
   - **Validates: Requirement 39.7**
 

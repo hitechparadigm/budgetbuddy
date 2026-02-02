@@ -453,6 +453,196 @@ async function processBillReminders(user) {
 }
 
 /**
+ * Send weekly insight notification to user
+ * **Validates: Requirement 39.7** - Weekly insight notifications
+ */
+async function sendWeeklyInsightNotification(user) {
+  try {
+    const userId = user.userId;
+    const familyId = user.familyId;
+
+    if (!familyId) {
+      return { userId, sent: false, reason: "no_family_id" };
+    }
+
+    // Get notification preferences
+    const preferences = await getNotificationPreferences(userId);
+
+    // Check if weekly insights are enabled (default to true)
+    if (preferences && preferences.weeklyInsights === false) {
+      console.log(`Weekly insights disabled for user ${userId}`);
+      return { userId, sent: false, reason: "disabled" };
+    }
+
+    // Check if in quiet hours
+    if (preferences && isInQuietHours(preferences)) {
+      console.log(`User ${userId} is in quiet hours`);
+      return { userId, sent: false, reason: "quiet_hours" };
+    }
+
+    // Generate weekly insight summary
+    const insightSummary = await generateWeeklyInsightSummary(familyId);
+
+    const notification = {
+      title: insightSummary.title,
+      body: insightSummary.body,
+      data: {
+        type: "weekly_insight",
+        ...insightSummary.data,
+      },
+    };
+
+    // Send notification
+    await lambda
+      .invoke({
+        FunctionName: NOTIFICATION_FUNCTION,
+        InvocationType: "Event",
+        Payload: JSON.stringify({
+          httpMethod: "POST",
+          path: "/notifications/send",
+          body: JSON.stringify({
+            userId,
+            notification,
+          }),
+        }),
+      })
+      .promise();
+
+    console.log(`✅ Weekly insight sent to user ${userId}`);
+    return { userId, sent: true };
+  } catch (error) {
+    console.error(
+      `Error sending weekly insight to user ${user.userId}:`,
+      error,
+    );
+    return { userId: user.userId, sent: false, error: error.message };
+  }
+}
+
+/**
+ * Generate weekly insight summary for a family
+ * **Validates: Requirement 39.7** - Weekly insight notifications
+ */
+async function generateWeeklyInsightSummary(familyId) {
+  try {
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(weekStart.getDate() - 7);
+
+    // Get this week's transactions
+    const transactions = await getTransactionsForFamily(
+      familyId,
+      weekStart,
+      today,
+    );
+
+    // Get previous week's transactions for comparison
+    const prevWeekStart = new Date(weekStart);
+    prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+    const prevWeekEnd = new Date(weekStart);
+    prevWeekEnd.setDate(prevWeekEnd.getDate() - 1);
+    const previousTransactions = await getTransactionsForFamily(
+      familyId,
+      prevWeekStart,
+      prevWeekEnd,
+    );
+
+    // Calculate summaries
+    const expenses = transactions.filter((t) => t.type === "expense");
+    const prevExpenses = previousTransactions.filter(
+      (t) => t.type === "expense",
+    );
+
+    const totalSpent = expenses.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const prevTotalSpent = prevExpenses.reduce(
+      (sum, t) => sum + (t.amount || 0),
+      0,
+    );
+
+    const income = transactions.filter((t) => t.type === "income");
+    const totalIncome = income.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    const savingsRate =
+      totalIncome > 0 ? ((totalIncome - totalSpent) / totalIncome) * 100 : 0;
+
+    // Calculate spending change
+    let spendingChange = 0;
+    if (prevTotalSpent > 0) {
+      spendingChange = Math.round(
+        ((totalSpent - prevTotalSpent) / prevTotalSpent) * 100,
+      );
+    }
+
+    // Generate summary text
+    let summaryText = `This week: $${totalSpent.toFixed(2)} spent`;
+    if (Math.abs(spendingChange) > 5) {
+      summaryText += ` (${spendingChange > 0 ? "↑" : "↓"}${Math.abs(spendingChange)}% vs last week)`;
+    }
+    summaryText += `. Savings rate: ${savingsRate.toFixed(0)}%`;
+
+    // Determine notification type
+    let notificationType = "info";
+    if (savingsRate >= 20) {
+      notificationType = "positive";
+    } else if (spendingChange > 20 || savingsRate < 5) {
+      notificationType = "alert";
+    }
+
+    return {
+      title: "📊 Weekly Spending Summary",
+      body: summaryText,
+      type: notificationType,
+      data: {
+        totalSpent: Math.round(totalSpent * 100) / 100,
+        spendingChange,
+        savingsRate: Math.round(savingsRate * 10) / 10,
+        transactionCount: transactions.length,
+      },
+    };
+  } catch (error) {
+    console.error("Error generating weekly insight summary:", error);
+    // Return a generic summary on error
+    return {
+      title: "📊 Weekly Spending Summary",
+      body: "Check your spending insights in the app!",
+      type: "info",
+      data: {},
+    };
+  }
+}
+
+/**
+ * Get transactions for a family within a date range
+ */
+async function getTransactionsForFamily(familyId, startDate, endDate) {
+  try {
+    const startStr = startDate.toISOString().split("T")[0];
+    const endStr = endDate.toISOString().split("T")[0];
+
+    const result = await dynamodb
+      .query({
+        TableName: TABLE_NAME,
+        KeyConditionExpression: "PK = :pk",
+        FilterExpression:
+          "entityType = :entityType AND #date >= :start AND #date <= :end",
+        ExpressionAttributeNames: { "#date": "date" },
+        ExpressionAttributeValues: {
+          ":pk": `FAMILY#${familyId}`,
+          ":entityType": "TRANSACTION",
+          ":start": startStr,
+          ":end": endStr,
+        },
+      })
+      .promise();
+
+    return result.Items || [];
+  } catch (error) {
+    console.error("Error getting transactions for family:", error);
+    return [];
+  }
+}
+
+/**
  * Main Lambda handler
  */
 exports.handler = async (event) => {
@@ -473,6 +663,12 @@ exports.handler = async (event) => {
       skipped: 0,
       errors: 0,
     },
+    // Weekly insight results
+    weeklyInsights: {
+      sent: 0,
+      skipped: 0,
+      errors: 0,
+    },
   };
 
   try {
@@ -481,6 +677,10 @@ exports.handler = async (event) => {
     results.totalUsers = users.length;
 
     console.log(`Found ${users.length} users`);
+
+    // Check if today is Sunday (weekly insight day)
+    const today = new Date();
+    const isSunday = today.getDay() === 0;
 
     // Send reminders (in batches)
     const BATCH_SIZE = 10;
@@ -515,6 +715,23 @@ exports.handler = async (event) => {
         results.billReminders.errors += result.errors || 0;
       });
 
+      // Process weekly insights on Sundays (Requirement 39.7)
+      if (isSunday) {
+        const weeklyResults = await Promise.all(
+          batch.map((user) => sendWeeklyInsightNotification(user)),
+        );
+
+        weeklyResults.forEach((result) => {
+          if (result.sent) {
+            results.weeklyInsights.sent++;
+          } else if (result.error) {
+            results.weeklyInsights.errors++;
+          } else {
+            results.weeklyInsights.skipped++;
+          }
+        });
+      }
+
       console.log(
         `Processed batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(users.length / BATCH_SIZE)}`,
       );
@@ -531,6 +748,9 @@ exports.handler = async (event) => {
       `   Bill reminders sent: ${results.billReminders.remindersSent}`,
     );
     console.log(`   Bills checked: ${results.billReminders.totalBillsChecked}`);
+    if (isSunday) {
+      console.log(`   Weekly insights sent: ${results.weeklyInsights.sent}`);
+    }
     console.log(`   Duration: ${duration}ms`);
 
     return {

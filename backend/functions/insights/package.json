@@ -1,14 +1,16 @@
 {
   "_comment": "Spending Insights Lambda function - Handles analytics, AI insights, and trend analysis",
   "name": "budgetbuddy-insights-function",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "BudgetBuddy spending insights Lambda function for analytics and AI-generated insights",
   "main": "index.js",
   "scripts": {
     "test": "jest",
     "local": "sam local start-api"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.400.0"
+  },
   "devDependencies": {
     "jest": "^29.0.0"
   }
