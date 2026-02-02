@@ -128,6 +128,31 @@ export interface TrendsResponse {
   };
 }
 
+export interface SpendingPattern {
+  dayOfWeek: Array<{ day: string; amount: number; count: number }>;
+  timeOfMonth: Array<{ period: string; amount: number; count: number }>;
+  topMerchants: Array<{ merchant: string; amount: number; count: number }>;
+}
+
+export interface PatternsResponse {
+  patterns: SpendingPattern;
+  period: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface AskResponse {
+  question: string;
+  answer: string;
+  context?: {
+    totalSpent?: number;
+    topCategories?: Array<{ category: string; amount: number }>;
+    period?: string;
+  };
+  suggestions?: string[];
+}
+
 // Insights API
 export const insightsApi = {
   // Get weekly insights
@@ -154,6 +179,24 @@ export const insightsApi = {
     params.append('months', months.toString());
 
     const response = await insightsApiCall(`/insights/trends?${params.toString()}`);
+    return response.data;
+  },
+
+  // Get spending patterns (day of week, time of month, merchants)
+  async getPatterns(months: number = 3): Promise<PatternsResponse> {
+    const params = new URLSearchParams();
+    params.append('months', months.toString());
+
+    const response = await insightsApiCall(`/insights/patterns?${params.toString()}`);
+    return response.data;
+  },
+
+  // Ask AI about spending (natural language query)
+  async askAboutSpending(question: string): Promise<AskResponse> {
+    const response = await insightsApiCall('/insights/ask', {
+      method: 'POST',
+      body: JSON.stringify({ question }),
+    });
     return response.data;
   },
 };

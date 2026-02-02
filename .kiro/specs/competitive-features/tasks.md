@@ -234,13 +234,13 @@
   - Identify unusual spikes
   - **Validates: Requirement 39.2, 39.5**
 
-- [ ] 6.4 Frontend Web: Enhance InsightsPage
+- [x] 6.4 Frontend Web: Enhance InsightsPage
   - Display AI-generated insights
   - Spending trend charts
   - Category comparisons
   - **Validates: Requirement 39.1, 39.3, 39.4**
 
-- [ ] 6.5 Frontend Mobile: Enhance InsightsScreen
+- [x] 6.5 Frontend Mobile: Enhance InsightsScreen
   - Mirror web enhancements
   - **Validates: Requirement 39**
 
@@ -267,18 +267,18 @@
   - `POST /receipts/process` - Trigger OCR
   - **Validates: Requirement 44.1, 44.2**
 
-- [ ] 7.4 Frontend Mobile: Create ReceiptScanner component
+- [x] 7.4 Frontend Mobile: Create ReceiptScanner component
   - Camera capture
   - Image crop/rotate
   - **Validates: Requirement 44.1, 44.6**
 
-- [ ] 7.5 Frontend Mobile: Add receipt confirmation screen
+- [x] 7.5 Frontend Mobile: Add receipt confirmation screen
   - Display extracted data
   - Allow editing before save
   - Auto-suggest category
   - **Validates: Requirement 44.4, 44.5**
 
-- [ ] 7.6 Frontend Web: Add receipt upload (file picker)
+- [x] 7.6 Frontend Web: Add receipt upload (file picker)
   - Alternative to camera for web
   - **Validates: Requirement 44**
 

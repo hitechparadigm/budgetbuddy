@@ -4,9 +4,13 @@
  * Displays financial insights, spending trends, and analytics.
  * Features:
  * - Weekly insight card with AI-generated insights
+ * - AI-powered "Ask about spending" feature
+ * - Spending pattern analysis (day of week, time of month)
  * - Spending trend chart (6-month view)
  * - Category breakdown with comparisons
  * - Month-over-month analysis
+ *
+ * **Validates: Requirement 39.1, 39.3, 39.4, 39.8, 39.9**
  */
 
 import React, { useState, useEffect } from "react";
@@ -15,6 +19,8 @@ import {
   insightsApi,
   WeeklyInsightsResponse,
   TrendsResponse,
+  PatternsResponse,
+  AskResponse,
 } from "../services/insightsApi";
 
 export const InsightsPage: React.FC = () => {
@@ -23,7 +29,14 @@ export const InsightsPage: React.FC = () => {
   const [weeklyInsights, setWeeklyInsights] =
     useState<WeeklyInsightsResponse | null>(null);
   const [trends, setTrends] = useState<TrendsResponse | null>(null);
+  const [patterns, setPatterns] = useState<PatternsResponse | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<"6" | "12">("6");
+
+  // AI Ask feature state
+  const [askQuestion, setAskQuestion] = useState("");
+  const [askResponse, setAskResponse] = useState<AskResponse | null>(null);
+  const [askLoading, setAskLoading] = useState(false);
+  const [showAskSection, setShowAskSection] = useState(false);
 
   useEffect(() => {
     loadInsights();
@@ -33,19 +46,53 @@ export const InsightsPage: React.FC = () => {
     try {
       setLoading(true);
 
-      // Load weekly insights and trends in parallel
-      const [weeklyData, trendsData] = await Promise.all([
+      // Load weekly insights, trends, and patterns in parallel
+      const [weeklyData, trendsData, patternsData] = await Promise.all([
         insightsApi.getWeeklyInsights(),
         insightsApi.getTrends(parseInt(selectedPeriod)),
+        insightsApi.getPatterns(3),
       ]);
 
       setWeeklyInsights(weeklyData);
       setTrends(trendsData);
+      setPatterns(patternsData);
       setLoading(false);
     } catch (error) {
       console.error("Error loading insights:", error);
       setLoading(false);
     }
+  };
+
+  const handleAskQuestion = async () => {
+    if (!askQuestion.trim()) return;
+
+    try {
+      setAskLoading(true);
+      const response = await insightsApi.askAboutSpending(askQuestion);
+      setAskResponse(response);
+      setAskLoading(false);
+    } catch (error) {
+      console.error("Error asking question:", error);
+      setAskLoading(false);
+      setAskResponse({
+        question: askQuestion,
+        answer:
+          "Sorry, I couldn't process your question. Please try again later.",
+        suggestions: [
+          "How much did I spend on groceries?",
+          "What's my biggest expense category?",
+          "Am I spending more than last month?",
+        ],
+      });
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setAskQuestion(suggestion);
+    // Auto-submit after setting the question
+    setTimeout(() => {
+      handleAskQuestion();
+    }, 100);
   };
 
   const formatCurrency = (amount: number) => {
@@ -189,6 +236,202 @@ export const InsightsPage: React.FC = () => {
                 {weeklyInsights.summary.transactionCount} transactions
               </div>
             </div>
+          </div>
+        )}
+
+        {/* AI Ask About Spending Section */}
+        <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🤖</span>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Ask About Your Spending
+              </h2>
+            </div>
+            <button
+              onClick={() => setShowAskSection(!showAskSection)}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
+              {showAskSection ? "Hide" : "Show"}
+            </button>
+          </div>
+
+          {showAskSection && (
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={askQuestion}
+                  onChange={(e) => setAskQuestion(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleAskQuestion()}
+                  placeholder="Ask anything about your spending..."
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  onClick={handleAskQuestion}
+                  disabled={askLoading || !askQuestion.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {askLoading ? "..." : "Ask"}
+                </button>
+              </div>
+
+              {/* Suggestion chips */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "How much did I spend on groceries?",
+                  "What's my biggest expense?",
+                  "Am I on track this month?",
+                ].map((suggestion, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+
+              {/* AI Response */}
+              {askResponse && (
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">💬</span>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600 mb-1">
+                        "{askResponse.question}"
+                      </p>
+                      <p className="text-gray-900">{askResponse.answer}</p>
+                      {askResponse.suggestions &&
+                        askResponse.suggestions.length > 0 && (
+                          <div className="mt-3">
+                            <p className="text-xs text-gray-500 mb-2">
+                              Try asking:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {askResponse.suggestions.map((s, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() => handleSuggestionClick(s)}
+                                  className="px-2 py-1 text-xs bg-white text-blue-600 rounded border border-blue-200 hover:bg-blue-50"
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Spending Patterns Section */}
+        {patterns && patterns.patterns && (
+          <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Spending Patterns
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Day of Week Pattern */}
+              {patterns.patterns.dayOfWeek &&
+                patterns.patterns.dayOfWeek.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">
+                      By Day of Week
+                    </h3>
+                    <div className="space-y-2">
+                      {patterns.patterns.dayOfWeek.map((day, i) => {
+                        const maxAmount = Math.max(
+                          ...patterns.patterns.dayOfWeek.map((d) => d.amount),
+                        );
+                        const percentage = (day.amount / maxAmount) * 100;
+                        return (
+                          <div key={i} className="flex items-center gap-2">
+                            <span className="w-12 text-xs text-gray-600">
+                              {day.day.slice(0, 3)}
+                            </span>
+                            <div className="flex-1 bg-gray-100 rounded-full h-4">
+                              <div
+                                className="bg-blue-500 h-4 rounded-full"
+                                style={{ width: `${percentage}%` }}
+                              ></div>
+                            </div>
+                            <span className="w-20 text-xs text-gray-600 text-right">
+                              {formatCurrency(day.amount)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+              {/* Time of Month Pattern */}
+              {patterns.patterns.timeOfMonth &&
+                patterns.patterns.timeOfMonth.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">
+                      By Time of Month
+                    </h3>
+                    <div className="space-y-2">
+                      {patterns.patterns.timeOfMonth.map((period, i) => {
+                        const maxAmount = Math.max(
+                          ...patterns.patterns.timeOfMonth.map((p) => p.amount),
+                        );
+                        const percentage = (period.amount / maxAmount) * 100;
+                        return (
+                          <div key={i} className="flex items-center gap-2">
+                            <span className="w-20 text-xs text-gray-600">
+                              {period.period}
+                            </span>
+                            <div className="flex-1 bg-gray-100 rounded-full h-4">
+                              <div
+                                className="bg-purple-500 h-4 rounded-full"
+                                style={{ width: `${percentage}%` }}
+                              ></div>
+                            </div>
+                            <span className="w-20 text-xs text-gray-600 text-right">
+                              {formatCurrency(period.amount)}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+            </div>
+
+            {/* Top Merchants */}
+            {patterns.patterns.topMerchants &&
+              patterns.patterns.topMerchants.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">
+                    Top Merchants
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {patterns.patterns.topMerchants.slice(0, 8).map((m, i) => (
+                      <div
+                        key={i}
+                        className="px-3 py-2 bg-gray-50 rounded-lg text-sm"
+                      >
+                        <span className="font-medium text-gray-900">
+                          {m.merchant}
+                        </span>
+                        <span className="text-gray-500 ml-2">
+                          {formatCurrency(m.amount)}
+                        </span>
+                        <span className="text-gray-400 ml-1">({m.count}x)</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
           </div>
         )}
 
