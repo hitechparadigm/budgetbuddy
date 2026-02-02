@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
+import { Confetti } from "../components/Confetti";
 
 const API_BASE_URL =
   "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
@@ -64,6 +65,7 @@ export const GoalsPage: React.FC = () => {
   const [draggedGoal, setDraggedGoal] = useState<Goal | null>(null);
   const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
   const [reordering, setReordering] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const dragCounter = useRef(0);
   const currency = "USD";
 
@@ -147,9 +149,13 @@ export const GoalsPage: React.FC = () => {
 
       const data = await response.json();
 
-      // Show celebration for new milestones
+      // Show celebration for new milestones with confetti
       if (data.data?.newMilestones?.length > 0) {
-        alert(data.data.newMilestones[0].message);
+        setShowConfetti(true);
+        // Show message after a brief delay for confetti effect
+        setTimeout(() => {
+          alert(`🎉 ${data.data.newMilestones[0].message}`);
+        }, 500);
       }
 
       // Reload goals
@@ -307,6 +313,12 @@ export const GoalsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Confetti Animation */}
+      <Confetti
+        active={showConfetti}
+        onComplete={() => setShowConfetti(false)}
+      />
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

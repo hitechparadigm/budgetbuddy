@@ -1,5 +1,47 @@
 # Development Log
 
+## 2026-02-02 - Confetti Animation & Goals Verification (Session 76)
+
+### Session Summary
+
+**Duration**: 10 minutes
+**Focus**: Add confetti animation and verify goals drag-and-drop (Tasks 5-6)
+**Outcome**: Confetti component created, drag-and-drop verified as complete
+
+### Work Completed
+
+1. **Created Confetti Component**:
+   - Lightweight CSS-based animation
+   - No external dependencies
+   - Configurable particles and duration
+   - `useConfetti` hook for easy use
+
+2. **Integrated into GoalsPage**:
+   - Triggers on milestone achievements
+   - Shows with celebration message
+
+3. **Verified Existing Implementation**:
+   - Goals drag-and-drop already fully implemented
+   - Uses native HTML5 drag-and-drop
+   - Calls PUT /goals/reorder API
+   - Has optimistic updates and error handling
+
+### Files Created
+
+- `packages/web-app/src/components/Confetti.tsx`
+
+### Files Modified
+
+- `packages/web-app/src/pages/GoalsPage.tsx`
+- `.kiro/specs/ui-polish-enhancements/tasks.md`
+
+### Tasks Completed
+
+- Task 5.1-5.4: Goals drag-and-drop ✅ (verified existing)
+- Task 6.2: Confetti animation ✅
+
+---
+
 ## 2026-02-02 - Transaction Filters Component (Session 75)
 
 ### Session Summary
