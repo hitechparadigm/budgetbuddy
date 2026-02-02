@@ -971,13 +971,18 @@ _"As a user, I want to customize my app experience and manage my account setting
 
 ### Missing Components
 
-| Component              | Priority | Description                |
-| ---------------------- | -------- | -------------------------- |
-| `LanguageSelector.tsx` | LOW      | Multi-language support     |
-| `PrivacySettings.tsx`  | LOW      | Data sharing preferences   |
-| `TermsOfService.tsx`   | LOW      | Static terms page          |
-| `PrivacyPolicy.tsx`    | LOW      | Static privacy policy page |
-| `RateAppPrompt.tsx`    | LOW      | App store rating prompt    |
+| Component              | Priority | Description              |
+| ---------------------- | -------- | ------------------------ |
+| `LanguageSelector.tsx` | LOW      | Multi-language support   |
+| `PrivacySettings.tsx`  | LOW      | Data sharing preferences |
+| `RateAppPrompt.tsx`    | LOW      | App store rating prompt  |
+
+### Completed Components (2026-02-02)
+
+| Component                | Description                |
+| ------------------------ | -------------------------- |
+| `TermsOfServicePage.tsx` | Static terms page          |
+| `PrivacyPolicyPage.tsx`  | Static privacy policy page |
 
 ---
 

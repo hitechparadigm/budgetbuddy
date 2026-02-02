@@ -34,6 +34,8 @@ import DebtFormPage from "./pages/DebtFormPage";
 import { LearnPage } from "./pages/LearnPage";
 import { AboutPage } from "./pages/AboutPage";
 import { HelpCenterPage } from "./pages/HelpCenterPage";
+import { TermsOfServicePage } from "./pages/TermsOfServicePage";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { initMockAuth } from "./utils/mockAuth";
 
 const App: React.FC = () => {
@@ -236,6 +238,10 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
+                {/* Terms of Service Page */}
+                <Route path="/terms" element={<TermsOfServicePage />} />
+                {/* Privacy Policy Page */}
+                <Route path="/privacy" element={<PrivacyPolicyPage />} />
                 {/* Default redirect to budget (main app) */}
                 <Route path="/" element={<Navigate to="/budget" replace />} />
                 {/* Catch all - redirect to budget */}

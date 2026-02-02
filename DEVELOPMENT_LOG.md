@@ -1,5 +1,56 @@
 # Development Log
 
+## 2026-02-02 - Legal Pages Implementation (Session 95)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Implement Terms of Service and Privacy Policy pages
+**Outcome**: Two new legal pages created, AboutPage updated with navigation
+
+### Work Completed
+
+1. **TermsOfServicePage Component**:
+   - Created `packages/web-app/src/pages/TermsOfServicePage.tsx`
+   - 11 sections covering all legal requirements
+   - Acceptance of terms, service description, user accounts
+   - Privacy, payments, acceptable use, IP, disclaimers
+   - Dark mode support
+
+2. **PrivacyPolicyPage Component**:
+   - Created `packages/web-app/src/pages/PrivacyPolicyPage.tsx`
+   - 11 sections covering privacy requirements
+   - Information collection, usage, sharing
+   - Security, retention, user rights
+   - Children's privacy, international transfers
+   - Dark mode support
+
+3. **Routing Updates**:
+   - Added `/terms` route (public - no auth required)
+   - Added `/privacy` route (public - no auth required)
+
+4. **AboutPage Updates**:
+   - Terms of Service link now navigates to `/terms`
+   - Privacy Policy link now navigates to `/privacy`
+
+5. **Documentation Updates**:
+   - Updated USER_JOURNEYS.md component mapping
+   - Updated CHANGELOG.md with v1.9.74 entry
+
+### Files Created
+
+- `packages/web-app/src/pages/TermsOfServicePage.tsx`
+- `packages/web-app/src/pages/PrivacyPolicyPage.tsx`
+
+### Files Modified
+
+- `packages/web-app/src/App.tsx`
+- `packages/web-app/src/pages/AboutPage.tsx`
+- `docs/USER_JOURNEYS.md`
+- `CHANGELOG.md`
+
+---
+
 ## 2026-02-02 - Delete Account Feature & Settings Journey (Session 94)
 
 ### Session Summary
