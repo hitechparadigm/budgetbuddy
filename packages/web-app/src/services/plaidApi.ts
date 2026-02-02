@@ -274,3 +274,26 @@ export async function createSandboxItem(): Promise<{
   const data = await response.json();
   return data.data;
 }
+
+// Type aliases for backward compatibility
+export type PlaidAccount = LinkedAccount;
+
+// Export plaidApi object for components that import it as an object
+export const plaidApi = {
+  createLinkToken,
+  exchangePublicToken,
+  getLinkedAccounts,
+  getAccounts: getLinkedAccounts, // Alias for BankAccounts.tsx
+  unlinkAccount,
+  syncAllTransactions,
+  syncAll: syncAllTransactions, // Alias for BankAccounts.tsx
+  syncAccountTransactions,
+  getPendingTransactions,
+  approvePendingTransactions,
+  approveTransactions: approvePendingTransactions, // Alias for BankAccounts.tsx
+  rejectPendingTransactions,
+  rejectTransactions: rejectPendingTransactions, // Alias for BankAccounts.tsx
+  getSyncStatus,
+  createSandboxItem,
+  createSandboxAccount: createSandboxItem, // Alias for BankAccounts.tsx
+};

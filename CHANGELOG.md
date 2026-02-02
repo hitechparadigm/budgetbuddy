@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.9.51] - 2026-02-02
+
+### 📝 Documentation - USER_JOURNEYS.md Update
+
+**Updates**:
+
+- Added Admin Dashboard Journey section (8.1)
+- Updated Requirements-to-Tasks Reconciliation table
+- Marked Receipt Scanner (R44) as ✅ Complete
+- Marked Admin Dashboard (R48) as ✅ Complete
+- Marked Net Worth (R41) as ✅ Complete
+- Marked Subscription Tracking (R35) as ✅ Complete
+- Marked Debt Payoff (R37) as ✅ Complete
+- Updated Task References with completion status
+- Updated Implementation Priority Matrix
+
+**Phase 1-2 Complete**:
+
+- All Tasks 1-10 now marked complete
+- Remaining: Tasks 11-14 (Phase 3-4)
+
 ## [1.9.50] - 2026-02-02
 
 ### ✨ Feature - PeerComparisonWidget Component
