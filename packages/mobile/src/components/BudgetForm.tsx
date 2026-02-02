@@ -3,7 +3,7 @@
  * Form for creating and editing budgets
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,12 +12,13 @@ import {
   Pressable,
   Alert,
   Modal,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import { Button, Input, Card } from './ui';
-import { useTheme } from '../hooks/useTheme';
+  Switch,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { Button, Input, Card } from "./ui";
+import { useTheme } from "../hooks/useTheme";
 import {
   Budget,
   CreateBudgetRequest,
@@ -28,8 +29,8 @@ import {
   BUDGET_CATEGORIES,
   FREQUENCY_LABELS,
   BUDGET_TYPE_CONFIG,
-} from '../types/budget';
-import RecurringBudgetConfigComponent from './RecurringBudgetConfig';
+} from "../types/budget";
+import RecurringBudgetConfigComponent from "./RecurringBudgetConfig";
 
 interface BudgetFormProps {
   visible: boolean;
@@ -49,18 +50,23 @@ interface FormData {
   type: BudgetType;
   description: string;
   recurringConfig: RecurringBudgetConfig;
+  // Rollover fields (Requirement 40)
+  rolloverEnabled: boolean;
+  rolloverCap: string;
 }
 
 const initialFormData: FormData = {
-  name: '',
-  amount: '',
-  category: '',
-  frequency: 'monthly',
-  startDate: new Date().toISOString().split('T')[0],
-  endDate: '',
-  type: 'expense',
-  description: '',
+  name: "",
+  amount: "",
+  category: "",
+  frequency: "monthly",
+  startDate: new Date().toISOString().split("T")[0],
+  endDate: "",
+  type: "expense",
+  description: "",
   recurringConfig: {},
+  rolloverEnabled: false,
+  rolloverCap: "",
 };
 
 export default function BudgetForm({
@@ -86,11 +92,13 @@ export default function BudgetForm({
         amount: budget.amount.toString(),
         category: budget.category,
         frequency: budget.frequency,
-        startDate: budget.startDate.split('T')[0],
-        endDate: budget.endDate?.split('T')[0] || '',
+        startDate: budget.startDate.split("T")[0],
+        endDate: budget.endDate?.split("T")[0] || "",
         type: budget.type,
-        description: budget.description || '',
+        description: budget.description || "",
         recurringConfig: budget.recurringConfig || {},
+        rolloverEnabled: budget.rolloverEnabled || false,
+        rolloverCap: budget.rolloverCap?.toString() || "",
       });
     } else {
       setFormData(initialFormData);
@@ -102,24 +110,28 @@ export default function BudgetForm({
     const newErrors: Partial<FormData> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Budget name is required';
+      newErrors.name = "Budget name is required";
     }
 
     const amount = parseFloat(formData.amount);
     if (!formData.amount || isNaN(amount) || amount <= 0) {
-      newErrors.amount = 'Valid amount is required';
+      newErrors.amount = "Valid amount is required";
     }
 
     if (!formData.category) {
-      newErrors.category = 'Category is required';
+      newErrors.category = "Category is required";
     }
 
     if (!formData.startDate) {
-      newErrors.startDate = 'Start date is required';
+      newErrors.startDate = "Start date is required";
     }
 
-    if (formData.endDate && formData.startDate && formData.endDate < formData.startDate) {
-      newErrors.endDate = 'End date must be after start date';
+    if (
+      formData.endDate &&
+      formData.startDate &&
+      formData.endDate < formData.startDate
+    ) {
+      newErrors.endDate = "End date must be after start date";
     }
 
     setErrors(newErrors);
@@ -141,7 +153,15 @@ export default function BudgetForm({
       endDate: formData.endDate || undefined,
       type: formData.type,
       description: formData.description.trim() || undefined,
-      recurringConfig: formData.frequency !== 'one-time' ? formData.recurringConfig : undefined,
+      recurringConfig:
+        formData.frequency !== "one-time"
+          ? formData.recurringConfig
+          : undefined,
+      // Rollover fields (Requirement 40)
+      rolloverEnabled: formData.rolloverEnabled,
+      rolloverCap: formData.rolloverCap
+        ? parseFloat(formData.rolloverCap)
+        : undefined,
     };
 
     if (isEditing) {
@@ -160,10 +180,10 @@ export default function BudgetForm({
   };
 
   const updateFormData = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
@@ -177,17 +197,19 @@ export default function BudgetForm({
             formData.type === type && dynamicStyles.typeOptionSelected,
           ]}
           onPress={() => {
-            updateFormData('type', type as BudgetType);
+            updateFormData("type", type as BudgetType);
             // Reset category when type changes
-            updateFormData('category', '');
+            updateFormData("category", "");
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           }}
         >
           <Text style={dynamicStyles.typeIcon}>{config.icon}</Text>
-          <Text style={[
-            dynamicStyles.typeLabel,
-            formData.type === type && dynamicStyles.typeLabelSelected,
-          ]}>
+          <Text
+            style={[
+              dynamicStyles.typeLabel,
+              formData.type === type && dynamicStyles.typeLabelSelected,
+            ]}
+          >
             {config.label}
           </Text>
         </Pressable>
@@ -220,22 +242,30 @@ export default function BudgetForm({
                   key={category}
                   style={[
                     dynamicStyles.categoryOption,
-                    formData.category === category && dynamicStyles.categoryOptionSelected,
+                    formData.category === category &&
+                      dynamicStyles.categoryOptionSelected,
                   ]}
                   onPress={() => {
-                    updateFormData('category', category);
+                    updateFormData("category", category);
                     setShowCategoryPicker(false);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
                 >
-                  <Text style={[
-                    dynamicStyles.categoryText,
-                    formData.category === category && dynamicStyles.categoryTextSelected,
-                  ]}>
+                  <Text
+                    style={[
+                      dynamicStyles.categoryText,
+                      formData.category === category &&
+                        dynamicStyles.categoryTextSelected,
+                    ]}
+                  >
                     {category}
                   </Text>
                   {formData.category === category && (
-                    <Ionicons name="checkmark" size={20} color={colors.primary} />
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.primary}
+                    />
                   )}
                 </Pressable>
               ))}
@@ -268,18 +298,22 @@ export default function BudgetForm({
                 key={frequency}
                 style={[
                   dynamicStyles.categoryOption,
-                  formData.frequency === frequency && dynamicStyles.categoryOptionSelected,
+                  formData.frequency === frequency &&
+                    dynamicStyles.categoryOptionSelected,
                 ]}
                 onPress={() => {
-                  updateFormData('frequency', frequency as BudgetFrequency);
+                  updateFormData("frequency", frequency as BudgetFrequency);
                   setShowFrequencyPicker(false);
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 }}
               >
-                <Text style={[
-                  dynamicStyles.categoryText,
-                  formData.frequency === frequency && dynamicStyles.categoryTextSelected,
-                ]}>
+                <Text
+                  style={[
+                    dynamicStyles.categoryText,
+                    formData.frequency === frequency &&
+                      dynamicStyles.categoryTextSelected,
+                  ]}
+                >
                   {label}
                 </Text>
                 {formData.frequency === frequency && (
@@ -299,9 +333,9 @@ export default function BudgetForm({
       backgroundColor: colors.background,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       paddingHorizontal: 16,
       paddingVertical: 12,
       borderBottomWidth: 1,
@@ -309,7 +343,7 @@ export default function BudgetForm({
     },
     headerTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     closeButton: {
@@ -324,24 +358,24 @@ export default function BudgetForm({
     },
     sectionTitle: {
       fontSize: 16,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
       marginBottom: 12,
     },
     typeSelector: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
+      flexDirection: "row",
+      justifyContent: "space-around",
       marginBottom: 16,
     },
     typeOption: {
-      alignItems: 'center',
+      alignItems: "center",
       padding: 16,
       borderRadius: 12,
       backgroundColor: colors.surface,
       minWidth: 80,
     },
     typeOptionSelected: {
-      backgroundColor: colors.primary + '20',
+      backgroundColor: colors.primary + "20",
       borderWidth: 2,
       borderColor: colors.primary,
     },
@@ -355,12 +389,12 @@ export default function BudgetForm({
     },
     typeLabelSelected: {
       color: colors.primary,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     pickerButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       padding: 16,
       backgroundColor: colors.surface,
       borderRadius: 8,
@@ -378,55 +412,55 @@ export default function BudgetForm({
       color: colors.textSecondary,
     },
     dateRow: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 12,
     },
     dateInput: {
       flex: 1,
     },
     buttonContainer: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 12,
       paddingHorizontal: 16,
       paddingBottom: 16,
     },
     modalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-end',
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "flex-end",
     },
     modalContent: {
       backgroundColor: colors.background,
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
-      maxHeight: '70%',
+      maxHeight: "70%",
     },
     modalHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       padding: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
     modalTitle: {
       fontSize: 18,
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
     categoryList: {
       maxHeight: 400,
     },
     categoryOption: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       padding: 16,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
     categoryOptionSelected: {
-      backgroundColor: colors.primary + '10',
+      backgroundColor: colors.primary + "10",
     },
     categoryText: {
       fontSize: 16,
@@ -434,7 +468,63 @@ export default function BudgetForm({
     },
     categoryTextSelected: {
       color: colors.primary,
-      fontWeight: '600',
+      fontWeight: "600",
+    },
+    // Rollover styles (Requirement 40)
+    rolloverToggleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: 16,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    rolloverToggleInfo: {
+      flex: 1,
+      marginRight: 12,
+    },
+    rolloverToggleLabel: {
+      fontSize: 16,
+      fontWeight: "500",
+      color: colors.text,
+    },
+    rolloverToggleDescription: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    rolloverCapContainer: {
+      marginTop: 12,
+    },
+    rolloverCapHint: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    currentRolloverContainer: {
+      marginTop: 12,
+      padding: 12,
+      backgroundColor: colors.primary + "15",
+      borderRadius: 8,
+    },
+    currentRolloverLabel: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: colors.primary,
+    },
+    currentRolloverAmount: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.primary,
+      marginTop: 4,
+    },
+    currentRolloverHint: {
+      fontSize: 12,
+      color: colors.primary,
+      marginTop: 4,
+      opacity: 0.8,
     },
   });
 
@@ -448,7 +538,7 @@ export default function BudgetForm({
       <SafeAreaView style={dynamicStyles.container}>
         <View style={dynamicStyles.header}>
           <Text style={dynamicStyles.headerTitle}>
-            {isEditing ? 'Edit Budget' : 'Create Budget'}
+            {isEditing ? "Edit Budget" : "Create Budget"}
           </Text>
           <Pressable style={dynamicStyles.closeButton} onPress={handleClose}>
             <Ionicons name="close" size={24} color={colors.text} />
@@ -465,7 +555,7 @@ export default function BudgetForm({
             <Input
               label="Budget Name"
               value={formData.name}
-              onChangeText={(value) => updateFormData('name', value)}
+              onChangeText={(value) => updateFormData("name", value)}
               placeholder="e.g., Monthly Groceries"
               error={errors.name}
             />
@@ -475,7 +565,7 @@ export default function BudgetForm({
             <Input
               label="Amount"
               value={formData.amount}
-              onChangeText={(value) => updateFormData('amount', value)}
+              onChangeText={(value) => updateFormData("amount", value)}
               placeholder="0.00"
               keyboardType="numeric"
               error={errors.amount}
@@ -491,13 +581,19 @@ export default function BudgetForm({
               ]}
               onPress={() => setShowCategoryPicker(true)}
             >
-              <Text style={[
-                dynamicStyles.pickerText,
-                !formData.category && dynamicStyles.pickerPlaceholder,
-              ]}>
-                {formData.category || 'Select category'}
+              <Text
+                style={[
+                  dynamicStyles.pickerText,
+                  !formData.category && dynamicStyles.pickerPlaceholder,
+                ]}
+              >
+                {formData.category || "Select category"}
               </Text>
-              <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+              <Ionicons
+                name="chevron-down"
+                size={20}
+                color={colors.textSecondary}
+              />
             </Pressable>
             {errors.category && (
               <Text style={{ color: colors.error, fontSize: 12, marginTop: 4 }}>
@@ -515,16 +611,22 @@ export default function BudgetForm({
               <Text style={dynamicStyles.pickerText}>
                 {FREQUENCY_LABELS[formData.frequency]}
               </Text>
-              <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+              <Ionicons
+                name="chevron-down"
+                size={20}
+                color={colors.textSecondary}
+              />
             </Pressable>
           </View>
 
           {/* Recurring Budget Configuration */}
-          {formData.frequency !== 'one-time' && (
+          {formData.frequency !== "one-time" && (
             <RecurringBudgetConfigComponent
               frequency={formData.frequency}
               config={formData.recurringConfig}
-              onConfigChange={(config) => updateFormData('recurringConfig', config)}
+              onConfigChange={(config) =>
+                updateFormData("recurringConfig", config)
+              }
             />
           )}
 
@@ -534,25 +636,84 @@ export default function BudgetForm({
               <Input
                 label="Start Date"
                 value={formData.startDate}
-                onChangeText={(value) => updateFormData('startDate', value)}
+                onChangeText={(value) => updateFormData("startDate", value)}
                 placeholder="YYYY-MM-DD"
                 error={errors.startDate}
               />
               <Input
                 label="End Date (Optional)"
                 value={formData.endDate}
-                onChangeText={(value) => updateFormData('endDate', value)}
+                onChangeText={(value) => updateFormData("endDate", value)}
                 placeholder="YYYY-MM-DD"
                 error={errors.endDate}
               />
             </View>
           </View>
 
+          {/* Rollover Settings (Requirement 40) */}
+          <View style={dynamicStyles.section}>
+            <Text style={dynamicStyles.sectionTitle}>Rollover Settings</Text>
+            <View style={dynamicStyles.rolloverToggleRow}>
+              <View style={dynamicStyles.rolloverToggleInfo}>
+                <Text style={dynamicStyles.rolloverToggleLabel}>
+                  Enable Rollover
+                </Text>
+                <Text style={dynamicStyles.rolloverToggleDescription}>
+                  Unused budget carries over to next month
+                </Text>
+              </View>
+              <Switch
+                value={formData.rolloverEnabled}
+                onValueChange={(value) => {
+                  setFormData((prev) => ({ ...prev, rolloverEnabled: value }));
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={formData.rolloverEnabled ? "#fff" : "#f4f3f4"}
+              />
+            </View>
+
+            {/* Rollover Cap (only shown when rollover is enabled) */}
+            {formData.rolloverEnabled && (
+              <View style={dynamicStyles.rolloverCapContainer}>
+                <Input
+                  label="Rollover Cap (Optional)"
+                  value={formData.rolloverCap}
+                  onChangeText={(value) =>
+                    setFormData((prev) => ({ ...prev, rolloverCap: value }))
+                  }
+                  placeholder="No limit"
+                  keyboardType="numeric"
+                />
+                <Text style={dynamicStyles.rolloverCapHint}>
+                  Maximum amount that can roll over. Leave empty for no limit.
+                </Text>
+              </View>
+            )}
+
+            {/* Display current rollover amount if editing */}
+            {isEditing &&
+              budget?.rolloverAmount !== undefined &&
+              budget.rolloverAmount > 0 && (
+                <View style={dynamicStyles.currentRolloverContainer}>
+                  <Text style={dynamicStyles.currentRolloverLabel}>
+                    Current Rollover:
+                  </Text>
+                  <Text style={dynamicStyles.currentRolloverAmount}>
+                    ${budget.rolloverAmount.toFixed(2)}
+                  </Text>
+                  <Text style={dynamicStyles.currentRolloverHint}>
+                    Available = Planned + Rollover - Spent
+                  </Text>
+                </View>
+              )}
+          </View>
+
           <View style={dynamicStyles.section}>
             <Input
               label="Description (Optional)"
               value={formData.description}
-              onChangeText={(value) => updateFormData('description', value)}
+              onChangeText={(value) => updateFormData("description", value)}
               placeholder="Additional notes about this budget"
               multiline
               numberOfLines={3}
@@ -568,7 +729,7 @@ export default function BudgetForm({
             style={{ flex: 1 }}
           />
           <Button
-            title={isEditing ? 'Update Budget' : 'Create Budget'}
+            title={isEditing ? "Update Budget" : "Create Budget"}
             onPress={handleSubmit}
             loading={isLoading}
             style={{ flex: 1 }}
