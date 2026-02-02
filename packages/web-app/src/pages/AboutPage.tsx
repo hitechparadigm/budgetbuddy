@@ -238,7 +238,11 @@ export const AboutPage: React.FC = () => {
 
             <a
               href="#faq"
-              className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/help");
+              }}
+              className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             >
               <div className="flex items-center space-x-3">
                 <svg

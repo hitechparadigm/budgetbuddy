@@ -957,6 +957,7 @@ _"As a user, I want to customize my app experience and manage my account setting
 | Theme Toggle          | `ThemeContext.tsx`         | N/A (local)                            | ✅ Complete |
 | Delete Account        | `DeleteAccountModal.tsx`   | `DELETE /auth/account`                 | ✅ Complete |
 | About Page            | `AboutPage.tsx`            | N/A (static)                           | ✅ Complete |
+| Help Center           | `HelpCenterPage.tsx`       | N/A (static)                           | ✅ Complete |
 
 ### UI/UX Requirements
 
@@ -974,7 +975,6 @@ _"As a user, I want to customize my app experience and manage my account setting
 | ---------------------- | -------- | -------------------------- |
 | `LanguageSelector.tsx` | LOW      | Multi-language support     |
 | `PrivacySettings.tsx`  | LOW      | Data sharing preferences   |
-| `HelpCenter.tsx`       | LOW      | FAQ and support links      |
 | `TermsOfService.tsx`   | LOW      | Static terms page          |
 | `PrivacyPolicy.tsx`    | LOW      | Static privacy policy page |
 | `RateAppPrompt.tsx`    | LOW      | App store rating prompt    |

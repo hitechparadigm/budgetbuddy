@@ -2,12 +2,13 @@
 
 ## [1.9.73] - 2026-02-02
 
-### ✨ Delete Account Feature & About Page
+### ✨ Settings Journey Components
 
 **New Components**:
 
 - `DeleteAccountModal.tsx` - Multi-step account deletion wizard
 - `AboutPage.tsx` - App information, version, and legal links
+- `HelpCenterPage.tsx` - FAQ, search, and support options
 
 **DeleteAccountModal Features**:
 
@@ -25,6 +26,14 @@
 - Rate app call-to-action
 - Dark mode support
 
+**HelpCenterPage Features**:
+
+- Searchable FAQ with 10 common questions
+- Category filter tabs (Getting Started, Security, etc.)
+- Expandable FAQ accordion
+- Contact support section
+- Quick links to Settings, Learn, Tips, Insights
+
 **Settings Page Updates**:
 
 - Added "Danger Zone" section with delete account button
@@ -33,12 +42,13 @@
 
 **Routing**:
 
-- Added `/about` route to App.tsx
+- Added `/about` route
+- Added `/help` route
 
 **Documentation**:
 
 - Updated USER_JOURNEYS.md component mapping
-- Marked DeleteAccountModal and AboutPage as complete
+- Marked DeleteAccountModal, AboutPage, HelpCenterPage as complete
 
 ## [1.9.72] - 2026-02-02
 
