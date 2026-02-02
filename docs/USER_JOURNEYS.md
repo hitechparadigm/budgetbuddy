@@ -1115,6 +1115,7 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 | Component                      | Description                                    | Status  |
 | ------------------------------ | ---------------------------------------------- | ------- |
 | `CalendarView.tsx`             | Calendar grid showing transactions by day      | ✅ Done |
+| CalendarView Integration       | Integrated into BudgetPage as new tab          | ✅ Done |
 | `LearnPage.tsx`                | Educational content with courses and badges    | ✅ Done |
 | `learnApi.ts`                  | Learn API service for courses/lessons/quizzes  | ✅ Done |
 | `TransactionFilters.tsx`       | Search, category, date, amount filters         | ✅ Done |
