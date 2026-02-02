@@ -7,9 +7,14 @@
  * - Right sidebar with transactions
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { QuickActionsFAB } from "../components/QuickActionsFAB";
+import {
+  TransactionFilters,
+  useTransactionFilters,
+  type TransactionFiltersState,
+} from "../components/TransactionFilters";
 import {
   getCurrentMonthString,
   getTodayString,
@@ -98,7 +103,11 @@ export const BudgetPage: React.FC = () => {
     "income" | "savings" | "expense" | null
   >(null);
   const [showResetModal, setShowResetModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+
+  // Transaction filters state (replaces basic searchQuery)
+  const { filters, setFilters, hasActiveFilters, clearFilters } =
+    useTransactionFilters();
+
   const [budgetItemForm, setBudgetItemForm] = useState({
     name: "",
     icon: "💰",
@@ -541,6 +550,93 @@ export const BudgetPage: React.FC = () => {
       remaining,
     };
   };
+
+  // Get all categories for the filter dropdown
+  const allCategories = useMemo(() => {
+    if (!budget || !Array.isArray(budget.groups)) return [];
+
+    return budget.groups.flatMap((group) =>
+      group.categories.map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon,
+        type: group.type,
+      })),
+    );
+  }, [budget]);
+
+  // Get all transactions with category and group info for filtering
+  const allTransactions = useMemo(() => {
+    if (!budget || !Array.isArray(budget.groups)) return [];
+
+    return budget.groups.flatMap((group) =>
+      group.categories.flatMap((cat) =>
+        cat.transactions.map((txn) => ({
+          ...txn,
+          categoryId: cat.id,
+          categoryName: cat.name,
+          categoryIcon: cat.icon,
+          groupType: group.type,
+          groupName: group.name,
+        })),
+      ),
+    );
+  }, [budget]);
+
+  // Apply filters to transactions
+  const filteredTransactions = useMemo(() => {
+    if (!allTransactions.length) return [];
+
+    return allTransactions.filter((txn) => {
+      // Search filter
+      if (filters.search) {
+        const query = filters.search.toLowerCase();
+        const matchesSearch =
+          txn.description.toLowerCase().includes(query) ||
+          txn.categoryName.toLowerCase().includes(query) ||
+          txn.groupName.toLowerCase().includes(query) ||
+          txn.amount.toString().includes(query);
+        if (!matchesSearch) return false;
+      }
+
+      // Category filter
+      if (filters.category && txn.categoryId !== filters.category) {
+        return false;
+      }
+
+      // Date range filter
+      if (filters.dateFrom && txn.date < filters.dateFrom) {
+        return false;
+      }
+      if (filters.dateTo && txn.date > filters.dateTo) {
+        return false;
+      }
+
+      // Amount range filter
+      if (filters.amountMin !== null && txn.amount < filters.amountMin) {
+        return false;
+      }
+      if (filters.amountMax !== null && txn.amount > filters.amountMax) {
+        return false;
+      }
+
+      // Type filter
+      if (filters.type) {
+        if (filters.type === "income" && txn.groupType !== "income") {
+          return false;
+        }
+        if (
+          filters.type === "expense" &&
+          txn.groupType !== "expense" &&
+          txn.groupType !== "savings"
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [allTransactions, filters]);
 
   const openTransactionModal = (type: "income" | "expense") => {
     setTransactionType(type);
@@ -2439,164 +2535,132 @@ export const BudgetPage: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Search */}
+                {/* Transaction Filters */}
                 <div className="mb-6">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search transactions..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <svg
-                      className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-                      >
-                        <svg
-                          className="h-5 w-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
+                  <TransactionFilters
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    categories={allCategories}
+                    compact={true}
+                  />
                 </div>
 
-                {/* Recent Transactions */}
+                {/* Filtered Transactions */}
                 <div className="space-y-4">
-                  <div className="text-sm text-gray-500 mb-4">
-                    {searchQuery
-                      ? `Search results for "${searchQuery}"`
-                      : new Date().toLocaleDateString("en-US", {
-                          month: "long",
-                        })}
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <span>
+                      {hasActiveFilters
+                        ? `${filteredTransactions.length} result${filteredTransactions.length !== 1 ? "s" : ""}`
+                        : new Date().toLocaleDateString("en-US", {
+                            month: "long",
+                          })}
+                    </span>
+                    {hasActiveFilters && (
+                      <span className="text-xs text-gray-400">
+                        of {allTransactions.length} total
+                      </span>
+                    )}
                   </div>
 
-                  {/* Real transactions from budget data */}
+                  {/* Transaction list using filtered data */}
                   <div className="space-y-3">
-                    {budget &&
-                      budget.groups.flatMap((group) =>
-                        group.categories.flatMap((cat) =>
-                          cat.transactions
-                            .filter((transaction) => {
-                              if (!searchQuery) return true;
-                              const query = searchQuery.toLowerCase();
-                              return (
-                                transaction.description
-                                  .toLowerCase()
-                                  .includes(query) ||
-                                cat.name.toLowerCase().includes(query) ||
-                                group.name.toLowerCase().includes(query) ||
-                                transaction.amount.toString().includes(query)
-                              );
-                            })
-                            .map((transaction) => {
-                              const isIncome = group.type === "income";
-                              return (
-                                <div
-                                  key={transaction.id}
-                                  className="group/transaction flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
-                                >
-                                  <div
-                                    className={`w-8 h-8 ${
-                                      isIncome ? "bg-green-100" : "bg-red-100"
-                                    } rounded-full flex items-center justify-center`}
-                                  >
-                                    <span
-                                      className={`${
-                                        isIncome
-                                          ? "text-green-600"
-                                          : "text-red-600"
-                                      } text-xs`}
-                                    >
-                                      $
-                                    </span>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-medium text-gray-900 truncate">
-                                      {transaction.description}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      {cat.name}
-                                    </div>
-                                  </div>
-                                  <div
-                                    className={`text-sm font-medium ${
-                                      isIncome
-                                        ? "text-green-600"
-                                        : "text-red-600"
-                                    }`}
-                                  >
-                                    {isIncome ? "+" : "-"}
-                                    {formatCurrency(
-                                      transaction.amount,
-                                      currency,
-                                    )}
-                                  </div>
-                                  <button
-                                    onClick={() =>
-                                      handleDeleteTransaction(
-                                        transaction.id,
-                                        cat.id,
-                                      )
-                                    }
-                                    className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors flex-shrink-0"
-                                    title="Delete transaction"
-                                  >
-                                    <svg
-                                      className="w-4 h-4"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                      />
-                                    </svg>
-                                  </button>
-                                </div>
-                              );
-                            }),
-                        ),
-                      )}
-
-                    {budget &&
-                      budget.groups.every((g) =>
-                        g.categories.every((c) => c.transactions.length === 0),
-                      ) && (
-                        <div className="text-center py-8 text-gray-400">
-                          <p className="text-sm">No transactions yet</p>
-                          <p className="text-xs mt-1">
-                            Use the + button to add your first transaction
-                          </p>
+                    {filteredTransactions.map((txn) => {
+                      const isIncome = txn.groupType === "income";
+                      return (
+                        <div
+                          key={txn.id}
+                          className="group/transaction flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
+                        >
+                          <div
+                            className={`w-8 h-8 ${
+                              isIncome ? "bg-green-100" : "bg-red-100"
+                            } rounded-full flex items-center justify-center`}
+                          >
+                            <span
+                              className={`${
+                                isIncome ? "text-green-600" : "text-red-600"
+                              } text-xs`}
+                            >
+                              {txn.categoryIcon || "$"}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-gray-900 truncate">
+                              {txn.description}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {txn.categoryName}
+                              {txn.date && (
+                                <span className="ml-2 text-gray-400">
+                                  {new Date(txn.date).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      month: "short",
+                                      day: "numeric",
+                                    },
+                                  )}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div
+                            className={`text-sm font-medium ${
+                              isIncome ? "text-green-600" : "text-red-600"
+                            }`}
+                          >
+                            {isIncome ? "+" : "-"}
+                            {formatCurrency(txn.amount, currency)}
+                          </div>
+                          <button
+                            onClick={() =>
+                              handleDeleteTransaction(txn.id, txn.categoryId)
+                            }
+                            className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors flex-shrink-0"
+                            title="Delete transaction"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </button>
                         </div>
-                      )}
+                      );
+                    })}
+
+                    {/* Empty state */}
+                    {filteredTransactions.length === 0 && (
+                      <div className="text-center py-8 text-gray-400">
+                        {hasActiveFilters ? (
+                          <>
+                            <p className="text-sm">
+                              No transactions match your filters
+                            </p>
+                            <button
+                              onClick={clearFilters}
+                              className="text-xs mt-2 text-blue-600 hover:text-blue-700"
+                            >
+                              Clear all filters
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm">No transactions yet</p>
+                            <p className="text-xs mt-1">
+                              Use the + button to add your first transaction
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 

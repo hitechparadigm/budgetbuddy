@@ -1,5 +1,38 @@
 # Development Log
 
+## 2026-02-02 - Transaction Filters Integration (Session 77)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Integrate TransactionFilters into BudgetPage (Task 4.4)
+**Outcome**: Full filtering capabilities now available in budget transactions view
+
+### Work Completed
+
+1. **Integrated TransactionFilters into BudgetPage**:
+   - Replaced basic search with full TransactionFilters component
+   - Added `allCategories` memo for filter dropdown
+   - Added `allTransactions` memo for efficient data access
+   - Added `filteredTransactions` memo with all filter logic
+
+2. **Enhanced Transaction Display**:
+   - Shows category icon in transaction list
+   - Shows transaction date
+   - Displays filtered count vs total count
+   - Clear filters button when no results match
+
+### Files Modified
+
+- `packages/web-app/src/pages/BudgetPage.tsx`
+- `.kiro/specs/ui-polish-enhancements/tasks.md`
+
+### Tasks Completed
+
+- Task 4.4: Integrate filters into TransactionList ✅
+
+---
+
 ## 2026-02-02 - Confetti Animation & Goals Verification (Session 76)
 
 ### Session Summary

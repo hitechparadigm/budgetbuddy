@@ -104,9 +104,9 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - **Validates: Requirement 5.8**
 
 - [ ] 4.4 Integrate filters into TransactionList
-  - [ ] 4.4.1 Update TransactionList to accept filters
-  - [ ] 4.4.2 Call API with filter parameters
-  - [ ] 4.4.3 Show active filter indicators
+  - [x] 4.4.1 Update TransactionList to accept filters
+  - [x] 4.4.2 Call API with filter parameters
+  - [x] 4.4.3 Show active filter indicators
   - **Validates: Requirement 5.1-5.8**
 
 - [ ] 4.5 Add search to mobile
