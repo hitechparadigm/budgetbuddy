@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.9.56] - 2026-02-02
+
+### ✨ Feature - Transaction Filters Integration
+
+**Integration Complete**:
+
+- Integrated TransactionFilters component into BudgetPage
+- Replaced basic search with full filtering capabilities
+
+**Features**:
+
+- Search by description, category, or amount
+- Filter by category (dropdown with all budget categories)
+- Filter by date range (from/to)
+- Filter by amount range (min/max)
+- Filter by transaction type (income/expense)
+- Active filter count and pills display
+- Clear all filters button
+- Shows filtered count vs total count
+
+**Technical**:
+
+- Added `allCategories` memo for filter dropdown
+- Added `allTransactions` memo for efficient filtering
+- Added `filteredTransactions` memo with all filter logic
+- Uses `useTransactionFilters` hook for state management
+
+**Tasks Completed**:
+
+- Task 4.4: Integrate filters into TransactionList ✅
+
 ## [1.9.55] - 2026-02-02
 
 ### ✨ Feature - Confetti Animation for Goal Milestones
