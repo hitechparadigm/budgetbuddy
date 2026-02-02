@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.9.64] - 2026-02-02
+
+### ✨ Feature - Mobile Quick Actions FAB Enhancement
+
+**Enhanced Components**:
+
+- `packages/mobile/src/components/ui/FloatingActionButton.tsx` - Added accessibility, safe area support
+- `packages/mobile/src/hooks/useHaptics.ts` - New haptic feedback hook
+- `packages/mobile/src/components/QuickActionsFAB.tsx` - Alternative FAB implementation
+
+**Improvements**:
+
+- Added accessibility labels and roles to FAB and action buttons
+- Added `accessibilityState` for expanded state
+- Added screen reader announcements on state change
+- Added safe area insets support for bottom positioning
+- Added `visible` prop for conditional rendering
+- Added `pointerEvents` control for action buttons
+- Light haptic on FAB tap, medium haptic on action selection
+
+**New Hook - useHaptics**:
+
+- `light()` - Light impact for subtle feedback
+- `medium()` - Medium impact for selections
+- `heavy()` - Heavy impact for significant actions
+- `success()` / `error()` / `warning()` - Notification feedback
+- `selection()` - Selection changed feedback
+
 ## [1.9.63] - 2026-02-02
 
 ### 📋 Spec - Mobile UI Polish
