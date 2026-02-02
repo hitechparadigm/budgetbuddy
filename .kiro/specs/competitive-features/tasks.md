@@ -81,7 +81,7 @@
   - Calendar view of upcoming bills
   - **Validates: Requirement 36.9**
 
-- [ ] 2.8 Unit Tests: Bill reminder timing
+- [x] 2.8 Unit Tests: Bill reminder timing
   - Test notification scheduling logic
   - Test recurring bill date calculations
   - **Validates: Requirement 36.5, 36.8**
