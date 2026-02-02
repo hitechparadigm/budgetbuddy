@@ -120,7 +120,7 @@
   - Link to savings category
   - **Validates: Requirement 38.1**
 
-- [ ] 3.7 Frontend Web: Implement drag-and-drop reordering
+- [x] 3.7 Frontend Web: Implement drag-and-drop reordering
   - Priority ordering of goals
   - **Validates: Requirement 38.7**
 
