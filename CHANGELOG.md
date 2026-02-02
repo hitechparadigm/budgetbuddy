@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.9.66] - 2026-02-02
+
+### ✨ Feature - Mobile Search and Filters
+
+**New Components**:
+
+- `packages/mobile/src/components/SearchBar.tsx` - Debounced search input
+- `packages/mobile/src/components/FilterSheet.tsx` - Filter bottom sheet
+
+**SearchBar Features**:
+
+- Debounced search (300ms default)
+- Clear button
+- Search icon
+- Auto-focus option
+- Full accessibility support
+
+**FilterSheet Features**:
+
+- Transaction type toggle (All/Income/Expense)
+- Category multi-select chips (grouped by type)
+- Date range picker with DateTimePicker
+- Active filter count badge
+- Clear all button
+- Full accessibility support
+
+**Filter Schema**:
+
+```typescript
+interface TransactionFilters {
+  search: string;
+  categoryIds: string[];
+  dateRange: { start: Date | null; end: Date | null };
+  amountRange: { min: number | null; max: number | null };
+  type: "all" | "income" | "expense";
+}
+```
+
 ## [1.9.65] - 2026-02-02
 
 ### ✨ Feature - Mobile Transaction Templates
