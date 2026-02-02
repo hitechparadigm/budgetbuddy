@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.9.84] - 2026-02-02
+
+### 🤖 AI Features
+
+- **AI Prompt Engineering**: Implemented prompt builder for AWS Bedrock (Claude 3.5 Sonnet)
+  - `buildPatternDetectionPrompt()` - Construct pattern detection prompt with transaction data
+  - `buildBudgetPlanningPrompt()` - Construct budget planning prompt with bills and spending history
+  - `validatePatternDetectionPrompt()` - Validate prompt completeness
+  - `validateBudgetPlanningPrompt()` - Validate budget prompt completeness
+  - `extractJsonFromResponse()` - Extract JSON from AI responses (handles markdown, extra text)
+  - 30 unit tests covering prompt construction, validation, and JSON extraction
+  - Includes JSON schema, example outputs, and detailed instructions for AI
+  - Handles edge cases: missing merchant names, negative amounts, empty data, markdown responses
+
 ## [1.9.83] - 2026-02-02
 
 ### 🤖 AI Features
