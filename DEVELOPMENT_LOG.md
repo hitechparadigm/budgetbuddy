@@ -1,5 +1,53 @@
 # Development Log
 
+## 2026-02-02 - Mobile Goal Reordering (Session 89)
+
+### Session Summary
+
+**Duration**: 25 minutes
+**Focus**: Implement Goal Drag-and-Drop Reordering (Task 4)
+**Outcome**: Complete drag-and-drop goal reordering
+
+### Work Completed
+
+1. **Created DraggableGoalList Component**:
+   - `packages/mobile/src/components/DraggableGoalList.tsx`
+   - Long-press gesture to initiate drag
+   - Pan gesture for drag movement
+   - Visual feedback (scale, elevation)
+   - Drag handle icon
+   - Smooth animations with reanimated
+
+2. **Created useGoalReorder Hook**:
+   - `packages/mobile/src/hooks/useGoalReorder.ts`
+   - API call to PUT /goals/reorder
+   - Optimistic updates
+   - Error handling with rollback
+
+3. **Updated GoalsScreen**:
+   - Added "Reorder" button in header
+   - Toggle between normal and reorder mode
+   - Integrated DraggableGoalList
+
+4. **Haptic Feedback**:
+   - Medium haptic on drag start
+   - Light haptic when crossing items
+   - Success haptic on drop
+
+### Files Created
+
+- `packages/mobile/src/components/DraggableGoalList.tsx`
+- `packages/mobile/src/hooks/useGoalReorder.ts`
+
+### Files Modified
+
+- `packages/mobile/src/screens/GoalsScreen.tsx`
+- `.kiro/specs/mobile-ui-polish/tasks.md`
+- `CHANGELOG.md`
+- `DEVELOPMENT_LOG.md`
+
+---
+
 ## 2026-02-02 - Mobile Search and Filters Integration (Session 88)
 
 ### Session Summary

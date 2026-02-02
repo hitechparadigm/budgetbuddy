@@ -1,10 +1,41 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-02 (Mobile Search and Filters Integration)
+**Last Updated**: 2026-02-02 (Mobile Goal Reordering)
 **Current Phase**: Mobile UI Polish
-**Overall Progress**: 95% Core + 90% Competitive Features + 100% UI Polish (Web) + 60% UI Polish (Mobile)
+**Overall Progress**: 95% Core + 90% Competitive Features + 100% UI Polish (Web) + 70% UI Polish (Mobile)
 
-## ✨ LATEST - Mobile Search and Filters Integration
+## ✨ LATEST - Mobile Goal Reordering
+
+### Task 4 Complete
+
+**New DraggableGoalList Component**:
+
+- Long-press to initiate drag
+- Visual feedback (scale, elevation)
+- Drag handle icon
+- Smooth animations with reanimated
+- Haptic feedback throughout
+
+**GoalsScreen Updates**:
+
+- "Reorder" button in header
+- Toggle between normal and reorder mode
+- API persistence via PUT /goals/reorder
+
+### Mobile UI Polish Progress
+
+| Task | Feature                   | Status      |
+| ---- | ------------------------- | ----------- |
+| 1    | Quick Actions FAB         | ✅ Complete |
+| 2    | Transaction Templates     | ✅ Complete |
+| 3    | Search and Filters        | ✅ Complete |
+| 4    | Goal Reordering           | ✅ Complete |
+| 5    | Two-Factor Authentication | ❌ Pending  |
+| 6    | Tips Feed Gestures        | ❌ Pending  |
+
+---
+
+## ✨ Mobile Search and Filters Integration
 
 ### Task 3 Complete
 
@@ -15,22 +46,11 @@
 - Comprehensive filter logic (type, category, date, amount)
 - Empty state with "Clear Filters" option
 
-### Mobile UI Polish Progress
-
-| Task | Feature                   | Status      |
-| ---- | ------------------------- | ----------- |
-| 1    | Quick Actions FAB         | ✅ Complete |
-| 2    | Transaction Templates     | ✅ Complete |
-| 3    | Search and Filters        | ✅ Complete |
-| 4    | Goal Reordering           | ❌ Pending  |
-| 5    | Two-Factor Authentication | ❌ Pending  |
-| 6    | Tips Feed Gestures        | ❌ Pending  |
-
 ---
 
 ## ✨ Mobile Search and Filters
 
-### Task 3 Complete
+### Task 3 Components
 
 **New SearchBar Component**:
 

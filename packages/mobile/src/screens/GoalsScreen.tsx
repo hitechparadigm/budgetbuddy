@@ -2,7 +2,7 @@
  * Goals Screen - Savings Goals Dashboard
  *
  * Displays savings goals with progress bars, contribution tracking,
- * and milestone celebrations with confetti animation.
+ * milestone celebrations with confetti animation, and drag-to-reorder.
  */
 
 import React, { useState, useCallback } from "react";
@@ -22,8 +22,10 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { Card, FloatingActionButton, LoadingSpinner } from "../components/ui";
+import DraggableGoalList from "../components/DraggableGoalList";
 import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../contexts/AuthContext";
+import { useGoalReorder } from "../hooks/useGoalReorder";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
 const API_BASE_URL =
@@ -68,7 +70,17 @@ export default function GoalsScreen() {
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [contributionAmount, setContributionAmount] = useState("");
   const [contributing, setContributing] = useState(false);
+  const [isReorderMode, setIsReorderMode] = useState(false);
   const currency = "USD";
+
+  const { reorderGoals, isReordering } = useGoalReorder({
+    onSuccess: () => {
+      loadGoals();
+    },
+    onError: (err) => {
+      Alert.alert("Error", "Failed to save goal order. Please try again.");
+    },
+  });
 
   const loadGoals = useCallback(async () => {
     try {
@@ -330,6 +342,38 @@ export default function GoalsScreen() {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Text style={[styles.title, { color: colors.text }]}>🎯 Goals</Text>
+        {goals.length > 1 && (
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setIsReorderMode(!isReorderMode);
+            }}
+            style={[
+              styles.reorderButton,
+              isReorderMode && { backgroundColor: colors.primary + "20" },
+            ]}
+            accessibilityLabel={
+              isReorderMode ? "Done reordering" : "Reorder goals"
+            }
+            accessibilityRole="button"
+          >
+            <Ionicons
+              name={isReorderMode ? "checkmark" : "swap-vertical"}
+              size={20}
+              color={isReorderMode ? colors.primary : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.reorderButtonText,
+                {
+                  color: isReorderMode ? colors.primary : colors.textSecondary,
+                },
+              ]}
+            >
+              {isReorderMode ? "Done" : "Reorder"}
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Summary Cards */}
@@ -393,6 +437,14 @@ export default function GoalsScreen() {
             Create your first savings goal to start tracking
           </Text>
         </View>
+      ) : isReorderMode ? (
+        <DraggableGoalList
+          goals={goals}
+          onReorder={reorderGoals}
+          onGoalPress={(goal) => openContributeModal(goal)}
+          currency={currency}
+          isReordering={isReordering}
+        />
       ) : (
         <FlatList
           data={goals}
@@ -506,6 +558,18 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
+  },
+  reorderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    gap: 4,
+  },
+  reorderButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
   },
   summaryContainer: {
     flexDirection: "row",
