@@ -1,10 +1,40 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-02 (Phase 1-2 Complete)
-**Current Phase**: Competitive Features Implementation
+**Last Updated**: 2026-02-02 (UI Polish Spec Created)
+**Current Phase**: UI Polish & Enhancements
 **Overall Progress**: 95% Core + 85% Competitive Features
 
-## ✨ LATEST - Phase 1-2 Complete
+## ✨ LATEST - UI Polish & Enhancements Spec Created
+
+### New Spec Created
+
+**Location**: `.kiro/specs/ui-polish-enhancements/`
+
+**Requirements (7 total)**:
+
+- Quick Actions & Shortcuts (R33)
+- Two-Factor Authentication UI (R34)
+- Goals Page Enhancements (drag-and-drop, archive)
+- Tips Feed UI Improvements
+- Transaction Search & Filtering
+- Onboarding Tutorial Polish
+- Theme & Accessibility Improvements
+
+**Tasks**: 11 implementation tasks across 7 phases
+**Estimated Duration**: 16 days (3-4 weeks)
+
+### Context
+
+Competitive features Tasks 11-12 are blocked on external APIs:
+
+- Task 11 (Credit Score): Requires credit bureau API partnership
+- Task 12 (Investment Tracking): Requires stock price API (Alpha Vantage/Yahoo Finance)
+
+Created this spec to continue productive work on remaining UI polish items identified in USER_JOURNEYS.md gap analysis.
+
+---
+
+## ✨ Phase 1-2 Complete (Previous)
 
 ### All Phase 1-2 Tasks Complete ✅
 
