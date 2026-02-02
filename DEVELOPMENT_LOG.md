@@ -1,5 +1,36 @@
 # Development Log
 
+## 2026-02-02 - Goal Archive Feature (Session 79)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Add goal archive functionality (Task 6.1)
+**Outcome**: Full archive/restore system implemented
+
+### Work Completed
+
+1. **Added Archive Functionality to GoalsPage**:
+   - Archive button on completed/paused goals
+   - Collapsible archived goals section
+   - Restore button for archived goals
+   - Visual distinction for archived items
+
+2. **Backend Integration**:
+   - Uses existing PUT /goals/{goalId} API
+   - Sets status to "archived" or restores to previous state
+
+### Files Modified
+
+- `packages/web-app/src/pages/GoalsPage.tsx`
+- `.kiro/specs/ui-polish-enhancements/tasks.md`
+
+### Tasks Completed
+
+- Task 6.1: Goal archive functionality ✅
+
+---
+
 ## 2026-02-02 - Transaction Templates Feature (Session 78)
 
 ### Session Summary

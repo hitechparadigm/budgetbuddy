@@ -22,7 +22,7 @@ interface Goal {
   targetDate: string | null;
   daysRemaining: number | null;
   priority: number;
-  status: "active" | "completed" | "paused";
+  status: "active" | "completed" | "paused" | "archived";
   statusIndicator: string;
   linkedCategoryId: string | null;
   progressPercent: number;
@@ -66,8 +66,14 @@ export const GoalsPage: React.FC = () => {
   const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
   const [reordering, setReordering] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiving, setArchiving] = useState<string | null>(null);
   const dragCounter = useRef(0);
   const currency = "USD";
+
+  // Separate active and archived goals
+  const activeGoals = goals.filter((g) => g.status !== "archived");
+  const archivedGoals = goals.filter((g) => g.status === "archived");
 
   const loadGoals = useCallback(async () => {
     try {
@@ -177,6 +183,51 @@ export const GoalsPage: React.FC = () => {
     setSelectedGoal(goal);
     setContributionAmount("");
     setShowContributeModal(true);
+  };
+
+  // Archive/restore goal
+  const handleArchiveGoal = async (goal: Goal, archive: boolean) => {
+    try {
+      setArchiving(goal.goalId);
+      setError(null);
+
+      const token = localStorage.getItem("budgetbuddy_id_token");
+      if (!token) {
+        navigate("/auth");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/goals/${goal.goalId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: archive
+            ? "archived"
+            : goal.progressPercent >= 100
+              ? "completed"
+              : "active",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${archive ? "archive" : "restore"} goal`);
+      }
+
+      // Reload goals
+      await loadGoals();
+    } catch (err) {
+      console.error(`Error ${archive ? "archiving" : "restoring"} goal:`, err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Failed to ${archive ? "archive" : "restore"} goal`,
+      );
+    } finally {
+      setArchiving(null);
+    }
   };
 
   // Drag and drop handlers for goal reordering
@@ -399,7 +450,7 @@ export const GoalsPage: React.FC = () => {
 
       {/* Goals List */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        {goals.length === 0 ? (
+        {activeGoals.length === 0 && archivedGoals.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 text-center">
             <div className="text-6xl mb-4">🎯</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -417,7 +468,7 @@ export const GoalsPage: React.FC = () => {
           </div>
         ) : (
           <>
-            {goals.length > 1 && (
+            {activeGoals.length > 1 && (
               <p className="text-sm text-gray-500 mb-4 flex items-center gap-2">
                 <span className="text-lg">↕️</span>
                 Drag and drop goals to reorder by priority
@@ -427,7 +478,7 @@ export const GoalsPage: React.FC = () => {
               </p>
             )}
             <div className="space-y-4">
-              {goals.map((goal) => (
+              {activeGoals.map((goal) => (
                 <div
                   key={goal.goalId}
                   draggable={goal.status === "active"}
@@ -485,14 +536,31 @@ export const GoalsPage: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    {goal.status === "active" && (
-                      <button
-                        onClick={() => openContributeModal(goal)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        + Add Funds
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {goal.status === "active" && (
+                        <button
+                          onClick={() => openContributeModal(goal)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                          + Add Funds
+                        </button>
+                      )}
+                      {(goal.status === "completed" ||
+                        goal.status === "paused") && (
+                        <button
+                          onClick={() => handleArchiveGoal(goal, true)}
+                          disabled={archiving === goal.goalId}
+                          className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="Archive goal"
+                        >
+                          {archiving === goal.goalId ? (
+                            <span className="animate-spin">⏳</span>
+                          ) : (
+                            <span>📦</span>
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Progress Bar */}
@@ -551,6 +619,88 @@ export const GoalsPage: React.FC = () => {
                 </div>
               ))}
             </div>
+
+            {/* Archived Goals Section */}
+            {archivedGoals.length > 0 && (
+              <div className="mt-8">
+                <button
+                  onClick={() => setShowArchived(!showArchived)}
+                  className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+                >
+                  <span
+                    className={`transition-transform ${showArchived ? "rotate-90" : ""}`}
+                  >
+                    ▶
+                  </span>
+                  <span className="text-sm font-medium">
+                    Archived Goals ({archivedGoals.length})
+                  </span>
+                </button>
+
+                {showArchived && (
+                  <div className="space-y-4">
+                    {archivedGoals.map((goal) => (
+                      <div
+                        key={goal.goalId}
+                        className="bg-gray-100 rounded-lg shadow p-6 opacity-75"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <span className="text-3xl grayscale">
+                              {goal.icon}
+                            </span>
+                            <div>
+                              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                                {goal.name}
+                                <span className="text-sm text-gray-500">
+                                  📦 Archived
+                                </span>
+                              </h3>
+                              {goal.completedAt && (
+                                <p className="text-sm text-gray-500">
+                                  Completed: {formatDate(goal.completedAt)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleArchiveGoal(goal, false)}
+                            disabled={archiving === goal.goalId}
+                            className="px-3 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Restore goal"
+                          >
+                            {archiving === goal.goalId ? (
+                              <span className="animate-spin">⏳</span>
+                            ) : (
+                              <span>↩️ Restore</span>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mb-2">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span className="text-gray-500">
+                              {formatCurrency(goal.currentAmount, currency)} of{" "}
+                              {formatCurrency(goal.targetAmount, currency)}
+                            </span>
+                            <span className="font-semibold text-gray-600">
+                              {goal.progressPercent}%
+                            </span>
+                          </div>
+                          <div className="h-3 bg-gray-300 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gray-500 transition-all duration-500"
+                              style={{ width: `${goal.progressPercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

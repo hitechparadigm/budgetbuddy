@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.9.58] - 2026-02-02
+
+### ✨ Feature - Goal Archive Functionality
+
+**Features Added**:
+
+- Archive button on completed/paused goals
+- Collapsible archived goals section
+- Restore button to bring back archived goals
+- Visual distinction for archived goals (grayscale, reduced opacity)
+- Archive status persisted via backend API
+
+**UI/UX**:
+
+- Archive icon (📦) on goal cards
+- Expandable archived section with count
+- Restore icon (↩️) with hover state
+- Loading state during archive/restore operations
+
+**Tasks Completed**:
+
+- Task 6.1: Goal archive functionality ✅
+
 ## [1.9.57] - 2026-02-02
 
 ### ✨ Feature - Transaction Templates
