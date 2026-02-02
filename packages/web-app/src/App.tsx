@@ -23,6 +23,8 @@ import { AcceptInvitationPage } from "./pages/AcceptInvitationPage";
 import { AccountsPage } from "./pages/AccountsPage";
 import { TipsFeedPage } from "./pages/TipsFeedPage";
 import { InsightsPage } from "./pages/InsightsPage";
+import { BillsPage } from "./pages/BillsPage";
+import { BillFormPage } from "./pages/BillFormPage";
 import { initMockAuth } from "./utils/mockAuth";
 
 const App: React.FC = () => {
@@ -99,6 +101,34 @@ const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <InsightsPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Bills Page */}
+                <Route
+                  path="/bills"
+                  element={
+                    <ProtectedRoute>
+                      <BillsPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Bill Form - New/Edit */}
+                <Route
+                  path="/bills/new"
+                  element={
+                    <ProtectedRoute>
+                      <BillFormPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/bills/:billId/edit"
+                  element={
+                    <ProtectedRoute>
+                      <BillFormPage />
                     </ProtectedRoute>
                   }
                 />
