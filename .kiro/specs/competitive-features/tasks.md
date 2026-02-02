@@ -318,13 +318,13 @@
 
 ### Task 9: Net Worth Tracking (Requirement 41)
 
-- [ ] 9.1 Backend: Create net-worth Lambda function
+- [x] 9.1 Backend: Create net-worth Lambda function
   - Create `backend/functions/net-worth/` directory
   - CRUD for assets and liabilities
   - Calculate net worth
   - **Validates: Requirement 41.1, 41.2, 41.3**
 
-- [ ] 9.2 Backend: Add net worth history tracking
+- [x] 9.2 Backend: Add net worth history tracking
   - Store monthly snapshots
   - Calculate month-over-month change
   - **Validates: Requirement 41.4, 41.7**

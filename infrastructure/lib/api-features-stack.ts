@@ -17,6 +17,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
 export interface ApiFeaturesStackProps extends cdk.StackProps {
@@ -29,9 +30,43 @@ export interface ApiFeaturesStackProps extends cdk.StackProps {
 export class ApiFeaturesStack extends cdk.Stack {
   public readonly api: apigateway.RestApi;
   public readonly functions: { [key: string]: lambda.Function } = {};
+  public readonly receiptBucket: s3.Bucket;
 
   constructor(scope: Construct, id: string, props: ApiFeaturesStackProps) {
     super(scope, id, props);
+
+    // Create S3 bucket for receipt images
+    // **Validates: Requirement 44.8** - S3 bucket with 30-day lifecycle and encryption
+    this.receiptBucket = new s3.Bucket(this, 'ReceiptBucket', {
+      bucketName: `budgetbuddy-receipts-${this.account}-${this.region}`,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      versioned: false,
+      lifecycleRules: [
+        {
+          id: 'DeleteAfter30Days',
+          expiration: cdk.Duration.days(30),
+          enabled: true,
+        },
+      ],
+      cors: [
+        {
+          allowedMethods: [s3.HttpMethods.PUT, s3.HttpMethods.GET],
+          allowedOrigins: [
+            'http://localhost:3000',
+            'http://localhost:5173',
+            'https://d1ueeugn9zcx7n.cloudfront.net',
+            'https://d2ubhx2a13s7gc.cloudfront.net',
+            'https://app.budgetbuddy.com',
+          ],
+          allowedHeaders: ['*'],
+          maxAge: 3000,
+        },
+      ],
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
 
     // Create separate API Gateway for features
     this.api = new apigateway.RestApi(this, 'FeaturesApi', {
@@ -261,19 +296,67 @@ export class ApiFeaturesStack extends cdk.Stack {
     this.functions.insightsHandler = new lambda.Function(this, 'InsightsHandler', {
       ...commonProps,
       functionName: 'budgetbuddy-insights',
-      code: lambda.Code.fromAsset('../backend/functions/insights'),
+      code: lambda.Code.fromAsset('../backend/functions/insights', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          user: 'root',
+          command: [
+            'bash', '-c', [
+              'cp -r /asset-input/* /asset-output/',
+              'cd /asset-output',
+              'npm install --production --no-optional',
+            ].join(' && '),
+          ],
+        },
+      }),
       handler: 'index.handler',
       description: 'BudgetBuddy insights handler for spending analytics and AI-generated insights',
+      timeout: cdk.Duration.seconds(60), // Increased for Bedrock AI calls
     });
+
+    // Grant Insights Lambda permission to invoke Bedrock
+    this.functions.insightsHandler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['bedrock:InvokeModel'],
+      resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
+    }));
 
     // Receipt Lambda
     this.functions.receiptHandler = new lambda.Function(this, 'ReceiptHandler', {
       ...commonProps,
       functionName: 'budgetbuddy-receipt',
-      code: lambda.Code.fromAsset('../backend/functions/receipt'),
+      code: lambda.Code.fromAsset('../backend/functions/receipt', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          user: 'root',
+          command: [
+            'bash', '-c', [
+              'cp -r /asset-input/* /asset-output/',
+              'cd /asset-output',
+              'npm install --production --no-optional',
+            ].join(' && '),
+          ],
+        },
+      }),
       handler: 'index.handler',
       description: 'BudgetBuddy receipt handler for AI-powered receipt scanning and extraction',
+      timeout: cdk.Duration.seconds(60), // Increased for Textract processing
+      environment: {
+        ...commonProps.environment,
+        RECEIPT_BUCKET: this.receiptBucket.bucketName,
+      },
     });
+
+    // Grant Receipt Lambda permissions for S3 and Textract
+    this.receiptBucket.grantReadWrite(this.functions.receiptHandler);
+    this.functions.receiptHandler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        'textract:AnalyzeExpense',
+        'textract:DetectDocumentText',
+      ],
+      resources: ['*'],
+    }));
   }
 
   private setupApiRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -638,6 +721,12 @@ export class ApiFeaturesStack extends cdk.Stack {
       value: this.api.url,
       description: 'Features API Gateway URL for Plaid, Reconciliation, and Admin endpoints',
       exportName: 'budgetbuddy-features-api-url',
+    });
+
+    new cdk.CfnOutput(this, 'ReceiptBucketName', {
+      value: this.receiptBucket.bucketName,
+      description: 'S3 bucket for receipt image storage',
+      exportName: 'budgetbuddy-receipt-bucket-name',
     });
   }
 
