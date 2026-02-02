@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.9.47] - 2026-02-02
+
+### 📋 Spec Complete - Competitive Features
+
+**Completed**: Full spec for 14 competitive features (Requirements 35-48)
+
+**Files Created/Updated**:
+
+- `.kiro/specs/competitive-features/design.md` - Complete technical design
+- `.kiro/specs/competitive-features/tasks.md` - 78 implementation tasks
+
+**Features Covered**:
+
+- Phase 1 (Quick Wins): Rollover Budgets, Bill Reminders, Savings Goals
+- Phase 2 (High-Value): Subscription Tracking, Debt Payoff, Spending Insights, Receipt Scanning, Admin App
+- Phase 3 (Comprehensive): Net Worth, Bank Sync UI, Credit Score, Investments
+- Phase 4 (Engagement): Peer Comparison, Educational Content
+
+**Technical Highlights**:
+
+- DynamoDB single-table design extensions
+- AWS Textract for receipt OCR
+- AWS Bedrock for AI insights
+- Separate admin stack for security isolation
+- Privacy-first peer comparison (min 50 users per cohort)
+
+**Estimated Effort**: 23 weeks across 4 phases
+
 ## [1.9.46] - 2026-02-02
 
 ### 🐛 Bug Fix - Budget Not Copying to New Month
