@@ -211,7 +211,7 @@
   - Milestone celebrations
   - **Validates: Requirement 37.9**
 
-- [ ] 5.7 Property Test: Debt payoff calculation correctness
+- [x] 5.7 Property Test: Debt payoff calculation correctness
   - Total paid = principal + total interest
   - Avalanche always <= snowball total interest
   - **Validates: Requirement 37.4**
