@@ -701,9 +701,9 @@ _"As a user, I want to customize my app experience and manage my account setting
 
 | Component                | Journey          | Backend Status | Effort  |
 | ------------------------ | ---------------- | -------------- | ------- |
-| `PlaidLinkButton.tsx`    | Bank Connection  | ✅ Ready       | 1 day   |
+| `BankAccounts.tsx`       | Bank Connection  | ✅ Ready       | ✅ Done |
 | `NotificationCenter.tsx` | Notifications    | ✅ Ready       | ✅ Done |
-| `TransactionSearch.tsx`  | Daily Management | ⚠️ Partial     | 1 day   |
+| `TransactionSearch`      | Daily Management | ⚠️ Partial     | ✅ Done |
 
 #### 🟡 MEDIUM PRIORITY (New Features)
 
@@ -843,7 +843,7 @@ xl: 32px  (major sections)
 | R25 | Mobile Security     | All           | N/A    | ✅       | ✅      | ✅ Complete     |
 | R26 | Export/Backup       | Settings      | N/A    | ✅       | ✅      | ✅ Complete     |
 | R27 | Onboarding Tutorial | Onboarding    | N/A    | ⚠️       | N/A     | ⚠️ Needs polish |
-| R28 | Search & Filtering  | Daily         | N/A    | ❌       | ⚠️      | ❌ Missing      |
+| R28 | Search & Filtering  | Daily         | N/A    | ✅       | ⚠️      | ✅ Complete     |
 | R29 | Notifications       | Notifications | N/A    | ✅       | ✅      | ✅ Complete     |
 | R30 | Multi-Currency      | Settings      | N/A    | ✅       | ✅      | ✅ Complete     |
 | R31 | Basic Reporting     | Insights      | Task 3 | ✅       | ✅      | ✅ Complete     |

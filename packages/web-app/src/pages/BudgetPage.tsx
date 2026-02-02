@@ -98,6 +98,7 @@ export const BudgetPage: React.FC = () => {
     "income" | "savings" | "expense" | null
   >(null);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [budgetItemForm, setBudgetItemForm] = useState({
     name: "",
     icon: "💰",
@@ -2444,7 +2445,9 @@ export const BudgetPage: React.FC = () => {
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Search"
+                      placeholder="Search transactions..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                     <svg
@@ -2460,13 +2463,37 @@ export const BudgetPage: React.FC = () => {
                         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                       />
                     </svg>
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                      >
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
 
                 {/* Recent Transactions */}
                 <div className="space-y-4">
                   <div className="text-sm text-gray-500 mb-4">
-                    {new Date().toLocaleDateString("en-US", { month: "long" })}
+                    {searchQuery
+                      ? `Search results for "${searchQuery}"`
+                      : new Date().toLocaleDateString("en-US", {
+                          month: "long",
+                        })}
                   </div>
 
                   {/* Real transactions from budget data */}
@@ -2474,71 +2501,89 @@ export const BudgetPage: React.FC = () => {
                     {budget &&
                       budget.groups.flatMap((group) =>
                         group.categories.flatMap((cat) =>
-                          cat.transactions.map((transaction) => {
-                            const isIncome = group.type === "income";
-                            return (
-                              <div
-                                key={transaction.id}
-                                className="group/transaction flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
-                              >
+                          cat.transactions
+                            .filter((transaction) => {
+                              if (!searchQuery) return true;
+                              const query = searchQuery.toLowerCase();
+                              return (
+                                transaction.description
+                                  .toLowerCase()
+                                  .includes(query) ||
+                                cat.name.toLowerCase().includes(query) ||
+                                group.name.toLowerCase().includes(query) ||
+                                transaction.amount.toString().includes(query)
+                              );
+                            })
+                            .map((transaction) => {
+                              const isIncome = group.type === "income";
+                              return (
                                 <div
-                                  className={`w-8 h-8 ${
-                                    isIncome ? "bg-green-100" : "bg-red-100"
-                                  } rounded-full flex items-center justify-center`}
+                                  key={transaction.id}
+                                  className="group/transaction flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
                                 >
-                                  <span
-                                    className={`${
+                                  <div
+                                    className={`w-8 h-8 ${
+                                      isIncome ? "bg-green-100" : "bg-red-100"
+                                    } rounded-full flex items-center justify-center`}
+                                  >
+                                    <span
+                                      className={`${
+                                        isIncome
+                                          ? "text-green-600"
+                                          : "text-red-600"
+                                      } text-xs`}
+                                    >
+                                      $
+                                    </span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-gray-900 truncate">
+                                      {transaction.description}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {cat.name}
+                                    </div>
+                                  </div>
+                                  <div
+                                    className={`text-sm font-medium ${
                                       isIncome
                                         ? "text-green-600"
                                         : "text-red-600"
-                                    } text-xs`}
+                                    }`}
                                   >
-                                    $
-                                  </span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-sm font-medium text-gray-900 truncate">
-                                    {transaction.description}
+                                    {isIncome ? "+" : "-"}
+                                    {formatCurrency(
+                                      transaction.amount,
+                                      currency,
+                                    )}
                                   </div>
-                                  <div className="text-xs text-gray-500">
-                                    {cat.name}
-                                  </div>
-                                </div>
-                                <div
-                                  className={`text-sm font-medium ${
-                                    isIncome ? "text-green-600" : "text-red-600"
-                                  }`}
-                                >
-                                  {isIncome ? "+" : "-"}
-                                  {formatCurrency(transaction.amount, currency)}
-                                </div>
-                                <button
-                                  onClick={() =>
-                                    handleDeleteTransaction(
-                                      transaction.id,
-                                      cat.id,
-                                    )
-                                  }
-                                  className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors flex-shrink-0"
-                                  title="Delete transaction"
-                                >
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteTransaction(
+                                        transaction.id,
+                                        cat.id,
+                                      )
+                                    }
+                                    className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors flex-shrink-0"
+                                    title="Delete transaction"
                                   >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                  </svg>
-                                </button>
-                              </div>
-                            );
-                          }),
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                      />
+                                    </svg>
+                                  </button>
+                                </div>
+                              );
+                            }),
                         ),
                       )}
 

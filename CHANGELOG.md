@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.9.49] - 2026-02-02
+
+### ✨ Feature - Transaction Search in BudgetPage
+
+**Component**: `packages/web-app/src/pages/BudgetPage.tsx`
+
+**Features**:
+
+- Search input with clear button
+- Real-time filtering of transactions
+- Searches across: description, category name, group name, amount
+- Shows "Search results for..." when filtering
+- Clear button to reset search
+
+**Status Updates**:
+
+- Transaction Search (R28): ❌ → ✅ Complete
+- All HIGH PRIORITY frontend gaps now complete
+
 ## [1.9.48] - 2026-02-02
 
 ### ✨ Feature - NotificationCenter Component Complete
