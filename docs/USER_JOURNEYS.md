@@ -945,18 +945,18 @@ _"As a user, I want to customize my app experience and manage my account setting
 
 ### Component Mapping
 
-| Feature               | Frontend Component         | Backend API                            | Status          |
-| --------------------- | -------------------------- | -------------------------------------- | --------------- |
-| Settings Page         | `SettingsPage.tsx`         | Multiple                               | ✅ Complete     |
-| Profile Settings      | `SettingsPage.tsx`         | `GET/PUT /auth/profile`                | ✅ Complete     |
-| Currency Settings     | `CurrencySelector.tsx`     | `PUT /auth/profile`                    | ✅ Complete     |
-| Notification Settings | `NotificationSettings.tsx` | `GET/PUT /notifications/preferences`   | ✅ Complete     |
-| Family Settings       | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete     |
-| Export Data           | `ExportModal.tsx`          | `POST /export/csv`, `POST /export/pdf` | ✅ Complete     |
-| Backup/Restore        | `BackupModal.tsx`          | `POST /backup`, `POST /restore`        | ✅ Complete     |
-| Theme Toggle          | `ThemeContext.tsx`         | N/A (local)                            | ✅ Complete     |
-| Delete Account        | ❌ Missing                 | `DELETE /auth/account`                 | ⚠️ Backend only |
-| About Page            | `AboutPage.tsx`            | N/A (static)                           | ⚠️ Partial      |
+| Feature               | Frontend Component         | Backend API                            | Status      |
+| --------------------- | -------------------------- | -------------------------------------- | ----------- |
+| Settings Page         | `SettingsPage.tsx`         | Multiple                               | ✅ Complete |
+| Profile Settings      | `SettingsPage.tsx`         | `GET/PUT /auth/profile`                | ✅ Complete |
+| Currency Settings     | `CurrencySelector.tsx`     | `PUT /auth/profile`                    | ✅ Complete |
+| Notification Settings | `NotificationSettings.tsx` | `GET/PUT /notifications/preferences`   | ✅ Complete |
+| Family Settings       | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete |
+| Export Data           | `ExportModal.tsx`          | `POST /export/csv`, `POST /export/pdf` | ✅ Complete |
+| Backup/Restore        | `BackupModal.tsx`          | `POST /backup`, `POST /restore`        | ✅ Complete |
+| Theme Toggle          | `ThemeContext.tsx`         | N/A (local)                            | ✅ Complete |
+| Delete Account        | `DeleteAccountModal.tsx`   | `DELETE /auth/account`                 | ✅ Complete |
+| About Page            | `AboutPage.tsx`            | N/A (static)                           | ⚠️ Partial  |
 
 ### UI/UX Requirements
 
@@ -970,15 +970,14 @@ _"As a user, I want to customize my app experience and manage my account setting
 
 ### Missing Components
 
-| Component                | Priority | Description                       |
-| ------------------------ | -------- | --------------------------------- |
-| `DeleteAccountModal.tsx` | MEDIUM   | Account deletion with data export |
-| `LanguageSelector.tsx`   | LOW      | Multi-language support            |
-| `PrivacySettings.tsx`    | LOW      | Data sharing preferences          |
-| `HelpCenter.tsx`         | LOW      | FAQ and support links             |
-| `TermsOfService.tsx`     | LOW      | Static terms page                 |
-| `PrivacyPolicy.tsx`      | LOW      | Static privacy policy page        |
-| `RateAppPrompt.tsx`      | LOW      | App store rating prompt           |
+| Component              | Priority | Description                |
+| ---------------------- | -------- | -------------------------- |
+| `LanguageSelector.tsx` | LOW      | Multi-language support     |
+| `PrivacySettings.tsx`  | LOW      | Data sharing preferences   |
+| `HelpCenter.tsx`       | LOW      | FAQ and support links      |
+| `TermsOfService.tsx`   | LOW      | Static terms page          |
+| `PrivacyPolicy.tsx`    | LOW      | Static privacy policy page |
+| `RateAppPrompt.tsx`    | LOW      | App store rating prompt    |
 
 ---
 
