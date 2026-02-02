@@ -848,3 +848,157 @@ function guessCategoryFromMerchant(merchant) {
 module.exports.detectRecurringPattern = detectRecurringPattern;
 module.exports.normalizeToMonthly = normalizeToMonthly;
 module.exports.guessCategoryFromMerchant = guessCategoryFromMerchant;
+
+/**
+ * Check for upcoming subscription renewals and create notifications
+ * This function can be called by a scheduled Lambda (e.g., daily)
+ * @param {string} familyId - Family ID to check subscriptions for
+ * @returns {Object} - Summary of notifications created
+ */
+async function checkRenewalNotifications(familyId) {
+  try {
+    const today = new Date();
+    const threeDaysFromNow = new Date(
+      today.getTime() + 3 * 24 * 60 * 60 * 1000,
+    );
+    const currentTime = today.toISOString();
+
+    // Get all active subscriptions for the family
+    const subscriptions = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+      FilterExpression:
+        "entityType = :entityType AND #status = :active AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: {
+        ":entityType": "SUBSCRIPTION",
+        ":active": "active",
+        ":false": false,
+      },
+    });
+
+    // Find subscriptions renewing in the next 3 days
+    const upcomingRenewals = subscriptions.filter((sub) => {
+      const nextBilling = new Date(sub.nextBillingDate);
+      return nextBilling >= today && nextBilling <= threeDaysFromNow;
+    });
+
+    if (upcomingRenewals.length === 0) {
+      return {
+        notificationsCreated: 0,
+        subscriptionsChecked: subscriptions.length,
+      };
+    }
+
+    // Get family members to notify
+    const familyMembers = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+      FilterExpression: "entityType = :type",
+      ExpressionAttributeValues: { ":type": "MEMBER" },
+    });
+
+    const userIds = familyMembers.map((m) => m.userId).filter(Boolean);
+    if (userIds.length === 0) {
+      return {
+        notificationsCreated: 0,
+        subscriptionsChecked: subscriptions.length,
+      };
+    }
+
+    // Create notifications for each upcoming renewal
+    const notificationPromises = [];
+
+    for (const subscription of upcomingRenewals) {
+      const nextBilling = new Date(subscription.nextBillingDate);
+      const daysUntil = Math.ceil(
+        (nextBilling - today) / (1000 * 60 * 60 * 24),
+      );
+
+      for (const userId of userIds) {
+        // Check if notification already sent for this subscription/date
+        const existingNotification = await dynamoHelpers.queryByPK(
+          `USER#${userId}`,
+          {
+            FilterExpression:
+              "entityType = :type AND #data.subscriptionId = :subId AND begins_with(createdAt, :datePrefix)",
+            ExpressionAttributeNames: { "#data": "data" },
+            ExpressionAttributeValues: {
+              ":type": "NOTIFICATION",
+              ":subId": subscription.subscriptionId,
+              ":datePrefix": currentTime.split("T")[0],
+            },
+          },
+        );
+
+        if (existingNotification.length > 0) continue; // Already notified today
+
+        const notificationId = `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        const notification = {
+          PK: `USER#${userId}`,
+          SK: `NOTIFICATION#${notificationId}`,
+          entityType: "NOTIFICATION",
+          notificationId,
+          userId,
+          familyId,
+          type: "subscription_renewal",
+          title: `💳 Subscription Renewal Coming`,
+          body: `${subscription.name} ($${subscription.amount}) renews in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`,
+          data: {
+            subscriptionId: subscription.subscriptionId,
+            subscriptionName: subscription.name,
+            amount: subscription.amount,
+            nextBillingDate: subscription.nextBillingDate,
+            daysUntil,
+          },
+          read: false,
+          createdAt: currentTime,
+        };
+
+        notificationPromises.push(dynamoHelpers.putItem(notification));
+      }
+    }
+
+    await Promise.all(notificationPromises);
+
+    logger.info("Subscription renewal notifications created", {
+      familyId,
+      renewalsFound: upcomingRenewals.length,
+      notificationsCreated: notificationPromises.length,
+    });
+
+    return {
+      notificationsCreated: notificationPromises.length,
+      subscriptionsChecked: subscriptions.length,
+      upcomingRenewals: upcomingRenewals.length,
+    };
+  } catch (error) {
+    logger.error("Error checking renewal notifications", error, { familyId });
+    throw error;
+  }
+}
+
+/**
+ * Check for price increases on subscriptions
+ * Compares current amount with historical amounts
+ * @param {string} familyId - Family ID
+ * @param {string} subscriptionId - Subscription ID
+ * @param {number} newAmount - New amount to compare
+ * @returns {Object|null} - Price increase info or null
+ */
+function checkPriceIncrease(subscription, newAmount) {
+  const oldAmount = subscription.amount;
+  if (newAmount <= oldAmount) return null;
+
+  const increaseAmount = newAmount - oldAmount;
+  const increasePercent = ((increaseAmount / oldAmount) * 100).toFixed(1);
+
+  return {
+    oldAmount,
+    newAmount,
+    increaseAmount: Math.round(increaseAmount * 100) / 100,
+    increasePercent: parseFloat(increasePercent),
+    message: `${subscription.name} price increased by $${increaseAmount.toFixed(2)} (${increasePercent}%)`,
+  };
+}
+
+// Export for scheduled Lambda and testing
+module.exports.checkRenewalNotifications = checkRenewalNotifications;
+module.exports.checkPriceIncrease = checkPriceIncrease;
