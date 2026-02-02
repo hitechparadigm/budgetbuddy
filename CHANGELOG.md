@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.9.61] - 2026-02-02
+
+### ✨ Feature - UI Polish & Enhancements Complete (Web)
+
+**All Web UI Polish Tasks Complete**:
+
+- Task 7.3: 2FA Settings Integration ✅
+- Task 7.4: Login Flow MFA Challenge ✅
+- Task 8.4: Tips Read/Unread Indicators ✅
+- Task 9.1-9.3: Theme System (Light/Dark/System) ✅
+- Task 10.1-10.3: Accessibility Improvements ✅
+- Task 11.3-11.5: Onboarding Polish ✅
+
+**New Components Created**:
+
+- `ThemeToggle.tsx` - 3-way theme toggle (light/dark/system)
+- `FocusTrap.tsx` - Modal focus trapping for accessibility
+- `SkipLink.tsx` - Skip to main content for keyboard navigation
+- `AriaLiveRegion.tsx` - Screen reader announcements
+- `TutorialOverlay.tsx` - Interactive tutorial with spotlight effect
+- `WelcomeModal.tsx` - Post-onboarding welcome with quick tips
+- `useReducedMotion.ts` - Respects prefers-reduced-motion
+
+**Enhanced Components**:
+
+- `ThemeContext.tsx` - Light/dark/system modes with persistence
+- `SettingsPage.tsx` - Added 2FA, Theme, Help & Tutorial sections
+- `LoginForm.tsx` - MFA challenge detection and handling
+- `TipsFeedPage.tsx` - Read/unread indicators with localStorage tracking
+
+**Dark Mode Support**:
+
+- Added `darkMode: 'class'` to Tailwind config
+- Base dark mode styles in index.css
+- Utility classes: `.card`, `.input`, `.btn-primary`, `.btn-secondary`
+
+**Accessibility Improvements**:
+
+- ARIA live regions for dynamic content
+- Focus trapping in modals
+- Skip link for keyboard navigation
+- Reduced motion support
+
+**Remaining (Mobile-only)**:
+
+- Tasks 1.2, 3.2, 4.5, 5.5, 7.5, 8.5, 8.6 (mobile-specific)
+
 ## [1.9.60] - 2026-02-02
 
 ### 📚 Documentation - USER_JOURNEYS.md Update

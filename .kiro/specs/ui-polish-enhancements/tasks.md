@@ -347,20 +347,20 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 
 ## Documentation Tasks
 
-- [ ] D.1 Update component documentation
-  - [ ] D.1.1 Document new components in README
-  - [ ] D.1.2 Add JSDoc comments to all components
-  - [ ] D.1.3 Update Storybook (if applicable)
+- [x] D.1 Update component documentation
+  - [x] D.1.1 Document new components in README
+  - [x] D.1.2 Add JSDoc comments to all components
+  - [x] D.1.3 Update Storybook (if applicable)
 
-- [ ] D.2 Update user documentation
-  - [ ] D.2.1 Document keyboard shortcuts
-  - [ ] D.2.2 Document 2FA setup process
-  - [ ] D.2.3 Update USER_JOURNEYS.md
+- [x] D.2 Update user documentation
+  - [x] D.2.1 Document keyboard shortcuts
+  - [x] D.2.2 Document 2FA setup process
+  - [x] D.2.3 Update USER_JOURNEYS.md
 
-- [ ] D.3 Update CHANGELOG and development-status
-  - [ ] D.3.1 Add version entry to CHANGELOG
-  - [ ] D.3.2 Update development-status.md
-  - [ ] D.3.3 Update README.md
+- [x] D.3 Update CHANGELOG and development-status
+  - [x] D.3.1 Add version entry to CHANGELOG
+  - [x] D.3.2 Update development-status.md
+  - [x] D.3.3 Update README.md
 
 ---
 
