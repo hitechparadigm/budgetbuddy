@@ -1,10 +1,39 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-02 (Educational Content Page Added)
-**Current Phase**: UI Polish & Enhancements
-**Overall Progress**: 95% Core + 90% Competitive Features + 95% UI Polish
+**Last Updated**: 2026-02-02 (Mobile UI Polish Spec Created)
+**Current Phase**: Mobile UI Polish
+**Overall Progress**: 95% Core + 90% Competitive Features + 100% UI Polish (Web) + 0% UI Polish (Mobile)
 
-## ✨ LATEST - Educational Content Page (LearnPage)
+## ✨ LATEST - Mobile UI Polish Spec Created
+
+### New Spec Created
+
+**Location**: `.kiro/specs/mobile-ui-polish/`
+
+**Requirements (6 total)**:
+
+- Mobile Quick Actions FAB with haptic feedback
+- Mobile Transaction Templates with AsyncStorage
+- Mobile Search and Filters with bottom sheet
+- Mobile Goal Reordering with drag-and-drop
+- Mobile Two-Factor Authentication UI
+- Mobile Tips Feed Gestures (swipe to save/dismiss)
+
+**Tasks**: 6 phases, 14 days estimated
+
+### USER_JOURNEYS.md Updated
+
+Fixed outdated component statuses - many components marked as "Missing" actually exist:
+
+- GoalsPage, GoalFormPage, DebtPayoffPage ✅
+- NotificationCenter, PeerComparisonWidget ✅
+- TwoFactorSetup, TwoFactorVerify ✅
+- QuickActionsFAB, TransactionFilters ✅
+- ThemeToggle, Confetti, TutorialOverlay ✅
+
+---
+
+## ✨ Educational Content Page (LearnPage)
 
 ### Implementation Complete
 

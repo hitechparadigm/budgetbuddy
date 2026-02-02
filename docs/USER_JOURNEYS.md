@@ -157,37 +157,36 @@ _"As a user, I want to quickly add transactions and see my budget status so I ca
 
 ### Component Mapping
 
-| Feature            | Frontend Component        | Backend API                 | Status          |
-| ------------------ | ------------------------- | --------------------------- | --------------- |
-| Dashboard          | `BudgetPage.tsx`          | `GET /budget?month=YYYY-MM` | ✅ Complete     |
-| Sidebar Nav        | `BudgetPage.tsx` (inline) | N/A                         | ✅ Complete     |
-| Month Nav          | `MonthNavigator.tsx`      | N/A                         | ✅ Complete     |
-| Category List      | `BudgetPage.tsx` (inline) | `GET /budget`               | ✅ Complete     |
-| Add Transaction    | `TransactionForm.tsx`     | `POST /transactions`        | ✅ Complete     |
-| Edit Transaction   | `TransactionForm.tsx`     | `PUT /transactions/{id}`    | ✅ Complete     |
-| Delete Transaction | `TransactionList.tsx`     | `DELETE /transactions/{id}` | ✅ Complete     |
-| Summary View       | `SummaryModal.tsx`        | `GET /budget`               | ✅ Complete     |
-| Transaction List   | `TransactionList.tsx`     | `GET /transactions`         | ✅ Complete     |
-| Search/Filter      | ❌ Missing                | `GET /transactions?search=` | ⚠️ Backend only |
-| Quick Actions      | ❌ Missing                | N/A                         | ❌ Not started  |
+| Feature            | Frontend Component          | Backend API                 | Status      |
+| ------------------ | --------------------------- | --------------------------- | ----------- |
+| Dashboard          | `BudgetPage.tsx`            | `GET /budget?month=YYYY-MM` | ✅ Complete |
+| Sidebar Nav        | `BudgetPage.tsx` (inline)   | N/A                         | ✅ Complete |
+| Month Nav          | `MonthNavigator.tsx`        | N/A                         | ✅ Complete |
+| Category List      | `BudgetPage.tsx` (inline)   | `GET /budget`               | ✅ Complete |
+| Add Transaction    | `TransactionForm.tsx`       | `POST /transactions`        | ✅ Complete |
+| Edit Transaction   | `TransactionForm.tsx`       | `PUT /transactions/{id}`    | ✅ Complete |
+| Delete Transaction | `TransactionList.tsx`       | `DELETE /transactions/{id}` | ✅ Complete |
+| Summary View       | `SummaryModal.tsx`          | `GET /budget`               | ✅ Complete |
+| Transaction List   | `TransactionList.tsx`       | `GET /transactions`         | ✅ Complete |
+| Search/Filter      | ✅ `TransactionFilters.tsx` | `GET /transactions?search=` | ✅ Complete |
+| Quick Actions      | ✅ `QuickActionsFAB.tsx`    | N/A                         | ✅ Complete |
 
 ### UI/UX Requirements
 
-- **Instant feedback**: Optimistic UI updates before API confirms
-- **Error recovery**: Rollback on API failure with retry option
-- **Keyboard shortcuts**: `N` for new transaction, `E` for edit
-- **Swipe gestures**: Swipe left to delete (mobile)
-- **Pull to refresh**: Update budget data (mobile)
-- **Skeleton loading**: Show placeholders while loading
+- **Instant feedback**: ✅ Optimistic UI updates before API confirms
+- **Error recovery**: ✅ Rollback on API failure with retry option
+- **Keyboard shortcuts**: ✅ `N` for new transaction, `E` for edit, `Ctrl+/` for help
+- **Swipe gestures**: Swipe left to delete (mobile - pending)
+- **Pull to refresh**: Update budget data (mobile - pending)
+- **Skeleton loading**: ✅ Show placeholders while loading
 
-### Missing Components
+### Remaining Mobile Tasks
 
-| Component                    | Priority | Description                   |
-| ---------------------------- | -------- | ----------------------------- |
-| `TransactionSearch.tsx`      | HIGH     | Search bar with filters       |
-| `QuickAddWidget.tsx`         | HIGH     | Recent transactions quick-add |
-| `CategoryDetailModal.tsx`    | MEDIUM   | Drill-down into category      |
-| `BulkTransactionActions.tsx` | LOW      | Multi-select operations       |
+| Component                    | Priority | Description                  |
+| ---------------------------- | -------- | ---------------------------- |
+| Mobile Search/Filters        | HIGH     | Search bar with filter sheet |
+| Mobile Transaction Templates | MEDIUM   | Quick-add with templates     |
+| Mobile Swipe Gestures        | LOW      | Swipe to delete transactions |
 
 ---
 
@@ -430,35 +429,32 @@ _"As a user, I want to understand my spending patterns so I can make better fina
 
 ### Component Mapping
 
-| Feature              | Frontend Component      | Backend API               | Status           |
-| -------------------- | ----------------------- | ------------------------- | ---------------- |
-| Insights Page        | ✅ `InsightsPage.tsx`   | `GET /insights/summary`   | ✅ Complete      |
-| Weekly Insights      | ✅ `InsightsPage.tsx`   | `GET /insights/weekly`    | ✅ Complete      |
-| Spending Trends      | ✅ `InsightsPage.tsx`   | `GET /insights/trends`    | ✅ Complete      |
-| AI Ask Feature       | ✅ `InsightsPage.tsx`   | `POST /insights/ask`      | ✅ Complete      |
-| Spending Patterns    | ✅ `InsightsPage.tsx`   | `GET /insights/patterns`  | ✅ Complete      |
-| Mobile Insights      | ✅ `InsightsScreen.tsx` | Same as web               | ✅ Complete      |
-| Peer Comparison      | ❌ Missing              | `GET /comparison/summary` | ✅ Backend ready |
-| Achievements         | ❌ Missing              | `GET /comparison/badges`  | ⚠️ Partial       |
-| Tips Feed            | ✅ Complete             | `GET /tips/feed`          | ✅ Complete      |
-| Daily Tip            | ✅ Complete             | `GET /tips/daily`         | ✅ Complete      |
-| Weekly Notifications | ✅ Backend              | Daily reminders Lambda    | ✅ Complete      |
+| Feature              | Frontend Component            | Backend API               | Status      |
+| -------------------- | ----------------------------- | ------------------------- | ----------- |
+| Insights Page        | ✅ `InsightsPage.tsx`         | `GET /insights/summary`   | ✅ Complete |
+| Weekly Insights      | ✅ `InsightsPage.tsx`         | `GET /insights/weekly`    | ✅ Complete |
+| Spending Trends      | ✅ `InsightsPage.tsx`         | `GET /insights/trends`    | ✅ Complete |
+| AI Ask Feature       | ✅ `InsightsPage.tsx`         | `POST /insights/ask`      | ✅ Complete |
+| Spending Patterns    | ✅ `InsightsPage.tsx`         | `GET /insights/patterns`  | ✅ Complete |
+| Mobile Insights      | ✅ `InsightsScreen.tsx`       | Same as web               | ✅ Complete |
+| Peer Comparison      | ✅ `PeerComparisonWidget.tsx` | `GET /comparison/summary` | ✅ Complete |
+| Achievements         | ✅ `PeerComparisonWidget.tsx` | `GET /comparison/badges`  | ✅ Complete |
+| Tips Feed            | ✅ `TipsFeedPage.tsx`         | `GET /tips/feed`          | ✅ Complete |
+| Daily Tip            | ✅ `TipsFeedPage.tsx`         | `GET /tips/daily`         | ✅ Complete |
+| Weekly Notifications | ✅ Backend                    | Daily reminders Lambda    | ✅ Complete |
 
 ### UI/UX Requirements
 
-- **Positive framing**: Focus on wins, not failures
-- **Actionable insights**: Every insight should have a suggested action
-- **Visual charts**: Use charts over tables for trends
-- **Gamification**: Badges, streaks, celebrations
-- **Personalization**: Insights based on user's actual data
-- **AI-powered Q&A**: Natural language questions about spending
+- **Positive framing**: ✅ Focus on wins, not failures
+- **Actionable insights**: ✅ Every insight should have a suggested action
+- **Visual charts**: ✅ Use charts over tables for trends
+- **Gamification**: ✅ Badges, streaks, celebrations
+- **Personalization**: ✅ Insights based on user's actual data
+- **AI-powered Q&A**: ✅ Natural language questions about spending
 
-### Missing Components (MEDIUM PRIORITY)
+### All Components Complete
 
-| Component                  | Priority | Description                    |
-| -------------------------- | -------- | ------------------------------ |
-| `PeerComparisonWidget.tsx` | MEDIUM   | Anonymous benchmark comparison |
-| `AchievementBadges.tsx`    | MEDIUM   | Gamification badges display    |
+All Financial Insights components have been implemented for both web and mobile.
 
 ---
 
@@ -548,7 +544,7 @@ _"As a user, I want to scan receipts with my phone camera so I can quickly add t
 | OCR Processing       | Backend only                 | `POST /receipt/process` | ✅ Complete |
 | Confirmation Screen  | ✅ `ReceiptConfirmation.tsx` | N/A                     | ✅ Complete |
 | Usage Tracking       | ✅ In components             | `GET /receipt/usage`    | ✅ Complete |
-| Receipt History      | ❌ Missing                   | `GET /receipt/history`  | ✅ Backend  |
+| Receipt History      | ✅ `ReceiptUpload.tsx`       | `GET /receipt/history`  | ✅ Complete |
 | S3 Storage           | Backend only                 | AWS S3 bucket           | ✅ Complete |
 | Textract Integration | Backend only                 | AWS Textract            | ✅ Complete |
 
@@ -608,36 +604,36 @@ _"As a user with debt, I want to create a payoff plan and track my savings goals
 
 ### Component Mapping
 
-| Feature           | Frontend Component | Backend API                | Status         |
-| ----------------- | ------------------ | -------------------------- | -------------- |
-| Goals Page        | ❌ Missing         | `GET /goals`               | ❌ Not started |
-| Savings Goal Card | ❌ Missing         | `GET /goals/{id}`          | ❌ Not started |
-| Create Goal       | ❌ Missing         | `POST /goals`              | ❌ Not started |
-| Update Goal       | ❌ Missing         | `PUT /goals/{id}`          | ❌ Not started |
-| Goal Progress     | ❌ Missing         | `GET /goals/{id}/progress` | ❌ Not started |
-| Debt List         | ❌ Missing         | `GET /debts`               | ❌ Not started |
-| Add Debt          | ❌ Missing         | `POST /debts`              | ❌ Not started |
-| Debt Calculator   | ❌ Missing         | `POST /debts/calculate`    | ❌ Not started |
-| Payoff Timeline   | ❌ Missing         | `GET /debts/timeline`      | ❌ Not started |
+| Feature         | Frontend Component        | Backend API                | Status      |
+| --------------- | ------------------------- | -------------------------- | ----------- |
+| Goals Page      | ✅ `GoalsPage.tsx`        | `GET /goals`               | ✅ Complete |
+| Goal Form       | ✅ `GoalFormPage.tsx`     | `POST /goals`              | ✅ Complete |
+| Update Goal     | ✅ `GoalFormPage.tsx`     | `PUT /goals/{id}`          | ✅ Complete |
+| Goal Progress   | ✅ `GoalsPage.tsx`        | `GET /goals/{id}/progress` | ✅ Complete |
+| Goal Reordering | ✅ `GoalsPage.tsx`        | `PUT /goals/reorder`       | ✅ Complete |
+| Goal Archive    | ✅ `GoalsPage.tsx`        | N/A (local state)          | ✅ Complete |
+| Confetti        | ✅ `Confetti.tsx`         | N/A                        | ✅ Complete |
+| Debt List       | ✅ `DebtPayoffPage.tsx`   | `GET /debts`               | ✅ Complete |
+| Add Debt        | ✅ `DebtFormPage.tsx`     | `POST /debts`              | ✅ Complete |
+| Debt Calculator | ✅ `DebtPayoffPage.tsx`   | `POST /debts/calculate`    | ✅ Complete |
+| Payoff Timeline | ✅ `DebtPayoffPage.tsx`   | `GET /debts/timeline`      | ✅ Complete |
+| Mobile Goals    | ✅ `GoalsScreen.tsx`      | Same as web                | ✅ Complete |
+| Mobile Debt     | ✅ `DebtPayoffScreen.tsx` | Same as web                | ✅ Complete |
 
 ### UI/UX Requirements
 
-- **Visual progress**: Animated progress bars
-- **Milestone celebrations**: Confetti at 25%, 50%, 75%, 100%
-- **Drag-and-drop**: Reorder goal priorities
-- **Calculator preview**: Show impact of extra payments
-- **Motivational messaging**: Encourage users at each milestone
+- **Visual progress**: ✅ Animated progress bars implemented
+- **Milestone celebrations**: ✅ Confetti at 25%, 50%, 75%, 100%
+- **Drag-and-drop**: ✅ Reorder goal priorities (web)
+- **Calculator preview**: ✅ Show impact of extra payments
+- **Motivational messaging**: ✅ Encourage users at each milestone
 
-### Missing Components (MEDIUM PRIORITY)
+### Remaining Mobile Tasks
 
-| Component                  | Priority | Description                   |
-| -------------------------- | -------- | ----------------------------- |
-| `GoalsPage.tsx`            | MEDIUM   | Goals dashboard               |
-| `SavingsGoalCard.tsx`      | MEDIUM   | Individual goal with progress |
-| `CreateGoalModal.tsx`      | MEDIUM   | Goal creation form            |
-| `DebtPayoffCalculator.tsx` | MEDIUM   | Snowball/Avalanche calculator |
-| `PayoffTimeline.tsx`       | MEDIUM   | Visual debt payoff timeline   |
-| `MilestoneAnimation.tsx`   | LOW      | Celebration animations        |
+| Component              | Priority | Description              |
+| ---------------------- | -------- | ------------------------ |
+| Mobile Goal Reordering | MEDIUM   | Long-press drag-and-drop |
+| Mobile Haptic Feedback | LOW      | Haptics during drag      |
 
 ---
 
@@ -697,32 +693,31 @@ _"As a user, I want to receive timely notifications about my budget so I stay on
 
 ### Component Mapping
 
-| Feature                        | Frontend Component         | Backend API                          | Status           |
-| ------------------------------ | -------------------------- | ------------------------------------ | ---------------- |
-| Notification Settings (Web)    | `NotificationSettings.tsx` | `GET/PUT /notifications/preferences` | ✅ Complete      |
-| Notification Settings (Mobile) | `NotificationSettings.tsx` | `GET/PUT /notifications/preferences` | ✅ Complete      |
-| Device Registration            | Mobile only                | `POST /notifications/devices`        | ✅ Complete      |
-| Budget Alerts                  | Backend only               | DynamoDB Streams trigger             | ✅ Complete      |
-| Daily Reminders                | Backend only               | EventBridge scheduled                | ✅ Complete      |
-| Notification History           | ❌ Missing                 | `GET /notifications/history`         | ✅ Backend ready |
-| In-App Notifications           | ❌ Missing                 | N/A                                  | ❌ Not started   |
+| Feature                        | Frontend Component            | Backend API                          | Status      |
+| ------------------------------ | ----------------------------- | ------------------------------------ | ----------- |
+| Notification Settings (Web)    | ✅ `NotificationSettings.tsx` | `GET/PUT /notifications/preferences` | ✅ Complete |
+| Notification Settings (Mobile) | ✅ `NotificationSettings.tsx` | `GET/PUT /notifications/preferences` | ✅ Complete |
+| Device Registration            | Mobile only                   | `POST /notifications/devices`        | ✅ Complete |
+| Budget Alerts                  | Backend only                  | DynamoDB Streams trigger             | ✅ Complete |
+| Daily Reminders                | Backend only                  | EventBridge scheduled                | ✅ Complete |
+| Notification History           | ✅ `NotificationCenter.tsx`   | `GET /notifications/history`         | ✅ Complete |
+| In-App Notifications           | ✅ `NotificationCenter.tsx`   | N/A                                  | ✅ Complete |
 
 ### UI/UX Requirements
 
-- **Non-intrusive**: Respect quiet hours, don't over-notify
-- **Actionable**: Each notification should link to relevant screen
-- **Customizable**: Let users control each notification type
-- **Grouped**: Batch similar notifications together
-- **Dismissible**: Easy to dismiss or mark as read
+- **Non-intrusive**: ✅ Respect quiet hours, don't over-notify
+- **Actionable**: ✅ Each notification should link to relevant screen
+- **Customizable**: ✅ Let users control each notification type
+- **Grouped**: ✅ Batch similar notifications together
+- **Dismissible**: ✅ Easy to dismiss or mark as read
 
-### Missing Components
+### All Components Complete
 
-| Component                | Priority | Description                |
-| ------------------------ | -------- | -------------------------- |
-| `NotificationCenter.tsx` | HIGH     | In-app notification list   |
-| `NotificationBadge.tsx`  | HIGH     | Unread count indicator     |
-| `NotificationToast.tsx`  | MEDIUM   | In-app toast notifications |
-| `BillReminderCard.tsx`   | MEDIUM   | Upcoming bills display     |
+| Component                  | Status      | Description              |
+| -------------------------- | ----------- | ------------------------ |
+| `NotificationCenter.tsx`   | ✅ Complete | In-app notification list |
+| `NotificationSettings.tsx` | ✅ Complete | Notification preferences |
+| Bill Reminders             | ✅ Complete | Backend + BillsPage UI   |
 
 ---
 
@@ -742,14 +737,14 @@ _"As a user, I want to customize my app experience and manage my account setting
 │  👤 ACCOUNT                                                                  │
 │  ├─ Profile (name, email, avatar)                    ✅ Complete             │
 │  ├─ Password & Security                              ✅ Complete             │
-│  ├─ Two-Factor Authentication                        ❌ Not started          │
+│  ├─ Two-Factor Authentication                        ✅ Complete             │
 │  └─ Delete Account                                   ⚠️ Partial              │
 │                                                                              │
 │  🌍 PREFERENCES                                                              │
 │  ├─ Currency (USD, EUR, GBP, CAD, AUD, JPY)         ✅ Complete             │
 │  ├─ Location (country, city, timezone)              ✅ Complete             │
 │  ├─ Language                                         ❌ Not started          │
-│  └─ Theme (Light/Dark/System)                        ⚠️ Partial              │
+│  └─ Theme (Light/Dark/System)                        ✅ Complete             │
 │                                                                              │
 │  🔔 NOTIFICATIONS                                                            │
 │  ├─ Budget Alerts                                    ✅ Complete             │
@@ -797,7 +792,6 @@ _"As a user, I want to customize my app experience and manage my account setting
 
 | Component                | Priority | Description                       |
 | ------------------------ | -------- | --------------------------------- |
-| `TwoFactorSetup.tsx`     | MEDIUM   | 2FA configuration                 |
 | `DeleteAccountModal.tsx` | MEDIUM   | Account deletion with data export |
 | `LanguageSelector.tsx`   | LOW      | Multi-language support            |
 | `PrivacySettings.tsx`    | LOW      | Data sharing preferences          |
