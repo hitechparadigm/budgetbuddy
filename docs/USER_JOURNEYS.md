@@ -999,24 +999,27 @@ xl: 32px  (major sections)
 | TipsFeed           | Insights      | 1 day  | MEDIUM | Backend ready | ✅ Complete |
 | InsightsPage       | Insights      | 3 days | HIGH   | Backend ready | ✅ Complete |
 | NotificationCenter | Notifications | 2 days | HIGH   | Backend ready | ❌ Pending  |
+| GoalsPage          | Goals         | 3 days | HIGH   | Backend ready | ✅ Complete |
+| BillsPage          | Notifications | 2 days | HIGH   | Backend ready | ✅ Complete |
+| SubscriptionsPage  | Daily         | 2 days | HIGH   | Backend ready | ✅ Complete |
+| DebtPayoffPage     | Goals         | 3 days | HIGH   | Backend ready | ✅ Complete |
 
 ### Next Sprint
 
-| Feature        | Journey       | Effort | Impact | Dependencies  |
-| -------------- | ------------- | ------ | ------ | ------------- |
-| GoalsPage      | Goals         | 3 days | HIGH   | Backend ready |
-| BillsPage      | Notifications | 2 days | HIGH   | Backend ready |
-| PeerComparison | Insights      | 1 day  | MEDIUM | Backend ready |
+| Feature        | Journey  | Effort | Impact | Dependencies  |
+| -------------- | -------- | ------ | ------ | ------------- |
+| PeerComparison | Insights | 1 day  | MEDIUM | Backend ready |
+| ReceiptScanner | Daily    | 3 days | MEDIUM | Camera API    |
+| LearnPage      | Insights | 3 days | MEDIUM | Backend ready |
 
 ### Future Sprints
 
-| Feature         | Journey  | Effort | Impact | Dependencies  |
-| --------------- | -------- | ------ | ------ | ------------- |
-| ReceiptScanner  | Daily    | 3 days | MEDIUM | Camera API    |
-| LearnPage       | Insights | 3 days | MEDIUM | Backend ready |
-| AdminDashboard  | Admin    | 4 days | LOW    | Internal only |
-| DebtCalculator  | Goals    | 3 days | HIGH   | New backend   |
-| NetWorthTracker | Goals    | 4 days | MEDIUM | New backend   |
+| Feature         | Journey | Effort | Impact | Dependencies  |
+| --------------- | ------- | ------ | ------ | ------------- |
+| AdminDashboard  | Admin   | 4 days | LOW    | Internal only |
+| NetWorthTracker | Goals   | 4 days | MEDIUM | New backend   |
+| CreditScore     | Goals   | 3 days | MEDIUM | Partnership   |
+| Investments     | Goals   | 4 days | MEDIUM | New backend   |
 
 ---
 
@@ -1047,21 +1050,25 @@ xl: 32px  (major sections)
 
 ### Task References
 
-Tasks are defined in `.kiro/specs/tasks.md`:
+Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 
-- Task 1: Bill Reminders
-- Task 2: Savings Goals
-- Task 3: Spending Insights
-- Task 4: Receipt Scanning
-- Task 5: Bank Sync (Plaid)
-- Task 6: Reconciliation
-- Task 7: Admin Dashboard
-- Task 8: Peer Comparison
-- Task 9: Financial Tips
-- Task 10: Educational Content
+- Task 1: Rollover Budgets ✅
+- Task 2: Bill Reminders ✅
+- Task 3: Savings Goals ✅
+- Task 4: Subscription Tracking ✅
+- Task 5: Debt Payoff Calculator ✅
+- Task 6: Spending Insights Enhancement
+- Task 7: Receipt Scanning
+- Task 8: Admin Web Application
+- Task 9: Net Worth Tracking
+- Task 10: Bank Sync UI (Plaid)
+- Task 11: Credit Score Monitoring
+- Task 12: Investment Tracking
+- Task 13: Peer Comparison
+- Task 14: Educational Content
 
 ---
 
 _Document maintained by BudgetBuddy Development Team_
-_Last reviewed: 2026-02-01_
+_Last reviewed: 2026-02-02_
 _Hook: `update-user-journeys` enforces updates on feature completion_
