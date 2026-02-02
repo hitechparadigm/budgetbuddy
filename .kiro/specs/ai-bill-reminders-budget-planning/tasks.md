@@ -93,7 +93,7 @@ This implementation plan breaks down the AI-powered bill reminders and budget pl
     - _Requirements: 10.1, 10.2, 10.5_
 
 - [ ] 6. Implement AWS Bedrock integration
-  - [ ] 6.1 Create bedrock-client.js
+  - [x] 6.1 Create bedrock-client.js
     - Implement callBedrock() with retry logic and exponential backoff
     - Implement response validation against JSON schema
     - Implement cost estimation and logging
@@ -108,7 +108,7 @@ This implementation plan breaks down the AI-powered bill reminders and budget pl
     - **Property 24: Cost Monitoring**
     - **Validates: Requirements 9.5**
 
-  - [ ]\* 6.4 Write unit tests for Bedrock client
+  - [x]\* 6.4 Write unit tests for Bedrock client
     - Test successful API calls
     - Test retry logic with transient failures
     - Test error handling with permanent failures

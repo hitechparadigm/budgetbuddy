@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.9.85] - 2026-02-02
+
+### 🤖 AI Features
+
+- **AWS Bedrock Integration**: Implemented Bedrock client for Claude 3.5 Sonnet with retry logic and cost monitoring
+  - `callBedrock()` - Call AWS Bedrock with exponential backoff retry (max 3 retries, 1s-8s delays)
+  - `validateJsonResponse()` - Validate AI responses against expected JSON schema
+  - `callBedrockWithValidation()` - Combined call and validation
+  - `estimateCost()` - Calculate cost based on input/output tokens ($0.003/1K input, $0.015/1K output)
+  - `isRetryableError()` - Identify transient errors (5xx, throttling, timeouts)
+  - 36 unit tests covering retry logic, cost monitoring, validation, error handling
+  - Logs warning when cost exceeds $0.10 threshold
+  - Handles ThrottlingException, ServiceUnavailableException, InternalServerException
+  - Non-retryable errors fail immediately (ValidationException, 4xx errors)
+
 ## [1.9.84] - 2026-02-02
 
 ### 🤖 AI Features
