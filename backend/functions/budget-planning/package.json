@@ -1,0 +1,17 @@
+{
+  "name": "budgetbuddy-budget-planning",
+  "version": "1.0.0",
+  "description": "AI-powered budget planning Lambda",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.980.0",
+    "@aws-sdk/lib-dynamodb": "^3.980.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.980.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
