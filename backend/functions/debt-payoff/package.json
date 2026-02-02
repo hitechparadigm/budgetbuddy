@@ -1,0 +1,14 @@
+{
+  "name": "budgetbuddy-debt-payoff-function",
+  "version": "1.0.0",
+  "description": "BudgetBuddy Debt Payoff Calculator Lambda Function",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "fast-check": "^3.15.0"
+  }
+}
