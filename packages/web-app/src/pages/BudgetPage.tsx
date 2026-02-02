@@ -7,11 +7,15 @@
  * - Right sidebar with transactions
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { QuickActionsFAB } from "../components/QuickActionsFAB";
 import { ReceiptUpload } from "../components/ReceiptUpload";
 import { CalendarView } from "../components/CalendarView";
+import {
+  TutorialOverlay,
+  DEFAULT_TUTORIAL_STEPS,
+} from "../components/TutorialOverlay";
 import {
   TransactionFilters,
   useTransactionFilters,
@@ -98,6 +102,10 @@ export const BudgetPage: React.FC = () => {
   const [templateModalMode, setTemplateModalMode] = useState<"select" | "save">(
     "select",
   );
+
+  // Tutorial state
+  const [showTutorial, setShowTutorial] = useState(false);
+
   const [transactionType, setTransactionType] = useState<
     "income" | "expense" | null
   >(null);
@@ -201,6 +209,40 @@ export const BudgetPage: React.FC = () => {
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
     return () => window.removeEventListener("resize", checkScreenSize);
+  }, []);
+
+  // Check if user should see tutorial (first-time users)
+  useEffect(() => {
+    const hasSeenTutorial = localStorage.getItem(
+      "budgetbuddy_tutorial_completed",
+    );
+    const isFirstVisit = !localStorage.getItem("budgetbuddy_visited");
+
+    if (!hasSeenTutorial && isFirstVisit) {
+      // Mark as visited
+      localStorage.setItem("budgetbuddy_visited", "true");
+      // Show tutorial after a short delay to let the page load
+      const timer = setTimeout(() => {
+        setShowTutorial(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Tutorial completion handlers
+  const handleTutorialComplete = useCallback(() => {
+    localStorage.setItem("budgetbuddy_tutorial_completed", "true");
+    setShowTutorial(false);
+  }, []);
+
+  const handleTutorialSkip = useCallback(() => {
+    localStorage.setItem("budgetbuddy_tutorial_completed", "true");
+    setShowTutorial(false);
+  }, []);
+
+  // Function to replay tutorial (can be called from settings)
+  const replayTutorial = useCallback(() => {
+    setShowTutorial(true);
   }, []);
 
   useEffect(() => {
@@ -1718,6 +1760,7 @@ export const BudgetPage: React.FC = () => {
             <li>
               <button
                 onClick={() => navigate("/settings")}
+                data-tutorial="settings"
                 className={`w-full flex items-center ${
                   sidebarCollapsed && !isMobile
                     ? "justify-center px-2"
@@ -2112,7 +2155,10 @@ export const BudgetPage: React.FC = () => {
 
           {/* Budget Categories */}
           {budget && (
-            <div className="p-4 lg:p-6 space-y-6 lg:space-y-8">
+            <div
+              className="p-4 lg:p-6 space-y-6 lg:space-y-8"
+              data-tutorial="budget-categories"
+            >
               {budget.groups.map((group) => (
                 <div key={group.id} className="space-y-4">
                   {/* Group Header */}
@@ -2258,6 +2304,7 @@ export const BudgetPage: React.FC = () => {
                     {/* Add Item Button */}
                     <button
                       onClick={() => openBudgetItemModal(group.type)}
+                      data-tutorial="add-transaction"
                       className="w-full text-left py-3 px-4 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     >
                       + Add Item
@@ -2793,11 +2840,13 @@ export const BudgetPage: React.FC = () => {
       </div>
 
       {/* Quick Actions FAB - Enhanced with keyboard shortcuts */}
-      <QuickActionsFAB
-        onAddIncome={() => openTransactionModal("income")}
-        onAddExpense={() => openTransactionModal("expense")}
-        onScanReceipt={() => setShowReceiptModal(true)}
-      />
+      <div data-tutorial="quick-actions">
+        <QuickActionsFAB
+          onAddIncome={() => openTransactionModal("income")}
+          onAddExpense={() => openTransactionModal("expense")}
+          onScanReceipt={() => setShowReceiptModal(true)}
+        />
+      </div>
 
       {/* Receipt Scan Modal */}
       {showReceiptModal && (
@@ -3258,6 +3307,14 @@ export const BudgetPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Tutorial Overlay for first-time users */}
+      <TutorialOverlay
+        steps={DEFAULT_TUTORIAL_STEPS}
+        isOpen={showTutorial}
+        onComplete={handleTutorialComplete}
+        onSkip={handleTutorialSkip}
+      />
     </div>
   );
 };

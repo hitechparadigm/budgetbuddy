@@ -83,7 +83,7 @@ _"As a new user, I want to quickly set up my budget with AI assistance so I can 
 | 2b   | `CurrencySelector.tsx`           | `PUT /auth/profile`         | ✅ Complete |
 | 3    | `OnboardingFlow.tsx`             | `PUT /auth/profile`         | ✅ Complete |
 | 4    | `AIBudgetGenerationPage.tsx`     | `POST /ai/generate-budget`  | ✅ Complete |
-| 5    | `BudgetPage.tsx` (tutorial mode) | N/A                         | ⚠️ Partial  |
+| 5    | `BudgetPage.tsx` (tutorial mode) | N/A                         | ✅ Complete |
 
 ### UI/UX Requirements
 
@@ -1116,6 +1116,7 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 | ------------------------------ | ---------------------------------------------- | ------- |
 | `CalendarView.tsx`             | Calendar grid showing transactions by day      | ✅ Done |
 | CalendarView Integration       | Integrated into BudgetPage as new tab          | ✅ Done |
+| Tutorial Integration           | TutorialOverlay integrated into BudgetPage     | ✅ Done |
 | `LearnPage.tsx`                | Educational content with courses and badges    | ✅ Done |
 | `learnApi.ts`                  | Learn API service for courses/lessons/quizzes  | ✅ Done |
 | `TransactionFilters.tsx`       | Search, category, date, amount filters         | ✅ Done |
@@ -1255,21 +1256,21 @@ xl: 32px  (major sections)
 
 #### Mobile & Platform (Requirements 22-34) - ✅ MOSTLY COMPLETE
 
-| Req | Name                | Journey       | Task   | Frontend | Backend | UI/UX Status    |
-| --- | ------------------- | ------------- | ------ | -------- | ------- | --------------- |
-| R22 | Native Mobile Apps  | All           | N/A    | ✅       | ✅      | ✅ Complete     |
-| R23 | Mobile UX           | All           | N/A    | ✅       | N/A     | ✅ Complete     |
-| R24 | Offline Capability  | All           | N/A    | ✅       | N/A     | ✅ Complete     |
-| R25 | Mobile Security     | All           | N/A    | ✅       | ✅      | ✅ Complete     |
-| R26 | Export/Backup       | Settings      | N/A    | ✅       | ✅      | ✅ Complete     |
-| R27 | Onboarding Tutorial | Onboarding    | N/A    | ⚠️       | N/A     | ⚠️ Needs polish |
-| R28 | Search & Filtering  | Daily         | N/A    | ✅       | ⚠️      | ✅ Complete     |
-| R29 | Notifications       | Notifications | N/A    | ✅       | ✅      | ✅ Complete     |
-| R30 | Multi-Currency      | Settings      | N/A    | ✅       | ✅      | ✅ Complete     |
-| R31 | Basic Reporting     | Insights      | Task 3 | ✅       | ✅      | ✅ Complete     |
-| R32 | Category Management | Daily         | N/A    | ⚠️       | ✅      | ⚠️ Basic only   |
-| R33 | Quick Actions       | Daily         | N/A    | ⚠️       | N/A     | ⚠️ Partial      |
-| R34 | Enhanced Security   | Settings      | N/A    | ⚠️       | ✅      | ⚠️ No 2FA UI    |
+| Req | Name                | Journey       | Task   | Frontend | Backend | UI/UX Status  |
+| --- | ------------------- | ------------- | ------ | -------- | ------- | ------------- |
+| R22 | Native Mobile Apps  | All           | N/A    | ✅       | ✅      | ✅ Complete   |
+| R23 | Mobile UX           | All           | N/A    | ✅       | N/A     | ✅ Complete   |
+| R24 | Offline Capability  | All           | N/A    | ✅       | N/A     | ✅ Complete   |
+| R25 | Mobile Security     | All           | N/A    | ✅       | ✅      | ✅ Complete   |
+| R26 | Export/Backup       | Settings      | N/A    | ✅       | ✅      | ✅ Complete   |
+| R27 | Onboarding Tutorial | Onboarding    | N/A    | ✅       | N/A     | ✅ Complete   |
+| R28 | Search & Filtering  | Daily         | N/A    | ✅       | ⚠️      | ✅ Complete   |
+| R29 | Notifications       | Notifications | N/A    | ✅       | ✅      | ✅ Complete   |
+| R30 | Multi-Currency      | Settings      | N/A    | ✅       | ✅      | ✅ Complete   |
+| R31 | Basic Reporting     | Insights      | Task 3 | ✅       | ✅      | ✅ Complete   |
+| R32 | Category Management | Daily         | N/A    | ⚠️       | ✅      | ⚠️ Basic only |
+| R33 | Quick Actions       | Daily         | N/A    | ✅       | N/A     | ✅ Complete   |
+| R34 | Enhanced Security   | Settings      | N/A    | ✅       | ✅      | ✅ Complete   |
 
 #### Competitive Features (Requirements 35-48) - 🔄 IN PROGRESS
 
