@@ -1,13 +1,17 @@
 {
   "name": "budgetbuddy-receipt-function",
-  "version": "1.0.0",
-  "description": "BudgetBuddy Receipt Scanning Lambda Function",
+  "version": "1.1.0",
+  "description": "BudgetBuddy Receipt Scanning Lambda Function with AWS Textract",
   "main": "index.js",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@aws-sdk/client-textract": "^3.400.0",
+    "@aws-sdk/client-s3": "^3.400.0",
+    "@aws-sdk/s3-request-presigner": "^3.400.0"
+  },
   "devDependencies": {
     "jest": "^29.7.0"
   },
@@ -15,7 +19,7 @@
     "budgetbuddy",
     "receipt",
     "ocr",
-    "ai",
+    "textract",
     "lambda"
   ],
   "author": "BudgetBuddy Team",

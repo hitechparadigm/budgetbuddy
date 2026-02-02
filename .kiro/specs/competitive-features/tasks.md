@@ -250,19 +250,19 @@
 
 ### Task 7: Receipt Scanning (Requirement 44)
 
-- [ ] 7.1 Backend: Create receipt-ocr Lambda function
+- [x] 7.1 Backend: Create receipt-ocr Lambda function
   - Create `backend/functions/receipt-ocr/` directory
   - Integrate AWS Textract
   - Extract total, merchant, date
   - **Validates: Requirement 44.3**
 
-- [ ] 7.2 Backend: Create S3 bucket for receipts
+- [x] 7.2 Backend: Create S3 bucket for receipts
   - Add to CDK stack
   - 30-day lifecycle policy
   - SSE-S3 encryption
   - **Validates: Requirement 44.8**
 
-- [ ] 7.3 Backend: Add receipt upload endpoint
+- [x] 7.3 Backend: Add receipt upload endpoint
   - `POST /receipts/upload` - Get presigned URL
   - `POST /receipts/process` - Trigger OCR
   - **Validates: Requirement 44.1, 44.2**
