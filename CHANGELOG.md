@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.9.73] - 2026-02-02
+
+### ✨ Delete Account Feature
+
+**New Component**:
+
+- `DeleteAccountModal.tsx` - Multi-step account deletion wizard
+
+**Features**:
+
+- 3-step deletion process (warning → export → confirm)
+- Data export option before deletion
+- Type "DELETE" confirmation for safety
+- Clears all local storage on deletion
+- Redirects to login after account deletion
+
+**Settings Page Updates**:
+
+- Added "Danger Zone" section with delete account button
+- Integrated DeleteAccountModal component
+
+**Documentation**:
+
+- Updated USER_JOURNEYS.md component mapping
+- Removed DeleteAccountModal from missing components list
+
 ## [1.9.72] - 2026-02-02
 
 ### 📋 Task Status Reconciliation
