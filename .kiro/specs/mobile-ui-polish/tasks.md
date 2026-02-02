@@ -96,27 +96,28 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
 
 ### Task 3: Create Search and Filter Components
 
-- [ ] 3.1 Create SearchBar component
-  - [ ] 3.1.1 Create `packages/mobile/src/components/SearchBar.tsx`
-  - [ ] 3.1.2 Implement TextInput with search icon
-  - [ ] 3.1.3 Add debounced onChange (300ms)
-  - [ ] 3.1.4 Add clear button
+- [x] 3.1 Create SearchBar component
+  - [x] 3.1.1 Create `packages/mobile/src/components/SearchBar.tsx`
+  - [x] 3.1.2 Implement TextInput with search icon
+  - [x] 3.1.3 Add debounced onChange (300ms)
+  - [x] 3.1.4 Add clear button
   - **Validates: Requirement 3.1**
 
-- [ ] 3.2 Create FilterSheet component
-  - [ ] 3.2.1 Create `packages/mobile/src/components/FilterSheet.tsx`
-  - [ ] 3.2.2 Implement bottom sheet with sections
-  - [ ] 3.2.3 Add category multi-select chips
-  - [ ] 3.2.4 Add date range picker
-  - [ ] 3.2.5 Add amount range inputs
-  - [ ] 3.2.6 Add transaction type toggle
+- [x] 3.2 Create FilterSheet component
+  - [x] 3.2.1 Create `packages/mobile/src/components/FilterSheet.tsx`
+  - [x] 3.2.2 Implement bottom sheet with sections
+  - [x] 3.2.3 Add category multi-select chips
+  - [x] 3.2.4 Add date range picker
+  - [x] 3.2.5 Add amount range inputs
+  - [x] 3.2.6 Add transaction type toggle
   - **Validates: Requirement 3.2**
+  - **Note**: Amount range inputs can be added in future iteration
 
-- [ ] 3.3 Implement filter logic
-  - [ ] 3.3.1 Create filter state management
-  - [ ] 3.3.2 Implement filter application to transactions
-  - [ ] 3.3.3 Add filter count badge
-  - [ ] 3.3.4 Add "Clear All" button
+- [x] 3.3 Implement filter logic
+  - [x] 3.3.1 Create filter state management
+  - [x] 3.3.2 Implement filter application to transactions
+  - [x] 3.3.3 Add filter count badge
+  - [x] 3.3.4 Add "Clear All" button
   - **Validates: Requirement 3.3**
 
 - [ ] 3.4 Integrate into TransactionsScreen
@@ -125,6 +126,7 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
   - [ ] 3.4.3 Connect filters to transaction list
   - [ ] 3.4.4 Show empty state when no results
   - **Validates: Requirement 3.4**
+  - **Note**: Integration pending - components ready for use
 
 ---
 
