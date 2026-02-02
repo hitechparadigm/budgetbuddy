@@ -296,6 +296,18 @@ export class ApiStack extends cdk.Stack {
     });
 
     /**
+     * Subscription Tracking Functions
+     * Handle subscription CRUD, detection, and renewal tracking
+     */
+    this.functions.subscriptionsHandler = new lambda.Function(this, 'SubscriptionsHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-subscriptions',
+      code: lambda.Code.fromAsset('../backend/functions/subscriptions'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy subscriptions handler for subscription tracking, detection, and renewal management',
+    });
+
+    /**
      * Spending Insights Functions
      * Handle analytics, AI insights, and trend analysis
      */
@@ -913,6 +925,56 @@ export class ApiStack extends cdk.Stack {
     goalContributeResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
       authorizer,
       operationName: 'ContributeToGoal',
+    });
+
+    // Subscriptions routes (protected)
+    const subscriptionsResource = this.api.root.addResource('subscriptions');
+    subscriptionsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'GetSubscriptions',
+    });
+    subscriptionsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'CreateSubscription',
+    });
+
+    // Subscriptions summary endpoint
+    const subscriptionsSummaryResource = subscriptionsResource.addResource('summary');
+    subscriptionsSummaryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'GetSubscriptionsSummary',
+    });
+
+    // Subscriptions detect endpoint
+    const subscriptionsDetectResource = subscriptionsResource.addResource('detect');
+    subscriptionsDetectResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'DetectSubscriptions',
+    });
+
+    // Subscriptions health endpoint
+    const subscriptionsHealthResource = subscriptionsResource.addResource('health');
+    subscriptionsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'SubscriptionsHealthCheck',
+    });
+
+    // Individual subscription routes
+    const subscriptionIdResource = subscriptionsResource.addResource('{subscriptionId}');
+    subscriptionIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'UpdateSubscription',
+    });
+    subscriptionIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'DeleteSubscription',
+    });
+
+    // Subscription status endpoint
+    const subscriptionStatusResource = subscriptionIdResource.addResource('status');
+    subscriptionStatusResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
+      authorizer,
+      operationName: 'UpdateSubscriptionStatus',
     });
 
     // Insights routes (protected)
