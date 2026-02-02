@@ -23,6 +23,8 @@ interface CategoryFormData {
   plannedAmount: number;
   icon: string;
   colorCode: string;
+  rolloverEnabled: boolean;
+  rolloverCap: number | null;
 }
 
 // ============================================================================
@@ -154,6 +156,8 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
     plannedAmount: 0,
     icon: "📊",
     colorCode: AVAILABLE_COLORS[0],
+    rolloverEnabled: false,
+    rolloverCap: null,
   });
 
   // ============================================================================
@@ -216,6 +220,12 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
       isCustom: true,
       isActive: true,
       createdAt: new Date().toISOString(),
+      // Rollover fields
+      rolloverEnabled: formData.rolloverEnabled,
+      rolloverAmount: 0,
+      ...(formData.rolloverCap !== null && {
+        rolloverCap: formData.rolloverCap,
+      }),
     };
 
     const updatedGroup = {
@@ -231,6 +241,8 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
       plannedAmount: 0,
       icon: "📊",
       colorCode: AVAILABLE_COLORS[0],
+      rolloverEnabled: false,
+      rolloverCap: null,
     });
   };
 
@@ -241,6 +253,8 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
       plannedAmount: category.plannedAmount,
       icon: category.icon,
       colorCode: category.colorCode,
+      rolloverEnabled: category.rolloverEnabled || false,
+      rolloverCap: category.rolloverCap ?? null,
     });
     setActiveTab("custom");
   };
@@ -257,6 +271,15 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
             remainingAmount: formData.plannedAmount - cat.spentAmount,
             icon: formData.icon,
             colorCode: formData.colorCode,
+            // Rollover fields
+            rolloverEnabled: formData.rolloverEnabled,
+            // If disabling rollover, reset rolloverAmount to 0
+            rolloverAmount: formData.rolloverEnabled
+              ? cat.rolloverAmount || 0
+              : 0,
+            ...(formData.rolloverCap !== null
+              ? { rolloverCap: formData.rolloverCap }
+              : {}),
           }
         : cat,
     );
@@ -273,6 +296,8 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
       plannedAmount: 0,
       icon: "📊",
       colorCode: AVAILABLE_COLORS[0],
+      rolloverEnabled: false,
+      rolloverCap: null,
     });
   };
 
@@ -408,6 +433,21 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                           <p className="text-xs text-gray-500">
                             {formatCurrency(category.plannedAmount, currency)}{" "}
                             planned
+                            {category.rolloverEnabled && (
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                🔄 Rollover
+                                {category.rolloverAmount &&
+                                  category.rolloverAmount > 0 && (
+                                    <span className="ml-1">
+                                      +
+                                      {formatCurrency(
+                                        category.rolloverAmount,
+                                        currency,
+                                      )}
+                                    </span>
+                                  )}
+                              </span>
+                            )}
                             {category.isCustom && (
                               <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                                 Custom
@@ -663,6 +703,89 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                   </div>
                 </div>
 
+                {/* Rollover Settings (Requirement 40) */}
+                <div className="border-t border-gray-200 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Enable Rollover
+                      </label>
+                      <p className="text-xs text-gray-500">
+                        Unused budget carries over to next month
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          rolloverEnabled: !formData.rolloverEnabled,
+                        })
+                      }
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        formData.rolloverEnabled ? "bg-blue-600" : "bg-gray-200"
+                      }`}
+                      role="switch"
+                      aria-checked={formData.rolloverEnabled}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          formData.rolloverEnabled
+                            ? "translate-x-5"
+                            : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Rollover Cap (only shown when rollover is enabled) */}
+                  {formData.rolloverEnabled && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Rollover Cap (optional)
+                      </label>
+                      <p className="text-xs text-gray-500 mb-2">
+                        Maximum amount that can roll over. Leave empty for no
+                        limit.
+                      </p>
+                      <input
+                        type="number"
+                        value={formData.rolloverCap ?? ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            rolloverCap: e.target.value
+                              ? parseFloat(e.target.value)
+                              : null,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="No limit"
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
+                  )}
+
+                  {/* Display current rollover amount if editing */}
+                  {editingCategory &&
+                    editingCategory.rolloverAmount !== undefined &&
+                    editingCategory.rolloverAmount > 0 && (
+                      <div className="mt-3 p-3 bg-blue-50 rounded-md">
+                        <p className="text-sm text-blue-800">
+                          <span className="font-medium">Current Rollover:</span>{" "}
+                          {formatCurrency(
+                            editingCategory.rolloverAmount,
+                            currency,
+                          )}
+                        </p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          Available = Planned + Rollover - Spent
+                        </p>
+                      </div>
+                    )}
+                </div>
+
                 {/* Action Buttons */}
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
@@ -673,6 +796,8 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                         plannedAmount: 0,
                         icon: "📊",
                         colorCode: AVAILABLE_COLORS[0],
+                        rolloverEnabled: false,
+                        rolloverCap: null,
                       });
                     }}
                     className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"

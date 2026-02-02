@@ -24,7 +24,7 @@
   - `PUT /budget/categories/{id}/rollover/reset` - Reset rollover to 0
   - **Validates: Requirement 40.7**
 
-- [ ] 1.4 Frontend Web: Add rollover toggle to budget category
+- [x] 1.4 Frontend Web: Add rollover toggle to budget category
   - Add toggle switch in category edit modal
   - Display rollover amount separately from planned
   - Show available = planned + rollover - spent

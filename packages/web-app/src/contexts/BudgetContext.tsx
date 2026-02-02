@@ -3,9 +3,15 @@
  * Manages budget state and provides budget operations
  */
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { apiClient, ApiClientError } from '../utils/apiClient';
-import { useAuth } from './AuthContext';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { apiClient, ApiClientError } from "../utils/apiClient";
+import { useAuth } from "./AuthContext";
 
 // ============================================================================
 // Types
@@ -13,7 +19,7 @@ import { useAuth } from './AuthContext';
 
 interface BudgetGroup {
   groupName: string;
-  groupType: 'income' | 'saving' | 'expense';
+  groupType: "income" | "saving" | "expense";
   categories: Category[];
   totalPlanned: number;
   totalSpent: number;
@@ -24,7 +30,7 @@ interface Category {
   categoryId: string;
   categoryName: string;
   parentGroup: string;
-  groupType: 'income' | 'saving' | 'expense';
+  groupType: "income" | "saving" | "expense";
   categoryOrder: number;
   icon: string;
   colorCode: string;
@@ -36,10 +42,14 @@ interface Category {
   createdAt: string;
   // New recurring fields
   isRecurring?: boolean;
-  frequency?: 'weekly' | 'bi-weekly' | 'monthly' | 'annually';
+  frequency?: "weekly" | "bi-weekly" | "monthly" | "annually";
   startDate?: string;
   endDate?: string;
   nextDueDate?: string;
+  // Rollover fields (Requirement 40)
+  rolloverEnabled?: boolean;
+  rolloverAmount?: number;
+  rolloverCap?: number;
 }
 
 interface Budget {
@@ -50,6 +60,7 @@ interface Budget {
   totalSavings: number;
   totalExpenses: number;
   remainingBalance: number;
+  totalRollover?: number; // Total rollover across all categories (Requirement 40.9)
   groups: {
     income: BudgetGroup[];
     savings: BudgetGroup[];
@@ -76,7 +87,11 @@ interface BudgetContextType extends BudgetState {
   deleteBudget: (month: string) => Promise<void>;
   setSelectedMonth: (month: string) => void;
   clearError: () => void;
-  addBudgetItem: (month: string, groupType: 'income' | 'saving' | 'expense', item: Partial<Category>) => Promise<void>;
+  addBudgetItem: (
+    month: string,
+    groupType: "income" | "saving" | "expense",
+    item: Partial<Category>,
+  ) => Promise<void>;
 }
 
 interface BudgetProviderProps {
@@ -118,15 +133,17 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   // ============================================================================
 
   const loadBudgets = async (): Promise<void> => {
-    setBudgetState(prev => ({ ...prev, loading: true, error: null }));
+    setBudgetState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await apiClient.get('/budget');
+      const response = await apiClient.get("/budget");
       // Handle both {budgets: [...]} and {data: {budgets: [...]}} formats
       const budgets = response.budgets || response.data?.budgets || [];
 
-      setBudgetState(prev => {
-        const currentMonthBudget = budgets.find((b: Budget) => b.month === prev.selectedMonth);
+      setBudgetState((prev) => {
+        const currentMonthBudget = budgets.find(
+          (b: Budget) => b.month === prev.selectedMonth,
+        );
         return {
           ...prev,
           budgets,
@@ -135,11 +152,12 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
         };
       });
     } catch (error) {
-      const errorMessage = error instanceof ApiClientError
-        ? error.message
-        : 'Failed to load budgets';
+      const errorMessage =
+        error instanceof ApiClientError
+          ? error.message
+          : "Failed to load budgets";
 
-      setBudgetState(prev => ({
+      setBudgetState((prev) => ({
         ...prev,
         loading: false,
         error: errorMessage,
@@ -148,7 +166,7 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   };
 
   const loadBudget = async (month: string): Promise<void> => {
-    setBudgetState(prev => ({ ...prev, loading: true, error: null }));
+    setBudgetState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       const response = await apiClient.get(`/budget/current?month=${month}`);
@@ -156,7 +174,7 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       // Extract budget from response (backend returns {success, data, message})
       const budget = response.data || response;
 
-      setBudgetState(prev => ({
+      setBudgetState((prev) => ({
         ...prev,
         currentBudget: budget,
         selectedMonth: month,
@@ -165,18 +183,19 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     } catch (error) {
       if (error instanceof ApiClientError && error.statusCode === 404) {
         // Budget doesn't exist for this month
-        setBudgetState(prev => ({
+        setBudgetState((prev) => ({
           ...prev,
           currentBudget: null,
           selectedMonth: month,
           loading: false,
         }));
       } else {
-        const errorMessage = error instanceof ApiClientError
-          ? error.message
-          : 'Failed to load budget';
+        const errorMessage =
+          error instanceof ApiClientError
+            ? error.message
+            : "Failed to load budget";
 
-        setBudgetState(prev => ({
+        setBudgetState((prev) => ({
           ...prev,
           loading: false,
           error: errorMessage,
@@ -185,49 +204,58 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     }
   };
 
-  const createBudget = async (month: string, budgetData?: Partial<Budget>): Promise<void> => {
-    setBudgetState(prev => ({ ...prev, loading: true, error: null }));
+  const createBudget = async (
+    month: string,
+    budgetData?: Partial<Budget>,
+  ): Promise<void> => {
+    setBudgetState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       const requestData = {
         month,
         groups: budgetData?.groups || {
-          income: [{
-            groupName: 'Income',
-            groupType: 'income',
-            categories: [],
-            totalPlanned: 0,
-            totalSpent: 0,
-            totalRemaining: 0,
-          }],
-          savings: [{
-            groupName: 'Savings',
-            groupType: 'saving',
-            categories: [],
-            totalPlanned: 0,
-            totalSpent: 0,
-            totalRemaining: 0,
-          }],
-          expenses: [{
-            groupName: 'Expenses',
-            groupType: 'expense',
-            categories: [],
-            totalPlanned: 0,
-            totalSpent: 0,
-            totalRemaining: 0,
-          }]
+          income: [
+            {
+              groupName: "Income",
+              groupType: "income",
+              categories: [],
+              totalPlanned: 0,
+              totalSpent: 0,
+              totalRemaining: 0,
+            },
+          ],
+          savings: [
+            {
+              groupName: "Savings",
+              groupType: "saving",
+              categories: [],
+              totalPlanned: 0,
+              totalSpent: 0,
+              totalRemaining: 0,
+            },
+          ],
+          expenses: [
+            {
+              groupName: "Expenses",
+              groupType: "expense",
+              categories: [],
+              totalPlanned: 0,
+              totalSpent: 0,
+              totalRemaining: 0,
+            },
+          ],
         },
         isAIGenerated: budgetData?.isAIGenerated || false,
       };
 
-      console.log('Creating budget with data:', requestData);
-      const response = await apiClient.post('/budget', requestData);
-      console.log('Budget created successfully:', response);
+      console.log("Creating budget with data:", requestData);
+      const response = await apiClient.post("/budget", requestData);
+      console.log("Budget created successfully:", response);
 
       // Extract budget from response (backend returns {success, data, message})
       const budget = response.data || response;
 
-      setBudgetState(prev => ({
+      setBudgetState((prev) => ({
         ...prev,
         currentBudget: budget,
         budgets: [...prev.budgets, budget],
@@ -235,11 +263,12 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
         loading: false,
       }));
     } catch (error) {
-      const errorMessage = error instanceof ApiClientError
-        ? error.message
-        : 'Failed to create budget';
+      const errorMessage =
+        error instanceof ApiClientError
+          ? error.message
+          : "Failed to create budget";
 
-      setBudgetState(prev => ({
+      setBudgetState((prev) => ({
         ...prev,
         loading: false,
         error: errorMessage,
@@ -248,14 +277,19 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
     }
   };
 
-  const updateBudget = async (month: string, updates: Partial<Budget>): Promise<void> => {
-    setBudgetState(prev => ({ ...prev, loading: true, error: null }));
+  const updateBudget = async (
+    month: string,
+    updates: Partial<Budget>,
+  ): Promise<void> => {
+    setBudgetState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       // First, get the budget for this month to find its budgetId
-      const budgetsResponse = await apiClient.get('/budget');
+      const budgetsResponse = await apiClient.get("/budget");
       const budgetsData = budgetsResponse.data || budgetsResponse;
-      const budget = budgetsData.budgets?.find((b: Budget) => b.month === month);
+      const budget = budgetsData.budgets?.find(
+        (b: Budget) => b.month === month,
+      );
 
       if (!budget) {
         throw new Error(`No budget found for ${month}`);
@@ -263,24 +297,27 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
 
       const response = await apiClient.put(`/budget/${budget.budgetId}`, {
         ...updates,
-        month // Include month in the request body
+        month, // Include month in the request body
       });
 
       // Extract budget from response (backend returns {success, data, message})
       const updatedBudget = response.data || response;
 
-      setBudgetState(prev => ({
+      setBudgetState((prev) => ({
         ...prev,
         currentBudget: updatedBudget,
-        budgets: prev.budgets.map((b: Budget) => b.month === month ? updatedBudget : b),
+        budgets: prev.budgets.map((b: Budget) =>
+          b.month === month ? updatedBudget : b,
+        ),
         loading: false,
       }));
     } catch (error) {
-      const errorMessage = error instanceof ApiClientError
-        ? error.message
-        : 'Failed to update budget';
+      const errorMessage =
+        error instanceof ApiClientError
+          ? error.message
+          : "Failed to update budget";
 
-      setBudgetState(prev => ({
+      setBudgetState((prev) => ({
         ...prev,
         loading: false,
         error: errorMessage,
@@ -290,23 +327,24 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   };
 
   const deleteBudget = async (month: string): Promise<void> => {
-    setBudgetState(prev => ({ ...prev, loading: true, error: null }));
+    setBudgetState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       await apiClient.delete(`/budget/current?month=${month}`);
 
-      setBudgetState(prev => ({
+      setBudgetState((prev) => ({
         ...prev,
         currentBudget: prev.selectedMonth === month ? null : prev.currentBudget,
         budgets: prev.budgets.filter((b: Budget) => b.month !== month),
         loading: false,
       }));
     } catch (error) {
-      const errorMessage = error instanceof ApiClientError
-        ? error.message
-        : 'Failed to delete budget';
+      const errorMessage =
+        error instanceof ApiClientError
+          ? error.message
+          : "Failed to delete budget";
 
-      setBudgetState(prev => ({
+      setBudgetState((prev) => ({
         ...prev,
         loading: false,
         error: errorMessage,
@@ -316,17 +354,21 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
   };
 
   const setSelectedMonth = (month: string): void => {
-    setBudgetState(prev => ({ ...prev, selectedMonth: month }));
+    setBudgetState((prev) => ({ ...prev, selectedMonth: month }));
     loadBudget(month);
   };
 
   const clearError = (): void => {
-    setBudgetState(prev => ({ ...prev, error: null }));
+    setBudgetState((prev) => ({ ...prev, error: null }));
   };
 
   // New seamless budget item management functions
-  const addBudgetItem = async (month: string, groupType: 'income' | 'saving' | 'expense', item: Partial<Category>): Promise<void> => {
-    setBudgetState(prev => ({ ...prev, loading: true, error: null }));
+  const addBudgetItem = async (
+    month: string,
+    groupType: "income" | "saving" | "expense",
+    item: Partial<Category>,
+  ): Promise<void> => {
+    setBudgetState((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       // Check if budget exists for this month
@@ -335,7 +377,9 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       if (!currentBudget || currentBudget.month !== month) {
         // Try to load existing budget
         try {
-          const response = await apiClient.get(`/budget/current?month=${month}`);
+          const response = await apiClient.get(
+            `/budget/current?month=${month}`,
+          );
           currentBudget = response.data || response;
         } catch (error) {
           // Budget doesn't exist, create it automatically
@@ -349,18 +393,23 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
       }
 
       if (!currentBudget) {
-        throw new Error('Failed to create or load budget');
+        throw new Error("Failed to create or load budget");
       }
 
       // Generate new category ID and add required fields
       const newCategory: Category = {
         categoryId: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        categoryName: item.categoryName || '',
-        parentGroup: groupType === 'saving' ? 'Savings' : groupType === 'income' ? 'Income' : 'Expenses',
+        categoryName: item.categoryName || "",
+        parentGroup:
+          groupType === "saving"
+            ? "Savings"
+            : groupType === "income"
+              ? "Income"
+              : "Expenses",
         groupType,
         categoryOrder: 0,
-        icon: item.icon || '💰',
-        colorCode: item.colorCode || '#3B82F6',
+        icon: item.icon || "💰",
+        colorCode: item.colorCode || "#3B82F6",
         plannedAmount: item.plannedAmount || 0,
         spentAmount: 0,
         remainingAmount: item.plannedAmount || 0,
@@ -376,18 +425,30 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
 
       // Add the category to the appropriate group
       const updatedGroups = { ...currentBudget.groups };
-      const groupKey = groupType === 'saving' ? 'savings' : groupType === 'income' ? 'income' : 'expenses';
+      const groupKey =
+        groupType === "saving"
+          ? "savings"
+          : groupType === "income"
+            ? "income"
+            : "expenses";
 
       if (!updatedGroups[groupKey] || updatedGroups[groupKey].length === 0) {
         // Create default group if it doesn't exist
-        updatedGroups[groupKey] = [{
-          groupName: groupType === 'saving' ? 'Savings' : groupType === 'income' ? 'Income' : 'Expenses',
-          groupType,
-          categories: [newCategory],
-          totalPlanned: newCategory.plannedAmount,
-          totalSpent: 0,
-          totalRemaining: newCategory.plannedAmount,
-        }];
+        updatedGroups[groupKey] = [
+          {
+            groupName:
+              groupType === "saving"
+                ? "Savings"
+                : groupType === "income"
+                  ? "Income"
+                  : "Expenses",
+            groupType,
+            categories: [newCategory],
+            totalPlanned: newCategory.plannedAmount,
+            totalSpent: 0,
+            totalRemaining: newCategory.plannedAmount,
+          },
+        ];
       } else {
         // Add to existing group
         updatedGroups[groupKey][0].categories.push(newCategory);
@@ -397,13 +458,13 @@ export const BudgetProvider: React.FC<BudgetProviderProps> = ({ children }) => {
 
       // Update the budget
       await updateBudget(month, { groups: updatedGroups });
-
     } catch (error) {
-      const errorMessage = error instanceof ApiClientError
-        ? error.message
-        : 'Failed to add budget item';
+      const errorMessage =
+        error instanceof ApiClientError
+          ? error.message
+          : "Failed to add budget item";
 
-      setBudgetState(prev => ({
+      setBudgetState((prev) => ({
         ...prev,
         loading: false,
         error: errorMessage,
@@ -443,7 +504,7 @@ export const useBudget = (): BudgetContextType => {
   const context = useContext(BudgetContext);
 
   if (context === undefined) {
-    throw new Error('useBudget must be used within a BudgetProvider');
+    throw new Error("useBudget must be used within a BudgetProvider");
   }
 
   return context;
@@ -456,7 +517,7 @@ export const useBudget = (): BudgetContextType => {
 function getCurrentMonth(): string {
   const now = new Date();
   const year = now.getFullYear();
-  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const month = (now.getMonth() + 1).toString().padStart(2, "0");
   return `${year}-${month}`;
 }
 
