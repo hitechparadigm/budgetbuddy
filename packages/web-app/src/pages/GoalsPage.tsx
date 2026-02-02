@@ -2,10 +2,10 @@
  * Goals Page - Savings Goals Dashboard
  *
  * Displays savings goals with progress bars, contribution tracking,
- * and milestone celebrations.
+ * milestone celebrations, and drag-and-drop reordering.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
@@ -61,6 +61,10 @@ export const GoalsPage: React.FC = () => {
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [contributionAmount, setContributionAmount] = useState("");
   const [contributing, setContributing] = useState(false);
+  const [draggedGoal, setDraggedGoal] = useState<Goal | null>(null);
+  const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
+  const [reordering, setReordering] = useState(false);
+  const dragCounter = useRef(0);
   const currency = "USD";
 
   const loadGoals = useCallback(async () => {
@@ -167,6 +171,110 @@ export const GoalsPage: React.FC = () => {
     setSelectedGoal(goal);
     setContributionAmount("");
     setShowContributeModal(true);
+  };
+
+  // Drag and drop handlers for goal reordering
+  const handleDragStart = (e: React.DragEvent, goal: Goal) => {
+    setDraggedGoal(goal);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", goal.goalId);
+    // Add a slight delay to show the dragging state
+    setTimeout(() => {
+      const element = e.target as HTMLElement;
+      element.style.opacity = "0.5";
+    }, 0);
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    const element = e.target as HTMLElement;
+    element.style.opacity = "1";
+    setDraggedGoal(null);
+    setDragOverGoalId(null);
+    dragCounter.current = 0;
+  };
+
+  const handleDragEnter = (e: React.DragEvent, goalId: string) => {
+    e.preventDefault();
+    dragCounter.current++;
+    if (draggedGoal && draggedGoal.goalId !== goalId) {
+      setDragOverGoalId(goalId);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current--;
+    if (dragCounter.current === 0) {
+      setDragOverGoalId(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetGoal: Goal) => {
+    e.preventDefault();
+    setDragOverGoalId(null);
+    dragCounter.current = 0;
+
+    if (!draggedGoal || draggedGoal.goalId === targetGoal.goalId) {
+      return;
+    }
+
+    // Calculate new order
+    const draggedIndex = goals.findIndex(
+      (g) => g.goalId === draggedGoal.goalId,
+    );
+    const targetIndex = goals.findIndex((g) => g.goalId === targetGoal.goalId);
+
+    if (draggedIndex === -1 || targetIndex === -1) return;
+
+    // Create new array with reordered goals
+    const newGoals = [...goals];
+    const [removed] = newGoals.splice(draggedIndex, 1);
+    newGoals.splice(targetIndex, 0, removed);
+
+    // Update local state immediately for responsive UI
+    setGoals(newGoals);
+
+    // Build the new order array for API
+    const goalOrder = newGoals.map((g, index) => ({
+      goalId: g.goalId,
+      priority: index + 1,
+    }));
+
+    // Call API to persist the new order
+    try {
+      setReordering(true);
+      const token = localStorage.getItem("budgetbuddy_id_token");
+      if (!token) {
+        navigate("/auth");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/goals/reorder`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ goalOrder }),
+      });
+
+      if (!response.ok) {
+        // Revert on failure
+        await loadGoals();
+        throw new Error("Failed to reorder goals");
+      }
+    } catch (err) {
+      console.error("Error reordering goals:", err);
+      setError(err instanceof Error ? err.message : "Failed to reorder goals");
+    } finally {
+      setReordering(false);
+      setDraggedGoal(null);
+    }
   };
 
   const getProgressColor = (percent: number) => {
@@ -296,104 +404,142 @@ export const GoalsPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
-            {goals.map((goal) => (
-              <div
-                key={goal.goalId}
-                className={`bg-white rounded-lg shadow p-6 ${
-                  goal.status === "completed" ? "border-2 border-green-500" : ""
-                }`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">{goal.icon}</span>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                        {goal.name}
-                        <span className="text-xl">{goal.statusIndicator}</span>
-                      </h3>
-                      {goal.targetDate && (
-                        <p className="text-sm text-gray-500">
-                          Target: {formatDate(goal.targetDate)}
-                          {goal.daysRemaining !== null && (
-                            <span className="ml-2">
-                              (
-                              {goal.daysRemaining > 0
-                                ? `${goal.daysRemaining} days left`
-                                : "Past due"}
-                              )
-                            </span>
-                          )}
-                        </p>
+          <>
+            {goals.length > 1 && (
+              <p className="text-sm text-gray-500 mb-4 flex items-center gap-2">
+                <span className="text-lg">↕️</span>
+                Drag and drop goals to reorder by priority
+                {reordering && (
+                  <span className="ml-2 text-blue-600">Saving...</span>
+                )}
+              </p>
+            )}
+            <div className="space-y-4">
+              {goals.map((goal) => (
+                <div
+                  key={goal.goalId}
+                  draggable={goal.status === "active"}
+                  onDragStart={(e) => handleDragStart(e, goal)}
+                  onDragEnd={handleDragEnd}
+                  onDragEnter={(e) => handleDragEnter(e, goal.goalId)}
+                  onDragLeave={handleDragLeave}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, goal)}
+                  className={`bg-white rounded-lg shadow p-6 transition-all duration-200 ${
+                    goal.status === "completed"
+                      ? "border-2 border-green-500"
+                      : ""
+                  } ${
+                    goal.status === "active"
+                      ? "cursor-grab active:cursor-grabbing"
+                      : ""
+                  } ${
+                    dragOverGoalId === goal.goalId
+                      ? "border-2 border-blue-500 border-dashed bg-blue-50"
+                      : ""
+                  } ${draggedGoal?.goalId === goal.goalId ? "opacity-50" : ""}`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      {goal.status === "active" && (
+                        <span
+                          className="text-gray-400 cursor-grab"
+                          title="Drag to reorder"
+                        >
+                          ⋮⋮
+                        </span>
                       )}
+                      <span className="text-3xl">{goal.icon}</span>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                          {goal.name}
+                          <span className="text-xl">
+                            {goal.statusIndicator}
+                          </span>
+                        </h3>
+                        {goal.targetDate && (
+                          <p className="text-sm text-gray-500">
+                            Target: {formatDate(goal.targetDate)}
+                            {goal.daysRemaining !== null && (
+                              <span className="ml-2">
+                                (
+                                {goal.daysRemaining > 0
+                                  ? `${goal.daysRemaining} days left`
+                                  : "Past due"}
+                                )
+                              </span>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {goal.status === "active" && (
+                      <button
+                        onClick={() => openContributeModal(goal)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        + Add Funds
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-gray-600">
+                        {formatCurrency(goal.currentAmount, currency)} of{" "}
+                        {formatCurrency(goal.targetAmount, currency)}
+                      </span>
+                      <span className="font-semibold text-gray-900">
+                        {goal.progressPercent}%
+                      </span>
+                    </div>
+                    <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${getProgressColor(goal.progressPercent)} transition-all duration-500`}
+                        style={{ width: `${goal.progressPercent}%` }}
+                      />
                     </div>
                   </div>
-                  {goal.status === "active" && (
-                    <button
-                      onClick={() => openContributeModal(goal)}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      + Add Funds
-                    </button>
+
+                  {/* Milestones */}
+                  <div className="flex gap-2 mb-4">
+                    {[25, 50, 75, 100].map((milestone) => {
+                      const reached =
+                        goal.milestones?.[String(milestone)]?.reached;
+                      return (
+                        <div
+                          key={milestone}
+                          className={`flex-1 text-center py-1 rounded text-xs font-medium ${
+                            reached
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-500"
+                          }`}
+                        >
+                          {reached ? "✓" : ""} {milestone}%
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Monthly Required */}
+                  {goal.monthlyRequired && goal.status === "active" && (
+                    <p className="text-sm text-blue-600">
+                      💡 Save {formatCurrency(goal.monthlyRequired, currency)}
+                      /month to reach your goal on time
+                    </p>
+                  )}
+
+                  {/* Completed Badge */}
+                  {goal.status === "completed" && goal.completedAt && (
+                    <p className="text-sm text-green-600 font-medium">
+                      🏆 Goal completed on {formatDate(goal.completedAt)}
+                    </p>
                   )}
                 </div>
-
-                {/* Progress Bar */}
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">
-                      {formatCurrency(goal.currentAmount, currency)} of{" "}
-                      {formatCurrency(goal.targetAmount, currency)}
-                    </span>
-                    <span className="font-semibold text-gray-900">
-                      {goal.progressPercent}%
-                    </span>
-                  </div>
-                  <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${getProgressColor(goal.progressPercent)} transition-all duration-500`}
-                      style={{ width: `${goal.progressPercent}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Milestones */}
-                <div className="flex gap-2 mb-4">
-                  {[25, 50, 75, 100].map((milestone) => {
-                    const reached =
-                      goal.milestones?.[String(milestone)]?.reached;
-                    return (
-                      <div
-                        key={milestone}
-                        className={`flex-1 text-center py-1 rounded text-xs font-medium ${
-                          reached
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-500"
-                        }`}
-                      >
-                        {reached ? "✓" : ""} {milestone}%
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Monthly Required */}
-                {goal.monthlyRequired && goal.status === "active" && (
-                  <p className="text-sm text-blue-600">
-                    💡 Save {formatCurrency(goal.monthlyRequired, currency)}
-                    /month to reach your goal on time
-                  </p>
-                )}
-
-                {/* Completed Badge */}
-                {goal.status === "completed" && goal.completedAt && (
-                  <p className="text-sm text-green-600 font-medium">
-                    🏆 Goal completed on {formatDate(goal.completedAt)}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
