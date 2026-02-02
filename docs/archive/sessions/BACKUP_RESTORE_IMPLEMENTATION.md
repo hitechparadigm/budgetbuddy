@@ -70,30 +70,8 @@
       "onboardingCompleted": true,
       "createdAt": "2026-01-01T00:00:00.000Z"
     },
-    "budgets": [
-      {
-        "budgetId": "budget1",
-        "month": "2026-01",
-        "categories": [...],
-        "totalIncome": 5000,
-        "totalSavings": 1000,
-        "totalExpenses": 3000,
-        "createdAt": "2026-01-01T00:00:00.000Z",
-        "updatedAt": "2026-01-15T00:00:00.000Z"
-      }
-    ],
-    "transactions": [
-      {
-        "transactionId": "trans1",
-        "date": "2026-01-15",
-        "category": "Groceries",
-        "description": "Walmart",
-        "amount": 150,
-        "type": "expense",
-        "budgetMonth": "2026-01",
-        "createdAt": "2026-01-15T00:00:00.000Z"
-      }
-    ]
+    "budgets": [...],
+    "transactions": [...]
   },
   "metadata": {
     "totalBudgets": 1,
@@ -105,23 +83,6 @@
   }
 }
 ```
-
-### Validation Rules
-
-**Backup Data Validation**:
-
-- Version field required
-- Data object with budgets and transactions arrays required
-- Each budget must have: month, categories array
-- Each transaction must have: date, category, amount, type
-
-**Restore Process**:
-
-1. Authenticate user via JWT token
-2. Parse and validate JSON backup data
-3. Restore budgets to DynamoDB (with new IDs if needed)
-4. Restore transactions to DynamoDB (with new IDs if needed)
-5. Return success with count of restored items
 
 ### API Endpoints
 
@@ -139,28 +100,6 @@
 - **Auth**: Required (JWT Bearer token)
 - **Body**: JSON backup data
 - **Response**: Success message with restored counts
-
-## Next Steps
-
-1. **Frontend Implementation** (30 min)
-   - Add backup/restore UI to Settings page
-   - Implement file download and upload
-   - Add success/error notifications
-
-2. **Infrastructure Deployment** (20 min)
-   - Create CDK stack for restore Lambda
-   - Add API Gateway integration
-   - Deploy to dev environment
-
-3. **Testing** (20 min)
-   - Test backup export with real data
-   - Test restore with backup file
-   - Verify data integrity
-
-4. **Documentation** (10 min)
-   - Update user documentation
-   - Add backup/restore guide
-   - Update API documentation
 
 ## Testing Results
 

@@ -6,9 +6,11 @@ This directory contains only the essential scripts needed for the BudgetBuddy de
 
 ### Security Scripts
 
-- `security-check-win.ps1` - Windows security validation
+- `security-check-win.ps1` - Windows security validation (primary)
 - `security-check.sh` - Linux/Mac security validation
 - `pre-commit-security.sh` - Pre-commit security hooks
+
+Note: Redundant security scripts (`security-check.ps1`, `security-check-simple.ps1`) were removed during documentation cleanup.
 
 ### Documentation Validation
 

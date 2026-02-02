@@ -28,7 +28,7 @@ const { DynamoDBDocumentClient, GetCommand, ... } = require("@aws-sdk/lib-dynamo
 Updated `backend/functions/family/index.js` to use AWS SDK v3:
 
 1. Changed imports from `aws-sdk` to `@aws-sdk/client-dynamodb` and `@aws-sdk/lib-dynamodb`
-2. Updated all DynamoDB operations to use the new command pattern (`send(new GetCommand(...))`)
+2. Updated all DynamoDB operations to use the new command pattern
 3. Updated `package.json` to list v3 dependencies
 4. Updated test file to mock AWS SDK v3 instead of v2
 
@@ -46,4 +46,4 @@ All 18 unit tests pass after the migration.
 
 1. Always use AWS SDK v3 for Node.js 18+ Lambda functions
 2. Check that Lambda dependencies match what's available in Lambda layers
-3. Compare new Lambda configurations with working ones (auth, budget, transactions all use SDK v3)
+3. Compare new Lambda configurations with working ones

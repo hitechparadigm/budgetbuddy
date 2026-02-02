@@ -297,76 +297,6 @@ Current (9 functions) → Proposed (5 functions):
 
 **Action**: Add proper code organization and linting.
 
-**Implementation**:
-
-```javascript
-// backend/functions/auth/index.js
-
-// ============================================================================
-// SECTION 1: IMPORTS (MUST BE AT TOP)
-// ============================================================================
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const {
-  CognitoIdentityProviderClient,
-} = require("@aws-sdk/client-cognito-identity-provider");
-const dynamoHelpers = require("/opt/nodejs/utils/dynamo-helpers");
-const FamilyIdResolver = require("/opt/nodejs/utils/family-id-resolver");
-
-// ============================================================================
-// SECTION 2: CONSTANTS
-// ============================================================================
-const TABLE_NAME = process.env.TABLE_NAME;
-const USER_POOL_ID = process.env.USER_POOL_ID;
-
-// ============================================================================
-// SECTION 3: HELPER FUNCTIONS
-// ============================================================================
-function validateEmail(email) {
-  /* ... */
-}
-function validatePassword(password) {
-  /* ... */
-}
-
-// ============================================================================
-// SECTION 4: ROUTE HANDLERS
-// ============================================================================
-async function handleRegister(event) {
-  /* ... */
-}
-async function handleLogin(event) {
-  /* ... */
-}
-async function handleOnboarding(event) {
-  /* ... */
-}
-
-// ============================================================================
-// SECTION 5: MAIN HANDLER
-// ============================================================================
-exports.handler = async (event) => {
-  // Route to appropriate handler
-};
-```
-
-**Add ESLint Rules**:
-
-```json
-{
-  "rules": {
-    "no-use-before-define": [
-      "error",
-      {
-        "functions": false,
-        "variables": true
-      }
-    ],
-    "max-lines": ["warn", 500],
-    "max-lines-per-function": ["warn", 100]
-  }
-}
-```
-
 **Timeline**: 2 hours
 
 ### 4.4 LONG-TERM: When to Split Functions ✅
@@ -381,157 +311,13 @@ exports.handler = async (event) => {
 
 **For BudgetBuddy MVP, NONE of these apply yet**.
 
-**Future Split Candidates** (when you reach scale):
-
-- AI generation (high memory, slow)
-- Payment processing (PCI compliance isolation)
-- Export (high memory for PDF generation)
-
 **Timeline**: When you have 10,000+ users
 
 ---
 
-## 5. Comparison: Current vs Recommended
+## 5. Conclusion
 
-### 5.1 Lambda Function Count
-
-| Aspect                       | Current           | Recommended | Benefit              |
-| ---------------------------- | ----------------- | ----------- | -------------------- |
-| **Business Logic Functions** | 9                 | 5           | -44% complexity      |
-| **Auth Functions**           | 2 (1 old + 1 new) | 1           | -50% auth complexity |
-| **Deployment Units**         | 12 total          | 8 total     | -33% deployments     |
-| **Lines of Code**            | Same              | Same        | No code loss         |
-| **Operational Overhead**     | High              | Medium      | Easier to manage     |
-
-### 5.2 Development Velocity
-
-| Task                      | Current                              | Recommended                 | Time Saved |
-| ------------------------- | ------------------------------------ | --------------------------- | ---------- |
-| **Add new auth endpoint** | 3 days (new Lambda + tests + deploy) | 2 hours (add route handler) | 92% faster |
-| **Debug auth issue**      | Check 2 Lambdas + routing            | Check 1 Lambda              | 50% faster |
-| **Deploy auth changes**   | Deploy 2 Lambdas                     | Deploy 1 Lambda             | 50% faster |
-| **Add new feature**       | Create new Lambda                    | Add to existing             | 80% faster |
-
-### 5.3 Cost Comparison
-
-| Resource               | Current                       | Recommended         | Savings         |
-| ---------------------- | ----------------------------- | ------------------- | --------------- |
-| **Lambda invocations** | Same                          | Same                | $0              |
-| **Lambda duration**    | Slightly higher (cold starts) | Slightly lower      | ~$5/month       |
-| **CloudWatch logs**    | 9 log groups                  | 5 log groups        | ~$2/month       |
-| **Developer time**     | High (managing 9 functions)   | Medium (managing 5) | ~20 hours/month |
-
-**Total Savings**: ~$7/month + 20 hours/month developer time
-
----
-
-## 6. Migration Plan
-
-### Phase 1: Immediate (1 day)
-
-1. **Pause auth refactoring**
-
-   - Document decision
-   - Update tasks.md to mark remaining tasks as "CANCELLED"
-   - Keep auth-onboarding (already deployed)
-
-2. **Fix import ordering in auth Lambda**
-
-   - Move all imports to top of file
-   - Add clear section comments
-   - Test thoroughly
-
-3. **Add ESLint rules**
-   - Add no-use-before-define rule
-   - Add max-lines warning
-   - Run on all Lambda functions
-
-### Phase 2: Short-term (1 week)
-
-1. **Merge family Lambda into auth**
-
-   - Family operations are auth-related
-   - Move code to auth Lambda
-   - Update API Gateway routes
-   - Deploy and test
-
-2. **Merge email Lambda into budget/transaction**
-
-   - Emails are triggered by budget/transaction actions
-   - Move email sending to those Lambdas
-   - Remove standalone email Lambda
-
-3. **Merge export Lambda into budget**
-
-   - Export is a budget operation
-   - Move export code to budget Lambda
-   - Update API Gateway routes
-
-4. **Remove admin Lambda**
-   - Admin features not built yet
-   - Remove Lambda and routes
-   - Build when actually needed
-
-### Phase 3: Medium-term (1 month)
-
-1. **Monitor and optimize**
-
-   - Watch CloudWatch metrics
-   - Identify actual bottlenecks
-   - Optimize based on real data
-
-2. **Document architecture decisions**
-
-   - Create ARCHITECTURE_DECISIONS.md
-   - Document why we consolidated
-   - Document when to split in future
-
-3. **Focus on features**
-   - Build core budget features
-   - Add mobile app functionality
-   - Improve user experience
-
----
-
-## 7. Architectural Principles for BudgetBuddy
-
-### 7.1 YAGNI (You Aren't Gonna Need It) ✅
-
-**Principle**: Don't build infrastructure until you need it.
-
-**Apply to**:
-
-- ❌ Don't split Lambdas until scaling requires it
-- ❌ Don't build admin features until you have users to admin
-- ❌ Don't optimize until you have performance problems
-- ✅ Do build features users actually need
-
-### 7.2 KISS (Keep It Simple, Stupid) ✅
-
-**Principle**: Simplest solution that works is usually best.
-
-**Apply to**:
-
-- ✅ One Lambda per business domain (auth, budget, transaction)
-- ✅ Fix bugs with simple solutions (move imports, not refactor)
-- ✅ Add complexity only when justified by real needs
-
-### 7.3 Premature Optimization is the Root of All Evil ✅
-
-**Principle**: Optimize based on measurements, not assumptions.
-
-**Apply to**:
-
-- ❌ Don't split Lambdas for "better performance" without measuring
-- ❌ Don't add caching until you have slow queries
-- ❌ Don't add CDN until you have global users
-- ✅ Do measure first, then optimize
-
----
-
-## 8. Conclusion
-
-### 8.1 Summary
+### 5.1 Summary
 
 **Current State**: Moderately overcomplicated for an MVP
 
@@ -548,7 +334,7 @@ exports.handler = async (event) => {
 3. ✅ **Fix** import ordering with simple solution
 4. ✅ **Focus** on core features and user value
 
-### 8.2 What's Good (Keep These) ✅
+### 5.2 What's Good (Keep These) ✅
 
 - Single-table DynamoDB design
 - Lambda layers for code reuse
@@ -557,14 +343,14 @@ exports.handler = async (event) => {
 - CI/CD pipeline
 - Infrastructure as Code (CDK)
 
-### 8.3 What Needs Fixing ⚠️
+### 5.3 What Needs Fixing ⚠️
 
 - Too many Lambda functions
 - Incomplete refactoring state
 - Premature feature development (admin, family)
 - Over-engineering simple problems
 
-### 8.4 Final Recommendation
+### 5.4 Final Recommendation
 
 **SIMPLIFY THE ARCHITECTURE**
 
@@ -577,29 +363,6 @@ You have a solid foundation, but you've added unnecessary complexity. For an MVP
 The best architecture is the one that **delivers value to users fastest** while remaining **maintainable**. Right now, you're optimizing for scale you don't have yet.
 
 **Build for today's needs, not tomorrow's assumptions.**
-
----
-
-## 9. Action Items
-
-### Immediate (This Week)
-
-- [ ] Review this document with team
-- [ ] Decide: Pause auth refactoring? (Recommended: YES)
-- [ ] Fix import ordering in auth Lambda
-- [ ] Add ESLint rules
-
-### Short-term (Next 2 Weeks)
-
-- [ ] Consolidate Lambda functions (9 → 5)
-- [ ] Update documentation
-- [ ] Focus on core features
-
-### Long-term (Next Quarter)
-
-- [ ] Monitor actual usage patterns
-- [ ] Optimize based on real data
-- [ ] Split functions only when justified
 
 ---
 
