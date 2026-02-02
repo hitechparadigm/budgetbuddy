@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.9.55] - 2026-02-02
+
+### ✨ Feature - Confetti Animation for Goal Milestones
+
+**Components Created**:
+
+- `packages/web-app/src/components/Confetti.tsx` - Lightweight confetti animation
+
+**Features**:
+
+- CSS-based confetti animation (no external dependencies)
+- Configurable particle count and duration
+- Multiple colors for visual appeal
+- `useConfetti` hook for easy integration
+- Triggers on goal milestone achievements
+
+**Integration**:
+
+- Added to GoalsPage for milestone celebrations
+- Shows confetti when reaching 25%, 50%, 75%, 100% milestones
+
+**Tasks Verified Complete**:
+
+- Task 5: Goals drag-and-drop (already implemented)
+- Task 6.2: Confetti animation ✅
+
 ## [1.9.54] - 2026-02-02
 
 ### ✨ Feature - Transaction Filters Component

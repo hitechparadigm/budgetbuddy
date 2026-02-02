@@ -1095,8 +1095,8 @@ xl: 32px  (major sections)
 - [x] Create goal modal with templates
 - [x] Goal icon/emoji picker
 - [x] Target date picker
-- [ ] Drag-and-drop reordering
-- [x] Milestone celebration (alert)
+- [x] Drag-and-drop reordering
+- [x] Milestone celebration (confetti + alert)
 - [ ] Archive completed goals
 
 **4. Peer Comparison (R46)**
