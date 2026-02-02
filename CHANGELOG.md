@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.9.76] - 2026-02-02
+
+### ✨ Receipt Scanning Integration
+
+**Integration Complete**:
+
+- Integrated `ReceiptUpload` component into BudgetPage
+- Added "Scan Receipt" action to QuickActionsFAB
+- Receipt scan results pre-fill transaction form
+
+**Features**:
+
+- Scan receipt from Quick Actions FAB (📷 icon)
+- Drag-and-drop or file picker for receipt images
+- AI-powered OCR extracts merchant, date, and total
+- Extracted data pre-fills expense transaction form
+- User selects category and confirms transaction
+
+**User Flow**:
+
+1. Click FAB → "Scan Receipt"
+2. Upload receipt image (drag-drop or browse)
+3. AI extracts merchant, date, total
+4. Transaction form opens with pre-filled data
+5. User selects category and saves
+
+**Documentation**:
+
+- Updated USER_JOURNEYS.md - ReceiptUpload marked as Done
+
 ## [1.9.75] - 2026-02-02
 
 ### ✨ Settings Journey Complete - All Components Implemented

@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { QuickActionsFAB } from "../components/QuickActionsFAB";
+import { ReceiptUpload } from "../components/ReceiptUpload";
 import {
   TransactionFilters,
   useTransactionFilters,
@@ -91,6 +92,7 @@ export const BudgetPage: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [templateModalMode, setTemplateModalMode] = useState<"select" | "save">(
     "select",
@@ -2746,7 +2748,32 @@ export const BudgetPage: React.FC = () => {
       <QuickActionsFAB
         onAddIncome={() => openTransactionModal("income")}
         onAddExpense={() => openTransactionModal("expense")}
+        onScanReceipt={() => setShowReceiptModal(true)}
       />
+
+      {/* Receipt Scan Modal */}
+      {showReceiptModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="max-w-lg w-full">
+            <ReceiptUpload
+              onScanComplete={(data) => {
+                // Pre-fill transaction form with extracted data
+                const extracted = data.extractedData;
+                setTransactionType("expense");
+                setTransactionForm({
+                  amount: extracted.total?.toString() || "",
+                  description: extracted.merchant || "Receipt scan",
+                  date: extracted.date || getTodayString(),
+                  categoryId: "", // User will select category
+                });
+                setShowReceiptModal(false);
+                setShowTransactionModal(true);
+              }}
+              onClose={() => setShowReceiptModal(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Transaction Modal */}
       {showTransactionModal && transactionType && (

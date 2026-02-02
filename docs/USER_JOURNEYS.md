@@ -907,19 +907,19 @@ _"As a user, I want to customize my app experience and manage my account setting
 │  ├─ Profile (name, email, avatar)                    ✅ Complete             │
 │  ├─ Password & Security                              ✅ Complete             │
 │  ├─ Two-Factor Authentication                        ✅ Complete             │
-│  └─ Delete Account                                   ⚠️ Partial              │
+│  └─ Delete Account                                   ✅ Complete             │
 │                                                                              │
 │  🌍 PREFERENCES                                                              │
 │  ├─ Currency (USD, EUR, GBP, CAD, AUD, JPY)         ✅ Complete             │
 │  ├─ Location (country, city, timezone)              ✅ Complete             │
-│  ├─ Language                                         ❌ Not started          │
+│  ├─ Language                                         ✅ Complete             │
 │  └─ Theme (Light/Dark/System)                        ✅ Complete             │
 │                                                                              │
 │  🔔 NOTIFICATIONS                                                            │
 │  ├─ Budget Alerts                                    ✅ Complete             │
 │  ├─ Daily Reminders                                  ✅ Complete             │
 │  ├─ Quiet Hours                                      ✅ Complete             │
-│  └─ Email Preferences                                ❌ Not started          │
+│  └─ Email Preferences                                ⚠️ Backend only        │
 │                                                                              │
 │  👨‍👩‍👧 FAMILY                                                                   │
 │  ├─ Family Members                                   ✅ Complete             │
@@ -933,13 +933,13 @@ _"As a user, I want to customize my app experience and manage my account setting
 │  📤 DATA & PRIVACY                                                           │
 │  ├─ Export Data (CSV, PDF, JSON)                    ✅ Complete             │
 │  ├─ Backup & Restore                                 ✅ Complete             │
-│  └─ Privacy Settings                                 ❌ Not started          │
+│  └─ Privacy Settings                                 ✅ Complete             │
 │                                                                              │
 │  ℹ️ ABOUT                                                                    │
-│  ├─ Version Info                                     ⚠️ Partial              │
-│  ├─ Terms of Service                                 ❌ Not started          │
-│  ├─ Privacy Policy                                   ❌ Not started          │
-│  └─ Help & Support                                   ❌ Not started          │
+│  ├─ Version Info                                     ✅ Complete             │
+│  ├─ Terms of Service                                 ✅ Complete             │
+│  ├─ Privacy Policy                                   ✅ Complete             │
+│  └─ Help & Support                                   ✅ Complete             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1095,7 +1095,7 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 | Component               | Journey          | Backend Status   | Effort       |
 | ----------------------- | ---------------- | ---------------- | ------------ |
 | `CalendarView.tsx`      | Daily Management | ❌ Not started   | 2-3 days     |
-| `ReceiptScanner.tsx`    | Daily Management | ✅ Backend ready | 3-4 days     |
+| `ReceiptUpload.tsx`     | Daily Management | ✅ Backend ready | ✅ Done      |
 | `InvestmentTracker.tsx` | Net Worth        | ❌ Not started   | 3-4 days     |
 | `CreditScoreWidget.tsx` | Financial Health | ❌ Not started   | External API |
 
