@@ -4,7 +4,55 @@
 **Current Phase**: Feature Complete - Maintenance Mode
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - Fuzzy Matching Algorithm
+## ✨ LATEST - Pattern Detection Algorithm
+
+### Core Algorithm for Recurring Payment Detection
+
+- Frequency detection with tolerance (weekly, bi-weekly, monthly, quarterly, annual)
+- Amount analysis with variance detection (mean, median, stdDev)
+- Multi-factor confidence scoring (timing 40%, amount 30%, occurrences 20%, merchant 10%)
+- Smart filtering (min 3 occurrences, min 50% confidence, exclude income/transfers)
+- 42 unit tests with comprehensive edge case coverage
+
+**Core Functions**:
+
+1. `groupTransactionsByMerchant()` - Group transactions using fuzzy matching
+2. `calculateIntervals()` - Calculate time intervals between transactions
+3. `detectFrequency()` - Identify frequency patterns with ±3 day tolerance
+4. `calculateAmountStats()` - Statistical analysis with variable amount detection
+5. `calculateConfidenceScore()` - Weighted multi-factor scoring
+6. `calculateNextExpectedDate()` - Predict next occurrence
+7. `detectPatterns()` - Orchestrate detection with filtering
+8. `analyzeTransactions()` - Main entry point
+
+**Frequency Patterns**:
+
+- Weekly: 7±2 days
+- Bi-weekly: 14±3 days
+- Monthly: 30±3 days
+- Quarterly: 91±7 days
+- Annual: 365±14 days
+
+**Edge Cases Handled**:
+
+- Variable amounts (utilities) - uses median instead of mean
+- Irregular timing - allows ±3 day variance
+- Seasonal expenses - flags patterns by month
+- One-time vs recurring - requires minimum 3 occurrences
+
+**Requirements Completed**:
+
+- R1.2 Frequency Detection with Tolerance - ✅ Complete
+- R1.5 Amount Variance Handling - ✅ Complete
+- R6.1 Minimum Occurrence Threshold - ✅ Complete
+- R6.3 Date Tolerance Logic - ✅ Complete
+- R6.4 Amount Variance Calculations - ✅ Complete
+- Task 4.1 Create pattern-detection-algorithm.js - ✅ Complete
+- Task 4.5 Write unit tests for confidence scoring - ✅ Complete
+
+---
+
+## ✨ Fuzzy Matching Algorithm
 
 ### Fuzzy Matching for Merchant Name Normalization
 
