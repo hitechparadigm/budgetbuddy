@@ -940,6 +940,18 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 | `QuickActionsFAB.tsx`          | Floating action button with keyboard shortcuts | ✅ Done |
 | `Confetti.tsx`                 | Celebration animation for milestones           | ✅ Done |
 | Goal Archive Feature           | Archive/restore completed goals                | ✅ Done |
+| `ThemeToggle.tsx`              | Light/dark/system theme selector               | ✅ Done |
+| `ThemeContext.tsx`             | Enhanced theme context with system detection   | ✅ Done |
+| `FocusTrap.tsx`                | Focus trapping for modals (accessibility)      | ✅ Done |
+| `SkipLink.tsx`                 | Skip to main content link (accessibility)      | ✅ Done |
+| `AriaLiveRegion.tsx`           | ARIA live region for announcements             | ✅ Done |
+| `useReducedMotion.ts`          | Hook for reduced motion preference             | ✅ Done |
+| `TutorialOverlay.tsx`          | Interactive tutorial with spotlight            | ✅ Done |
+| `WelcomeModal.tsx`             | Post-onboarding welcome with quick tips        | ✅ Done |
+| Tips Read/Unread Indicators    | Track and display read status on tips          | ✅ Done |
+| 2FA Settings Integration       | Enable/disable 2FA from Settings page          | ✅ Done |
+| Appearance Settings            | Theme selection in Settings page               | ✅ Done |
+| Replay Tutorial Option         | Reset and replay tutorial from Settings        | ✅ Done |
 
 ---
 

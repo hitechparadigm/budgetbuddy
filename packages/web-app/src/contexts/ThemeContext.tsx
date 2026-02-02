@@ -1,11 +1,26 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/**
+ * Theme Context
+ *
+ * Provides theme management with light/dark/system modes.
+ * Persists user preference and detects system preference changes.
+ */
 
-type Theme = 'light' | 'dark';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+
+type ThemeMode = "light" | "dark" | "system";
+type ResolvedTheme = "light" | "dark";
 
 interface ThemeContextType {
-  theme: Theme;
+  mode: ThemeMode;
+  theme: ResolvedTheme;
+  setMode: (mode: ThemeMode) => void;
   toggleTheme: () => void;
-  setTheme: (theme: Theme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -13,7 +28,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
 };
@@ -22,35 +37,85 @@ interface ThemeProviderProps {
   children: React.ReactNode;
 }
 
+const getSystemTheme = (): ResolvedTheme => {
+  if (typeof window !== "undefined" && window.matchMedia) {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  }
+  return "light";
+};
+
+const resolveTheme = (mode: ThemeMode): ResolvedTheme => {
+  if (mode === "system") {
+    return getSystemTheme();
+  }
+  return mode;
+};
+
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    // Check localStorage for saved theme, default to dark
-    const savedTheme = localStorage.getItem('budgetbuddy-theme') as Theme;
-    return savedTheme || 'dark';
+  const [mode, setModeState] = useState<ThemeMode>(() => {
+    // Check localStorage for saved theme mode
+    const savedMode = localStorage.getItem(
+      "budgetbuddy-theme-mode",
+    ) as ThemeMode;
+    if (savedMode && ["light", "dark", "system"].includes(savedMode)) {
+      return savedMode;
+    }
+    // Default to system preference
+    return "system";
   });
 
-  useEffect(() => {
-    // Save theme to localStorage
-    localStorage.setItem('budgetbuddy-theme', theme);
+  const [theme, setTheme] = useState<ResolvedTheme>(() => resolveTheme(mode));
 
-    // Apply theme to document
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
+  // Apply theme to document
+  const applyTheme = useCallback((resolvedTheme: ResolvedTheme) => {
+    if (resolvedTheme === "dark") {
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
     }
-  }, [theme]);
+  }, []);
 
-  const toggleTheme = () => {
-    setThemeState(prev => prev === 'light' ? 'dark' : 'light');
+  // Update theme when mode changes
+  useEffect(() => {
+    const resolved = resolveTheme(mode);
+    setTheme(resolved);
+    applyTheme(resolved);
+    localStorage.setItem("budgetbuddy-theme-mode", mode);
+  }, [mode, applyTheme]);
+
+  // Listen for system theme changes when in system mode
+  useEffect(() => {
+    if (mode !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      const newTheme = e.matches ? "dark" : "light";
+      setTheme(newTheme);
+      applyTheme(newTheme);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [mode, applyTheme]);
+
+  const setMode = (newMode: ThemeMode) => {
+    setModeState(newMode);
   };
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
+  const toggleTheme = () => {
+    // Cycle through: light -> dark -> system -> light
+    setModeState((prev) => {
+      if (prev === "light") return "dark";
+      if (prev === "dark") return "system";
+      return "light";
+    });
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ mode, theme, setMode, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
