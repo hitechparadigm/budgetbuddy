@@ -31,6 +31,7 @@ import SubscriptionsPage from "./pages/SubscriptionsPage";
 import SubscriptionFormPage from "./pages/SubscriptionFormPage";
 import DebtPayoffPage from "./pages/DebtPayoffPage";
 import DebtFormPage from "./pages/DebtFormPage";
+import { LearnPage } from "./pages/LearnPage";
 import { initMockAuth } from "./utils/mockAuth";
 
 const App: React.FC = () => {
@@ -60,7 +61,6 @@ const App: React.FC = () => {
                   path="/family/accept"
                   element={<AcceptInvitationPage />}
                 />
-
                 {/* Main Budget App - No Layout wrapper for clean, focused experience */}
                 <Route
                   path="/budget"
@@ -70,7 +70,6 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-
                 {/* Settings Page */}
                 <Route
                   path="/settings"
@@ -80,7 +79,6 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-
                 {/* Bank Accounts Page */}
                 <Route
                   path="/accounts"
@@ -90,7 +88,6 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-
                 {/* Tips Feed Page */}
                 <Route
                   path="/tips"
@@ -100,7 +97,6 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-
                 {/* Insights Page */}
                 <Route
                   path="/insights"
@@ -110,7 +106,6 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-
                 {/* Bills Page */}
                 <Route
                   path="/bills"
@@ -120,7 +115,6 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-
                 {/* Bill Form - New/Edit */}
                 <Route
                   path="/bills/new"
@@ -138,7 +132,6 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-
                 {/* Goals Pages */}
                 <Route
                   path="/goals"
@@ -164,7 +157,6 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-
                 {/* Subscriptions Pages */}
                 <Route
                   path="/subscriptions"
@@ -190,7 +182,6 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-
                 {/* Debt Payoff Pages */}
                 <Route
                   path="/debts"
@@ -216,10 +207,17 @@ const App: React.FC = () => {
                     </ProtectedRoute>
                   }
                 />
-
+                {/* Learn Page - Educational Content */}
+                <Route
+                  path="/learn"
+                  element={
+                    <ProtectedRoute>
+                      <LearnPage />
+                    </ProtectedRoute>
+                  }
+                />{" "}
                 {/* Default redirect to budget (main app) */}
                 <Route path="/" element={<Navigate to="/budget" replace />} />
-
                 {/* Catch all - redirect to budget */}
                 <Route path="*" element={<Navigate to="/budget" replace />} />
               </Routes>
