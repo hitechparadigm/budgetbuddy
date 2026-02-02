@@ -711,7 +711,7 @@ _"As a user, I want to customize my app experience and manage my account setting
 | -------------------------- | ------------------ | -------------- | -------- |
 | `GoalsPage.tsx`            | Debt & Savings     | ❌ Not started | 3-4 days |
 | `DebtPayoffCalculator.tsx` | Debt & Savings     | ❌ Not started | 2-3 days |
-| `PeerComparisonWidget.tsx` | Financial Insights | ✅ Ready       | 1 day    |
+| `PeerComparisonWidget.tsx` | Financial Insights | ✅ Ready       | ✅ Done  |
 | `SubscriptionTracker.tsx`  | Subscriptions      | ❌ Not started | 2-3 days |
 | `BillReminders.tsx`        | Notifications      | ❌ Not started | 2 days   |
 
@@ -866,7 +866,7 @@ xl: 32px  (major sections)
 | R43 | Credit Score          | Insights      | -       | ❌       | ❌      | ❌ External API |
 | R44 | Receipt Scanning      | Daily         | Task 4  | ❌       | ✅      | ❌ Missing UI   |
 | R45 | Investments           | Goals         | -       | ❌       | ❌      | ❌ Not started  |
-| R46 | Peer Comparison       | Insights      | Task 8  | ❌       | ✅      | ❌ Missing UI   |
+| R46 | Peer Comparison       | Insights      | Task 8  | ✅       | ✅      | ✅ Complete     |
 | R47 | Educational Content   | Insights      | Task 10 | ❌       | ✅      | ❌ Missing UI   |
 | R48 | Admin Dashboard       | Admin         | Task 7  | ❌       | ✅      | ❌ Missing UI   |
 

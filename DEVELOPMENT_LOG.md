@@ -1,5 +1,40 @@
 # Development Log
 
+## 2026-02-02 - PeerComparisonWidget Component (Session 71)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Create PeerComparisonWidget for anonymous spending comparison
+**Outcome**: Component and API service fully implemented
+
+### Work Completed
+
+1. **Created comparisonApi.ts** service:
+   - `getSummary()` - Get spending comparison data
+   - `getPreferences()` - Get user's comparison preferences
+   - `updatePreferences()` - Update opt-in/out settings
+   - Full TypeScript types for API responses
+
+2. **Created PeerComparisonWidget.tsx**:
+   - Financial score (0-100) based on spending percentiles
+   - Category comparison with progress bars
+   - Status indicators (below/average/above average)
+   - Compact mode with expand/collapse
+   - Handles opted-out and not-available states
+   - Privacy messaging (50+ users required)
+
+3. **Updated USER_JOURNEYS.md**:
+   - PeerComparisonWidget: ❌ → ✅ Done
+   - R46 Peer Comparison: ❌ → ✅ Complete
+
+### Files Created
+
+- `packages/web-app/src/services/comparisonApi.ts`
+- `packages/web-app/src/components/PeerComparisonWidget.tsx`
+
+---
+
 ## 2026-02-02 - Transaction Search Feature (Session 70)
 
 ### Session Summary
