@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.9.59] - 2026-02-02
+
+### ✨ Feature - Two-Factor Authentication UI Components
+
+**Components Created**:
+
+- `packages/web-app/src/components/TwoFactorSetup.tsx` - 4-step setup wizard
+- `packages/web-app/src/components/TwoFactorVerify.tsx` - Login verification component
+
+**TwoFactorSetup Features**:
+
+- Step-by-step wizard (Intro → QR Code → Verify → Backup Codes)
+- Progress indicator showing current step
+- QR code display for authenticator apps
+- Manual secret code entry option
+- 6-digit verification code input
+- Backup codes display with copy functionality
+- Error handling at each step
+
+**TwoFactorVerify Features**:
+
+- 6-digit code input with auto-submit
+- Backup code option toggle
+- Loading and error states
+- Cancel option to return to login
+
+**Tasks Completed**:
+
+- Task 7.1: TwoFactorSetup component ✅
+- Task 7.2: TwoFactorVerify component ✅
+
 ## [1.9.58] - 2026-02-02
 
 ### ✨ Feature - Goal Archive Functionality
