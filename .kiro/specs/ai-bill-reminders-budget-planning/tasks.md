@@ -31,7 +31,7 @@ This implementation plan breaks down the AI-powered bill reminders and budget pl
     - _Requirements: 1.1, 8.3_
 
 - [ ] 3. Implement fuzzy matching algorithm
-  - [ ] 3.1 Create fuzzy-matching-utils.js
+  - [x] 3.1 Create fuzzy-matching-utils.js
     - Implement Levenshtein distance calculation
     - Implement merchant name normalization (lowercase, remove special chars)
     - Implement fuzzyMatch() with 80% similarity threshold
@@ -41,7 +41,7 @@ This implementation plan breaks down the AI-powered bill reminders and budget pl
     - **Property 5: Fuzzy Merchant Matching**
     - **Validates: Requirements 6.2**
 
-  - [ ]\* 3.3 Write unit tests for edge cases
+  - [x]\* 3.3 Write unit tests for edge cases
     - Test with identical names
     - Test with completely different names
     - Test with minor variations (typos, abbreviations)

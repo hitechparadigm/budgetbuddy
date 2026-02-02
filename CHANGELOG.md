@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.9.82] - 2026-02-02
+
+### 🤖 AI Features
+
+- **Fuzzy Matching Algorithm**: Implemented Levenshtein distance-based fuzzy matching for merchant name normalization
+  - `levenshteinDistance()` - Calculate edit distance between strings
+  - `normalizeMerchantName()` - Lowercase, remove special chars, trim whitespace
+  - `calculateSimilarity()` - Calculate similarity percentage (0-100)
+  - `fuzzyMatch()` - Check if two names match above threshold (default 80%)
+  - `findBestMatch()` - Find best matching name from candidate list
+  - 37 unit tests covering edge cases (identical names, typos, abbreviations, numbers, unicode)
+  - Supports configurable similarity thresholds for flexible matching
+  - Handles edge cases: empty strings, special characters, numbers, unicode characters
+
 ## [1.9.81] - 2026-02-02
 
 ### 🤖 AI Bill Reminders - Pattern Detection Repository Layer
