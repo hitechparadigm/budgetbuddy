@@ -195,13 +195,13 @@
   - Calculate interest saved
   - **Validates: Requirement 37.6, 37.7**
 
-- [ ] 5.4 Frontend Web: Create DebtPayoffPage
+- [x] 5.4 Frontend Web: Create DebtPayoffPage
   - List debts with details
   - Strategy selector (snowball/avalanche)
   - Payoff timeline visualization
   - **Validates: Requirement 37.1, 37.3, 37.5**
 
-- [ ] 5.5 Frontend Web: Add debt form and extra payment input
+- [x] 5.5 Frontend Web: Add debt form and extra payment input
   - Add/edit debts
   - Extra monthly payment slider
   - **Validates: Requirement 37.2, 37.6**
