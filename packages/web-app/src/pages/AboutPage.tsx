@@ -126,8 +126,12 @@ export const AboutPage: React.FC = () => {
           </h3>
           <div className="space-y-3">
             <a
-              href="#terms"
-              className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              href="/terms"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/terms");
+              }}
+              className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             >
               <div className="flex items-center space-x-3">
                 <svg
@@ -163,8 +167,12 @@ export const AboutPage: React.FC = () => {
             </a>
 
             <a
-              href="#privacy"
-              className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              href="/privacy"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/privacy");
+              }}
+              className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
             >
               <div className="flex items-center space-x-3">
                 <svg

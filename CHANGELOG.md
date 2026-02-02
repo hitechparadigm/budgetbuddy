@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.9.74] - 2026-02-02
+
+### ✨ Legal Pages - Terms of Service & Privacy Policy
+
+**New Components**:
+
+- `TermsOfServicePage.tsx` - Complete terms of service page
+- `PrivacyPolicyPage.tsx` - Complete privacy policy page
+
+**TermsOfServicePage Features**:
+
+- 11 sections covering all legal requirements
+- Acceptance of terms, service description, user accounts
+- Privacy and data, subscription and payments
+- Acceptable use, intellectual property
+- Disclaimer of warranties, limitation of liability
+- Contact information
+- Dark mode support
+
+**PrivacyPolicyPage Features**:
+
+- 11 sections covering privacy requirements
+- Information collection (provided and automatic)
+- How we use information
+- Data sharing and disclosure
+- Data security measures
+- Data retention policies
+- User rights (access, correct, delete, export)
+- Children's privacy, international transfers
+- Contact information
+- Dark mode support
+
+**Routing**:
+
+- Added `/terms` route (public)
+- Added `/privacy` route (public)
+
+**AboutPage Updates**:
+
+- Terms of Service link now navigates to `/terms`
+- Privacy Policy link now navigates to `/privacy`
+
+**Documentation**:
+
+- Updated USER_JOURNEYS.md component mapping
+- Marked TermsOfServicePage, PrivacyPolicyPage as complete
+
 ## [1.9.73] - 2026-02-02
 
 ### ✨ Settings Journey Components

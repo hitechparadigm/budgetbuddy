@@ -1,10 +1,49 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-02 (Settings Journey Components)
+**Last Updated**: 2026-02-02 (Legal Pages Implementation)
 **Current Phase**: Feature Complete - Maintenance Mode
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - Settings Journey Components
+## ✨ LATEST - Legal Pages Implementation
+
+### New Components Created
+
+| Component              | Description               | Status      |
+| ---------------------- | ------------------------- | ----------- |
+| TermsOfServicePage.tsx | Complete terms of service | ✅ Complete |
+| PrivacyPolicyPage.tsx  | Complete privacy policy   | ✅ Complete |
+
+**TermsOfServicePage Features**:
+
+- 11 sections covering all legal requirements
+- Acceptance of terms, service description
+- User accounts, privacy, payments
+- Acceptable use, intellectual property
+- Disclaimers, liability, contact info
+- Dark mode support
+
+**PrivacyPolicyPage Features**:
+
+- 11 sections covering privacy requirements
+- Information collection and usage
+- Data sharing and security
+- User rights (access, correct, delete, export)
+- Children's privacy, international transfers
+- Dark mode support
+
+**Routing**:
+
+- `/terms` - Public route (no auth required)
+- `/privacy` - Public route (no auth required)
+
+**AboutPage Updates**:
+
+- Terms link navigates to `/terms`
+- Privacy link navigates to `/privacy`
+
+---
+
+## ✨ Settings Journey Components
 
 ### New Components Created
 
