@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.9.50] - 2026-02-02
+
+### ✨ Feature - PeerComparisonWidget Component
+
+**Components Created**:
+
+- `packages/web-app/src/components/PeerComparisonWidget.tsx`
+- `packages/web-app/src/services/comparisonApi.ts`
+
+**Features**:
+
+- Financial score (0-100) based on spending percentiles
+- Category-by-category comparison with progress bars
+- Status indicators (below/average/above average)
+- Compact mode with expand/collapse
+- Group info display (region, family size, income range)
+- Handles opted-out and not-available states
+- Privacy-first: requires 50+ users per comparison group
+
+**API Integration**:
+
+- `GET /comparison/summary` - Get spending comparison
+- `GET /comparison/preferences` - Get user preferences
+- `PUT /comparison/preferences` - Update preferences
+
+**Status Updates**:
+
+- PeerComparisonWidget (R46): ❌ → ✅ Complete
+
 ## [1.9.49] - 2026-02-02
 
 ### ✨ Feature - Transaction Search in BudgetPage
