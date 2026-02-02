@@ -1,5 +1,40 @@
 # Development Log
 
+## 2026-02-02 - Receipt Scanning Integration (Session 97)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Integrate ReceiptUpload into BudgetPage
+**Outcome**: Receipt scanning now accessible from Quick Actions FAB
+
+### Work Completed
+
+1. **BudgetPage Integration**:
+   - Added `ReceiptUpload` import
+   - Added `showReceiptModal` state
+   - Added receipt modal with ReceiptUpload component
+   - Connected to QuickActionsFAB via `onScanReceipt` prop
+
+2. **User Flow**:
+   - Click FAB → "Scan Receipt" action
+   - Upload receipt image (drag-drop or file picker)
+   - AI extracts merchant, date, total via OCR
+   - Transaction form opens with pre-filled data
+   - User selects category and saves
+
+3. **Documentation Updates**:
+   - Updated USER_JOURNEYS.md - ReceiptUpload marked as Done
+   - Updated CHANGELOG.md with v1.9.76 entry
+
+### Files Modified
+
+- `packages/web-app/src/pages/BudgetPage.tsx`
+- `docs/USER_JOURNEYS.md`
+- `CHANGELOG.md`
+
+---
+
 ## 2026-02-02 - Settings Journey Complete (Session 96)
 
 ### Session Summary
