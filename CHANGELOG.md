@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.9.77] - 2026-02-02
+
+### ✨ CalendarView Component
+
+**New Component**:
+
+- Created `CalendarView.tsx` for transaction visualization by day
+
+**Features**:
+
+- Calendar grid showing transactions organized by day
+- Daily income/expense totals with color coding
+- Click on any day to see transaction details
+- Today highlighting with ring indicator
+- Legend for income (green), expense (red), today (blue)
+- Dark mode support
+- Responsive design
+
+**Props**:
+
+- `transactions` - Array of transactions to display
+- `month` - Month to display (YYYY-MM format)
+- `onDateClick` - Callback when a date is clicked
+- `currency` - Currency for formatting (default: USD)
+
+**Documentation**:
+
+- Updated USER_JOURNEYS.md - CalendarView marked as Done
+
 ## [1.9.76] - 2026-02-02
 
 ### ✨ Receipt Scanning Integration

@@ -1094,7 +1094,7 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 | Component               | Journey          | Backend Status   | Effort       |
 | ----------------------- | ---------------- | ---------------- | ------------ |
-| `CalendarView.tsx`      | Daily Management | ❌ Not started   | 2-3 days     |
+| `CalendarView.tsx`      | Daily Management | N/A              | ✅ Done      |
 | `ReceiptUpload.tsx`     | Daily Management | ✅ Backend ready | ✅ Done      |
 | `InvestmentTracker.tsx` | Net Worth        | ❌ Not started   | 3-4 days     |
 | `CreditScoreWidget.tsx` | Financial Health | ❌ Not started   | External API |
@@ -1114,6 +1114,7 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 | Component                      | Description                                    | Status  |
 | ------------------------------ | ---------------------------------------------- | ------- |
+| `CalendarView.tsx`             | Calendar grid showing transactions by day      | ✅ Done |
 | `LearnPage.tsx`                | Educational content with courses and badges    | ✅ Done |
 | `learnApi.ts`                  | Learn API service for courses/lessons/quizzes  | ✅ Done |
 | `TransactionFilters.tsx`       | Search, category, date, amount filters         | ✅ Done |
