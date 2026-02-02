@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.9.46] - 2026-02-02
+
+### 🐛 Bug Fix - Budget Not Copying to New Month
+
+**Issue**: When navigating to a new month (e.g., February), the budget from the previous month (January) was not being automatically copied.
+
+**Root Cause**: The `BudgetPage.tsx` was calling `GET /budget` (which returns all budgets) and manually searching for the current month. This bypassed the `GET /budget/current?month=YYYY-MM` endpoint which has the auto-copy logic.
+
+**Fix**: Updated `loadBudget()` in `BudgetPage.tsx` to call `/budget/current?month=YYYY-MM` instead of `/budget`. This endpoint:
+
+- Returns the budget for the specified month if it exists
+- Auto-creates a new budget by copying from the previous month if no budget exists
+- Resets spent amounts to 0 while preserving planned amounts
+
+**Files Changed**:
+
+- `packages/web-app/src/pages/BudgetPage.tsx` - Fixed loadBudget to use /budget/current endpoint
+
+**Impact**: Users will now see their previous month's budget categories automatically copied when navigating to a new month.
+
 ## [1.9.45] - 2026-02-01
 
 ### 🔄 Enhancement - User Journeys Reconciliation & Hook
