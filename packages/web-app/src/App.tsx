@@ -32,6 +32,7 @@ import SubscriptionFormPage from "./pages/SubscriptionFormPage";
 import DebtPayoffPage from "./pages/DebtPayoffPage";
 import DebtFormPage from "./pages/DebtFormPage";
 import { LearnPage } from "./pages/LearnPage";
+import { AboutPage } from "./pages/AboutPage";
 import { initMockAuth } from "./utils/mockAuth";
 
 const App: React.FC = () => {
@@ -215,7 +216,16 @@ const App: React.FC = () => {
                       <LearnPage />
                     </ProtectedRoute>
                   }
-                />{" "}
+                />
+                {/* About Page */}
+                <Route
+                  path="/about"
+                  element={
+                    <ProtectedRoute>
+                      <AboutPage />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* Default redirect to budget (main app) */}
                 <Route path="/" element={<Navigate to="/budget" replace />} />
                 {/* Catch all - redirect to budget */}

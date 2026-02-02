@@ -1,22 +1,19 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-02 (Delete Account Feature)
+**Last Updated**: 2026-02-02 (Delete Account Feature & About Page)
 **Current Phase**: Feature Complete - Maintenance Mode
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - Delete Account Feature
+## ✨ LATEST - Delete Account Feature & About Page
 
-### DeleteAccountModal Component Created
+### New Components Created
 
-New component for account deletion with multi-step wizard:
+| Component              | Description                        | Status      |
+| ---------------------- | ---------------------------------- | ----------- |
+| DeleteAccountModal.tsx | Multi-step account deletion wizard | ✅ Complete |
+| AboutPage.tsx          | App info, version, legal links     | ✅ Complete |
 
-| Step | Feature                  | Status      |
-| ---- | ------------------------ | ----------- |
-| 1    | Warning with data list   | ✅ Complete |
-| 2    | Data export option       | ✅ Complete |
-| 3    | Type DELETE confirmation | ✅ Complete |
-
-**Features**:
+**DeleteAccountModal Features**:
 
 - 3-step deletion process for safety
 - Data export before deletion
@@ -24,9 +21,18 @@ New component for account deletion with multi-step wizard:
 - Clears local storage on deletion
 - Redirects to login after deletion
 
+**AboutPage Features**:
+
+- App logo and version display
+- Feature highlights grid
+- Legal links (Terms, Privacy, Support)
+- Rate app call-to-action
+- Dark mode support
+
 **Settings Page Updates**:
 
 - Added "Danger Zone" section
+- Added "About" link
 - Integrated DeleteAccountModal
 
 ---
