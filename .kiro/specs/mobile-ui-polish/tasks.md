@@ -61,32 +61,34 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
 
 ### Task 2: Create Transaction Templates Feature
 
-- [ ] 2.1 Create useTemplates hook
-  - [ ] 2.1.1 Create `packages/mobile/src/hooks/useTemplates.ts`
-  - [ ] 2.1.2 Implement AsyncStorage read/write
-  - [ ] 2.1.3 Add template CRUD operations
-  - [ ] 2.1.4 Add recent categories tracking
+- [x] 2.1 Create useTemplates hook
+  - [x] 2.1.1 Create `packages/mobile/src/hooks/useTemplates.ts`
+  - [x] 2.1.2 Implement AsyncStorage read/write
+  - [x] 2.1.3 Add template CRUD operations
+  - [x] 2.1.4 Add recent categories tracking
   - **Validates: Requirement 2.1**
 
-- [ ] 2.2 Create TransactionTemplateModal
-  - [ ] 2.2.1 Create `packages/mobile/src/components/TransactionTemplateModal.tsx`
-  - [ ] 2.2.2 Implement bottom sheet with template list
-  - [ ] 2.2.3 Add template selection with pre-fill
-  - [ ] 2.2.4 Add swipe-to-delete for templates
+- [x] 2.2 Create TransactionTemplateModal
+  - [x] 2.2.1 Create `packages/mobile/src/components/TransactionTemplateModal.tsx`
+  - [x] 2.2.2 Implement bottom sheet with template list
+  - [x] 2.2.3 Add template selection with pre-fill
+  - [x] 2.2.4 Add swipe-to-delete for templates (long-press implemented)
   - **Validates: Requirement 2.3, 2.4**
 
-- [ ] 2.3 Add "Save as Template" feature
-  - [ ] 2.3.1 Add "Save as Template" button to transaction form
-  - [ ] 2.3.2 Create template name input modal
-  - [ ] 2.3.3 Validate max 10 templates
-  - [ ] 2.3.4 Show success toast on save
+- [x] 2.3 Add "Save as Template" feature
+  - [x] 2.3.1 Add "Save as Template" button to transaction form
+  - [x] 2.3.2 Create template name input modal
+  - [x] 2.3.3 Validate max 10 templates
+  - [x] 2.3.4 Show success toast on save
   - **Validates: Requirement 2.2**
+  - **Note**: Integrated into TransactionTemplateModal with save mode
 
-- [ ] 2.4 Add recent categories
-  - [ ] 2.4.1 Track last 5 used categories
-  - [ ] 2.4.2 Show as chips in quick add
-  - [ ] 2.4.3 Tap to select category
+- [x] 2.4 Add recent categories
+  - [x] 2.4.1 Track last 5 used categories
+  - [x] 2.4.2 Show as chips in quick add
+  - [x] 2.4.3 Tap to select category
   - **Validates: Requirement 2.3**
+  - **Note**: Implemented in useTemplates hook with addRecentCategory
 
 ---
 
