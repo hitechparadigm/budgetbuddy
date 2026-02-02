@@ -23,18 +23,19 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - [x] 1.1.6 Style with Tailwind CSS
   - **Validates: Requirement 1.1-1.4**
 
-- [ ] 1.2 Create QuickActionsFAB component (Mobile)
-  - [ ] 1.2.1 Create `packages/mobile/src/components/QuickActionsFAB.tsx`
-  - [ ] 1.2.2 Implement native FAB with React Native
-  - [ ] 1.2.3 Add haptic feedback on tap
-  - [ ] 1.2.4 Add "Scan Receipt" action with camera
+- [x] 1.2 Create QuickActionsFAB component (Mobile)
+  - [x] 1.2.1 Create `packages/mobile/src/components/QuickActionsFAB.tsx`
+  - [x] 1.2.2 Implement native FAB with React Native
+  - [x] 1.2.3 Add haptic feedback on tap
+  - [x] 1.2.4 Add "Scan Receipt" action with camera
+  - **Note**: Implemented in mobile-ui-polish spec
   - **Validates: Requirement 1.1-1.4**
 
 - [x] 1.3 Integrate FAB into layouts
   - [x] 1.3.1 Add FAB to BudgetPage
   - [x] 1.3.2 Add FAB to TransactionsPage
-  - [ ] 1.3.3 Add FAB to mobile screens
-  - **Note**: Transactions are displayed in BudgetPage, no separate TransactionsPage
+  - [x] 1.3.3 Add FAB to mobile screens
+  - **Note**: Transactions are displayed in BudgetPage, no separate TransactionsPage. Mobile FAB in mobile-ui-polish spec.
   - **Validates: Requirement 1.1**
 
 ### Task 2: Keyboard Shortcuts
@@ -68,10 +69,11 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - [x] 3.1.4 Remember last used category
   - **Validates: Requirement 1.6-1.8**
 
-- [ ] 3.2 Add templates to mobile
-  - [ ] 3.2.1 Create `packages/mobile/src/components/TransactionTemplateModal.tsx`
-  - [ ] 3.2.2 Store templates in AsyncStorage
-  - [ ] 3.2.3 Show templates in quick add flow
+- [x] 3.2 Add templates to mobile
+  - [x] 3.2.1 Create `packages/mobile/src/components/TransactionTemplateModal.tsx`
+  - [x] 3.2.2 Store templates in AsyncStorage
+  - [x] 3.2.3 Show templates in quick add flow
+  - **Note**: Implemented in mobile-ui-polish spec
   - **Validates: Requirement 1.6-1.8**
 
 ---
@@ -111,10 +113,11 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - **Note**: Integrated in BudgetPage with TransactionFilters component
   - **Validates: Requirement 5.1-5.8**
 
-- [ ] 4.5 Add search to mobile
-  - [ ] 4.5.1 Create mobile SearchBar component
-  - [ ] 4.5.2 Create mobile filter sheet
-  - [ ] 4.5.3 Integrate with TransactionsScreen
+- [x] 4.5 Add search to mobile
+  - [x] 4.5.1 Create mobile SearchBar component
+  - [x] 4.5.2 Create mobile filter sheet
+  - [x] 4.5.3 Integrate with TransactionsScreen
+  - **Note**: Implemented in mobile-ui-polish spec
   - **Validates: Requirement 5.1-5.8**
 
 ---
@@ -151,10 +154,11 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - **Note**: Native drag-and-drop has basic keyboard support
   - **Validates: Requirement 3.1**
 
-- [ ] 5.5 Add mobile reordering
-  - [ ] 5.5.1 Implement long-press to reorder on mobile
-  - [ ] 5.5.2 Add haptic feedback during drag
-  - [ ] 5.5.3 Call reorder API on drop
+- [x] 5.5 Add mobile reordering
+  - [x] 5.5.1 Implement long-press to reorder on mobile
+  - [x] 5.5.2 Add haptic feedback during drag
+  - [x] 5.5.3 Call reorder API on drop
+  - **Note**: Implemented in mobile-ui-polish spec with DraggableGoalList
   - **Validates: Requirement 3.2, 3.3**
 
 ### Task 6: Goal Archive Feature
@@ -205,10 +209,11 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - [x] 7.4.3 Complete authentication after verify
   - **Validates: Requirement 2.7**
 
-- [ ] 7.5 Add 2FA to mobile
-  - [ ] 7.5.1 Create TwoFactorSetupScreen
-  - [ ] 7.5.2 Create TwoFactorVerifyScreen
-  - [ ] 7.5.3 Update login flow for MFA
+- [x] 7.5 Add 2FA to mobile
+  - [x] 7.5.1 Create TwoFactorSetupScreen
+  - [x] 7.5.2 Create TwoFactorVerifyScreen
+  - [x] 7.5.3 Update login flow for MFA
+  - **Note**: Implemented in mobile-ui-polish spec with AuthContext integration
   - **Validates: Requirement 2.1-2.8**
 
 ---
@@ -244,17 +249,19 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - [x] 8.4.3 Mark as read on view
   - **Validates: Requirement 4.6**
 
-- [ ] 8.5 Add mobile swipe gestures
-  - [ ] 8.5.1 Create SwipeableTipCard component
-  - [ ] 8.5.2 Swipe left to save
-  - [ ] 8.5.3 Swipe right to dismiss
-  - [ ] 8.5.4 Add visual swipe indicators
+- [x] 8.5 Add mobile swipe gestures
+  - [x] 8.5.1 Create SwipeableTipCard component
+  - [x] 8.5.2 Swipe left to save
+  - [x] 8.5.3 Swipe right to dismiss
+  - [x] 8.5.4 Add visual swipe indicators
+  - **Note**: Implemented in mobile-ui-polish spec
   - **Validates: Requirement 4.2**
 
-- [ ] 8.6 Add pull-to-refresh
-  - [ ] 8.6.1 Implement pull-to-refresh on mobile
-  - [ ] 8.6.2 Add haptic feedback
-  - [ ] 8.6.3 Refresh tips feed
+- [x] 8.6 Add pull-to-refresh
+  - [x] 8.6.1 Implement pull-to-refresh on mobile
+  - [x] 8.6.2 Add haptic feedback
+  - [x] 8.6.3 Refresh tips feed
+  - **Note**: Implemented in mobile-ui-polish spec with TipsScreen
   - **Validates: Requirement 4.7**
 
 ---
@@ -393,11 +400,11 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 ## Definition of Done
 
 - [x] All web tasks completed
-- [ ] All mobile tasks completed (1.2, 3.2, 4.5, 5.5, 7.5, 8.5, 8.6 remaining)
+- [x] All mobile tasks completed
 - [x] All components have unit tests
 - [x] Accessibility audit passed
 - [x] Dark mode tested
-- [ ] Mobile tested
+- [x] Mobile tested
 - [x] Documentation updated
 - [x] Code reviewed
 - [x] Deployed via CI/CD
