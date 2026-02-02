@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.9.54] - 2026-02-02
+
+### ✨ Feature - Transaction Filters Component
+
+**Components Created**:
+
+- `packages/web-app/src/components/TransactionFilters.tsx` - Comprehensive filtering UI
+
+**Features**:
+
+- Search bar with clear button
+- Category dropdown filter (grouped by income/expense)
+- Date range picker (from/to)
+- Amount range inputs (min/max)
+- Transaction type toggle (income/expense)
+- Collapsible filter panel
+- Active filter pills with remove buttons
+- Clear all filters button
+- `useTransactionFilters` hook for state management
+- `filterTransactions` utility function
+
+**UI/UX**:
+
+- Filter count badge
+- Expandable/collapsible design
+- Responsive grid layout
+- Accessible with ARIA labels
+
 ## [1.9.53] - 2026-02-02
 
 ### ✨ Feature - Quick Actions FAB & Keyboard Shortcuts
