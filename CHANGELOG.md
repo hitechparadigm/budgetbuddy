@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.9.71] - 2026-02-02
+
+### 🧹 Documentation Cleanup & Consolidation
+
+**Archived Session Documents**:
+
+- Moved 9 root-level session docs to `docs/archive/sessions/`
+- Moved 4 .kiro/ session docs to `docs/archive/kiro/`
+- Moved resolved blocker to `docs/archive/blockers/`
+
+**Deleted Obsolete Files**:
+
+- DOCUMENTATION_AUDIT.md, READY_TO_DEPLOY.md, .kiro/DOCUMENTATION_CLEANUP_SUMMARY.md
+
+**Consolidated Deployment Docs**:
+
+- Merged DEPLOYMENT.md, DEPLOYMENT_INSTRUCTIONS.md, DEPLOYMENT_INSTRUCTIONS_CICD.md
+- Created unified `docs/deployment-guide.md`
+
+**Scripts Cleanup**:
+
+- Removed redundant security-check.ps1 and security-check-simple.ps1
+- Updated scripts/README.md
+
+**Impact**: Cleaner root directory, organized archive, consolidated deployment documentation
+
 ## [1.9.70] - 2026-02-02
 
 ### ✨ Feature - Mobile Tips Feed with Swipe Gestures

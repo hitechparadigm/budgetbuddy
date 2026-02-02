@@ -68,11 +68,11 @@ Added console logging to show which Lambda is being used:
 ```typescript
 if (this.authOnboardingFunction) {
   console.log(
-    "✅ Using standalone auth-onboarding Lambda for /auth/onboarding endpoint"
+    "✅ Using standalone auth-onboarding Lambda for /auth/onboarding endpoint",
   );
 } else {
   console.log(
-    "⚠️  Using monolithic auth Lambda for /auth/onboarding endpoint (fallback)"
+    "⚠️  Using monolithic auth Lambda for /auth/onboarding endpoint (fallback)",
   );
 }
 ```
