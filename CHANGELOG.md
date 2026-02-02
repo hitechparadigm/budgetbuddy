@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.9.83] - 2026-02-02
+
+### 🤖 AI Features
+
+- **Pattern Detection Algorithm**: Implemented core algorithm for detecting recurring payment patterns
+  - `groupTransactionsByMerchant()` - Group transactions using fuzzy matching
+  - `calculateIntervals()` - Calculate time intervals between transactions
+  - `detectFrequency()` - Identify frequency patterns (weekly, bi-weekly, monthly, quarterly, annual)
+  - `calculateAmountStats()` - Calculate mean, median, stdDev, and detect variable amounts
+  - `calculateConfidenceScore()` - Multi-factor confidence scoring (timing 40%, amount 30%, occurrences 20%, merchant 10%)
+  - `calculateNextExpectedDate()` - Predict next occurrence date
+  - `detectPatterns()` - Orchestrate pattern detection with filtering
+  - `analyzeTransactions()` - Main entry point for transaction analysis
+  - 42 unit tests covering all frequency types, edge cases, and confidence scoring
+  - Supports ±3 day tolerance for monthly bills, handles variable amounts (utilities)
+  - Filters out income/transfers, requires minimum 3 occurrences, filters low confidence (<50%)
+
 ## [1.9.82] - 2026-02-02
 
 ### 🤖 AI Features
