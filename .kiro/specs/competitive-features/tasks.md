@@ -88,34 +88,34 @@
 
 ### Task 3: Savings Goals (Requirement 38)
 
-- [ ] 3.1 Backend: Create goals Lambda function
+- [x] 3.1 Backend: Create goals Lambda function
   - Create `backend/functions/goals/` directory (extend existing if present)
   - Implement CRUD for goals
   - Store with `GOAL#<goalId>` sort key
   - **Validates: Requirement 38.1**
 
-- [ ] 3.2 Backend: Implement goal contribution logic
+- [x] 3.2 Backend: Implement goal contribution logic
   - Manual contributions endpoint
   - Auto-link category transactions to goals
   - Calculate required monthly savings
   - **Validates: Requirement 38.4, 38.5, 38.3**
 
-- [ ] 3.3 Backend: Implement goal reordering
+- [x] 3.3 Backend: Implement goal reordering
   - `PUT /goals/reorder` endpoint
   - Update priority field for drag-and-drop
   - **Validates: Requirement 38.7**
 
-- [ ] 3.4 Backend: Add goal milestone notifications
+- [-] 3.4 Backend: Add goal milestone notifications
   - Extend notifications for 25%, 50%, 75%, 100% milestones
   - Weekly progress updates
   - **Validates: Requirement 38.8**
 
-- [ ] 3.5 Frontend Web: Create GoalsPage component
+- [x] 3.5 Frontend Web: Create GoalsPage component
   - Goals dashboard with progress bars
   - Current amount, percentage, days remaining
   - **Validates: Requirement 38.2, 38.9**
 
-- [ ] 3.6 Frontend Web: Add goal creation/edit form
+- [x] 3.6 Frontend Web: Add goal creation/edit form
   - Name, target amount, target date, icon
   - Link to savings category
   - **Validates: Requirement 38.1**
