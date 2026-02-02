@@ -368,15 +368,15 @@
   - Category assignment
   - **Validates: Requirement 42.15, 42.16, 42.17**
 
-- [ ] 10.4 Frontend Mobile: Integrate Plaid Link
+- [x] 10.4 Frontend Mobile: Integrate Plaid Link
   - Use react-native-plaid-link-sdk
   - **Validates: Requirement 42.12**
 
-- [ ] 10.5 Frontend Mobile: Create connected accounts screen
+- [x] 10.5 Frontend Mobile: Create connected accounts screen
   - Mirror web implementation
   - **Validates: Requirement 42.13**
 
-- [ ] 10.6 Backend: Add sandbox test account creation
+- [x] 10.6 Backend: Add sandbox test account creation
   - Endpoint to create Plaid sandbox accounts
   - Generate sample transactions
   - **Validates: Requirement 42.21, 42.22, 42.23**
