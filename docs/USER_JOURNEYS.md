@@ -406,11 +406,19 @@ _"As a user, I want to understand my spending patterns so I can make better fina
 │  │  📊 Your Financial Insights                                          │    │
 │  │  ────────────────────────────────────────────────────────────────── │    │
 │  │                                                                      │    │
-│  │  💡 Weekly Insight                                                   │    │
+│  │  💡 Weekly Insight (AI-Generated)                                    │    │
 │  │  "You spent 40% more on dining this week compared to last week.     │    │
 │  │   Consider meal prepping to save ~$50/week."                         │    │
 │  │                                                                      │    │
-│  │  📈 Spending Trends                    🏆 Achievements               │    │
+│  │  🤖 Ask About Your Spending                                          │    │
+│  │  [How much did I spend on groceries?] [Ask]                          │    │
+│  │  Suggestions: "Biggest expense?" "On track this month?"              │    │
+│  │                                                                      │    │
+│  │  📈 Spending Patterns                                                │    │
+│  │  By Day: Mon ████ $120 | Tue ██ $45 | Wed ███ $80 ...               │    │
+│  │  Top Merchants: Walmart $450 | Amazon $320 | Starbucks $85          │    │
+│  │                                                                      │    │
+│  │  📊 Spending Trends                    🏆 Achievements               │    │
 │  │  [Chart: 6-month trend]               • Under budget 3 months       │    │
 │  │                                        • Saved $500 this month       │    │
 │  │                                                                      │    │
@@ -424,15 +432,19 @@ _"As a user, I want to understand my spending patterns so I can make better fina
 
 ### Component Mapping
 
-| Feature         | Frontend Component | Backend API               | Status           |
-| --------------- | ------------------ | ------------------------- | ---------------- |
-| Insights Page   | ✅ Complete        | `GET /insights/summary`   | ✅ Complete      |
-| Weekly Insights | ✅ Complete        | `GET /insights/weekly`    | ✅ Complete      |
-| Spending Trends | ✅ Complete        | `GET /insights/trends`    | ✅ Complete      |
-| Peer Comparison | ❌ Missing         | `GET /comparison/summary` | ✅ Backend ready |
-| Achievements    | ❌ Missing         | `GET /comparison/badges`  | ⚠️ Partial       |
-| Tips Feed       | ✅ Complete        | `GET /tips/feed`          | ✅ Complete      |
-| Daily Tip       | ✅ Complete        | `GET /tips/daily`         | ✅ Complete      |
+| Feature              | Frontend Component      | Backend API               | Status           |
+| -------------------- | ----------------------- | ------------------------- | ---------------- |
+| Insights Page        | ✅ `InsightsPage.tsx`   | `GET /insights/summary`   | ✅ Complete      |
+| Weekly Insights      | ✅ `InsightsPage.tsx`   | `GET /insights/weekly`    | ✅ Complete      |
+| Spending Trends      | ✅ `InsightsPage.tsx`   | `GET /insights/trends`    | ✅ Complete      |
+| AI Ask Feature       | ✅ `InsightsPage.tsx`   | `POST /insights/ask`      | ✅ Complete      |
+| Spending Patterns    | ✅ `InsightsPage.tsx`   | `GET /insights/patterns`  | ✅ Complete      |
+| Mobile Insights      | ✅ `InsightsScreen.tsx` | Same as web               | ✅ Complete      |
+| Peer Comparison      | ❌ Missing              | `GET /comparison/summary` | ✅ Backend ready |
+| Achievements         | ❌ Missing              | `GET /comparison/badges`  | ⚠️ Partial       |
+| Tips Feed            | ✅ Complete             | `GET /tips/feed`          | ✅ Complete      |
+| Daily Tip            | ✅ Complete             | `GET /tips/daily`         | ✅ Complete      |
+| Weekly Notifications | ✅ Backend              | Daily reminders Lambda    | ✅ Complete      |
 
 ### UI/UX Requirements
 
@@ -441,13 +453,115 @@ _"As a user, I want to understand my spending patterns so I can make better fina
 - **Visual charts**: Use charts over tables for trends
 - **Gamification**: Badges, streaks, celebrations
 - **Personalization**: Insights based on user's actual data
+- **AI-powered Q&A**: Natural language questions about spending
 
-### Missing Components (HIGH PRIORITY)
+### Missing Components (MEDIUM PRIORITY)
 
 | Component                  | Priority | Description                    |
 | -------------------------- | -------- | ------------------------------ |
 | `PeerComparisonWidget.tsx` | MEDIUM   | Anonymous benchmark comparison |
 | `AchievementBadges.tsx`    | MEDIUM   | Gamification badges display    |
+
+---
+
+## 5.1 Receipt Scanning Journey
+
+### User Story
+
+_"As a user, I want to scan receipts with my phone camera so I can quickly add transactions without manual entry."_
+
+### Journey Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ENTRY: Quick Add or Transactions Page                                       │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  [+ Add Transaction] → [📷 Scan Receipt]                                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  MOBILE: Camera Capture                                                      │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  [Camera View]                                                       │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  ┌───┐                                           ┌───┐      │    │    │
+│  │  │  │   │                                           │   │      │    │    │
+│  │  │  └───┘                                           └───┘      │    │    │
+│  │  │         Position receipt within frame                       │    │    │
+│  │  │  ┌───┐                                           ┌───┐      │    │    │
+│  │  │  │   │                                           │   │      │    │    │
+│  │  │  └───┘                                           └───┘      │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  │                                                                      │    │
+│  │  [🖼️ Gallery]        [📸 Capture]        [5 scans left]             │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  WEB: File Upload                                                            │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  📷 Scan Receipt                                    5 scans left    │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │                                                              │    │    │
+│  │  │              📄 Drag and drop your receipt here              │    │    │
+│  │  │                         or                                   │    │    │
+│  │  │                   [Browse Files]                             │    │    │
+│  │  │                                                              │    │    │
+│  │  │         Supports JPEG, PNG, WebP, HEIC, PDF (max 10MB)       │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  CONFIRMATION: Review Extracted Data                                         │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Confirm Receipt                                                     │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │  Extraction Confidence: [High (92%)]                                 │    │
+│  │                                                                      │    │
+│  │  Merchant:  [Walmart_______________]                                 │    │
+│  │  Date:      [2026-02-01____________]                                 │    │
+│  │  Total:     [$_45.67_______________]                                 │    │
+│  │  Category:  [Groceries ▼__________]  (auto-suggested)               │    │
+│  │                                                                      │    │
+│  │  Extracted Items:                                                    │    │
+│  │  • Milk 2%                                    $4.99                  │    │
+│  │  • Bread                                      $3.49                  │    │
+│  │  • Eggs (dozen)                               $5.99                  │    │
+│  │  +3 more items                                                       │    │
+│  │                                                                      │    │
+│  │  [Cancel]                              [Save Transaction]            │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Component Mapping
+
+| Feature              | Frontend Component           | Backend API             | Status      |
+| -------------------- | ---------------------------- | ----------------------- | ----------- |
+| Camera Scanner       | ✅ `ReceiptScanner.tsx`      | `POST /receipt/upload`  | ✅ Complete |
+| File Upload (Web)    | ✅ `ReceiptUpload.tsx`       | `POST /receipt/upload`  | ✅ Complete |
+| OCR Processing       | Backend only                 | `POST /receipt/process` | ✅ Complete |
+| Confirmation Screen  | ✅ `ReceiptConfirmation.tsx` | N/A                     | ✅ Complete |
+| Usage Tracking       | ✅ In components             | `GET /receipt/usage`    | ✅ Complete |
+| Receipt History      | ❌ Missing                   | `GET /receipt/history`  | ✅ Backend  |
+| S3 Storage           | Backend only                 | AWS S3 bucket           | ✅ Complete |
+| Textract Integration | Backend only                 | AWS Textract            | ✅ Complete |
+
+### UI/UX Requirements
+
+- **Camera guide frame**: Help users position receipt correctly
+- **Processing feedback**: Show progress during OCR
+- **Editable fields**: Allow correction of extracted data
+- **Category suggestion**: Auto-suggest based on merchant
+- **Usage limits**: Show remaining scans clearly
+- **Error handling**: Clear messages for failed scans
 
 ---
 
