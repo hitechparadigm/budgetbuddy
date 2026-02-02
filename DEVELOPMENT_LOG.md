@@ -1,5 +1,45 @@
 # Development Log
 
+## 2026-02-02 - NotificationCenter Component (Session 69)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Complete truncated NotificationCenter.tsx component
+**Outcome**: Component fully implemented and working
+
+### Work Completed
+
+1. **Fixed NotificationCenter.tsx** - Was truncated mid-line, now complete:
+   - Bell icon with unread count badge
+   - Dropdown panel with notification list
+   - Mark as read functionality (individual and all)
+   - Auto-refresh every 60 seconds
+   - Click outside to close
+   - Type-specific icons and colors
+   - Relative time formatting
+   - Loading, error, and empty states
+
+2. **Verified InsightsPage.tsx** - Already complete with:
+   - Weekly insight highlight card
+   - Summary cards (spending, income, savings rate)
+   - Spending trends chart (6/12 month toggle)
+   - Category breakdown with progress bars
+   - Additional insights grid
+
+3. **Updated USER_JOURNEYS.md**:
+   - NotificationCenter: ❌ → ✅ Done
+   - InsightsPage (R31, R39): ❌ → ✅ Complete
+   - Removed insights endpoints from "Backend APIs Without Frontend"
+   - Updated UI/UX checklist
+
+### Files Changed
+
+- `packages/web-app/src/components/NotificationCenter.tsx` - Complete rewrite
+- `docs/USER_JOURNEYS.md` - Status updates
+
+---
+
 ## 2026-02-02 - Competitive Features Spec Complete (Session 68)
 
 ### Session Summary

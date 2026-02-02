@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.9.48] - 2026-02-02
+
+### ✨ Feature - NotificationCenter Component Complete
+
+**Component**: `packages/web-app/src/components/NotificationCenter.tsx`
+
+**Features**:
+
+- Bell icon with unread badge (shows count up to 9+)
+- Dropdown panel with notification history
+- Mark individual notifications as read
+- Mark all as read button
+- Auto-refresh every 60 seconds
+- Click outside to close
+- Notification type icons (budget_alert, reminder, tip, family, system)
+- Relative time formatting (Just now, 5m ago, 2h ago, etc.)
+- Loading and error states
+- Empty state for new users
+
+**Integration**:
+
+- Uses `notificationsApi.ts` service
+- Connects to `GET /notifications/history` endpoint
+- Supports `PUT /notifications/{id}/read` for marking as read
+
+**Status Updates**:
+
+- `NotificationCenter.tsx`: ❌ → ✅ Complete
+- `InsightsPage.tsx`: Already complete (verified)
+- Updated `docs/USER_JOURNEYS.md` with status changes
+
 ## [1.9.47] - 2026-02-02
 
 ### 📋 Spec Complete - Competitive Features
