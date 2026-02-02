@@ -1,5 +1,47 @@
 # Development Log
 
+## 2026-02-02 - CalendarView Component (Session 98)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Create CalendarView component for transaction visualization
+**Outcome**: New calendar component for viewing transactions by day
+
+### Work Completed
+
+1. **CalendarView Component**:
+   - Created `packages/web-app/src/components/CalendarView.tsx`
+   - Calendar grid showing transactions organized by day
+   - Daily income/expense totals with color coding
+   - Click on any day to see transaction details
+   - Today highlighting with ring indicator
+   - Legend for income (green), expense (red), today (blue)
+   - Dark mode support
+
+2. **Features**:
+   - Groups transactions by date
+   - Calculates daily income/expense totals
+   - Shows transaction count per day
+   - Selected date shows transaction list
+   - Currency formatting support
+
+3. **Documentation Updates**:
+   - Updated USER_JOURNEYS.md - CalendarView marked as Done
+   - Updated CHANGELOG.md with v1.9.77 entry
+
+### Files Created
+
+- `packages/web-app/src/components/CalendarView.tsx`
+
+### Files Modified
+
+- `docs/USER_JOURNEYS.md`
+- `CHANGELOG.md`
+- `DEVELOPMENT_LOG.md`
+
+---
+
 ## 2026-02-02 - Receipt Scanning Integration (Session 97)
 
 ### Session Summary

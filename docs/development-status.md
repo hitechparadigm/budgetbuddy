@@ -1,10 +1,30 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-02 (Receipt Scanning Integration)
+**Last Updated**: 2026-02-02 (CalendarView Component)
 **Current Phase**: Feature Complete - Maintenance Mode
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - Receipt Scanning Integration
+## ✨ LATEST - CalendarView Component
+
+### New Transaction Visualization Component
+
+- Created `CalendarView.tsx` for viewing transactions by day
+- Calendar grid with daily income/expense totals
+- Click on any day to see transaction details
+- Today highlighting with ring indicator
+- Dark mode support
+
+**Features**:
+
+- Groups transactions by date
+- Color-coded income (green) and expense (red)
+- Transaction count per day
+- Selected date shows transaction list
+- Currency formatting support
+
+---
+
+## ✨ Receipt Scanning Integration
 
 ### ReceiptUpload Integrated into BudgetPage
 
