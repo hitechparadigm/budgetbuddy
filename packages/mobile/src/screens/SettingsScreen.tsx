@@ -6,6 +6,7 @@ import {
   ScrollView,
   Switch,
   Alert,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card, Button } from "../components/ui";
@@ -16,6 +17,8 @@ import FamilySettings from "../components/FamilySettings";
 import CurrencySelector, {
   CurrencyDisplay,
 } from "../components/CurrencySelector";
+import TwoFactorSetup from "../components/TwoFactorSetup";
+import TwoFactorVerify from "../components/TwoFactorVerify";
 import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../contexts/AuthContext";
 import { useCurrency } from "../contexts/CurrencyContext";
@@ -36,7 +39,15 @@ interface SettingsItem {
 
 export default function SettingsScreen() {
   const { colors, isDark } = useTheme();
-  const { signOut, user } = useAuth();
+  const {
+    signOut,
+    user,
+    mfaEnabled,
+    setupMFA,
+    confirmMFASetup,
+    disableMFA,
+    getBackupCodes,
+  } = useAuth();
   const { selectedCurrency, setSelectedCurrency } = useCurrency();
   const { data: budgets = [] } = useBudgets();
   const { data: transactions = [] } = useTransactions();
@@ -56,6 +67,9 @@ export default function SettingsScreen() {
     useState(false);
   const [currencySelectorVisible, setCurrencySelectorVisible] = useState(false);
   const [familySettingsVisible, setFamilySettingsVisible] = useState(false);
+  const [twoFactorSetupVisible, setTwoFactorSetupVisible] = useState(false);
+  const [backupCodesVisible, setBackupCodesVisible] = useState(false);
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
 
   const handleSignOut = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -148,6 +162,74 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleToggle2FA = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (mfaEnabled) {
+      // Disable 2FA
+      Alert.alert(
+        "Disable Two-Factor Authentication",
+        "Are you sure you want to disable 2FA? This will make your account less secure.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Disable",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await disableMFA();
+                await Haptics.notificationAsync(
+                  Haptics.NotificationFeedbackType.Success,
+                );
+                Alert.alert(
+                  "Success",
+                  "Two-factor authentication has been disabled.",
+                );
+              } catch (error) {
+                Alert.alert(
+                  "Error",
+                  "Failed to disable 2FA. Please try again.",
+                );
+              }
+            },
+          },
+        ],
+      );
+    } else {
+      // Enable 2FA - show setup wizard
+      setTwoFactorSetupVisible(true);
+    }
+  };
+
+  const handleViewBackupCodes = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      const codes = await getBackupCodes();
+      setBackupCodes(codes);
+      setBackupCodesVisible(true);
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        "Failed to retrieve backup codes. Please try again.",
+      );
+    }
+  };
+
+  const handle2FASetupComplete = async () => {
+    setTwoFactorSetupVisible(false);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Alert.alert(
+      "2FA Enabled",
+      "Two-factor authentication is now enabled. Make sure to save your backup codes!",
+      [
+        {
+          text: "View Backup Codes",
+          onPress: handleViewBackupCodes,
+        },
+        { text: "Done" },
+      ],
+    );
+  };
+
   const accountSettings: SettingsItem[] = [
     {
       id: "profile",
@@ -190,6 +272,27 @@ export default function SettingsScreen() {
         setNotificationSettingsVisible(true);
       },
     },
+    {
+      id: "2fa",
+      title: "Two-Factor Authentication",
+      subtitle: mfaEnabled
+        ? "Enabled - Extra security active"
+        : "Disabled - Add extra security",
+      type: "toggle",
+      value: mfaEnabled,
+      onToggle: handleToggle2FA,
+    },
+    ...(mfaEnabled
+      ? [
+          {
+            id: "backup-codes",
+            title: "View Backup Codes",
+            subtitle: "Recovery codes for 2FA",
+            type: "navigation" as const,
+            onPress: handleViewBackupCodes,
+          },
+        ]
+      : []),
     {
       id: "biometric",
       title: "Biometric Authentication",
@@ -463,6 +566,62 @@ export default function SettingsScreen() {
           <FamilySettings onClose={() => setFamilySettingsVisible(false)} />
         </View>
       )}
+
+      {/* Two-Factor Authentication Setup Modal */}
+      <Modal
+        visible={twoFactorSetupVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setTwoFactorSetupVisible(false)}
+      >
+        <TwoFactorSetup
+          onComplete={handle2FASetupComplete}
+          onCancel={() => setTwoFactorSetupVisible(false)}
+        />
+      </Modal>
+
+      {/* Backup Codes Modal */}
+      <Modal
+        visible={backupCodesVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setBackupCodesVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[styles.backupCodesModal, { backgroundColor: colors.card }]}
+          >
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              Backup Codes
+            </Text>
+            <Text
+              style={[styles.modalSubtitle, { color: colors.textSecondary }]}
+            >
+              Save these codes in a safe place. Each code can only be used once.
+            </Text>
+            <View style={styles.codesContainer}>
+              {backupCodes.map((code, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.codeItem,
+                    { backgroundColor: colors.background },
+                  ]}
+                >
+                  <Text style={[styles.codeText, { color: colors.text }]}>
+                    {code}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <Button
+              title="Done"
+              onPress={() => setBackupCodesVisible(false)}
+              style={styles.modalButton}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -556,5 +715,50 @@ const createStyles = (colors: any) =>
       textAlign: "center",
       fontSize: 12,
       color: colors.textMuted,
+    },
+    // Modal styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+    },
+    backupCodesModal: {
+      width: "100%",
+      maxWidth: 400,
+      borderRadius: 16,
+      padding: 24,
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      textAlign: "center",
+      marginBottom: 8,
+    },
+    modalSubtitle: {
+      fontSize: 14,
+      textAlign: "center",
+      marginBottom: 20,
+    },
+    codesContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+      marginBottom: 20,
+    },
+    codeItem: {
+      width: "48%",
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 8,
+    },
+    codeText: {
+      fontSize: 14,
+      fontFamily: "monospace",
+      textAlign: "center",
+    },
+    modalButton: {
+      marginTop: 8,
     },
   });
