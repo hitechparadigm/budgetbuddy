@@ -30,11 +30,11 @@
   - Show available = planned + rollover - spent
   - **Validates: Requirement 40.2, 40.3, 40.4**
 
-- [-] 1.5 Frontend Mobile: Add rollover toggle to budget category
+- [x] 1.5 Frontend Mobile: Add rollover toggle to budget category
   - Mirror web implementation in React Native
   - **Validates: Requirement 40.2, 40.3, 40.4**
 
-- [ ] 1.6 Property Test: Rollover calculation correctness
+- [x] 1.6 Property Test: Rollover calculation correctness
   - Rollover never negative (unless overspent)
   - Rollover respects cap when set
   - Year-end rollover works correctly
