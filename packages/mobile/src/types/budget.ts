@@ -18,6 +18,10 @@ export interface Budget {
   updatedAt: string;
   // Recurring budget specific fields
   recurringConfig?: RecurringBudgetConfig;
+  // Rollover budget fields (Requirement 40)
+  rolloverEnabled?: boolean;
+  rolloverAmount?: number;
+  rolloverCap?: number;
 }
 
 export interface RecurringBudgetConfig {
@@ -144,6 +148,9 @@ export interface CreateBudgetRequest {
   type: BudgetType;
   description?: string;
   recurringConfig?: RecurringBudgetConfig;
+  // Rollover budget fields (Requirement 40)
+  rolloverEnabled?: boolean;
+  rolloverCap?: number;
 }
 
 export interface UpdateBudgetRequest extends Partial<CreateBudgetRequest> {

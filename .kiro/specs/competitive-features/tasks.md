@@ -30,7 +30,7 @@
   - Show available = planned + rollover - spent
   - **Validates: Requirement 40.2, 40.3, 40.4**
 
-- [ ] 1.5 Frontend Mobile: Add rollover toggle to budget category
+- [-] 1.5 Frontend Mobile: Add rollover toggle to budget category
   - Mirror web implementation in React Native
   - **Validates: Requirement 40.2, 40.3, 40.4**
 
