@@ -1,0 +1,15 @@
+{
+  "_comment": "Net Worth Lambda function - Handles assets, liabilities, and net worth tracking",
+  "name": "budgetbuddy-net-worth-function",
+  "version": "1.0.0",
+  "description": "BudgetBuddy net worth Lambda function for tracking assets and liabilities",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "local": "sam local start-api"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
