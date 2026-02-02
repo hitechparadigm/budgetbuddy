@@ -11,6 +11,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { QuickActionsFAB } from "../components/QuickActionsFAB";
 import { ReceiptUpload } from "../components/ReceiptUpload";
+import { CalendarView } from "../components/CalendarView";
 import {
   TransactionFilters,
   useTransactionFilters,
@@ -135,9 +136,9 @@ export const BudgetPage: React.FC = () => {
   });
 
   // Right sidebar tab state
-  const [activeTab, setActiveTab] = useState<"summary" | "transactions">(
-    "transactions",
-  );
+  const [activeTab, setActiveTab] = useState<
+    "summary" | "transactions" | "calendar"
+  >("transactions");
 
   // Right sidebar width state
   const [sidebarWidth, setSidebarWidth] = useState(400); // Default 400px (larger than w-80 which is 320px)
@@ -2378,6 +2379,33 @@ export const BudgetPage: React.FC = () => {
                   Transactions
                 </span>
               </button>
+              <button
+                onClick={() => setActiveTab("calendar")}
+                className={`flex flex-col items-center space-y-1 pb-2 ${
+                  activeTab === "calendar" ? "border-b-2 border-blue-600" : ""
+                }`}
+              >
+                <svg
+                  className="w-6 h-6 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                <span
+                  className={`text-sm font-medium ${
+                    activeTab === "calendar" ? "text-blue-600" : "text-gray-500"
+                  }`}
+                >
+                  Calendar
+                </span>
+              </button>
             </div>
 
             {/* Summary View */}
@@ -2739,6 +2767,26 @@ export const BudgetPage: React.FC = () => {
                   </div>
                 </button>
               </>
+            )}
+
+            {/* Calendar View */}
+            {activeTab === "calendar" && (
+              <CalendarView
+                transactions={allTransactions.map((txn) => ({
+                  id: txn.id,
+                  description: txn.description,
+                  amount: txn.amount,
+                  date: txn.date,
+                  categoryName: txn.categoryName,
+                  type: txn.groupType === "income" ? "income" : "expense",
+                }))}
+                month={currentMonth}
+                currency={currency}
+                onDateClick={(date, transactions) => {
+                  // Could open a modal or filter to show transactions for that date
+                  console.log("Date clicked:", date, transactions);
+                }}
+              />
             )}
           </div>
         </div>

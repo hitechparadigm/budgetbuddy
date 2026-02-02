@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.9.78] - 2026-02-02
+
+### ✨ CalendarView Integration
+
+**Integration Complete**:
+
+- Integrated `CalendarView` component into BudgetPage
+- Added "Calendar" tab to right sidebar (Summary | Transactions | Calendar)
+- Calendar shows transactions organized by day for the current month
+
+**Features**:
+
+- View transactions in calendar grid format
+- Daily income/expense totals with color coding
+- Click on any day to see transaction details
+- Today highlighting
+- Syncs with current month navigation
+
+**User Flow**:
+
+1. Navigate to Budget page
+2. Click "Calendar" tab in right sidebar
+3. View transactions organized by day
+4. Click any day to see details
+
 ## [1.9.77] - 2026-02-02
 
 ### ✨ CalendarView Component

@@ -1,10 +1,28 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-02 (CalendarView Component)
+**Last Updated**: 2026-02-02 (CalendarView Integration)
 **Current Phase**: Feature Complete - Maintenance Mode
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - CalendarView Component
+## ✨ LATEST - CalendarView Integration
+
+### CalendarView Integrated into BudgetPage
+
+- Added "Calendar" tab to right sidebar (Summary | Transactions | Calendar)
+- Calendar shows transactions organized by day for the current month
+- Daily income/expense totals with color coding
+- Click on any day to see transaction details
+
+**User Flow**:
+
+1. Navigate to Budget page
+2. Click "Calendar" tab in right sidebar
+3. View transactions organized by day
+4. Click any day to see details
+
+---
+
+## ✨ CalendarView Component
 
 ### New Transaction Visualization Component
 

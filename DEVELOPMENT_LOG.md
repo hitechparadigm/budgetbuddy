@@ -1,5 +1,39 @@
 # Development Log
 
+## 2026-02-02 - CalendarView Integration (Session 99)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Integrate CalendarView into BudgetPage
+**Outcome**: Calendar tab added to budget page right sidebar
+
+### Work Completed
+
+1. **BudgetPage Integration**:
+   - Added `CalendarView` import
+   - Extended `activeTab` state to include "calendar"
+   - Added Calendar tab button with calendar icon
+   - Added CalendarView component rendering when calendar tab active
+   - Connected to allTransactions data with proper type mapping
+
+2. **User Flow**:
+   - Navigate to Budget page
+   - Click "Calendar" tab in right sidebar
+   - View transactions organized by day
+   - Click any day to see transaction details
+
+3. **Documentation Updates**:
+   - Updated CHANGELOG.md with v1.9.78 entry
+
+### Files Modified
+
+- `packages/web-app/src/pages/BudgetPage.tsx`
+- `CHANGELOG.md`
+- `DEVELOPMENT_LOG.md`
+
+---
+
 ## 2026-02-02 - CalendarView Component (Session 98)
 
 ### Session Summary
