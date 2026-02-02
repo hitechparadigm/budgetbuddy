@@ -4,7 +4,7 @@
  * Handles spending analytics, AI-generated insights, and trend analysis.
  * Uses AWS Bedrock for natural language insight generation.
  *
- * Version: 1.0.0
+ * Version: 1.1.0
  */
 
 const {
@@ -18,6 +18,20 @@ const {
 } = require("/opt/nodejs/utils");
 
 const { checkPermission } = require("/opt/nodejs/shared");
+
+// AWS Bedrock client for AI insights
+const {
+  BedrockRuntimeClient,
+  InvokeModelCommand,
+} = require("@aws-sdk/client-bedrock-runtime");
+
+const bedrockClient = new BedrockRuntimeClient({
+  region: process.env.AWS_REGION || "us-east-1",
+});
+
+// Bedrock model configuration
+const BEDROCK_MODEL_ID =
+  process.env.BEDROCK_MODEL_ID || "anthropic.claude-3-sonnet-20240229-v1:0";
 
 /**
  * Main Lambda handler for insights operations
@@ -419,18 +433,28 @@ async function askAboutSpending(event, user) {
   const transactions = await getTransactionsInRange(familyId, startDate, today);
   const summary = calculateSummary(transactions);
   const categoryBreakdown = calculateCategoryTotals(transactions);
+  const patterns = identifyPatterns(transactions);
 
-  // Generate AI response (simplified - would use Bedrock in production)
-  const response = generateAIResponse(
-    body.question,
-    summary,
-    categoryBreakdown,
-  );
+  // Use AI-powered response with Bedrock (falls back to simple if unavailable)
+  const useAI = body.useAI !== false; // Default to using AI
+  let response;
+
+  if (useAI) {
+    response = await generateAIResponseWithBedrock(
+      body.question,
+      summary,
+      categoryBreakdown,
+      patterns,
+    );
+  } else {
+    response = generateAIResponse(body.question, summary, categoryBreakdown);
+  }
 
   return successResponse(
     {
       question: body.question,
       answer: response,
+      aiPowered: useAI,
       context: {
         period: "30 days",
         transactionCount: transactions.length,
@@ -894,3 +918,236 @@ function generateAIResponse(question, summary, categoryBreakdown) {
 
   return `Based on your recent activity: You spent $${summary.totalSpent.toFixed(2)} with an average transaction of $${summary.avgTransaction.toFixed(2)}. Your savings rate is ${summary.savingsRate.toFixed(1)}%.`;
 }
+
+// ============ AWS Bedrock AI Functions ============
+
+/**
+ * Generate AI response using AWS Bedrock
+ * Falls back to simple response if Bedrock is unavailable
+ */
+async function generateAIResponseWithBedrock(
+  question,
+  summary,
+  categoryBreakdown,
+  patterns = null,
+) {
+  try {
+    // Build context for AI
+    const context = buildAIContext(summary, categoryBreakdown, patterns);
+
+    const prompt = `You are a helpful financial advisor assistant for BudgetBuddy, a personal budgeting app.
+Based on the user's spending data below, answer their question concisely and helpfully.
+Keep your response under 150 words and focus on actionable advice.
+
+User's Financial Data:
+${context}
+
+User's Question: ${question}
+
+Provide a helpful, personalized response:`;
+
+    const response = await invokeBedrockModel(prompt);
+    return response;
+  } catch (error) {
+    logger.warn("Bedrock AI unavailable, using fallback", {
+      error: error.message,
+    });
+    return generateAIResponse(question, summary, categoryBreakdown);
+  }
+}
+
+/**
+ * Build context string for AI from spending data
+ */
+function buildAIContext(summary, categoryBreakdown, patterns) {
+  let context = `- Total spent (30 days): $${summary.totalSpent.toFixed(2)}
+- Total income: $${summary.totalIncome.toFixed(2)}
+- Savings rate: ${summary.savingsRate.toFixed(1)}%
+- Transaction count: ${summary.transactionCount}
+- Average transaction: $${summary.avgTransaction.toFixed(2)}
+
+Top spending categories:`;
+
+  const topCategories = Object.entries(categoryBreakdown)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  for (const [category, amount] of topCategories) {
+    context += `\n- ${category}: $${amount.toFixed(2)}`;
+  }
+
+  if (patterns) {
+    if (patterns.peakSpendingDay) {
+      context += `\n\nSpending patterns:`;
+      context += `\n- Peak spending day: ${patterns.peakSpendingDay}`;
+    }
+    if (patterns.topMerchant) {
+      context += `\n- Most visited merchant: ${patterns.topMerchant} (${patterns.topMerchantCount} visits)`;
+    }
+  }
+
+  return context;
+}
+
+/**
+ * Invoke AWS Bedrock model
+ */
+async function invokeBedrockModel(prompt) {
+  const payload = {
+    anthropic_version: "bedrock-2023-05-31",
+    max_tokens: 500,
+    messages: [
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+  };
+
+  const command = new InvokeModelCommand({
+    modelId: BEDROCK_MODEL_ID,
+    contentType: "application/json",
+    accept: "application/json",
+    body: JSON.stringify(payload),
+  });
+
+  const response = await bedrockClient.send(command);
+  // Use Buffer for Node.js environment
+  const responseBody = JSON.parse(Buffer.from(response.body).toString("utf-8"));
+
+  return responseBody.content[0].text;
+}
+
+/**
+ * Generate personalized AI insights using Bedrock
+ */
+async function generateAIInsights(
+  summary,
+  previousSummary,
+  categoryBreakdown,
+  budgetComparison = null,
+) {
+  try {
+    const spendingChange = calculatePercentChange(
+      summary.totalSpent,
+      previousSummary.totalSpent,
+    );
+
+    const prompt = `You are a financial advisor for BudgetBuddy. Generate 2-3 personalized, actionable insights based on this spending data.
+Format each insight as a JSON object with: type (positive/alert/tip/info), icon (emoji), title (short), message (1-2 sentences), actionable (optional action to take).
+
+Spending Data:
+- Current period spending: $${summary.totalSpent.toFixed(2)}
+- Previous period spending: $${previousSummary.totalSpent.toFixed(2)}
+- Change: ${spendingChange}%
+- Savings rate: ${summary.savingsRate.toFixed(1)}%
+- Income: $${summary.totalIncome.toFixed(2)}
+${budgetComparison ? `- Budget: $${budgetComparison.plannedExpenses.toFixed(2)} (${budgetComparison.onTrack ? "on track" : "over budget"})` : ""}
+
+Top categories:
+${categoryBreakdown
+  .slice(0, 5)
+  .map(
+    (c) =>
+      `- ${c.category}: $${c.amount.toFixed(2)} (${c.change > 0 ? "+" : ""}${c.change}% vs last period)`,
+  )
+  .join("\n")}
+
+Return ONLY a JSON array of insight objects, no other text:`;
+
+    const response = await invokeBedrockModel(prompt);
+
+    // Parse AI response
+    const jsonMatch = response.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const aiInsights = JSON.parse(jsonMatch[0]);
+      return aiInsights.slice(0, 3); // Limit to 3 insights
+    }
+
+    // Fallback if parsing fails
+    return generateInsights(
+      summary,
+      previousSummary,
+      categoryBreakdown,
+      budgetComparison,
+    );
+  } catch (error) {
+    logger.warn("AI insights generation failed, using fallback", {
+      error: error.message,
+    });
+    return generateInsights(
+      summary,
+      previousSummary,
+      categoryBreakdown,
+      budgetComparison,
+    );
+  }
+}
+
+/**
+ * Generate weekly insight summary for notifications
+ * @param {string} familyId - Family ID
+ * @returns {Object} Weekly insight summary
+ */
+async function generateWeeklyInsightSummary(familyId) {
+  try {
+    const today = new Date();
+    const weekStart = getWeekStart(today);
+    const weekEnd = new Date(today);
+
+    const transactions = await getTransactionsInRange(
+      familyId,
+      weekStart,
+      weekEnd,
+    );
+    const previousWeekTransactions = await getTransactionsInRange(
+      familyId,
+      new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000),
+      new Date(weekStart.getTime() - 1),
+    );
+
+    const summary = calculateSummary(transactions);
+    const previousSummary = calculateSummary(previousWeekTransactions);
+    const spendingChange = calculatePercentChange(
+      summary.totalSpent,
+      previousSummary.totalSpent,
+    );
+
+    // Generate a concise weekly summary
+    let summaryText = `This week: $${summary.totalSpent.toFixed(2)} spent`;
+    if (Math.abs(spendingChange) > 5) {
+      summaryText += ` (${spendingChange > 0 ? "↑" : "↓"}${Math.abs(spendingChange)}% vs last week)`;
+    }
+    summaryText += `. Savings rate: ${summary.savingsRate.toFixed(0)}%`;
+
+    // Determine notification type
+    let notificationType = "info";
+    if (summary.savingsRate >= 20) {
+      notificationType = "positive";
+    } else if (spendingChange > 20 || summary.savingsRate < 5) {
+      notificationType = "alert";
+    }
+
+    return {
+      title: "📊 Weekly Spending Summary",
+      body: summaryText,
+      type: notificationType,
+      data: {
+        totalSpent: summary.totalSpent,
+        spendingChange,
+        savingsRate: summary.savingsRate,
+        transactionCount: summary.transactionCount,
+      },
+    };
+  } catch (error) {
+    logger.error("Error generating weekly insight summary", error, {
+      familyId,
+    });
+    throw error;
+  }
+}
+
+// Export functions for use by other services
+module.exports.generateWeeklyInsightSummary = generateWeeklyInsightSummary;
+module.exports.generateAIInsights = generateAIInsights;
+module.exports.generateAIResponseWithBedrock = generateAIResponseWithBedrock;
