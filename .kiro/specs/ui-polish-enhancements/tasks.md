@@ -157,11 +157,11 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 
 ### Task 6: Goal Archive Feature
 
-- [ ] 6.1 Add archive functionality
-  - [ ] 6.1.1 Add "Archive" button to completed goals
-  - [ ] 6.1.2 Create archived goals section
-  - [ ] 6.1.3 Add "Restore" button for archived goals
-  - [ ] 6.1.4 Store archive status in backend
+- [x] 6.1 Add archive functionality
+  - [x] 6.1.1 Add "Archive" button to completed goals
+  - [x] 6.1.2 Create archived goals section
+  - [x] 6.1.3 Add "Restore" button for archived goals
+  - [x] 6.1.4 Store archive status in backend
   - **Validates: Requirement 3.5-3.7**
 
 - [x] 6.2 Add confetti animation
