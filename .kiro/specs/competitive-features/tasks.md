@@ -42,13 +42,13 @@
 
 ### Task 2: Bill Reminders (Requirement 36)
 
-- [ ] 2.1 Backend: Create bills Lambda function
+- [x] 2.1 Backend: Create bills Lambda function
   - Create `backend/functions/bills/` directory
   - Implement CRUD operations for bills
   - Store in DynamoDB with `BILL#<billId>` sort key
   - **Validates: Requirement 36.1, 36.2**
 
-- [ ] 2.2 Backend: Implement bill notification scheduler
+- [-] 2.2 Backend: Implement bill notification scheduler
   - Extend daily-reminders Lambda to check bills
   - Send notifications at 7, 3, 0 days before due
   - **Validates: Requirement 36.5**

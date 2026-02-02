@@ -1,8 +1,10 @@
 /**
  * Daily Reminders Service
  *
- * Sends daily expense tracking reminders to users.
+ * Sends daily expense tracking reminders and bill due date notifications to users.
  * Triggered by EventBridge (CloudWatch Events) scheduled rule.
+ *
+ * **Validates: Requirement 36.5** - Bill reminder notifications
  */
 
 const AWS = require("aws-sdk");
@@ -13,6 +15,9 @@ const lambda = new AWS.Lambda();
 const TABLE_NAME = process.env.TABLE_NAME || "budgetbuddy-main";
 const NOTIFICATION_FUNCTION =
   process.env.NOTIFICATION_FUNCTION || "budgetbuddy-notifications";
+
+// Bill reminder days before due date
+const BILL_REMINDER_DAYS = [7, 3, 0];
 
 /**
  * Get all active users
@@ -241,6 +246,213 @@ async function sendDailyReminder(user) {
 }
 
 /**
+ * Get upcoming bills for a family that need reminders
+ * **Validates: Requirement 36.5** - Bill reminder notifications
+ */
+async function getUpcomingBillsForFamily(familyId) {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get bills due in the next 7 days
+    const sevenDaysLater = new Date(today);
+    sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
+    const todayStr = today.toISOString().split("T")[0];
+    const futureStr = sevenDaysLater.toISOString().split("T")[0];
+
+    const result = await dynamodb
+      .query({
+        TableName: TABLE_NAME,
+        KeyConditionExpression: "PK = :pk",
+        FilterExpression:
+          "entityType = :entityType AND dueDate >= :today AND dueDate <= :future AND #status <> :paid AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: {
+          ":pk": `FAMILY#${familyId}`,
+          ":entityType": "BILL",
+          ":today": todayStr,
+          ":future": futureStr,
+          ":paid": "paid",
+          ":false": false,
+        },
+      })
+      .promise();
+
+    return result.Items || [];
+  } catch (error) {
+    console.error(
+      `Error getting upcoming bills for family ${familyId}:`,
+      error,
+    );
+    return [];
+  }
+}
+
+/**
+ * Check if a bill needs a reminder today
+ * **Validates: Requirement 36.5** - Send notifications at 7, 3, 0 days before due
+ */
+function billNeedsReminder(bill) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dueDate = new Date(bill.dueDate);
+  dueDate.setHours(0, 0, 0, 0);
+
+  const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+
+  // Check if today is a reminder day (7, 3, or 0 days before due)
+  if (!BILL_REMINDER_DAYS.includes(daysUntilDue)) {
+    return { needsReminder: false, daysUntilDue };
+  }
+
+  // Check if reminder was already sent today
+  const todayStr = today.toISOString().split("T")[0];
+  const reminderKey = `${todayStr}_${daysUntilDue}`;
+
+  if (bill.remindersSent && bill.remindersSent.includes(reminderKey)) {
+    return { needsReminder: false, daysUntilDue, reason: "already_sent" };
+  }
+
+  return { needsReminder: true, daysUntilDue };
+}
+
+/**
+ * Send bill reminder notification
+ * **Validates: Requirement 36.5** - Bill reminder notifications
+ */
+async function sendBillReminder(userId, bill, daysUntilDue) {
+  try {
+    let title, body;
+
+    if (daysUntilDue === 0) {
+      title = "🔴 Bill Due Today!";
+      body = `${bill.name} ($${bill.amount.toFixed(2)}) is due today!`;
+    } else if (daysUntilDue === 3) {
+      title = "🟡 Bill Due Soon";
+      body = `${bill.name} ($${bill.amount.toFixed(2)}) is due in 3 days.`;
+    } else if (daysUntilDue === 7) {
+      title = "📅 Upcoming Bill";
+      body = `${bill.name} ($${bill.amount.toFixed(2)}) is due in 7 days.`;
+    } else {
+      title = "📅 Bill Reminder";
+      body = `${bill.name} ($${bill.amount.toFixed(2)}) is due in ${daysUntilDue} days.`;
+    }
+
+    const notification = {
+      title,
+      body,
+      data: {
+        type: "bill_reminder",
+        billId: bill.billId,
+        daysUntilDue,
+        amount: bill.amount,
+        dueDate: bill.dueDate,
+      },
+    };
+
+    // Send notification
+    await lambda
+      .invoke({
+        FunctionName: NOTIFICATION_FUNCTION,
+        InvocationType: "Event",
+        Payload: JSON.stringify({
+          httpMethod: "POST",
+          path: "/notifications/send",
+          body: JSON.stringify({
+            userId,
+            notification,
+          }),
+        }),
+      })
+      .promise();
+
+    // Mark reminder as sent
+    const todayStr = new Date().toISOString().split("T")[0];
+    const reminderKey = `${todayStr}_${daysUntilDue}`;
+    const remindersSent = bill.remindersSent || [];
+    remindersSent.push(reminderKey);
+
+    await dynamodb
+      .update({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `FAMILY#${bill.familyId}`,
+          SK: `BILL#${bill.billId}`,
+        },
+        UpdateExpression: "SET remindersSent = :reminders, updatedAt = :now",
+        ExpressionAttributeValues: {
+          ":reminders": remindersSent,
+          ":now": new Date().toISOString(),
+        },
+      })
+      .promise();
+
+    console.log(`✅ Bill reminder sent: ${bill.name} (${daysUntilDue} days)`);
+    return { sent: true, billId: bill.billId, daysUntilDue };
+  } catch (error) {
+    console.error(`Error sending bill reminder for ${bill.billId}:`, error);
+    return { sent: false, billId: bill.billId, error: error.message };
+  }
+}
+
+/**
+ * Process bill reminders for a user
+ * **Validates: Requirement 36.5** - Bill reminder notifications
+ */
+async function processBillReminders(user) {
+  const results = {
+    userId: user.userId,
+    billsChecked: 0,
+    remindersSent: 0,
+    skipped: 0,
+    errors: 0,
+    details: [],
+  };
+
+  try {
+    const familyId = user.familyId;
+    if (!familyId) {
+      return { ...results, error: "No family ID" };
+    }
+
+    // Get upcoming bills
+    const bills = await getUpcomingBillsForFamily(familyId);
+    results.billsChecked = bills.length;
+
+    // Check each bill for reminders
+    for (const bill of bills) {
+      const { needsReminder, daysUntilDue, reason } = billNeedsReminder(bill);
+
+      if (!needsReminder) {
+        results.skipped++;
+        results.details.push({
+          billId: bill.billId,
+          name: bill.name,
+          sent: false,
+          reason: reason || "not_reminder_day",
+        });
+        continue;
+      }
+
+      // Send reminder
+      const result = await sendBillReminder(user.userId, bill, daysUntilDue);
+      if (result.sent) {
+        results.remindersSent++;
+      } else {
+        results.errors++;
+      }
+      results.details.push(result);
+    }
+
+    return results;
+  } catch (error) {
+    console.error(`Error processing bill reminders for ${user.userId}:`, error);
+    return { ...results, error: error.message };
+  }
+}
+
+/**
  * Main Lambda handler
  */
 exports.handler = async (event) => {
@@ -254,6 +466,13 @@ exports.handler = async (event) => {
     skipped: 0,
     errors: 0,
     details: [],
+    // Bill reminder results
+    billReminders: {
+      totalBillsChecked: 0,
+      remindersSent: 0,
+      skipped: 0,
+      errors: 0,
+    },
   };
 
   try {
@@ -267,11 +486,13 @@ exports.handler = async (event) => {
     const BATCH_SIZE = 10;
     for (let i = 0; i < users.length; i += BATCH_SIZE) {
       const batch = users.slice(i, i + BATCH_SIZE);
-      const batchResults = await Promise.all(
+
+      // Process daily expense reminders
+      const dailyResults = await Promise.all(
         batch.map((user) => sendDailyReminder(user)),
       );
 
-      batchResults.forEach((result) => {
+      dailyResults.forEach((result) => {
         if (result.sent) {
           results.remindersSent++;
         } else if (result.error) {
@@ -280,6 +501,18 @@ exports.handler = async (event) => {
           results.skipped++;
         }
         results.details.push(result);
+      });
+
+      // Process bill reminders (Requirement 36.5)
+      const billResults = await Promise.all(
+        batch.map((user) => processBillReminders(user)),
+      );
+
+      billResults.forEach((result) => {
+        results.billReminders.totalBillsChecked += result.billsChecked || 0;
+        results.billReminders.remindersSent += result.remindersSent || 0;
+        results.billReminders.skipped += result.skipped || 0;
+        results.billReminders.errors += result.errors || 0;
       });
 
       console.log(
@@ -291,9 +524,13 @@ exports.handler = async (event) => {
 
     console.log("✅ Daily reminders job complete!");
     console.log(`   Total users: ${results.totalUsers}`);
-    console.log(`   Reminders sent: ${results.remindersSent}`);
-    console.log(`   Skipped: ${results.skipped}`);
-    console.log(`   Errors: ${results.errors}`);
+    console.log(`   Daily reminders sent: ${results.remindersSent}`);
+    console.log(`   Daily skipped: ${results.skipped}`);
+    console.log(`   Daily errors: ${results.errors}`);
+    console.log(
+      `   Bill reminders sent: ${results.billReminders.remindersSent}`,
+    );
+    console.log(`   Bills checked: ${results.billReminders.totalBillsChecked}`);
     console.log(`   Duration: ${duration}ms`);
 
     return {
