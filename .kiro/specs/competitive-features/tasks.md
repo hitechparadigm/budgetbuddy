@@ -284,7 +284,7 @@
 
 ### Task 8: Admin Web Application (Requirement 48)
 
-- [ ] 8.1 Infrastructure: Create AdminStack CDK
+- [x] 8.1 Infrastructure: Create AdminStack CDK
   - Separate Cognito user pool
   - Admin API Gateway
   - CloudFront distribution
@@ -307,7 +307,7 @@
   - Content management
   - **Validates: Requirement 48.3, 48.5, 48.6**
 
-- [ ] 8.5 Infrastructure: Configure IP allowlist
+- [x] 8.5 Infrastructure: Configure IP allowlist
   - API Gateway resource policy
   - VPN/office IP ranges only
   - **Validates: Requirement 48.10**
