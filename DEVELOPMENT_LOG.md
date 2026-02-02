@@ -1,5 +1,45 @@
 # Development Log
 
+## 2026-02-02 - Competitive Features Spec Complete (Session 68)
+
+### Session Summary
+
+**Duration**: 30 minutes
+**Focus**: Complete competitive features spec (design.md + tasks.md)
+**Outcome**: Full spec ready for implementation
+
+### Work Completed
+
+1. **Completed design.md** (`.kiro/specs/competitive-features/design.md`):
+   - Architecture overview with all components
+   - DynamoDB single-table design extensions
+   - Detailed feature designs for all 14 requirements (35-48)
+   - Correctness properties for testing
+   - Implementation priority and dependencies
+
+2. **Created tasks.md** (`.kiro/specs/competitive-features/tasks.md`):
+   - 78 implementation tasks across 4 phases
+   - Phase 1: Rollover Budgets, Bill Reminders, Savings Goals
+   - Phase 2: Subscription Tracking, Debt Payoff, Insights, Receipt OCR, Admin App
+   - Phase 3: Net Worth, Bank Sync UI, Credit Score, Investments
+   - Phase 4: Peer Comparison, Educational Content
+   - Property-based tests for key calculations
+
+### Technical Decisions
+
+- **AWS Textract** for receipt OCR (serverless, pay-per-use)
+- **AWS Bedrock** for AI-powered insights and recommendations
+- **Separate admin stack** for security isolation
+- **Privacy-first peer comparison** with minimum 50 users per cohort
+- **Stock price API** (Alpha Vantage) for investment tracking
+
+### Next Steps
+
+- Begin Phase 1 implementation (Rollover Budgets first)
+- Complete incomplete frontend components (NotificationCenter, InsightsPage)
+
+---
+
 ## 2026-02-02 - Budget Copy Bug Fix (Session 67)
 
 ### Session Summary
