@@ -171,7 +171,7 @@
   - Mirror web implementation
   - **Validates: Requirement 35**
 
-- [ ] 4.7 Property Test: Subscription detection accuracy
+- [x] 4.7 Property Test: Subscription detection accuracy
   - Detected subscriptions match recurring patterns
   - No false positives for one-time purchases
   - **Validates: Requirement 35.2**
