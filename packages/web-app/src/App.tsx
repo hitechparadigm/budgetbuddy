@@ -25,6 +25,8 @@ import { TipsFeedPage } from "./pages/TipsFeedPage";
 import { InsightsPage } from "./pages/InsightsPage";
 import { BillsPage } from "./pages/BillsPage";
 import { BillFormPage } from "./pages/BillFormPage";
+import { GoalsPage } from "./pages/GoalsPage";
+import { GoalFormPage } from "./pages/GoalFormPage";
 import { initMockAuth } from "./utils/mockAuth";
 
 const App: React.FC = () => {
@@ -129,6 +131,32 @@ const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <BillFormPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Goals Pages */}
+                <Route
+                  path="/goals"
+                  element={
+                    <ProtectedRoute>
+                      <GoalsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/goals/new"
+                  element={
+                    <ProtectedRoute>
+                      <GoalFormPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/goals/:goalId/edit"
+                  element={
+                    <ProtectedRoute>
+                      <GoalFormPage />
                     </ProtectedRoute>
                   }
                 />
