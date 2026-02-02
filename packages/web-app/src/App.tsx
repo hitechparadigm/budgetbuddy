@@ -29,6 +29,8 @@ import { GoalsPage } from "./pages/GoalsPage";
 import { GoalFormPage } from "./pages/GoalFormPage";
 import SubscriptionsPage from "./pages/SubscriptionsPage";
 import SubscriptionFormPage from "./pages/SubscriptionFormPage";
+import DebtPayoffPage from "./pages/DebtPayoffPage";
+import DebtFormPage from "./pages/DebtFormPage";
 import { initMockAuth } from "./utils/mockAuth";
 
 const App: React.FC = () => {
@@ -185,6 +187,32 @@ const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <SubscriptionFormPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Debt Payoff Pages */}
+                <Route
+                  path="/debts"
+                  element={
+                    <ProtectedRoute>
+                      <DebtPayoffPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/debts/new"
+                  element={
+                    <ProtectedRoute>
+                      <DebtFormPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/debts/:debtId/edit"
+                  element={
+                    <ProtectedRoute>
+                      <DebtFormPage />
                     </ProtectedRoute>
                   }
                 />
