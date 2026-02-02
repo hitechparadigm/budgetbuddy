@@ -19,6 +19,16 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-02-02)
 
+- 🤖 **AWS BEDROCK INTEGRATION** - Bedrock client for Claude 3.5 Sonnet with retry logic
+  - **Retry Logic**: Exponential backoff (1s → 2s → 4s → 8s), max 3 retries
+  - **Cost Monitoring**: $0.003/1K input tokens, $0.015/1K output tokens, warns at $0.10
+  - **Response Validation**: JSON schema validation with required fields checking
+  - **Error Handling**: Retries transient errors (5xx, throttling, timeouts), fails fast on 4xx
+  - **Model**: Claude 3.5 Sonnet (anthropic.claude-3-5-sonnet-20241022-v2:0)
+  - **Testing**: 36 unit tests passing with comprehensive coverage
+  - **Files**: `backend/functions/pattern-detection/bedrock-client.js` + tests
+  - **Impact**: Ready to integrate AI-powered pattern detection with AWS Bedrock
+
 - 🤖 **AI PROMPT ENGINEERING** - Prompt builder for AWS Bedrock (Claude 3.5 Sonnet)
   - **Pattern Detection Prompts**: Transaction data, JSON schema, example outputs, instructions
   - **Budget Planning Prompts**: Bills, spending history, target month, frequency handling
