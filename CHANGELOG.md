@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.9.52] - 2026-02-02
+
+### 📋 Spec - UI Polish & Enhancements
+
+**New Spec Created**: `.kiro/specs/ui-polish-enhancements/`
+
+**Requirements Document**:
+
+- 7 requirements covering remaining UI polish items
+- Quick Actions & Shortcuts (R33)
+- Two-Factor Authentication UI (R34)
+- Goals Page Enhancements (drag-and-drop, archive)
+- Tips Feed UI Improvements
+- Transaction Search & Filtering
+- Onboarding Tutorial Polish
+- Theme & Accessibility Improvements
+
+**Design Document**:
+
+- Component architecture for all features
+- @dnd-kit integration for drag-and-drop
+- Cognito MFA integration for 2FA
+- Correctness properties defined
+
+**Tasks Document**:
+
+- 11 implementation tasks across 7 phases
+- Estimated 16 days (3-4 weeks)
+- Priority order defined
+
+**Context**: Created after competitive features Tasks 11-12 blocked on external APIs (Credit Score, Investment Tracking).
+
 ## [1.9.51] - 2026-02-02
 
 ### 📝 Documentation - USER_JOURNEYS.md Update
