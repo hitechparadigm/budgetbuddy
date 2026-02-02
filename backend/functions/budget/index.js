@@ -97,6 +97,25 @@ exports.handler = async (event, context) => {
       return await deleteBudget(event, user, pathParameters.budgetId);
     }
 
+    // Rollover API endpoints (Requirement 40.7)
+    // PUT /budget/categories/{categoryId}/rollover - Enable/disable rollover
+    if (
+      httpMethod === "PUT" &&
+      path.match(/^\/budget\/categories\/[^/]+\/rollover$/)
+    ) {
+      const categoryId = path.split("/")[3];
+      return await updateCategoryRollover(event, user, categoryId);
+    }
+
+    // PUT /budget/categories/{categoryId}/rollover/reset - Reset rollover to 0
+    if (
+      httpMethod === "PUT" &&
+      path.match(/^\/budget\/categories\/[^/]+\/rollover\/reset$/)
+    ) {
+      const categoryId = path.split("/")[3];
+      return await resetCategoryRollover(event, user, categoryId);
+    }
+
     // Default response for unhandled routes
     return errorResponse.notFound(`Route ${httpMethod} ${path} not found`);
   } catch (error) {
@@ -790,6 +809,281 @@ async function deleteBudget(event, user, budgetId) {
   });
 
   return successResponse(null, "Budget deleted successfully");
+}
+
+/**
+ * Update rollover settings for a specific category
+ * PUT /budget/categories/{categoryId}/rollover
+ *
+ * Request body:
+ * {
+ *   "month": "YYYY-MM",
+ *   "groupType": "income" | "savings" | "expenses",
+ *   "rolloverEnabled": boolean,
+ *   "rolloverCap": number (optional)
+ * }
+ *
+ * **Validates: Requirement 40.7** - Enable/disable rollover per category
+ */
+async function updateCategoryRollover(event, user, categoryId) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "budget:edit");
+  if (permissionError) {
+    logger.warn("Permission denied for updating category rollover", {
+      userId: user.userId,
+      role: user.familyRole,
+      categoryId,
+    });
+    return permissionError;
+  }
+
+  logger.info("Updating category rollover settings", {
+    userId: user.userId,
+    familyId: user.familyId,
+    categoryId,
+  });
+
+  const requestBody = parseRequestBody(event.body);
+
+  // Validate required fields
+  if (!requestBody.month) {
+    return errorResponse.badRequest("Month is required (format: YYYY-MM)");
+  }
+
+  if (!requestBody.groupType) {
+    return errorResponse.badRequest(
+      "groupType is required (income, savings, or expenses)",
+    );
+  }
+
+  if (!["income", "savings", "expenses"].includes(requestBody.groupType)) {
+    return errorResponse.badRequest(
+      "groupType must be one of: income, savings, expenses",
+    );
+  }
+
+  if (typeof requestBody.rolloverEnabled !== "boolean") {
+    return errorResponse.badRequest("rolloverEnabled must be a boolean");
+  }
+
+  // Use centralized FamilyIdResolver to get familyId consistently
+  const familyId = await FamilyIdResolver.resolveFamilyId(
+    user.userId,
+    user.familyId,
+    dynamoHelpers,
+  );
+
+  // Get the budget
+  const budget = await dynamoHelpers.getItem(
+    `FAMILY#${familyId}`,
+    `BUDGET#${requestBody.month}`,
+  );
+
+  if (!budget) {
+    return errorResponse.notFound(`Budget not found for ${requestBody.month}`);
+  }
+
+  // Find and update the category
+  let categoryFound = false;
+  const updatedGroups = { ...budget.groups };
+
+  if (updatedGroups[requestBody.groupType]) {
+    updatedGroups[requestBody.groupType] = updatedGroups[
+      requestBody.groupType
+    ].map((group) => ({
+      ...group,
+      categories: group.categories
+        ? group.categories.map((category) => {
+            if (category.id === categoryId) {
+              categoryFound = true;
+              const updatedCategory = {
+                ...category,
+                rolloverEnabled: requestBody.rolloverEnabled,
+                // If disabling rollover, reset rolloverAmount to 0
+                rolloverAmount: requestBody.rolloverEnabled
+                  ? category.rolloverAmount || 0
+                  : 0,
+              };
+
+              // Handle rolloverCap
+              if (
+                requestBody.rolloverCap !== undefined &&
+                requestBody.rolloverCap !== null
+              ) {
+                updatedCategory.rolloverCap = requestBody.rolloverCap;
+              } else if (!requestBody.rolloverEnabled) {
+                // Remove rolloverCap if disabling rollover
+                delete updatedCategory.rolloverCap;
+              }
+
+              return updatedCategory;
+            }
+            return category;
+          })
+        : [],
+    }));
+  }
+
+  if (!categoryFound) {
+    return errorResponse.notFound(
+      `Category ${categoryId} not found in ${requestBody.groupType}`,
+    );
+  }
+
+  // Update the budget
+  const updatedBudget = await dynamoHelpers.updateItem(
+    `FAMILY#${familyId}`,
+    `BUDGET#${requestBody.month}`,
+    {
+      groups: updatedGroups,
+      totalRollover: calculateTotalRollover(updatedGroups),
+      updatedAt: new Date().toISOString(),
+    },
+  );
+
+  logger.info("Category rollover settings updated successfully", {
+    categoryId,
+    familyId,
+    month: requestBody.month,
+    rolloverEnabled: requestBody.rolloverEnabled,
+  });
+
+  return successResponse(
+    {
+      categoryId,
+      rolloverEnabled: requestBody.rolloverEnabled,
+      rolloverCap: requestBody.rolloverCap,
+      totalRollover: updatedBudget.totalRollover,
+    },
+    "Category rollover settings updated successfully",
+  );
+}
+
+/**
+ * Reset rollover amount to 0 for a specific category
+ * PUT /budget/categories/{categoryId}/rollover/reset
+ *
+ * Request body:
+ * {
+ *   "month": "YYYY-MM",
+ *   "groupType": "income" | "savings" | "expenses"
+ * }
+ *
+ * **Validates: Requirement 40.7** - Reset rollover (start fresh)
+ */
+async function resetCategoryRollover(event, user, categoryId) {
+  // Check permission before proceeding
+  const permissionError = checkPermission(event, "budget:edit");
+  if (permissionError) {
+    logger.warn("Permission denied for resetting category rollover", {
+      userId: user.userId,
+      role: user.familyRole,
+      categoryId,
+    });
+    return permissionError;
+  }
+
+  logger.info("Resetting category rollover", {
+    userId: user.userId,
+    familyId: user.familyId,
+    categoryId,
+  });
+
+  const requestBody = parseRequestBody(event.body);
+
+  // Validate required fields
+  if (!requestBody.month) {
+    return errorResponse.badRequest("Month is required (format: YYYY-MM)");
+  }
+
+  if (!requestBody.groupType) {
+    return errorResponse.badRequest(
+      "groupType is required (income, savings, or expenses)",
+    );
+  }
+
+  if (!["income", "savings", "expenses"].includes(requestBody.groupType)) {
+    return errorResponse.badRequest(
+      "groupType must be one of: income, savings, expenses",
+    );
+  }
+
+  // Use centralized FamilyIdResolver to get familyId consistently
+  const familyId = await FamilyIdResolver.resolveFamilyId(
+    user.userId,
+    user.familyId,
+    dynamoHelpers,
+  );
+
+  // Get the budget
+  const budget = await dynamoHelpers.getItem(
+    `FAMILY#${familyId}`,
+    `BUDGET#${requestBody.month}`,
+  );
+
+  if (!budget) {
+    return errorResponse.notFound(`Budget not found for ${requestBody.month}`);
+  }
+
+  // Find and reset the category rollover
+  let categoryFound = false;
+  let previousRollover = 0;
+  const updatedGroups = { ...budget.groups };
+
+  if (updatedGroups[requestBody.groupType]) {
+    updatedGroups[requestBody.groupType] = updatedGroups[
+      requestBody.groupType
+    ].map((group) => ({
+      ...group,
+      categories: group.categories
+        ? group.categories.map((category) => {
+            if (category.id === categoryId) {
+              categoryFound = true;
+              previousRollover = category.rolloverAmount || 0;
+              return {
+                ...category,
+                rolloverAmount: 0, // Reset to 0
+              };
+            }
+            return category;
+          })
+        : [],
+    }));
+  }
+
+  if (!categoryFound) {
+    return errorResponse.notFound(
+      `Category ${categoryId} not found in ${requestBody.groupType}`,
+    );
+  }
+
+  // Update the budget
+  const updatedBudget = await dynamoHelpers.updateItem(
+    `FAMILY#${familyId}`,
+    `BUDGET#${requestBody.month}`,
+    {
+      groups: updatedGroups,
+      totalRollover: calculateTotalRollover(updatedGroups),
+      updatedAt: new Date().toISOString(),
+    },
+  );
+
+  logger.info("Category rollover reset successfully", {
+    categoryId,
+    familyId,
+    month: requestBody.month,
+    previousRollover,
+  });
+
+  return successResponse(
+    {
+      categoryId,
+      previousRollover,
+      newRollover: 0,
+      totalRollover: updatedBudget.totalRollover,
+    },
+    "Category rollover reset successfully",
+  );
 }
 
 /**
