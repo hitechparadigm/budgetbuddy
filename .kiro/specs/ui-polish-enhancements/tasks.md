@@ -177,18 +177,18 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 
 ### Task 7: 2FA Setup Wizard
 
-- [ ] 7.1 Create TwoFactorSetup component
-  - [ ] 7.1.1 Create `packages/web-app/src/components/TwoFactorSetup.tsx`
-  - [ ] 7.1.2 Implement step wizard (intro → QR → verify → backup)
-  - [ ] 7.1.3 Generate QR code from Cognito secret
-  - [ ] 7.1.4 Display backup codes
+- [x] 7.1 Create TwoFactorSetup component
+  - [x] 7.1.1 Create `packages/web-app/src/components/TwoFactorSetup.tsx`
+  - [x] 7.1.2 Implement step wizard (intro → QR → verify → backup)
+  - [x] 7.1.3 Generate QR code from Cognito secret
+  - [x] 7.1.4 Display backup codes
   - **Validates: Requirement 2.1-2.5**
 
-- [ ] 7.2 Create TwoFactorVerify component
-  - [ ] 7.2.1 Create `packages/web-app/src/components/TwoFactorVerify.tsx`
-  - [ ] 7.2.2 Implement 6-digit code input
-  - [ ] 7.2.3 Auto-submit on complete
-  - [ ] 7.2.4 Handle verification errors
+- [x] 7.2 Create TwoFactorVerify component
+  - [x] 7.2.1 Create `packages/web-app/src/components/TwoFactorVerify.tsx`
+  - [x] 7.2.2 Implement 6-digit code input
+  - [x] 7.2.3 Auto-submit on complete
+  - [x] 7.2.4 Handle verification errors
   - **Validates: Requirement 2.4, 2.7**
 
 - [ ] 7.3 Integrate with Settings page
