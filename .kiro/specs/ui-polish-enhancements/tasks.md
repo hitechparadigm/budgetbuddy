@@ -191,10 +191,10 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - [x] 7.2.4 Handle verification errors
   - **Validates: Requirement 2.4, 2.7**
 
-- [ ] 7.3 Integrate with Settings page
-  - [ ] 7.3.1 Add 2FA section to SettingsPage
-  - [ ] 7.3.2 Show enable/disable toggle
-  - [ ] 7.3.3 Show 2FA status indicator
+- [x] 7.3 Integrate with Settings page
+  - [x] 7.3.1 Add 2FA section to SettingsPage
+  - [x] 7.3.2 Show enable/disable toggle
+  - [x] 7.3.3 Show 2FA status indicator
   - **Validates: Requirement 2.8**
 
 - [ ] 7.4 Update login flow
@@ -233,10 +233,10 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - [ ] 8.3.3 Add unsave functionality
   - **Validates: Requirement 4.5**
 
-- [ ] 8.4 Add read/unread indicators
-  - [ ] 8.4.1 Track read status locally
-  - [ ] 8.4.2 Show unread badge on tips
-  - [ ] 8.4.3 Mark as read on view
+- [x] 8.4 Add read/unread indicators
+  - [x] 8.4.1 Track read status locally
+  - [x] 8.4.2 Show unread badge on tips
+  - [x] 8.4.3 Mark as read on view
   - **Validates: Requirement 4.6**
 
 - [ ] 8.5 Add mobile swipe gestures
@@ -258,17 +258,17 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 
 ### Task 9: Theme System
 
-- [ ] 9.1 Enhance ThemeContext
-  - [ ] 9.1.1 Update ThemeContext with light/dark/system modes
-  - [ ] 9.1.2 Persist theme preference
-  - [ ] 9.1.3 Detect system preference
-  - [ ] 9.1.4 Apply theme immediately on change
+- [x] 9.1 Enhance ThemeContext
+  - [x] 9.1.1 Update ThemeContext with light/dark/system modes
+  - [x] 9.1.2 Persist theme preference
+  - [x] 9.1.3 Detect system preference
+  - [x] 9.1.4 Apply theme immediately on change
   - **Validates: Requirement 7.1-7.2**
 
-- [ ] 9.2 Create theme toggle component
-  - [ ] 9.2.1 Create ThemeToggle component
-  - [ ] 9.2.2 Add to Settings page
-  - [ ] 9.2.3 Add to header (optional)
+- [x] 9.2 Create theme toggle component
+  - [x] 9.2.1 Create ThemeToggle component
+  - [x] 9.2.2 Add to Settings page
+  - [x] 9.2.3 Add to header (optional)
   - **Validates: Requirement 7.1**
 
 - [ ] 9.3 Implement dark mode styles
@@ -279,21 +279,24 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 
 ### Task 10: Accessibility Improvements
 
-- [ ] 10.1 Add ARIA labels
-  - [ ] 10.1.1 Audit all interactive elements
-  - [ ] 10.1.2 Add missing ARIA labels
-  - [ ] 10.1.3 Add ARIA live regions for updates
+- [x] 10.1 Add ARIA labels
+  - [x] 10.1.1 Audit all interactive elements
+  - [x] 10.1.2 Add missing ARIA labels
+  - [x] 10.1.3 Add ARIA live regions for updates
+  - **Note**: Created AriaLiveRegion component and useAriaAnnounce hook
   - **Validates: Requirement 7.6**
 
-- [ ] 10.2 Improve keyboard navigation
-  - [ ] 10.2.1 Ensure all elements are focusable
-  - [ ] 10.2.2 Add visible focus indicators
-  - [ ] 10.2.3 Implement focus trapping in modals
+- [x] 10.2 Improve keyboard navigation
+  - [x] 10.2.1 Ensure all elements are focusable
+  - [x] 10.2.2 Add visible focus indicators
+  - [x] 10.2.3 Implement focus trapping in modals
+  - **Note**: Created FocusTrap and SkipLink components
   - **Validates: Requirement 7.7**
 
-- [ ] 10.3 Add reduced motion support
-  - [ ] 10.3.1 Detect prefers-reduced-motion
-  - [ ] 10.3.2 Disable animations when preferred
+- [x] 10.3 Add reduced motion support
+  - [x] 10.3.1 Detect prefers-reduced-motion
+  - [x] 10.3.2 Disable animations when preferred
+  - **Note**: Created useReducedMotion hook
   - **Validates: Requirement 7.4**
 
 ---
@@ -302,34 +305,36 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 
 ### Task 11: Onboarding Improvements
 
-- [ ] 11.1 Add progress indicator
-  - [ ] 11.1.1 Create OnboardingProgress component
-  - [ ] 11.1.2 Show current step and total steps
-  - [ ] 11.1.3 Add step labels
+- [x] 11.1 Add progress indicator
+  - [x] 11.1.1 Create OnboardingProgress component
+  - [x] 11.1.2 Show current step and total steps
+  - [x] 11.1.3 Add step labels
+  - **Note**: Already implemented in OnboardingFlow.tsx
   - **Validates: Requirement 6.1**
 
-- [ ] 11.2 Add skip and back navigation
-  - [ ] 11.2.1 Add "Skip" button for experienced users
-  - [ ] 11.2.2 Add "Back" button to return to previous step
-  - [ ] 11.2.3 Auto-save progress at each step
+- [x] 11.2 Add skip and back navigation
+  - [x] 11.2.1 Add "Skip" button for experienced users
+  - [x] 11.2.2 Add "Back" button to return to previous step
+  - [x] 11.2.3 Auto-save progress at each step
+  - **Note**: Already implemented in OnboardingFlow.tsx
   - **Validates: Requirement 6.2-6.4**
 
-- [ ] 11.3 Create tutorial overlay
-  - [ ] 11.3.1 Create TutorialOverlay component
-  - [ ] 11.3.2 Highlight first transaction entry
-  - [ ] 11.3.3 Show tooltips for key features
+- [x] 11.3 Create tutorial overlay
+  - [x] 11.3.1 Create TutorialOverlay component
+  - [x] 11.3.2 Highlight first transaction entry
+  - [x] 11.3.3 Show tooltips for key features
   - **Validates: Requirement 6.5**
 
-- [ ] 11.4 Add welcome modal
-  - [ ] 11.4.1 Create WelcomeModal component
-  - [ ] 11.4.2 Show after onboarding completion
-  - [ ] 11.4.3 Offer quick tips
+- [x] 11.4 Add welcome modal
+  - [x] 11.4.1 Create WelcomeModal component
+  - [x] 11.4.2 Show after onboarding completion
+  - [x] 11.4.3 Offer quick tips
   - **Validates: Requirement 6.6**
 
-- [ ] 11.5 Add replay tutorial option
-  - [ ] 11.5.1 Add "Replay Tutorial" to Settings
-  - [ ] 11.5.2 Reset tutorial state
-  - [ ] 11.5.3 Restart onboarding flow
+- [x] 11.5 Add replay tutorial option
+  - [x] 11.5.1 Add "Replay Tutorial" to Settings
+  - [x] 11.5.2 Reset tutorial state
+  - [x] 11.5.3 Restart onboarding flow
   - **Validates: Requirement 6.7**
 
 ---

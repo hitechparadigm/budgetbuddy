@@ -46,6 +46,11 @@ export const TipsFeedPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"feed" | "saved">("feed");
   const [savingTipId, setSavingTipId] = useState<string | null>(null);
   const [dismissingTipId, setDismissingTipId] = useState<string | null>(null);
+  const [readTips, setReadTips] = useState<Set<string>>(() => {
+    // Load read tips from localStorage
+    const stored = localStorage.getItem("budgetbuddy_read_tips");
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
 
   useEffect(() => {
     loadTips();
@@ -119,6 +124,20 @@ export const TipsFeedPage: React.FC = () => {
     return cat?.icon || "💡";
   };
 
+  const markAsRead = (tipId: string) => {
+    if (!readTips.has(tipId)) {
+      const newReadTips = new Set(readTips);
+      newReadTips.add(tipId);
+      setReadTips(newReadTips);
+      localStorage.setItem(
+        "budgetbuddy_read_tips",
+        JSON.stringify([...newReadTips]),
+      );
+    }
+  };
+
+  const unreadCount = tips.filter((t) => !readTips.has(t.id)).length;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -156,13 +175,18 @@ export const TipsFeedPage: React.FC = () => {
           <div className="flex gap-4 mt-6 border-b border-gray-200">
             <button
               onClick={() => setActiveTab("feed")}
-              className={`pb-3 px-2 font-medium transition-colors ${
+              className={`pb-3 px-2 font-medium transition-colors relative ${
                 activeTab === "feed"
                   ? "text-blue-600 border-b-2 border-blue-600"
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
               📚 Tips Feed ({tips.length})
+              {unreadCount > 0 && (
+                <span className="ml-2 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-full">
+                  {unreadCount} new
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab("saved")}
@@ -246,8 +270,19 @@ export const TipsFeedPage: React.FC = () => {
                 tips.map((tip) => (
                   <div
                     key={tip.id}
-                    className="bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+                    className={`bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow relative ${
+                      !readTips.has(tip.id) ? "border-l-4 border-blue-500" : ""
+                    }`}
+                    onMouseEnter={() => markAsRead(tip.id)}
                   >
+                    {/* Unread indicator */}
+                    {!readTips.has(tip.id) && (
+                      <div className="absolute top-4 right-4">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                          New
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
@@ -268,7 +303,7 @@ export const TipsFeedPage: React.FC = () => {
                         </h3>
                         <p className="text-gray-600">{tip.content}</p>
                       </div>
-                      <div className="flex gap-2 ml-4">
+                      <div className="flex gap-2 ml-4 mt-6">
                         <button
                           onClick={() => handleSaveTip(tip.id)}
                           disabled={
