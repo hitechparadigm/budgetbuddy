@@ -171,20 +171,20 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
 
 ### Task 5: Implement 2FA UI
 
-- [ ] 5.1 Create TwoFactorSetup component
-  - [ ] 5.1.1 Create `packages/mobile/src/components/TwoFactorSetup.tsx`
-  - [ ] 5.1.2 Implement step wizard (intro → QR → verify → backup)
-  - [ ] 5.1.3 Display QR code from Cognito secret
-  - [ ] 5.1.4 Add manual code entry option
-  - [ ] 5.1.5 Display backup codes with copy button
+- [x] 5.1 Create TwoFactorSetup component
+  - [x] 5.1.1 Create `packages/mobile/src/components/TwoFactorSetup.tsx`
+  - [x] 5.1.2 Implement step wizard (intro → QR → verify → backup)
+  - [x] 5.1.3 Display QR code from Cognito secret
+  - [x] 5.1.4 Add manual code entry option
+  - [x] 5.1.5 Display backup codes with copy button
   - **Validates: Requirement 5.1**
 
-- [ ] 5.2 Create TwoFactorVerify component
-  - [ ] 5.2.1 Create `packages/mobile/src/components/TwoFactorVerify.tsx`
-  - [ ] 5.2.2 Implement 6-digit code input boxes
-  - [ ] 5.2.3 Auto-focus next input on digit entry
-  - [ ] 5.2.4 Auto-submit when 6 digits entered
-  - [ ] 5.2.5 Handle verification errors
+- [x] 5.2 Create TwoFactorVerify component
+  - [x] 5.2.1 Create `packages/mobile/src/components/TwoFactorVerify.tsx`
+  - [x] 5.2.2 Implement 6-digit code input boxes
+  - [x] 5.2.3 Auto-focus next input on digit entry
+  - [x] 5.2.4 Auto-submit when 6 digits entered
+  - [x] 5.2.5 Handle verification errors
   - **Validates: Requirement 5.2**
 
 - [ ] 5.3 Update login flow
@@ -193,6 +193,7 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
   - [ ] 5.3.3 Complete authentication after verify
   - [ ] 5.3.4 Add "Use backup code" option
   - **Validates: Requirement 5.3**
+  - **Note**: Requires AuthContext integration
 
 - [ ] 5.4 Add to Settings screen
   - [ ] 5.4.1 Add 2FA section to SettingsScreen
@@ -200,6 +201,7 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
   - [ ] 5.4.3 Show 2FA status indicator
   - [ ] 5.4.4 Add "View backup codes" option
   - **Validates: Requirement 5.4**
+  - **Note**: Requires SettingsScreen integration
 
 ---
 

@@ -1,26 +1,26 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-02 (Mobile Goal Reordering)
+**Last Updated**: 2026-02-02 (Mobile Two-Factor Authentication UI)
 **Current Phase**: Mobile UI Polish
-**Overall Progress**: 95% Core + 90% Competitive Features + 100% UI Polish (Web) + 70% UI Polish (Mobile)
+**Overall Progress**: 95% Core + 90% Competitive Features + 100% UI Polish (Web) + 80% UI Polish (Mobile)
 
-## ✨ LATEST - Mobile Goal Reordering
+## ✨ LATEST - Mobile Two-Factor Authentication UI
 
-### Task 4 Complete
+### Task 5.1-5.2 Complete
 
-**New DraggableGoalList Component**:
+**New TwoFactorSetup Component**:
 
-- Long-press to initiate drag
-- Visual feedback (scale, elevation)
-- Drag handle icon
-- Smooth animations with reanimated
-- Haptic feedback throughout
+- Step wizard (Intro → QR → Verify → Backup)
+- QR code display for authenticator apps
+- Manual secret code entry with copy
+- Backup codes display with copy all
+- Progress indicator
 
-**GoalsScreen Updates**:
+**New TwoFactorVerify Component**:
 
-- "Reorder" button in header
-- Toggle between normal and reorder mode
-- API persistence via PUT /goals/reorder
+- 6-digit code input with auto-submit
+- Backup code option toggle
+- Auto-focus and keyboard handling
 
 ### Mobile UI Polish Progress
 
@@ -30,12 +30,12 @@
 | 2    | Transaction Templates     | ✅ Complete |
 | 3    | Search and Filters        | ✅ Complete |
 | 4    | Goal Reordering           | ✅ Complete |
-| 5    | Two-Factor Authentication | ❌ Pending  |
+| 5    | Two-Factor Authentication | ⚠️ 50% Done |
 | 6    | Tips Feed Gestures        | ❌ Pending  |
 
 ---
 
-## ✨ Mobile Search and Filters Integration
+## ✨ Mobile Goal Reordering
 
 ### Task 3 Complete
 
