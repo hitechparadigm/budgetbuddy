@@ -805,6 +805,79 @@ _"As a user, I want to customize my app experience and manage my account setting
 
 ---
 
+## 8.1 Admin Dashboard Journey
+
+### User Story
+
+_"As an admin, I want to manage users and monitor system health so I can ensure the platform runs smoothly."_
+
+### Journey Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 1: Admin Login                                                         │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  Navigate to /admin → Enter admin credentials → MFA verification             │
+│  (Separate Cognito user pool, IP allowlist enforced)                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 2: Admin Dashboard                                                     │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  📊 Admin Dashboard                                                  │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐            │    │
+│  │  │ 👥 Users │  │ 💰 Revenue│  │ 📈 Active│  │ ⚠️ Alerts│            │    │
+│  │  │  12,450  │  │  $45,230 │  │   8,234  │  │    3     │            │    │
+│  │  └──────────┘  └──────────┘  └──────────┘  └──────────┘            │    │
+│  │                                                                      │    │
+│  │  [👥 Users]  [📊 Analytics]  [📝 Content]  [⚙️ System]              │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 3: User Management                                                     │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  👥 User Management                                                  │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │  [🔍 Search users...]                    [Filter ▼]  [Export]       │    │
+│  │                                                                      │    │
+│  │  Email              Name         Status    Plan      Actions        │    │
+│  │  john@email.com     John Smith   Active    Premium   [View] [...]   │    │
+│  │  jane@email.com     Jane Doe     Active    Free      [View] [...]   │    │
+│  │  bob@email.com      Bob Wilson   Disabled  Free      [View] [...]   │    │
+│  │                                                                      │    │
+│  │  Showing 1-10 of 12,450 users            [< Prev] [Next >]          │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Component Mapping
+
+| Feature         | Frontend Component   | Backend API                | Status      |
+| --------------- | -------------------- | -------------------------- | ----------- |
+| Admin Login     | `AdminLogin.tsx`     | `POST /admin/auth/login`   | ✅ Complete |
+| Admin Dashboard | `AdminDashboard.tsx` | `GET /admin/dashboard`     | ✅ Complete |
+| User Management | `AdminUsers.tsx`     | `GET /admin/users`         | ✅ Complete |
+| User Search     | `AdminUsers.tsx`     | `GET /admin/users?search=` | ✅ Complete |
+| User Actions    | `AdminUsers.tsx`     | `PUT /admin/users/{id}`    | ✅ Complete |
+| Admin Cognito   | Infrastructure       | AdminStack CDK             | ✅ Complete |
+| IP Allowlist    | Infrastructure       | API Gateway policy         | ✅ Complete |
+| CloudFront      | Infrastructure       | AdminStack CDK             | ✅ Complete |
+
+### UI/UX Requirements
+
+- **Secure access**: IP allowlist, separate auth, audit logging
+- **Quick search**: Fast user lookup by email/name
+- **Bulk actions**: Select multiple users for batch operations
+- **Audit trail**: All admin actions logged
+- **Role-based**: Different admin permission levels
+
+---
+
 ## 9. Component Gap Analysis
 
 ### Summary by Priority
@@ -970,20 +1043,20 @@ xl: 32px  (major sections)
 
 | Req | Name                  | Journey       | Task    | Frontend | Backend | UI/UX Status    |
 | --- | --------------------- | ------------- | ------- | -------- | ------- | --------------- |
-| R35 | Subscription Tracking | Insights      | -       | ❌       | ❌      | ❌ Not started  |
+| R35 | Subscription Tracking | Insights      | Task 4  | ✅       | ✅      | ✅ Complete     |
 | R36 | Bill Reminders        | Notifications | Task 2  | ✅       | ✅      | ✅ Complete     |
-| R37 | Debt Payoff           | Goals         | -       | ❌       | ❌      | ❌ Not started  |
+| R37 | Debt Payoff           | Goals         | Task 5  | ✅       | ✅      | ✅ Complete     |
 | R38 | Savings Goals         | Goals         | Task 3  | ✅       | ✅      | ✅ Complete     |
-| R39 | Spending Insights     | Insights      | Task 3  | ✅       | ✅      | ✅ Complete     |
+| R39 | Spending Insights     | Insights      | Task 6  | ✅       | ✅      | ✅ Complete     |
 | R40 | Rollover Budgets      | Daily         | Task 1  | ✅       | ✅      | ✅ Complete     |
-| R41 | Net Worth             | Goals         | -       | ❌       | ❌      | ❌ Not started  |
-| R42 | Bank Sync (Plaid)     | Bank          | Task 5  | ✅       | ✅      | ✅ Complete     |
-| R43 | Credit Score          | Insights      | -       | ❌       | ❌      | ❌ External API |
-| R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ⚠️ Missing UI   |
-| R45 | Investments           | Goals         | -       | ❌       | ❌      | ❌ Not started  |
-| R46 | Peer Comparison       | Insights      | Task 8  | ✅       | ✅      | ✅ Complete     |
-| R47 | Educational Content   | Insights      | Task 10 | ❌       | ✅      | ❌ Missing UI   |
-| R48 | Admin Dashboard       | Admin         | Task 7  | ❌       | ✅      | ❌ Missing UI   |
+| R41 | Net Worth             | Goals         | Task 9  | ✅       | ✅      | ✅ Complete     |
+| R42 | Bank Sync (Plaid)     | Bank          | Task 10 | ✅       | ✅      | ✅ Complete     |
+| R43 | Credit Score          | Insights      | Task 11 | ❌       | ❌      | ❌ External API |
+| R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete     |
+| R45 | Investments           | Goals         | Task 12 | ❌       | ❌      | ❌ Not started  |
+| R46 | Peer Comparison       | Insights      | Task 13 | ❌       | ❌      | ❌ Not started  |
+| R47 | Educational Content   | Insights      | Task 14 | ❌       | ❌      | ❌ Not started  |
+| R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete     |
 
 ---
 
@@ -1045,15 +1118,15 @@ xl: 32px  (major sections)
 - [x] Due date countdown
 - [x] Color-coded urgency (green/yellow/red)
 
-**6. Receipt Scanner (R44)**
+**6. Receipt Scanner (R44)** - ✅ COMPLETE
 
-- [ ] Camera capture button
-- [ ] Image preview with crop/rotate
-- [ ] Processing spinner with status
-- [ ] Extracted data confirmation form
-- [ ] Category suggestion dropdown
-- [ ] Retry on failure
-- [ ] Usage limit indicator
+- [x] Camera capture button
+- [x] Image preview with crop/rotate
+- [x] Processing spinner with status
+- [x] Extracted data confirmation form
+- [x] Category suggestion dropdown
+- [x] Retry on failure
+- [x] Usage limit indicator
 
 **7. Educational Content (R47)**
 
@@ -1065,14 +1138,14 @@ xl: 32px  (major sections)
 - [ ] Badge showcase
 - [ ] Streak indicator
 
-**8. Admin Dashboard (R48)**
+**8. Admin Dashboard (R48)** - ✅ COMPLETE
 
-- [ ] Metrics cards (users, revenue, etc.)
-- [ ] User search with filters
-- [ ] User detail modal
-- [ ] Action buttons (disable, reset password)
-- [ ] System health indicators
-- [ ] Audit log table with pagination
+- [x] Metrics cards (users, revenue, etc.)
+- [x] User search with filters
+- [x] User detail modal
+- [x] Action buttons (disable, reset password)
+- [x] System health indicators
+- [x] Audit log table with pagination
 
 #### 🟡 MEDIUM PRIORITY - Enhancements
 
@@ -1110,28 +1183,31 @@ xl: 32px  (major sections)
 | ------------------ | ------------- | ------ | ------ | ------------- | ----------- |
 | TipsFeed           | Insights      | 1 day  | MEDIUM | Backend ready | ✅ Complete |
 | InsightsPage       | Insights      | 3 days | HIGH   | Backend ready | ✅ Complete |
-| NotificationCenter | Notifications | 2 days | HIGH   | Backend ready | ❌ Pending  |
+| NotificationCenter | Notifications | 2 days | HIGH   | Backend ready | ✅ Complete |
 | GoalsPage          | Goals         | 3 days | HIGH   | Backend ready | ✅ Complete |
 | BillsPage          | Notifications | 2 days | HIGH   | Backend ready | ✅ Complete |
 | SubscriptionsPage  | Daily         | 2 days | HIGH   | Backend ready | ✅ Complete |
 | DebtPayoffPage     | Goals         | 3 days | HIGH   | Backend ready | ✅ Complete |
+| NetWorthPage       | Goals         | 2 days | HIGH   | Backend ready | ✅ Complete |
+| BankSyncPage       | Bank          | 2 days | HIGH   | Backend ready | ✅ Complete |
+| AdminDashboard     | Admin         | 3 days | MEDIUM | Backend ready | ✅ Complete |
 
 ### Next Sprint
 
-| Feature        | Journey  | Effort | Impact | Dependencies     |
-| -------------- | -------- | ------ | ------ | ---------------- |
-| PeerComparison | Insights | 1 day  | MEDIUM | Backend ready    |
-| ReceiptScanner | Daily    | 3 days | MEDIUM | ✅ Backend ready |
-| LearnPage      | Insights | 3 days | MEDIUM | Backend ready    |
+| Feature        | Journey  | Effort | Impact | Dependencies   |
+| -------------- | -------- | ------ | ------ | -------------- |
+| CreditScore    | Insights | 3 days | MEDIUM | External API   |
+| Investments    | Goals    | 4 days | MEDIUM | New backend    |
+| PeerComparison | Insights | 3 days | MEDIUM | Backend needed |
+| LearnPage      | Insights | 3 days | MEDIUM | Backend needed |
 
 ### Future Sprints
 
-| Feature         | Journey | Effort | Impact | Dependencies  |
-| --------------- | ------- | ------ | ------ | ------------- |
-| AdminDashboard  | Admin   | 4 days | LOW    | Internal only |
-| NetWorthTracker | Goals   | 4 days | MEDIUM | New backend   |
-| CreditScore     | Goals   | 3 days | MEDIUM | Partnership   |
-| Investments     | Goals   | 4 days | MEDIUM | New backend   |
+| Feature         | Journey | Effort | Impact | Dependencies |
+| --------------- | ------- | ------ | ------ | ------------ |
+| NetWorthTracker | Goals   | 4 days | MEDIUM | ✅ Complete  |
+| CreditScore     | Goals   | 3 days | MEDIUM | Partnership  |
+| Investments     | Goals   | 4 days | MEDIUM | New backend  |
 
 ---
 
@@ -1169,15 +1245,15 @@ Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 - Task 3: Savings Goals ✅
 - Task 4: Subscription Tracking ✅
 - Task 5: Debt Payoff Calculator ✅
-- Task 6: Spending Insights Enhancement
-- Task 7: Receipt Scanning
-- Task 8: Admin Web Application
-- Task 9: Net Worth Tracking
-- Task 10: Bank Sync UI (Plaid)
-- Task 11: Credit Score Monitoring
-- Task 12: Investment Tracking
-- Task 13: Peer Comparison
-- Task 14: Educational Content
+- Task 6: Spending Insights Enhancement ✅
+- Task 7: Receipt Scanning ✅
+- Task 8: Admin Web Application ✅
+- Task 9: Net Worth Tracking ✅
+- Task 10: Bank Sync UI (Plaid) ✅
+- Task 11: Credit Score Monitoring ❌
+- Task 12: Investment Tracking ❌
+- Task 13: Peer Comparison ❌
+- Task 14: Educational Content ❌
 
 ---
 

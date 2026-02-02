@@ -63,8 +63,9 @@ export const BankAccounts: React.FC = () => {
         plaidApi.getPendingTransactions(),
       ]);
 
-      setAccounts(accountsData.accounts);
-      setPendingTransactions(pendingData.transactions);
+      // API returns arrays directly
+      setAccounts(accountsData);
+      setPendingTransactions(pendingData);
     } catch (err: any) {
       setError(err.message || "Failed to load accounts");
     } finally {
@@ -85,7 +86,7 @@ export const BankAccounts: React.FC = () => {
 
       const result = await plaidApi.createSandboxAccount();
       setSuccessMessage(
-        `Connected ${result.accounts.length} test account(s) from ${result.institutionName}`,
+        `Connected ${result.accounts.length} test account(s) successfully`,
       );
       await loadData();
     } catch (err: any) {
@@ -103,12 +104,8 @@ export const BankAccounts: React.FC = () => {
       setSyncing(true);
 
       const result = await plaidApi.syncAll();
-      const totalAdded = result.results.reduce(
-        (sum, r) => sum + (r.transactionsAdded || 0),
-        0,
-      );
       setSuccessMessage(
-        `Synced ${result.syncedCount} account(s). ${totalAdded} new transaction(s) found.`,
+        `Synced accounts. ${result.pending} pending transaction(s) found.`,
       );
       await loadData();
     } catch (err: any) {
@@ -163,7 +160,7 @@ export const BankAccounts: React.FC = () => {
       const result = await plaidApi.approveTransactions(
         Array.from(selectedTransactions),
       );
-      setSuccessMessage(`Approved ${result.approved.length} transaction(s)`);
+      setSuccessMessage(`Approved ${result.approved} transaction(s)`);
       setSelectedTransactions(new Set());
       await loadData();
     } catch (err: any) {
@@ -180,7 +177,7 @@ export const BankAccounts: React.FC = () => {
       const result = await plaidApi.rejectTransactions(
         Array.from(selectedTransactions),
       );
-      setSuccessMessage(`Rejected ${result.rejected.length} transaction(s)`);
+      setSuccessMessage(`Rejected ${result.rejected} transaction(s)`);
       setSelectedTransactions(new Set());
       await loadData();
     } catch (err: any) {
@@ -262,9 +259,7 @@ export const BankAccounts: React.FC = () => {
               <div className="account-info">
                 <div className="account-name">
                   <strong>{account.accountName}</strong>
-                  <span className="account-mask">
-                    ••••{account.accountMask}
-                  </span>
+                  <span className="account-mask">••••{account.mask}</span>
                 </div>
                 <div className="account-institution">
                   {account.institutionName}
@@ -275,14 +270,11 @@ export const BankAccounts: React.FC = () => {
               </div>
               <div className="account-balance">
                 <div className="balance-amount">
-                  {formatCurrency(
-                    account.currentBalance,
-                    account.isoCurrencyCode,
-                  )}
+                  {formatCurrency(account.currentBalance, account.currency)}
                 </div>
                 <div className="balance-label">Current Balance</div>
                 <div className="last-sync">
-                  Last sync: {formatDate(account.lastSyncAt)}
+                  Last sync: {formatDate(account.lastSynced)}
                 </div>
               </div>
               <div className="account-actions">
@@ -348,12 +340,14 @@ export const BankAccounts: React.FC = () => {
                 />
                 <div className="txn-date">{txn.date}</div>
                 <div className="txn-merchant">
-                  <div className="merchant-name">{txn.merchant}</div>
+                  <div className="merchant-name">
+                    {txn.merchantName || "Unknown"}
+                  </div>
                   <div className="merchant-desc">{txn.description}</div>
                 </div>
                 <div className="txn-category">
                   <span className="category-badge">
-                    {txn.suggestedCategory}
+                    {txn.suggestedCategory || "Uncategorized"}
                   </span>
                 </div>
                 <div
