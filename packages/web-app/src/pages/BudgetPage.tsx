@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { QuickActionsFAB } from "../components/QuickActionsFAB";
 import {
   getCurrentMonthString,
   getTodayString,
@@ -81,7 +82,6 @@ export const BudgetPage: React.FC = () => {
   const [transactionType, setTransactionType] = useState<
     "income" | "expense" | null
   >(null);
-  const [showFAB, setShowFAB] = useState(false);
   const [transactionForm, setTransactionForm] = useState({
     amount: "",
     description: "",
@@ -551,7 +551,6 @@ export const BudgetPage: React.FC = () => {
       categoryId: "",
     });
     setShowTransactionModal(true);
-    setShowFAB(false);
   };
 
   const closeTransactionModal = () => {
@@ -2626,47 +2625,11 @@ export const BudgetPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Floating Action Button */}
-      <div className="fixed bottom-6 right-6 z-40">
-        {showFAB && (
-          <div className="mb-4 space-y-2">
-            <button
-              onClick={() => openTransactionModal("income")}
-              className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-full shadow-lg transition-all"
-            >
-              <span className="text-lg">+</span>
-              <span className="font-medium">Income</span>
-            </button>
-            <button
-              onClick={() => openTransactionModal("expense")}
-              className="flex items-center space-x-2 bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-full shadow-lg transition-all"
-            >
-              <span className="text-lg">-</span>
-              <span className="font-medium">Expense</span>
-            </button>
-          </div>
-        )}
-        <button
-          onClick={() => setShowFAB(!showFAB)}
-          className="w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all"
-        >
-          <svg
-            className={`w-6 h-6 transition-transform ${
-              showFAB ? "rotate-45" : ""
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-        </button>
-      </div>
+      {/* Quick Actions FAB - Enhanced with keyboard shortcuts */}
+      <QuickActionsFAB
+        onAddIncome={() => openTransactionModal("income")}
+        onAddExpense={() => openTransactionModal("expense")}
+      />
 
       {/* Transaction Modal */}
       {showTransactionModal && transactionType && (

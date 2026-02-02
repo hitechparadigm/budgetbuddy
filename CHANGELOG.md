@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.9.53] - 2026-02-02
+
+### ✨ Feature - Quick Actions FAB & Keyboard Shortcuts
+
+**Components Created**:
+
+- `packages/web-app/src/components/QuickActionsFAB.tsx` - Enhanced floating action button
+- `packages/web-app/src/hooks/useKeyboardShortcuts.ts` - Keyboard shortcuts hook
+
+**Features**:
+
+- Expandable FAB with animated menu
+- Quick actions: Add Income, Add Expense, View Budget, View Goals, View Insights
+- Keyboard shortcuts: Ctrl+N (new), Ctrl+B (budget), Ctrl+S (settings), Ctrl+/ (help)
+- Shortcuts help modal with all available shortcuts
+- Mac support (⌘ instead of Ctrl)
+- Accessible with ARIA labels and keyboard navigation
+
+**Integration**:
+
+- Replaced basic FAB in BudgetPage with enhanced QuickActionsFAB
+- Removed unused showFAB state
+
 ## [1.9.52] - 2026-02-02
 
 ### 📋 Spec - UI Polish & Enhancements

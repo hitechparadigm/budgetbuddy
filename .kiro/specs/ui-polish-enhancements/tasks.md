@@ -14,13 +14,13 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 
 ### Task 1: Quick Actions FAB
 
-- [ ] 1.1 Create QuickActionsFAB component (Web)
-  - [ ] 1.1.1 Create `packages/web-app/src/components/QuickActionsFAB.tsx`
-  - [ ] 1.1.2 Implement expandable FAB with animation
-  - [ ] 1.1.3 Add "Add Transaction" action
-  - [ ] 1.1.4 Add "View Budget" action
-  - [ ] 1.1.5 Add "Scan Receipt" action (link to mobile)
-  - [ ] 1.1.6 Style with Tailwind CSS
+- [x] 1.1 Create QuickActionsFAB component (Web)
+  - [x] 1.1.1 Create `packages/web-app/src/components/QuickActionsFAB.tsx`
+  - [x] 1.1.2 Implement expandable FAB with animation
+  - [x] 1.1.3 Add "Add Transaction" action
+  - [x] 1.1.4 Add "View Budget" action
+  - [x] 1.1.5 Add "Scan Receipt" action (link to mobile)
+  - [x] 1.1.6 Style with Tailwind CSS
   - **Validates: Requirement 1.1-1.4**
 
 - [ ] 1.2 Create QuickActionsFAB component (Mobile)
@@ -30,32 +30,32 @@ Implementation tasks for UI polish items and enhancements. All features use exis
   - [ ] 1.2.4 Add "Scan Receipt" action with camera
   - **Validates: Requirement 1.1-1.4**
 
-- [ ] 1.3 Integrate FAB into layouts
-  - [ ] 1.3.1 Add FAB to BudgetPage
+- [x] 1.3 Integrate FAB into layouts
+  - [x] 1.3.1 Add FAB to BudgetPage
   - [ ] 1.3.2 Add FAB to TransactionsPage
   - [ ] 1.3.3 Add FAB to mobile screens
   - **Validates: Requirement 1.1**
 
 ### Task 2: Keyboard Shortcuts
 
-- [ ] 2.1 Create keyboard shortcuts hook
-  - [ ] 2.1.1 Create `packages/web-app/src/hooks/useKeyboardShortcuts.ts`
-  - [ ] 2.1.2 Implement shortcut registration
-  - [ ] 2.1.3 Handle Ctrl/Cmd key detection
-  - [ ] 2.1.4 Prevent conflicts with browser shortcuts
+- [x] 2.1 Create keyboard shortcuts hook
+  - [x] 2.1.1 Create `packages/web-app/src/hooks/useKeyboardShortcuts.ts`
+  - [x] 2.1.2 Implement shortcut registration
+  - [x] 2.1.3 Handle Ctrl/Cmd key detection
+  - [x] 2.1.4 Prevent conflicts with browser shortcuts
   - **Validates: Requirement 1.5**
 
-- [ ] 2.2 Create shortcuts help modal
-  - [ ] 2.2.1 Create `packages/web-app/src/components/ShortcutsHelpModal.tsx`
-  - [ ] 2.2.2 Display all available shortcuts
-  - [ ] 2.2.3 Open with Ctrl+/ shortcut
+- [x] 2.2 Create shortcuts help modal
+  - [x] 2.2.1 Create `packages/web-app/src/components/ShortcutsHelpModal.tsx`
+  - [x] 2.2.2 Display all available shortcuts
+  - [x] 2.2.3 Open with Ctrl+/ shortcut
   - **Validates: Requirement 1.5**
 
-- [ ] 2.3 Implement core shortcuts
-  - [ ] 2.3.1 Ctrl+N: Open new transaction modal
-  - [ ] 2.3.2 Ctrl+B: Navigate to budget
-  - [ ] 2.3.3 Ctrl+S: Navigate to settings
-  - [ ] 2.3.4 Escape: Close modals
+- [x] 2.3 Implement core shortcuts
+  - [x] 2.3.1 Ctrl+N: Open new transaction modal
+  - [x] 2.3.2 Ctrl+B: Navigate to budget
+  - [x] 2.3.3 Ctrl+S: Navigate to settings
+  - [x] 2.3.4 Escape: Close modals
   - **Validates: Requirement 1.5**
 
 ### Task 3: Transaction Templates
