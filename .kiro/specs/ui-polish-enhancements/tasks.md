@@ -60,11 +60,11 @@ Implementation tasks for UI polish items and enhancements. All features use exis
 
 ### Task 3: Transaction Templates
 
-- [ ] 3.1 Create transaction templates feature
-  - [ ] 3.1.1 Create `packages/web-app/src/components/TransactionTemplateModal.tsx`
-  - [ ] 3.1.2 Store templates in localStorage
-  - [ ] 3.1.3 Show recent categories in quick add
-  - [ ] 3.1.4 Remember last used category
+- [x] 3.1 Create transaction templates feature
+  - [x] 3.1.1 Create `packages/web-app/src/components/TransactionTemplateModal.tsx`
+  - [x] 3.1.2 Store templates in localStorage
+  - [x] 3.1.3 Show recent categories in quick add
+  - [x] 3.1.4 Remember last used category
   - **Validates: Requirement 1.6-1.8**
 
 - [ ] 3.2 Add templates to mobile

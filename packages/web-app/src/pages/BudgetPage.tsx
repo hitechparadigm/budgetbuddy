@@ -16,6 +16,13 @@ import {
   type TransactionFiltersState,
 } from "../components/TransactionFilters";
 import {
+  TransactionTemplateModal,
+  getStoredTemplates,
+  addRecentCategory,
+  getRecentCategories,
+  type TransactionTemplate,
+} from "../components/TransactionTemplateModal";
+import {
   getCurrentMonthString,
   getTodayString,
   isFutureMonth,
@@ -84,6 +91,10 @@ export const BudgetPage: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templateModalMode, setTemplateModalMode] = useState<"select" | "save">(
+    "select",
+  );
   const [transactionType, setTransactionType] = useState<
     "income" | "expense" | null
   >(null);
@@ -658,6 +669,48 @@ export const BudgetPage: React.FC = () => {
       date: getTodayString(),
       categoryId: "",
     });
+  };
+
+  // Template handling functions
+  const openTemplateModal = (mode: "select" | "save") => {
+    setTemplateModalMode(mode);
+    setShowTemplateModal(true);
+  };
+
+  const handleSelectTemplate = (template: TransactionTemplate) => {
+    // Find the category in current budget
+    const category = budget?.groups
+      .flatMap((g) => g.categories)
+      .find((c) => c.id === template.categoryId);
+
+    setTransactionForm({
+      amount: template.amount?.toString() || "",
+      description: template.description,
+      date: getTodayString(),
+      categoryId: template.categoryId,
+    });
+
+    // Track recent category usage
+    addRecentCategory(template.categoryId);
+  };
+
+  const getCurrentTransactionForTemplate = () => {
+    if (!transactionForm.categoryId || !transactionType) return undefined;
+
+    const category = budget?.groups
+      .flatMap((g) => g.categories)
+      .find((c) => c.id === transactionForm.categoryId);
+
+    if (!category) return undefined;
+
+    return {
+      description: transactionForm.description,
+      amount: transactionForm.amount,
+      categoryId: transactionForm.categoryId,
+      categoryName: category.name,
+      categoryIcon: category.icon,
+      type: transactionType,
+    };
   };
 
   const handleTransactionSubmit = async (e: React.FormEvent) => {
@@ -2705,24 +2758,46 @@ export const BudgetPage: React.FC = () => {
                   ? "Add Income Transaction"
                   : "Add Expense Transaction"}
               </h3>
-              <button
-                onClick={closeTransactionModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => openTemplateModal("select")}
+                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  title="Use template"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={closeTransactionModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleTransactionSubmit} className="space-y-4">
@@ -2819,6 +2894,28 @@ export const BudgetPage: React.FC = () => {
                 >
                   Cancel
                 </button>
+                {transactionForm.categoryId && transactionForm.description && (
+                  <button
+                    type="button"
+                    onClick={() => openTemplateModal("save")}
+                    className="px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                    title="Save as template"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                      />
+                    </svg>
+                  </button>
+                )}
                 <button
                   type="submit"
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -2830,6 +2927,15 @@ export const BudgetPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Transaction Template Modal */}
+      <TransactionTemplateModal
+        isOpen={showTemplateModal}
+        onClose={() => setShowTemplateModal(false)}
+        onSelectTemplate={handleSelectTemplate}
+        currentTransaction={getCurrentTransactionForTemplate()}
+        mode={templateModalMode}
+      />
 
       {/* Budget Item Modal */}
       {showBudgetItemModal && selectedGroupType && (
