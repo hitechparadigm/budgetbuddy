@@ -120,13 +120,12 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
   - [x] 3.3.4 Add "Clear All" button
   - **Validates: Requirement 3.3**
 
-- [ ] 3.4 Integrate into TransactionsScreen
-  - [ ] 3.4.1 Add SearchBar to screen header
-  - [ ] 3.4.2 Add filter button with badge
-  - [ ] 3.4.3 Connect filters to transaction list
-  - [ ] 3.4.4 Show empty state when no results
+- [x] 3.4 Integrate into TransactionsScreen
+  - [x] 3.4.1 Add SearchBar to screen header
+  - [x] 3.4.2 Add filter button with badge
+  - [x] 3.4.3 Connect filters to transaction list
+  - [x] 3.4.4 Show empty state when no results
   - **Validates: Requirement 3.4**
-  - **Note**: Integration pending - components ready for use
 
 ---
 
