@@ -17,6 +17,7 @@ export class NotificationStack extends cdk.Stack {
   public readonly notificationFunction: lambda.Function;
   public readonly budgetAlertsFunction: lambda.Function;
   public readonly dailyRemindersFunction: lambda.Function;
+  public readonly billSchedulerFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: NotificationStackProps) {
     super(scope, id, props);
@@ -92,7 +93,25 @@ export class NotificationStack extends cdk.Stack {
     // Grant Lambda invoke permission to call Notification Service
     this.notificationFunction.grantInvoke(this.dailyRemindersFunction);
 
-    // 4. Configure DynamoDB Streams event source mapping
+    // 4. Create Bill Scheduler Service Lambda
+    this.billSchedulerFunction = new lambda.Function(this, 'BillSchedulerFunction', {
+      functionName: `budgetbuddy-${this.node.tryGetContext('environment') || 'dev'}-bill-scheduler`,
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('../backend/functions/bills-scheduler'),
+      layers: [props.commonLayer],
+      environment: {
+        TABLE_NAME: props.table.tableName,
+      },
+      timeout: cdk.Duration.seconds(300), // 5 minutes for batch processing
+      memorySize: 512,
+      description: 'Checks for upcoming bills and sends reminder notifications',
+    });
+
+    // Grant DynamoDB read/write permissions to Bill Scheduler Service
+    props.table.grantReadWriteData(this.billSchedulerFunction);
+
+    // 5. Configure DynamoDB Streams event source mapping
     this.budgetAlertsFunction.addEventSourceMapping('TransactionStreamMapping', {
       eventSourceArn: props.table.tableStreamArn!,
       batchSize: 10,
@@ -125,6 +144,20 @@ export class NotificationStack extends cdk.Stack {
     );
 
     // 5. Create EventBridge scheduled rules
+    const billSchedulerRule = new events.Rule(this, 'BillSchedulerRule', {
+      ruleName: `budgetbuddy-${this.node.tryGetContext('environment') || 'dev'}-bill-scheduler`,
+      description: 'Triggers bill notification scheduler daily at 8AM UTC',
+      schedule: events.Schedule.cron({ hour: '8', minute: '0' }),
+      enabled: true,
+    });
+
+    billSchedulerRule.addTarget(
+      new targets.LambdaFunction(this.billSchedulerFunction, {
+        retryAttempts: 2,
+        maxEventAge: cdk.Duration.hours(2),
+      })
+    );
+
     const dailyRemindersRule = new events.Rule(this, 'DailyRemindersRule', {
       ruleName: `budgetbuddy-${this.node.tryGetContext('environment') || 'dev'}-daily-reminders`,
       description: 'Triggers daily reminders service every 15 minutes',
@@ -177,6 +210,12 @@ export class NotificationStack extends cdk.Stack {
       description: 'ARN of the Daily Reminders Service Lambda function',
       exportName: `${this.stackName}-DailyRemindersFunctionArn`,
     });
+
+    new cdk.CfnOutput(this, 'BillSchedulerFunctionArn', {
+      value: this.billSchedulerFunction.functionArn,
+      description: 'ARN of the Bill Scheduler Service Lambda function',
+      exportName: `${this.stackName}-BillSchedulerFunctionArn`,
+    });
   }
 
   private createAlarms(): void {
@@ -184,6 +223,7 @@ export class NotificationStack extends cdk.Stack {
       { fn: this.notificationFunction, name: 'Notification' },
       { fn: this.budgetAlertsFunction, name: 'BudgetAlerts' },
       { fn: this.dailyRemindersFunction, name: 'DailyReminders' },
+      { fn: this.billSchedulerFunction, name: 'BillScheduler' },
     ];
 
     functions.forEach(({ fn, name }) => {
@@ -241,6 +281,7 @@ export class NotificationStack extends cdk.Stack {
       { fn: this.notificationFunction, name: 'Notification Service' },
       { fn: this.budgetAlertsFunction, name: 'Budget Alerts Service' },
       { fn: this.dailyRemindersFunction, name: 'Daily Reminders Service' },
+      { fn: this.billSchedulerFunction, name: 'Bill Scheduler Service' },
     ];
 
     functions.forEach(({ fn, name }) => {

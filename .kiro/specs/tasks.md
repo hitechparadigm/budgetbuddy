@@ -20,12 +20,12 @@
   - [x] 1.2.3 Implement PUT /api/bills/:id - update bill
   - [x] 1.2.4 Implement POST /api/bills/:id/pay - mark bill as paid
   - [x] 1.2.5 Implement GET /api/bills/upcoming - next 30 days
-- [ ] 1.3 Implement bill notification scheduler
-  - [ ] 1.3.1 Create EventBridge rule for daily bill check (8AM)
-  - [ ] 1.3.2 Implement 7-day reminder notification
-  - [ ] 1.3.3 Implement 3-day reminder notification
-  - [ ] 1.3.4 Implement due-day notification
-  - [ ] 1.3.5 Implement overdue notification
+- [x] 1.3 Implement bill notification scheduler
+  - [x] 1.3.1 Create EventBridge rule for daily bill check (8AM)
+  - [x] 1.3.2 Implement 7-day reminder notification
+  - [x] 1.3.3 Implement 3-day reminder notification
+  - [x] 1.3.4 Implement due-day notification
+  - [x] 1.3.5 Implement overdue notification
 - [x] 1.4 Implement recurring bill auto-scheduling
   - [x] 1.4.1 Calculate next due date based on frequency
   - [x] 1.4.2 Auto-create next bill occurrence when paid
@@ -35,7 +35,7 @@
 - [x] 1.6 Add bills CDK infrastructure
   - [x] 1.6.1 Create bills Lambda in api-stack.ts
   - [x] 1.6.2 Add API Gateway routes for /api/bills/\*
-  - [ ] 1.6.3 Add EventBridge rules for notifications
+  - [x] 1.6.3 Add EventBridge rules for notifications
 - [x] 1.7 Create bills UI components
   - [x] 1.7.1 Create BillsPage/BillsScreen component
   - [x] 1.7.2 Create BillCard component with status indicators
