@@ -149,6 +149,7 @@ Get all budgets for the authenticated user's family.
         "totalIncome": 5000,
         "totalExpenses": 4000,
         "remainingBalance": 1000,
+        "totalRollover": 150,
         "groups": {
           "income": [...],
           "expenses": [...]
@@ -189,7 +190,10 @@ Create a new budget.
         "categories": [
           {
             "name": "Rent",
-            "plannedAmount": 1500
+            "plannedAmount": 1500,
+            "rolloverEnabled": true,
+            "rolloverAmount": 100,
+            "rolloverCap": 500
           }
         ]
       }
@@ -197,6 +201,12 @@ Create a new budget.
   }
 }
 ```
+
+**Category Rollover Fields** (optional):
+
+- **rolloverEnabled**: Boolean - Whether unused budget rolls over to next month (default: false)
+- **rolloverAmount**: Number - Current rollover amount from previous months (default: 0)
+- **rolloverCap**: Number - Maximum rollover amount allowed (optional, no cap if not set)
 
 **Currency Field**:
 
