@@ -152,7 +152,7 @@
   - Check amount consistency (±10%)
   - **Validates: Requirement 35.2**
 
-- [ ] 4.3 Backend: Add subscription renewal notifications
+- [x] 4.3 Backend: Add subscription renewal notifications
   - 3 days before renewal notification
   - Price increase alerts
   - **Validates: Requirement 35.6, 35.10**
