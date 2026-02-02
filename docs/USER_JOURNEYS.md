@@ -1446,6 +1446,235 @@ xl: 32px  (major sections)
 
 ---
 
+## 9. AI-Powered Bill Reminders & Budget Planning Journey
+
+### User Story
+
+_"As a user, I want AI to automatically detect my recurring bills and help me plan future budgets, so that I don't miss payments and can budget more accurately."_
+
+### Journey Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 1: AI Pattern Detection Trigger                                        │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  • Automatic: After 3 months of transaction history                          │
+│  • Manual: User clicks "Detect Recurring Bills" in Bills page                │
+│  • Notification: "We found 5 recurring bills in your transactions"           │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 2: Pattern Review Interface                                            │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  🤖 AI Detected Recurring Bills                                      │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │  ☑ Netflix Subscription                          Confidence: 95%    │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  Amount: $15.99/month                                        │    │    │
+│  │  │  Last 3 payments: Dec 1, Nov 1, Oct 1                        │    │    │
+│  │  │  Next expected: Jan 1, 2026                                  │    │    │
+│  │  │  Category: Entertainment                                     │    │    │
+│  │  │                                                              │    │    │
+│  │  │  💡 Why detected: Consistent monthly charge from Netflix     │    │    │
+│  │  │  on the 1st of each month with same amount.                 │    │    │
+│  │  │                                                              │    │    │
+│  │  │  [✓ Create Reminder]  [✏️ Edit]  [✗ Dismiss]                │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  │                                                                      │    │
+│  │  ☑ Electric Bill (Variable)                      Confidence: 82%    │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  Amount: $120-$180/month (avg $145)                          │    │    │
+│  │  │  Last 3 payments: Dec 15 ($156), Nov 15 ($142), Oct 15 ($138)│    │    │
+│  │  │  Next expected: Jan 15, 2026                                 │    │    │
+│  │  │  Category: Utilities                                         │    │    │
+│  │  │                                                              │    │    │
+│  │  │  💡 Why detected: Monthly charge from Electric Co around     │    │    │
+│  │  │  the 15th with amounts varying by season.                    │    │    │
+│  │  │                                                              │    │    │
+│  │  │  [✓ Create Reminder]  [✏️ Edit]  [✗ Dismiss]                │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  │                                                                      │    │
+│  │  [Approve All (2)]                              [Review Later]      │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 3: Bill Reminders Created                                              │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ✅ Success! 2 bill reminders created                                        │
+│                                                                              │
+│  • Netflix Subscription - Due Jan 1                                          │
+│  • Electric Bill - Due Jan 15                                                │
+│                                                                              │
+│  You'll receive notifications 7 days, 3 days, and on the due date.          │
+│                                                                              │
+│  [View Bills]  [Plan Next Month's Budget]                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 4: AI Budget Planning (When Creating New Month)                        │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  🤖 AI Budget Suggestions for February 2026                         │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │  INCOME                                                              │    │
+│  │  ☑ Salary (Bi-weekly)                            $5,000             │    │
+│  │     💡 2 paychecks expected in February                              │    │
+│  │     Confidence: 98%                                                  │    │
+│  │                                                                      │    │
+│  │  RECURRING BILLS                                                     │    │
+│  │  ☑ Rent                                           $1,500             │    │
+│  │     💡 Due Feb 1 (monthly)                                           │    │
+│  │     Confidence: 100%                                                 │    │
+│  │                                                                      │    │
+│  │  ☑ Electric Bill                                  $145               │    │
+│  │     💡 Due Feb 15 (avg of last 3 months)                             │    │
+│  │     Confidence: 82%                                                  │    │
+│  │                                                                      │    │
+│  │  ☑ Netflix                                        $15.99             │    │
+│  │     💡 Due Feb 1 (monthly)                                           │    │
+│  │     Confidence: 95%                                                  │    │
+│  │                                                                      │    │
+│  │  VARIABLE EXPENSES (Based on 3-month average)                       │    │
+│  │  ☑ Groceries                                      $650               │    │
+│  │     💡 You typically spend $600-700/month                            │    │
+│  │     Confidence: 75%                                                  │    │
+│  │                                                                      │    │
+│  │  ☑ Dining Out                                     $200               │    │
+│  │     💡 You spent $180 avg last 3 months                              │    │
+│  │     Confidence: 70%                                                  │    │
+│  │                                                                      │    │
+│  │  Total Suggested: $7,510.99                                          │    │
+│  │  Expected Income: $10,000                                            │    │
+│  │  Remaining: $2,489.01                                                │    │
+│  │                                                                      │    │
+│  │  [Apply All]  [Customize]  [Start from Scratch]                     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 5: Smart Notifications                                                 │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  🔔 New Pattern Detected                                                     │
+│  We noticed you've been paying $45/month to Gym Membership for 3 months.    │
+│  Would you like to create a bill reminder?                                   │
+│  [Yes, Create Reminder]  [No, Thanks]                                        │
+│                                                                              │
+│  ⚠️ Bill Amount Changed                                                      │
+│  Your Electric Bill was $210 this month, 45% higher than usual ($145 avg).  │
+│  Consider adjusting your budget for next month.                              │
+│  [Adjust Budget]  [Dismiss]                                                  │
+│                                                                              │
+│  💡 Budget Planning Available                                                │
+│  Ready to plan March's budget? We have suggestions based on your spending.   │
+│  [Plan Budget]  [Remind Me Later]                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Component Mapping
+
+| Feature                  | Frontend Component           | Backend API                     | Status        |
+| ------------------------ | ---------------------------- | ------------------------------- | ------------- |
+| Pattern Detection        | `PatternReviewModal.tsx`     | `POST /api/patterns/detect`     | 📋 Spec Ready |
+| Pattern Review           | `PatternReviewModal.tsx`     | `GET /api/patterns`             | 📋 Spec Ready |
+| Pattern Approval         | `PatternReviewModal.tsx`     | `PUT /api/patterns/{id}`        | 📋 Spec Ready |
+| Budget Suggestions       | `BudgetSuggestionsModal.tsx` | `POST /api/budget/suggestions`  | 📋 Spec Ready |
+| Apply Suggestions        | `BudgetSuggestionsModal.tsx` | `POST /api/budget/apply`        | 📋 Spec Ready |
+| Manual Pattern Creation  | `TransactionList.tsx`        | `POST /api/patterns/manual`     | 📋 Spec Ready |
+| Pattern Notifications    | `NotificationCenter.tsx`     | Existing notification system    | 📋 Spec Ready |
+| AI Analysis Service      | Backend only                 | AWS Bedrock (Claude 3.5 Sonnet) | 📋 Spec Ready |
+| Pattern Detection Lambda | Backend only                 | `pattern-detection` Lambda      | 📋 Spec Ready |
+| Budget Planning Lambda   | Backend only                 | `budget-planning` Lambda        | 📋 Spec Ready |
+
+### UI/UX Requirements
+
+- **Clear confidence scores**: Show AI confidence with visual indicators (color-coded)
+- **Explanations**: Always explain why AI detected each pattern
+- **User control**: All suggestions require explicit approval
+- **Edit before approve**: Allow users to modify AI suggestions
+- **Variable amounts**: Handle bills with fluctuating amounts (utilities)
+- **Frequency detection**: Support weekly, bi-weekly, monthly, quarterly, annual
+- **Smart defaults**: Pre-fill forms with AI suggestions but allow full customization
+- **Progress feedback**: Show analysis progress during pattern detection
+- **Error recovery**: Graceful handling of AI service failures
+
+### AI Capabilities
+
+1. **Pattern Detection**:
+   - Analyzes 3-6 months of transaction history
+   - Detects recurring patterns with 70%+ confidence
+   - Handles amount variations (utilities, subscriptions)
+   - Fuzzy merchant name matching (handles typos, variations)
+   - Calculates next expected due dates
+
+2. **Budget Planning**:
+   - Suggests recurring bills for upcoming months
+   - Calculates bi-weekly income (2 or 3 paychecks per month)
+   - Adjusts for seasonal variations
+   - Provides category-wise spending averages
+   - Shows confidence scores for each suggestion
+
+3. **Smart Notifications**:
+   - New pattern detected (3+ occurrences)
+   - Bill amount changed significantly (>20%)
+   - Pattern stopped (2 missed expected occurrences)
+   - Budget planning available for new month
+
+### Privacy & Security
+
+- **Data encryption**: All transaction data encrypted in transit (TLS 1.2+) and at rest
+- **No data retention**: AWS Bedrock doesn't retain transaction data in logs
+- **Family scoping**: AI only accesses authenticated user's family data
+- **Audit logging**: All AI operations logged (without sensitive details)
+- **User deletion**: All AI patterns deleted when account deleted
+
+### Performance
+
+- **Analysis speed**: < 10 seconds for up to 1000 transactions
+- **Cost monitoring**: Logs warning if AI cost exceeds $0.10 per analysis
+- **Retry logic**: Exponential backoff for transient AI service failures
+- **Caching**: Results cached in S3 for 30 days to reduce costs
+
+### Missing Components
+
+| Component                    | Priority | Description                                    |
+| ---------------------------- | -------- | ---------------------------------------------- |
+| `PatternReviewModal.tsx`     | HIGH     | Review and approve AI-detected patterns        |
+| `BudgetSuggestionsModal.tsx` | HIGH     | Review and apply AI budget suggestions         |
+| `PatternConfidenceBar.tsx`   | MEDIUM   | Visual confidence score indicator              |
+| `PatternExplanation.tsx`     | MEDIUM   | Expandable explanation of why pattern detected |
+| Pattern detection Lambda     | HIGH     | Backend service for AI pattern analysis        |
+| Budget planning Lambda       | HIGH     | Backend service for AI budget suggestions      |
+
+### Implementation Status
+
+**Spec Status**: ✅ Complete
+
+- Requirements document: 10 requirements, 60+ acceptance criteria
+- Design document: Architecture, algorithms, 25 correctness properties
+- Tasks document: 28 implementation tasks with testing requirements
+
+**Implementation Status**: 📋 Ready to Start
+
+- All specifications complete and reviewed
+- Integration points with existing systems identified
+- Testing strategy defined (unit, property-based, integration)
+- Frontend components designed
+- Backend architecture planned
+
+**Next Steps**:
+
+1. Review spec with stakeholders
+2. Begin Task 1: Infrastructure setup (DynamoDB tables, S3 bucket, IAM roles)
+3. Implement pattern detection algorithm (Tasks 2-4)
+4. Integrate AWS Bedrock for AI analysis (Tasks 5-6)
+5. Build frontend review interfaces (Tasks 22-26)
+
+---
+
 ## Appendix: Quick Reference
 
 ### Status Legend
@@ -1456,20 +1685,22 @@ xl: 32px  (major sections)
 | ⚠️     | Partial/needs work  |
 | ❌     | Not started         |
 | 🔄     | In progress         |
+| 📋     | Spec ready          |
 
 ### Journey Abbreviations
 
-| Code          | Journey                   |
-| ------------- | ------------------------- |
-| Onboarding    | New User Onboarding       |
-| Daily         | Daily Budget Management   |
-| Bank          | Bank Account Connection   |
-| Family        | Family Collaboration      |
-| Insights      | Financial Insights        |
-| Goals         | Debt & Savings Goals      |
-| Notifications | Notifications & Reminders |
-| Settings      | Settings & Preferences    |
-| Admin         | Admin Dashboard           |
+| Code          | Journey                              |
+| ------------- | ------------------------------------ | ----------- |
+| Onboarding    | New User Onboarding                  |
+| Daily         | Daily Budget Management              |
+| Bank          | Bank Account Connection              |
+| Family        | Family Collaboration                 |
+| Insights      | Financial Insights                   |
+| Goals         | Debt & Savings Goals                 |
+| Notifications | Notifications                        |
+| AI Bills      | AI-Powered Bill Reminders & Planning | & Reminders |
+| Settings      | Settings & Preferences               |
+| Admin         | Admin Dashboard                      |
 
 ### Task References
 

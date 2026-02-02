@@ -31,6 +31,7 @@ export class ApiFeaturesStack extends cdk.Stack {
   public readonly api: apigateway.RestApi;
   public readonly functions: { [key: string]: lambda.Function } = {};
   public readonly receiptBucket: s3.Bucket;
+  public readonly patternCacheBucket: s3.Bucket;
 
   constructor(scope: Construct, id: string, props: ApiFeaturesStackProps) {
     super(scope, id, props);
@@ -62,6 +63,25 @@ export class ApiFeaturesStack extends cdk.Stack {
           ],
           allowedHeaders: ['*'],
           maxAge: 3000,
+        },
+      ],
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+    });
+
+    // Create S3 bucket for pattern analysis cache
+    // **Validates: AI Bill Reminders Requirement 8.2** - S3 bucket for pattern cache
+    this.patternCacheBucket = new s3.Bucket(this, 'PatternCacheBucket', {
+      bucketName: `budgetbuddy-pattern-cache-${this.account}-${this.region}`,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      enforceSSL: true,
+      versioned: false,
+      lifecycleRules: [
+        {
+          id: 'DeleteAfter30Days',
+          expiration: cdk.Duration.days(30),
+          enabled: true,
         },
       ],
       removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -357,6 +377,71 @@ export class ApiFeaturesStack extends cdk.Stack {
       ],
       resources: ['*'],
     }));
+
+    // Pattern Detection Lambda
+    this.functions.patternDetectionHandler = new lambda.Function(this, 'PatternDetectionHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-pattern-detection',
+      code: lambda.Code.fromAsset('../backend/functions/pattern-detection', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          user: 'root',
+          command: [
+            'bash', '-c', [
+              'cp -r /asset-input/* /asset-output/',
+              'cd /asset-output',
+              'npm install --production --no-optional',
+            ].join(' && '),
+          ],
+        },
+      }),
+      handler: 'index.handler',
+      description: 'BudgetBuddy pattern detection handler for AI-powered recurring bill detection',
+      timeout: cdk.Duration.seconds(60), // Increased for AI analysis
+      memorySize: 1024, // Increased for pattern analysis
+      environment: {
+        ...commonProps.environment,
+        PATTERN_CACHE_BUCKET: this.patternCacheBucket.bucketName,
+      },
+    });
+
+    // Grant Pattern Detection Lambda permissions for S3 and Bedrock
+    this.patternCacheBucket.grantReadWrite(this.functions.patternDetectionHandler);
+    this.functions.patternDetectionHandler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['bedrock:InvokeModel'],
+      resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
+    }));
+
+    // Budget Planning Lambda
+    this.functions.budgetPlanningHandler = new lambda.Function(this, 'BudgetPlanningHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-budget-planning',
+      code: lambda.Code.fromAsset('../backend/functions/budget-planning', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          user: 'root',
+          command: [
+            'bash', '-c', [
+              'cp -r /asset-input/* /asset-output/',
+              'cd /asset-output',
+              'npm install --production --no-optional',
+            ].join(' && '),
+          ],
+        },
+      }),
+      handler: 'index.handler',
+      description: 'BudgetBuddy budget planning handler for AI-powered budget suggestions',
+      timeout: cdk.Duration.seconds(60), // Increased for AI analysis
+      memorySize: 1024, // Increased for budget analysis
+    });
+
+    // Grant Budget Planning Lambda permission to invoke Bedrock
+    this.functions.budgetPlanningHandler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['bedrock:InvokeModel'],
+      resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
+    }));
   }
 
   private setupApiRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -389,6 +474,12 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Receipt routes
     this.setupReceiptRoutes(authorizer);
+
+    // Pattern Detection routes
+    this.setupPatternDetectionRoutes(authorizer);
+
+    // Budget Planning routes
+    this.setupBudgetPlanningRoutes(authorizer);
   }
 
   private setupPlaidRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -728,6 +819,12 @@ export class ApiFeaturesStack extends cdk.Stack {
       description: 'S3 bucket for receipt image storage',
       exportName: 'budgetbuddy-receipt-bucket-name',
     });
+
+    new cdk.CfnOutput(this, 'PatternCacheBucketName', {
+      value: this.patternCacheBucket.bucketName,
+      description: 'S3 bucket for pattern analysis cache',
+      exportName: 'budgetbuddy-pattern-cache-bucket-name',
+    });
   }
 
   private setupSubscriptionsRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -899,6 +996,70 @@ export class ApiFeaturesStack extends cdk.Stack {
     receiptIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
       authorizer,
       operationName: 'GetReceipt',
+    });
+  }
+
+  private setupPatternDetectionRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const patternsResource = this.api.root.addResource('patterns');
+
+    // Detect patterns endpoint
+    const patternsDetectResource = patternsResource.addResource('detect');
+    patternsDetectResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
+      authorizer,
+      operationName: 'DetectPatterns',
+    });
+
+    // Get patterns endpoint
+    patternsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
+      authorizer,
+      operationName: 'GetPatterns',
+    });
+
+    // Pattern ID resource
+    const patternIdResource = patternsResource.addResource('{patternId}');
+    patternIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
+      authorizer,
+      operationName: 'GetPattern',
+    });
+    patternIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
+      authorizer,
+      operationName: 'UpdatePattern',
+    });
+    patternIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
+      authorizer,
+      operationName: 'DeletePattern',
+    });
+
+    // Health endpoint
+    const patternsHealthResource = patternsResource.addResource('health');
+    patternsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'PatternDetectionHealthCheck',
+    });
+  }
+
+  private setupBudgetPlanningRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const budgetResource = this.api.root.addResource('budget-planning');
+
+    // Generate suggestions endpoint
+    const suggestionsResource = budgetResource.addResource('suggestions');
+    suggestionsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.budgetPlanningHandler), {
+      authorizer,
+      operationName: 'GenerateBudgetSuggestions',
+    });
+
+    // Apply suggestions endpoint
+    const applyResource = budgetResource.addResource('apply');
+    applyResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.budgetPlanningHandler), {
+      authorizer,
+      operationName: 'ApplyBudgetSuggestions',
+    });
+
+    // Health endpoint
+    const budgetHealthResource = budgetResource.addResource('health');
+    budgetHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetPlanningHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'BudgetPlanningHealthCheck',
     });
   }
 }
