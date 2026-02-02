@@ -157,13 +157,13 @@
   - Price increase alerts
   - **Validates: Requirement 35.6, 35.10**
 
-- [ ] 4.4 Frontend Web: Create SubscriptionsPage
+- [x] 4.4 Frontend Web: Create SubscriptionsPage
   - List all subscriptions with details
   - Total monthly cost
   - Status badges (keep/review/cancel)
   - **Validates: Requirement 35.1, 35.3, 35.4, 35.7**
 
-- [ ] 4.5 Frontend Web: Add manual subscription form
+- [x] 4.5 Frontend Web: Add manual subscription form
   - For subscriptions not auto-detected
   - **Validates: Requirement 35.5**
 
