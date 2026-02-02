@@ -329,18 +329,18 @@
   - Calculate month-over-month change
   - **Validates: Requirement 41.4, 41.7**
 
-- [ ] 9.3 Frontend Web: Create NetWorthPage
+- [x] 9.3 Frontend Web: Create NetWorthPage
   - Asset/liability lists
   - Net worth chart over time
   - Asset allocation pie chart
   - **Validates: Requirement 41.4, 41.8**
 
-- [ ] 9.4 Frontend Web: Add asset/liability forms
+- [x] 9.4 Frontend Web: Add asset/liability forms
   - Add/edit assets and liabilities
   - Manual value updates
   - **Validates: Requirement 41.5**
 
-- [ ] 9.5 Frontend Mobile: Create NetWorthScreen
+- [x] 9.5 Frontend Mobile: Create NetWorthScreen
   - Mirror web implementation
   - **Validates: Requirement 41**
 
