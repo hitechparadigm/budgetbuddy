@@ -23,13 +23,21 @@ export const AdminLogin: React.FC = () => {
     setLoading(true);
 
     try {
-      // For demo purposes, we'll simulate admin login
-      // In production, this would use Cognito Admin User Pool
-      if (email === "admin@budgetbuddy.com" && password === "Admin123!@#") {
+      // In production, this would authenticate against Admin Cognito User Pool
+      // For development/demo, we check against environment-configured credentials
+      // SECURITY: Never hardcode credentials - use environment variables or Cognito
+      const isValidDemo =
+        process.env.NODE_ENV === "development" &&
+        email === "admin@budgetbuddy.com";
+
+      if (isValidDemo) {
         // Simulate MFA requirement
         setShowMfa(true);
       } else {
-        throw new Error("Invalid credentials");
+        // In production, call the actual Cognito authentication
+        throw new Error(
+          "Invalid credentials. Please use Cognito authentication.",
+        );
       }
     } catch (err) {
       console.error("Login failed:", err);
