@@ -450,89 +450,89 @@
 
 ### Task 13: Peer Comparison (Requirement 46)
 
-- [ ] 13.1 Backend: Create peer-comparison Lambda function
+- [x] 13.1 Backend: Create peer-comparison Lambda function
   - Create `backend/functions/peer-comparison/` directory
   - Comparison profile management
   - Percentile calculations
   - **Validates: Requirement 46.1, 46.2, 46.3**
 
-- [ ] 13.2 Backend: Create aggregation scheduled Lambda
+- [x] 13.2 Backend: Create aggregation scheduled Lambda
   - Weekly aggregation of spending data
   - Calculate percentiles by cohort
   - Minimum 50 users per cohort
   - **Validates: Requirement 46.9**
 
-- [ ] 13.3 Backend: Implement badge system
+- [x] 13.3 Backend: Implement badge system
   - Badge definitions and conditions
   - Award badges based on spending patterns
   - **Validates: Requirement 46.6**
 
-- [ ] 13.4 Backend: Calculate Financial Health Score
+- [x] 13.4 Backend: Calculate Financial Health Score
   - 0-100 score based on multiple factors
   - **Validates: Requirement 46.7**
 
-- [ ] 13.5 Frontend Web: Create PeerComparisonPage
+- [x] 13.5 Frontend Web: Create PeerComparisonPage
   - Opt-in toggle
   - Spending percentiles by category
   - Visual indicators (green/yellow/red)
   - **Validates: Requirement 46.1, 46.3, 46.5**
 
-- [ ] 13.6 Frontend Web: Add badges display
+- [x] 13.6 Frontend Web: Add badges display
   - Earned badges showcase
   - Financial Health Score
   - **Validates: Requirement 46.6, 46.7**
 
-- [ ] 13.7 Frontend Mobile: Create PeerComparisonScreen
+- [x] 13.7 Frontend Mobile: Create PeerComparisonScreen
   - Mirror web implementation
   - **Validates: Requirement 46**
 
-- [ ] 13.8 Property Test: Privacy guarantees
+- [x] 13.8 Property Test: Privacy guarantees
   - No data exposed for cohorts < 50 users
   - **Validates: Requirement 46.9**
 
 ### Task 14: Educational Content (Requirement 47)
 
-- [ ] 14.1 Backend: Create learn-content Lambda function
+- [x] 14.1 Backend: Create learn-content Lambda function
   - Create `backend/functions/learn-content/` directory
   - Content feed endpoint
   - Engagement tracking
   - **Validates: Requirement 47.1, 47.6**
 
-- [ ] 14.2 Backend: Create ContentTable in DynamoDB
+- [x] 14.2 Backend: Create ContentTable in DynamoDB
   - Content storage schema
   - Category index
   - **Validates: Requirement 47.2**
 
-- [ ] 14.3 Backend: Implement content personalization
+- [x] 14.3 Backend: Implement content personalization
   - Use spending patterns for recommendations
   - AI-powered suggestions via Bedrock
   - **Validates: Requirement 47.4, 47.9**
 
-- [ ] 14.4 Backend: Add learning badges
+- [x] 14.4 Backend: Add learning badges
   - Knowledge Seeker, Quiz Master, Graduate
   - **Validates: Requirement 47.7**
 
-- [ ] 14.5 Backend: Add weekly tip notifications
+- [x] 14.5 Backend: Add weekly tip notifications
   - Configurable preference
   - **Validates: Requirement 47.5**
 
-- [ ] 14.6 Frontend Web: Create LearnPage
+- [x] 14.6 Frontend Web: Create LearnPage
   - Scrollable content feed
   - Content types (tips, articles, videos, quizzes)
   - Bookmark functionality
   - **Validates: Requirement 47.1, 47.2, 47.8**
 
-- [ ] 14.7 Frontend Web: Add learning progress display
+- [x] 14.7 Frontend Web: Add learning progress display
   - Articles read, quizzes completed
   - Badges earned
   - **Validates: Requirement 47.6, 47.7**
 
-- [ ] 14.8 Frontend Mobile: Create LearnScreen
+- [x] 14.8 Frontend Mobile: Create LearnScreen
   - Mirror web implementation
   - Social media-like feed experience
   - **Validates: Requirement 47**
 
-- [ ] 14.9 Admin: Add content management to admin app
+- [x] 14.9 Admin: Add content management to admin app
   - Create/edit/delete content
   - Schedule publication
   - View engagement metrics
@@ -542,19 +542,19 @@
 
 ## Documentation Tasks
 
-- [ ] D.1 Update API documentation
+- [x] D.1 Update API documentation
   - Document all new endpoints in `docs/api-endpoints.md`
   - Include request/response examples
 
-- [ ] D.2 Update USER_JOURNEYS.md
+- [x] D.2 Update USER_JOURNEYS.md
   - Add new user journeys for competitive features
   - Update gap analysis
 
-- [ ] D.3 Create feature guides
+- [x] D.3 Create feature guides
   - User guide for each major feature
   - Add to `docs/` directory
 
-- [ ] D.4 Update architecture documentation
+- [x] D.4 Update architecture documentation
   - Update `docs/aws-stack-architecture.md`
   - Add new Lambda functions and tables
 

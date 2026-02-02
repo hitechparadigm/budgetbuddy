@@ -1,8 +1,8 @@
 # API Endpoints Documentation
 
 **Base URL**: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1`
-**Last Updated**: 2026-01-05
-**API Version**: 1.1 (Security Enhanced)
+**Last Updated**: 2026-02-02
+**API Version**: 1.2 (Competitive Features)
 
 ## Authentication
 
@@ -1353,4 +1353,490 @@ curl -X DELETE https://api.budgetbuddy.com/v1/family/members/user_456 \
 ```bash
 curl -X POST https://api.budgetbuddy.com/v1/family/leave \
   -H "Authorization: Bearer $TOKEN"
+```
+
+---
+
+## Competitive Features (v1.2)
+
+### Bills Management
+
+#### GET /bills
+
+Get all bills for the authenticated user's family.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "bills": [
+      {
+        "billId": "bill_123",
+        "name": "Electric Bill",
+        "amount": 150.0,
+        "dueDate": "2026-02-15",
+        "frequency": "monthly",
+        "category": "Utilities",
+        "isPaid": false,
+        "reminderDays": [7, 3, 0]
+      }
+    ]
+  }
+}
+```
+
+#### POST /bills
+
+Create a new bill.
+
+**Request Body**:
+
+```json
+{
+  "name": "Electric Bill",
+  "amount": 150.0,
+  "dueDate": "2026-02-15",
+  "frequency": "monthly",
+  "category": "Utilities",
+  "reminderDays": [7, 3, 0]
+}
+```
+
+#### PUT /bills/{billId}/paid
+
+Mark a bill as paid.
+
+**Request Body**:
+
+```json
+{
+  "createTransaction": true,
+  "paidDate": "2026-02-14"
+}
+```
+
+### Goals Management
+
+#### GET /goals
+
+Get all savings goals.
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "goals": [
+      {
+        "goalId": "goal_123",
+        "name": "Vacation Fund",
+        "targetAmount": 3000,
+        "currentAmount": 2400,
+        "targetDate": "2026-06-01",
+        "icon": "🏖️",
+        "priority": 1
+      }
+    ]
+  }
+}
+```
+
+#### POST /goals/{goalId}/contribute
+
+Add a contribution to a goal.
+
+**Request Body**:
+
+```json
+{
+  "amount": 100.0,
+  "note": "Monthly contribution"
+}
+```
+
+#### PUT /goals/reorder
+
+Reorder goals by priority.
+
+**Request Body**:
+
+```json
+{
+  "goalIds": ["goal_456", "goal_123", "goal_789"]
+}
+```
+
+### Subscriptions
+
+#### GET /subscriptions
+
+Get all tracked subscriptions.
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "subscriptions": [
+      {
+        "subscriptionId": "sub_123",
+        "name": "Netflix",
+        "amount": 15.99,
+        "frequency": "monthly",
+        "nextBillingDate": "2026-02-15",
+        "status": "keep",
+        "detectedFrom": "transactions"
+      }
+    ],
+    "totalMonthly": 89.97
+  }
+}
+```
+
+#### POST /subscriptions/detect
+
+Detect subscriptions from transaction history.
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "detected": 5,
+    "subscriptions": [...]
+  }
+}
+```
+
+### Debt Payoff
+
+#### GET /debts
+
+Get all debts.
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "debts": [
+      {
+        "debtId": "debt_123",
+        "name": "Credit Card",
+        "balance": 5432.0,
+        "interestRate": 19.99,
+        "minimumPayment": 150.0,
+        "type": "credit_card"
+      }
+    ]
+  }
+}
+```
+
+#### POST /debts/calculate
+
+Calculate payoff timeline.
+
+**Request Body**:
+
+```json
+{
+  "strategy": "avalanche",
+  "extraPayment": 200.0
+}
+```
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "strategy": "avalanche",
+    "payoffDate": "2027-03-15",
+    "totalInterest": 892.45,
+    "interestSaved": 234.50,
+    "timeline": [...]
+  }
+}
+```
+
+### Net Worth
+
+#### GET /net-worth
+
+Get current net worth.
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "netWorth": 125000,
+    "assets": {
+      "total": 175000,
+      "items": [...]
+    },
+    "liabilities": {
+      "total": 50000,
+      "items": [...]
+    },
+    "history": [...]
+  }
+}
+```
+
+#### POST /net-worth/assets
+
+Add an asset.
+
+**Request Body**:
+
+```json
+{
+  "name": "Savings Account",
+  "type": "cash",
+  "value": 10000,
+  "institution": "Chase Bank"
+}
+```
+
+### Peer Comparison
+
+#### GET /comparison/summary
+
+Get spending comparison with similar households.
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "available": true,
+    "groupCriteria": {
+      "region": "US",
+      "familySize": 2,
+      "incomeRange": "75k-100k"
+    },
+    "groupSize": 156,
+    "comparison": {
+      "Housing": {
+        "userAmount": 1500,
+        "groupAverage": 1650,
+        "percentile": 42,
+        "status": "below-average"
+      }
+    }
+  }
+}
+```
+
+#### GET /comparison/preferences
+
+Get user's comparison preferences.
+
+#### PUT /comparison/preferences
+
+Update comparison preferences.
+
+**Request Body**:
+
+```json
+{
+  "optedOut": false,
+  "shareData": true,
+  "showInInsights": true
+}
+```
+
+### Educational Content
+
+#### GET /learn/courses
+
+Get available courses.
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "courses": [
+      {
+        "id": "budgeting-101",
+        "title": "Budgeting 101",
+        "description": "Learn the fundamentals of budgeting",
+        "difficulty": "beginner",
+        "estimatedMinutes": 30,
+        "lessonsCount": 4
+      }
+    ]
+  }
+}
+```
+
+#### GET /learn/courses/{courseId}
+
+Get course details with lessons.
+
+#### POST /learn/lessons/{lessonId}/complete
+
+Mark a lesson as complete.
+
+#### POST /learn/quiz/{quizId}/submit
+
+Submit quiz answers.
+
+**Request Body**:
+
+```json
+{
+  "answers": [1, 1, 2]
+}
+```
+
+#### GET /learn/progress
+
+Get user's learning progress.
+
+#### GET /learn/badges
+
+Get earned badges.
+
+### Receipt Scanning
+
+#### POST /receipt/upload
+
+Get presigned URL for receipt upload.
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "uploadUrl": "https://s3.amazonaws.com/...",
+    "receiptId": "receipt_123",
+    "expiresIn": 300
+  }
+}
+```
+
+#### POST /receipt/process
+
+Process uploaded receipt with OCR.
+
+**Request Body**:
+
+```json
+{
+  "receiptId": "receipt_123"
+}
+```
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "merchant": "Walmart",
+    "date": "2026-02-01",
+    "total": 45.67,
+    "suggestedCategory": "Groceries",
+    "confidence": 0.92,
+    "items": [...]
+  }
+}
+```
+
+### Admin Endpoints
+
+#### GET /admin/dashboard
+
+Get admin dashboard metrics.
+
+**Headers**: `Authorization: Bearer <admin_token>`
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "totalUsers": 12450,
+    "activeUsers": 8234,
+    "premiumUsers": 623,
+    "revenue": 45230,
+    "alerts": 3
+  }
+}
+```
+
+#### GET /admin/users
+
+Search and list users.
+
+**Query Parameters**:
+
+- `search`: Search by email or name
+- `status`: Filter by status (active, disabled)
+- `plan`: Filter by plan (free, premium)
+- `page`: Page number
+- `limit`: Items per page
+
+#### PUT /admin/users/{userId}
+
+Update user status or details.
+
+**Request Body**:
+
+```json
+{
+  "status": "disabled",
+  "reason": "Terms violation"
+}
+```
+
+---
+
+## Health Check Endpoints
+
+All services expose health check endpoints:
+
+- `GET /auth/health`
+- `GET /budget/health`
+- `GET /transactions/health`
+- `GET /family/health`
+- `GET /bills/health`
+- `GET /goals/health`
+- `GET /subscriptions/health`
+- `GET /debts/health`
+- `GET /net-worth/health`
+- `GET /comparison/health`
+- `GET /learn/health`
+- `GET /receipt/health`
+- `GET /admin/health`
+- `GET /insights/health`
+- `GET /tips/health`
+- `GET /plaid/health`
+
+**Response**: `200 OK`
+
+```json
+{
+  "status": "healthy",
+  "service": "<service-name>",
+  "version": "1.0.0"
+}
 ```
