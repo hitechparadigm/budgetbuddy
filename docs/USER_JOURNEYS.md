@@ -729,6 +729,173 @@ _"As a user, I want to receive timely notifications about my budget so I stay on
 
 _"As a user, I want to customize my app experience and manage my account settings."_
 
+### Journey Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ENTRY: Settings Page                                                        │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  Sidebar → Settings | Profile icon → Settings | Mobile: Tab bar → Settings  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  SETTINGS MAIN PAGE                                                          │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  ⚙️ Settings                                                         │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │  👤 ACCOUNT                                                          │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  Profile                                              [>]   │    │    │
+│  │  │  Update your name, email, and profile picture               │    │    │
+│  │  ├─────────────────────────────────────────────────────────────┤    │    │
+│  │  │  Password & Security                                  [>]   │    │    │
+│  │  │  Change password and manage security settings               │    │    │
+│  │  ├─────────────────────────────────────────────────────────────┤    │    │
+│  │  │  Two-Factor Authentication                            [>]   │    │    │
+│  │  │  Add an extra layer of security to your account             │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  │                                                                      │    │
+│  │  🌍 PREFERENCES                                                      │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  Currency                                       [USD ▼]     │    │    │
+│  │  │  Set your preferred currency for budgets                    │    │    │
+│  │  ├─────────────────────────────────────────────────────────────┤    │    │
+│  │  │  Location                                             [>]   │    │    │
+│  │  │  Update your country and city for AI suggestions            │    │    │
+│  │  ├─────────────────────────────────────────────────────────────┤    │    │
+│  │  │  Appearance                                    [System ▼]   │    │    │
+│  │  │  Choose light, dark, or system theme                        │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PROFILE SETTINGS SCREEN                                                     │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  👤 Profile Settings                                                 │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │                    ┌─────────┐                                       │    │
+│  │                    │  📷     │  [Change Photo]                       │    │
+│  │                    │  Avatar │                                       │    │
+│  │                    └─────────┘                                       │    │
+│  │                                                                      │    │
+│  │  Full Name                                                           │    │
+│  │  [John Smith_______________________________________]                 │    │
+│  │                                                                      │    │
+│  │  Email Address                                                       │    │
+│  │  [john.smith@email.com____________________________]                  │    │
+│  │                                                                      │    │
+│  │  Phone Number (optional)                                             │    │
+│  │  [+1 (555) 123-4567_______________________________]                  │    │
+│  │                                                                      │    │
+│  │  [Cancel]                                    [Save Changes]          │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  NOTIFICATION SETTINGS SCREEN                                                │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  🔔 Notification Preferences                                         │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │  BUDGET ALERTS                                                       │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  Budget threshold alerts                         [ON]       │    │    │
+│  │  │  Get notified when approaching budget limits                │    │    │
+│  │  ├─────────────────────────────────────────────────────────────┤    │    │
+│  │  │  Alert at 80% spent                              [ON]       │    │    │
+│  │  │  Alert at 90% spent                              [ON]       │    │    │
+│  │  │  Alert when exceeded                             [ON]       │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  │                                                                      │    │
+│  │  REMINDERS                                                           │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  Daily expense reminder                          [ON]       │    │    │
+│  │  │  Reminder time                            [7:00 PM ▼]       │    │    │
+│  │  ├─────────────────────────────────────────────────────────────┤    │    │
+│  │  │  Bill due reminders                              [ON]       │    │    │
+│  │  │  Remind me before                         [3 days ▼]        │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  │                                                                      │    │
+│  │  QUIET HOURS                                                         │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  Enable quiet hours                              [ON]       │    │    │
+│  │  │  Start: [10:00 PM ▼]      End: [8:00 AM ▼]                  │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  DATA & PRIVACY SCREEN                                                       │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  📤 Data & Privacy                                                   │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │  EXPORT YOUR DATA                                                    │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  Download a copy of your financial data                     │    │    │
+│  │  │                                                              │    │    │
+│  │  │  [📊 Export CSV]  [📄 Export PDF]  [📦 Export JSON]         │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  │                                                                      │    │
+│  │  BACKUP & RESTORE                                                    │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  Last backup: January 28, 2026 at 3:45 PM                   │    │    │
+│  │  │                                                              │    │    │
+│  │  │  [☁️ Create Backup]           [📥 Restore from Backup]      │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  │                                                                      │    │
+│  │  DANGER ZONE                                                         │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  ⚠️ Delete Account                                          │    │    │
+│  │  │  Permanently delete your account and all associated data.   │    │    │
+│  │  │  This action cannot be undone.                              │    │    │
+│  │  │                                                              │    │    │
+│  │  │  [🗑️ Delete My Account]                                     │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ABOUT SCREEN                                                                │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  ℹ️ About BudgetBuddy                                                │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │                    ┌─────────┐                                       │    │
+│  │                    │  💰     │                                       │    │
+│  │                    │  Logo   │                                       │    │
+│  │                    └─────────┘                                       │    │
+│  │                   BudgetBuddy                                        │    │
+│  │                   Version 1.4.0                                      │    │
+│  │                                                                      │    │
+│  │  ┌─────────────────────────────────────────────────────────────┐    │    │
+│  │  │  Terms of Service                                     [>]   │    │    │
+│  │  │  Read our terms and conditions                              │    │    │
+│  │  ├─────────────────────────────────────────────────────────────┤    │    │
+│  │  │  Privacy Policy                                       [>]   │    │    │
+│  │  │  Learn how we protect your data                             │    │    │
+│  │  ├─────────────────────────────────────────────────────────────┤    │    │
+│  │  │  Help & Support                                       [>]   │    │    │
+│  │  │  FAQs, contact support, and tutorials                       │    │    │
+│  │  ├─────────────────────────────────────────────────────────────┤    │    │
+│  │  │  Rate BudgetBuddy                                     [>]   │    │    │
+│  │  │  Love the app? Leave us a review!                           │    │    │
+│  │  └─────────────────────────────────────────────────────────────┘    │    │
+│  │                                                                      │    │
+│  │  Made with ❤️ by the BudgetBuddy Team                               │    │
+│  │  © 2026 BudgetBuddy. All rights reserved.                           │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
 ### Settings Structure
 
 ```
@@ -787,8 +954,19 @@ _"As a user, I want to customize my app experience and manage my account setting
 | Family Settings       | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete     |
 | Export Data           | `ExportModal.tsx`          | `POST /export/csv`, `POST /export/pdf` | ✅ Complete     |
 | Backup/Restore        | `BackupModal.tsx`          | `POST /backup`, `POST /restore`        | ✅ Complete     |
-| Theme Toggle          | `ThemeContext.tsx`         | N/A (local)                            | ⚠️ Partial      |
+| Theme Toggle          | `ThemeContext.tsx`         | N/A (local)                            | ✅ Complete     |
 | Delete Account        | ❌ Missing                 | `DELETE /auth/account`                 | ⚠️ Backend only |
+| About Page            | `AboutPage.tsx`            | N/A (static)                           | ⚠️ Partial      |
+
+### UI/UX Requirements
+
+- **Grouped sections**: Organize settings into logical categories
+- **Toggle switches**: Use toggles for on/off settings
+- **Confirmation dialogs**: Confirm destructive actions (delete account, leave family)
+- **Inline editing**: Allow quick edits without navigating away
+- **Search settings**: Allow users to search for specific settings (future)
+- **Sync indicators**: Show when settings are syncing to server
+- **Accessibility**: Full keyboard navigation, screen reader support
 
 ### Missing Components
 
@@ -798,6 +976,9 @@ _"As a user, I want to customize my app experience and manage my account setting
 | `LanguageSelector.tsx`   | LOW      | Multi-language support            |
 | `PrivacySettings.tsx`    | LOW      | Data sharing preferences          |
 | `HelpCenter.tsx`         | LOW      | FAQ and support links             |
+| `TermsOfService.tsx`     | LOW      | Static terms page                 |
+| `PrivacyPolicy.tsx`      | LOW      | Static privacy policy page        |
+| `RateAppPrompt.tsx`      | LOW      | App store rating prompt           |
 
 ---
 
