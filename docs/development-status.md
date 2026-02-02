@@ -1,10 +1,24 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-01 (User Journeys Reconciliation)
+**Last Updated**: 2026-02-02 (Budget Copy Bug Fix)
 **Current Phase**: Competitive Features Implementation
 **Overall Progress**: 95% Core + 40% Competitive Features
 
-## 🔄 LATEST - Requirements Reconciliation Complete
+## 🐛 LATEST - Budget Copy Bug Fix
+
+### Issue Fixed ✅
+
+**Problem**: When navigating to a new month, the previous month's budget was not being automatically copied.
+
+**Root Cause**: `BudgetPage.tsx` was calling `GET /budget` instead of `GET /budget/current?month=YYYY-MM`. The latter endpoint has the auto-copy logic.
+
+**Fix**: Updated `loadBudget()` to use `/budget/current` endpoint which triggers `createBudgetWithRecurringItems()` on the backend.
+
+**Impact**: Users will now see their previous month's budget categories automatically copied when navigating to a new month.
+
+---
+
+## 🔄 Requirements Reconciliation Complete
 
 ### Hook Enforcement Added ✅
 

@@ -335,19 +335,48 @@ export const BudgetPage: React.FC = () => {
 
       console.log("[loadBudget] Loading budget for month:", currentMonth);
 
-      // Fetch all budgets from backend with cache-busting parameter
-      const response = await fetch(`${API_BASE_URL}/budget?t=${Date.now()}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem(
-            "budgetbuddy_id_token",
-          )}`,
-          "Content-Type": "application/json",
+      // FIXED: Use /budget/current endpoint which auto-creates budget from previous month
+      // This triggers createBudgetWithRecurringItems on the backend
+      const response = await fetch(
+        `${API_BASE_URL}/budget/current?month=${currentMonth}&t=${Date.now()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem(
+              "budgetbuddy_id_token",
+            )}`,
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
+
+      console.log("[loadBudget] Response status:", response.status);
+
+      if (response.status === 404) {
+        // No budget exists and couldn't be created from previous month
+        console.log("[loadBudget] No budget found for", currentMonth);
+        setBudget(null);
+        setLoading(false);
+
+        // Check for AI-generated budget only for current month
+        const isCurrentMonth = currentMonth === getCurrentMonthString();
+        if (isCurrentMonth) {
+          const aiGeneratedBudget = localStorage.getItem("ai-generated-budget");
+          if (aiGeneratedBudget) {
+            console.log(
+              "[loadBudget] Using AI-generated budget for current month",
+            );
+            const parsedBudget = JSON.parse(aiGeneratedBudget);
+            const budget = createBudgetFromAIData(parsedBudget, currentMonth);
+            setBudget(budget);
+            await saveBudgetToBackend(budget);
+          }
+        }
+        return;
+      }
 
       if (!response.ok) {
         console.error(
-          "[loadBudget] Failed to fetch budgets. Status:",
+          "[loadBudget] Failed to fetch budget. Status:",
           response.status,
         );
         setLoading(false);
@@ -357,85 +386,21 @@ export const BudgetPage: React.FC = () => {
       const data = await response.json();
       console.log("[loadBudget] Backend response:", data);
 
-      // CRITICAL FIX: Handle both response formats (data.budgets and data.data.budgets)
-      const budgets = data.data?.budgets || data.budgets || [];
-      const budgetCount = budgets.length;
+      // Extract budget from response (backend returns {success, data, message})
+      const budgetData = data.data || data;
 
-      console.log("[loadBudget] Found", budgetCount, "budget(s) in backend");
-
-      // CRITICAL DEBUG: Show exactly what months we found
-      if (budgetCount > 0) {
-        console.log(
-          "[loadBudget] CRITICAL DEBUG - Budget months found:",
-          budgets.map((b: any) => b.month),
-        );
-        console.log(
-          "[loadBudget] CRITICAL DEBUG - Looking for month:",
-          currentMonth,
-        );
-        console.log(
-          "[loadBudget] CRITICAL DEBUG - First budget details:",
-          budgets[0],
-        );
-      }
-
-      if (budgetCount > 0) {
-        // Find budget for the EXACT month being viewed
-        const monthBudget = budgets.find((b: any) => b.month === currentMonth);
-
-        if (monthBudget) {
-          console.log("[loadBudget] Found budget for", currentMonth);
-          // Transform backend format to frontend format
-          const transformedBudget = transformBackendBudget(monthBudget);
-          console.log("[loadBudget] Transformed budget:", transformedBudget);
-          setBudget(transformedBudget);
-          setLoading(false);
-          return;
-        }
-
-        // No budget for this specific month, but other budgets exist
-        console.log(
-          "[loadBudget] No budget found for",
-          currentMonth,
-          "(other months have budgets)",
-        );
-        setBudget(null);
+      if (budgetData) {
+        console.log("[loadBudget] Found budget for", currentMonth);
+        // Transform backend format to frontend format
+        const transformedBudget = transformBackendBudget(budgetData);
+        console.log("[loadBudget] Transformed budget:", transformedBudget);
+        setBudget(transformedBudget);
         setLoading(false);
         return;
       }
 
-      // No budgets exist at all in backend
-      console.log("[loadBudget] No budgets exist in backend");
-
-      // Only check for AI budget if this is the current month
-      const isCurrentMonth = currentMonth === getCurrentMonthString();
-      console.log("[loadBudget] Is current month?", isCurrentMonth);
-
-      if (isCurrentMonth) {
-        const aiGeneratedBudget = localStorage.getItem("ai-generated-budget");
-
-        if (aiGeneratedBudget) {
-          console.log(
-            "[loadBudget] Using AI-generated budget for current month",
-          );
-          const parsedBudget = JSON.parse(aiGeneratedBudget);
-          const budget = createBudgetFromAIData(parsedBudget, currentMonth);
-
-          setBudget(budget);
-          await saveBudgetToBackend(budget);
-          setLoading(false);
-          return;
-        } else {
-          // No AI budget - show empty state instead of redirecting
-          console.log("[loadBudget] No AI budget found, showing empty state");
-          setBudget(null);
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Not current month and no budgets exist - show empty state
-      console.log("[loadBudget] Not current month, showing empty state");
+      // No budget returned
+      console.log("[loadBudget] No budget data in response for", currentMonth);
       setBudget(null);
       setLoading(false);
     } catch (error) {

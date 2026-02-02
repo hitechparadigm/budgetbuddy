@@ -1,5 +1,51 @@
 # Development Log
 
+## 2026-02-02 - Budget Copy Bug Fix (Session 67)
+
+### Session Summary
+
+**Duration**: 20 minutes
+**Focus**: Fix bug where budget was not copying to new month
+**Outcome**: Fixed - budgets now auto-copy when navigating to new month
+
+### Problem
+
+User reported that when navigating to February 2026, their January 2026 budget was not being copied over. According to requirements, the previous month's budget should automatically copy to the new month with spent amounts reset to 0.
+
+### Root Cause Analysis
+
+The `BudgetPage.tsx` was calling `GET /budget` (returns all budgets) and manually searching for the current month. This bypassed the `GET /budget/current?month=YYYY-MM` endpoint which contains the auto-copy logic in `createBudgetWithRecurringItems()`.
+
+The backend had the correct logic:
+
+- `GET /budget/current?month=YYYY-MM` calls `createBudgetWithRecurringItems()`
+- This function copies all categories from previous month
+- Resets `spentAmount` to 0, keeps `plannedAmount`
+
+But the frontend never called this endpoint!
+
+### Fix Applied
+
+Updated `loadBudget()` in `BudgetPage.tsx`:
+
+- Changed from: `GET /budget` (all budgets)
+- Changed to: `GET /budget/current?month=${currentMonth}` (specific month with auto-copy)
+
+### Files Changed
+
+- `packages/web-app/src/pages/BudgetPage.tsx` - Fixed loadBudget function
+
+### Testing
+
+After deployment:
+
+1. Log in to BudgetBuddy
+2. Navigate to a new month (e.g., March 2026)
+3. Budget should auto-populate from previous month
+4. Spent amounts should be 0, planned amounts preserved
+
+---
+
 ## 2026-02-01 - User Journeys Reconciliation (Session 66)
 
 ### Session Summary
