@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.9.57] - 2026-02-02
+
+### ✨ Feature - Transaction Templates
+
+**Component Created**:
+
+- `packages/web-app/src/components/TransactionTemplateModal.tsx` - Save and use transaction templates
+
+**Features**:
+
+- Save transactions as reusable templates
+- Quick template selection from modal
+- Search and filter templates by type
+- Usage tracking (most used templates shown first)
+- Recent categories tracking
+- Max 20 templates stored in localStorage
+- Template preview before saving
+- Option to save with or without amount
+
+**Integration**:
+
+- Added template button to transaction modal header
+- Added "Save as Template" button when form is filled
+- Templates persist across sessions
+
+**Tasks Completed**:
+
+- Task 3.1: Transaction templates feature ✅
+
 ## [1.9.56] - 2026-02-02
 
 ### ✨ Feature - Transaction Filters Integration
