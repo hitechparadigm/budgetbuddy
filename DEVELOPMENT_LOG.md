@@ -1,5 +1,47 @@
 # Development Log
 
+## 2026-02-02 - Tutorial Integration (Session 100)
+
+### Session Summary
+
+**Duration**: 20 minutes
+**Focus**: Integrate TutorialOverlay into BudgetPage for first-time users
+**Outcome**: Interactive tutorial now guides new users through key features
+
+### Work Completed
+
+1. **Tutorial Integration**:
+   - Imported `TutorialOverlay` and `DEFAULT_TUTORIAL_STEPS` components
+   - Added `showTutorial` state for controlling tutorial visibility
+   - Added tutorial initialization logic for first-time users
+   - Added `handleTutorialComplete` and `handleTutorialSkip` callbacks
+   - Added `replayTutorial` function for settings integration
+
+2. **Data-Tutorial Attributes**:
+   - Added `data-tutorial="add-transaction"` to Add Item button
+   - Added `data-tutorial="budget-categories"` to categories container
+   - Added `data-tutorial="quick-actions"` to QuickActionsFAB wrapper
+   - Added `data-tutorial="settings"` to Settings button
+
+3. **User Flow**:
+   - New user visits Budget page for first time
+   - Tutorial overlay appears after 1 second delay
+   - User follows 4-step guide through key features
+   - Tutorial completion saved to localStorage, won't show again
+
+4. **Documentation Updates**:
+   - Updated USER_JOURNEYS.md - R27, R33, R34 marked complete
+   - Updated CHANGELOG.md with v1.9.79 entry
+
+### Files Modified
+
+- `packages/web-app/src/pages/BudgetPage.tsx`
+- `docs/USER_JOURNEYS.md`
+- `CHANGELOG.md`
+- `DEVELOPMENT_LOG.md`
+
+---
+
 ## 2026-02-02 - CalendarView Integration (Session 99)
 
 ### Session Summary

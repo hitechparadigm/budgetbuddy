@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.9.79] - 2026-02-02
+
+### ✨ Tutorial Integration
+
+**Tutorial Overlay Integrated into BudgetPage**:
+
+- Integrated `TutorialOverlay` component for first-time users
+- Added `data-tutorial` attributes to key UI elements
+- Tutorial automatically shows for new users on first visit
+
+**Features**:
+
+- 4-step interactive tutorial with spotlight highlighting
+- Guides users through: Add Transaction, Budget Categories, Quick Actions, Settings
+- Progress indicator showing current step
+- Skip option for experienced users
+- Tutorial completion saved to localStorage
+
+**User Flow**:
+
+1. New user visits Budget page for first time
+2. Tutorial overlay appears after 1 second
+3. User follows 4-step guide through key features
+4. Tutorial marked complete, won't show again
+
+**Requirements Completed**:
+
+- R27 Onboarding Tutorial - ✅ Complete
+- R33 Quick Actions - ✅ Complete
+- R34 Enhanced Security - ✅ Complete
+
 ## [1.9.78] - 2026-02-02
 
 ### ✨ CalendarView Integration
