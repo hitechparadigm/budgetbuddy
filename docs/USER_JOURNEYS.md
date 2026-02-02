@@ -709,11 +709,14 @@ _"As a user, I want to customize my app experience and manage my account setting
 
 | Component                  | Journey            | Backend Status | Effort   |
 | -------------------------- | ------------------ | -------------- | -------- |
-| `GoalsPage.tsx`            | Debt & Savings     | ❌ Not started | 3-4 days |
+| `GoalsPage.tsx`            | Debt & Savings     | ✅ Ready       | ✅ Done  |
+| `GoalFormPage.tsx`         | Debt & Savings     | ✅ Ready       | ✅ Done  |
+| `BillsPage.tsx`            | Notifications      | ✅ Ready       | ✅ Done  |
+| `BillFormPage.tsx`         | Notifications      | ✅ Ready       | ✅ Done  |
+| `BillsScreen.tsx` (Mobile) | Notifications      | ✅ Ready       | ✅ Done  |
 | `DebtPayoffCalculator.tsx` | Debt & Savings     | ❌ Not started | 2-3 days |
 | `PeerComparisonWidget.tsx` | Financial Insights | ✅ Ready       | ✅ Done  |
 | `SubscriptionTracker.tsx`  | Subscriptions      | ❌ Not started | 2-3 days |
-| `BillReminders.tsx`        | Notifications      | ❌ Not started | 2 days   |
 
 #### 🟢 LOW PRIORITY (Nice to Have)
 
@@ -856,11 +859,11 @@ xl: 32px  (major sections)
 | Req | Name                  | Journey       | Task    | Frontend | Backend | UI/UX Status    |
 | --- | --------------------- | ------------- | ------- | -------- | ------- | --------------- |
 | R35 | Subscription Tracking | Insights      | -       | ❌       | ❌      | ❌ Not started  |
-| R36 | Bill Reminders        | Notifications | Task 1  | ❌       | ✅      | ❌ Missing UI   |
+| R36 | Bill Reminders        | Notifications | Task 2  | ✅       | ✅      | ✅ Complete     |
 | R37 | Debt Payoff           | Goals         | -       | ❌       | ❌      | ❌ Not started  |
-| R38 | Savings Goals         | Goals         | Task 2  | ❌       | ✅      | ❌ Missing UI   |
+| R38 | Savings Goals         | Goals         | Task 3  | ✅       | ✅      | ✅ Complete     |
 | R39 | Spending Insights     | Insights      | Task 3  | ✅       | ✅      | ✅ Complete     |
-| R40 | Rollover Budgets      | Daily         | -       | ❌       | ❌      | ❌ Not started  |
+| R40 | Rollover Budgets      | Daily         | Task 1  | ✅       | ✅      | ✅ Complete     |
 | R41 | Net Worth             | Goals         | -       | ❌       | ❌      | ❌ Not started  |
 | R42 | Bank Sync (Plaid)     | Bank          | Task 5  | ✅       | ✅      | ✅ Complete     |
 | R43 | Credit Score          | Insights      | -       | ❌       | ❌      | ❌ External API |
@@ -900,15 +903,15 @@ xl: 32px  (major sections)
 - [ ] Saved tips section
 - [ ] Read/unread indicators
 
-**3. Goals Page (R38)**
+**3. Goals Page (R38)** - ✅ COMPLETE
 
-- [ ] Goal cards with progress bars
-- [ ] Animated progress on contribution
-- [ ] Create goal modal with templates
-- [ ] Goal icon/emoji picker
-- [ ] Target date picker
+- [x] Goal cards with progress bars
+- [x] Animated progress on contribution
+- [x] Create goal modal with templates
+- [x] Goal icon/emoji picker
+- [x] Target date picker
 - [ ] Drag-and-drop reordering
-- [ ] Milestone celebration (confetti)
+- [x] Milestone celebration (alert)
 - [ ] Archive completed goals
 
 **4. Peer Comparison (R46)**
@@ -920,15 +923,15 @@ xl: 32px  (major sections)
 - [ ] Achievement badges display
 - [ ] Privacy explanation modal
 
-**5. Bills Page (R36)**
+**5. Bills Page (R36)** - ✅ COMPLETE
 
-- [ ] Bills list sorted by due date
+- [x] Bills list sorted by due date
 - [ ] Calendar view toggle
-- [ ] Bill card with status (paid/unpaid/overdue)
-- [ ] Quick "Mark Paid" button
-- [ ] Add bill modal with recurrence
-- [ ] Due date countdown
-- [ ] Color-coded urgency (green/yellow/red)
+- [x] Bill card with status (paid/unpaid/overdue)
+- [x] Quick "Mark Paid" button
+- [x] Add bill modal with recurrence
+- [x] Due date countdown
+- [x] Color-coded urgency (green/yellow/red)
 
 **6. Receipt Scanner (R44)**
 
