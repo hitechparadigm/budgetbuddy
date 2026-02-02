@@ -1,6 +1,6 @@
 # BudgetBuddy User Journeys & Component Mapping
 
-**Last Updated**: 2026-02-01
+**Last Updated**: 2026-02-02
 **Purpose**: Comprehensive mapping of user journeys to frontend/backend components
 **Status**: Living Document - Update as features are implemented
 
@@ -889,19 +889,25 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 | `BankAccounts.tsx`       | Bank Connection  | ✅ Ready       | ✅ Done |
 | `NotificationCenter.tsx` | Notifications    | ✅ Ready       | ✅ Done |
 | `TransactionSearch`      | Daily Management | ⚠️ Partial     | ✅ Done |
+| `TransactionFilters.tsx` | Daily Management | ✅ Ready       | ✅ Done |
 
 #### 🟡 MEDIUM PRIORITY (New Features)
 
-| Component                  | Journey            | Backend Status | Effort   |
-| -------------------------- | ------------------ | -------------- | -------- |
-| `GoalsPage.tsx`            | Debt & Savings     | ✅ Ready       | ✅ Done  |
-| `GoalFormPage.tsx`         | Debt & Savings     | ✅ Ready       | ✅ Done  |
-| `BillsPage.tsx`            | Notifications      | ✅ Ready       | ✅ Done  |
-| `BillFormPage.tsx`         | Notifications      | ✅ Ready       | ✅ Done  |
-| `BillsScreen.tsx` (Mobile) | Notifications      | ✅ Ready       | ✅ Done  |
-| `DebtPayoffCalculator.tsx` | Debt & Savings     | ❌ Not started | 2-3 days |
-| `PeerComparisonWidget.tsx` | Financial Insights | ✅ Ready       | ✅ Done  |
-| `SubscriptionTracker.tsx`  | Subscriptions      | ❌ Not started | 2-3 days |
+| Component                      | Journey            | Backend Status | Effort   |
+| ------------------------------ | ------------------ | -------------- | -------- |
+| `GoalsPage.tsx`                | Debt & Savings     | ✅ Ready       | ✅ Done  |
+| `GoalFormPage.tsx`             | Debt & Savings     | ✅ Ready       | ✅ Done  |
+| `BillsPage.tsx`                | Notifications      | ✅ Ready       | ✅ Done  |
+| `BillFormPage.tsx`             | Notifications      | ✅ Ready       | ✅ Done  |
+| `BillsScreen.tsx` (Mobile)     | Notifications      | ✅ Ready       | ✅ Done  |
+| `DebtPayoffCalculator.tsx`     | Debt & Savings     | ❌ Not started | 2-3 days |
+| `PeerComparisonWidget.tsx`     | Financial Insights | ✅ Ready       | ✅ Done  |
+| `SubscriptionTracker.tsx`      | Subscriptions      | ❌ Not started | 2-3 days |
+| `TransactionTemplateModal.tsx` | Daily Management   | N/A (local)    | ✅ Done  |
+| `TwoFactorSetup.tsx`           | Settings           | ⚠️ Partial     | ✅ Done  |
+| `TwoFactorVerify.tsx`          | Settings           | ⚠️ Partial     | ✅ Done  |
+| `QuickActionsFAB.tsx`          | Daily Management   | N/A            | ✅ Done  |
+| `Confetti.tsx`                 | Goals              | N/A            | ✅ Done  |
 
 #### 🟢 LOW PRIORITY (Nice to Have)
 
@@ -922,6 +928,18 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 | `GET /learn/courses`      | Educational content      | LOW      |
 | `GET /learn/progress`     | Learning progress        | LOW      |
 | `GET /admin/dashboard`    | Admin metrics            | LOW      |
+
+### Recently Completed Components (2026-02-02)
+
+| Component                      | Description                                    | Status  |
+| ------------------------------ | ---------------------------------------------- | ------- |
+| `TransactionFilters.tsx`       | Search, category, date, amount filters         | ✅ Done |
+| `TransactionTemplateModal.tsx` | Save/use transaction templates                 | ✅ Done |
+| `TwoFactorSetup.tsx`           | 4-step 2FA setup wizard                        | ✅ Done |
+| `TwoFactorVerify.tsx`          | 2FA verification during login                  | ✅ Done |
+| `QuickActionsFAB.tsx`          | Floating action button with keyboard shortcuts | ✅ Done |
+| `Confetti.tsx`                 | Celebration animation for milestones           | ✅ Done |
+| Goal Archive Feature           | Archive/restore completed goals                | ✅ Done |
 
 ---
 
