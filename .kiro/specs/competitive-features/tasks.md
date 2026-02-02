@@ -167,7 +167,7 @@
   - For subscriptions not auto-detected
   - **Validates: Requirement 35.5**
 
-- [ ] 4.6 Frontend Mobile: Create SubscriptionsScreen
+- [x] 4.6 Frontend Mobile: Create SubscriptionsScreen
   - Mirror web implementation
   - **Validates: Requirement 35**
 
