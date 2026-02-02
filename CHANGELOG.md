@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.9.70] - 2026-02-02
+
+### ✨ Feature - Mobile Tips Feed with Swipe Gestures
+
+**New Components**:
+
+- `packages/mobile/src/components/SwipeableTipCard.tsx` - Swipeable tip card
+- `packages/mobile/src/screens/TipsScreen.tsx` - Tips feed screen
+
+**SwipeableTipCard Features**:
+
+- Swipe left to save (bookmark)
+- Swipe right to dismiss
+- Animated background color interpolation
+- Action icons during swipe
+- Haptic feedback on threshold
+- Smooth card exit animation
+
+**TipsScreen Features**:
+
+- Tips list with swipeable cards
+- Pull-to-refresh with haptic
+- Read/unread tracking (AsyncStorage)
+- Unread count badge in header
+- Saved tips view toggle
+- Category icons and difficulty badges
+
+**Completes**: Mobile UI Polish Task 6 (Tips Feed Gestures)
+
 ## [1.9.69] - 2026-02-02
 
 ### ✨ Feature - Mobile Two-Factor Authentication UI

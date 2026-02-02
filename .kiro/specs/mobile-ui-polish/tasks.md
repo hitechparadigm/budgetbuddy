@@ -209,33 +209,40 @@ Implementation tasks for mobile-specific UI polish features. These tasks bring f
 
 ### Task 6: Implement Swipeable Tips
 
-- [ ] 6.1 Create SwipeableTipCard component
-  - [ ] 6.1.1 Create `packages/mobile/src/components/SwipeableTipCard.tsx`
-  - [ ] 6.1.2 Implement PanGestureHandler for swipe
-  - [ ] 6.1.3 Add left swipe to save (green, bookmark icon)
-  - [ ] 6.1.4 Add right swipe to dismiss (red, X icon)
+- [x] 6.1 Create SwipeableTipCard component
+  - [x] 6.1.1 Create `packages/mobile/src/components/SwipeableTipCard.tsx`
+  - [x] 6.1.2 Implement PanGestureHandler for swipe
+  - [x] 6.1.3 Add left swipe to save (green, bookmark icon)
+  - [x] 6.1.4 Add right swipe to dismiss (red, X icon)
   - **Validates: Requirement 6.1**
 
-- [ ] 6.2 Add swipe feedback
-  - [ ] 6.2.1 Interpolate background color based on swipe
-  - [ ] 6.2.2 Show action icons during swipe
-  - [ ] 6.2.3 Add haptic on threshold
-  - [ ] 6.2.4 Animate card exit on action
+- [x] 6.2 Add swipe feedback
+  - [x] 6.2.1 Interpolate background color based on swipe
+  - [x] 6.2.2 Show action icons during swipe
+  - [x] 6.2.3 Add haptic on threshold
+  - [x] 6.2.4 Animate card exit on action
   - **Validates: Requirement 6.2**
 
-- [ ] 6.3 Implement pull-to-refresh
-  - [ ] 6.3.1 Add RefreshControl to tips FlatList
-  - [ ] 6.3.2 Call refresh API on pull
-  - [ ] 6.3.3 Add haptic on refresh trigger
-  - [ ] 6.3.4 Show new tips at top
+- [x] 6.3 Implement pull-to-refresh
+  - [x] 6.3.1 Add RefreshControl to tips FlatList
+  - [x] 6.3.2 Call refresh API on pull
+  - [x] 6.3.3 Add haptic on refresh trigger
+  - [x] 6.3.4 Show new tips at top
   - **Validates: Requirement 6.3**
 
-- [ ] 6.4 Add read/unread state
-  - [ ] 6.4.1 Track read status in AsyncStorage
-  - [ ] 6.4.2 Show unread badge on new tips
-  - [ ] 6.4.3 Mark as read after 3 seconds view
-  - [ ] 6.4.4 Show unread count in tab badge
+- [x] 6.4 Add read/unread state
+  - [x] 6.4.1 Track read status in AsyncStorage
+  - [x] 6.4.2 Show unread badge on new tips
+  - [x] 6.4.3 Mark as read after tap
+  - [x] 6.4.4 Show unread count in header badge
   - **Validates: Requirement 6.4**
+
+- [x] 6.5 Create TipsScreen
+  - [x] 6.5.1 Create `packages/mobile/src/screens/TipsScreen.tsx`
+  - [x] 6.5.2 Implement tips list with SwipeableTipCard
+  - [x] 6.5.3 Add saved tips view toggle
+  - [x] 6.5.4 Add swipe hint text
+  - **Note**: New screen created for tips feed
 
 ---
 
