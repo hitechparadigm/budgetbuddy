@@ -1,217 +1,276 @@
 /**
  * Plaid API Service
- * Handles bank account linking via Plaid
+ *
+ * Handles communication with the Plaid backend for bank account linking,
+ * transaction sync, and pending transaction management.
  */
 
-const FEATURES_API_BASE = 'https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1';
+const API_BASE_URL =
+  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
 
-// Get token from localStorage
-function getToken(): string | null {
-  // Use ID token for API Gateway Cognito authorizer
-  return localStorage.getItem('budgetbuddy_id_token');
-}
-
-// API Error class
-export class PlaidApiError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number,
-    public details?: any
-  ) {
-    super(message);
-    this.name = 'PlaidApiError';
-  }
-}
-
-// Core API function for Features API
-async function plaidApiCall<T = any>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const url = `${FEATURES_API_BASE}${endpoint}`;
-
-  const headers = new Headers(options.headers);
-  headers.set('Content-Type', 'application/json');
-
-  const token = getToken();
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    let errorMessage = `HTTP ${response.status}`;
-    try {
-      const errorData = await response.json();
-      errorMessage = errorData.message || errorMessage;
-    } catch {
-      // Use default error message
-    }
-    throw new PlaidApiError(errorMessage, response.status);
-  }
-
-  return response.json();
-}
-
-// Types
-export interface PlaidAccount {
+export interface LinkedAccount {
   accountId: string;
   institutionName: string;
   accountName: string;
-  officialName?: string;
   accountType: string;
-  accountSubtype?: string;
-  accountMask: string;
+  accountSubtype: string;
+  mask: string;
   currentBalance: number;
-  availableBalance?: number;
-  isoCurrencyCode: string;
-  lastSyncAt: string | null;
-  status: string;
-  createdAt: string;
+  availableBalance: number | null;
+  currency: string;
+  lastSynced: string | null;
+  syncStatus: "active" | "error" | "pending";
+  itemId: string;
 }
 
 export interface PendingTransaction {
   pendingId: string;
-  plaidAccountId: string;
+  accountId: string;
+  institutionName: string;
+  plaidTransactionId: string;
   amount: number;
+  merchantName: string | null;
   description: string;
-  merchant: string;
   date: string;
-  suggestedCategory: string;
-  categoryDetailed?: string;
-  isPending: boolean;
-  paymentChannel?: string;
-  location?: {
-    city?: string;
-    region?: string;
-    country?: string;
-  };
-  status: string;
+  category: string[];
+  suggestedCategory: string | null;
+  status: "pending" | "approved" | "rejected";
   createdAt: string;
 }
 
 export interface SyncStatus {
-  accountId: string;
-  institutionName: string;
-  accountName: string;
-  lastSyncAt: string | null;
-  syncsToday: number;
-  syncsRemaining: number;
-  canSync: boolean;
-  nextSyncAvailable: string;
+  lastSync: string | null;
+  accountsCount: number;
+  pendingCount: number;
+  syncInProgress: boolean;
 }
 
-// Plaid API
-export const plaidApi = {
-  // Health check
-  async healthCheck() {
-    const response = await plaidApiCall('/plaid/health');
-    return response.data;
-  },
+/**
+ * Get auth headers
+ */
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem("budgetbuddy_id_token");
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
+}
 
-  // Create link token for Plaid Link
-  async createLinkToken(): Promise<{ linkToken: string; expiration: string; environment: string }> {
-    const response = await plaidApiCall('/plaid/link-token', {
-      method: 'POST',
-    });
-    return response.data;
-  },
+/**
+ * Create a Plaid Link token for account linking
+ */
+export async function createLinkToken(): Promise<{
+  linkToken: string;
+  expiration: string;
+  environment: string;
+}> {
+  const response = await fetch(`${API_BASE_URL}/plaid/link-token`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  });
 
-  // Exchange public token after Plaid Link success
-  async exchangeToken(publicToken: string, institutionName?: string): Promise<{
-    itemId: string;
-    accounts: PlaidAccount[];
-    institutionName: string;
-  }> {
-    const response = await plaidApiCall('/plaid/exchange-token', {
-      method: 'POST',
-      body: JSON.stringify({ publicToken, institutionName }),
-    });
-    return response.data;
-  },
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to create link token");
+  }
 
-  // Get all linked accounts
-  async getAccounts(): Promise<{ accounts: PlaidAccount[]; count: number }> {
-    const response = await plaidApiCall('/plaid/accounts');
-    return response.data;
-  },
+  const data = await response.json();
+  return data.data;
+}
 
-  // Unlink an account
-  async unlinkAccount(accountId: string): Promise<void> {
-    await plaidApiCall(`/plaid/accounts/${accountId}`, {
-      method: 'DELETE',
-    });
-  },
+/**
+ * Exchange public token for access token after successful Plaid Link
+ */
+export async function exchangePublicToken(
+  publicToken: string
+): Promise<{ accounts: LinkedAccount[] }> {
+  const response = await fetch(`${API_BASE_URL}/plaid/exchange-token`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ publicToken }),
+  });
 
-  // Sync all accounts
-  async syncAll(): Promise<{
-    results: Array<{
-      accountId: string;
-      status: string;
-      transactionsAdded?: number;
-      reason?: string;
-    }>;
-    syncedCount: number;
-    skippedCount: number;
-  }> {
-    const response = await plaidApiCall('/plaid/sync', {
-      method: 'POST',
-    });
-    return response.data;
-  },
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to exchange token");
+  }
 
-  // Get pending transactions
-  async getPendingTransactions(): Promise<{ transactions: PendingTransaction[]; count: number }> {
-    const response = await plaidApiCall('/plaid/pending');
-    return response.data;
-  },
+  const data = await response.json();
+  return data.data;
+}
 
-  // Approve pending transactions
-  async approveTransactions(transactionIds: string[], categoryMappings?: Record<string, { categoryId: string; categoryName: string }>): Promise<{
-    approved: Array<{ pendingId: string; transactionId: string }>;
-    failed: Array<{ id: string; reason: string }>;
-  }> {
-    const response = await plaidApiCall('/plaid/pending/approve', {
-      method: 'POST',
-      body: JSON.stringify({ transactionIds, categoryMappings }),
-    });
-    return response.data;
-  },
+/**
+ * Get all linked bank accounts
+ */
+export async function getLinkedAccounts(): Promise<LinkedAccount[]> {
+  const response = await fetch(`${API_BASE_URL}/plaid/accounts`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
 
-  // Reject pending transactions
-  async rejectTransactions(transactionIds: string[], reason?: string): Promise<{
-    rejected: Array<{ pendingId: string }>;
-    failed: Array<{ id: string; reason: string }>;
-  }> {
-    const response = await plaidApiCall('/plaid/pending/reject', {
-      method: 'POST',
-      body: JSON.stringify({ transactionIds, reason }),
-    });
-    return response.data;
-  },
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to get linked accounts");
+  }
 
-  // Get sync status
-  async getSyncStatus(): Promise<{ accounts: SyncStatus[]; dailyLimit: number }> {
-    const response = await plaidApiCall('/plaid/sync-status');
-    return response.data;
-  },
+  const data = await response.json();
+  return data.data?.accounts || [];
+}
 
-  // Create sandbox test account (sandbox only)
-  async createSandboxAccount(institutionId?: string): Promise<{
-    itemId: string;
-    accounts: PlaidAccount[];
-    institutionName: string;
-  }> {
-    const response = await plaidApiCall('/plaid/sandbox/create-item', {
-      method: 'POST',
-      body: JSON.stringify({ institutionId }),
-    });
-    return response.data;
-  },
-};
+/**
+ * Unlink a bank account
+ */
+export async function unlinkAccount(accountId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/plaid/accounts/${accountId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
 
-export default plaidApi;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to unlink account");
+  }
+}
+
+/**
+ * Sync transactions for all linked accounts
+ */
+export async function syncAllTransactions(): Promise<{
+  synced: number;
+  pending: number;
+}> {
+  const response = await fetch(`${API_BASE_URL}/plaid/sync`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to sync transactions");
+  }
+
+  const data = await response.json();
+  return data.data;
+}
+
+/**
+ * Sync transactions for a specific account
+ */
+export async function syncAccountTransactions(
+  accountId: string
+): Promise<{ synced: number; pending: number }> {
+  const response = await fetch(
+    `${API_BASE_URL}/plaid/accounts/${accountId}/sync`,
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to sync account");
+  }
+
+  const data = await response.json();
+  return data.data;
+}
+
+/**
+ * Get pending transactions awaiting approval
+ */
+export async function getPendingTransactions(): Promise<PendingTransaction[]> {
+  const response = await fetch(`${API_BASE_URL}/plaid/pending`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to get pending transactions");
+  }
+
+  const data = await response.json();
+  return data.data?.transactions || [];
+}
+
+/**
+ * Approve pending transactions
+ */
+export async function approvePendingTransactions(
+  pendingIds: string[],
+  categoryOverrides?: Record<string, string>
+): Promise<{ approved: number; created: number }> {
+  const response = await fetch(`${API_BASE_URL}/plaid/pending/approve`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ pendingIds, categoryOverrides }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to approve transactions");
+  }
+
+  const data = await response.json();
+  return data.data;
+}
+
+/**
+ * Reject pending transactions
+ */
+export async function rejectPendingTransactions(
+  pendingIds: string[]
+): Promise<{ rejected: number }> {
+  const response = await fetch(`${API_BASE_URL}/plaid/pending/reject`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ pendingIds }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to reject transactions");
+  }
+
+  const data = await response.json();
+  return data.data;
+}
+
+/**
+ * Get sync status
+ */
+export async function getSyncStatus(): Promise<SyncStatus> {
+  const response = await fetch(`${API_BASE_URL}/plaid/sync-status`, {
+    method: "GET",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to get sync status");
+  }
+
+  const data = await response.json();
+  return data.data;
+}
+
+/**
+ * Create sandbox test item (development only)
+ */
+export async function createSandboxItem(): Promise<{
+  accounts: LinkedAccount[];
+}> {
+  const response = await fetch(`${API_BASE_URL}/plaid/sandbox/create-item`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to create sandbox item");
+  }
+
+  const data = await response.json();
+  return data.data;
+}
