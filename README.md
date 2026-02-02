@@ -17,6 +17,18 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
+### Recent Achievements (2026-02-02)
+
+- ✨ **UI POLISH & ENHANCEMENTS COMPLETE (WEB)** - All web UI polish tasks done
+  - **2FA Integration**: Settings page toggle, login flow MFA challenge handling
+  - **Theme System**: Light/dark/system modes with Tailwind dark mode support
+  - **Accessibility**: ARIA live regions, focus trapping, skip links, reduced motion
+  - **Onboarding Polish**: Tutorial overlay, welcome modal, replay tutorial option
+  - **Tips Feed**: Read/unread indicators with localStorage tracking
+  - **New Components**: ThemeToggle, FocusTrap, SkipLink, AriaLiveRegion, TutorialOverlay, WelcomeModal
+  - **Files**: Multiple components in `packages/web-app/src/components/`
+  - **Impact**: Enhanced UX with dark mode, better accessibility, polished onboarding
+
 ### Recent Achievements (2026-02-01)
 
 - 🐛 **THREE CRITICAL BUG FIXES** - User-reported issues resolved
