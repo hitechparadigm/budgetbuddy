@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.9.62] - 2026-02-02
+
+### ✨ Feature - Educational Content Page (LearnPage)
+
+**New Components**:
+
+- `packages/web-app/src/pages/LearnPage.tsx` - Educational content hub
+- `packages/web-app/src/services/learnApi.ts` - Learn API service
+
+**Features**:
+
+- Course listing with progress tracking
+- Lesson viewer with completion marking
+- Quiz system with pass/fail results
+- Badge display and earning notifications
+- Learning streak tracking
+- Progress statistics dashboard
+- Dark mode support
+
+**Courses Available**:
+
+- Budgeting 101 (beginner)
+- Debt Freedom (intermediate)
+- Emergency Fund Basics (beginner)
+
+**Gamification**:
+
+- 6 badges: First Steps, Course Graduate, Quiz Master, On a Roll, Week Warrior, Financial Scholar
+- Learning streaks with day counter
+- Progress percentages per course
+
+**Route**: `/learn` added to App.tsx
+
 ## [1.9.61] - 2026-02-02
 
 ### ✨ Feature - UI Polish & Enhancements Complete (Web)

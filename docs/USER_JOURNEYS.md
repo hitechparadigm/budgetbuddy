@@ -893,21 +893,22 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 #### 🟡 MEDIUM PRIORITY (New Features)
 
-| Component                      | Journey            | Backend Status | Effort   |
-| ------------------------------ | ------------------ | -------------- | -------- |
-| `GoalsPage.tsx`                | Debt & Savings     | ✅ Ready       | ✅ Done  |
-| `GoalFormPage.tsx`             | Debt & Savings     | ✅ Ready       | ✅ Done  |
-| `BillsPage.tsx`                | Notifications      | ✅ Ready       | ✅ Done  |
-| `BillFormPage.tsx`             | Notifications      | ✅ Ready       | ✅ Done  |
-| `BillsScreen.tsx` (Mobile)     | Notifications      | ✅ Ready       | ✅ Done  |
-| `DebtPayoffCalculator.tsx`     | Debt & Savings     | ❌ Not started | 2-3 days |
-| `PeerComparisonWidget.tsx`     | Financial Insights | ✅ Ready       | ✅ Done  |
-| `SubscriptionTracker.tsx`      | Subscriptions      | ❌ Not started | 2-3 days |
-| `TransactionTemplateModal.tsx` | Daily Management   | N/A (local)    | ✅ Done  |
-| `TwoFactorSetup.tsx`           | Settings           | ⚠️ Partial     | ✅ Done  |
-| `TwoFactorVerify.tsx`          | Settings           | ⚠️ Partial     | ✅ Done  |
-| `QuickActionsFAB.tsx`          | Daily Management   | N/A            | ✅ Done  |
-| `Confetti.tsx`                 | Goals              | N/A            | ✅ Done  |
+| Component                      | Journey            | Backend Status | Effort  |
+| ------------------------------ | ------------------ | -------------- | ------- |
+| `GoalsPage.tsx`                | Debt & Savings     | ✅ Ready       | ✅ Done |
+| `GoalFormPage.tsx`             | Debt & Savings     | ✅ Ready       | ✅ Done |
+| `BillsPage.tsx`                | Notifications      | ✅ Ready       | ✅ Done |
+| `BillFormPage.tsx`             | Notifications      | ✅ Ready       | ✅ Done |
+| `BillsScreen.tsx` (Mobile)     | Notifications      | ✅ Ready       | ✅ Done |
+| `DebtPayoffPage.tsx`           | Debt & Savings     | ✅ Ready       | ✅ Done |
+| `PeerComparisonWidget.tsx`     | Financial Insights | ✅ Ready       | ✅ Done |
+| `SubscriptionsPage.tsx`        | Subscriptions      | ✅ Ready       | ✅ Done |
+| `TransactionTemplateModal.tsx` | Daily Management   | N/A (local)    | ✅ Done |
+| `TwoFactorSetup.tsx`           | Settings           | ⚠️ Partial     | ✅ Done |
+| `TwoFactorVerify.tsx`          | Settings           | ⚠️ Partial     | ✅ Done |
+| `QuickActionsFAB.tsx`          | Daily Management   | N/A            | ✅ Done |
+| `Confetti.tsx`                 | Goals              | N/A            | ✅ Done |
+| `LearnPage.tsx`                | Educational        | ✅ Ready       | ✅ Done |
 
 #### 🟢 LOW PRIORITY (Nice to Have)
 
@@ -920,19 +921,21 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 ### Backend APIs Without Frontend
 
-| API Endpoint              | Description              | Priority |
-| ------------------------- | ------------------------ | -------- |
-| `GET /comparison/summary` | Peer spending comparison | MEDIUM   |
-| `GET /tips/feed`          | Financial tips feed      | MEDIUM   |
-| `GET /tips/daily`         | Daily tip                | MEDIUM   |
-| `GET /learn/courses`      | Educational content      | LOW      |
-| `GET /learn/progress`     | Learning progress        | LOW      |
-| `GET /admin/dashboard`    | Admin metrics            | LOW      |
+| API Endpoint              | Description              | Priority | Status                         |
+| ------------------------- | ------------------------ | -------- | ------------------------------ |
+| `GET /comparison/summary` | Peer spending comparison | MEDIUM   | ✅ Done (PeerComparisonWidget) |
+| `GET /tips/feed`          | Financial tips feed      | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /tips/daily`         | Daily tip                | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /learn/courses`      | Educational content      | LOW      | ✅ Done (LearnPage)            |
+| `GET /learn/progress`     | Learning progress        | LOW      | ✅ Done (LearnPage)            |
+| `GET /admin/dashboard`    | Admin metrics            | LOW      | ✅ Done (AdminDashboard)       |
 
 ### Recently Completed Components (2026-02-02)
 
 | Component                      | Description                                    | Status  |
 | ------------------------------ | ---------------------------------------------- | ------- |
+| `LearnPage.tsx`                | Educational content with courses and badges    | ✅ Done |
+| `learnApi.ts`                  | Learn API service for courses/lessons/quizzes  | ✅ Done |
 | `TransactionFilters.tsx`       | Search, category, date, amount filters         | ✅ Done |
 | `TransactionTemplateModal.tsx` | Save/use transaction templates                 | ✅ Done |
 | `TwoFactorSetup.tsx`           | 4-step 2FA setup wizard                        | ✅ Done |
