@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.9.63] - 2026-02-02
+
+### 📋 Spec - Mobile UI Polish
+
+**New Spec Created**: `.kiro/specs/mobile-ui-polish/`
+
+Created comprehensive spec for remaining mobile-specific UI polish tasks:
+
+**Requirements (6 total)**:
+
+- Mobile Quick Actions FAB with haptic feedback
+- Mobile Transaction Templates with AsyncStorage
+- Mobile Search and Filters with bottom sheet
+- Mobile Goal Reordering with drag-and-drop
+- Mobile Two-Factor Authentication UI
+- Mobile Tips Feed Gestures (swipe to save/dismiss)
+
+**Tasks**: 6 phases, 14 days estimated
+
+**Documentation Updated**:
+
+- `docs/USER_JOURNEYS.md` - Major update to reflect current component status
+- Fixed outdated "Missing" statuses for components that now exist
+- Updated Goals, Notifications, Settings, Insights sections
+
+**Components Now Correctly Marked Complete**:
+
+- GoalsPage, GoalFormPage, DebtPayoffPage
+- NotificationCenter, PeerComparisonWidget
+- TwoFactorSetup, TwoFactorVerify
+- QuickActionsFAB, TransactionFilters
+- ThemeToggle, Confetti, TutorialOverlay
+
 ## [1.9.62] - 2026-02-02
 
 ### ✨ Feature - Educational Content Page (LearnPage)
