@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.9.97] - 2026-02-03
+
+### 🧪 Test Coverage Improvement - Week 4 AI Pattern Detection Tests (Session 117)
+
+- **AI Pattern Detection Test Suite** (32 unit tests)
+  - Requirement 11.1: Recurring transaction identification (monthly, weekly, annual)
+  - Requirement 11.2: Confidence score calculation (timing, amount, occurrences)
+  - Requirement 11.3: Threshold-based bill suggestion
+  - Requirement 11.4: User feedback exclusion
+  - Requirement 11.5: Pattern change detection
+
+- **Property 16, 17, 18: Pattern Detection Properties** (16 property tests)
+  - Property 16: Confidence score bounds, monotonicity, timing/amount impact
+  - Property 17: Frequency and amount change detection
+  - Property 18: Next date calculation, interval consistency, prediction accuracy
+  - Validates Requirements 11.2, 11.3, 11.5, 11.6
+
 ## [1.9.96] - 2026-02-03
 
 ### 🧪 Test Coverage Improvement - Week 4 Property Tests (Session 117)
