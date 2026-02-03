@@ -17,6 +17,10 @@
  * - transaction:create - Add new transactions
  * - transaction:edit - Edit existing transactions
  * - transaction:delete - Delete transactions
+ * - account:view - View accounts
+ * - account:create - Create new accounts
+ * - account:edit - Edit existing accounts
+ * - account:delete - Delete accounts
  * - family:invite - Send family invitations
  * - family:remove - Remove family members
  * - family:change-role - Change member roles
@@ -32,6 +36,10 @@ const PERMISSION_MATRIX = {
     "transaction:create": true,
     "transaction:edit": true,
     "transaction:delete": true,
+    "account:view": true,
+    "account:create": true,
+    "account:edit": true,
+    "account:delete": true,
     "family:invite": true,
     "family:remove": true,
     "family:change-role": true,
@@ -46,6 +54,10 @@ const PERMISSION_MATRIX = {
     "transaction:create": true,
     "transaction:edit": true,
     "transaction:delete": true,
+    "account:view": true,
+    "account:create": true,
+    "account:edit": true,
+    "account:delete": true,
     "family:invite": false,
     "family:remove": false,
     "family:change-role": false,
@@ -60,6 +72,10 @@ const PERMISSION_MATRIX = {
     "transaction:create": false,
     "transaction:edit": false,
     "transaction:delete": false,
+    "account:view": true,
+    "account:create": false,
+    "account:edit": false,
+    "account:delete": false,
     "family:invite": false,
     "family:remove": false,
     "family:change-role": false,
