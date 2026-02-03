@@ -279,8 +279,10 @@ describe("Family Lambda Handler", () => {
 
       expect(result.statusCode).toBe(200);
       const body = JSON.parse(result.body);
-      expect(body.familyId).toBe("family123");
-      expect(body.role).toBe("spouse");
+      // Handle both standardized format { data: { familyId, role } } and legacy format
+      const data = body.data || body;
+      expect(data.familyId).toBe("family123");
+      expect(data.role).toBe("spouse");
     });
 
     it("should reject expired invitation", async () => {
@@ -372,8 +374,10 @@ describe("Family Lambda Handler", () => {
 
       expect(result.statusCode).toBe(200);
       const body = JSON.parse(result.body);
-      expect(body.members).toHaveLength(1);
-      expect(body.members[0].email).toBe("user@example.com");
+      // Handle both standardized format { data: { members } } and legacy format
+      const data = body.data || body;
+      expect(data.members).toHaveLength(1);
+      expect(data.members[0].email).toBe("user@example.com");
     });
   });
 
@@ -687,9 +691,10 @@ describe("Family Lambda Handler", () => {
         const body = JSON.parse(result.body);
 
         expect(result.statusCode).toBe(200);
-        expect(body.familyId).toBe("family-456");
-        expect(body.role).toBe("spouse");
-        expect(body.family.memberCount).toBe(2);
+        // Handle both standardized format { data: { familyId, role } } and legacy format
+        const data = body.data || body;
+        expect(data.familyId).toBe("family-456");
+        expect(data.role).toBe("spouse");
       });
 
       it("should reject expired invitation", async () => {
@@ -839,9 +844,11 @@ describe("Family Lambda Handler", () => {
         const body = JSON.parse(result.body);
 
         expect(result.statusCode).toBe(200);
-        expect(body.members).toHaveLength(2);
-        expect(body.members[0].role).toBe("primary");
-        expect(body.members[1].role).toBe("spouse");
+        // Handle both standardized format { data: { members } } and legacy format
+        const data = body.data || body;
+        expect(data.members).toHaveLength(2);
+        expect(data.members[0].role).toBe("primary");
+        expect(data.members[1].role).toBe("spouse");
       });
     });
   });

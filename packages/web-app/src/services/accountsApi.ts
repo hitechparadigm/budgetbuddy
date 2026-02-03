@@ -17,10 +17,60 @@ export class AccountsApiError extends Error {
   constructor(
     message: string,
     public statusCode: number,
-    public details?: unknown
+    public details?: unknown,
+    public isNetworkError: boolean = false
   ) {
     super(message);
     this.name = 'AccountsApiError';
+  }
+}
+
+// Check if error is a network error
+function isNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError && error.message === 'Failed to fetch') {
+    return true;
+  }
+  if (error instanceof Error && error.name === 'AbortError') {
+    return true;
+  }
+  return false;
+}
+
+// Extract user-friendly error message from response
+function extractErrorMessage(errorData: unknown, statusCode: number): string {
+  if (typeof errorData === 'object' && errorData !== null) {
+    const data = errorData as Record<string, unknown>;
+    // Try various error message fields
+    if (typeof data.message === 'string' && data.message) {
+      return data.message;
+    }
+    if (typeof data.error === 'string' && data.error) {
+      return data.error;
+    }
+    if (data.data && typeof data.data === 'object') {
+      const nestedData = data.data as Record<string, unknown>;
+      if (typeof nestedData.message === 'string' && nestedData.message) {
+        return nestedData.message;
+      }
+    }
+  }
+
+  // Default messages based on status code
+  switch (statusCode) {
+    case 400:
+      return 'Invalid request. Please check your input.';
+    case 401:
+      return 'Please sign in to continue.';
+    case 403:
+      return 'You do not have permission to perform this action.';
+    case 404:
+      return 'The requested resource was not found.';
+    case 409:
+      return 'This operation conflicts with existing data.';
+    case 500:
+      return 'Server error. Please try again later.';
+    default:
+      return `Request failed (${statusCode})`;
   }
 }
 
@@ -35,27 +85,57 @@ async function accountsApiCall<T = unknown>(
   headers.set('Content-Type', 'application/json');
 
   const token = getToken();
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
+  if (!token) {
+    throw new AccountsApiError(
+      'Please sign in to continue.',
+      401,
+      { reason: 'missing_token' }
+    );
   }
+  headers.set('Authorization', `Bearer ${token}`);
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
 
-  if (!response.ok) {
-    let errorMessage = `HTTP ${response.status}`;
-    try {
-      const errorData = await response.json();
-      errorMessage = errorData.message || errorMessage;
-    } catch {
-      // Use default error message
+    if (!response.ok) {
+      let errorData: unknown = null;
+      try {
+        errorData = await response.json();
+      } catch {
+        // Response body is not JSON
+      }
+
+      const errorMessage = extractErrorMessage(errorData, response.status);
+      throw new AccountsApiError(errorMessage, response.status, errorData);
     }
-    throw new AccountsApiError(errorMessage, response.status);
-  }
 
-  return response.json();
+    return response.json();
+  } catch (error) {
+    // Re-throw AccountsApiError as-is
+    if (error instanceof AccountsApiError) {
+      throw error;
+    }
+
+    // Handle network errors
+    if (isNetworkError(error)) {
+      throw new AccountsApiError(
+        'Network error. Please check your internet connection and try again.',
+        0,
+        { originalError: error instanceof Error ? error.message : 'Unknown error' },
+        true
+      );
+    }
+
+    // Handle other errors
+    throw new AccountsApiError(
+      'An unexpected error occurred. Please try again.',
+      0,
+      { originalError: error instanceof Error ? error.message : 'Unknown error' }
+    );
+  }
 }
 
 // Account Types
@@ -131,11 +211,28 @@ export interface AccountsSummary {
   accountCount: number;
 }
 
-// API Response types
+// API Response types - handles both standardized { success, data, message } and legacy formats
 interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
+  success?: boolean;
+  message?: string;
+  data?: T;
+  // Legacy format fields
+  accounts?: Account[];
+  account?: Account;
+}
+
+// Helper to extract data from response (handles both formats)
+function extractData<T>(response: ApiResponse<T>, fallbackKey?: keyof ApiResponse<T>): T {
+  // Standardized format: { success, data, message }
+  if (response.data !== undefined) {
+    return response.data;
+  }
+  // Legacy format: data at root level
+  if (fallbackKey && response[fallbackKey] !== undefined) {
+    return response[fallbackKey] as T;
+  }
+  // Return the whole response as data (for backwards compatibility)
+  return response as unknown as T;
 }
 
 // Accounts API
@@ -154,31 +251,37 @@ export const accountsApi = {
     }
 
     const response = await accountsApiCall<ApiResponse<{ accounts: Account[] }>>(endpoint);
-    return response.data.accounts;
+    // Handle both { data: { accounts } } and { accounts }
+    const data = extractData(response, 'accounts' as keyof typeof response);
+    return (data as { accounts: Account[] }).accounts || (response.accounts as Account[]) || [];
   },
 
   // Get single account
   async getAccount(accountId: string): Promise<Account> {
     const response = await accountsApiCall<ApiResponse<Account>>(`/accounts/${accountId}`);
-    return response.data;
+    return extractData(response, 'account' as keyof typeof response);
   },
 
   // Create account
   async createAccount(input: CreateAccountInput): Promise<Account> {
-    const response = await accountsApiCall<ApiResponse<Account>>('/accounts', {
+    const response = await accountsApiCall<ApiResponse<{ account: Account }>>('/accounts', {
       method: 'POST',
       body: JSON.stringify(input),
     });
-    return response.data;
+    // Handle both { data: { account } } and { account }
+    const data = extractData(response, 'account' as keyof typeof response);
+    return (data as { account: Account }).account || (response.account as Account) || data as Account;
   },
 
   // Update account
   async updateAccount(accountId: string, input: UpdateAccountInput): Promise<Account> {
-    const response = await accountsApiCall<ApiResponse<Account>>(`/accounts/${accountId}`, {
+    const response = await accountsApiCall<ApiResponse<{ account: Account }>>(`/accounts/${accountId}`, {
       method: 'PUT',
       body: JSON.stringify(input),
     });
-    return response.data;
+    // Handle both { data: { account } } and { account }
+    const data = extractData(response, 'account' as keyof typeof response);
+    return (data as { account: Account }).account || (response.account as Account) || data as Account;
   },
 
   // Delete account
@@ -194,22 +297,23 @@ export const accountsApi = {
       method: 'POST',
       body: JSON.stringify(input),
     });
-    return response.data;
+    return extractData(response);
   },
 
   // Set account tracking
   async setAccountTracking(accountId: string, isTracked: boolean): Promise<Account> {
-    const response = await accountsApiCall<ApiResponse<Account>>(`/accounts/${accountId}/tracking`, {
+    const response = await accountsApiCall<ApiResponse<{ account: Account }>>(`/accounts/${accountId}/tracking`, {
       method: 'PUT',
       body: JSON.stringify({ isTracked }),
     });
-    return response.data;
+    const data = extractData(response, 'account' as keyof typeof response);
+    return (data as { account: Account }).account || (response.account as Account) || data as Account;
   },
 
   // Get accounts summary
   async getAccountsSummary(): Promise<AccountsSummary> {
     const response = await accountsApiCall<ApiResponse<AccountsSummary>>('/accounts/summary');
-    return response.data;
+    return extractData(response);
   },
 };
 
