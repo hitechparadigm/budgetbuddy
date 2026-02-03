@@ -6,7 +6,7 @@ This implementation plan addresses critical integration bugs in Manual Accounts 
 
 ## Tasks
 
-- [-] 1. Fix Backend Family Lambda - Auto-Create Family Metadata
+- [x] 1. Fix Backend Family Lambda - Auto-Create Family Metadata
   - [x] 1.1 Update handleInvite function to auto-create family metadata if missing
     - Add check for existing FAMILY#<familyId> METADATA record
     - If missing, create metadata with primaryUserId, memberCount=1, subscriptionTier='free'
@@ -23,28 +23,28 @@ This implementation plan addresses critical integration bugs in Manual Accounts 
     - Create MEMBER record if missing (backwards compatibility)
     - _Requirements: 5.3, 5.4_
 
-  - [ ] 1.4 Standardize Family Lambda response format
+  - [x] 1.4 Standardize Family Lambda response format
     - Update successResponse to use `{ success: true, data, message }` format
     - Update errorResponse to use `{ success: false, message, error: { code } }` format
     - Ensure consistency with Accounts Lambda response format
     - _Requirements: 7.1, 7.4, 7.5_
 
-- [ ] 2. Checkpoint - Verify backend family fixes
+- [x] 2. Checkpoint - Verify backend family fixes
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 3. Fix Frontend Accounts API Response Parsing
-  - [ ] 3.1 Verify and fix accountsApi.ts response parsing
+  - [x] 3.1 Verify and fix accountsApi.ts response parsing
     - Confirm backend returns `{ success, data: { accounts, count }, message }` for list
     - Confirm backend returns `{ success, data: account, message }` for single account
     - Update parsing if needed to handle both formats
     - Add better error extraction from response
     - _Requirements: 2.3, 2.6, 7.2_
 
-  - [ ] 3.2 Write property test for account creation round-trip
+  - [x] 3.2 Write property test for account creation round-trip
     - **Property 3: Account Creation Round-Trip**
     - **Validates: Requirements 2.2, 2.3, 2.6**
 
-  - [ ] 3.3 Improve error handling in accountsApiCall function
+  - [x] 3.3 Improve error handling in accountsApiCall function
     - Add check for missing token before API call
     - Improve error message extraction from response
     - Handle network errors with user-friendly message
@@ -64,7 +64,7 @@ This implementation plan addresses critical integration bugs in Manual Accounts 
     - Add error handling for missing token
     - _Requirements: 1.2, 1.3_
 
-  - [ ] 5.2 Improve error handling and user feedback
+  - [x] 5.2 Improve error handling and user feedback
     - Add loading states during API calls
     - Display clear error messages for common failures
     - Add success confirmations for operations

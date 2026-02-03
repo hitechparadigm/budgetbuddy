@@ -190,8 +190,16 @@ describe("Property-Based Tests: Family Lambda", () => {
 
               case "viewMembers":
                 event = createEvent("GET", "/family/members", claims);
-                // Always mock successful response for view
+                // Mock 1: Query for members
                 mockSend.mockResolvedValueOnce({ Items: [{ userId, role }] });
+                // Mock 2: Get family metadata
+                mockSend.mockResolvedValueOnce({
+                  Item: {
+                    primaryUserId: userId,
+                    createdAt: new Date().toISOString(),
+                  },
+                });
+                // Mock 3: Get user profile
                 mockSend.mockResolvedValueOnce({
                   Item: { email: "test@example.com", firstName: "Test" },
                 });
@@ -653,7 +661,16 @@ describe("Property-Based Tests: Family Lambda", () => {
               joinedAt: new Date().toISOString(),
             }));
 
+            // Mock 1: Query for family members
             mockSend.mockResolvedValueOnce({ Items: familyMembers });
+
+            // Mock 2: Get family metadata
+            mockSend.mockResolvedValueOnce({
+              Item: {
+                primaryUserId: memberIds[0],
+                createdAt: new Date().toISOString(),
+              },
+            });
 
             // Mock user profiles for each member
             for (const memberId of memberIds) {
@@ -667,11 +684,13 @@ describe("Property-Based Tests: Family Lambda", () => {
 
             // Should return 200 with members
             expect(result.statusCode).toBe(200);
-            expect(body.familyId).toBe(familyId);
-            expect(body.members.length).toBe(memberIds.length);
+            // Handle both standardized format { data: { familyId, members } } and legacy format
+            const data = body.data || body;
+            expect(data.familyId).toBe(familyId);
+            expect(data.members.length).toBe(memberIds.length);
 
             // All returned members should have emails (from our mocks)
-            body.members.forEach((member) => {
+            data.members.forEach((member) => {
               expect(member.email).toContain("@example.com");
             });
 
@@ -776,10 +795,18 @@ describe("Property-Based Tests: Family Lambda", () => {
               );
               const event = createEvent("GET", "/family/members", claims);
 
-              // Mock returns members for THIS user's family
+              // Mock 1: Query returns members for THIS user's family
               mockSend.mockResolvedValueOnce({
                 Items: [{ userId: user.userId, role: user.role }],
               });
+              // Mock 2: Get family metadata
+              mockSend.mockResolvedValueOnce({
+                Item: {
+                  primaryUserId: user.userId,
+                  createdAt: new Date().toISOString(),
+                },
+              });
+              // Mock 3: Get user profile
               mockSend.mockResolvedValueOnce({
                 Item: {
                   email: `${user.userId}@example.com`,
@@ -792,7 +819,9 @@ describe("Property-Based Tests: Family Lambda", () => {
 
               // Verify response is for the correct family
               expect(result.statusCode).toBe(200);
-              expect(body.familyId).toBe(user.familyId);
+              // Handle both standardized format { data: { familyId } } and legacy format
+              const data = body.data || body;
+              expect(data.familyId).toBe(user.familyId);
             }
 
             return true;
