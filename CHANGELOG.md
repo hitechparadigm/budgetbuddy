@@ -1,5 +1,48 @@
 # Changelog
 
+## [1.9.90] - 2026-02-03
+
+### ✨ Enhanced Accounts & Transactions (Phase 2 - Frontend UI)
+
+- **Sidebar Navigation**: Integrated persistent sidebar into app layout
+  - Created `AppLayout.tsx` and `ProtectedLayout.tsx` components
+  - All protected routes now use sidebar navigation
+  - Mobile responsive with hamburger menu and overlay
+  - Collapse state persisted in localStorage
+
+- **Transaction Modal Enhancements**: Added account selection and batch mode
+  - Account dropdown grouped by type with balance display
+  - Batch entry mode with "Create another transaction" checkbox
+  - Last account preference saved to localStorage
+  - Error handling preserves form data on failure
+
+- **Transaction List Enhancements**: Added account display and filtering
+  - Account column shows icon and name (or "Unassigned")
+  - Multi-select account filter in filter bar
+  - Account name included in CSV export
+
+- **Account Mapping Modal**: For Plaid connected accounts
+  - Configure nickname, type, and tracking status
+  - Default tracking enabled for new connected accounts
+  - Property tests for default tracking behavior
+
+- **Budget Exclusion**: Untracked accounts excluded from budget
+  - Created `budget-service.js` with `isAccountTracked()` function
+  - Transactions from untracked accounts skip budget updates
+  - Property tests validate exclusion behavior
+
+- **Bulk Account Assignment**: New modal for bulk operations
+  - Filter by date range, category, description
+  - Select multiple transactions for account assignment
+  - Supports removing account assignment
+
+### 🧪 Property-Based Tests Added
+
+- Property 17: Connected Account Default Tracking (15 tests)
+- Property 18: Untracked Account Budget Exclusion (11 tests)
+- Property 13: Account Dropdown Content (17 tests)
+- Property 24: Transaction Account Display (12 tests)
+
 ## [1.9.89] - 2026-02-03
 
 ### ✨ New Feature: Enhanced Accounts & Transactions (Phase 1)

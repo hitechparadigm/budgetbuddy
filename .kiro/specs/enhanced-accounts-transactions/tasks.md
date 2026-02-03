@@ -275,7 +275,7 @@ This implementation plan covers the development of comprehensive account managem
     - Use "Unassigned" for transactions without account
     - _Requirements: 9.6_
 
-- [-] 16. Implement Connected Account Mapping
+- [x] 16. Implement Connected Account Mapping
   - [x] 16.1 Create AccountMappingModal component
     - Display after Plaid connection success
     - Show each discovered account with mapping options
@@ -296,50 +296,50 @@ This implementation plan covers the development of comprehensive account managem
     - Recalculate on tracking status change
     - _Requirements: 5.4, 5.7_
 
-  - [ ] 16.5 Write property test for untracked budget exclusion
+  - [x] 16.5 Write property test for untracked budget exclusion
     - **Property 18: Untracked Account Budget Exclusion**
     - Generate accounts and transactions, toggle tracking, verify budget
     - **Validates: Requirements 5.4, 5.7**
 
-- [ ] 17. Checkpoint - Connected account mapping complete
+- [x] 17. Checkpoint - Connected account mapping complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 18. Integrate Sidebar into App Layout
-  - [ ] 18.1 Update App layout with sidebar
+- [x] 18. Integrate Sidebar into App Layout
+  - [x] 18.1 Update App layout with sidebar
     - Wrap main content with sidebar layout
     - Pass current route for active state
     - Handle collapse state
     - _Requirements: 6.1_
 
-  - [ ] 18.2 Update routing for sidebar navigation
+  - [x] 18.2 Update routing for sidebar navigation
     - Ensure all sidebar routes are defined
     - Handle 404 redirect to /budget
     - _Requirements: 6.2_
 
-  - [ ] 18.3 Test responsive behavior
+  - [x] 18.3 Test responsive behavior
     - Verify sidebar hidden on mobile
     - Verify hamburger menu works
     - Verify overlay closes on navigation
     - _Requirements: 6.7, 6.8_
 
-- [ ] 19. Final integration and polish
-  - [ ] 19.1 Wire account balance updates
+- [x] 19. Final integration and polish
+  - [x] 19.1 Wire account balance updates
     - Connect transaction save to account balance update
     - Connect transaction edit to balance recalculation
     - Connect transaction delete to balance reversal
     - _Requirements: 3.2, 3.3, 3.4_
 
-  - [ ] 19.2 Add bulk account assignment UI
+  - [x] 19.2 Add bulk account assignment UI
     - Create modal for bulk-assigning accounts to transactions
     - Add filters for date range, category, description
     - _Requirements: 10.3, 10.4_
 
-  - [ ] 19.3 Update documentation
+  - [x] 19.3 Update documentation
     - Update API documentation with new endpoints
     - Update README with new features
     - _Requirements: All_
 
-- [ ] 20. Final checkpoint - All features complete
+- [x] 20. Final checkpoint - All features complete
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

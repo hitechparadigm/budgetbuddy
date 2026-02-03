@@ -14,6 +14,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { BudgetProvider } from "./contexts/BudgetContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { ProtectedLayout } from "./components/layout/ProtectedLayout";
 import { AuthPage } from "./pages/AuthPage";
 import { BudgetPage } from "./pages/BudgetPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -65,177 +66,177 @@ const App: React.FC = () => {
                   path="/family/accept"
                   element={<AcceptInvitationPage />}
                 />
-                {/* Main Budget App - No Layout wrapper for clean, focused experience */}
+                {/* Main Budget App - With Sidebar Layout */}
                 <Route
                   path="/budget"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <BudgetPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Settings Page */}
                 <Route
                   path="/settings"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <SettingsPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Bank Accounts Page */}
                 <Route
                   path="/accounts"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <AccountsPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Tips Feed Page */}
                 <Route
                   path="/tips"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <TipsFeedPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Insights Page */}
                 <Route
                   path="/insights"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <InsightsPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Bills Page */}
                 <Route
                   path="/bills"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <BillsPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Bill Form - New/Edit */}
                 <Route
                   path="/bills/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <BillFormPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 <Route
                   path="/bills/:billId/edit"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <BillFormPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Goals Pages */}
                 <Route
                   path="/goals"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <GoalsPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 <Route
                   path="/goals/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <GoalFormPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 <Route
                   path="/goals/:goalId/edit"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <GoalFormPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Subscriptions Pages */}
                 <Route
                   path="/subscriptions"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <SubscriptionsPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 <Route
                   path="/subscriptions/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <SubscriptionFormPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 <Route
                   path="/subscriptions/:subscriptionId/edit"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <SubscriptionFormPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Debt Payoff Pages */}
                 <Route
                   path="/debts"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <DebtPayoffPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 <Route
                   path="/debts/new"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <DebtFormPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 <Route
                   path="/debts/:debtId/edit"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <DebtFormPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Learn Page - Educational Content */}
                 <Route
                   path="/learn"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <LearnPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* About Page */}
                 <Route
                   path="/about"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <AboutPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Help Center Page */}
                 <Route
                   path="/help"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedLayout>
                       <HelpCenterPage />
-                    </ProtectedRoute>
+                    </ProtectedLayout>
                   }
                 />
                 {/* Terms of Service Page */}

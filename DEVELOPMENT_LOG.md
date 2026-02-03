@@ -1,5 +1,64 @@
 # Development Log
 
+## 2026-02-03 - Enhanced Accounts & Transactions Phase 2 (Session 111)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Complete frontend UI tasks for enhanced accounts & transactions
+**Outcome**: Tasks 16-19 completed, sidebar integrated, all tests passing
+
+### Work Completed
+
+1. **Task 16: Connected Account Mapping**:
+   - Fixed CI/CD build failure (orphaned JSX in TransactionFilters.tsx)
+   - Verified AccountMappingModal property tests (15 tests passing)
+   - Verified budget-exclusion property tests (11 tests passing)
+   - Property 17 & 18 validated
+
+2. **Task 18: Sidebar Integration**:
+   - Created `AppLayout.tsx` - main layout with sidebar
+   - Created `ProtectedLayout.tsx` - combines auth check with layout
+   - Updated `App.tsx` to use ProtectedLayout for all protected routes
+   - Mobile responsive with hamburger menu
+   - Collapse state persisted in localStorage
+
+3. **Task 19: Final Integration**:
+   - Verified account balance updates already wired in transactions
+   - Created `BulkAccountAssignmentModal.tsx` for bulk operations
+   - Updated CHANGELOG.md with v1.9.90 entry
+   - Updated DEVELOPMENT_LOG.md (this entry)
+
+### Files Created/Modified
+
+**New Components**:
+
+- `packages/web-app/src/components/layout/AppLayout.tsx`
+- `packages/web-app/src/components/layout/ProtectedLayout.tsx`
+- `packages/web-app/src/components/transactions/BulkAccountAssignmentModal.tsx`
+
+**Modified**:
+
+- `packages/web-app/src/App.tsx` (use ProtectedLayout)
+- `packages/web-app/src/components/TransactionFilters.tsx` (fix syntax error)
+- `CHANGELOG.md` (v1.9.90 entry)
+
+### Tests Status
+
+- AccountMappingModal.pbt.test.tsx: 15 tests passing
+- budget-exclusion.pbt.test.js: 11 tests passing
+- Sidebar.pbt.test.tsx: 11 tests passing
+- TransactionModal.pbt.test.tsx: 17 tests passing
+- TransactionList.pbt.test.tsx: 12 tests passing
+
+### Next Steps
+
+1. Complete Task 20: Final checkpoint
+2. Run full test suite to verify all tests pass
+3. Commit and push changes
+
+---
+
 ## 2026-02-03 - Week 1 P0 Bug Fixes Complete (Session 110)
 
 ### Session Summary
