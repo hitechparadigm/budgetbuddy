@@ -126,35 +126,35 @@ This implementation plan covers the development of comprehensive account managem
     - Create useAccountsSummary for net worth data
     - _Requirements: 2.6, 3.5_
 
-- [ ] 8. Implement Sidebar Navigation component
-  - [ ] 8.1 Create Sidebar component
+- [x] 8. Implement Sidebar Navigation component
+  - [x] 8.1 Create Sidebar component
     - Create `packages/web-app/src/components/layout/Sidebar.tsx`
     - Implement navigation items with icons and labels
     - Implement active state highlighting based on current route
     - Implement collapse/expand functionality
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-  - [ ] 8.2 Write property test for sidebar active state
+  - [x] 8.2 Write property test for sidebar active state
     - **Property 21: Sidebar Active State**
     - Generate random routes, verify exactly one item highlighted
     - **Validates: Requirements 6.3**
 
-  - [ ] 8.3 Implement sidebar collapse persistence
+  - [x] 8.3 Implement sidebar collapse persistence
     - Store collapse state in localStorage
     - Restore state on page load
     - _Requirements: 6.9_
 
-  - [ ] 8.4 Write property test for sidebar collapse persistence
+  - [x] 8.4 Write property test for sidebar collapse persistence
     - **Property 22: Sidebar Collapse Persistence**
     - Toggle collapse, refresh, verify state restored
     - **Validates: Requirements 6.9**
 
-  - [ ] 8.5 Implement mobile responsive sidebar
+  - [x] 8.5 Implement mobile responsive sidebar
     - Hide sidebar on mobile, show hamburger menu
     - Display sidebar as overlay when hamburger tapped
     - _Requirements: 6.7, 6.8_
 
-  - [ ] 8.6 Add user profile section to sidebar
+  - [x] 8.6 Add user profile section to sidebar
     - Display user name/avatar at top
     - Add dropdown for profile/logout
     - _Requirements: 6.10_
