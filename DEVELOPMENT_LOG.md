@@ -1,5 +1,77 @@
 # Development Log
 
+## 2026-02-03 - Critical Bug Fixes (Session 112)
+
+### Session Summary
+
+**Duration**: 60 minutes
+**Focus**: Fix critical bugs reported by user (dark theme, permissions, network errors)
+**Outcome**: All 6 bugs fixed, property tests passing, code committed
+
+### Work Completed
+
+1. **Bug 1 - Dark Theme Persistence**:
+   - Issue: Dark theme flash on page load, theme not persisting properly
+   - Fix: Added synchronous theme application in ThemeContext.tsx
+   - Fix: Added inline script in index.html to apply theme before React loads
+   - Property tests: 21 tests passing (ThemeContext.pbt.test.tsx)
+
+2. **Bug 2 - Account Permissions**:
+   - Issue: "Role 'primary' does not have permission to perform action 'account:view'"
+   - Fix: Added account:view, account:create, account:edit, account:delete to PERMISSION_MATRIX
+   - Roles updated: primary (all), spouse (all), viewer (view only)
+   - Unit tests: All permission tests passing
+
+3. **Bug 3 - Receipt Scanning Network Error**:
+   - Issue: "Failed to fetch" error not user-friendly
+   - Fix: Added specific network error detection in ReceiptUpload.tsx
+   - Shows: "Network error. Please check your internet connection."
+
+4. **Bug 4 - Bank Accounts Network Error**:
+   - Issue: "Failed to fetch" error in ConnectedAccounts
+   - Fix: Added network error detection with retry button
+
+5. **Bug 5 - AI Insights Network Error**:
+   - Issue: "Failed to fetch" error in InsightsPage
+   - Fix: Added network error detection with user-friendly message
+
+6. **Error Handling Utilities**:
+   - Created: packages/web-app/src/utils/error-handling.ts
+   - Property tests: error-handling.pbt.test.ts passing
+
+### Files Created/Modified
+
+**New Files**:
+
+- `packages/web-app/src/utils/error-handling.ts`
+- `packages/web-app/src/utils/error-handling.pbt.test.ts`
+- `packages/web-app/src/contexts/ThemeContext.pbt.test.tsx`
+- `.kiro/specs/critical-bug-fixes/` (requirements.md, design.md, tasks.md)
+
+**Modified Files**:
+
+- `packages/web-app/src/contexts/ThemeContext.tsx`
+- `packages/web-app/index.html`
+- `backend/layers/shared/nodejs/shared/permissions.js`
+- `backend/layers/shared/nodejs/shared/permissions.test.js`
+- `packages/web-app/src/components/ReceiptUpload.tsx`
+- `packages/web-app/src/components/ConnectedAccounts.tsx`
+- `packages/web-app/src/pages/InsightsPage.tsx`
+
+### Deployment Status
+
+- Commits pushed to develop branch
+- CI/CD deployment failed due to known CloudFormation export blocker
+- Issue documented in `.kiro/CLOUDFORMATION_EXPORT_BLOCKER.md`
+- Code changes are in repository, awaiting manual stack deployment
+
+### Next Steps
+
+1. Manual deployment of stacks in correct order (see CLOUDFORMATION_EXPORT_BLOCKER.md)
+2. Verify fixes in deployed environment
+
+---
+
 ## 2026-02-03 - Enhanced Accounts & Transactions Phase 2 (Session 111)
 
 ### Session Summary
