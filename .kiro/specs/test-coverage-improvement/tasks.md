@@ -21,7 +21,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - **Property 3: Transaction Invalid Data Rejection**
     - **Validates: Requirements 1.3, 1.4, 1.6**
 
-  - [ ] 1.3 Create Google OAuth test suite
+  - [x] 1.3 Create Google OAuth test suite
     - Create `backend/functions/auth/google-oauth.test.js`
     - Test OAuth initiation with correct redirect parameters
     - Test authorization code exchange
@@ -31,7 +31,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - Test JWT token issuance
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
-  - [ ] 1.4 Create admin dashboard test suite
+  - [x] 1.4 Create admin dashboard test suite
     - Create `backend/functions/admin/admin-api.test.js`
     - Test user list pagination
     - Test user search by email/name
@@ -41,7 +41,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - Test authorization enforcement (403 for non-admins)
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [ ] 1.5 Write property tests for admin APIs
+  - [x] 1.5 Write property tests for admin APIs
     - **Property 4: Admin Search and Pagination**
     - **Property 5: Admin Data Completeness**
     - **Property 6: Admin Authorization**
