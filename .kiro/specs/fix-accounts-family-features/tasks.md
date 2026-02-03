@@ -32,7 +32,7 @@ This implementation plan addresses critical integration bugs in Manual Accounts 
 - [x] 2. Checkpoint - Verify backend family fixes
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 3. Fix Frontend Accounts API Response Parsing
+- [x] 3. Fix Frontend Accounts API Response Parsing
   - [x] 3.1 Verify and fix accountsApi.ts response parsing
     - Confirm backend returns `{ success, data: { accounts, count }, message }` for list
     - Confirm backend returns `{ success, data: account, message }` for single account
@@ -50,11 +50,11 @@ This implementation plan addresses critical integration bugs in Manual Accounts 
     - Handle network errors with user-friendly message
     - _Requirements: 1.3, 2.5, 6.1, 6.2_
 
-  - [ ] 3.4 Write property test for error message safety
+  - [x] 3.4 Write property test for error message safety
     - **Property 12: Error Message Safety**
     - **Validates: Requirements 6.1, 6.2**
 
-- [ ] 4. Checkpoint - Verify accounts API fixes
+- [x] 4. Checkpoint - Verify accounts API fixes
   - Ensure all tests pass, ask the user if questions arise.
 
 - [-] 5. Fix Frontend Family Settings Component
