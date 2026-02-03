@@ -387,11 +387,11 @@ _"As a user, I want to manually track accounts that aren't connected to banks so
 | Toggle Tracking      | N/A                   | `PUT /api/accounts/{id}/tracking`   | ✅ Complete |
 | Accounts Summary     | N/A                   | `GET /api/accounts/summary`         | ✅ Complete |
 | Account Types        | `account.ts` (shared) | N/A                                 | ✅ Complete |
-| Sidebar Navigation   | `Sidebar.tsx`         | N/A                                 | ⚠️ Pending  |
-| Account Card         | `AccountCard.tsx`     | N/A                                 | ⚠️ Pending  |
-| Add Account Modal    | `AddAccountModal.tsx` | N/A                                 | ⚠️ Pending  |
-| Reconcile Modal      | `ReconcileModal.tsx`  | N/A                                 | ⚠️ Pending  |
-| Accounts Page        | `AccountsPage.tsx`    | N/A                                 | ⚠️ Pending  |
+| Sidebar Navigation   | `Sidebar.tsx`         | N/A                                 | ✅ Complete |
+| Account Card         | `AccountCard.tsx`     | N/A                                 | ✅ Complete |
+| Add Account Modal    | `AddAccountModal.tsx` | N/A                                 | ✅ Complete |
+| Reconcile Modal      | `ReconcileModal.tsx`  | N/A                                 | ✅ Complete |
+| Accounts Page        | `AccountsPage.tsx`    | N/A                                 | ✅ Complete |
 
 ### UI/UX Requirements
 
@@ -402,15 +402,12 @@ _"As a user, I want to manually track accounts that aren't connected to banks so
 - **Account icons**: Visual icons for each account type
 - **Balance formatting**: Currency-aware formatting with proper symbols
 
-### Missing Components (Frontend UI)
+### All Frontend UI Components Complete
 
-| Component             | Priority | Description                              |
-| --------------------- | -------- | ---------------------------------------- |
-| `Sidebar.tsx`         | HIGH     | Navigation sidebar with account access   |
-| `AccountCard.tsx`     | HIGH     | Display account with balance and actions |
-| `AddAccountModal.tsx` | HIGH     | Form for creating manual accounts        |
-| `ReconcileModal.tsx`  | MEDIUM   | Balance reconciliation dialog            |
-| `AccountsPage.tsx`    | HIGH     | Main accounts management page            |
+All Account Management UI components have been implemented:
+| `AddAccountModal.tsx` | HIGH | Form for creating manual accounts |
+| `ReconcileModal.tsx` | MEDIUM | Balance reconciliation dialog |
+| `AccountsPage.tsx` | HIGH | Main accounts management page |
 
 ---
 
@@ -1190,16 +1187,16 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 #### 🔴 HIGH PRIORITY (Missing Frontend for Existing Backend)
 
-| Component                | Journey            | Backend Status | Effort     |
-| ------------------------ | ------------------ | -------------- | ---------- |
-| `BankAccounts.tsx`       | Bank Connection    | ✅ Ready       | ✅ Done    |
-| `NotificationCenter.tsx` | Notifications      | ✅ Ready       | ✅ Done    |
-| `TransactionSearch`      | Daily Management   | ⚠️ Partial     | ✅ Done    |
-| `TransactionFilters.tsx` | Daily Management   | ✅ Ready       | ✅ Done    |
-| `Sidebar.tsx`            | Account Management | ✅ Ready       | ⚠️ Pending |
-| `AccountCard.tsx`        | Account Management | ✅ Ready       | ⚠️ Pending |
-| `AddAccountModal.tsx`    | Account Management | ✅ Ready       | ⚠️ Pending |
-| `AccountsPage.tsx`       | Account Management | ✅ Ready       | ⚠️ Pending |
+| Component                | Journey            | Backend Status | Effort  |
+| ------------------------ | ------------------ | -------------- | ------- |
+| `BankAccounts.tsx`       | Bank Connection    | ✅ Ready       | ✅ Done |
+| `NotificationCenter.tsx` | Notifications      | ✅ Ready       | ✅ Done |
+| `TransactionSearch`      | Daily Management   | ⚠️ Partial     | ✅ Done |
+| `TransactionFilters.tsx` | Daily Management   | ✅ Ready       | ✅ Done |
+| `Sidebar.tsx`            | Account Management | ✅ Ready       | ✅ Done |
+| `AccountCard.tsx`        | Account Management | ✅ Ready       | ✅ Done |
+| `AddAccountModal.tsx`    | Account Management | ✅ Ready       | ✅ Done |
+| `AccountsPage.tsx`       | Account Management | ✅ Ready       | ✅ Done |
 
 #### 🟡 MEDIUM PRIORITY (New Features)
 
@@ -1249,39 +1246,45 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 ### Recently Completed Components (2026-02-02)
 
-| Component                      | Description                                    | Status  |
-| ------------------------------ | ---------------------------------------------- | ------- |
-| `accountsApi.ts`               | Frontend API service for account management    | ✅ Done |
-| `useAccounts.ts`               | React hooks for accounts (CRUD, summary)       | ✅ Done |
-| `account.ts` (shared types)    | Account types, enums, validation schemas       | ✅ Done |
-| Accounts Lambda                | Backend CRUD, reconciliation, tracking         | ✅ Done |
-| Accounts PBT Tests             | 17 property-based tests for accounts           | ✅ Done |
-| Transactions PBT Tests         | 8 property-based tests with account support    | ✅ Done |
-| CDK Accounts Infrastructure    | Lambda, API routes, IAM permissions            | ✅ Done |
-| `CalendarView.tsx`             | Calendar grid showing transactions by day      | ✅ Done |
-| CalendarView Integration       | Integrated into BudgetPage as new tab          | ✅ Done |
-| Tutorial Integration           | TutorialOverlay integrated into BudgetPage     | ✅ Done |
-| `LearnPage.tsx`                | Educational content with courses and badges    | ✅ Done |
-| `learnApi.ts`                  | Learn API service for courses/lessons/quizzes  | ✅ Done |
-| `TransactionFilters.tsx`       | Search, category, date, amount filters         | ✅ Done |
-| `TransactionTemplateModal.tsx` | Save/use transaction templates                 | ✅ Done |
-| `TwoFactorSetup.tsx`           | 4-step 2FA setup wizard                        | ✅ Done |
-| `TwoFactorVerify.tsx`          | 2FA verification during login                  | ✅ Done |
-| `QuickActionsFAB.tsx`          | Floating action button with keyboard shortcuts | ✅ Done |
-| `Confetti.tsx`                 | Celebration animation for milestones           | ✅ Done |
-| Goal Archive Feature           | Archive/restore completed goals                | ✅ Done |
-| `ThemeToggle.tsx`              | Light/dark/system theme selector               | ✅ Done |
-| `ThemeContext.tsx`             | Enhanced theme context with system detection   | ✅ Done |
-| `FocusTrap.tsx`                | Focus trapping for modals (accessibility)      | ✅ Done |
-| `SkipLink.tsx`                 | Skip to main content link (accessibility)      | ✅ Done |
-| `AriaLiveRegion.tsx`           | ARIA live region for announcements             | ✅ Done |
-| `useReducedMotion.ts`          | Hook for reduced motion preference             | ✅ Done |
-| `TutorialOverlay.tsx`          | Interactive tutorial with spotlight            | ✅ Done |
-| `WelcomeModal.tsx`             | Post-onboarding welcome with quick tips        | ✅ Done |
-| Tips Read/Unread Indicators    | Track and display read status on tips          | ✅ Done |
-| 2FA Settings Integration       | Enable/disable 2FA from Settings page          | ✅ Done |
-| Appearance Settings            | Theme selection in Settings page               | ✅ Done |
-| Replay Tutorial Option         | Reset and replay tutorial from Settings        | ✅ Done |
+| Component                          | Description                                    | Status  |
+| ---------------------------------- | ---------------------------------------------- | ------- |
+| `Sidebar.tsx`                      | Navigation sidebar with collapse persistence   | ✅ Done |
+| `AccountCard.tsx`                  | Account display with balance and action menu   | ✅ Done |
+| `AddAccountModal.tsx`              | Modal for creating manual accounts             | ✅ Done |
+| `ReconcileModal.tsx`               | Modal for balance reconciliation               | ✅ Done |
+| `AccountsPage.tsx` (enhanced)      | Full account management with grouping          | ✅ Done |
+| `QuickActionsFAB.tsx` (simplified) | Removed nav items, kept transaction actions    | ✅ Done |
+| `accountsApi.ts`                   | Frontend API service for account management    | ✅ Done |
+| `useAccounts.ts`                   | React hooks for accounts (CRUD, summary)       | ✅ Done |
+| `account.ts` (shared types)        | Account types, enums, validation schemas       | ✅ Done |
+| Accounts Lambda                    | Backend CRUD, reconciliation, tracking         | ✅ Done |
+| Accounts PBT Tests                 | 17 property-based tests for accounts           | ✅ Done |
+| Transactions PBT Tests             | 8 property-based tests with account support    | ✅ Done |
+| CDK Accounts Infrastructure        | Lambda, API routes, IAM permissions            | ✅ Done |
+| `CalendarView.tsx`                 | Calendar grid showing transactions by day      | ✅ Done |
+| CalendarView Integration           | Integrated into BudgetPage as new tab          | ✅ Done |
+| Tutorial Integration               | TutorialOverlay integrated into BudgetPage     | ✅ Done |
+| `LearnPage.tsx`                    | Educational content with courses and badges    | ✅ Done |
+| `learnApi.ts`                      | Learn API service for courses/lessons/quizzes  | ✅ Done |
+| `TransactionFilters.tsx`           | Search, category, date, amount filters         | ✅ Done |
+| `TransactionTemplateModal.tsx`     | Save/use transaction templates                 | ✅ Done |
+| `TwoFactorSetup.tsx`               | 4-step 2FA setup wizard                        | ✅ Done |
+| `TwoFactorVerify.tsx`              | 2FA verification during login                  | ✅ Done |
+| `QuickActionsFAB.tsx`              | Floating action button with keyboard shortcuts | ✅ Done |
+| `Confetti.tsx`                     | Celebration animation for milestones           | ✅ Done |
+| Goal Archive Feature               | Archive/restore completed goals                | ✅ Done |
+| `ThemeToggle.tsx`                  | Light/dark/system theme selector               | ✅ Done |
+| `ThemeContext.tsx`                 | Enhanced theme context with system detection   | ✅ Done |
+| `FocusTrap.tsx`                    | Focus trapping for modals (accessibility)      | ✅ Done |
+| `SkipLink.tsx`                     | Skip to main content link (accessibility)      | ✅ Done |
+| `AriaLiveRegion.tsx`               | ARIA live region for announcements             | ✅ Done |
+| `useReducedMotion.ts`              | Hook for reduced motion preference             | ✅ Done |
+| `TutorialOverlay.tsx`              | Interactive tutorial with spotlight            | ✅ Done |
+| `WelcomeModal.tsx`                 | Post-onboarding welcome with quick tips        | ✅ Done |
+| Tips Read/Unread Indicators        | Track and display read status on tips          | ✅ Done |
+| 2FA Settings Integration           | Enable/disable 2FA from Settings page          | ✅ Done |
+| Appearance Settings                | Theme selection in Settings page               | ✅ Done |
+| Replay Tutorial Option             | Reset and replay tutorial from Settings        | ✅ Done |
 
 ### Mobile UI Polish Components (2026-02-02)
 

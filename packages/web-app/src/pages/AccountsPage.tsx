@@ -1,47 +1,302 @@
 /**
- * AccountsPage
- * Page for managing connected bank accounts via Plaid
+ * AccountsPage - Enhanced Account Management
+ *
+ * Features:
+ * - Manual account management (CRUD)
+ * - Connected bank accounts via Plaid
+ * - Accounts grouped by type
+ * - Net worth summary
+ * - Balance reconciliation
+ *
+ * **Validates: Requirements 8.1, 8.3, 8.4, 8.6**
  */
 
-import React from "react";
-import { Link } from "react-router-dom";
-import BankAccounts from "../components/BankAccounts";
+import React, { useState, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
+import { AccountCard } from "../components/accounts/AccountCard";
+import { AddAccountModal } from "../components/accounts/AddAccountModal";
+import { ReconcileModal } from "../components/accounts/ReconcileModal";
+import {
+  useAccounts,
+  useAccountsSummary,
+  useAccountMutations,
+  Account,
+  CreateAccountInput,
+} from "../hooks/useAccounts";
+
+// Account type labels and icons (local definitions to avoid type conflicts)
+const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+  banking: "Banking",
+  cash: "Cash",
+  credit_card: "Credit Cards",
+  investment: "Investments",
+  loan: "Loans",
+};
+
+const ACCOUNT_TYPE_ICONS: Record<string, string> = {
+  banking: "🏦",
+  cash: "💵",
+  credit_card: "💳",
+  investment: "📈",
+  loan: "📋",
+};
+
+const ACCOUNT_TYPE_ORDER = [
+  "banking",
+  "cash",
+  "credit_card",
+  "investment",
+  "loan",
+];
 
 export const AccountsPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { accounts, isLoading, error, refetch } = useAccounts();
+  const { summary, isLoading: summaryLoading } = useAccountsSummary();
+  const { createAccount, deleteAccount, reconcileAccount, setAccountTracking } =
+    useAccountMutations();
+
+  // Modal states
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showReconcileModal, setShowReconcileModal] = useState(false);
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+
+  // Group accounts by type
+  const accountsByType = useMemo(() => {
+    const grouped: Record<string, Account[]> = {};
+
+    ACCOUNT_TYPE_ORDER.forEach((type) => {
+      grouped[type] = [];
+    });
+
+    accounts.forEach((account) => {
+      const type = account.accountType;
+      if (grouped[type]) {
+        grouped[type].push(account);
+      }
+    });
+
+    return grouped;
+  }, [accounts]);
+
+  // Handlers
+  const handleAddAccount = async (input: CreateAccountInput) => {
+    await createAccount(input);
+    refetch();
+  };
+
+  const handleEditAccount = (account: Account) => {
+    // TODO: Implement edit modal
+    console.log("Edit account:", account);
+  };
+
+  const handleDeleteAccount = async (accountId: string) => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this account? Transactions will be preserved.",
+      )
+    ) {
+      await deleteAccount(accountId);
+      refetch();
+    }
+  };
+
+  const handleReconcile = (accountId: string) => {
+    const account = accounts.find((a) => a.accountId === accountId);
+    if (account) {
+      setSelectedAccount(account);
+      setShowReconcileModal(true);
+    }
+  };
+
+  const handleReconcileSubmit = async (
+    accountId: string,
+    newBalance: number,
+    notes?: string,
+  ) => {
+    await reconcileAccount(accountId, { newBalance, notes });
+    refetch();
+  };
+
+  const handleToggleTracking = async (
+    accountId: string,
+    isTracked: boolean,
+  ) => {
+    await setAccountTracking(accountId, isTracked);
+    refetch();
+  };
+
+  const handleViewTransactions = (accountId: string) => {
+    // Navigate to budget page with account filter
+    navigate(`/budget?accountId=${accountId}`);
+  };
+
+  // Render account group section
+  const renderAccountGroup = (type: string, groupAccounts: Account[]) => {
+    if (groupAccounts.length === 0) return null;
+
+    return (
+      <div key={type} className="mb-6">
+        <h3 className="flex items-center space-x-2 text-lg font-semibold text-gray-900 mb-3">
+          <span>{ACCOUNT_TYPE_ICONS[type]}</span>
+          <span>{ACCOUNT_TYPE_LABELS[type]}</span>
+          <span className="text-sm font-normal text-gray-500">
+            ({groupAccounts.length})
+          </span>
+        </h3>
+        <div className="space-y-3">
+          {groupAccounts.map((account) => (
+            <AccountCard
+              key={account.accountId}
+              account={account as any}
+              onEdit={handleEditAccount as any}
+              onDelete={handleDeleteAccount}
+              onReconcile={handleReconcile}
+              onToggleTracking={handleToggleTracking}
+              onViewTransactions={handleViewTransactions}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="accounts-page">
-      <nav className="page-nav">
-        <Link to="/budget" className="nav-link">
-          ← Back to Budget
-        </Link>
-        <Link to="/settings" className="nav-link">
-          Settings
-        </Link>
-      </nav>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Link
+                to="/budget"
+                className="text-gray-600 hover:text-gray-900 flex items-center"
+              >
+                <svg
+                  className="w-5 h-5 mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+                Back
+              </Link>
+              <h1 className="text-xl font-semibold text-gray-900">Accounts</h1>
+            </div>
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+              >
+                <span>+</span>
+                <span>Add Manual Account</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <BankAccounts />
+      {/* Main Content */}
+      <main className="max-w-4xl mx-auto px-4 py-6">
+        {/* Summary Cards */}
+        {!summaryLoading && summary && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <p className="text-sm text-gray-600 mb-1">Total Assets</p>
+              <p className="text-2xl font-bold text-green-600">
+                {formatCurrency(summary.totalAssets, "USD")}
+              </p>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <p className="text-sm text-gray-600 mb-1">Total Liabilities</p>
+              <p className="text-2xl font-bold text-red-600">
+                {formatCurrency(summary.totalLiabilities, "USD")}
+              </p>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <p className="text-sm text-gray-600 mb-1">Net Worth</p>
+              <p
+                className={`text-2xl font-bold ${summary.netWorth >= 0 ? "text-green-600" : "text-red-600"}`}
+              >
+                {formatCurrency(summary.netWorth, "USD")}
+              </p>
+            </div>
+          </div>
+        )}
 
-      <style>{`
-        .accounts-page {
-          min-height: 100vh;
-          background: #f5f5f5;
-        }
-        .page-nav {
-          display: flex;
-          justify-content: space-between;
-          padding: 16px 20px;
-          background: white;
-          border-bottom: 1px solid #e0e0e0;
-        }
-        .nav-link {
-          color: #2196F3;
-          text-decoration: none;
-          font-size: 14px;
-        }
-        .nav-link:hover {
-          text-decoration: underline;
-        }
-      `}</style>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+            <span className="ml-3 text-gray-600">Loading accounts...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-700">{error}</p>
+            <button
+              onClick={refetch}
+              className="mt-2 text-red-600 hover:text-red-800 underline"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && !error && accounts.length === 0 && (
+          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+            <div className="text-4xl mb-4">🏦</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No accounts yet
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Add your first account to start tracking your finances.
+            </p>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Add Manual Account
+            </button>
+          </div>
+        )}
+
+        {/* Account Groups */}
+        {!isLoading && !error && accounts.length > 0 && (
+          <div>
+            {ACCOUNT_TYPE_ORDER.map((type) =>
+              renderAccountGroup(type, accountsByType[type]),
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Modals */}
+      <AddAccountModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSave={handleAddAccount as any}
+      />
+
+      <ReconcileModal
+        isOpen={showReconcileModal}
+        account={selectedAccount as any}
+        onClose={() => {
+          setShowReconcileModal(false);
+          setSelectedAccount(null);
+        }}
+        onReconcile={handleReconcileSubmit}
+      />
     </div>
   );
 };

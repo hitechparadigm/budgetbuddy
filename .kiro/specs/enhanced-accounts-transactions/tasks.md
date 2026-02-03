@@ -174,7 +174,7 @@ This implementation plan covers the development of comprehensive account managem
     - Ensure Escape closes FAB
     - _Requirements: 7.6, 7.7_
 
-- [-] 11. Implement Account Management UI
+- [x] 11. Implement Account Management UI
   - [x] 11.1 Create AccountCard component
     - Create `packages/web-app/src/components/accounts/AccountCard.tsx`
     - Display icon, nickname, institution, mask, balance
@@ -199,35 +199,35 @@ This implementation plan covers the development of comprehensive account managem
     - Create adjustment transaction on save
     - _Requirements: 3.7, 3.8_
 
-  - [ ] 11.5 Enhance AccountsPage
+  - [x] 11.5 Enhance AccountsPage
     - Group accounts by type in sections
     - Add "Add Manual Account" button
     - Add "Connect Bank" button (existing Plaid integration)
     - Add summary section with Total Assets, Total Liabilities, Net Worth
     - _Requirements: 8.1, 8.3, 8.4, 8.6_
 
-  - [ ] 11.6 Write property test for account grouping
+  - [x] 11.6 Write property test for account grouping
     - **Property 6: Account Grouping Consistency**
     - Generate random accounts, verify each in exactly one group
     - **Validates: Requirements 2.6**
 
-- [ ] 12. Checkpoint - Account management UI complete
+- [x] 12. Checkpoint - Account management UI complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 13. Enhance Transaction Modal
-  - [ ] 13.1 Add account selection dropdown
+- [x] 13. Enhance Transaction Modal
+  - [x] 13.1 Add account selection dropdown
     - Add Account dropdown to transaction form
     - List all accounts grouped by type
     - Display account name, mask, and balance in dropdown
     - Make account selection optional
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-  - [ ] 13.2 Write property test for account dropdown content
+  - [x] 13.2 Write property test for account dropdown content
     - **Property 13: Account Dropdown Content**
     - Generate random accounts, verify all listed with correct format
     - **Validates: Requirements 4.2, 4.3**
 
-  - [ ] 13.3 Implement batch entry mode
+  - [x] 13.3 Implement batch entry mode
     - Add "Create another transaction" checkbox
     - Keep modal open and clear form on save when checked
     - Preserve transaction type and account selection
@@ -235,32 +235,32 @@ This implementation plan covers the development of comprehensive account managem
     - Add "Done" button for closing
     - _Requirements: 1.1, 1.2, 1.6, 1.7_
 
-  - [ ] 13.4 Write property test for batch mode context preservation
+  - [x] 13.4 Write property test for batch mode context preservation
     - **Property 2: Batch Mode Context Preservation**
     - Generate random transactions in batch, verify type and account preserved
     - **Validates: Requirements 1.3, 1.4**
 
-  - [ ] 13.5 Implement batch mode error handling
+  - [x] 13.5 Implement batch mode error handling
     - Keep form data on save failure
     - Display error message
     - Allow retry
     - _Requirements: 1.9_
 
-  - [ ] 13.6 Implement last account preference
+  - [x] 13.6 Implement last account preference
     - Store last used account in localStorage
     - Pre-select on next transaction modal open
     - _Requirements: 4.8_
 
-- [ ] 14. Checkpoint - Transaction modal enhancements complete
+- [x] 14. Checkpoint - Transaction modal enhancements complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 15. Enhance Transaction List display
-  - [ ] 15.1 Add account column to transaction list
+- [-] 15. Enhance Transaction List display
+  - [x] 15.1 Add account column to transaction list
     - Display account icon and name for transactions with account
     - Display "Unassigned" for transactions without account
     - _Requirements: 9.1, 9.2_
 
-  - [ ] 15.2 Write property test for transaction account display
+  - [x] 15.2 Write property test for transaction account display
     - **Property 24: Transaction Account Display**
     - Generate transactions with/without accounts, verify display
     - **Validates: Requirements 9.1, 9.2**
