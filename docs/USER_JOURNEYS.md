@@ -1753,18 +1753,27 @@ _"As a user, I want AI to automatically detect my recurring bills and help me pl
 
 ### Component Mapping
 
-| Feature                  | Frontend Component           | Backend API                     | Status        |
-| ------------------------ | ---------------------------- | ------------------------------- | ------------- |
-| Pattern Detection        | `PatternReviewModal.tsx`     | `POST /api/patterns/detect`     | 📋 Spec Ready |
-| Pattern Review           | `PatternReviewModal.tsx`     | `GET /api/patterns`             | 📋 Spec Ready |
-| Pattern Approval         | `PatternReviewModal.tsx`     | `PUT /api/patterns/{id}`        | 📋 Spec Ready |
-| Budget Suggestions       | `BudgetSuggestionsModal.tsx` | `POST /api/budget/suggestions`  | 📋 Spec Ready |
-| Apply Suggestions        | `BudgetSuggestionsModal.tsx` | `POST /api/budget/apply`        | 📋 Spec Ready |
-| Manual Pattern Creation  | `TransactionList.tsx`        | `POST /api/patterns/manual`     | 📋 Spec Ready |
-| Pattern Notifications    | `NotificationCenter.tsx`     | Existing notification system    | 📋 Spec Ready |
-| AI Analysis Service      | Backend only                 | AWS Bedrock (Claude 3.5 Sonnet) | 📋 Spec Ready |
-| Pattern Detection Lambda | Backend only                 | `pattern-detection` Lambda      | 📋 Spec Ready |
-| Budget Planning Lambda   | Backend only                 | `budget-planning` Lambda        | 📋 Spec Ready |
+| Feature                  | Frontend Component           | Backend API                     | Status            |
+| ------------------------ | ---------------------------- | ------------------------------- | ----------------- |
+| Pattern Detection        | `PatternReviewModal.tsx`     | `POST /api/patterns/detect`     | 📋 Spec Ready     |
+| Pattern Review           | `PatternReviewModal.tsx`     | `GET /api/patterns`             | 📋 Spec Ready     |
+| Pattern Approval         | `PatternReviewModal.tsx`     | `PUT /api/patterns/{id}`        | 📋 Spec Ready     |
+| Budget Suggestions       | `BudgetSuggestionsModal.tsx` | `POST /api/budget/suggestions`  | 📋 Spec Ready     |
+| Apply Suggestions        | `BudgetSuggestionsModal.tsx` | `POST /api/budget/apply`        | 📋 Spec Ready     |
+| Manual Pattern Creation  | `TransactionList.tsx`        | `POST /api/patterns/manual`     | 📋 Spec Ready     |
+| Pattern Notifications    | `NotificationCenter.tsx`     | Existing notification system    | 📋 Spec Ready     |
+| AI Analysis Service      | Backend only                 | AWS Bedrock (Claude 3.5 Sonnet) | 📋 Spec Ready     |
+| Pattern Detection Lambda | Backend only                 | `pattern-detection` Lambda      | ✅ Tests Complete |
+| Budget Planning Lambda   | Backend only                 | `budget-planning` Lambda        | ✅ Tests Complete |
+| Bill Creation from AI    | Backend only                 | `bills` Lambda                  | ✅ Tests Complete |
+
+### Test Coverage (Updated 2026-02-03)
+
+| Component                   | Unit Tests                       | Property Tests              | Status      |
+| --------------------------- | -------------------------------- | --------------------------- | ----------- |
+| Pattern Detection Algorithm | 32 tests (`confidence.test.js`)  | 16 tests (Properties 16-18) | ✅ Complete |
+| AI Bill Creation            | 36 tests (`ai-creation.test.js`) | 16 tests (Properties 19-20) | ✅ Complete |
+| AI Budget Planning          | 29 tests (`ai-planning.test.js`) | 14 tests (Properties 21-22) | ✅ Complete |
 
 ### UI/UX Requirements
 
