@@ -124,54 +124,21 @@ Before writing any code:
 
 **Before Starting Any New Task:**
 
-1. **Check CI/CD Status**: Run `node scripts/check-cicd-status.js` to verify latest deployment
-2. **Wait for Success**: If deployment is in progress or failed, STOP and wait
-3. **Monitor Active Deployments**: Check every 2 minutes until deployment completes
-4. **Only Proceed on Success**: Start new tasks ONLY after successful deployment
+1. Check CI/CD status: `node scripts/check-cicd-status.js`
+2. Wait if deployment in progress or failed
+3. Only proceed after successful deployment
 
-**Deployment Monitoring Rules:**
-
-- **NEVER start new tasks while deployment is in progress**
-- **NEVER start new tasks if last deployment failed**
-- **ALWAYS verify deployment success before continuing**
-- **ALWAYS check `.kiro/cicd-status/latest.json` for deployment status**
-
-**If Deployment Failed:**
-
-1. Read failure logs from CI/CD status
-2. Analyze the error and root cause
-3. Fix the issue that caused failure
-4. Commit and push the fix
-5. Wait for new deployment to succeed
-6. Only then continue with next task
-
-**Deployment Status Check:**
-
-```bash
-# Check latest deployment status
-node scripts/check-cicd-status.js
-
-# Expected output for success:
-# ✅ CI/CD Status: SUCCESS
-# Branch: develop
-# Conclusion: success
-
-# If failed:
-# ❌ CI/CD Status: FAILED
-# [Error logs will be displayed]
-```
+**See**: `cicd-deployment.md` steering file for detailed CI/CD rules (auto-loaded when working with CI/CD files)
 
 ### 5. Never
 
 - Hardcode secrets, API keys, or passwords
 - Disable security controls to "make things work"
 - Use `--no-verify` flag to bypass git hooks
-- **Start new tasks without verifying CI/CD deployment success**
-- **Ignore failed deployments**
+- Start new tasks without verifying CI/CD deployment success
 - Introduce breaking changes without updating specs
 - Deploy without validation passing
 - Skip documentation updates
-- **Deploy directly to AWS using CDK commands** - ALL deployments MUST go through CI/CD pipeline
 
 ## Testing and CI/CD
 
@@ -190,24 +157,10 @@ node scripts/check-cicd-status.js
 - Branch protection enforced (PR validation required)
 - Environment promotion: dev → staging → prod
 - Automated rollback on health check failures
-- **ALL deployments MUST go through CI/CD pipeline** - Never use direct CDK deploy commands
-- After completing a feature, commit and push to trigger automated deployment
 
 ### AWS Integration Testing
 
-**AWS Profile**: `hitechparadigm` - Required for all AWS CLI/CDK commands
-
-**Cost Limits**: Daily < $1, Monthly < $20, Single test < $0.10
-
-**Critical Rules**:
-
-- Max 10 API calls per test, 30s Lambda timeout
-- Clean up test data immediately
-- Test in dev only, never prod
-- No infinite loops or auto-scaling without limits
-
-**When to test**: After Lambda/API/DB/auth changes, before task completion
-**When NOT to test**: Unit tests, property tests, rapid iteration, destructive ops
+**See**: `aws-integration-testing.md` steering file (auto-loaded when working with test files)
 
 ### Validation Before Commit
 
@@ -271,17 +224,19 @@ When working autonomously (overnight development):
 
 **Before starting ANY task:**
 
-1. **Check deployment status**: `node scripts/check-cicd-status.js`
-2. **Verify success**: Ensure last deployment succeeded
-3. **If in progress**: Wait and check every 2 minutes
-4. **If failed**: Fix deployment issues FIRST before continuing
+1. Check deployment status: `node scripts/check-cicd-status.js`
+2. Verify success: Ensure last deployment succeeded
+3. If in progress: Wait and check every 2 minutes
+4. If failed: Fix deployment issues FIRST before continuing
+
+**See**: `cicd-deployment.md` for detailed deployment rules
 
 ### Workflow
 
 For each task:
 
 1. **FIRST: Check context transfer summary** (if new session)
-2. **SECOND: Verify CI/CD deployment success** (see above)
+2. **SECOND: Verify CI/CD deployment success** (see cicd-deployment.md)
 3. **Implement** the feature/fix
 4. **Commit**: Use `node scripts/safe-commit-push.js "feat: description"` (validates internally)
 5. **If validation fails**: Auto-fix and retry (max 3 attempts)
@@ -289,15 +244,6 @@ For each task:
 7. **If CI/CD fails**: Analyze logs, fix, commit fix (max 2 attempts)
 8. **Wait for deployment success** before continuing to next task
 9. **Continue** to next task only after deployment succeeds
-
-**CRITICAL DEPLOYMENT RULE**: NEVER use direct CDK deploy commands (`cdk deploy`, `npm run deploy:dev`, etc.). ALL deployments happen automatically through the CI/CD pipeline when you push to develop/main branches. Your job is to:
-
-1. Complete the feature implementation
-2. Commit and push the code
-3. **WAIT for GitHub Actions deployment to complete**
-4. **VERIFY deployment succeeded using check-cicd-status.js**
-5. Monitor the deployment logs if needed
-6. Only then proceed to next task
 
 **CRITICAL**: Never run `validate-for-commit.js` manually before `safe-commit-push.js` - it causes duplicate validation. The safe-commit-push script handles validation internally.
 
@@ -379,26 +325,12 @@ Summarize in 3-5 bullets:
 
 ## Documentation Requirements
 
-### Mandatory Files (Must Update on Every Commit)
+**See**: `documentation-standards.md` steering file (auto-loaded when working with documentation files)
 
-1. **README.md** - Project overview, recent achievements
-2. **CHANGELOG.md** - Version history with semantic versioning
-3. **DEVELOPMENT_LOG.md** - Daily development progress
-4. **docs/development-status.md** - Current status and next steps
+### Quick Reference
 
-### When to Update
-
-- **README.md**: Major features, status changes
-- **CHANGELOG.md**: Every commit (version entry)
-- **DEVELOPMENT_LOG.md**: Every session (with summary)
-- **development-status.md**: Progress updates, blockers
-
-### Format Requirements
-
-- Use emojis for categories (🔒🔧🐛🚀🤖)
-- Include technical details and impact
-- Follow established patterns
-- Keep consistent structure
+**Mandatory Files**: README.md, CHANGELOG.md, DEVELOPMENT_LOG.md, docs/development-status.md
+**Update on**: Every commit (CHANGELOG), every session (DEVELOPMENT_LOG), major features (README, development-status)
 
 ## AWS Well-Architected Pillars
 

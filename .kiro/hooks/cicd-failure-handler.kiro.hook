@@ -1,12 +1,12 @@
 {
   "name": "CI/CD Failure Auto-Fix",
-  "version": "1.0.0",
-  "description": "Automatically handles and fixes CI/CD pipeline failures",
+  "version": "2.0.0",
+  "description": "Handles CI/CD failures - see cicd-deployment.md steering for detailed rules",
   "when": {
     "type": "userTriggered"
   },
   "then": {
     "type": "askAgent",
-    "prompt": "🔴 CI/CD FAILURE - Auto-fix workflow:\n\n1. Get logs: gh run view --log-failed\n2. Identify issue type (build/test/deploy/lint/types)\n3. Fix the issue\n4. Validate: node scripts/validate-for-commit.js\n5. Commit: node scripts/safe-commit-push.js \"fix: [description]\"\n6. Monitor: gh run watch\n\nMax 2 attempts. If still failing, document and ask user."
+    "prompt": "🔴 CI/CD FAILURE\n\n1. Get logs: gh run view --log-failed\n2. Identify issue\n3. Fix\n4. Validate: node scripts/validate-for-commit.js\n5. Commit: node scripts/safe-commit-push.js \"fix: [description]\"\n6. Monitor: gh run watch\n\nMax 2 attempts. See .kiro/steering/cicd-deployment.md for full rules."
   }
 }
