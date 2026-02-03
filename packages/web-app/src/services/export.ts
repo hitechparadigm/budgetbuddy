@@ -1,10 +1,16 @@
 import { Budget, Transaction } from '../types';
 
+// Account lookup type for export
+export interface AccountLookup {
+  [accountId: string]: string; // accountId -> account name
+}
+
 export interface ExportOptions {
   startDate?: Date;
   endDate?: Date;
   categories?: string[];
   format: 'csv' | 'pdf';
+  accountLookup?: AccountLookup; // NEW: Map of accountId to account name
 }
 
 export interface ExportResult {
@@ -37,10 +43,13 @@ class WebExportService {
   /**
    * Export transaction data to CSV format for web
    */
-  async exportTransactionsToCSV(transactions: Transaction[], options: ExportOptions): Promise<ExportResult> {
+  async exportTransactionsToCSV(
+    transactions: Transaction[],
+    options: ExportOptions
+  ): Promise<ExportResult> {
     try {
       const filteredTransactions = this.filterTransactionsByOptions(transactions, options);
-      const csvContent = this.generateTransactionCSV(filteredTransactions);
+      const csvContent = this.generateTransactionCSV(filteredTransactions, options.accountLookup);
 
       const fileName = `transactions_${this.formatDateForFilename(new Date())}.csv`;
       this.downloadFile(csvContent, fileName, 'text/csv');
@@ -202,12 +211,16 @@ class WebExportService {
   /**
    * Generate CSV content for transactions
    */
-  private generateTransactionCSV(transactions: Transaction[]): string {
+  private generateTransactionCSV(
+    transactions: Transaction[],
+    accountLookup?: AccountLookup
+  ): string {
     const headers = [
       'ID',
       'Description',
       'Amount',
       'Category',
+      'Account', // NEW: Account column
       'Date',
       'Merchant',
       'Location',
@@ -217,19 +230,27 @@ class WebExportService {
       'Created Date'
     ];
 
-    const rows = transactions.map(transaction => [
-      transaction.id,
-      this.escapeCsvField(transaction.description),
-      transaction.amount.toString(),
-      this.escapeCsvField(transaction.category),
-      transaction.date,
-      this.escapeCsvField(transaction.merchant || ''),
-      this.escapeCsvField(transaction.location || ''),
-      this.escapeCsvField(transaction.tags?.join(';') || ''),
-      this.escapeCsvField(transaction.notes || ''),
-      transaction.syncStatus || 'synced',
-      transaction.createdAt
-    ]);
+    const rows = transactions.map(transaction => {
+      // Get account name from lookup or use "Unassigned"
+      const accountName = transaction.accountId && accountLookup
+        ? (accountLookup[transaction.accountId] || 'Unknown Account')
+        : 'Unassigned';
+
+      return [
+        transaction.id,
+        this.escapeCsvField(transaction.description),
+        transaction.amount.toString(),
+        this.escapeCsvField(transaction.category),
+        this.escapeCsvField(accountName), // NEW: Account name
+        transaction.date,
+        this.escapeCsvField(transaction.merchant || ''),
+        this.escapeCsvField(transaction.location || ''),
+        this.escapeCsvField(transaction.tags?.join(';') || ''),
+        this.escapeCsvField(transaction.notes || ''),
+        transaction.syncStatus || 'synced',
+        transaction.createdAt
+      ];
+    });
 
     return [headers, ...rows]
       .map(row => row.join(','))
