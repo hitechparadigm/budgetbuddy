@@ -111,15 +111,15 @@ This implementation plan covers the development of comprehensive account managem
     - Update CDK stack with GSI definition
     - _Requirements: 11.4_
 
-- [ ] 7. Create frontend account service
-  - [ ] 7.1 Create accountsApi service
+- [x] 7. Create frontend account service
+  - [x] 7.1 Create accountsApi service
     - Create `packages/web-app/src/services/accountsApi.ts`
     - Implement getAccounts, createAccount, updateAccount, deleteAccount
     - Implement reconcileAccount, setAccountTracking
     - Implement getAccountsSummary
     - _Requirements: 2.5, 2.7, 2.8, 3.7, 5.6_
 
-  - [ ] 7.2 Create account React Query hooks
+  - [x] 7.2 Create account React Query hooks
     - Create useAccounts hook for listing accounts
     - Create useAccount hook for single account
     - Create useAccountMutations for CRUD operations
