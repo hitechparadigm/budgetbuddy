@@ -11,6 +11,8 @@ const {
   QueryCommand,
   PutCommand,
   UpdateCommand,
+  DeleteCommand,
+  BatchWriteCommand,
 } = require("@aws-sdk/lib-dynamodb");
 const { v4: uuidv4 } = require("uuid");
 
@@ -223,4 +225,60 @@ module.exports = {
   savePattern,
   getPatternsByFamily,
   updatePatternStatus,
+  deleteAllPatternsForFamily,
 };
+
+/**
+ * Delete all patterns for a family (used during account deletion)
+ * @param {string} familyId - Family ID
+ * @returns {Promise<Object>} Deletion result with count
+ */
+async function deleteAllPatternsForFamily(familyId) {
+  if (!familyId) {
+    throw new Error("familyId is required");
+  }
+
+  try {
+    // First, get all patterns for the family
+    const patterns = await getPatternsByFamily(familyId);
+
+    if (patterns.length === 0) {
+      return { deletedCount: 0, message: "No patterns to delete" };
+    }
+
+    // Delete patterns in batches of 25 (DynamoDB limit)
+    const batchSize = 25;
+    let deletedCount = 0;
+
+    for (let i = 0; i < patterns.length; i += batchSize) {
+      const batch = patterns.slice(i, i + batchSize);
+
+      const deleteRequests = batch.map((pattern) => ({
+        DeleteRequest: {
+          Key: {
+            PK: `FAMILY#${familyId}`,
+            SK: `PATTERN#${pattern.patternId}`,
+          },
+        },
+      }));
+
+      await docClient.send(
+        new BatchWriteCommand({
+          RequestItems: {
+            [TABLE_NAME]: deleteRequests,
+          },
+        }),
+      );
+
+      deletedCount += batch.length;
+    }
+
+    return {
+      deletedCount,
+      message: `Successfully deleted ${deletedCount} patterns for family ${familyId}`,
+    };
+  } catch (error) {
+    console.error("Error deleting patterns for family:", error);
+    throw new Error(`Failed to delete patterns: ${error.message}`);
+  }
+}

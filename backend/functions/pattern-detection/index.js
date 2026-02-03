@@ -6,6 +6,7 @@
  *
  * Endpoints:
  * - POST /patterns/detect - Analyze transactions and detect patterns
+ * - POST /patterns/manual - Create manual pattern from transaction
  * - GET /patterns - Get all patterns for family
  * - GET /patterns/{patternId} - Get specific pattern
  * - PUT /patterns/{patternId} - Update pattern (approve/reject/edit)
@@ -20,6 +21,7 @@ const {
   approvePattern,
   rejectPattern,
   ignorePattern,
+  createManualPattern,
 } = require("./pattern-detection-service");
 
 /**
@@ -295,6 +297,73 @@ async function handleDeletePattern(event) {
 }
 
 /**
+ * Handle POST /patterns/manual - Create manual pattern from transaction
+ * @param {Object} event - Lambda event
+ * @returns {Promise<Object>} Lambda response
+ */
+async function handleCreateManualPattern(event) {
+  const { userId, familyId } = extractUserInfo(event);
+
+  if (!userId || !familyId) {
+    return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
+  }
+
+  const body = parseBody(event);
+  const { transaction, frequency } = body;
+
+  // Validate required fields
+  if (!transaction) {
+    return errorResponse("Transaction data is required", "MISSING_PARAM", 400);
+  }
+
+  if (!frequency) {
+    return errorResponse("Frequency is required", "MISSING_PARAM", 400);
+  }
+
+  const validFrequencies = [
+    "weekly",
+    "bi-weekly",
+    "monthly",
+    "quarterly",
+    "annual",
+  ];
+  if (!validFrequencies.includes(frequency)) {
+    return errorResponse(
+      `Invalid frequency. Must be one of: ${validFrequencies.join(", ")}`,
+      "INVALID_FREQUENCY",
+      400,
+    );
+  }
+
+  try {
+    const pattern = await createManualPattern(
+      userId,
+      familyId,
+      transaction,
+      frequency,
+    );
+
+    return successResponse({ pattern }, "Manual pattern created successfully");
+  } catch (error) {
+    console.error("Create manual pattern error:", error);
+
+    if (error.message.includes("required")) {
+      return errorResponse(error.message, "VALIDATION_ERROR", 400);
+    }
+
+    if (error.message.includes("Invalid frequency")) {
+      return errorResponse(error.message, "INVALID_FREQUENCY", 400);
+    }
+
+    return errorResponse(
+      "Failed to create manual pattern",
+      "CREATE_FAILED",
+      500,
+    );
+  }
+}
+
+/**
  * Handle health check
  * @returns {Object} Lambda response
  */
@@ -343,6 +412,9 @@ exports.handler = async (event) => {
       case "POST":
         if (path?.includes("/detect")) {
           return await handleDetectPatterns(event);
+        }
+        if (path?.includes("/manual")) {
+          return await handleCreateManualPattern(event);
         }
         return errorResponse("Invalid endpoint", "NOT_FOUND", 404);
 

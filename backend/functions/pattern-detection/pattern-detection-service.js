@@ -363,16 +363,26 @@ async function getPatterns(userId, familyId, filters = {}) {
 
 /**
  * Update a pattern (user edits)
+ * Also propagates changes to associated bill if one exists
  * @param {string} patternId - Pattern ID
  * @param {string} userId - User ID
  * @param {string} familyId - Family ID
  * @param {Object} updates - Fields to update
- * @returns {Promise<Object>} Updated pattern
+ * @param {Object} options - Options (propagateToBill)
+ * @returns {Promise<Object>} Updated pattern with propagation result
  */
-async function updatePattern(patternId, userId, familyId, updates) {
+async function updatePattern(
+  patternId,
+  userId,
+  familyId,
+  updates,
+  options = {},
+) {
   if (!patternId || !familyId) {
     throw new Error("patternId and familyId are required");
   }
+
+  const { propagateToBill = true } = options;
 
   // Get existing pattern to verify ownership
   const patterns = await getPatternsByFamily(familyId);
@@ -388,6 +398,7 @@ async function updatePattern(patternId, userId, familyId, updates) {
     "averageAmount",
     "frequency",
     "categoryId",
+    "categoryName",
     "nextExpectedDate",
   ];
 
@@ -409,7 +420,74 @@ async function updatePattern(patternId, userId, familyId, updates) {
     ...filteredUpdates,
   };
 
-  return savePattern(updatedPattern);
+  const savedPattern = await savePattern(updatedPattern);
+
+  // Propagate changes to associated bill if exists and propagation is enabled
+  let billUpdateResult = null;
+  if (propagateToBill && existingPattern.billId) {
+    try {
+      billUpdateResult = await updateAssociatedBill(
+        existingPattern.billId,
+        familyId,
+        filteredUpdates,
+      );
+    } catch (error) {
+      console.warn("Failed to propagate pattern edit to bill:", error.message);
+      billUpdateResult = { success: false, error: error.message };
+    }
+  }
+
+  return {
+    pattern: savedPattern,
+    billUpdateResult,
+  };
+}
+
+/**
+ * Update associated bill when pattern is edited
+ * Preserves AI metadata during edits
+ * @param {string} billId - Bill ID
+ * @param {string} familyId - Family ID
+ * @param {Object} patternUpdates - Updates from pattern
+ * @returns {Promise<Object>} Update result
+ */
+async function updateAssociatedBill(billId, familyId, patternUpdates) {
+  // Map pattern fields to bill fields
+  const billUpdates = {};
+
+  if (patternUpdates.suggestedBillName) {
+    billUpdates.name = patternUpdates.suggestedBillName;
+  }
+  if (patternUpdates.averageAmount !== undefined) {
+    billUpdates.amount = patternUpdates.averageAmount;
+  }
+  if (patternUpdates.frequency) {
+    billUpdates.frequency = patternUpdates.frequency;
+  }
+  if (patternUpdates.categoryId !== undefined) {
+    billUpdates.categoryId = patternUpdates.categoryId;
+  }
+  if (patternUpdates.categoryName !== undefined) {
+    billUpdates.categoryName = patternUpdates.categoryName;
+  }
+  if (patternUpdates.nextExpectedDate) {
+    billUpdates.dueDate = patternUpdates.nextExpectedDate;
+  }
+
+  // Mark bill as user-modified but preserve AI metadata
+  billUpdates.userModified = true;
+  billUpdates.updatedAt = new Date().toISOString();
+
+  // Note: This would typically call the bills service/repository
+  // For now, we return the updates that should be applied
+  // The actual bill update would be done via the bills Lambda
+  return {
+    success: true,
+    billId,
+    familyId,
+    updates: billUpdates,
+    message: "Bill update prepared (requires bills service integration)",
+  };
 }
 
 /**
@@ -482,6 +560,144 @@ async function ignorePattern(patternId, userId, familyId) {
   return updatedPattern;
 }
 
+/**
+ * Create a manual pattern from a transaction
+ * User marks a transaction as recurring and specifies frequency
+ *
+ * @param {string} userId - User ID
+ * @param {string} familyId - Family ID
+ * @param {Object} transactionData - Transaction data
+ * @param {string} frequency - Recurring frequency
+ * @returns {Promise<Object>} Created pattern
+ */
+async function createManualPattern(
+  userId,
+  familyId,
+  transactionData,
+  frequency,
+) {
+  if (!userId) {
+    throw new Error("userId is required");
+  }
+  if (!familyId) {
+    throw new Error("familyId is required");
+  }
+  if (!transactionData) {
+    throw new Error("transactionData is required");
+  }
+  if (!frequency) {
+    throw new Error("frequency is required");
+  }
+
+  // Validate frequency
+  const validFrequencies = [
+    "weekly",
+    "bi-weekly",
+    "monthly",
+    "quarterly",
+    "annual",
+  ];
+  if (!validFrequencies.includes(frequency)) {
+    throw new Error(
+      `Invalid frequency. Must be one of: ${validFrequencies.join(", ")}`,
+    );
+  }
+
+  // Extract transaction details
+  const {
+    transactionId,
+    merchant,
+    merchantName,
+    amount,
+    date,
+    categoryId,
+    categoryName,
+    description,
+  } = transactionData;
+
+  const merchantValue =
+    merchant || merchantName || description || "Unknown Merchant";
+
+  // Validate amount before processing
+  const rawAmount = amount || 0;
+  if (rawAmount === 0) {
+    throw new Error("Transaction amount must be greater than 0");
+  }
+
+  const transactionAmount = Math.abs(rawAmount);
+
+  // Calculate next expected date based on frequency
+  const nextExpectedDate = calculateNextExpectedDate(date, frequency);
+
+  // Create pattern object
+  const pattern = {
+    patternId: uuidv4(),
+    familyId,
+    userId,
+    merchantName: merchantValue,
+    suggestedBillName: generateBillName(merchantValue),
+    averageAmount: transactionAmount,
+    amountStdDev: 0, // Single occurrence, no variance
+    frequency,
+    confidenceScore: 100, // Manual patterns have 100% confidence
+    status: "approved", // Manual patterns are auto-approved
+    categoryId: categoryId || null,
+    categoryName: categoryName || null,
+    nextExpectedDate,
+    occurrences: [
+      {
+        date: date || new Date().toISOString().split("T")[0],
+        amount: transactionAmount,
+        transactionId: transactionId || null,
+      },
+    ],
+    explanation: `Manually marked as recurring ${frequency} payment by user.`,
+    analysisMonths: 0, // Not from analysis
+    isManual: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    approvedAt: new Date().toISOString(),
+    approvedBy: userId,
+  };
+
+  // Save pattern to database
+  const savedPattern = await savePattern(pattern);
+
+  return savedPattern;
+}
+
+/**
+ * Calculate next expected date based on frequency
+ * @param {string} currentDate - Current date (YYYY-MM-DD)
+ * @param {string} frequency - Frequency
+ * @returns {string} Next expected date (YYYY-MM-DD)
+ */
+function calculateNextExpectedDate(currentDate, frequency) {
+  const date = currentDate ? new Date(currentDate) : new Date();
+
+  switch (frequency) {
+    case "weekly":
+      date.setDate(date.getDate() + 7);
+      break;
+    case "bi-weekly":
+      date.setDate(date.getDate() + 14);
+      break;
+    case "monthly":
+      date.setMonth(date.getMonth() + 1);
+      break;
+    case "quarterly":
+      date.setMonth(date.getMonth() + 3);
+      break;
+    case "annual":
+      date.setFullYear(date.getFullYear() + 1);
+      break;
+    default:
+      date.setMonth(date.getMonth() + 1);
+  }
+
+  return date.toISOString().split("T")[0];
+}
+
 module.exports = {
   analyzeTransactionsForPatterns,
   getPatterns,
@@ -489,10 +705,13 @@ module.exports = {
   approvePattern,
   rejectPattern,
   ignorePattern,
+  createManualPattern,
+  updateAssociatedBill,
   // Export helpers for testing
   generateBillName,
   generateExplanation,
   mergePatterns,
+  calculateNextExpectedDate,
   // Export constants
   MIN_ANALYSIS_MONTHS,
   MAX_ANALYSIS_MONTHS,
