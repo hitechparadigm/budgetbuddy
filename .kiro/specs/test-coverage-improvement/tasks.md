@@ -21,7 +21,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - **Property 3: Transaction Invalid Data Rejection**
     - **Validates: Requirements 1.3, 1.4, 1.6**
 
-  - [x] 1.3 Create Google OAuth test suite
+  - [ ] 1.3 Create Google OAuth test suite
     - Create `backend/functions/auth/google-oauth.test.js`
     - Test OAuth initiation with correct redirect parameters
     - Test authorization code exchange
