@@ -47,7 +47,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - **Property 6: Admin Authorization**
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.6**
 
-  - [ ] 1.6 Create receipt OCR accuracy test suite
+  - [x] 1.6 Create receipt OCR accuracy test suite
     - Create `backend/functions/receipt/ocr-accuracy.test.js`
     - Create test receipt image dataset (10+ images with known values)
     - Test total amount extraction accuracy
@@ -57,7 +57,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - Test multi-item receipt validation
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ] 1.7 Write property test for receipt OCR
+  - [x] 1.7 Write property test for receipt OCR
     - **Property 7: Receipt OCR Accuracy**
     - **Validates: Requirements 4.6**
 
