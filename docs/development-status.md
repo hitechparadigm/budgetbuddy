@@ -1,10 +1,61 @@
 # Development Status - BudgetBuddy
 
 **Last Updated**: 2026-02-03
-**Current Phase**: Week 1 P0 Bug Fixes - COMPLETE ✅
+**Current Phase**: Enhanced Accounts & Transactions - Phase 2 Complete ✅
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - Week 1 P0 Bug Fixes Complete (Session 110)
+## ✨ LATEST - Enhanced Accounts & Transactions Phase 2 (Session 111)
+
+### Frontend UI Tasks Complete ✅
+
+**Status**: Tasks 16-19 completed, sidebar integrated, all tests passing
+
+**Completed Tasks**:
+
+1. ✅ **Task 16: Connected Account Mapping**
+   - AccountMappingModal with default tracking
+   - Budget exclusion for untracked accounts
+   - Property tests: 15 + 11 tests passing
+
+2. ✅ **Task 17: Checkpoint** - All tests verified
+
+3. ✅ **Task 18: Sidebar Integration**
+   - Created AppLayout and ProtectedLayout components
+   - All protected routes use sidebar navigation
+   - Mobile responsive with hamburger menu
+   - Collapse state persisted in localStorage
+
+4. ✅ **Task 19: Final Integration**
+   - Account balance updates already wired
+   - Created BulkAccountAssignmentModal
+   - Documentation updated
+
+### New Components Created
+
+- `packages/web-app/src/components/layout/AppLayout.tsx`
+- `packages/web-app/src/components/layout/ProtectedLayout.tsx`
+- `packages/web-app/src/components/transactions/BulkAccountAssignmentModal.tsx`
+
+### Property-Based Tests Status
+
+| Test File                        | Tests | Status     |
+| -------------------------------- | ----- | ---------- |
+| AccountMappingModal.pbt.test.tsx | 15    | ✅ Passing |
+| budget-exclusion.pbt.test.js     | 11    | ✅ Passing |
+| Sidebar.pbt.test.tsx             | 11    | ✅ Passing |
+| TransactionModal.pbt.test.tsx    | 17    | ✅ Passing |
+| TransactionList.pbt.test.tsx     | 12    | ✅ Passing |
+| AccountCard.pbt.test.tsx         | 14    | ✅ Passing |
+
+### Next Steps
+
+1. Complete Task 20: Final checkpoint
+2. Run full test suite
+3. Commit and deploy
+
+---
+
+## Previous - Week 1 P0 Bug Fixes Complete (Session 110)
 
 ### Week 1 P0 Bug Fixes - COMPLETE ✅
 
