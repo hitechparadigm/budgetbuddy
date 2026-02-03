@@ -17,6 +17,10 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^/opt/nodejs/utils$": "<rootDir>/__mocks__/opt/nodejs/utils.js",
+      "^/opt/nodejs/shared$": "<rootDir>/__mocks__/opt/nodejs/shared.js"
+    },
     "collectCoverageFrom": [
       "*.js",
       "!*.test.js"

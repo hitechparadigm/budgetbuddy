@@ -1,5 +1,72 @@
 # Development Log
 
+## 2026-02-03 - Test Coverage Improvement Week 2 (Session 113)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Execute Week 2 test coverage improvement tasks
+**Outcome**: 3 tasks completed, 27 new tests added
+
+### Work Completed
+
+1. **Task 1.1: Transaction Editing Test Suite**:
+   - File: `backend/functions/transactions/edit-transaction.test.js` (already existed)
+   - Tests: 10 unit tests for transaction editing
+   - Coverage: Amount, category, description, date, accountId updates
+   - Validation: Positive amounts, valid types, date format
+
+2. **Task 1.2: Property Tests for Transaction Editing**:
+   - File: `backend/functions/transactions/edit-transaction.pbt.test.js` (NEW)
+   - Tests: 5 property-based tests using fast-check
+   - Properties:
+     - Property 1: Transaction Edit Round-Trip
+     - Property 2: Transaction Date Validation
+     - Property 3: Transaction Invalid Data Rejection
+     - Property: Type Change Consistency
+   - All tests passing
+
+3. **Task 1.3: Google OAuth Test Suite**:
+   - File: `backend/functions/auth/google-oauth.test.js` (NEW)
+   - Tests: 12 unit tests for Google Sign-In
+   - Coverage: Token validation, user creation, account linking, JWT issuance
+   - Fixed auth function jest config with moduleNameMapper
+   - Created mock files for /opt/nodejs/utils and /opt/nodejs/shared
+
+4. **Infrastructure Fixes**:
+   - Updated `backend/functions/auth/package.json` with moduleNameMapper
+   - Created `backend/functions/auth/__mocks__/opt/nodejs/utils.js`
+   - Created `backend/functions/auth/__mocks__/opt/nodejs/shared.js`
+
+### Files Created/Modified
+
+**New Files**:
+
+- `backend/functions/transactions/edit-transaction.pbt.test.js`
+- `backend/functions/auth/google-oauth.test.js`
+- `backend/functions/auth/__mocks__/opt/nodejs/utils.js`
+- `backend/functions/auth/__mocks__/opt/nodejs/shared.js`
+
+**Modified Files**:
+
+- `backend/functions/auth/package.json` (added moduleNameMapper)
+- `.kiro/specs/test-coverage-improvement/tasks.md` (task status updates)
+
+### Test Results
+
+- Transaction editing unit tests: 10 passing
+- Transaction editing PBT tests: 5 passing
+- Google OAuth tests: 12 passing
+- **Total new tests**: 27
+
+### Next Steps
+
+1. Task 1.4: Create admin dashboard test suite
+2. Task 1.5: Write property tests for admin APIs
+3. Task 1.6: Create receipt OCR accuracy test suite
+
+---
+
 ## 2026-02-03 - Test Coverage Improvement Spec (Session 113)
 
 ### Session Summary
