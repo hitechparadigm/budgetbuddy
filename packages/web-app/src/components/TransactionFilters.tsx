@@ -19,6 +19,7 @@ export interface TransactionFiltersState {
   amountMin: number | null;
   amountMax: number | null;
   type: "income" | "expense" | null;
+  accountIds: string[] | null; // NEW: Multi-select account filter
 }
 
 interface Category {
@@ -28,10 +29,19 @@ interface Category {
   type: "income" | "savings" | "expense";
 }
 
+// Account interface for filtering
+interface Account {
+  accountId: string;
+  nickname: string;
+  accountType: string;
+  mask?: string | null;
+}
+
 interface TransactionFiltersProps {
   filters: TransactionFiltersState;
   onFiltersChange: (filters: TransactionFiltersState) => void;
   categories: Category[];
+  accounts?: Account[]; // NEW: Optional accounts for filtering
   className?: string;
   compact?: boolean;
 }
@@ -44,12 +54,14 @@ const initialFilters: TransactionFiltersState = {
   amountMin: null,
   amountMax: null,
   type: null,
+  accountIds: null,
 };
 
 export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
   filters,
   onFiltersChange,
   categories,
+  accounts = [],
   className = "",
   compact = false,
 }) => {
@@ -62,13 +74,15 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
     filters.dateTo !== null ||
     filters.amountMin !== null ||
     filters.amountMax !== null ||
-    filters.type !== null;
+    filters.type !== null ||
+    (filters.accountIds !== null && filters.accountIds.length > 0);
 
   const activeFilterCount = [
     filters.category,
     filters.dateFrom || filters.dateTo,
     filters.amountMin || filters.amountMax,
     filters.type,
+    filters.accountIds && filters.accountIds.length > 0,
   ].filter(Boolean).length;
 
   const handleSearchChange = (value: string) => {
@@ -104,6 +118,24 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
     });
   };
 
+  const handleAccountChange = (accountId: string) => {
+    const currentIds = filters.accountIds || [];
+    let newIds: string[];
+
+    if (currentIds.includes(accountId)) {
+      // Remove account from filter
+      newIds = currentIds.filter((id) => id !== accountId);
+    } else {
+      // Add account to filter
+      newIds = [...currentIds, accountId];
+    }
+
+    onFiltersChange({
+      ...filters,
+      accountIds: newIds.length > 0 ? newIds : null,
+    });
+  };
+
   const clearAllFilters = () => {
     onFiltersChange(initialFilters);
     setIsExpanded(false);
@@ -114,6 +146,8 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
       onFiltersChange({ ...filters, dateFrom: null, dateTo: null });
     } else if (filterName === "amountMin" || filterName === "amountMax") {
       onFiltersChange({ ...filters, amountMin: null, amountMax: null });
+    } else if (filterName === "accountIds") {
+      onFiltersChange({ ...filters, accountIds: null });
     } else {
       onFiltersChange({
         ...filters,
@@ -269,6 +303,12 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
               onRemove={() => clearFilter("type")}
             />
           )}
+          {filters.accountIds && filters.accountIds.length > 0 && (
+            <FilterPill
+              label={`Accounts: ${filters.accountIds.length} selected`}
+              onRemove={() => clearFilter("accountIds")}
+            />
+          )}
         </div>
       )}
 
@@ -381,6 +421,49 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
+
+            {/* Account Filter (NEW) */}
+            {accounts.length > 0 && (
+              <div className="col-span-full">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Accounts
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {accounts.map((account) => {
+                    const isSelected = filters.accountIds?.includes(account.accountId);
+                    return (
+                      <button
+                        key={account.accountId}
+                        type="button"
+                        onClick={() => handleAccountChange(account.accountId)}
+                        className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                          isSelected
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+                        }`}
+                      >
+                        {account.nickname}
+                        {account.mask && ` (••••${account.mask})`}
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => handleAccountChange("unassigned")}
+                    className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+                      filters.accountIds?.includes("unassigned")
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+                    }`}
+                  >
+                    📝 Unassigned
+                  </button>
+                </div>
+              </div>
+            )}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -437,7 +520,8 @@ export function useTransactionFilters(
     filters.dateTo !== null ||
     filters.amountMin !== null ||
     filters.amountMax !== null ||
-    filters.type !== null;
+    filters.type !== null ||
+    (filters.accountIds !== null && filters.accountIds.length > 0);
 
   return {
     filters,
@@ -454,6 +538,7 @@ export function filterTransactions<
     amount: number;
     date: string;
     categoryId?: string;
+    accountId?: string | null;
   },
 >(
   transactions: T[],
@@ -504,6 +589,14 @@ export function filterTransactions<
         catType !== "expense" &&
         catType !== "savings"
       ) {
+        return false;
+      }
+    }
+
+    // Account filter (NEW)
+    if (filters.accountIds && filters.accountIds.length > 0) {
+      const txnAccountId = txn.accountId || "unassigned";
+      if (!filters.accountIds.includes(txnAccountId)) {
         return false;
       }
     }

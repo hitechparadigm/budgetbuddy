@@ -254,7 +254,7 @@ This implementation plan covers the development of comprehensive account managem
 - [x] 14. Checkpoint - Transaction modal enhancements complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 15. Enhance Transaction List display
+- [x] 15. Enhance Transaction List display
   - [x] 15.1 Add account column to transaction list
     - Display account icon and name for transactions with account
     - Display "Unassigned" for transactions without account
@@ -265,12 +265,12 @@ This implementation plan covers the development of comprehensive account managem
     - Generate transactions with/without accounts, verify display
     - **Validates: Requirements 9.1, 9.2**
 
-  - [ ] 15.3 Add account filter to transaction filters
+  - [x] 15.3 Add account filter to transaction filters
     - Add Account dropdown to filter bar
     - Support multi-select filtering
     - _Requirements: 9.3, 9.4_
 
-  - [ ] 15.4 Add account to transaction export
+  - [x] 15.4 Add account to transaction export
     - Include account name in CSV/PDF export
     - Use "Unassigned" for transactions without account
     - _Requirements: 9.6_
