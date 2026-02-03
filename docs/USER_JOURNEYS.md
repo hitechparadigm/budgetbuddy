@@ -6,6 +6,9 @@
 
 **Recent Updates**:
 
+- Split api-features-stack into two stacks to stay under CloudFormation 500 resource limit (2026-02-03)
+- Created api-features-extended-stack for AI-powered features (Insights, Receipt, Pattern Detection, Budget Planning)
+- Updated CI/CD workflow to deploy stacks in correct order to break SharedLayer export dependency
 - Added Enhanced Accounts & Transactions Phase 2 components (2026-02-03)
 - Sidebar integration with AppLayout and ProtectedLayout
 - Transaction modal with account selection and batch mode
@@ -1992,6 +1995,37 @@ All optimization work has been completed:
 **Token Efficiency**: 35-40% reduction per interaction achieved
 **Autonomous Capability**: 100% maintained
 **Best Practices**: Fully aligned with Kiro documentation
+
+### Infrastructure Stack Architecture (Updated 2026-02-03)
+
+The CDK infrastructure has been split to stay under CloudFormation's 500 resource limit:
+
+| Stack Name                              | Purpose                                    | Resources | Status      |
+| --------------------------------------- | ------------------------------------------ | --------- | ----------- |
+| `budgetbuddy-dev-database`              | DynamoDB tables                            | ~10       | ✅ Complete |
+| `budgetbuddy-dev-auth`                  | Cognito User Pools                         | ~20       | ✅ Complete |
+| `budgetbuddy-dev-auth-onboarding`       | Standalone onboarding Lambda               | ~15       | ✅ Complete |
+| `budgetbuddy-dev-api`                   | Core API (budget, transactions, auth, etc) | ~412      | ✅ Complete |
+| `budgetbuddy-dev-api-features`          | Feature APIs (Plaid, Admin, Tips, etc)     | ~350      | ✅ Complete |
+| `budgetbuddy-dev-api-features-extended` | AI-powered APIs (Insights, Receipt, etc)   | ~150      | ✅ NEW      |
+| `budgetbuddy-dev-hosting`               | S3 + CloudFront                            | ~30       | ✅ Complete |
+| `budgetbuddy-dev-notification`          | Push notifications, reminders              | ~40       | ✅ Complete |
+| `budgetbuddy-dev-monitoring`            | CloudWatch dashboards, alarms              | ~25       | ✅ Complete |
+
+**API Features Extended Stack** (New - 2026-02-03):
+
+- `InsightsHandler` - AI spending analytics with Bedrock
+- `ReceiptHandler` - AI receipt scanning with Textract
+- `PatternDetectionHandler` - AI recurring bill detection
+- `BudgetPlanningHandler` - AI budget suggestions
+- S3 buckets for receipts and pattern cache
+
+**CI/CD Deployment Order**:
+
+1. `api-features` (creates own SharedLayer)
+2. `api-features-extended` (creates own SharedLayer)
+3. `notification` (creates own SharedLayer)
+4. All remaining stacks
 
 **Next Steps**:
 
