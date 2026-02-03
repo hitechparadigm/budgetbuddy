@@ -295,6 +295,18 @@ export class ApiStack extends cdk.Stack {
       description: 'BudgetBuddy goals handler for savings goals, progress tracking, and milestone celebrations',
     });
 
+    /**
+     * Account Management Functions
+     * Handle account CRUD, balance tracking, and reconciliation
+     */
+    this.functions.accountsHandler = new lambda.Function(this, 'AccountsHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-accounts',
+      code: lambda.Code.fromAsset('../backend/functions/accounts'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy accounts handler for manual/connected account management, balance tracking, and reconciliation',
+    });
+
     // Note: Subscriptions, Debt Payoff, Insights, and Receipt Lambdas moved to ApiFeaturesStack
 
     // Note: Plaid and Reconciliation Lambdas moved to ApiFeaturesStack
@@ -891,6 +903,60 @@ export class ApiStack extends cdk.Stack {
     goalContributeResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.goalsHandler), {
       authorizer,
       operationName: 'ContributeToGoal',
+    });
+
+    // Accounts routes (protected)
+    const accountsResource = this.api.root.addResource('accounts');
+    accountsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.accountsHandler), {
+      authorizer,
+      operationName: 'GetAccounts',
+    });
+    accountsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.accountsHandler), {
+      authorizer,
+      operationName: 'CreateAccount',
+    });
+
+    // Accounts summary endpoint
+    const accountsSummaryResource = accountsResource.addResource('summary');
+    accountsSummaryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.accountsHandler), {
+      authorizer,
+      operationName: 'GetAccountsSummary',
+    });
+
+    // Accounts health endpoint
+    const accountsHealthResource = accountsResource.addResource('health');
+    accountsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.accountsHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'AccountsHealthCheck',
+    });
+
+    // Individual account routes
+    const accountIdResource = accountsResource.addResource('{accountId}');
+    accountIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.accountsHandler), {
+      authorizer,
+      operationName: 'GetAccount',
+    });
+    accountIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.accountsHandler), {
+      authorizer,
+      operationName: 'UpdateAccount',
+    });
+    accountIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.accountsHandler), {
+      authorizer,
+      operationName: 'DeleteAccount',
+    });
+
+    // Account reconcile endpoint
+    const accountReconcileResource = accountIdResource.addResource('reconcile');
+    accountReconcileResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.accountsHandler), {
+      authorizer,
+      operationName: 'ReconcileAccount',
+    });
+
+    // Account tracking endpoint
+    const accountTrackingResource = accountIdResource.addResource('tracking');
+    accountTrackingResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.accountsHandler), {
+      authorizer,
+      operationName: 'SetAccountTracking',
     });
 
     // Note: Subscriptions routes moved to ApiFeaturesStack
