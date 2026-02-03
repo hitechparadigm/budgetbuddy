@@ -8,6 +8,55 @@
 
 All endpoints except health checks require JWT authentication via `Authorization: Bearer <token>` header.
 
+### Token Types
+
+**Important**: BudgetBuddy uses AWS Cognito for authentication. The API Gateway Cognito authorizer requires **ID tokens**, not access tokens.
+
+| Token Type    | Storage Key                 | Usage                               |
+| ------------- | --------------------------- | ----------------------------------- |
+| ID Token      | `budgetbuddy_id_token`      | API requests (Authorization header) |
+| Access Token  | `budgetbuddy_access_token`  | Cognito user operations             |
+| Refresh Token | `budgetbuddy_refresh_token` | Token refresh                       |
+
+**Frontend Implementation**:
+
+```javascript
+// Correct: Use ID token for API calls
+const idToken = localStorage.getItem("budgetbuddy_id_token");
+const response = await fetch("/api/endpoint", {
+  headers: {
+    Authorization: `Bearer ${idToken}`,
+  },
+});
+
+// Incorrect: Access token will result in 401 Unauthorized
+// const accessToken = localStorage.getItem('budgetbuddy_access_token');
+```
+
+### Response Format
+
+All API responses follow a standardized format:
+
+**Success Response**:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Operation completed successfully"
+}
+```
+
+**Error Response**:
+
+```json
+{
+  "success": false,
+  "error": "Error description",
+  "message": "User-friendly error message"
+}
+```
+
 ### 🔒 Security Enhancements (v1.1)
 
 **Comprehensive Security Validation**: All API endpoints now include enhanced security measures:

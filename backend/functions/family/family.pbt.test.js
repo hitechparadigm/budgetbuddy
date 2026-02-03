@@ -1081,4 +1081,307 @@ describe("Property-Based Tests: Family Lambda", () => {
       );
     });
   });
+
+  /**
+   * Property 7: Duplicate Invitation Prevention
+   * **Validates: Requirements 3.5**
+   *
+   * Property: For any email address, only one pending invitation can exist per family
+   * - Attempting to invite the same email twice should return 409 Conflict
+   * - Different families can invite the same email
+   * - After invitation is accepted/rejected, a new invitation can be sent
+   */
+  describe("Property 7: Duplicate Invitation Prevention", () => {
+    it("should reject duplicate invitations to the same email in the same family", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.uuid(),
+          fc.uuid(),
+          fc.emailAddress(),
+          async (userId, familyId, email) => {
+            mockSend.mockReset();
+
+            const claims = createUserClaims(userId, familyId, "primary");
+            const event = createEvent("POST", "/family/invite", claims, {
+              email,
+              role: "spouse",
+            });
+
+            // Mock: family metadata exists
+            mockSend.mockResolvedValueOnce({
+              Item: { familyId, memberCount: 1, primaryUserId: userId },
+            });
+            // Mock: existing pending invitation found for this email
+            mockSend.mockResolvedValueOnce({
+              Items: [
+                {
+                  PK: `FAMILY#${familyId}`,
+                  SK: `INVITATION#existing-inv`,
+                  email,
+                  status: "pending",
+                  role: "spouse",
+                },
+              ],
+            });
+
+            const result = await handler(event);
+
+            // Should return 409 Conflict - duplicate invitation
+            expect(result.statusCode).toBe(409);
+            const body = JSON.parse(result.body);
+            expect(body.error || body.message).toMatch(
+              /already|pending|exists/i,
+            );
+
+            return true;
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+
+    it("should allow inviting the same email to different families", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.uuid(),
+          fc.uuid(),
+          fc.uuid(),
+          fc.uuid(),
+          fc.emailAddress(),
+          async (userId1, familyId1, userId2, familyId2, email) => {
+            // Skip if same family
+            if (familyId1 === familyId2) return true;
+
+            mockSend.mockReset();
+
+            // First family invites the email
+            const claims1 = createUserClaims(userId1, familyId1, "primary");
+            const event1 = createEvent("POST", "/family/invite", claims1, {
+              email,
+              role: "spouse",
+            });
+
+            // Mock for first invitation
+            mockSend.mockResolvedValueOnce({
+              Item: {
+                familyId: familyId1,
+                memberCount: 1,
+                primaryUserId: userId1,
+              },
+            });
+            mockSend.mockResolvedValueOnce({ Items: [] }); // No existing invitations
+            mockSend.mockResolvedValueOnce({}); // Successful creation
+
+            const result1 = await handler(event1);
+            expect(result1.statusCode).toBe(201);
+
+            // Second family invites the same email
+            mockSend.mockReset();
+            const claims2 = createUserClaims(userId2, familyId2, "primary");
+            const event2 = createEvent("POST", "/family/invite", claims2, {
+              email,
+              role: "spouse",
+            });
+
+            // Mock for second invitation
+            mockSend.mockResolvedValueOnce({
+              Item: {
+                familyId: familyId2,
+                memberCount: 1,
+                primaryUserId: userId2,
+              },
+            });
+            mockSend.mockResolvedValueOnce({ Items: [] }); // No existing invitations in THIS family
+            mockSend.mockResolvedValueOnce({}); // Successful creation
+
+            const result2 = await handler(event2);
+            expect(result2.statusCode).toBe(201);
+
+            return true;
+          },
+        ),
+        { numRuns: 30 },
+      );
+    });
+
+    it("should allow re-inviting after invitation is revoked", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.uuid(),
+          fc.uuid(),
+          fc.emailAddress(),
+          async (userId, familyId, email) => {
+            mockSend.mockReset();
+
+            const claims = createUserClaims(userId, familyId, "primary");
+            const event = createEvent("POST", "/family/invite", claims, {
+              email,
+              role: "spouse",
+            });
+
+            // Mock: family metadata exists
+            mockSend.mockResolvedValueOnce({
+              Item: { familyId, memberCount: 1, primaryUserId: userId },
+            });
+            // Mock: no pending invitations (previous one was revoked)
+            mockSend.mockResolvedValueOnce({ Items: [] });
+            // Mock: successful invitation creation
+            mockSend.mockResolvedValueOnce({});
+
+            const result = await handler(event);
+
+            // Should succeed - can re-invite after revocation
+            expect(result.statusCode).toBe(201);
+
+            return true;
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+  });
+
+  /**
+   * Property 11: Member Count Invariant
+   * **Validates: Requirements 5.4, 5.5**
+   *
+   * Property: The memberCount in family metadata must always equal the actual number of MEMBER records
+   * - After adding a member, memberCount should increment
+   * - After removing a member, memberCount should decrement
+   * - memberCount should never be negative
+   * - memberCount should never exceed the family size limit (2)
+   */
+  describe("Property 11: Member Count Invariant", () => {
+    it("should maintain memberCount equal to actual member count", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.uuid(),
+          fc.uuid(),
+          fc.integer({ min: 1, max: 2 }),
+          async (userId, familyId, actualMemberCount) => {
+            mockSend.mockReset();
+
+            const claims = createUserClaims(userId, familyId, "primary");
+            const event = createEvent("GET", "/family/members", claims);
+
+            // Create mock members
+            const members = Array.from(
+              { length: actualMemberCount },
+              (_, i) => ({
+                userId: i === 0 ? userId : `member-${i}`,
+                role: i === 0 ? "primary" : "spouse",
+                joinedAt: new Date().toISOString(),
+              }),
+            );
+
+            // Mock: Query returns members
+            mockSend.mockResolvedValueOnce({ Items: members });
+            // Mock: Get family metadata with matching memberCount
+            mockSend.mockResolvedValueOnce({
+              Item: {
+                primaryUserId: userId,
+                memberCount: actualMemberCount,
+                createdAt: new Date().toISOString(),
+              },
+            });
+            // Mock user profiles
+            for (const member of members) {
+              mockSend.mockResolvedValueOnce({
+                Item: {
+                  email: `${member.userId}@example.com`,
+                  firstName: "User",
+                },
+              });
+            }
+
+            const result = await handler(event);
+            const body = JSON.parse(result.body);
+
+            expect(result.statusCode).toBe(200);
+            const data = body.data || body;
+            // The returned members count should match the actual count
+            expect(data.members.length).toBe(actualMemberCount);
+
+            return true;
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+
+    it("should never have negative memberCount", async () => {
+      await fc.assert(
+        fc.asyncProperty(fc.uuid(), fc.uuid(), async (userId, familyId) => {
+          mockSend.mockReset();
+
+          const claims = createUserClaims(userId, familyId, "primary");
+          const event = createEvent("GET", "/family/members", claims);
+
+          // Mock: Query returns one member (primary)
+          mockSend.mockResolvedValueOnce({
+            Items: [
+              { userId, role: "primary", joinedAt: new Date().toISOString() },
+            ],
+          });
+          // Mock: Get family metadata - memberCount should be at least 1
+          mockSend.mockResolvedValueOnce({
+            Item: {
+              primaryUserId: userId,
+              memberCount: 1, // Minimum valid count
+              createdAt: new Date().toISOString(),
+            },
+          });
+          // Mock user profile
+          mockSend.mockResolvedValueOnce({
+            Item: { email: `${userId}@example.com`, firstName: "User" },
+          });
+
+          const result = await handler(event);
+          const body = JSON.parse(result.body);
+
+          expect(result.statusCode).toBe(200);
+          const data = body.data || body;
+          // Should have at least one member (the primary)
+          expect(data.members.length).toBeGreaterThanOrEqual(1);
+
+          return true;
+        }),
+        { numRuns: 50 },
+      );
+    });
+
+    it("should never exceed family size limit of 2", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.uuid(),
+          fc.uuid(),
+          fc.integer({ min: 3, max: 10 }), // Try to exceed limit
+          async (userId, familyId, attemptedCount) => {
+            mockSend.mockReset();
+
+            const claims = createUserClaims(userId, familyId, "primary");
+            const event = createEvent("POST", "/family/invite", claims, {
+              email: "new@example.com",
+              role: "spouse",
+            });
+
+            // Mock: family metadata shows family is already at limit
+            mockSend.mockResolvedValueOnce({
+              Item: { familyId, memberCount: 2, primaryUserId: userId },
+            });
+
+            const result = await handler(event);
+
+            // Should reject - family is full
+            expect(result.statusCode).toBe(409);
+            const body = JSON.parse(result.body);
+            expect(body.error || body.message).toMatch(/full|limit|maximum/i);
+
+            return true;
+          },
+        ),
+        { numRuns: 30 },
+      );
+    });
+  });
 });

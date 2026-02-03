@@ -14,16 +14,51 @@
   - Updated all handlers: handleGetAccounts, handleCreateAccount, handleUpdateAccount, handleDeleteAccount
   - Frontend accountsApi.ts updated to handle both standardized and legacy formats
 
-- **FamilySettings Error Handling**: Improved error handling for standardized response format
-  - Updated response parsing to use `data.message` for success messages
-  - Cleared error state on successful operations
-  - Better user feedback with server-provided messages
+- **Accounts Validator Bug Fixes**: Fixed edge cases found by property-based testing
+  - Fixed `isValidSubtypeForType` to handle built-in property names (e.g., "toString", "valueOf")
+  - Fixed nickname validation to reject whitespace-only strings
+  - Added `isValidAccountType` check before accessing `ACCOUNT_SUBTYPES`
 
-- **Property-Based Tests**: Added Family Metadata Auto-Creation PBT (Property 5)
-  - 5 tests validating auto-creation behavior
-  - Tests cover: metadata creation, member record creation, idempotency
+- **FamilySettings Component**: Improved error handling and user feedback
+  - Fixed token usage: now uses `budgetbuddy_id_token` (not access token)
+  - Added loading states during API calls
+  - Added success/error message display
+  - Created comprehensive unit tests (7 tests)
+
+- **Frontend Error Handling**: Improved accountsApi error handling
+  - Added `isNetworkError` helper for network error detection
+  - Added `extractErrorMessage` helper for better error message extraction
+  - Added missing token check before API calls
+
+### 🧪 Property-Based Tests
+
+- **Property 4: Account Validation Rejects Invalid Input** (4 tests)
+  - Tests invalid account types, mismatched subtypes, empty nicknames, missing balance
+  - Found and fixed 2 bugs in validators
+
+- **Property 5: Family Metadata Auto-Creation** (5 tests)
+  - Tests auto-creation behavior, idempotency, member record creation
+
+- **Property 7: Duplicate Invitation Prevention** (3 tests)
+  - Tests duplicate rejection, cross-family invitations, re-invitation after revocation
+
+- **Property 11: Member Count Invariant** (3 tests)
+  - Tests memberCount consistency, non-negative constraint, family size limit
+
+- **Property 12: Error Message Safety** (6 tests)
+  - Tests that error messages don't expose sensitive information
+
+### 📝 Integration Tests
+
+- **Accounts Integration Tests**: Created `tests/accounts-integration.test.js`
+  - Tests account CRUD operations, validation, authorization, CORS, performance
 
 ### 📚 Documentation
+
+- **API Documentation**: Added token type requirements
+  - Documented ID token vs Access token usage
+  - Added storage key reference table
+  - Added standardized response format documentation
 
 - **Root Cause Analysis**: Documented why mandatory documentation validation was passing despite missing updates
   - Issue: Validation uses file system mtime instead of git commit dates

@@ -316,6 +316,182 @@ describe("Account Property-Based Tests", () => {
       );
     });
   });
+
+  /**
+   * Property 4: Account Validation Rejects Invalid Input
+   * For any invalid account input (wrong type, mismatched subtype, empty nickname,
+   * missing balance), validation SHALL reject with appropriate error messages.
+   *
+   * **Validates: Requirements 2.5, 2.7**
+   */
+  describe("Property 4: Account Validation Rejects Invalid Input", () => {
+    it("should reject accounts with invalid account types", async () => {
+      const invalidTypeArb = fc
+        .string({ minLength: 1, maxLength: 20 })
+        .filter(
+          (s) =>
+            !["banking", "cash", "credit_card", "investment", "loan"].includes(
+              s,
+            ),
+        );
+
+      await fc.assert(
+        fc.property(
+          fc.record({
+            accountType: invalidTypeArb,
+            accountSubtype: fc.string({ minLength: 1, maxLength: 20 }),
+            nickname: fc.string({ minLength: 1, maxLength: 100 }),
+            currentBalance: fc.double({
+              min: -1000000,
+              max: 1000000,
+              noNaN: true,
+            }),
+          }),
+          (input) => {
+            const result = validators.validateCreateAccountInput(input);
+            expect(result.isValid).toBe(false);
+            expect(result.errors.some((e) => e.includes("accountType"))).toBe(
+              true,
+            );
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+
+    it("should reject accounts with mismatched subtypes", async () => {
+      // Generate valid type with wrong subtype
+      const mismatchedInputArb = fc.oneof(
+        // banking with credit_card subtype
+        fc.record({
+          accountType: fc.constant("banking"),
+          accountSubtype: fc.constant("credit_card"),
+          nickname: fc.string({ minLength: 1, maxLength: 100 }),
+          currentBalance: fc.double({
+            min: -1000000,
+            max: 1000000,
+            noNaN: true,
+          }),
+        }),
+        // credit_card with checking subtype
+        fc.record({
+          accountType: fc.constant("credit_card"),
+          accountSubtype: fc.constant("checking"),
+          nickname: fc.string({ minLength: 1, maxLength: 100 }),
+          currentBalance: fc.double({
+            min: -1000000,
+            max: 1000000,
+            noNaN: true,
+          }),
+        }),
+        // investment with savings subtype
+        fc.record({
+          accountType: fc.constant("investment"),
+          accountSubtype: fc.constant("savings"),
+          nickname: fc.string({ minLength: 1, maxLength: 100 }),
+          currentBalance: fc.double({
+            min: -1000000,
+            max: 1000000,
+            noNaN: true,
+          }),
+        }),
+      );
+
+      await fc.assert(
+        fc.property(mismatchedInputArb, (input) => {
+          const result = validators.validateCreateAccountInput(input);
+          expect(result.isValid).toBe(false);
+          expect(result.errors.some((e) => e.includes("accountSubtype"))).toBe(
+            true,
+          );
+        }),
+        { numRuns: 30 },
+      );
+    });
+
+    it("should reject accounts with empty or whitespace-only nicknames", async () => {
+      const emptyNicknameArb = fc.oneof(
+        fc.constant(""),
+        fc.constant("   "),
+        fc.constant("\t\n"),
+      );
+
+      await fc.assert(
+        fc.property(
+          fc.record({
+            accountType: accountTypeArb,
+            accountSubtype: fc.constant("checking"),
+            nickname: emptyNicknameArb,
+            currentBalance: fc.double({
+              min: -1000000,
+              max: 1000000,
+              noNaN: true,
+            }),
+          }),
+          (input) => {
+            // Fix subtype to match type
+            if (input.accountType === "banking") {
+              input.accountSubtype = "checking";
+            } else if (input.accountType === "credit_card") {
+              input.accountSubtype = "credit_card";
+            } else if (input.accountType === "investment") {
+              input.accountSubtype = "brokerage";
+            } else if (input.accountType === "loan") {
+              input.accountSubtype = "personal";
+            } else if (input.accountType === "cash") {
+              input.accountSubtype = "cash";
+            }
+
+            const result = validators.validateCreateAccountInput(input);
+            expect(result.isValid).toBe(false);
+            expect(result.errors.some((e) => e.includes("nickname"))).toBe(
+              true,
+            );
+          },
+        ),
+        { numRuns: 20 },
+      );
+    });
+
+    it("should reject accounts with missing or invalid balance", async () => {
+      await fc.assert(
+        fc.property(
+          fc.record({
+            accountType: accountTypeArb,
+            accountSubtype: fc.constant("checking"),
+            nickname: fc.string({ minLength: 1, maxLength: 100 }),
+            // Missing currentBalance or invalid value
+          }),
+          (input) => {
+            // Fix subtype to match type
+            if (input.accountType === "banking") {
+              input.accountSubtype = "checking";
+            } else if (input.accountType === "credit_card") {
+              input.accountSubtype = "credit_card";
+            } else if (input.accountType === "investment") {
+              input.accountSubtype = "brokerage";
+            } else if (input.accountType === "loan") {
+              input.accountSubtype = "personal";
+            } else if (input.accountType === "cash") {
+              input.accountSubtype = "cash";
+            }
+
+            // Ensure nickname is not empty
+            if (!input.nickname || input.nickname.trim() === "") {
+              input.nickname = "Test Account";
+            }
+
+            const result = validators.validateCreateAccountInput(input);
+            expect(result.isValid).toBe(false);
+            expect(
+              result.errors.some((e) => e.includes("currentBalance")),
+            ).toBe(true);
+          },
+        ),
+        { numRuns: 30 },
+      );
+    });
+  });
 });
 
 // ============================================================================

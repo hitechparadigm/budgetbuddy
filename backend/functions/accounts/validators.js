@@ -30,8 +30,16 @@ function isValidAccountType(accountType) {
  * Validate account subtype for a given type
  */
 function isValidSubtypeForType(accountType, subtype) {
+  // First check if accountType is valid to avoid accessing built-in properties
+  if (!isValidAccountType(accountType)) {
+    return false;
+  }
   const validSubtypes = ACCOUNT_SUBTYPES[accountType];
-  return validSubtypes && validSubtypes.includes(subtype);
+  return (
+    validSubtypes &&
+    Array.isArray(validSubtypes) &&
+    validSubtypes.includes(subtype)
+  );
 }
 
 /**
@@ -67,6 +75,7 @@ function validateCreateAccountInput(input) {
     errors.push("accountSubtype is required");
   } else if (
     input.accountType &&
+    isValidAccountType(input.accountType) &&
     !isValidSubtypeForType(input.accountType, input.accountSubtype)
   ) {
     const validSubtypes = ACCOUNT_SUBTYPES[input.accountType] || [];
@@ -77,8 +86,10 @@ function validateCreateAccountInput(input) {
 
   if (!input.nickname || typeof input.nickname !== "string") {
     errors.push("nickname is required and must be a string");
-  } else if (input.nickname.length < 1 || input.nickname.length > 100) {
-    errors.push("nickname must be between 1 and 100 characters");
+  } else if (input.nickname.trim().length < 1) {
+    errors.push("nickname cannot be empty or whitespace only");
+  } else if (input.nickname.length > 100) {
+    errors.push("nickname must be 100 characters or less");
   }
 
   if (input.currentBalance === undefined || input.currentBalance === null) {
