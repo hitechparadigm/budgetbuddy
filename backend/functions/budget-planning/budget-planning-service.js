@@ -790,10 +790,64 @@ async function defaultGetSuggestionsByFamily(familyId) {
   return [];
 }
 
+/**
+ * Delete all budget suggestions for a family (used during account deletion)
+ *
+ * @param {string} familyId - Family ID
+ * @param {Object} dependencies - Injected dependencies
+ * @returns {Promise<Object>} Deletion result
+ */
+async function deleteAllSuggestionsForFamily(familyId, dependencies = {}) {
+  const {
+    getSuggestionsByFamily = defaultGetSuggestionsByFamily,
+    deleteSuggestion = defaultDeleteSuggestion,
+  } = dependencies;
+
+  if (!familyId) {
+    throw new Error("familyId is required");
+  }
+
+  try {
+    // Get all suggestions for the family
+    const suggestions = await getSuggestionsByFamily(familyId);
+
+    if (suggestions.length === 0) {
+      return { deletedCount: 0, message: "No suggestions to delete" };
+    }
+
+    // Delete each suggestion
+    let deletedCount = 0;
+    for (const suggestion of suggestions) {
+      try {
+        await deleteSuggestion(familyId, suggestion.suggestionId);
+        deletedCount++;
+      } catch (error) {
+        console.error(
+          `Failed to delete suggestion ${suggestion.suggestionId}:`,
+          error.message,
+        );
+      }
+    }
+
+    return {
+      deletedCount,
+      message: `Successfully deleted ${deletedCount} suggestions for family ${familyId}`,
+    };
+  } catch (error) {
+    console.error("Error deleting suggestions for family:", error);
+    throw new Error(`Failed to delete suggestions: ${error.message}`);
+  }
+}
+
+async function defaultDeleteSuggestion(familyId, suggestionId) {
+  console.log("defaultDeleteSuggestion called:", { familyId, suggestionId });
+}
+
 module.exports = {
   generateSuggestions,
   applySuggestions,
   getSuggestions,
+  deleteAllSuggestionsForFamily,
   // Export helpers for testing
   calculateBillAmountForMonth,
   calculateBiWeeklyOccurrences,

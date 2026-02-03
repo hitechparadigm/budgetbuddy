@@ -479,6 +479,36 @@ async function markBillPaid(event, user, billId) {
     updatedAt: currentTime,
   };
 
+  // Store payment history for pattern detection learning
+  // This data helps improve future pattern detection accuracy
+  const paymentHistory = existingBill.paymentHistory || [];
+  paymentHistory.push({
+    paidDate,
+    paidAmount,
+    expectedAmount: existingBill.amount,
+    transactionId,
+    paidBy: user.userId,
+    paidAt: currentTime,
+    // Track variance from expected amount
+    amountVariance: paidAmount - existingBill.amount,
+    amountVariancePercent:
+      existingBill.amount > 0
+        ? ((paidAmount - existingBill.amount) / existingBill.amount) * 100
+        : 0,
+    // Track if paid on time
+    daysFromDue: Math.floor(
+      (new Date(paidDate) - new Date(existingBill.dueDate)) /
+        (1000 * 60 * 60 * 24),
+    ),
+  });
+
+  // Keep only last 12 payments for learning
+  if (paymentHistory.length > 12) {
+    paymentHistory.shift();
+  }
+
+  updates.paymentHistory = paymentHistory;
+
   // If recurring, calculate and create next occurrence
   let nextBill = null;
   if (existingBill.isRecurring && existingBill.frequency) {
@@ -644,6 +674,9 @@ function formatBillResponse(bill) {
     aiConfidenceScore: bill.aiConfidenceScore || null,
     aiDetectedDate: bill.aiDetectedDate || null,
     userModified: bill.userModified || false,
+    // Payment history for learning
+    paymentHistory: bill.paymentHistory || [],
+    paymentCount: (bill.paymentHistory || []).length,
     createdAt: bill.createdAt,
     updatedAt: bill.updatedAt,
   };

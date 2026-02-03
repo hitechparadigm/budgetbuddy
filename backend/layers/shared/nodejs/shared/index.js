@@ -32,6 +32,15 @@ const {
   getRolePermissions,
   getAllowedActions,
 } = require("./permissions");
+const {
+  sanitizeLogData,
+  sanitizeObject,
+  sanitizeValue,
+  sanitizeError,
+  createSanitizedLogger,
+  SENSITIVE_FIELDS,
+  FIELDS_TO_REMOVE,
+} = require("./log-sanitizer");
 
 module.exports = {
   // CORS utilities
@@ -64,4 +73,13 @@ module.exports = {
   checkPermission,
   getRolePermissions,
   getAllowedActions,
+
+  // Log sanitization utilities
+  sanitizeLogData,
+  sanitizeObject,
+  sanitizeValue,
+  sanitizeError,
+  createSanitizedLogger,
+  SENSITIVE_FIELDS,
+  FIELDS_TO_REMOVE,
 };
