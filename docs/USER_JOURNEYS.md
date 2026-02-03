@@ -1,14 +1,18 @@
 # BudgetBuddy User Journeys & Component Mapping
 
-**Last Updated**: 2026-02-02
+**Last Updated**: 2026-02-03
 **Purpose**: Comprehensive mapping of user journeys to frontend/backend components
 **Status**: Living Document - Update as features are implemented
 
 **Recent Updates**:
 
+- Added Enhanced Accounts & Transactions Phase 2 components (2026-02-03)
+- Sidebar integration with AppLayout and ProtectedLayout
+- Transaction modal with account selection and batch mode
+- Account mapping modal for Plaid connected accounts
+- Bulk account assignment modal
+- All account APIs now have frontend UI complete
 - Added Development Infrastructure & Optimization Journey (Section 10)
-- Documented steering files and hooks optimization (35-40% token savings)
-- Updated component mapping for optimization work
 
 ## Table of Contents
 
@@ -168,16 +172,19 @@ _"As a user, I want to quickly add transactions and see my budget status so I ca
 | Feature            | Frontend Component          | Backend API                 | Status      |
 | ------------------ | --------------------------- | --------------------------- | ----------- |
 | Dashboard          | `BudgetPage.tsx`            | `GET /budget?month=YYYY-MM` | ✅ Complete |
-| Sidebar Nav        | `BudgetPage.tsx` (inline)   | N/A                         | ✅ Complete |
+| Sidebar Nav        | `Sidebar.tsx` + `AppLayout` | N/A                         | ✅ Complete |
 | Month Nav          | `MonthNavigator.tsx`        | N/A                         | ✅ Complete |
 | Category List      | `BudgetPage.tsx` (inline)   | `GET /budget`               | ✅ Complete |
-| Add Transaction    | `TransactionForm.tsx`       | `POST /transactions`        | ✅ Complete |
-| Edit Transaction   | `TransactionForm.tsx`       | `PUT /transactions/{id}`    | ✅ Complete |
+| Add Transaction    | `TransactionModal.tsx`      | `POST /transactions`        | ✅ Complete |
+| Edit Transaction   | `TransactionModal.tsx`      | `PUT /transactions/{id}`    | ✅ Complete |
 | Delete Transaction | `TransactionList.tsx`       | `DELETE /transactions/{id}` | ✅ Complete |
 | Summary View       | `SummaryModal.tsx`          | `GET /budget`               | ✅ Complete |
 | Transaction List   | `TransactionList.tsx`       | `GET /transactions`         | ✅ Complete |
 | Search/Filter      | ✅ `TransactionFilters.tsx` | `GET /transactions?search=` | ✅ Complete |
 | Quick Actions      | ✅ `QuickActionsFAB.tsx`    | N/A                         | ✅ Complete |
+| Batch Entry        | `TransactionModal.tsx`      | `POST /transactions`        | ✅ Complete |
+| Account Selection  | `TransactionModal.tsx`      | N/A                         | ✅ Complete |
+| Account Filter     | `TransactionFilters.tsx`    | `GET /transactions`         | ✅ Complete |
 
 ### UI/UX Requirements
 
@@ -1230,19 +1237,33 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 | API Endpoint                        | Description              | Priority | Status                         |
 | ----------------------------------- | ------------------------ | -------- | ------------------------------ |
-| `GET /api/accounts`                 | List user accounts       | HIGH     | ⚠️ API ready, UI pending       |
-| `POST /api/accounts`                | Create manual account    | HIGH     | ⚠️ API ready, UI pending       |
-| `PUT /api/accounts/{id}`            | Update account           | HIGH     | ⚠️ API ready, UI pending       |
-| `DELETE /api/accounts/{id}`         | Delete account           | HIGH     | ⚠️ API ready, UI pending       |
-| `POST /api/accounts/{id}/reconcile` | Reconcile balance        | MEDIUM   | ⚠️ API ready, UI pending       |
-| `PUT /api/accounts/{id}/tracking`   | Toggle budget tracking   | MEDIUM   | ⚠️ API ready, UI pending       |
-| `GET /api/accounts/summary`         | Net worth summary        | MEDIUM   | ⚠️ API ready, UI pending       |
+| `GET /api/accounts`                 | List user accounts       | HIGH     | ✅ Done (AccountsPage)         |
+| `POST /api/accounts`                | Create manual account    | HIGH     | ✅ Done (AddAccountModal)      |
+| `PUT /api/accounts/{id}`            | Update account           | HIGH     | ✅ Done (AccountCard)          |
+| `DELETE /api/accounts/{id}`         | Delete account           | HIGH     | ✅ Done (AccountCard)          |
+| `POST /api/accounts/{id}/reconcile` | Reconcile balance        | MEDIUM   | ✅ Done (ReconcileModal)       |
+| `PUT /api/accounts/{id}/tracking`   | Toggle budget tracking   | MEDIUM   | ✅ Done (AccountCard)          |
+| `GET /api/accounts/summary`         | Net worth summary        | MEDIUM   | ✅ Done (AccountsPage)         |
 | `GET /comparison/summary`           | Peer spending comparison | MEDIUM   | ✅ Done (PeerComparisonWidget) |
 | `GET /tips/feed`                    | Financial tips feed      | MEDIUM   | ✅ Done (TipsFeedPage)         |
 | `GET /tips/daily`                   | Daily tip                | MEDIUM   | ✅ Done (TipsFeedPage)         |
 | `GET /learn/courses`                | Educational content      | LOW      | ✅ Done (LearnPage)            |
 | `GET /learn/progress`               | Learning progress        | LOW      | ✅ Done (LearnPage)            |
 | `GET /admin/dashboard`              | Admin metrics            | LOW      | ✅ Done (AdminDashboard)       |
+
+### Recently Completed Components (2026-02-03)
+
+| Component                           | Description                                   | Status  |
+| ----------------------------------- | --------------------------------------------- | ------- |
+| `AppLayout.tsx`                     | Main layout wrapper with sidebar integration  | ✅ Done |
+| `ProtectedLayout.tsx`               | Auth check + layout for protected routes      | ✅ Done |
+| `TransactionModal.tsx`              | Enhanced modal with account selection & batch | ✅ Done |
+| `TransactionList.tsx` (enhanced)    | Added account column display                  | ✅ Done |
+| `TransactionFilters.tsx` (enhanced) | Added multi-select account filter             | ✅ Done |
+| `AccountMappingModal.tsx`           | Configure connected accounts from Plaid       | ✅ Done |
+| `BulkAccountAssignmentModal.tsx`    | Bulk assign accounts to transactions          | ✅ Done |
+| `budget-service.js`                 | Budget exclusion for untracked accounts       | ✅ Done |
+| `export.ts` (enhanced)              | Added account column to CSV export            | ✅ Done |
 
 ### Recently Completed Components (2026-02-02)
 
