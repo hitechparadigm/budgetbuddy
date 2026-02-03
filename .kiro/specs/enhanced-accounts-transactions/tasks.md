@@ -99,14 +99,14 @@ This implementation plan covers the development of comprehensive account managem
 - [x] 5. Checkpoint - Transaction enhancements complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Create CDK infrastructure for accounts
-  - [ ] 6.1 Add accounts Lambda to API stack
+- [x] 6. Create CDK infrastructure for accounts
+  - [x] 6.1 Add accounts Lambda to API stack
     - Create accounts Lambda function in CDK
     - Add API Gateway routes for /api/accounts/\*
     - Configure IAM permissions for DynamoDB access
     - _Requirements: 11.3, 11.4_
 
-  - [ ] 6.2 Add GSI for account type queries
+  - [x] 6.2 Add GSI for account type queries
     - Add GSI1 to DynamoDB table for account type queries
     - Update CDK stack with GSI definition
     - _Requirements: 11.4_
