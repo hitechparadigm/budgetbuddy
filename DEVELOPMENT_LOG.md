@@ -1,5 +1,44 @@
 # Development Log
 
+## 2026-02-03 - Test Coverage Improvement Spec (Session 113)
+
+### Session Summary
+
+**Duration**: 15 minutes
+**Focus**: Create spec for test coverage improvement (Weeks 2-4)
+**Outcome**: New spec created with requirements, design, and tasks
+
+### Work Completed
+
+1. **Created test-coverage-improvement spec**:
+   - Location: `.kiro/specs/test-coverage-improvement/`
+   - Purpose: Track Weeks 2-4 of test creation plan from REQUIREMENTS_TEST_COVERAGE_ANALYSIS.md
+   - Goal: Increase test coverage from 56% to 80%
+
+2. **Spec Contents**:
+   - **requirements.md**: 13 requirements covering transaction editing, OAuth, admin, OCR, 2FA, E2E journeys, mobile, and AI tests
+   - **design.md**: Architecture, 22 correctness properties, test organization, success metrics
+   - **tasks.md**: 24 tasks organized by week with checkpoints
+
+3. **Previous Session Work**:
+   - Fixed CloudFormation 500 resource limit by splitting api-features stack
+   - Created api-features-extended-stack for AI features
+   - All critical bug fixes complete (Session 112)
+
+### Files Created
+
+- `.kiro/specs/test-coverage-improvement/requirements.md`
+- `.kiro/specs/test-coverage-improvement/design.md`
+- `.kiro/specs/test-coverage-improvement/tasks.md`
+
+### Next Steps
+
+1. Begin Week 2 tasks: Transaction editing tests
+2. Continue with Google OAuth, Admin, Receipt OCR, 2FA tests
+3. Target: 80% test coverage (65/81 requirements)
+
+---
+
 ## 2026-02-03 - Critical Bug Fixes (Session 112)
 
 ### Session Summary
