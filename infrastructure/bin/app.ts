@@ -23,6 +23,7 @@ import { AuthStack } from '../lib/auth-stack';
 import { AuthOnboardingStack } from '../lib/auth-onboarding-stack';
 import { ApiStack } from '../lib/api-stack';
 import { ApiFeaturesStack } from '../lib/api-features-stack';
+import { ApiFeaturesExtendedStack } from '../lib/api-features-extended-stack';
 import { HostingStack } from '../lib/hosting-stack';
 import { MonitoringStack } from '../lib/monitoring-stack';
 import { NotificationStack } from '../lib/notification-stack';
@@ -100,6 +101,19 @@ const apiFeaturesStack = new ApiFeaturesStack(app, `${stackPrefix}-api-features`
 });
 
 /**
+ * API Features Extended Stack - AI-powered features
+ * Split from api-features-stack to stay under CloudFormation's 500 resource limit
+ * Contains: Insights, Receipt, Pattern Detection, Budget Planning
+ */
+const apiFeaturesExtendedStack = new ApiFeaturesExtendedStack(app, `${stackPrefix}-api-features-extended`, {
+  env,
+  description: 'BudgetBuddy Extended API features stack with AI-powered features (Insights, Receipt, Pattern Detection, Budget Planning)',
+  table: databaseStack.table,
+  userPool: authStack.userPool,
+  commonLayer: apiStack.commonLayer,
+});
+
+/**
  * Hosting Stack - S3 and CloudFront
  * Hosts the web application and admin dashboard
  */
@@ -144,12 +158,16 @@ apiStack.addDependency(authOnboardingStack);
 apiFeaturesStack.addDependency(databaseStack);
 apiFeaturesStack.addDependency(authStack);
 apiFeaturesStack.addDependency(apiStack);
+apiFeaturesExtendedStack.addDependency(databaseStack);
+apiFeaturesExtendedStack.addDependency(authStack);
+apiFeaturesExtendedStack.addDependency(apiStack);
 notificationStack.addDependency(databaseStack);
 notificationStack.addDependency(apiStack);
 monitoringStack.addDependency(databaseStack);
 monitoringStack.addDependency(authStack);
 monitoringStack.addDependency(apiStack);
 monitoringStack.addDependency(apiFeaturesStack);
+monitoringStack.addDependency(apiFeaturesExtendedStack);
 monitoringStack.addDependency(notificationStack);
 
 // Add comprehensive tags to all resources for cost tracking and organization
