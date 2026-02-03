@@ -159,41 +159,41 @@ This implementation plan covers the development of comprehensive account managem
     - Add dropdown for profile/logout
     - _Requirements: 6.10_
 
-- [ ] 9. Checkpoint - Sidebar navigation complete
+- [x] 9. Checkpoint - Sidebar navigation complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 10. Simplify QuickActionsFAB
-  - [ ] 10.1 Remove navigation items from FAB
+- [x] 10. Simplify QuickActionsFAB
+  - [x] 10.1 Remove navigation items from FAB
     - Remove View Budget, View Goals, View Insights from FAB menu
     - Keep only Add Income, Add Expense, Scan Receipt
     - _Requirements: 7.1, 7.2_
 
-  - [ ] 10.2 Update FAB keyboard shortcuts
+  - [x] 10.2 Update FAB keyboard shortcuts
     - Ensure Ctrl+N opens FAB
     - Ensure I triggers Add Income, E triggers Add Expense
     - Ensure Escape closes FAB
     - _Requirements: 7.6, 7.7_
 
-- [ ] 11. Implement Account Management UI
-  - [ ] 11.1 Create AccountCard component
+- [-] 11. Implement Account Management UI
+  - [x] 11.1 Create AccountCard component
     - Create `packages/web-app/src/components/accounts/AccountCard.tsx`
     - Display icon, nickname, institution, mask, balance
     - Display connection status and tracking status badge
     - Add menu with Edit, Reconcile, View Transactions, Toggle Tracking, Delete
     - _Requirements: 8.2, 8.5_
 
-  - [ ] 11.2 Write property test for account card content
+  - [x] 11.2 Write property test for account card content
     - **Property 23: Account Card Content Completeness**
     - Generate random accounts, verify all fields displayed
     - **Validates: Requirements 8.2**
 
-  - [ ] 11.3 Create AddAccountModal component
+  - [x] 11.3 Create AddAccountModal component
     - Create `packages/web-app/src/components/accounts/AddAccountModal.tsx`
     - Implement account type selection step
     - Implement form with nickname, institution, balance, currency
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - [ ] 11.4 Create ReconcileModal component
+  - [x] 11.4 Create ReconcileModal component
     - Create modal for entering new balance
     - Show current balance and difference
     - Create adjustment transaction on save
