@@ -1758,23 +1758,25 @@ _"As a user, I want AI to automatically detect my recurring bills and help me pl
 | Pattern Detection        | `PatternReviewModal.tsx`     | `POST /api/patterns/detect`     | ✅ Backend Complete |
 | Pattern Review           | `PatternReviewModal.tsx`     | `GET /api/patterns`             | ✅ Backend Complete |
 | Pattern Approval         | `PatternReviewModal.tsx`     | `PUT /api/patterns/{id}`        | ✅ Backend Complete |
-| Budget Suggestions       | `BudgetSuggestionsModal.tsx` | `POST /api/budget/suggestions`  | 📋 Spec Ready       |
-| Apply Suggestions        | `BudgetSuggestionsModal.tsx` | `POST /api/budget/apply`        | 📋 Spec Ready       |
+| Budget Suggestions       | `BudgetSuggestionsModal.tsx` | `POST /api/budget/suggestions`  | ✅ Backend Complete |
+| Apply Suggestions        | `BudgetSuggestionsModal.tsx` | `POST /api/budget/apply`        | ✅ Backend Complete |
 | Manual Pattern Creation  | `TransactionList.tsx`        | `POST /api/patterns/manual`     | 📋 Spec Ready       |
-| Pattern Notifications    | `NotificationCenter.tsx`     | Existing notification system    | 📋 Spec Ready       |
+| Pattern Notifications    | `NotificationCenter.tsx`     | Existing notification system    | ✅ Backend Complete |
 | AI Analysis Service      | Backend only                 | AWS Bedrock (Claude 3.5 Sonnet) | ✅ Implemented      |
 | Pattern Detection Lambda | Backend only                 | `pattern-detection` Lambda      | ✅ Implemented      |
-| Budget Planning Lambda   | Backend only                 | `budget-planning` Lambda        | ✅ Tests Complete   |
-| Bill Creation from AI    | Backend only                 | `bills` Lambda                  | ✅ Tests Complete   |
+| Budget Planning Lambda   | Backend only                 | `budget-planning` Lambda        | ✅ Implemented      |
+| Bill Creation from AI    | Backend only                 | `POST /bills/from-pattern`      | ✅ Implemented      |
+| AI Notifications         | Backend only                 | `notifications` Lambda          | ✅ Implemented      |
 
 ### Test Coverage (Updated 2026-02-03)
 
-| Component                   | Unit Tests                       | Property Tests              | Status      |
-| --------------------------- | -------------------------------- | --------------------------- | ----------- |
-| Pattern Detection Algorithm | 32 tests (`confidence.test.js`)  | 16 tests (Properties 16-18) | ✅ Complete |
-| Pattern Detection Service   | 21 tests (`service.test.js`)     | -                           | ✅ Complete |
-| AI Bill Creation            | 36 tests (`ai-creation.test.js`) | 16 tests (Properties 19-20) | ✅ Complete |
-| AI Budget Planning          | 29 tests (`ai-planning.test.js`) | 14 tests (Properties 21-22) | ✅ Complete |
+| Component                   | Unit Tests                                   | Property Tests              | Status      |
+| --------------------------- | -------------------------------------------- | --------------------------- | ----------- |
+| Pattern Detection Algorithm | 32 tests (`confidence.test.js`)              | 16 tests (Properties 16-18) | ✅ Complete |
+| Pattern Detection Service   | 21 tests (`service.test.js`)                 | -                           | ✅ Complete |
+| AI Bill Creation            | 41 tests (`bills.test.js`)                   | -                           | ✅ Complete |
+| Budget Planning Service     | 45 tests (`budget-planning-service.test.js`) | -                           | ✅ Complete |
+| AI Budget Planning          | 29 tests (`ai-planning.test.js`)             | 14 tests (Properties 21-22) | ✅ Complete |
 
 ### UI/UX Requirements
 
