@@ -44,36 +44,36 @@ This implementation plan addresses six critical bugs in the BudgetBuddy web appl
 - [x] 3. Checkpoint - Verify permission and theme fixes
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Fix Receipt Scanning Error Handling
-  - [ ] 4.1 Add network error detection to ReceiptUpload component
+- [x] 4. Fix Receipt Scanning Error Handling
+  - [x] 4.1 Add network error detection to ReceiptUpload component
     - Detect TypeError with 'Failed to fetch' message
     - Display specific network error message
     - Suggest checking internet connectivity
     - _Requirements: 3.4, 3.5, 3.6_
 
-  - [ ] 4.2 Write property test for error handling
+  - [x] 4.2 Write property test for error handling
     - **Property 5: Error Response Contains User-Friendly Message**
     - **Validates: Requirements 3.4, 3.5**
 
-- [ ] 5. Fix Connected Bank Accounts Error Handling
-  - [ ] 5.1 Add network error detection to ConnectedAccounts component
+- [x] 5. Fix Connected Bank Accounts Error Handling
+  - [x] 5.1 Add network error detection to ConnectedAccounts component
     - Detect TypeError with 'Failed to fetch' message
     - Display specific network error message
     - Add retry button for failed requests
     - _Requirements: 4.2, 4.3_
 
-- [ ] 6. Fix AI Insights Error Handling
-  - [ ] 6.1 Improve error handling in InsightsPage askAboutSpending
+- [x] 6. Fix AI Insights Error Handling
+  - [x] 6.1 Improve error handling in InsightsPage askAboutSpending
     - Detect network errors specifically
     - Display appropriate error message based on error type
     - Ensure suggestions are always provided with errors
     - _Requirements: 5.3, 5.4, 5.6_
 
-  - [ ] 6.2 Write property test for AI insights error handling
+  - [x] 6.2 Write property test for AI insights error handling
     - **Property 6: Error Response Includes Suggestions**
     - **Validates: Requirements 5.6**
 
-- [ ] 7. Final Checkpoint - Verify all fixes
+- [x] 7. Final Checkpoint - Verify all fixes
   - Ensure all tests pass, ask the user if questions arise.
   - Verify theme persistence works across page refreshes
   - Verify accounts page loads without permission errors

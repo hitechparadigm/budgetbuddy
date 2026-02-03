@@ -130,17 +130,30 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
       }
 
       // Step 1: Get presigned upload URL
-      const uploadResponse = await fetch(`${API_BASE}/receipt/upload`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          contentType: selectedFile.type,
-          fileName: selectedFile.name,
-        }),
-      });
+      let uploadResponse;
+      try {
+        uploadResponse = await fetch(`${API_BASE}/receipt/upload`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            contentType: selectedFile.type,
+            fileName: selectedFile.name,
+          }),
+        });
+      } catch (fetchError) {
+        if (
+          fetchError instanceof TypeError &&
+          fetchError.message === "Failed to fetch"
+        ) {
+          throw new Error(
+            "Network error: Unable to connect to the server. Please check your internet connection and try again.",
+          );
+        }
+        throw fetchError;
+      }
 
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json();
@@ -155,23 +168,48 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
       setUploading(false);
       setProcessing(true);
 
-      await fetch(uploadUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": selectedFile.type,
-        },
-        body: selectedFile,
-      });
+      try {
+        await fetch(uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": selectedFile.type,
+          },
+          body: selectedFile,
+        });
+      } catch (fetchError) {
+        if (
+          fetchError instanceof TypeError &&
+          fetchError.message === "Failed to fetch"
+        ) {
+          throw new Error(
+            "Network error: Unable to upload the receipt. Please check your internet connection and try again.",
+          );
+        }
+        throw fetchError;
+      }
 
       // Step 3: Process with OCR
-      const processResponse = await fetch(`${API_BASE}/receipt/process`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ receiptId }),
-      });
+      let processResponse;
+      try {
+        processResponse = await fetch(`${API_BASE}/receipt/process`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ receiptId }),
+        });
+      } catch (fetchError) {
+        if (
+          fetchError instanceof TypeError &&
+          fetchError.message === "Failed to fetch"
+        ) {
+          throw new Error(
+            "Network error: Unable to process the receipt. Please check your internet connection and try again.",
+          );
+        }
+        throw fetchError;
+      }
 
       if (!processResponse.ok) {
         const errorData = await processResponse.json();
@@ -190,8 +228,16 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
       // Reset state
       setSelectedFile(null);
       setPreviewUrl(null);
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err: unknown) {
+      if (err instanceof TypeError && err.message === "Failed to fetch") {
+        setError(
+          "Network error: Unable to connect to the server. Please check your internet connection and try again.",
+        );
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setUploading(false);
       setProcessing(false);
