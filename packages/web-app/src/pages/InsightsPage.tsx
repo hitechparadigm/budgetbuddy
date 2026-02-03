@@ -59,6 +59,10 @@ export const InsightsPage: React.FC = () => {
       setLoading(false);
     } catch (error) {
       console.error("Error loading insights:", error);
+      // Set error state for network errors - could add error state to component
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        console.error("Network error: Unable to connect to the server");
+      }
       setLoading(false);
     }
   };
@@ -74,10 +78,18 @@ export const InsightsPage: React.FC = () => {
     } catch (error) {
       console.error("Error asking question:", error);
       setAskLoading(false);
+
+      // Detect network errors specifically
+      let errorMessage =
+        "Sorry, I couldn't process your question. Please try again later.";
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        errorMessage =
+          "Network error: Unable to connect to the server. Please check your internet connection and try again.";
+      }
+
       setAskResponse({
         question: askQuestion,
-        answer:
-          "Sorry, I couldn't process your question. Please try again later.",
+        answer: errorMessage,
         suggestions: [
           "How much did I spend on groceries?",
           "What's my biggest expense category?",

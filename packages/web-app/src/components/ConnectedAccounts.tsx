@@ -38,7 +38,15 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
       setAccounts(data);
     } catch (err) {
       console.error("Failed to load accounts:", err);
-      setError(err instanceof Error ? err.message : "Failed to load accounts");
+      if (err instanceof TypeError && err.message === "Failed to fetch") {
+        setError(
+          "Network error: Unable to connect to the server. Please check your internet connection and try again.",
+        );
+      } else {
+        setError(
+          err instanceof Error ? err.message : "Failed to load accounts",
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -57,7 +65,13 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
       onAccountsChange?.();
     } catch (err) {
       console.error("Failed to sync account:", err);
-      setError(err instanceof Error ? err.message : "Failed to sync account");
+      if (err instanceof TypeError && err.message === "Failed to fetch") {
+        setError(
+          "Network error: Unable to sync account. Please check your internet connection and try again.",
+        );
+      } else {
+        setError(err instanceof Error ? err.message : "Failed to sync account");
+      }
     } finally {
       setSyncing(null);
     }
@@ -72,9 +86,15 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
       onAccountsChange?.();
     } catch (err) {
       console.error("Failed to sync all accounts:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to sync all accounts",
-      );
+      if (err instanceof TypeError && err.message === "Failed to fetch") {
+        setError(
+          "Network error: Unable to sync accounts. Please check your internet connection and try again.",
+        );
+      } else {
+        setError(
+          err instanceof Error ? err.message : "Failed to sync all accounts",
+        );
+      }
     } finally {
       setSyncingAll(false);
     }
@@ -89,7 +109,15 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
       onAccountsChange?.();
     } catch (err) {
       console.error("Failed to unlink account:", err);
-      setError(err instanceof Error ? err.message : "Failed to unlink account");
+      if (err instanceof TypeError && err.message === "Failed to fetch") {
+        setError(
+          "Network error: Unable to unlink account. Please check your internet connection and try again.",
+        );
+      } else {
+        setError(
+          err instanceof Error ? err.message : "Failed to unlink account",
+        );
+      }
     }
   };
 
@@ -192,7 +220,15 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
       {/* Error Message */}
       {error && (
         <div className="p-4 bg-red-50 border-b border-red-100">
-          <p className="text-sm text-red-700">{error}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-red-700">{error}</p>
+            <button
+              onClick={loadAccounts}
+              className="text-sm text-red-600 hover:text-red-800 underline"
+            >
+              Try again
+            </button>
+          </div>
         </div>
       )}
 
