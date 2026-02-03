@@ -40,6 +40,14 @@ jest.mock(
         },
         body: JSON.stringify({ success: false, message }),
       }),
+      conflict: (message) => ({
+        statusCode: 409,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({ success: false, message }),
+      }),
       internalError: (message) => ({
         statusCode: 500,
         headers: {
@@ -765,5 +773,543 @@ describe("Bill Reminder Timing", () => {
       expect(body.data.summary.totalPaid).toBe(200);
       expect(body.data.summary.billCount).toBe(2);
     });
+  });
+});
+
+/**
+ * AI Pattern Integration Tests
+ * Tests for creating bills from AI-detected patterns
+ * Validates: Requirements 2.3, 2.4, 2.7, 7.1, 7.4, 7.6
+ */
+describe("AI Pattern Integration - POST /bills/from-pattern", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    dynamoHelpers.queryByPK.mockResolvedValue([]); // No existing bills by default
+  });
+
+  describe("Bill Creation from Pattern", () => {
+    it("should create a bill from an approved pattern with AI metadata", async () => {
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          patternId: "pattern-123",
+          merchantName: "Netflix",
+          suggestedBillName: "Netflix Subscription",
+          averageAmount: 15.99,
+          frequency: "monthly",
+          nextExpectedDate: "2026-03-01",
+          confidenceScore: 85,
+          categoryId: "cat-entertainment",
+          categoryName: "Entertainment",
+          explanation: "Detected monthly subscription based on 6 occurrences",
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      const body = JSON.parse(result.body);
+
+      expect(result.statusCode).toBe(200);
+      expect(body.data.name).toBe("Netflix Subscription");
+      expect(body.data.amount).toBe(15.99);
+      expect(body.data.frequency).toBe("monthly");
+      expect(body.data.isRecurring).toBe(true);
+      // AI metadata should be set
+      expect(body.data.aiGenerated).toBe(true);
+      expect(body.data.sourcePatternId).toBe("pattern-123");
+      expect(body.data.aiConfidenceScore).toBe(85);
+      expect(body.data.aiDetectedDate).toBeTruthy();
+      expect(body.data.userModified).toBe(false);
+      expect(dynamoHelpers.putItem).toHaveBeenCalled();
+    });
+
+    it("should set reminder schedule for 7 days, 3 days, and due date", async () => {
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          patternId: "pattern-456",
+          merchantName: "Spotify",
+          suggestedBillName: "Spotify Premium",
+          averageAmount: 9.99,
+          frequency: "monthly",
+          nextExpectedDate: "2026-03-15",
+          confidenceScore: 90,
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+
+      expect(result.statusCode).toBe(200);
+      // Verify putItem was called with reminder schedule
+      const putItemCall = dynamoHelpers.putItem.mock.calls[0][0];
+      expect(putItemCall.reminderSchedule).toBeDefined();
+      expect(putItemCall.reminderSchedule.length).toBe(3);
+      expect(putItemCall.reminderSchedule[0].type).toBe("7_days_before");
+      expect(putItemCall.reminderSchedule[0].date).toBe("2026-03-08");
+      expect(putItemCall.reminderSchedule[1].type).toBe("3_days_before");
+      expect(putItemCall.reminderSchedule[1].date).toBe("2026-03-12");
+      expect(putItemCall.reminderSchedule[2].type).toBe("due_date");
+      expect(putItemCall.reminderSchedule[2].date).toBe("2026-03-15");
+    });
+
+    it("should support all valid frequencies", async () => {
+      const frequencies = [
+        "weekly",
+        "bi-weekly",
+        "monthly",
+        "quarterly",
+        "annual",
+      ];
+
+      for (const frequency of frequencies) {
+        jest.clearAllMocks();
+        dynamoHelpers.queryByPK.mockResolvedValue([]);
+
+        const event = {
+          httpMethod: "POST",
+          path: "/bills/from-pattern",
+          headers: { Authorization: "Bearer test-token" },
+          body: JSON.stringify({
+            patternId: `pattern-${frequency}`,
+            merchantName: `Test ${frequency}`,
+            suggestedBillName: `Test ${frequency} Bill`,
+            averageAmount: 100,
+            frequency,
+            nextExpectedDate: "2026-03-01",
+          }),
+        };
+
+        const result = await handler(event, { awsRequestId: "test-123" });
+        const body = JSON.parse(result.body);
+
+        expect(result.statusCode).toBe(200);
+        expect(body.data.frequency).toBe(frequency);
+      }
+    });
+  });
+
+  describe("Validation", () => {
+    it("should reject request without patternId", async () => {
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          merchantName: "Netflix",
+          suggestedBillName: "Netflix Subscription",
+          averageAmount: 15.99,
+          frequency: "monthly",
+          nextExpectedDate: "2026-03-01",
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      expect(result.statusCode).toBe(400);
+    });
+
+    it("should reject request without merchantName", async () => {
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          patternId: "pattern-123",
+          suggestedBillName: "Netflix Subscription",
+          averageAmount: 15.99,
+          frequency: "monthly",
+          nextExpectedDate: "2026-03-01",
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      expect(result.statusCode).toBe(400);
+    });
+
+    it("should reject request with invalid frequency", async () => {
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          patternId: "pattern-123",
+          merchantName: "Netflix",
+          suggestedBillName: "Netflix Subscription",
+          averageAmount: 15.99,
+          frequency: "daily", // Invalid
+          nextExpectedDate: "2026-03-01",
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      expect(result.statusCode).toBe(400);
+    });
+
+    it("should reject request with invalid date format", async () => {
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          patternId: "pattern-123",
+          merchantName: "Netflix",
+          suggestedBillName: "Netflix Subscription",
+          averageAmount: 15.99,
+          frequency: "monthly",
+          nextExpectedDate: "03-01-2026", // Wrong format
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      expect(result.statusCode).toBe(400);
+    });
+
+    it("should reject request with zero or negative amount", async () => {
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          patternId: "pattern-123",
+          merchantName: "Netflix",
+          suggestedBillName: "Netflix Subscription",
+          averageAmount: 0,
+          frequency: "monthly",
+          nextExpectedDate: "2026-03-01",
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      expect(result.statusCode).toBe(400);
+    });
+  });
+
+  describe("Duplicate Detection", () => {
+    it("should reject duplicate bill with same merchant and frequency", async () => {
+      // Mock existing bill with same merchant
+      dynamoHelpers.queryByPK.mockResolvedValue([
+        {
+          billId: "existing-bill-123",
+          name: "Netflix Subscription",
+          merchantName: "Netflix",
+          amount: 15.99,
+          frequency: "monthly",
+          status: "unpaid",
+          entityType: "BILL",
+        },
+      ]);
+
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          patternId: "pattern-123",
+          merchantName: "Netflix",
+          suggestedBillName: "Netflix Subscription",
+          averageAmount: 15.99,
+          frequency: "monthly",
+          nextExpectedDate: "2026-03-01",
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      expect(result.statusCode).toBe(409); // Conflict
+    });
+
+    it("should detect duplicate with fuzzy merchant name matching", async () => {
+      // Mock existing bill with slightly different merchant name
+      dynamoHelpers.queryByPK.mockResolvedValue([
+        {
+          billId: "existing-bill-123",
+          name: "Netflix",
+          merchantName: "NETFLIX", // Same name, different case
+          amount: 15.99,
+          frequency: "monthly",
+          status: "unpaid",
+          entityType: "BILL",
+        },
+      ]);
+
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          patternId: "pattern-123",
+          merchantName: "netflix", // Same name, different case
+          suggestedBillName: "Netflix Subscription",
+          averageAmount: 15.99,
+          frequency: "monthly",
+          nextExpectedDate: "2026-03-01",
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      expect(result.statusCode).toBe(409); // Conflict - fuzzy match detected
+    });
+
+    it("should allow bill with same merchant but different frequency", async () => {
+      // Mock existing bill with same merchant but different frequency
+      dynamoHelpers.queryByPK.mockResolvedValue([
+        {
+          billId: "existing-bill-123",
+          name: "Netflix Subscription",
+          merchantName: "Netflix",
+          amount: 15.99,
+          frequency: "annual", // Different frequency
+          status: "unpaid",
+          entityType: "BILL",
+        },
+      ]);
+
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          patternId: "pattern-123",
+          merchantName: "Netflix",
+          suggestedBillName: "Netflix Monthly",
+          averageAmount: 15.99,
+          frequency: "monthly", // Different frequency
+          nextExpectedDate: "2026-03-01",
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      expect(result.statusCode).toBe(200); // Should succeed
+    });
+
+    it("should allow bill with different merchant", async () => {
+      // Mock existing bill with different merchant
+      dynamoHelpers.queryByPK.mockResolvedValue([
+        {
+          billId: "existing-bill-123",
+          name: "Spotify Premium",
+          merchantName: "Spotify",
+          amount: 9.99,
+          frequency: "monthly",
+          status: "unpaid",
+          entityType: "BILL",
+        },
+      ]);
+
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          patternId: "pattern-123",
+          merchantName: "Netflix",
+          suggestedBillName: "Netflix Subscription",
+          averageAmount: 15.99,
+          frequency: "monthly",
+          nextExpectedDate: "2026-03-01",
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      expect(result.statusCode).toBe(200); // Should succeed
+    });
+
+    it("should ignore deleted bills in duplicate check", async () => {
+      // Mock deleted bill with same merchant
+      dynamoHelpers.queryByPK.mockResolvedValue([]); // Filter excludes deleted bills
+
+      const event = {
+        httpMethod: "POST",
+        path: "/bills/from-pattern",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          patternId: "pattern-123",
+          merchantName: "Netflix",
+          suggestedBillName: "Netflix Subscription",
+          averageAmount: 15.99,
+          frequency: "monthly",
+          nextExpectedDate: "2026-03-01",
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      expect(result.statusCode).toBe(200); // Should succeed
+    });
+  });
+
+  describe("AI Metadata Preservation on Edit", () => {
+    it("should set userModified flag when AI bill is edited", async () => {
+      const mockBill = {
+        billId: "bill-ai-123",
+        name: "Netflix Subscription",
+        amount: 15.99,
+        dueDate: "2026-03-01",
+        status: "unpaid",
+        aiGenerated: true,
+        sourcePatternId: "pattern-123",
+        aiConfidenceScore: 85,
+        aiDetectedDate: "2026-02-01T00:00:00.000Z",
+        userModified: false,
+      };
+      dynamoHelpers.getItem.mockResolvedValue(mockBill);
+      dynamoHelpers.updateItem.mockResolvedValue({
+        ...mockBill,
+        name: "Netflix Premium",
+        userModified: true,
+      });
+
+      const event = {
+        httpMethod: "PUT",
+        path: "/bills/bill-ai-123",
+        pathParameters: { billId: "bill-ai-123" },
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          name: "Netflix Premium", // User editing the name
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      const body = JSON.parse(result.body);
+
+      expect(result.statusCode).toBe(200);
+      // Verify updateItem was called with userModified: true
+      const updateCall = dynamoHelpers.updateItem.mock.calls[0][2];
+      expect(updateCall.userModified).toBe(true);
+    });
+
+    it("should preserve AI metadata when bill is edited", async () => {
+      const mockBill = {
+        billId: "bill-ai-123",
+        name: "Netflix Subscription",
+        amount: 15.99,
+        dueDate: "2026-03-01",
+        status: "unpaid",
+        aiGenerated: true,
+        sourcePatternId: "pattern-123",
+        aiConfidenceScore: 85,
+        aiDetectedDate: "2026-02-01T00:00:00.000Z",
+        userModified: false,
+      };
+      dynamoHelpers.getItem.mockResolvedValue(mockBill);
+      dynamoHelpers.updateItem.mockResolvedValue({
+        ...mockBill,
+        amount: 19.99,
+        userModified: true,
+      });
+
+      const event = {
+        httpMethod: "PUT",
+        path: "/bills/bill-ai-123",
+        pathParameters: { billId: "bill-ai-123" },
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          amount: 19.99, // User editing the amount
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+
+      expect(result.statusCode).toBe(200);
+      // AI metadata should NOT be in the update call (preserved as-is)
+      const updateCall = dynamoHelpers.updateItem.mock.calls[0][2];
+      expect(updateCall.aiGenerated).toBeUndefined();
+      expect(updateCall.sourcePatternId).toBeUndefined();
+      expect(updateCall.aiConfidenceScore).toBeUndefined();
+      expect(updateCall.aiDetectedDate).toBeUndefined();
+    });
+
+    it("should not set userModified for non-AI bills", async () => {
+      const mockBill = {
+        billId: "bill-manual-123",
+        name: "Rent",
+        amount: 1500,
+        dueDate: "2026-03-01",
+        status: "unpaid",
+        aiGenerated: false, // Manual bill
+      };
+      dynamoHelpers.getItem.mockResolvedValue(mockBill);
+      dynamoHelpers.updateItem.mockResolvedValue({
+        ...mockBill,
+        amount: 1600,
+      });
+
+      const event = {
+        httpMethod: "PUT",
+        path: "/bills/bill-manual-123",
+        pathParameters: { billId: "bill-manual-123" },
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify({
+          amount: 1600,
+        }),
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+
+      expect(result.statusCode).toBe(200);
+      // userModified should NOT be set for non-AI bills
+      const updateCall = dynamoHelpers.updateItem.mock.calls[0][2];
+      expect(updateCall.userModified).toBeUndefined();
+    });
+  });
+});
+
+/**
+ * AI Metadata in Response Tests
+ * Tests that AI metadata is properly included in bill responses
+ */
+describe("AI Metadata in Bill Responses", () => {
+  it("should include AI metadata in GET /bills response", async () => {
+    const mockBills = [
+      {
+        billId: "bill-ai-1",
+        name: "Netflix",
+        amount: 15.99,
+        dueDate: "2026-03-01",
+        status: "unpaid",
+        aiGenerated: true,
+        sourcePatternId: "pattern-123",
+        aiConfidenceScore: 85,
+        aiDetectedDate: "2026-02-01T00:00:00.000Z",
+        userModified: false,
+        entityType: "BILL",
+      },
+      {
+        billId: "bill-manual-1",
+        name: "Rent",
+        amount: 1500,
+        dueDate: "2026-03-01",
+        status: "unpaid",
+        entityType: "BILL",
+      },
+    ];
+    dynamoHelpers.queryByPK.mockResolvedValue(mockBills);
+
+    const event = {
+      httpMethod: "GET",
+      path: "/bills",
+      headers: { Authorization: "Bearer test-token" },
+    };
+
+    const result = await handler(event, { awsRequestId: "test-123" });
+    const body = JSON.parse(result.body);
+
+    expect(result.statusCode).toBe(200);
+
+    // AI bill should have metadata
+    const aiBill = body.data.bills.find((b) => b.billId === "bill-ai-1");
+    expect(aiBill.aiGenerated).toBe(true);
+    expect(aiBill.sourcePatternId).toBe("pattern-123");
+    expect(aiBill.aiConfidenceScore).toBe(85);
+    expect(aiBill.userModified).toBe(false);
+
+    // Manual bill should have default AI metadata
+    const manualBill = body.data.bills.find(
+      (b) => b.billId === "bill-manual-1",
+    );
+    expect(manualBill.aiGenerated).toBe(false);
+    expect(manualBill.sourcePatternId).toBeNull();
+    expect(manualBill.aiConfidenceScore).toBeNull();
+    expect(manualBill.userModified).toBe(false);
   });
 });

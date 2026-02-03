@@ -90,6 +90,11 @@ exports.handler = async (event, context) => {
       return await deleteBill(event, user, pathParameters.billId);
     }
 
+    // AI Pattern Integration - Create bill from approved pattern
+    if (httpMethod === "POST" && path === "/bills/from-pattern") {
+      return await createBillFromPattern(event, user);
+    }
+
     return errorResponse.notFound(`Route ${httpMethod} ${path} not found`);
   } catch (error) {
     logger.error("Bills function error", error, {
@@ -311,6 +316,12 @@ async function createBill(event, user) {
     paidDate: null,
     transactionId: null,
     notes: body.notes || null,
+    // AI metadata fields
+    aiGenerated: body.aiGenerated || false,
+    sourcePatternId: body.sourcePatternId || null,
+    aiConfidenceScore: body.aiConfidenceScore || null,
+    aiDetectedDate: body.aiDetectedDate || null,
+    userModified: false,
     createdBy: user.userId,
     createdAt: currentTime,
     updatedAt: currentTime,
@@ -367,6 +378,18 @@ async function updateBill(event, user, billId) {
   if (body.isRecurring !== undefined) updates.isRecurring = body.isRecurring;
   if (body.frequency !== undefined) updates.frequency = body.frequency;
   if (body.notes !== undefined) updates.notes = body.notes;
+
+  // If this is an AI-generated bill and user is editing it, set userModified flag
+  // AI metadata (aiGenerated, sourcePatternId, aiConfidenceScore, aiDetectedDate) is preserved
+  if (
+    existingBill.aiGenerated &&
+    (body.name ||
+      body.amount !== undefined ||
+      body.dueDate ||
+      body.frequency !== undefined)
+  ) {
+    updates.userModified = true;
+  }
 
   const updatedBill = await dynamoHelpers.updateItem(
     `FAMILY#${familyId}`,
@@ -615,7 +638,275 @@ function formatBillResponse(bill) {
     paidAmount: bill.paidAmount,
     transactionId: bill.transactionId,
     notes: bill.notes,
+    // AI metadata fields
+    aiGenerated: bill.aiGenerated || false,
+    sourcePatternId: bill.sourcePatternId || null,
+    aiConfidenceScore: bill.aiConfidenceScore || null,
+    aiDetectedDate: bill.aiDetectedDate || null,
+    userModified: bill.userModified || false,
     createdAt: bill.createdAt,
     updatedAt: bill.updatedAt,
   };
+}
+
+/**
+ * Create a bill from an approved AI-detected pattern
+ * POST /bills/from-pattern
+ *
+ * This endpoint converts an approved pattern into a bill reminder with:
+ * - AI metadata preserved (aiGenerated, sourcePatternId, aiConfidenceScore)
+ * - Reminder schedule set (7 days, 3 days, due date)
+ * - Duplicate detection to prevent redundant bills
+ */
+async function createBillFromPattern(event, user) {
+  const permissionError = checkPermission(event, "budget:create");
+  if (permissionError) return permissionError;
+
+  const familyId = await FamilyIdResolver.resolveFamilyId(
+    user.userId,
+    user.familyId,
+    dynamoHelpers,
+  );
+
+  const body = parseRequestBody(event.body);
+
+  // Validate required pattern fields
+  if (!body.patternId)
+    return errorResponse.badRequest("Pattern ID is required");
+  if (!body.merchantName)
+    return errorResponse.badRequest("Merchant name is required");
+  if (!body.suggestedBillName)
+    return errorResponse.badRequest("Bill name is required");
+  if (!body.averageAmount || body.averageAmount <= 0) {
+    return errorResponse.badRequest("Valid average amount is required");
+  }
+  if (!body.frequency) return errorResponse.badRequest("Frequency is required");
+  if (!body.nextExpectedDate)
+    return errorResponse.badRequest("Next expected date is required");
+
+  // Validate frequency
+  const validFrequencies = [
+    "weekly",
+    "bi-weekly",
+    "monthly",
+    "quarterly",
+    "annual",
+  ];
+  if (!validFrequencies.includes(body.frequency)) {
+    return errorResponse.badRequest(
+      `Frequency must be one of: ${validFrequencies.join(", ")}`,
+    );
+  }
+
+  // Validate date format
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(body.nextExpectedDate)) {
+    return errorResponse.badRequest(
+      "Next expected date must be in YYYY-MM-DD format",
+    );
+  }
+
+  // Check for duplicate bills (same merchant name and frequency)
+  const duplicateBill = await checkForDuplicateBill(
+    familyId,
+    body.merchantName,
+    body.frequency,
+  );
+  if (duplicateBill) {
+    return errorResponse.conflict(
+      `A similar bill already exists: ${duplicateBill.name} (ID: ${duplicateBill.billId})`,
+    );
+  }
+
+  const billId = generateId.custom("bill");
+  const currentTime = new Date().toISOString();
+  const dueDate = body.nextExpectedDate;
+  const dueDateObj = new Date(dueDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Determine initial status
+  let status = "unpaid";
+  if (dueDateObj < today) {
+    status = "overdue";
+  }
+
+  // Calculate reminder schedule (7 days, 3 days, due date)
+  const reminderSchedule = calculateReminderSchedule(dueDate);
+
+  const bill = {
+    PK: `FAMILY#${familyId}`,
+    SK: `BILL#${billId}`,
+    GSI1PK: `BILLS#${dueDate.substring(0, 7)}`,
+    GSI1SK: `${dueDate}#${billId}`,
+    entityType: "BILL",
+    billId,
+    familyId,
+    name: body.suggestedBillName,
+    merchantName: body.merchantName,
+    amount: body.averageAmount,
+    dueDate,
+    categoryId: body.categoryId || null,
+    categoryName: body.categoryName || null,
+    status,
+    isRecurring: true,
+    frequency: body.frequency,
+    nextDueDate: null,
+    remindersSent: [],
+    reminderSchedule,
+    paidDate: null,
+    transactionId: null,
+    notes: body.explanation || null,
+    // AI metadata fields
+    aiGenerated: true,
+    sourcePatternId: body.patternId,
+    aiConfidenceScore: body.confidenceScore || null,
+    aiDetectedDate: currentTime,
+    userModified: false,
+    createdBy: user.userId,
+    createdAt: currentTime,
+    updatedAt: currentTime,
+  };
+
+  await dynamoHelpers.putItem(bill);
+
+  logger.info("Bill created from AI pattern", {
+    billId,
+    familyId,
+    patternId: body.patternId,
+    merchantName: body.merchantName,
+    confidenceScore: body.confidenceScore,
+  });
+
+  return successResponse(
+    formatBillResponse(bill),
+    "Bill created from pattern successfully",
+  );
+}
+
+/**
+ * Check for duplicate bills with same merchant name and frequency
+ * Returns the existing bill if found, null otherwise
+ */
+async function checkForDuplicateBill(familyId, merchantName, frequency) {
+  const bills = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    FilterExpression:
+      "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
+    ExpressionAttributeValues: {
+      ":entityType": "BILL",
+      ":false": false,
+    },
+  });
+
+  // Normalize merchant name for comparison
+  const normalizedMerchant = normalizeMerchantName(merchantName);
+
+  for (const bill of bills) {
+    // Check if bill has same frequency
+    if (bill.frequency !== frequency) continue;
+
+    // Check merchant name similarity (fuzzy match)
+    const billMerchant = normalizeMerchantName(bill.merchantName || bill.name);
+    if (fuzzyMatchMerchant(normalizedMerchant, billMerchant)) {
+      return bill;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Normalize merchant name for comparison
+ * - Lowercase
+ * - Remove special characters
+ * - Trim whitespace
+ */
+function normalizeMerchantName(name) {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Fuzzy match two merchant names using Levenshtein distance
+ * Returns true if similarity > 80%
+ */
+function fuzzyMatchMerchant(name1, name2) {
+  if (!name1 || !name2) return false;
+  if (name1 === name2) return true;
+
+  const distance = levenshteinDistance(name1, name2);
+  const maxLength = Math.max(name1.length, name2.length);
+  if (maxLength === 0) return true;
+
+  const similarity = 1 - distance / maxLength;
+  return similarity > 0.8;
+}
+
+/**
+ * Calculate Levenshtein distance between two strings
+ */
+function levenshteinDistance(str1, str2) {
+  const m = str1.length;
+  const n = str2.length;
+
+  // Create matrix
+  const dp = Array(m + 1)
+    .fill(null)
+    .map(() => Array(n + 1).fill(0));
+
+  // Initialize first row and column
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  // Fill matrix
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+      }
+    }
+  }
+
+  return dp[m][n];
+}
+
+/**
+ * Calculate reminder schedule for a bill
+ * Returns array of reminder dates: 7 days before, 3 days before, and due date
+ */
+function calculateReminderSchedule(dueDate) {
+  const due = new Date(dueDate);
+  const schedule = [];
+
+  // 7 days before
+  const sevenDaysBefore = new Date(due);
+  sevenDaysBefore.setDate(sevenDaysBefore.getDate() - 7);
+  schedule.push({
+    date: sevenDaysBefore.toISOString().split("T")[0],
+    type: "7_days_before",
+    sent: false,
+  });
+
+  // 3 days before
+  const threeDaysBefore = new Date(due);
+  threeDaysBefore.setDate(threeDaysBefore.getDate() - 3);
+  schedule.push({
+    date: threeDaysBefore.toISOString().split("T")[0],
+    type: "3_days_before",
+    sent: false,
+  });
+
+  // Due date
+  schedule.push({
+    date: dueDate,
+    type: "due_date",
+    sent: false,
+  });
+
+  return schedule;
 }
