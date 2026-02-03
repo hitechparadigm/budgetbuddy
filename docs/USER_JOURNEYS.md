@@ -6,6 +6,12 @@
 
 **Recent Updates**:
 
+- Fix Accounts & Family Features spec completed (2026-02-03)
+  - FamilySettings.tsx: Fixed token usage (id_token), improved error handling, added unit tests
+  - accountsApi.ts: Improved error handling with network error detection, better message extraction
+  - accounts/validators.js: Fixed edge cases for invalid types and whitespace nicknames
+  - Added Property 4, 7, 11, 12 property-based tests
+  - Created accounts-integration.test.js for end-to-end testing
 - Split api-features-stack into two stacks to stay under CloudFormation 500 resource limit (2026-02-03)
 - Created api-features-extended-stack for AI-powered features (Insights, Receipt, Pattern Detection, Budget Planning)
 - Updated CI/CD workflow to deploy stacks in correct order to break SharedLayer export dependency

@@ -57,7 +57,7 @@ This implementation plan addresses critical integration bugs in Manual Accounts 
 - [x] 4. Checkpoint - Verify accounts API fixes
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 5. Fix Frontend Family Settings Component
+- [x] 5. Fix Frontend Family Settings Component
   - [x] 5.1 Fix token usage in FamilySettings.tsx
     - Change from `budgetbuddy_access_token` to `budgetbuddy_id_token`
     - API Gateway Cognito authorizer requires ID tokens, not access tokens
@@ -70,50 +70,50 @@ This implementation plan addresses critical integration bugs in Manual Accounts 
     - Add success confirmations for operations
     - _Requirements: 6.1, 6.3, 6.6_
 
-  - [ ] 5.3 Write unit tests for FamilySettings error handling
+  - [x] 5.3 Write unit tests for FamilySettings error handling
     - Test missing token handling
     - Test API error display
     - Test success message display
     - _Requirements: 6.1, 6.6_
 
-- [ ] 6. Checkpoint - Verify family settings fixes
+- [x] 6. Checkpoint - Verify family settings fixes
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Add Integration Tests for End-to-End Flows
-  - [ ] 7.1 Write integration test for manual account creation flow
+- [x] 7. Add Integration Tests for End-to-End Flows
+  - [x] 7.1 Write integration test for manual account creation flow
     - Test creating account via API
     - Verify account appears in list
     - Verify account details match input
     - _Requirements: 2.2, 2.4_
 
-  - [ ] 7.2 Write property test for account validation
+  - [x] 7.2 Write property test for account validation
     - **Property 4: Account Validation Rejects Invalid Input**
     - **Validates: Requirements 2.5, 2.7**
 
-  - [ ] 7.3 Write integration test for family invitation flow
+  - [x] 7.3 Write integration test for family invitation flow
     - Test sending invitation
     - Test accepting invitation
     - Verify family membership updated
     - _Requirements: 3.3, 4.1_
 
-  - [ ] 7.4 Write property test for duplicate invitation prevention
+  - [x] 7.4 Write property test for duplicate invitation prevention
     - **Property 7: Duplicate Invitation Prevention**
     - **Validates: Requirements 3.5**
 
-  - [ ] 7.5 Write property test for member count invariant
+  - [x] 7.5 Write property test for member count invariant
     - **Property 11: Member Count Invariant**
     - \*\*Validates: Requirements 5.4, 5.5\_
 
-- [ ] 8. Final Checkpoint - Ensure all tests pass
+- [x] 8. Final Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Update Documentation
-  - [ ] 9.1 Update API documentation with token requirements
+- [x] 9. Update Documentation
+  - [x] 9.1 Update API documentation with token requirements
     - Document which token each endpoint expects
     - Document response formats
     - _Requirements: 1.4_
 
-  - [ ] 9.2 Update CHANGELOG.md with bug fixes
+  - [x] 9.2 Update CHANGELOG.md with bug fixes
     - Document accounts feature fixes
     - Document family invitation fixes
     - _Requirements: N/A (documentation)_
