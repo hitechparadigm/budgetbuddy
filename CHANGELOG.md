@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.9.96] - 2026-02-03
+
+### 🧪 Test Coverage Improvement - Week 4 Property Tests (Session 117)
+
+- **Property 14: Mobile Search Filtering** (10 property tests)
+  - Tests filter result subset property
+  - Tests empty query returns all
+  - Tests query match accuracy
+  - Tests amount and date range filters
+  - Tests category and type filter exactness
+  - Tests highlight preservation and sort stability
+  - Validates Requirement 10.3
+
+- **Property 15: Mobile Accessibility** (22 property tests)
+  - Tests accessibility props generation
+  - Tests label validation rules
+  - Tests color contrast ratio (WCAG AA)
+  - Tests minimum touch target size (44x44)
+  - Tests focus order logic
+  - Tests button label generation
+  - Tests state and role propagation
+  - Validates Requirement 10.6
+
 ## [1.9.95] - 2026-02-03
 
 ### 🧪 Test Coverage Improvement - Week 4 Mobile Component Tests (Session 117)
