@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.9.86] - 2026-02-03
+
+### 🔧 Development Infrastructure
+
+- **Steering Files Optimization**: Optimized steering files and hooks for token efficiency (35-40% reduction)
+  - Created 3 conditional steering files that load only when relevant:
+    - `aws-integration-testing.md` - Loads when editing test files (saves ~200 tokens)
+    - `cicd-deployment.md` - Loads when editing CI/CD files (saves ~300 tokens)
+    - `documentation-standards.md` - Loads when editing documentation (saves ~250 tokens)
+  - Streamlined `00-global.md` by 32% (removed ~800 tokens of duplicated content)
+  - Optimized hook prompts to reference steering files instead of duplicating:
+    - `autonomous-task-executor.kiro.hook` - 55% reduction (450→200 tokens)
+    - `cicd-failure-handler.kiro.hook` - 33% reduction (150→100 tokens)
+  - Created comprehensive documentation:
+    - `STEERING_OPTIMIZATION_SUMMARY.md` - Detailed analysis and metrics
+    - `STEERING_QUICK_REFERENCE.md` - Fast lookup guide for steering files
+    - `OPTIMIZATION_VALIDATION_CHECKLIST.md` - Testing and validation checklist
+    - `STEERING_HOOKS_OPTIMIZATION_COMPLETE.md` - Complete summary
+  - Updated `ACTIVE_HOOKS.md` with optimization details
+  - Token savings per interaction: 35-40% (4,950 → ~3,000 tokens average)
+  - Autonomous mode: 100% functionality maintained
+  - Cost savings: ~$0.37 per 10-task autonomous session
+  - Fully aligned with Kiro best practices (conditional inclusion, focused content, file references)
+
+### 📚 Documentation
+
+- **User Journeys**: Added Development Infrastructure & Optimization Journey (Section 10)
+  - Documented steering files and hooks optimization process
+  - Added component mapping for optimization work
+  - Included optimization metrics and best practices applied
+
 ## [1.9.85] - 2026-02-02
 
 ### 🤖 AI Features

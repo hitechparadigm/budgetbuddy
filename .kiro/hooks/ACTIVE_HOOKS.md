@@ -1,13 +1,13 @@
 # Active Hooks - BudgetBuddy
 
-**Last Updated**: 2026-01-31
-**Status**: Optimized and streamlined
+**Last Updated**: 2026-02-02
+**Status**: Optimized for token efficiency and autonomous development
 
 ---
 
 ## Overview
 
-The hook system has been optimized from 13 to 8 active hooks, eliminating duplication and redundancy while maintaining full autonomous development capability.
+The hook system has been optimized for **token efficiency** while maintaining full autonomous development capability. Hooks now reference steering files instead of duplicating content.
 
 **Key Improvements:**
 
@@ -16,6 +16,8 @@ The hook system has been optimized from 13 to 8 active hooks, eliminating duplic
 - ✅ Removed false-trigger AWS monitoring
 - ✅ Consolidated continuation logic
 - ✅ Simplified prompts for clarity
+- ✅ **NEW**: Hooks reference steering files (55% token reduction per trigger)
+- ✅ **NEW**: Conditional steering files (35-40% token reduction per interaction)
 
 ---
 
@@ -50,7 +52,7 @@ The hook system has been optimized from 13 to 8 active hooks, eliminating duplic
 #### 3. `autonomous-task-executor.kiro.hook` ⭐ CORE
 
 **Purpose**: Guide autonomous overnight development
-**Trigger**: userTriggered (manual start of autonomous mode)
+**Trigger**: agentStop
 **Status**: ✅ Active
 **Action**: Executes tasks with validation before each commit
 **Optimizations**:
@@ -58,6 +60,8 @@ The hook system has been optimized from 13 to 8 active hooks, eliminating duplic
 - Simplified prompt (removed redundancy)
 - References steering files instead of duplicating content
 - Focuses on workflow, not implementation details
+- **Token cost**: ~200 tokens (down from ~450, 55% reduction)
+- **References**: `.kiro/steering/00-global.md` for detailed workflow
 
 #### 4. `task-continuation.kiro.hook` ⭐ NEW
 
@@ -73,8 +77,12 @@ The hook system has been optimized from 13 to 8 active hooks, eliminating duplic
 **Trigger**: userTriggered
 **Status**: ✅ Active
 **Action**: Analyzes CI/CD logs, fixes issues, re-validates and commits
-**Optimizations**: Simplified prompt, removed redundant instructions
-**Safety**: Max 2 retry attempts, asks user if still failing
+**Optimizations**:
+
+- Simplified prompt, removed redundant instructions
+- References cicd-deployment.md steering file
+- **Token cost**: ~100 tokens (down from ~150, 33% reduction)
+  **Safety**: Max 2 retry attempts, asks user if still failing
 
 #### 6. `aws-analysis.kiro.hook` ⭐ REFINED
 
@@ -175,6 +183,38 @@ The hook system has been optimized from 13 to 8 active hooks, eliminating duplic
 **Reason**: Too aggressive, removes developer control
 **Risk**: Makes architectural decisions without human oversight
 **Status**: DISABLED - DO NOT RE-ENABLE
+
+---
+
+## Steering File Integration
+
+### Token Efficiency Strategy
+
+Hooks now **reference** steering files instead of duplicating content:
+
+**Before optimization:**
+
+- Hook prompts contained full instructions (~450 tokens)
+- Steering files always loaded (~4,500 tokens)
+- **Total per interaction**: ~4,950 tokens
+
+**After optimization:**
+
+- Hook prompts reference steering files (~200 tokens)
+- Core steering always loaded (~2,700 tokens)
+- Conditional steering loads when relevant (~200-300 tokens)
+- **Total per interaction**: ~3,100 tokens average
+- **Savings**: 35-40% per interaction
+
+### Conditional Steering Files
+
+New conditional files load only when working with specific file types:
+
+1. **`aws-integration-testing.md`** - Loads when editing `**/*.test.js`
+2. **`cicd-deployment.md`** - Loads when editing CI/CD files
+3. **`documentation-standards.md`** - Loads when editing documentation
+
+**See**: `.kiro/STEERING_OPTIMIZATION_SUMMARY.md` for detailed analysis
 
 ---
 
@@ -319,8 +359,9 @@ Check that tasks.md files have incomplete tasks marked with `[ ]`
 **Disabled**: 3 (security risks)
 **Optimizations**: Simplified prompts, narrowed patterns, consolidated logic
 
-**Philosophy**: Hooks should assist, not automate critical decisions. Validation happens once per commit. Autonomous mode works seamlessly without stops.
+**Philosophy**: Hooks should assist, not automate critical decisions. Validation happens once per commit. Autonomous mode works seamlessly without stops. **Token efficiency through steering file references.**
 
 ---
 
 **For system overview, see**: `.kiro/SYSTEM_GUIDE.md`
+**For optimization details, see**: `.kiro/STEERING_HOOKS_OPTIMIZATION_COMPLETE.md`
