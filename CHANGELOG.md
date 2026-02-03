@@ -1,5 +1,48 @@
 # Changelog
 
+## [1.9.91] - 2026-02-03
+
+### 🧪 Test Coverage Improvement (Week 2 - Sessions 113-114)
+
+- **Receipt OCR Accuracy Tests**: Added comprehensive test suite for receipt scanning
+  - Created `ocr-accuracy.test.js` with 8 tests for OCR validation
+  - Created `receipt.pbt.test.js` with property-based tests (Property 7)
+  - Tests cover: amount extraction, date parsing, merchant detection, edge cases
+
+- **Admin API Property Tests**: Added PBT coverage for admin endpoints
+  - Created `admin.pbt.test.js` with 12 property-based tests (Properties 4-6)
+  - Property 4: Admin User Listing Consistency
+  - Property 5: Admin User Search Filtering
+  - Property 6: Admin Audit Log Integrity
+
+- **Transaction Editing Tests**: Comprehensive test suite for transaction updates
+  - Created `edit-transaction.pbt.test.js` with 5 property-based tests
+  - Property 1: Transaction Edit Round-Trip
+  - Property 2: Transaction Date Validation
+  - Property 3: Transaction Invalid Data Rejection
+
+- **Google OAuth Tests**: Added test coverage for Google Sign-In
+  - Created `google-oauth.test.js` with 12 unit tests
+  - Coverage: Token validation, user creation, account linking, JWT issuance
+
+### 🐛 Bug Fixes
+
+- **BudgetPage UI**: Removed duplicate sidebar and sign-out button
+  - Fixed layout issue where sidebar appeared twice
+  - Removed redundant sign-out button from BudgetPage header
+
+### 🔧 Infrastructure
+
+- **CloudFormation Stack Split**: Split api-features-stack to stay under 500 resource limit
+  - Created api-features-extended-stack for overflow resources
+  - Updated CI/CD to deploy api-features first to break SharedLayer export dependency
+  - Resolved CloudFormation export dependency issues
+
+### 📚 Documentation
+
+- **USER_JOURNEYS.md**: Updated with infrastructure stack split details
+- **Test Coverage Spec**: Created test-coverage-improvement spec for Weeks 2-4
+
 ## [1.9.90] - 2026-02-03
 
 ### ✨ Enhanced Accounts & Transactions (Phase 2 - Frontend UI)

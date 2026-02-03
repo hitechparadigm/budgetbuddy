@@ -73,7 +73,13 @@ export const FamilySettings: React.FC<FamilySettingsProps> = ({ onClose }) => {
 
   const getAuthToken = async (): Promise<string | null> => {
     try {
-      return await AsyncStorage.getItem("auth_token");
+      // Use id_token for API Gateway Cognito authorizer
+      // Try SecureStore first (preferred), then AsyncStorage as fallback
+      const { default: SecureStore } = await import("expo-secure-store");
+      const token = await SecureStore.getItemAsync("auth_id_token");
+      if (token) return token;
+      // Fallback to AsyncStorage for backwards compatibility
+      return await AsyncStorage.getItem("auth_id_token");
     } catch {
       return null;
     }

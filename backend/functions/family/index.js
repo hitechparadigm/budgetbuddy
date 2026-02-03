@@ -227,7 +227,8 @@ async function handleInvite(event, userId, familyId, familyRole) {
     }
 
     // Get family metadata to check member count
-    const familyResult = await dynamodb.send(
+    // Auto-create if missing (for legacy users who don't have FAMILY metadata)
+    let familyResult = await dynamodb.send(
       new GetCommand({
         TableName: TABLE_NAME,
         Key: {
@@ -237,8 +238,78 @@ async function handleInvite(event, userId, familyId, familyRole) {
       }),
     );
 
+    // Auto-create family metadata if missing (idempotent operation)
     if (!familyResult.Item) {
-      return errorResponse(404, "Family not found");
+      console.log(
+        "Family metadata missing, auto-creating for familyId:",
+        familyId,
+      );
+      const now = new Date().toISOString();
+      const familyMetadata = {
+        PK: `FAMILY#${familyId}`,
+        SK: "METADATA",
+        familyId,
+        primaryUserId: userId,
+        createdAt: now,
+        memberCount: 1,
+        subscriptionTier: "free",
+      };
+
+      try {
+        await dynamodb.send(
+          new PutCommand({
+            TableName: TABLE_NAME,
+            Item: familyMetadata,
+            ConditionExpression: "attribute_not_exists(PK)", // Idempotent
+          }),
+        );
+        console.log("Created family metadata for familyId:", familyId);
+      } catch (conditionError) {
+        // If condition fails, another process created it - re-fetch
+        if (conditionError.name === "ConditionalCheckFailedException") {
+          console.log(
+            "Family metadata was created by another process, re-fetching",
+          );
+          familyResult = await dynamodb.send(
+            new GetCommand({
+              TableName: TABLE_NAME,
+              Key: {
+                PK: `FAMILY#${familyId}`,
+                SK: "METADATA",
+              },
+            }),
+          );
+        } else {
+          throw conditionError;
+        }
+      }
+
+      // Also create MEMBER record for primary user if missing
+      try {
+        await dynamodb.send(
+          new PutCommand({
+            TableName: TABLE_NAME,
+            Item: {
+              PK: `FAMILY#${familyId}`,
+              SK: `MEMBER#${userId}`,
+              userId,
+              role: "primary",
+              joinedAt: now,
+              addedBy: userId,
+            },
+            ConditionExpression: "attribute_not_exists(PK)", // Idempotent
+          }),
+        );
+        console.log("Created primary member record for userId:", userId);
+      } catch (memberConditionError) {
+        // Ignore if member already exists
+        if (memberConditionError.name !== "ConditionalCheckFailedException") {
+          throw memberConditionError;
+        }
+      }
+
+      // Use the newly created metadata
+      familyResult = { Item: familyMetadata };
     }
 
     const family = familyResult.Item;
@@ -530,6 +601,7 @@ async function handleGetMembers(familyId) {
     );
 
     // Get family metadata to find primary user
+    // Auto-create if missing (for legacy users)
     const familyResult = await dynamodb.send(
       new GetCommand({
         TableName: TABLE_NAME,
@@ -539,6 +611,22 @@ async function handleGetMembers(familyId) {
         },
       }),
     );
+
+    // If family metadata doesn't exist, we can't determine the primary user
+    // Return empty members list - the user should trigger invite flow to create metadata
+    if (!familyResult.Item) {
+      console.log(
+        "Family metadata not found for familyId:",
+        familyId,
+        "- returning empty members list",
+      );
+      return successResponse({
+        familyId,
+        members: [],
+        message:
+          "Family not yet configured. Send an invitation to set up your family.",
+      });
+    }
 
     const family = familyResult.Item;
     const existingMembers = membersResult.Items || [];

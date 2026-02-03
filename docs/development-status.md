@@ -1,10 +1,44 @@
 # Development Status - BudgetBuddy
 
 **Last Updated**: 2026-02-03
-**Current Phase**: Enhanced Accounts & Transactions - Phase 2 Complete ✅
+**Current Phase**: Test Coverage Improvement - Week 2 In Progress
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - Enhanced Accounts & Transactions Phase 2 (Session 111)
+## ✨ LATEST - Test Coverage Improvement Week 2 (Session 113-114)
+
+### Test Coverage Tasks Complete ✅
+
+**Status**: Week 2 tasks 1.1-1.3 completed, 27 new tests added
+
+**Completed Tasks**:
+
+1. ✅ **Task 1.1: Transaction Editing Test Suite**
+   - File: `backend/functions/transactions/edit-transaction.test.js`
+   - Tests: 10 unit tests for transaction editing
+
+2. ✅ **Task 1.2: Property Tests for Transaction Editing**
+   - File: `backend/functions/transactions/edit-transaction.pbt.test.js`
+   - Tests: 5 property-based tests using fast-check
+
+3. ✅ **Task 1.3: Google OAuth Test Suite**
+   - File: `backend/functions/auth/google-oauth.test.js`
+   - Tests: 12 unit tests for Google Sign-In
+
+4. ✅ **Properties 4-6: Admin API PBT**
+   - File: `backend/functions/admin/admin.pbt.test.js`
+   - Tests: 12 property-based tests
+
+5. ✅ **Property 7: Receipt OCR PBT**
+   - Files: `backend/functions/receipt/ocr-accuracy.test.js`, `receipt.pbt.test.js`
+   - Tests: 8+ tests for OCR validation
+
+### Documentation Validation Issue Identified
+
+**Root Cause**: Validation script uses file system mtime instead of git commit dates
+**Impact**: Files appear "fresh" after git operations even without content changes
+**Recommendation**: Update validation to use `git log` for actual commit dates
+
+## Previous - Enhanced Accounts & Transactions Phase 2 (Session 111)
 
 ### Frontend UI Tasks Complete ✅
 
