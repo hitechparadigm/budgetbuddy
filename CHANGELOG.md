@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.9.92] - 2026-02-03
+
+### 🔧 Fix Accounts & Family Features (Session 115)
+
+- **Family Lambda Response Standardization**: Standardized all response formats to `{ success, data, message }`
+  - Updated `createResponse` helper to enforce standardized format
+  - Updated all handlers: handleGetMembers, handleInvite, handleAcceptInvitation, handleRemoveMember, handleGetPendingInvitations, handleCancelInvitation
+  - All responses now include `data` object and `message` field
+
+- **Accounts Lambda Response Standardization**: Standardized response format to match Family Lambda
+  - Updated `createResponse` helper with same standardization logic
+  - Updated all handlers: handleGetAccounts, handleCreateAccount, handleUpdateAccount, handleDeleteAccount
+  - Frontend accountsApi.ts updated to handle both standardized and legacy formats
+
+- **FamilySettings Error Handling**: Improved error handling for standardized response format
+  - Updated response parsing to use `data.message` for success messages
+  - Cleared error state on successful operations
+  - Better user feedback with server-provided messages
+
+- **Property-Based Tests**: Added Family Metadata Auto-Creation PBT (Property 5)
+  - 5 tests validating auto-creation behavior
+  - Tests cover: metadata creation, member record creation, idempotency
+
+### 📚 Documentation
+
+- **Root Cause Analysis**: Documented why mandatory documentation validation was passing despite missing updates
+  - Issue: Validation uses file system mtime instead of git commit dates
+  - Impact: Files appear "fresh" after git operations even without content changes
+  - Recommendation: Update validation to use `git log` for actual commit dates
+
 ## [1.9.91] - 2026-02-03
 
 ### 🧪 Test Coverage Improvement (Week 2 - Sessions 113-114)

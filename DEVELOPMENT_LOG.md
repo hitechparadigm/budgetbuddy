@@ -1,5 +1,97 @@
 # Development Log
 
+## 2026-02-03 - Fix Accounts & Family Features (Session 115)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Standardize response formats and investigate documentation validation issue
+**Outcome**: Response formats standardized, root cause identified and documented
+
+### Work Completed
+
+1. **Family Lambda Response Standardization (Task 1.4)**:
+   - Updated `createResponse` helper to enforce `{ success, data, message }` format
+   - Updated all handlers to use standardized format:
+     - `handleGetMembers`: Returns `{ data: { members, familyId, memberCount }, message }`
+     - `handleInvite`: Returns `{ data: { invitationId, email, role, expiresAt }, message }`
+     - `handleAcceptInvitation`: Returns `{ data: { familyId, role }, message }`
+     - `handleRemoveMember`: Returns `{ data: { removedUserId }, message }`
+     - `handleGetPendingInvitations`: Returns `{ data: { invitations }, message }`
+     - `handleCancelInvitation`: Returns `{ data: { cancelledInvitationId }, message }`
+   - All tests passing
+
+2. **Accounts Lambda Response Standardization (Task 3)**:
+   - Updated `createResponse` helper with same standardization logic
+   - Updated all handlers to use standardized format:
+     - `handleGetAccounts`: Returns `{ data: { accounts }, message }`
+     - `handleCreateAccount`: Returns `{ data: { account }, message }`
+     - `handleUpdateAccount`: Returns `{ data: { account }, message }`
+     - `handleDeleteAccount`: Returns `{ data: { deletedAccountId }, message }`
+   - All tests passing
+
+3. **Frontend Updates**:
+   - Updated `accountsApi.ts` to handle both standardized and legacy formats
+   - Updated `FamilySettings.tsx` error handling for standardized responses
+   - Better user feedback with server-provided messages
+
+4. **Documentation Validation Root Cause Analysis**:
+   - Investigated why mandatory docs weren't being updated despite deployments
+   - Root cause: Validation script uses file system mtime instead of git commit dates
+   - When git operations occur (checkout, pull), file mtime is updated to current time
+   - Validation sees "fresh" files even though content hasn't changed
+   - Recommendation: Update validation to use `git log` for actual commit dates
+
+### Files Modified
+
+**Backend**:
+
+- `backend/functions/family/index.js` - Standardized response format
+- `backend/functions/accounts/index.js` - Standardized response format
+
+**Frontend**:
+
+- `packages/web-app/src/services/accountsApi.ts` - Handle both response formats
+- `packages/web-app/src/components/FamilySettings.tsx` - Improved error handling
+
+**Documentation**:
+
+- `CHANGELOG.md` - Added v1.9.92 entry
+- `DEVELOPMENT_LOG.md` - This entry
+- `docs/development-status.md` - Updated status
+
+### Root Cause Analysis: Documentation Validation Gap
+
+**Problem**: Mandatory documentation files weren't being updated with recent commits, but validation was passing.
+
+**Root Cause**: The documentation validation script (`scripts/validate-documentation.js`) uses **file system modification timestamps** (`fs.statSync(filePath).mtime`) rather than **git commit history** to determine if files were recently updated.
+
+**Why This Fails**:
+
+1. When you checkout a branch or pull changes, git updates the file modification time to the current time
+2. The validation script sees the file was "modified today" (because git touched it)
+3. But the actual content hasn't been updated since the last meaningful commit
+
+**The Validation Gap**:
+
+- `maxDaysOld: 1` for CHANGELOG.md and DEVELOPMENT_LOG.md means "modified within 1 day"
+- File system mtime gets updated on git operations, so files appear "fresh"
+- The content validation checks for today's date in entries, but if an entry exists from earlier today, it passes
+
+**Recommendations**:
+
+1. **Improve Validation Script**: Use `git log` to check actual commit dates instead of file mtime
+2. **Add Content Hash Check**: Compare content hash to detect if file actually changed
+3. **Stricter Date Validation**: Require today's date in first entry AND verify content changed since last commit
+
+### Next Steps
+
+1. Continue with Task 2: Checkpoint - Verify backend family fixes
+2. Continue with remaining frontend tasks (3.2-3.4)
+3. Consider implementing validation script improvements
+
+---
+
 ## 2026-02-03 - Documentation Validation Analysis (Session 114)
 
 ### Session Summary
