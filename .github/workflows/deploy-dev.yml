@@ -138,17 +138,30 @@ jobs:
           echo "Deploying BudgetBuddy infrastructure to development environment..."
 
           # Deploy stacks in specific order to break CloudFormation export dependencies
-          # The notification stack imports SharedLayer from API stack
-          # We must deploy notification WITHOUT its dependencies first to remove the import
+          # The api-features stack previously imported SharedLayer from api stack
+          # We must deploy api-features first (which now creates its own SharedLayer)
+          # Then api can remove the export
 
-          echo "Step 1: Deploying notification stack in isolation to remove SharedLayer import..."
+          echo "Step 1: Deploying api-features stack first to remove SharedLayer import..."
+          npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api-features \
+            --require-approval never \
+            --context environment=${{ env.ENVIRONMENT }} \
+            --exclusively || echo "api-features deployment may have failed, continuing..."
+
+          echo "Step 2: Deploying api-features-extended stack..."
+          npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended \
+            --require-approval never \
+            --context environment=${{ env.ENVIRONMENT }} \
+            --exclusively || echo "api-features-extended deployment may have failed, continuing..."
+
+          echo "Step 3: Deploying notification stack..."
           npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-notification \
             --require-approval never \
             --context environment=${{ env.ENVIRONMENT }} \
-            --exclusively
+            --exclusively || echo "notification deployment may have failed, continuing..."
 
           # Now deploy all remaining stacks (including API which can now remove the export)
-          echo "Step 2: Deploying all remaining stacks..."
+          echo "Step 4: Deploying all remaining stacks..."
           npx cdk deploy --all \
             --require-approval never \
             --context environment=${{ env.ENVIRONMENT }} \
@@ -258,6 +271,8 @@ jobs:
             "budgetbuddy-${{ env.ENVIRONMENT }}-database"
             "budgetbuddy-${{ env.ENVIRONMENT }}-auth"
             "budgetbuddy-${{ env.ENVIRONMENT }}-api"
+            "budgetbuddy-${{ env.ENVIRONMENT }}-api-features"
+            "budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended"
             "budgetbuddy-${{ env.ENVIRONMENT }}-hosting"
             "budgetbuddy-${{ env.ENVIRONMENT }}-monitoring"
           )
