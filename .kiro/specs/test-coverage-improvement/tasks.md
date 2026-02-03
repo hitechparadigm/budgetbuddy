@@ -128,7 +128,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - **Property 13: Goal Math Accuracy**
     - **Validates: Requirements 9.1, 9.2, 9.6**
 
-- [ ] 4. Week 3 Checkpoint
+- [x] 4. Week 3 Checkpoint
   - Ensure all Week 3 tests pass
   - Verify test coverage increased by ~10%
   - Ask the user if questions arise
@@ -192,7 +192,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - **Property 22: Budget Prediction Accuracy**
     - **Validates: Requirements 13.2, 13.6**
 
-- [ ] 6. Final Checkpoint
+- [x] 6. Final Checkpoint
   - Ensure all tests pass
   - Verify test coverage reached 80% target (65/81 requirements)
   - Update REQUIREMENTS_TEST_COVERAGE_ANALYSIS.md with final status
