@@ -1,13 +1,16 @@
 /**
  * QuickActionsFAB Component
  *
- * Enhanced floating action button with quick actions menu.
- * Provides fast access to common actions like adding transactions,
- * viewing budget, and scanning receipts.
+ * Simplified floating action button with quick actions menu.
+ * Provides fast access to transaction entry actions:
+ * - Add Income
+ * - Add Expense
+ * - Scan Receipt
+ *
+ * Navigation items have been moved to the Sidebar component.
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 
 interface QuickAction {
   id: string;
@@ -34,7 +37,6 @@ export const QuickActionsFAB: React.FC<QuickActionsFABProps> = ({
   className = "",
   position = "bottom-right",
 }) => {
-  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [showShortcutsHint, setShowShortcutsHint] = useState(false);
   const fabRef = useRef<HTMLDivElement>(null);
@@ -57,25 +59,39 @@ export const QuickActionsFAB: React.FC<QuickActionsFABProps> = ({
       const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
       const modifier = isMac ? event.metaKey : event.ctrlKey;
 
-      if (modifier) {
+      // Ctrl+N to open FAB
+      if (modifier && event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        setIsOpen(true);
+        return;
+      }
+
+      // Ctrl+/ to show shortcuts help
+      if (modifier && event.key === "/") {
+        event.preventDefault();
+        setShowShortcutsHint((prev) => !prev);
+        return;
+      }
+
+      // When FAB is open, handle action shortcuts
+      if (isOpen) {
         switch (event.key.toLowerCase()) {
-          case "n":
+          case "i":
             event.preventDefault();
-            setIsOpen(true);
+            onAddIncome?.();
+            setIsOpen(false);
             break;
-          case "b":
+          case "e":
             event.preventDefault();
-            navigate("/budget");
+            onAddExpense?.();
+            setIsOpen(false);
             break;
-          case "s":
-            if (!event.shiftKey) {
+          case "r":
+            if (onScanReceipt) {
               event.preventDefault();
-              navigate("/settings");
+              onScanReceipt();
+              setIsOpen(false);
             }
-            break;
-          case "/":
-            event.preventDefault();
-            setShowShortcutsHint((prev) => !prev);
             break;
         }
       }
@@ -89,7 +105,7 @@ export const QuickActionsFAB: React.FC<QuickActionsFABProps> = ({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [navigate]);
+  }, [isOpen, onAddIncome, onAddExpense, onScanReceipt]);
 
   const actions: QuickAction[] = [
     {
@@ -102,7 +118,7 @@ export const QuickActionsFAB: React.FC<QuickActionsFABProps> = ({
         onAddIncome?.();
         setIsOpen(false);
       },
-      shortcut: "Ctrl+N → I",
+      shortcut: "I",
     },
     {
       id: "expense",
@@ -114,47 +130,13 @@ export const QuickActionsFAB: React.FC<QuickActionsFABProps> = ({
         onAddExpense?.();
         setIsOpen(false);
       },
-      shortcut: "Ctrl+N → E",
-    },
-    {
-      id: "budget",
-      label: "View Budget",
-      icon: "📊",
-      color: "bg-blue-500",
-      hoverColor: "hover:bg-blue-600",
-      onClick: () => {
-        navigate("/budget");
-        setIsOpen(false);
-      },
-      shortcut: "Ctrl+B",
-    },
-    {
-      id: "goals",
-      label: "View Goals",
-      icon: "🎯",
-      color: "bg-purple-500",
-      hoverColor: "hover:bg-purple-600",
-      onClick: () => {
-        navigate("/goals");
-        setIsOpen(false);
-      },
-    },
-    {
-      id: "insights",
-      label: "View Insights",
-      icon: "💡",
-      color: "bg-yellow-500",
-      hoverColor: "hover:bg-yellow-600",
-      onClick: () => {
-        navigate("/insights");
-        setIsOpen(false);
-      },
+      shortcut: "E",
     },
   ];
 
   // Add scan receipt action if handler provided
   if (onScanReceipt) {
-    actions.splice(2, 0, {
+    actions.push({
       id: "receipt",
       label: "Scan Receipt",
       icon: "📷",
@@ -164,6 +146,7 @@ export const QuickActionsFAB: React.FC<QuickActionsFABProps> = ({
         onScanReceipt();
         setIsOpen(false);
       },
+      shortcut: "R",
     });
   }
 
@@ -209,15 +192,27 @@ export const QuickActionsFAB: React.FC<QuickActionsFABProps> = ({
                 </kbd>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">Go to Budget</span>
+                <span className="text-gray-700">
+                  Add Income (when FAB open)
+                </span>
                 <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                  Ctrl+B
+                  I
                 </kbd>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">Go to Settings</span>
+                <span className="text-gray-700">
+                  Add Expense (when FAB open)
+                </span>
                 <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                  Ctrl+S
+                  E
+                </kbd>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <span className="text-gray-700">
+                  Scan Receipt (when FAB open)
+                </span>
+                <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                  R
                 </kbd>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
