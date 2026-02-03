@@ -130,6 +130,34 @@ jest.mock('expo-print', () => ({
   })),
 }));
 
+// Mock Expo Asset
+jest.mock('expo-asset', () => ({
+  Asset: {
+    fromModule: jest.fn(() => ({
+      downloadAsync: jest.fn(() => Promise.resolve()),
+      uri: 'test-uri',
+      localUri: 'test-local-uri',
+    })),
+    loadAsync: jest.fn(() => Promise.resolve()),
+  },
+}));
+
+// Mock Expo Font
+jest.mock('expo-font', () => ({
+  loadAsync: jest.fn(() => Promise.resolve()),
+  isLoaded: jest.fn(() => true),
+}));
+
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const { Text } = require('react-native');
+  return {
+    Ionicons: Text,
+    MaterialIcons: Text,
+    FontAwesome: Text,
+  };
+});
+
 // Mock React Navigation
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),

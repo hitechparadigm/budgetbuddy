@@ -134,7 +134,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
   - Ask the user if questions arise
 
 - [ ] 5. Week 4: Mobile + AI Tests
-  - [ ] 5.1 Create React Native component tests
+  - [x] 5.1 Create React Native component tests
     - Create `packages/mobile/src/components/__tests__/QuickActionsFAB.test.tsx`
     - Create `packages/mobile/src/components/__tests__/TransactionTemplate.test.tsx`
     - Create `packages/mobile/src/components/__tests__/MobileSearch.test.tsx`

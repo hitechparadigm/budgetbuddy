@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.9.95] - 2026-02-03
+
+### 🧪 Test Coverage Improvement - Week 4 Mobile Component Tests (Session 117)
+
+- **React Native Component Tests** (78 tests)
+  - QuickActionsFAB: FAB rendering, expansion, action callbacks, accessibility (Requirement 10.1)
+  - TransactionTemplateModal: Template list, selection, save mode, accessibility (Requirement 10.2)
+  - SearchBar: Debounced input, clear button, accessibility (Requirement 10.3)
+  - DraggableGoalList: Goal rendering, press handling, empty state (Requirement 10.4)
+  - TwoFactorSetup: 4-step wizard flow, error handling, backup codes (Requirement 10.5)
+
 ## [1.9.94] - 2026-02-03
 
 ### 🧪 Test Coverage Improvement - Week 3 Property Tests (Session 117)
