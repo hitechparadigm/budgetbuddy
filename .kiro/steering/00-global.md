@@ -122,11 +122,23 @@ Before writing any code:
 
 ### 4. CI/CD Deployment Monitoring (CRITICAL)
 
+**CRITICAL: No Parallel Deployments**
+
+- NEVER push new commits while a deployment is in progress
+- Parallel deployments will conflict and fail (CloudFormation stack conflicts)
+- Only ONE deployment can run at a time
+
 **Before Starting Any New Task:**
 
 1. Check CI/CD status: `node scripts/check-cicd-status.js`
 2. Wait if deployment in progress or failed
 3. Only proceed after successful deployment
+
+**After Pushing a Commit:**
+
+1. WAIT for deployment to complete (check every 2 minutes)
+2. Verify success before pushing next commit
+3. If deployment fails, fix and retry (max 2 attempts)
 
 **See**: `cicd-deployment.md` steering file for detailed CI/CD rules (auto-loaded when working with CI/CD files)
 
@@ -240,10 +252,11 @@ For each task:
 3. **Implement** the feature/fix
 4. **Commit**: Use `node scripts/safe-commit-push.js "feat: description"` (validates internally)
 5. **If validation fails**: Auto-fix and retry (max 3 attempts)
-6. **Monitor CI/CD**: Wait for deployment to complete after push
-7. **If CI/CD fails**: Analyze logs, fix, commit fix (max 2 attempts)
-8. **Wait for deployment success** before continuing to next task
-9. **Continue** to next task only after deployment succeeds
+6. **CRITICAL: WAIT for deployment to complete** (check every 2 minutes)
+7. **NEVER push while deployment is in progress** (will cause conflicts)
+8. **If CI/CD fails**: Analyze logs, fix, commit fix (max 2 attempts)
+9. **Wait for deployment success** before continuing to next task
+10. **Continue** to next task only after deployment succeeds
 
 **CRITICAL**: Never run `validate-for-commit.js` manually before `safe-commit-push.js` - it causes duplicate validation. The safe-commit-push script handles validation internally.
 
