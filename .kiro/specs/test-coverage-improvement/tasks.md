@@ -6,8 +6,8 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
 
 ## Tasks
 
-- [ ] 1. Week 2: High-Value Feature Tests
-  - [ ] 1.1 Create transaction editing test suite
+- [-] 1. Week 2: High-Value Feature Tests
+  - [x] 1.1 Create transaction editing test suite
     - Create `backend/functions/transactions/edit-transaction.test.js`
     - Test amount editing with budget recalculation
     - Test category change with both category totals update
@@ -15,13 +15,13 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - Test invalid data rejection
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-  - [ ] 1.2 Write property tests for transaction editing
+  - [x] 1.2 Write property tests for transaction editing
     - **Property 1: Transaction Edit Round-Trip**
     - **Property 2: Transaction Date Validation**
     - **Property 3: Transaction Invalid Data Rejection**
     - **Validates: Requirements 1.3, 1.4, 1.6**
 
-  - [ ] 1.3 Create Google OAuth test suite
+  - [x] 1.3 Create Google OAuth test suite
     - Create `backend/functions/auth/google-oauth.test.js`
     - Test OAuth initiation with correct redirect parameters
     - Test authorization code exchange
