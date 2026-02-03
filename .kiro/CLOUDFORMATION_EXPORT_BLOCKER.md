@@ -1,59 +1,63 @@
 # CloudFormation Export Dependency Blocker
 
-## Status: RESOLVED - Fix Applied
+## Status: RESOLVED - Stack Split Applied
 
 ## Latest Fix
 
 **Date**: 2026-02-03
-**Fix**: Modified `api-features-stack.ts` to create its own SharedLayer instead of importing from `api-stack`
+**Fix**: Split api-features-stack into two stacks to stay under CloudFormation's 500 resource limit
 **Commit**: Pending
 
-## Problem (Historical)
+## Problem (Current)
 
-The deployment was failing because of a CloudFormation export dependency issue.
+The deployment was failing because the `api-features` stack exceeded CloudFormation's 500 resource limit (had 501 resources).
 
-**Error**: "Cannot update export budgetbuddy-dev-api:ExportsOutputRefSharedLayer27DFABF0C2CA2696 as it is in use by budgetbuddy-dev-api-features"
+**Error**: "Number of resources in stack 'budgetbuddy-dev-api-features': 501 is greater than allowed maximum of 500"
 
 ## Root Cause
 
-1. The `api-features` stack was importing the SharedLayer from the `api` stack via props
-2. This created a CloudFormation export/import relationship
-3. When the SharedLayer was updated, CloudFormation couldn't update the export because it was still being used
-4. CDK deploys stacks in alphabetical order, so it tried to deploy `api` before `api-features`
+The api-features stack grew too large with:
+
+- 174 API Gateway Methods
+- 90 API Gateway Resources
+- 166 Lambda Permissions
+- 14 Lambda Functions
+- Plus other resources (IAM roles, policies, S3 buckets, etc.)
 
 ## Solution Applied
 
-Modified `api-features-stack.ts` to create its own SharedLayer internally:
+Split the api-features-stack into two stacks:
 
-```typescript
-// Create own SharedLayer to avoid CloudFormation export dependency issues
-const sharedLayer = new lambda.LayerVersion(this, "FeaturesSharedLayer", {
-  layerVersionName: "budgetbuddy-features-shared",
-  code: lambda.Code.fromAsset("../backend/layers/shared"),
-  compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
-  description:
-    "Shared utilities for BudgetBuddy Features API Lambda functions (independent copy)",
-});
-```
+1. **api-features-stack** (core features):
+   - Plaid, Reconciliation, Admin, Comparison, Tips, Learn, Subscriptions, Debt Payoff
+   - ~350 resources
 
-Updated `bin/app.ts` to remove the `sharedLayer` prop from `ApiFeaturesStack`.
+2. **api-features-extended-stack** (AI-powered features):
+   - Insights, Receipt, Pattern Detection, Budget Planning
+   - ~150 resources
 
 ## Files Modified
 
-- `infrastructure/lib/api-features-stack.ts` - Creates own SharedLayer, removed prop
-- `infrastructure/bin/app.ts` - Removed sharedLayer prop from ApiFeaturesStack
+- `infrastructure/lib/api-features-stack.ts` - Removed AI features
+- `infrastructure/lib/api-features-extended-stack.ts` - New stack with AI features
+- `infrastructure/bin/app.ts` - Added ApiFeaturesExtendedStack
 
 ## Impact
 
-- Both stacks now have independent SharedLayers
-- No cross-stack export dependency for SharedLayer
-- Deployments can proceed independently
-- Slight increase in Lambda layer storage (duplicate layer), but negligible cost impact
+- Both stacks now stay under the 500 resource limit
+- AI features have their own API Gateway at a separate URL
+- Frontend may need to be updated to use the new extended API URL for AI features
+
+## Previous Issue (Historical)
+
+**Date**: 2026-01-31 - Session 40
+**Issue**: CloudFormation export dependency between api and api-features stacks
+**Fix**: Modified api-features-stack to create its own SharedLayer instead of importing from api-stack
 
 ## Date Identified
 
-2026-01-31 - Session 40
+2026-02-03 - Session 112
 
 ## Date Resolved
 
-2026-02-03 - Session 112
+2026-02-03 - Session 112 (stack split applied)

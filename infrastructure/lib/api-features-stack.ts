@@ -5,6 +5,10 @@
  * - Plaid (bank sync)
  * - Reconciliation (receipt-to-bank matching)
  * - Admin (admin dashboard)
+ * - Comparison, Tips, Learn, Subscriptions, Debt Payoff
+ *
+ * Note: AI-powered features (Insights, Receipt, Pattern Detection, Budget Planning)
+ * have been moved to ApiFeaturesExtendedStack to stay under CloudFormation's 500 resource limit.
  *
  * This stack has its own API Gateway to avoid cyclic dependencies
  * with the main API stack.
@@ -17,7 +21,6 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
 export interface ApiFeaturesStackProps extends cdk.StackProps {
@@ -30,8 +33,6 @@ export interface ApiFeaturesStackProps extends cdk.StackProps {
 export class ApiFeaturesStack extends cdk.Stack {
   public readonly api: apigateway.RestApi;
   public readonly functions: { [key: string]: lambda.Function } = {};
-  public readonly receiptBucket: s3.Bucket;
-  public readonly patternCacheBucket: s3.Bucket;
 
   constructor(scope: Construct, id: string, props: ApiFeaturesStackProps) {
     super(scope, id, props);
@@ -45,57 +46,7 @@ export class ApiFeaturesStack extends cdk.Stack {
       description: 'Shared utilities for BudgetBuddy Features API Lambda functions (independent copy)',
     });
 
-    // Create S3 bucket for receipt images
-    // **Validates: Requirement 44.8** - S3 bucket with 30-day lifecycle and encryption
-    this.receiptBucket = new s3.Bucket(this, 'ReceiptBucket', {
-      bucketName: `budgetbuddy-receipts-${this.account}-${this.region}`,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      enforceSSL: true,
-      versioned: false,
-      lifecycleRules: [
-        {
-          id: 'DeleteAfter30Days',
-          expiration: cdk.Duration.days(30),
-          enabled: true,
-        },
-      ],
-      cors: [
-        {
-          allowedMethods: [s3.HttpMethods.PUT, s3.HttpMethods.GET],
-          allowedOrigins: [
-            'http://localhost:3000',
-            'http://localhost:5173',
-            'https://d1ueeugn9zcx7n.cloudfront.net',
-            'https://d2ubhx2a13s7gc.cloudfront.net',
-            'https://app.budgetbuddy.com',
-          ],
-          allowedHeaders: ['*'],
-          maxAge: 3000,
-        },
-      ],
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      autoDeleteObjects: true,
-    });
-
-    // Create S3 bucket for pattern analysis cache
-    // **Validates: AI Bill Reminders Requirement 8.2** - S3 bucket for pattern cache
-    this.patternCacheBucket = new s3.Bucket(this, 'PatternCacheBucket', {
-      bucketName: `budgetbuddy-pattern-cache-${this.account}-${this.region}`,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      enforceSSL: true,
-      versioned: false,
-      lifecycleRules: [
-        {
-          id: 'DeleteAfter30Days',
-          expiration: cdk.Duration.days(30),
-          enabled: true,
-        },
-      ],
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      autoDeleteObjects: true,
-    });
+    // Note: S3 buckets for receipts and pattern cache are now in ApiFeaturesExtendedStack
 
     // Create separate API Gateway for features
     this.api = new apigateway.RestApi(this, 'FeaturesApi', {
@@ -321,136 +272,8 @@ export class ApiFeaturesStack extends cdk.Stack {
       description: 'BudgetBuddy debt payoff handler for debt tracking, snowball/avalanche calculations, and payment recording',
     });
 
-    // Insights Lambda
-    this.functions.insightsHandler = new lambda.Function(this, 'InsightsHandler', {
-      ...commonProps,
-      functionName: 'budgetbuddy-insights',
-      code: lambda.Code.fromAsset('../backend/functions/insights', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
-          user: 'root',
-          command: [
-            'bash', '-c', [
-              'cp -r /asset-input/* /asset-output/',
-              'cd /asset-output',
-              'npm install --production --no-optional',
-            ].join(' && '),
-          ],
-        },
-      }),
-      handler: 'index.handler',
-      description: 'BudgetBuddy insights handler for spending analytics and AI-generated insights',
-      timeout: cdk.Duration.seconds(60), // Increased for Bedrock AI calls
-    });
-
-    // Grant Insights Lambda permission to invoke Bedrock
-    this.functions.insightsHandler.addToRolePolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: ['bedrock:InvokeModel'],
-      resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
-    }));
-
-    // Receipt Lambda
-    this.functions.receiptHandler = new lambda.Function(this, 'ReceiptHandler', {
-      ...commonProps,
-      functionName: 'budgetbuddy-receipt',
-      code: lambda.Code.fromAsset('../backend/functions/receipt', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
-          user: 'root',
-          command: [
-            'bash', '-c', [
-              'cp -r /asset-input/* /asset-output/',
-              'cd /asset-output',
-              'npm install --production --no-optional',
-            ].join(' && '),
-          ],
-        },
-      }),
-      handler: 'index.handler',
-      description: 'BudgetBuddy receipt handler for AI-powered receipt scanning and extraction',
-      timeout: cdk.Duration.seconds(60), // Increased for Textract processing
-      environment: {
-        ...commonProps.environment,
-        RECEIPT_BUCKET: this.receiptBucket.bucketName,
-      },
-    });
-
-    // Grant Receipt Lambda permissions for S3 and Textract
-    this.receiptBucket.grantReadWrite(this.functions.receiptHandler);
-    this.functions.receiptHandler.addToRolePolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        'textract:AnalyzeExpense',
-        'textract:DetectDocumentText',
-      ],
-      resources: ['*'],
-    }));
-
-    // Pattern Detection Lambda
-    this.functions.patternDetectionHandler = new lambda.Function(this, 'PatternDetectionHandler', {
-      ...commonProps,
-      functionName: 'budgetbuddy-pattern-detection',
-      code: lambda.Code.fromAsset('../backend/functions/pattern-detection', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
-          user: 'root',
-          command: [
-            'bash', '-c', [
-              'cp -r /asset-input/* /asset-output/',
-              'cd /asset-output',
-              'npm install --production --no-optional',
-            ].join(' && '),
-          ],
-        },
-      }),
-      handler: 'index.handler',
-      description: 'BudgetBuddy pattern detection handler for AI-powered recurring bill detection',
-      timeout: cdk.Duration.seconds(60), // Increased for AI analysis
-      memorySize: 1024, // Increased for pattern analysis
-      environment: {
-        ...commonProps.environment,
-        PATTERN_CACHE_BUCKET: this.patternCacheBucket.bucketName,
-      },
-    });
-
-    // Grant Pattern Detection Lambda permissions for S3 and Bedrock
-    this.patternCacheBucket.grantReadWrite(this.functions.patternDetectionHandler);
-    this.functions.patternDetectionHandler.addToRolePolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: ['bedrock:InvokeModel'],
-      resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
-    }));
-
-    // Budget Planning Lambda
-    this.functions.budgetPlanningHandler = new lambda.Function(this, 'BudgetPlanningHandler', {
-      ...commonProps,
-      functionName: 'budgetbuddy-budget-planning',
-      code: lambda.Code.fromAsset('../backend/functions/budget-planning', {
-        bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
-          user: 'root',
-          command: [
-            'bash', '-c', [
-              'cp -r /asset-input/* /asset-output/',
-              'cd /asset-output',
-              'npm install --production --no-optional',
-            ].join(' && '),
-          ],
-        },
-      }),
-      handler: 'index.handler',
-      description: 'BudgetBuddy budget planning handler for AI-powered budget suggestions',
-      timeout: cdk.Duration.seconds(60), // Increased for AI analysis
-      memorySize: 1024, // Increased for budget analysis
-    });
-
-    // Grant Budget Planning Lambda permission to invoke Bedrock
-    this.functions.budgetPlanningHandler.addToRolePolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: ['bedrock:InvokeModel'],
-      resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
-    }));
+    // Note: Insights, Receipt, Pattern Detection, and Budget Planning Lambdas
+    // have been moved to ApiFeaturesExtendedStack to stay under CloudFormation's 500 resource limit
   }
 
   private setupApiRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -478,17 +301,8 @@ export class ApiFeaturesStack extends cdk.Stack {
     // Debt Payoff routes
     this.setupDebtPayoffRoutes(authorizer);
 
-    // Insights routes
-    this.setupInsightsRoutes(authorizer);
-
-    // Receipt routes
-    this.setupReceiptRoutes(authorizer);
-
-    // Pattern Detection routes
-    this.setupPatternDetectionRoutes(authorizer);
-
-    // Budget Planning routes
-    this.setupBudgetPlanningRoutes(authorizer);
+    // Note: Insights, Receipt, Pattern Detection, and Budget Planning routes
+    // have been moved to ApiFeaturesExtendedStack
   }
 
   private setupPlaidRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -822,18 +636,7 @@ export class ApiFeaturesStack extends cdk.Stack {
       description: 'Features API Gateway URL for Plaid, Reconciliation, and Admin endpoints',
       exportName: 'budgetbuddy-features-api-url',
     });
-
-    new cdk.CfnOutput(this, 'ReceiptBucketName', {
-      value: this.receiptBucket.bucketName,
-      description: 'S3 bucket for receipt image storage',
-      exportName: 'budgetbuddy-receipt-bucket-name',
-    });
-
-    new cdk.CfnOutput(this, 'PatternCacheBucketName', {
-      value: this.patternCacheBucket.bucketName,
-      description: 'S3 bucket for pattern analysis cache',
-      exportName: 'budgetbuddy-pattern-cache-bucket-name',
-    });
+    // Note: Receipt and Pattern Cache bucket outputs are now in ApiFeaturesExtendedStack
   }
 
   private setupSubscriptionsRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -925,150 +728,6 @@ export class ApiFeaturesStack extends cdk.Stack {
     debtPaymentResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
       authorizer,
       operationName: 'RecordDebtPayment',
-    });
-  }
-
-  private setupInsightsRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
-    const insightsResource = this.api.root.addResource('insights');
-
-    const insightsWeeklyResource = insightsResource.addResource('weekly');
-    insightsWeeklyResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
-      authorizer,
-      operationName: 'GetWeeklyInsights',
-    });
-
-    const insightsMonthlyResource = insightsResource.addResource('monthly');
-    insightsMonthlyResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
-      authorizer,
-      operationName: 'GetMonthlyInsights',
-    });
-
-    const insightsTrendsResource = insightsResource.addResource('trends');
-    insightsTrendsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
-      authorizer,
-      operationName: 'GetSpendingTrends',
-    });
-
-    const insightsPatternsResource = insightsResource.addResource('patterns');
-    insightsPatternsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
-      authorizer,
-      operationName: 'GetSpendingPatterns',
-    });
-
-    const insightsAskResource = insightsResource.addResource('ask');
-    insightsAskResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
-      authorizer,
-      operationName: 'AskAboutSpending',
-    });
-
-    const insightsHealthResource = insightsResource.addResource('health');
-    insightsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.insightsHandler), {
-      methodResponses: [{ statusCode: '200' }],
-      operationName: 'InsightsHealthCheck',
-    });
-  }
-
-  private setupReceiptRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
-    const receiptResource = this.api.root.addResource('receipt');
-
-    const receiptUploadResource = receiptResource.addResource('upload');
-    receiptUploadResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
-      authorizer,
-      operationName: 'GetReceiptUploadUrl',
-    });
-
-    const receiptProcessResource = receiptResource.addResource('process');
-    receiptProcessResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
-      authorizer,
-      operationName: 'ProcessReceipt',
-    });
-
-    const receiptUsageResource = receiptResource.addResource('usage');
-    receiptUsageResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
-      authorizer,
-      operationName: 'GetReceiptUsage',
-    });
-
-    const receiptHistoryResource = receiptResource.addResource('history');
-    receiptHistoryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
-      authorizer,
-      operationName: 'GetReceiptHistory',
-    });
-
-    const receiptHealthResource = receiptResource.addResource('health');
-    receiptHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
-      methodResponses: [{ statusCode: '200' }],
-      operationName: 'ReceiptHealthCheck',
-    });
-
-    const receiptIdResource = receiptResource.addResource('{receiptId}');
-    receiptIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.receiptHandler), {
-      authorizer,
-      operationName: 'GetReceipt',
-    });
-  }
-
-  private setupPatternDetectionRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
-    const patternsResource = this.api.root.addResource('patterns');
-
-    // Detect patterns endpoint
-    const patternsDetectResource = patternsResource.addResource('detect');
-    patternsDetectResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
-      authorizer,
-      operationName: 'DetectPatterns',
-    });
-
-    // Get patterns endpoint
-    patternsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
-      authorizer,
-      operationName: 'GetPatterns',
-    });
-
-    // Pattern ID resource
-    const patternIdResource = patternsResource.addResource('{patternId}');
-    patternIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
-      authorizer,
-      operationName: 'GetPattern',
-    });
-    patternIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
-      authorizer,
-      operationName: 'UpdatePattern',
-    });
-    patternIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
-      authorizer,
-      operationName: 'DeletePattern',
-    });
-
-    // Health endpoint
-    const patternsHealthResource = patternsResource.addResource('health');
-    patternsHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
-      methodResponses: [{ statusCode: '200' }],
-      operationName: 'PatternDetectionHealthCheck',
-    });
-  }
-
-  private setupBudgetPlanningRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
-    const budgetResource = this.api.root.addResource('budget-planning');
-
-    // Generate suggestions endpoint
-    const suggestionsResource = budgetResource.addResource('suggestions');
-    suggestionsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.budgetPlanningHandler), {
-      authorizer,
-      operationName: 'GenerateBudgetSuggestions',
-    });
-
-    // Apply suggestions endpoint
-    const applyResource = budgetResource.addResource('apply');
-    applyResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.budgetPlanningHandler), {
-      authorizer,
-      operationName: 'ApplyBudgetSuggestions',
-    });
-
-    // Health endpoint
-    const budgetHealthResource = budgetResource.addResource('health');
-    budgetHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetPlanningHandler), {
-      methodResponses: [{ statusCode: '200' }],
-      operationName: 'BudgetPlanningHealthCheck',
     });
   }
 }
