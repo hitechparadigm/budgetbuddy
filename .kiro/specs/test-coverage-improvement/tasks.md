@@ -6,7 +6,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
 
 ## Tasks
 
-- [-] 1. Week 2: High-Value Feature Tests
+- [x] 1. Week 2: High-Value Feature Tests
   - [x] 1.1 Create transaction editing test suite
     - Create `backend/functions/transactions/edit-transaction.test.js`
     - Test amount editing with budget recalculation
@@ -61,7 +61,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - **Property 7: Receipt OCR Accuracy**
     - **Validates: Requirements 4.6**
 
-  - [-] 1.8 Create two-factor authentication test suite
+  - [x] 1.8 Create two-factor authentication test suite
     - Create `tests/security/two-factor-auth.test.js`
     - Test TOTP secret generation and QR code display
     - Test TOTP verification flow
@@ -70,11 +70,11 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - Test 2FA disable flow
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ] 1.9 Write property test for TOTP timing
+  - [x] 1.9 Write property test for TOTP timing
     - **Property 8: TOTP Timing Validation**
     - **Validates: Requirements 5.6**
 
-- [ ] 2. Week 2 Checkpoint
+- [x] 2. Week 2 Checkpoint
   - Ensure all Week 2 tests pass
   - Verify test coverage increased by ~10%
   - Ask the user if questions arise

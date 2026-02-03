@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.9.93] - 2026-02-03
+
+### 🧪 Test Coverage Improvement - Week 2 Complete (Session 116)
+
+- **Two-Factor Authentication Test Suite** (16 tests)
+  - Tests TOTP secret generation and QR code display (Requirement 5.1)
+  - Tests TOTP verification flow (Requirement 5.2)
+  - Tests login with 2FA enabled (Requirement 5.3)
+  - Tests invalid TOTP rejection with max 3 attempts (Requirement 5.4)
+  - Tests 2FA disable flow (Requirement 5.5)
+  - Includes lockout mechanism testing (15-minute lockout after 3 failures)
+
+- **Property 8: TOTP Timing Validation** (12 property tests)
+  - Tests TOTP codes valid within time window (clock drift tolerance)
+  - Tests TOTP codes expire after time window
+  - Tests lockout timing properties (active/inactive, remaining minutes)
+  - Tests code determinism (same inputs = same outputs)
+  - Validates Requirement 5.6
+
 ## [1.9.92] - 2026-02-03
 
 ### 🔧 Fix Accounts & Family Features (Session 115)
