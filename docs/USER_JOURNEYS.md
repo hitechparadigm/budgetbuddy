@@ -296,6 +296,124 @@ _"As a user, I want to connect my bank accounts so transactions are imported aut
 
 ---
 
+## 3.1 Manual Account Management Journey
+
+### User Story
+
+_"As a user, I want to manually track accounts that aren't connected to banks so I can see my complete financial picture including cash, investments, and loans."_
+
+### Journey Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 1: Navigate to Accounts                                                │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  Sidebar → Accounts | Dashboard → "Add Account" card                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 2: Accounts Overview                                                   │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  💰 Your Accounts                                                    │    │
+│  │  ─────────────────────────────────────────────────────────────────── │    │
+│  │  Summary: Assets $45,000 | Liabilities $12,000 | Net Worth $33,000  │    │
+│  │                                                                      │    │
+│  │  [+ Add Manual Account]  [🔗 Connect Bank]                           │    │
+│  │                                                                      │    │
+│  │  CHECKING & SAVINGS                                                  │    │
+│  │  🏦 Main Checking ••••1234      $5,432.10    ✓ Tracked              │    │
+│  │  💰 Emergency Fund              $10,000.00   ✓ Tracked              │    │
+│  │                                                                      │    │
+│  │  CREDIT CARDS                                                        │    │
+│  │  💳 Visa ••••5678              -$1,234.56    ✓ Tracked              │    │
+│  │                                                                      │    │
+│  │  INVESTMENTS                                                         │    │
+│  │  📈 401(k)                     $25,000.00    ✓ Tracked              │    │
+│  │                                                                      │    │
+│  │  LOANS                                                               │    │
+│  │  🏠 Mortgage                  -$10,765.44    ○ Not Tracked          │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 3: Add Manual Account                                                  │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Add Manual Account                                                  │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │  Account Type: [Checking ▼]                                          │    │
+│  │    • Checking  • Savings  • Credit Card  • Investment               │    │
+│  │    • Loan  • Mortgage  • Cash  • Other                              │    │
+│  │                                                                      │    │
+│  │  Nickname: [Emergency Fund                    ]                      │    │
+│  │  Institution: [Local Credit Union             ] (optional)           │    │
+│  │  Current Balance: [$10,000.00                 ]                      │    │
+│  │  Currency: [USD ▼]                                                   │    │
+│  │                                                                      │    │
+│  │  ☑ Track in budget calculations                                     │    │
+│  │                                                                      │    │
+│  │  [Cancel]                              [Add Account]                 │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  STEP 4: Reconcile Account Balance                                           │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  Reconcile: Emergency Fund                                           │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │  Current Balance: $10,000.00                                         │    │
+│  │  Actual Balance:  [$10,250.00                 ]                      │    │
+│  │                                                                      │    │
+│  │  Difference: +$250.00 (will create adjustment transaction)           │    │
+│  │                                                                      │    │
+│  │  [Cancel]                              [Reconcile]                   │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Component Mapping
+
+| Feature              | Frontend Component    | Backend API                         | Status      |
+| -------------------- | --------------------- | ----------------------------------- | ----------- |
+| Accounts API Service | `accountsApi.ts`      | N/A                                 | ✅ Complete |
+| Accounts Hooks       | `useAccounts.ts`      | N/A                                 | ✅ Complete |
+| Accounts Lambda      | N/A                   | `GET /api/accounts`                 | ✅ Complete |
+| Create Account       | N/A                   | `POST /api/accounts`                | ✅ Complete |
+| Update Account       | N/A                   | `PUT /api/accounts/{id}`            | ✅ Complete |
+| Delete Account       | N/A                   | `DELETE /api/accounts/{id}`         | ✅ Complete |
+| Reconcile Account    | N/A                   | `POST /api/accounts/{id}/reconcile` | ✅ Complete |
+| Toggle Tracking      | N/A                   | `PUT /api/accounts/{id}/tracking`   | ✅ Complete |
+| Accounts Summary     | N/A                   | `GET /api/accounts/summary`         | ✅ Complete |
+| Account Types        | `account.ts` (shared) | N/A                                 | ✅ Complete |
+| Sidebar Navigation   | `Sidebar.tsx`         | N/A                                 | ⚠️ Pending  |
+| Account Card         | `AccountCard.tsx`     | N/A                                 | ⚠️ Pending  |
+| Add Account Modal    | `AddAccountModal.tsx` | N/A                                 | ⚠️ Pending  |
+| Reconcile Modal      | `ReconcileModal.tsx`  | N/A                                 | ⚠️ Pending  |
+| Accounts Page        | `AccountsPage.tsx`    | N/A                                 | ⚠️ Pending  |
+
+### UI/UX Requirements
+
+- **Account grouping**: Group accounts by type (Checking, Savings, Credit, etc.)
+- **Net worth display**: Show total assets, liabilities, and net worth
+- **Quick reconcile**: Easy balance adjustment with automatic adjustment transactions
+- **Tracking toggle**: Enable/disable accounts from budget calculations
+- **Account icons**: Visual icons for each account type
+- **Balance formatting**: Currency-aware formatting with proper symbols
+
+### Missing Components (Frontend UI)
+
+| Component             | Priority | Description                              |
+| --------------------- | -------- | ---------------------------------------- |
+| `Sidebar.tsx`         | HIGH     | Navigation sidebar with account access   |
+| `AccountCard.tsx`     | HIGH     | Display account with balance and actions |
+| `AddAccountModal.tsx` | HIGH     | Form for creating manual accounts        |
+| `ReconcileModal.tsx`  | MEDIUM   | Balance reconciliation dialog            |
+| `AccountsPage.tsx`    | HIGH     | Main accounts management page            |
+
+---
+
 ## 4. Family Collaboration Journey
 
 ### User Story
@@ -1072,12 +1190,16 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 #### 🔴 HIGH PRIORITY (Missing Frontend for Existing Backend)
 
-| Component                | Journey          | Backend Status | Effort  |
-| ------------------------ | ---------------- | -------------- | ------- |
-| `BankAccounts.tsx`       | Bank Connection  | ✅ Ready       | ✅ Done |
-| `NotificationCenter.tsx` | Notifications    | ✅ Ready       | ✅ Done |
-| `TransactionSearch`      | Daily Management | ⚠️ Partial     | ✅ Done |
-| `TransactionFilters.tsx` | Daily Management | ✅ Ready       | ✅ Done |
+| Component                | Journey            | Backend Status | Effort     |
+| ------------------------ | ------------------ | -------------- | ---------- |
+| `BankAccounts.tsx`       | Bank Connection    | ✅ Ready       | ✅ Done    |
+| `NotificationCenter.tsx` | Notifications      | ✅ Ready       | ✅ Done    |
+| `TransactionSearch`      | Daily Management   | ⚠️ Partial     | ✅ Done    |
+| `TransactionFilters.tsx` | Daily Management   | ✅ Ready       | ✅ Done    |
+| `Sidebar.tsx`            | Account Management | ✅ Ready       | ⚠️ Pending |
+| `AccountCard.tsx`        | Account Management | ✅ Ready       | ⚠️ Pending |
+| `AddAccountModal.tsx`    | Account Management | ✅ Ready       | ⚠️ Pending |
+| `AccountsPage.tsx`       | Account Management | ✅ Ready       | ⚠️ Pending |
 
 #### 🟡 MEDIUM PRIORITY (New Features)
 
@@ -1109,19 +1231,33 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 ### Backend APIs Without Frontend
 
-| API Endpoint              | Description              | Priority | Status                         |
-| ------------------------- | ------------------------ | -------- | ------------------------------ |
-| `GET /comparison/summary` | Peer spending comparison | MEDIUM   | ✅ Done (PeerComparisonWidget) |
-| `GET /tips/feed`          | Financial tips feed      | MEDIUM   | ✅ Done (TipsFeedPage)         |
-| `GET /tips/daily`         | Daily tip                | MEDIUM   | ✅ Done (TipsFeedPage)         |
-| `GET /learn/courses`      | Educational content      | LOW      | ✅ Done (LearnPage)            |
-| `GET /learn/progress`     | Learning progress        | LOW      | ✅ Done (LearnPage)            |
-| `GET /admin/dashboard`    | Admin metrics            | LOW      | ✅ Done (AdminDashboard)       |
+| API Endpoint                        | Description              | Priority | Status                         |
+| ----------------------------------- | ------------------------ | -------- | ------------------------------ |
+| `GET /api/accounts`                 | List user accounts       | HIGH     | ⚠️ API ready, UI pending       |
+| `POST /api/accounts`                | Create manual account    | HIGH     | ⚠️ API ready, UI pending       |
+| `PUT /api/accounts/{id}`            | Update account           | HIGH     | ⚠️ API ready, UI pending       |
+| `DELETE /api/accounts/{id}`         | Delete account           | HIGH     | ⚠️ API ready, UI pending       |
+| `POST /api/accounts/{id}/reconcile` | Reconcile balance        | MEDIUM   | ⚠️ API ready, UI pending       |
+| `PUT /api/accounts/{id}/tracking`   | Toggle budget tracking   | MEDIUM   | ⚠️ API ready, UI pending       |
+| `GET /api/accounts/summary`         | Net worth summary        | MEDIUM   | ⚠️ API ready, UI pending       |
+| `GET /comparison/summary`           | Peer spending comparison | MEDIUM   | ✅ Done (PeerComparisonWidget) |
+| `GET /tips/feed`                    | Financial tips feed      | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /tips/daily`                   | Daily tip                | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /learn/courses`                | Educational content      | LOW      | ✅ Done (LearnPage)            |
+| `GET /learn/progress`               | Learning progress        | LOW      | ✅ Done (LearnPage)            |
+| `GET /admin/dashboard`              | Admin metrics            | LOW      | ✅ Done (AdminDashboard)       |
 
 ### Recently Completed Components (2026-02-02)
 
 | Component                      | Description                                    | Status  |
 | ------------------------------ | ---------------------------------------------- | ------- |
+| `accountsApi.ts`               | Frontend API service for account management    | ✅ Done |
+| `useAccounts.ts`               | React hooks for accounts (CRUD, summary)       | ✅ Done |
+| `account.ts` (shared types)    | Account types, enums, validation schemas       | ✅ Done |
+| Accounts Lambda                | Backend CRUD, reconciliation, tracking         | ✅ Done |
+| Accounts PBT Tests             | 17 property-based tests for accounts           | ✅ Done |
+| Transactions PBT Tests         | 8 property-based tests with account support    | ✅ Done |
+| CDK Accounts Infrastructure    | Lambda, API routes, IAM permissions            | ✅ Done |
 | `CalendarView.tsx`             | Calendar grid showing transactions by day      | ✅ Done |
 | CalendarView Integration       | Integrated into BudgetPage as new tab          | ✅ Done |
 | Tutorial Integration           | TutorialOverlay integrated into BudgetPage     | ✅ Done |
