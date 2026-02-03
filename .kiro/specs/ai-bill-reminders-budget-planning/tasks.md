@@ -118,8 +118,8 @@ This implementation plan breaks down the AI-powered bill reminders and budget pl
 - [x] 7. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 8. Implement pattern detection service layer
-  - [ ] 8.1 Create pattern-detection-service.js
+- [-] 8. Implement pattern detection service layer
+  - [x] 8.1 Create pattern-detection-service.js
     - Implement analyzeTransactions() orchestrating algorithm + AI
     - Implement getPatterns() with filtering
     - Implement updatePattern() for user edits
@@ -148,15 +148,15 @@ This implementation plan breaks down the AI-powered bill reminders and budget pl
     - **Property 16: Explanation Presence**
     - **Validates: Requirements 5.5**
 
-  - [ ]\* 8.7 Write unit tests for service methods
+  - [x]\* 8.7 Write unit tests for service methods
     - Test analyzeTransactions with various transaction sets
     - Test pattern approval flow
     - Test pattern rejection flow
     - Test pattern editing
     - _Requirements: 1.1, 2.5, 2.6, 5.2_
 
-- [ ] 9. Implement pattern detection Lambda handler
-  - [ ] 9.1 Create backend/functions/pattern-detection/index.js
+- [-] 9. Implement pattern detection Lambda handler
+  - [x] 9.1 Create backend/functions/pattern-detection/index.js
     - Implement POST /api/patterns/detect handler
     - Implement GET /api/patterns handler
     - Implement PUT /api/patterns/{patternId} handler
