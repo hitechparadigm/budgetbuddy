@@ -11,6 +11,16 @@ export interface DateValidationResult {
 }
 
 /**
+ * Parses a date string in local timezone (not UTC)
+ * @param dateString - Date string in YYYY-MM-DD format
+ * @returns Date object in local timezone
+ */
+const parseLocalDate = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+/**
  * Validates if a transaction date falls within the current budget month
  * @param transactionDate - The date of the transaction (YYYY-MM-DD format)
  * @param currentBudgetMonth - The current budget month (YYYY-MM format)
@@ -24,7 +34,8 @@ export const validateTransactionDate = (
     return { isValid: true };
   }
 
-  const txDate = new Date(transactionDate);
+  // Parse date in local timezone to avoid UTC conversion issues
+  const txDate = parseLocalDate(transactionDate);
   const txMonth = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
 
   if (txMonth === currentBudgetMonth) {
@@ -36,7 +47,7 @@ export const validateTransactionDate = (
     year: 'numeric'
   });
 
-  const currentMonthName = new Date(currentBudgetMonth + '-01').toLocaleDateString('en-US', {
+  const currentMonthName = parseLocalDate(currentBudgetMonth + '-01').toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric'
   });
@@ -65,7 +76,8 @@ export const getCurrentMonth = (): string => {
  * @returns Formatted month name (e.g., "November 2025")
  */
 export const formatMonthName = (monthString: string): string => {
-  const date = new Date(monthString + '-01');
+  const [year, month] = monthString.split('-').map(Number);
+  const date = new Date(year, month - 1, 1);
   return date.toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric'
