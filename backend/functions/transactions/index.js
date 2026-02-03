@@ -475,7 +475,7 @@ async function createTransaction(event, user) {
   // Save transaction to DynamoDB
   await dynamoHelpers.putItem(transaction);
 
-  // Update budget calculations
+  // Update budget calculations (only for tracked accounts)
   await updateBudgetCalculations(
     familyId,
     budgetMonth,
@@ -483,6 +483,7 @@ async function createTransaction(event, user) {
     requestBody.type,
     requestBody.amount,
     "add",
+    requestBody.accountId || null,
   );
 
   // Update linked goals if this is a savings/income transaction
@@ -845,7 +846,7 @@ async function updateTransaction(event, user, transactionId) {
 
   // Update budget calculations if amount, type, or category changed
   if (budgetUpdateNeeded) {
-    // Remove old transaction impact
+    // Remove old transaction impact (use old accountId for tracking check)
     await updateBudgetCalculations(
       familyId,
       existingTransaction.budgetMonth,
@@ -853,6 +854,7 @@ async function updateTransaction(event, user, transactionId) {
       oldType,
       oldAmount,
       "subtract",
+      oldAccountId || null,
     );
 
     // Update linked goals for old category (subtract)
@@ -868,6 +870,7 @@ async function updateTransaction(event, user, transactionId) {
     const newType = updatedTransaction.type;
     const newCategoryId = updatedTransaction.categoryId;
     const newBudgetMonth = updatedTransaction.budgetMonth;
+    const newAccountId = updatedTransaction.accountId;
 
     await updateBudgetCalculations(
       familyId,
@@ -876,6 +879,7 @@ async function updateTransaction(event, user, transactionId) {
       newType,
       newAmount,
       "add",
+      newAccountId || null,
     );
 
     // Update linked goals for new category (add)
@@ -989,7 +993,7 @@ async function deleteTransaction(event, user, transactionId) {
     },
   );
 
-  // Update budget calculations (subtract the transaction impact)
+  // Update budget calculations (subtract the transaction impact, only for tracked accounts)
   await updateBudgetCalculations(
     familyId,
     existingTransaction.budgetMonth,
@@ -997,6 +1001,7 @@ async function deleteTransaction(event, user, transactionId) {
     existingTransaction.type,
     existingTransaction.amount,
     "subtract",
+    existingTransaction.accountId || null,
   );
 
   // Update linked goals if this was a savings/income transaction

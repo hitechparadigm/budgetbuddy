@@ -275,23 +275,23 @@ This implementation plan covers the development of comprehensive account managem
     - Use "Unassigned" for transactions without account
     - _Requirements: 9.6_
 
-- [ ] 16. Implement Connected Account Mapping
-  - [ ] 16.1 Create AccountMappingModal component
+- [-] 16. Implement Connected Account Mapping
+  - [x] 16.1 Create AccountMappingModal component
     - Display after Plaid connection success
     - Show each discovered account with mapping options
     - Allow enable/disable tracking, custom nickname, type override
     - _Requirements: 5.1, 5.2_
 
-  - [ ] 16.2 Implement default tracking for connected accounts
+  - [x] 16.2 Implement default tracking for connected accounts
     - Set isTracked = true for new connected accounts
     - _Requirements: 5.3_
 
-  - [ ] 16.3 Write property test for default tracking
+  - [x] 16.3 Write property test for default tracking
     - **Property 17: Connected Account Default Tracking**
     - Create connected accounts, verify isTracked = true
     - **Validates: Requirements 5.3**
 
-  - [ ] 16.4 Implement budget exclusion for untracked accounts
+  - [x] 16.4 Implement budget exclusion for untracked accounts
     - Filter out untracked account transactions from budget calculations
     - Recalculate on tracking status change
     - _Requirements: 5.4, 5.7_

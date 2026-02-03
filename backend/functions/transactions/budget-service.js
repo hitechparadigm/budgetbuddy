@@ -3,45 +3,111 @@
  * Separated budget calculation logic for better maintainability
  */
 
-const { dynamoHelpers, logger } = require('/opt/nodejs/utils');
+const { dynamoHelpers, logger } = require("/opt/nodejs/utils");
+
+/**
+ * Check if an account is tracked (should be included in budget calculations)
+ * @param {string} familyId - Family ID
+ * @param {string} accountId - Account ID (optional)
+ * @returns {Promise<boolean>} True if account is tracked or no account specified
+ */
+async function isAccountTracked(familyId, accountId) {
+  // If no account specified, include in budget (legacy behavior)
+  if (!accountId) {
+    return true;
+  }
+
+  try {
+    const account = await dynamoHelpers.getItem(
+      `FAMILY#${familyId}`,
+      `ACCOUNT#${accountId}`,
+    );
+
+    // If account not found, include in budget (defensive)
+    if (!account) {
+      logger.warn("Account not found when checking tracking status", {
+        familyId,
+        accountId,
+      });
+      return true;
+    }
+
+    // Return the isTracked status (default to true if not set)
+    return account.isTracked !== false;
+  } catch (error) {
+    logger.error("Error checking account tracking status", error, {
+      familyId,
+      accountId,
+    });
+    // On error, include in budget (defensive)
+    return true;
+  }
+}
 
 /**
  * Update budget calculations when transactions are added, updated, or deleted
+ * @param {string} familyId - Family ID
+ * @param {string} budgetMonth - Budget month (YYYY-MM)
+ * @param {string} categoryId - Category ID
+ * @param {string} transactionType - 'income' or 'expense'
+ * @param {number} amount - Transaction amount
+ * @param {string} operation - 'add' or 'remove'
+ * @param {string} accountId - Optional account ID (for tracking check)
  */
-async function updateBudgetCalculations(familyId, budgetMonth, categoryId, transactionType, amount, operation) {
+async function updateBudgetCalculations(
+  familyId,
+  budgetMonth,
+  categoryId,
+  transactionType,
+  amount,
+  operation,
+  accountId = null,
+) {
   try {
-    logger.info('Updating budget calculations', {
+    // Check if account is tracked - if not, skip budget update
+    const tracked = await isAccountTracked(familyId, accountId);
+    if (!tracked) {
+      logger.info("Skipping budget update for untracked account", {
+        familyId,
+        budgetMonth,
+        accountId,
+      });
+      return;
+    }
+
+    logger.info("Updating budget calculations", {
       familyId,
       budgetMonth,
       categoryId,
       transactionType,
       amount,
-      operation
+      operation,
+      accountId,
     });
 
     // Get the current budget for this month
     const budget = await dynamoHelpers.getItem(
       `FAMILY#${familyId}`,
-      `BUDGET#${budgetMonth}`
+      `BUDGET#${budgetMonth}`,
     );
 
     if (!budget) {
-      logger.warn('Budget not found for month, skipping calculation update', {
+      logger.warn("Budget not found for month, skipping calculation update", {
         familyId,
-        budgetMonth
+        budgetMonth,
       });
       return;
     }
 
     // Calculate the amount change based on operation
-    const amountChange = operation === 'add' ? amount : -amount;
+    const amountChange = operation === "add" ? amount : -amount;
 
     // Find and update the specific category in the budget
     let categoryFound = false;
     const updatedGroups = { ...budget.groups };
 
     // Determine which group to update based on transaction type
-    const groupKey = transactionType === 'income' ? 'income' : 'expenses';
+    const groupKey = transactionType === "income" ? "income" : "expenses";
 
     if (updatedGroups[groupKey]) {
       for (let group of updatedGroups[groupKey]) {
@@ -49,7 +115,8 @@ async function updateBudgetCalculations(familyId, budgetMonth, categoryId, trans
           for (let category of group.categories) {
             if (category.categoryId === categoryId) {
               category.spentAmount = (category.spentAmount || 0) + amountChange;
-              category.remainingAmount = category.plannedAmount - category.spentAmount;
+              category.remainingAmount =
+                category.plannedAmount - category.spentAmount;
               categoryFound = true;
               break;
             }
@@ -60,10 +127,10 @@ async function updateBudgetCalculations(familyId, budgetMonth, categoryId, trans
     }
 
     if (!categoryFound) {
-      logger.warn('Category not found in budget, skipping calculation update', {
+      logger.warn("Category not found in budget, skipping calculation update", {
         familyId,
         budgetMonth,
-        categoryId
+        categoryId,
       });
       return;
     }
@@ -80,21 +147,20 @@ async function updateBudgetCalculations(familyId, budgetMonth, categoryId, trans
         totalIncome: totals.totalIncome,
         totalSavings: totals.totalSavings,
         totalExpenses: totals.totalExpenses,
-        remainingBalance: totals.remainingBalance
-      }
+        remainingBalance: totals.remainingBalance,
+      },
     );
 
-    logger.info('Budget calculations updated successfully', {
+    logger.info("Budget calculations updated successfully", {
       familyId,
       budgetMonth,
-      categoryId
+      categoryId,
     });
-
   } catch (error) {
-    logger.error('Error updating budget calculations', error, {
+    logger.error("Error updating budget calculations", error, {
       familyId,
       budgetMonth,
-      categoryId
+      categoryId,
     });
     // Don't throw error - transaction should still succeed even if budget update fails
   }
@@ -136,11 +202,12 @@ function calculateBudgetTotals(groups) {
     totalIncome,
     totalSavings,
     totalExpenses,
-    remainingBalance
+    remainingBalance,
   };
 }
 
 module.exports = {
   updateBudgetCalculations,
-  calculateBudgetTotals
+  calculateBudgetTotals,
+  isAccountTracked,
 };
