@@ -60,9 +60,22 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       "budgetbuddy-theme-mode",
     ) as ThemeMode;
     if (savedMode && ["light", "dark", "system"].includes(savedMode)) {
+      // Apply theme immediately during initialization to prevent flash
+      const resolved = resolveTheme(savedMode);
+      if (resolved === "dark") {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
       return savedMode;
     }
-    // Default to system preference
+    // Default to system preference - apply immediately
+    const systemTheme = getSystemTheme();
+    if (systemTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
     return "system";
   });
 
