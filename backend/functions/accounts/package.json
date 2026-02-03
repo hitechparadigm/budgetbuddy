@@ -1,0 +1,16 @@
+{
+  "_comment": "Accounts management Lambda function - Handles manual and connected account CRUD, balance tracking, and reconciliation",
+  "name": "budgetbuddy-accounts-function",
+  "version": "1.0.0",
+  "description": "BudgetBuddy accounts management Lambda function for account operations and balance tracking",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "local": "sam local start-api"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "fast-check": "^3.15.0"
+  }
+}

@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.9.89] - 2026-02-03
+
+### ✨ New Feature: Enhanced Accounts & Transactions (Phase 1)
+
+- **Account Data Model**: Created comprehensive account types and validation schemas
+  - Added `packages/shared/src/types/account.ts` with AccountType, AccountSubtype enums
+  - Supports Banking, Cash, Credit Card, Investment, and Loan account types
+  - Includes balance calculation helpers for asset vs liability accounts
+  - Added Zod validation schemas for create/update/reconcile operations
+
+- **Accounts Lambda Backend**: Implemented full CRUD operations for account management
+  - Created `backend/functions/accounts/` with handler, service, repository, validators
+  - Endpoints: GET/POST/PUT/DELETE /accounts, POST /accounts/:id/reconcile, PUT /accounts/:id/tracking
+  - Supports manual account creation with balance tracking
+  - Implements net worth calculation (assets - liabilities)
+
+- **Property-Based Tests**: Added comprehensive PBT coverage
+  - Property 5: Account CRUD Round-Trip (validates data preservation)
+  - Property 6: Account Grouping Consistency (validates type grouping)
+  - Property 9: Balance Consistency (validates transaction balance updates)
+  - Property 10: Net Worth Calculation (validates assets - liabilities)
+  - All 17 tests passing
+
 ## [1.9.88] - 2026-02-03
 
 ### 🐛 Critical Bug Fixes (Week 1 P0 Priority - COMPLETE)
