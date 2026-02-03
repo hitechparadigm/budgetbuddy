@@ -1753,25 +1753,26 @@ _"As a user, I want AI to automatically detect my recurring bills and help me pl
 
 ### Component Mapping
 
-| Feature                  | Frontend Component           | Backend API                     | Status            |
-| ------------------------ | ---------------------------- | ------------------------------- | ----------------- |
-| Pattern Detection        | `PatternReviewModal.tsx`     | `POST /api/patterns/detect`     | 📋 Spec Ready     |
-| Pattern Review           | `PatternReviewModal.tsx`     | `GET /api/patterns`             | 📋 Spec Ready     |
-| Pattern Approval         | `PatternReviewModal.tsx`     | `PUT /api/patterns/{id}`        | 📋 Spec Ready     |
-| Budget Suggestions       | `BudgetSuggestionsModal.tsx` | `POST /api/budget/suggestions`  | 📋 Spec Ready     |
-| Apply Suggestions        | `BudgetSuggestionsModal.tsx` | `POST /api/budget/apply`        | 📋 Spec Ready     |
-| Manual Pattern Creation  | `TransactionList.tsx`        | `POST /api/patterns/manual`     | 📋 Spec Ready     |
-| Pattern Notifications    | `NotificationCenter.tsx`     | Existing notification system    | 📋 Spec Ready     |
-| AI Analysis Service      | Backend only                 | AWS Bedrock (Claude 3.5 Sonnet) | 📋 Spec Ready     |
-| Pattern Detection Lambda | Backend only                 | `pattern-detection` Lambda      | ✅ Tests Complete |
-| Budget Planning Lambda   | Backend only                 | `budget-planning` Lambda        | ✅ Tests Complete |
-| Bill Creation from AI    | Backend only                 | `bills` Lambda                  | ✅ Tests Complete |
+| Feature                  | Frontend Component           | Backend API                     | Status              |
+| ------------------------ | ---------------------------- | ------------------------------- | ------------------- |
+| Pattern Detection        | `PatternReviewModal.tsx`     | `POST /api/patterns/detect`     | ✅ Backend Complete |
+| Pattern Review           | `PatternReviewModal.tsx`     | `GET /api/patterns`             | ✅ Backend Complete |
+| Pattern Approval         | `PatternReviewModal.tsx`     | `PUT /api/patterns/{id}`        | ✅ Backend Complete |
+| Budget Suggestions       | `BudgetSuggestionsModal.tsx` | `POST /api/budget/suggestions`  | 📋 Spec Ready       |
+| Apply Suggestions        | `BudgetSuggestionsModal.tsx` | `POST /api/budget/apply`        | 📋 Spec Ready       |
+| Manual Pattern Creation  | `TransactionList.tsx`        | `POST /api/patterns/manual`     | 📋 Spec Ready       |
+| Pattern Notifications    | `NotificationCenter.tsx`     | Existing notification system    | 📋 Spec Ready       |
+| AI Analysis Service      | Backend only                 | AWS Bedrock (Claude 3.5 Sonnet) | ✅ Implemented      |
+| Pattern Detection Lambda | Backend only                 | `pattern-detection` Lambda      | ✅ Implemented      |
+| Budget Planning Lambda   | Backend only                 | `budget-planning` Lambda        | ✅ Tests Complete   |
+| Bill Creation from AI    | Backend only                 | `bills` Lambda                  | ✅ Tests Complete   |
 
 ### Test Coverage (Updated 2026-02-03)
 
 | Component                   | Unit Tests                       | Property Tests              | Status      |
 | --------------------------- | -------------------------------- | --------------------------- | ----------- |
 | Pattern Detection Algorithm | 32 tests (`confidence.test.js`)  | 16 tests (Properties 16-18) | ✅ Complete |
+| Pattern Detection Service   | 21 tests (`service.test.js`)     | -                           | ✅ Complete |
 | AI Bill Creation            | 36 tests (`ai-creation.test.js`) | 16 tests (Properties 19-20) | ✅ Complete |
 | AI Budget Planning          | 29 tests (`ai-planning.test.js`) | 14 tests (Properties 21-22) | ✅ Complete |
 
@@ -1832,7 +1833,6 @@ _"As a user, I want AI to automatically detect my recurring bills and help me pl
 | `BudgetSuggestionsModal.tsx` | HIGH     | Review and apply AI budget suggestions         |
 | `PatternConfidenceBar.tsx`   | MEDIUM   | Visual confidence score indicator              |
 | `PatternExplanation.tsx`     | MEDIUM   | Expandable explanation of why pattern detected |
-| Pattern detection Lambda     | HIGH     | Backend service for AI pattern analysis        |
 | Budget planning Lambda       | HIGH     | Backend service for AI budget suggestions      |
 
 ### Implementation Status
@@ -1843,11 +1843,12 @@ _"As a user, I want AI to automatically detect my recurring bills and help me pl
 - Design document: Architecture, algorithms, 25 correctness properties
 - Tasks document: 28 implementation tasks with testing requirements
 
-**Implementation Status**: 📋 Ready to Start
+**Implementation Status**: 🔄 In Progress
 
-- All specifications complete and reviewed
-- Integration points with existing systems identified
-- Testing strategy defined (unit, property-based, integration)
+- Pattern Detection Service: ✅ Implemented (service layer + Lambda handler)
+- Pattern Detection Tests: ✅ Complete (21 unit tests)
+- Budget Planning Service: 📋 Not started
+- Frontend Components: 📋 Not started
 - Frontend components designed
 - Backend architecture planned
 
