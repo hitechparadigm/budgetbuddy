@@ -61,7 +61,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - **Property 7: Receipt OCR Accuracy**
     - **Validates: Requirements 4.6**
 
-  - [ ] 1.8 Create two-factor authentication test suite
+  - [-] 1.8 Create two-factor authentication test suite
     - Create `tests/security/two-factor-auth.test.js`
     - Test TOTP secret generation and QR code display
     - Test TOTP verification flow

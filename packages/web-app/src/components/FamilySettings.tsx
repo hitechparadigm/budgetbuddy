@@ -53,9 +53,10 @@ export const FamilySettings: React.FC = () => {
     setError(null);
 
     try {
-      const token = localStorage.getItem("budgetbuddy_access_token");
+      // Use id_token for API Gateway Cognito authorizer (not access_token)
+      const token = localStorage.getItem("budgetbuddy_id_token");
       if (!token) {
-        throw new Error("Not authenticated");
+        throw new Error("Please log in to view family members");
       }
 
       const response = await fetch(`${API_BASE}/family/members`, {
@@ -97,9 +98,10 @@ export const FamilySettings: React.FC = () => {
     setSuccess(null);
 
     try {
-      const token = localStorage.getItem("budgetbuddy_access_token");
+      // Use id_token for API Gateway Cognito authorizer (not access_token)
+      const token = localStorage.getItem("budgetbuddy_id_token");
       if (!token) {
-        throw new Error("Not authenticated");
+        throw new Error("Please log in to send invitations");
       }
 
       const response = await fetch(`${API_BASE}/family/invite`, {
@@ -142,9 +144,10 @@ export const FamilySettings: React.FC = () => {
     setSuccess(null);
 
     try {
-      const token = localStorage.getItem("budgetbuddy_access_token");
+      // Use id_token for API Gateway Cognito authorizer (not access_token)
+      const token = localStorage.getItem("budgetbuddy_id_token");
       if (!token) {
-        throw new Error("Not authenticated");
+        throw new Error("Please log in to update roles");
       }
 
       const response = await fetch(
@@ -184,9 +187,10 @@ export const FamilySettings: React.FC = () => {
     setSuccess(null);
 
     try {
-      const token = localStorage.getItem("budgetbuddy_access_token");
+      // Use id_token for API Gateway Cognito authorizer (not access_token)
+      const token = localStorage.getItem("budgetbuddy_id_token");
       if (!token) {
-        throw new Error("Not authenticated");
+        throw new Error("Please log in to remove members");
       }
 
       const response = await fetch(`${API_BASE}/family/members/${userId}`, {
@@ -221,9 +225,10 @@ export const FamilySettings: React.FC = () => {
     setSuccess(null);
 
     try {
-      const token = localStorage.getItem("budgetbuddy_access_token");
+      // Use id_token for API Gateway Cognito authorizer (not access_token)
+      const token = localStorage.getItem("budgetbuddy_id_token");
       if (!token) {
-        throw new Error("Not authenticated");
+        throw new Error("Please log in to leave family");
       }
 
       const response = await fetch(`${API_BASE}/family/leave`, {

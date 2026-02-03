@@ -17,7 +17,26 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
-### Recent Achievements (2026-02-02)
+### Recent Achievements (2026-02-03)
+
+- 🧪 **TEST COVERAGE IMPROVEMENT** - Week 2 test creation tasks completed
+  - **Transaction Editing PBT**: 5 property-based tests for edit operations
+  - **Google OAuth Tests**: 12 unit tests for Google Sign-In flow
+  - **Admin API PBT**: 12 property-based tests (Properties 4-6)
+  - **Receipt OCR PBT**: Property tests for OCR accuracy (Property 7)
+  - **Total New Tests**: 27+ tests added across 4 test files
+
+- 🐛 **BUG FIXES** - UI and infrastructure improvements
+  - **BudgetPage UI**: Removed duplicate sidebar and sign-out button
+  - **CloudFormation**: Split api-features-stack to stay under 500 resource limit
+  - **CI/CD**: Updated deployment order to break SharedLayer export dependency
+
+- 📚 **DOCUMENTATION VALIDATION ANALYSIS** - Root cause identified
+  - **Issue**: Validation uses file mtime instead of git commit dates
+  - **Impact**: Files appear "fresh" after git operations without content changes
+  - **Recommendation**: Update validation to use `git log` for actual commit dates
+
+### Previous Achievements (2026-02-02)
 
 - 🤖 **AWS BEDROCK INTEGRATION** - Bedrock client for Claude 3.5 Sonnet with retry logic
   - **Retry Logic**: Exponential backoff (1s → 2s → 4s → 8s), max 3 retries
