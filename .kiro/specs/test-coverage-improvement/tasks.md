@@ -79,7 +79,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
   - Verify test coverage increased by ~10%
   - Ask the user if questions arise
 
-- [ ] 3. Week 3: E2E User Journey Tests
+- [-] 3. Week 3: E2E User Journey Tests
   - [ ] 3.1 Create onboarding journey E2E test
     - Create `tests/e2e/onboarding-journey.test.js`
     - Test registration → email verification → onboarding redirect
@@ -97,7 +97,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - Test budget edit → recalculation
     - _Requirements: 7.1, 7.2, 7.3, 7.4_
 
-  - [ ] 3.3 Write property test for budget totals
+  - [x] 3.3 Write property test for budget totals
     - **Property 9: Budget Totals Invariant**
     - **Validates: Requirements 7.6**
 
@@ -110,7 +110,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - Test error handling and reconnection
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-  - [ ] 3.5 Write property test for bank import
+  - [x] 3.5 Write property test for bank import
     - **Property 10: Bank Import Data Integrity**
     - **Validates: Requirements 8.6**
 
@@ -122,7 +122,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - Test goal completion → celebration notification
     - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-  - [ ] 3.7 Write property tests for goal calculations
+  - [x] 3.7 Write property tests for goal calculations
     - **Property 11: Savings Goal Calculation**
     - **Property 12: Debt Payoff Calculation**
     - **Property 13: Goal Math Accuracy**

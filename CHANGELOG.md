@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.9.94] - 2026-02-03
+
+### 🧪 Test Coverage Improvement - Week 3 Property Tests (Session 117)
+
+- **Property 9: Budget Totals Invariant** (13 property tests)
+  - Tests budget totals equal sum of category amounts
+  - Tests remaining budget calculation accuracy
+  - Tests budget percentage bounds (0-100%)
+  - Tests category total consistency
+  - Validates Requirement 7.6
+
+- **Property 10: Bank Import Data Integrity** (13 property tests)
+  - Tests imported transactions preserve original amounts
+  - Tests transaction IDs are unique
+  - Tests date ordering is preserved
+  - Tests category assignment consistency
+  - Validates Requirement 8.6
+
+- **Property 11, 12, 13: Goal Calculations** (16 property tests)
+  - Property 11: Savings goal progress bounds and monthly required calculation
+  - Property 12: Debt payoff calculation (snowball/avalanche methods)
+  - Property 13: Goal math accuracy and milestone detection
+  - Validates Requirements 9.1, 9.2, 9.6
+
 ## [1.9.93] - 2026-02-03
 
 ### 🧪 Test Coverage Improvement - Week 2 Complete (Session 116)
