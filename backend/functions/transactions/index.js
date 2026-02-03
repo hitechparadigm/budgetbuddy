@@ -25,6 +25,15 @@ const {
 } = require("./errors");
 const { updateBudgetCalculations } = require("./budget-service");
 
+// Import accounts service for balance updates
+let accountsService = null;
+try {
+  // Try to load accounts service - may not exist in all environments
+  accountsService = require("../accounts/service");
+} catch (_error) {
+  // Accounts service not available - balance updates will be skipped
+}
+
 // Import permission checking from shared layer
 const { checkPermission } = require("/opt/nodejs/shared");
 
@@ -151,6 +160,77 @@ async function updateLinkedGoals(familyId, categoryId, amount, operation) {
     logger.error("Failed to update linked goals", {
       familyId,
       categoryId,
+      amount,
+      operation,
+      error: error.message,
+    });
+  }
+}
+
+/**
+ * Update account balance when a transaction is created, updated, or deleted
+ * @param {string} familyId - Family ID
+ * @param {string} accountId - Account ID (may be null)
+ * @param {string} transactionType - 'income' or 'expense'
+ * @param {number} amount - Transaction amount
+ * @param {string} operation - 'add' or 'subtract'
+ */
+async function updateAccountBalance(
+  familyId,
+  accountId,
+  transactionType,
+  amount,
+  operation,
+) {
+  // Skip if no account service or no accountId
+  if (!accountsService || !accountId) {
+    return;
+  }
+
+  try {
+    // Get the account to determine its type
+    const account = await accountsService.getAccount(familyId, accountId);
+    if (!account) {
+      logger.warn("Account not found for balance update", {
+        familyId,
+        accountId,
+      });
+      return;
+    }
+
+    // Calculate balance change based on account type and transaction type
+    let balanceChange = accountsService.calculateBalanceChange(
+      transactionType,
+      amount,
+      account.accountType,
+    );
+
+    // Reverse the change if we're subtracting (deleting/updating transaction)
+    if (operation === "subtract") {
+      balanceChange = -balanceChange;
+    }
+
+    // Update the account balance
+    await accountsService.updateAccountBalance(
+      familyId,
+      accountId,
+      balanceChange,
+    );
+
+    logger.info("Account balance updated from transaction", {
+      familyId,
+      accountId,
+      transactionType,
+      amount,
+      operation,
+      balanceChange,
+    });
+  } catch (error) {
+    // Log but don't fail the transaction if account update fails
+    logger.error("Failed to update account balance", {
+      familyId,
+      accountId,
+      transactionType,
       amount,
       operation,
       error: error.message,
@@ -385,6 +465,7 @@ async function createTransaction(event, user) {
     description: requestBody.description,
     date: requestBody.date,
     merchantName: requestBody.merchantName || null,
+    accountId: requestBody.accountId || null, // Optional account association
     createdBy: user.userId,
     createdByName: `${user.firstName} ${user.lastName}`,
     createdAt: currentTime,
@@ -417,6 +498,17 @@ async function createTransaction(event, user) {
     );
   }
 
+  // Update account balance if transaction is linked to an account
+  if (requestBody.accountId) {
+    await updateAccountBalance(
+      familyId,
+      requestBody.accountId,
+      requestBody.type,
+      requestBody.amount,
+      "add",
+    );
+  }
+
   logger.info("Transaction created successfully", {
     transactionId,
     familyId,
@@ -436,6 +528,7 @@ async function createTransaction(event, user) {
       description: transaction.description,
       date: transaction.date,
       merchantName: transaction.merchantName,
+      accountId: transaction.accountId,
       createdBy: transaction.createdBy,
       createdByName: transaction.createdByName,
       createdAt: transaction.createdAt,
@@ -516,6 +609,12 @@ async function getTransactions(event, user) {
       queryParams.createdBy;
   }
 
+  if (queryParams.accountId) {
+    filters.push("accountId = :accountId");
+    queryOptions.ExpressionAttributeValues[":accountId"] =
+      queryParams.accountId;
+  }
+
   // Combine filters
   if (filters.length > 0) {
     queryOptions.FilterExpression += " AND " + filters.join(" AND ");
@@ -549,6 +648,7 @@ async function getTransactions(event, user) {
     description: transaction.description,
     date: transaction.date,
     merchantName: transaction.merchantName,
+    accountId: transaction.accountId || null,
     createdBy: transaction.createdBy,
     createdByName: transaction.createdByName,
     createdAt: transaction.createdAt,
@@ -628,6 +728,7 @@ async function getTransaction(event, user, transactionId) {
       description: transaction.description,
       date: transaction.date,
       merchantName: transaction.merchantName,
+      accountId: transaction.accountId || null,
       createdBy: transaction.createdBy,
       createdByName: transaction.createdByName,
       createdAt: transaction.createdAt,
@@ -680,9 +781,11 @@ async function updateTransaction(event, user, transactionId) {
   };
 
   let budgetUpdateNeeded = false;
+  let accountUpdateNeeded = false;
   const oldAmount = existingTransaction.amount;
   const oldType = existingTransaction.type;
   const oldCategoryId = existingTransaction.categoryId;
+  const oldAccountId = existingTransaction.accountId;
 
   if (requestBody.amount !== undefined) {
     if (requestBody.amount <= 0) {
@@ -721,6 +824,16 @@ async function updateTransaction(event, user, transactionId) {
 
   if (requestBody.merchantName !== undefined) {
     updates.merchantName = requestBody.merchantName;
+  }
+
+  if (requestBody.accountId !== undefined) {
+    updates.accountId = requestBody.accountId;
+    accountUpdateNeeded = true;
+  }
+
+  // Also need to update account if amount or type changed
+  if (budgetUpdateNeeded && oldAccountId) {
+    accountUpdateNeeded = true;
   }
 
   // Update the transaction
@@ -774,6 +887,35 @@ async function updateTransaction(event, user, transactionId) {
     }
   }
 
+  // Update account balances if account, amount, or type changed
+  if (accountUpdateNeeded) {
+    const newAccountId = updatedTransaction.accountId;
+    const newAmount = updatedTransaction.amount;
+    const newType = updatedTransaction.type;
+
+    // Reverse old account balance if there was an old account
+    if (oldAccountId) {
+      await updateAccountBalance(
+        familyId,
+        oldAccountId,
+        oldType,
+        oldAmount,
+        "subtract",
+      );
+    }
+
+    // Apply new account balance if there is a new account
+    if (newAccountId) {
+      await updateAccountBalance(
+        familyId,
+        newAccountId,
+        newType,
+        newAmount,
+        "add",
+      );
+    }
+  }
+
   logger.info("Transaction updated successfully", {
     transactionId,
     familyId,
@@ -790,6 +932,7 @@ async function updateTransaction(event, user, transactionId) {
       description: updatedTransaction.description,
       date: updatedTransaction.date,
       merchantName: updatedTransaction.merchantName,
+      accountId: updatedTransaction.accountId || null,
       createdBy: updatedTransaction.createdBy,
       createdByName: updatedTransaction.createdByName,
       createdAt: updatedTransaction.createdAt,
@@ -864,6 +1007,17 @@ async function deleteTransaction(event, user, transactionId) {
     await updateLinkedGoals(
       familyId,
       existingTransaction.categoryId,
+      existingTransaction.amount,
+      "subtract",
+    );
+  }
+
+  // Reverse account balance if transaction was linked to an account
+  if (existingTransaction.accountId) {
+    await updateAccountBalance(
+      familyId,
+      existingTransaction.accountId,
+      existingTransaction.type,
       existingTransaction.amount,
       "subtract",
     );

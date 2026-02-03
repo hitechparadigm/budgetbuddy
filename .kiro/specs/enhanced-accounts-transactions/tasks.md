@@ -60,43 +60,43 @@ This implementation plan covers the development of comprehensive account managem
     - Generate random accounts, verify net worth = assets - liabilities
     - **Validates: Requirements 3.5**
 
-- [ ] 3. Checkpoint - Backend accounts API complete
+- [x] 3. Checkpoint - Backend accounts API complete
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 4. Enhance Transaction Lambda for account support
-  - [ ] 4.1 Extend transaction data model with accountId
+- [x] 4. Enhance Transaction Lambda for account support
+  - [x] 4.1 Extend transaction data model with accountId
     - Update transaction repository to include optional accountId field
     - Update createTransaction to accept accountId
     - Update updateTransaction to handle accountId changes
     - _Requirements: 4.5, 10.6_
 
-  - [ ] 4.2 Implement account balance updates on transactions
+  - [x] 4.2 Implement account balance updates on transactions
     - Add balance update logic when transaction is created with accountId
     - Add balance reversal when transaction is deleted
     - Add balance recalculation when transaction amount/account changes
     - _Requirements: 3.2, 3.3, 3.4_
 
-  - [ ] 4.3 Add account filtering to transaction queries
+  - [x] 4.3 Add account filtering to transaction queries
     - Add accountId filter parameter to listTransactions
     - Support multi-account filtering
     - _Requirements: 4.7, 9.4_
 
-  - [ ] 4.4 Write property test for transaction account filtering
+  - [x] 4.4 Write property test for transaction account filtering
     - **Property 15: Transaction Account Filtering**
     - Generate random transactions, apply filters, verify results
     - **Validates: Requirements 4.7**
 
-  - [ ] 4.5 Ensure backward compatibility
+  - [x] 4.5 Ensure backward compatibility
     - Verify transactions without accountId continue to work
     - Add "Unassigned" handling for legacy transactions
     - _Requirements: 10.1, 10.5, 10.6_
 
-  - [ ] 4.6 Write property test for backward compatibility
+  - [x] 4.6 Write property test for backward compatibility
     - **Property 27: Backward Compatibility - Optional AccountId**
     - Generate transactions without accountId, verify save and retrieve
     - **Validates: Requirements 10.1, 10.5, 10.6**
 
-- [ ] 5. Checkpoint - Transaction enhancements complete
+- [x] 5. Checkpoint - Transaction enhancements complete
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 6. Create CDK infrastructure for accounts
