@@ -7,19 +7,208 @@
  * Endpoints:
  * - POST /budget-planning/suggestions - Generate budget suggestions
  * - POST /budget-planning/apply - Apply suggestions to budget
+ * - GET /budget-planning/suggestions - Get existing suggestions
  * - GET /budget-planning/health - Health check
  */
 
-// Commented out until implementation
-// const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-// const { DynamoDBDocumentClient } = require("@aws-sdk/lib-dynamodb");
+const {
+  generateSuggestions,
+  applySuggestions,
+  getSuggestions,
+} = require("./budget-planning-service");
 
-// const dynamoClient = new DynamoDBClient({
-//   region: process.env.AWS_REGION || "us-east-1",
-// });
-// const docClient = DynamoDBDocumentClient.from(dynamoClient);
+/**
+ * CORS headers for all responses
+ */
+const CORS_HEADERS = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token",
+  "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+};
 
-// const TABLE_NAME = process.env.TABLE_NAME;
+/**
+ * Create success response
+ */
+function successResponse(data, message = "Success", statusCode = 200) {
+  return {
+    statusCode,
+    headers: CORS_HEADERS,
+    body: JSON.stringify({
+      success: true,
+      data,
+      message,
+    }),
+  };
+}
+
+/**
+ * Create error response
+ */
+function errorResponse(message, code = "ERROR", statusCode = 400) {
+  return {
+    statusCode,
+    headers: CORS_HEADERS,
+    body: JSON.stringify({
+      success: false,
+      message,
+      error: { code },
+    }),
+  };
+}
+
+/**
+ * Extract user info from event
+ */
+function extractUserInfo(event) {
+  const claims = event.requestContext?.authorizer?.claims || {};
+  const userId = claims.sub || claims["cognito:username"];
+  const familyId = claims["custom:familyId"] || claims.familyId;
+  return { userId, familyId };
+}
+
+/**
+ * Parse request body
+ */
+function parseBody(event) {
+  if (!event.body) return {};
+  try {
+    return JSON.parse(event.body);
+  } catch (error) {
+    return {};
+  }
+}
+
+/**
+ * Handle POST /budget-planning/suggestions - Generate suggestions
+ */
+async function handleGenerateSuggestions(event) {
+  const { userId, familyId } = extractUserInfo(event);
+
+  if (!userId || !familyId) {
+    return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
+  }
+
+  const body = parseBody(event);
+  const { targetMonth, includeRecurringBills, includeHistoricalAverage } = body;
+
+  if (!targetMonth) {
+    return errorResponse(
+      "targetMonth is required (YYYY-MM format)",
+      "MISSING_PARAM",
+      400,
+    );
+  }
+
+  try {
+    const result = await generateSuggestions(userId, familyId, targetMonth, {
+      includeRecurringBills,
+      includeHistoricalAverage,
+    });
+
+    return successResponse(result, "Budget suggestions generated successfully");
+  } catch (error) {
+    console.error("Generate suggestions error:", error);
+
+    if (error.message.includes("format")) {
+      return errorResponse(error.message, "INVALID_FORMAT", 400);
+    }
+
+    return errorResponse(
+      "Failed to generate suggestions",
+      "GENERATION_FAILED",
+      500,
+    );
+  }
+}
+
+/**
+ * Handle POST /budget-planning/apply - Apply suggestions
+ */
+async function handleApplySuggestions(event) {
+  const { userId, familyId } = extractUserInfo(event);
+
+  if (!userId || !familyId) {
+    return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
+  }
+
+  const body = parseBody(event);
+  const { suggestionId, selectedCategories } = body;
+
+  if (!suggestionId) {
+    return errorResponse("suggestionId is required", "MISSING_PARAM", 400);
+  }
+
+  try {
+    const result = await applySuggestions(
+      userId,
+      familyId,
+      suggestionId,
+      selectedCategories,
+    );
+
+    return successResponse(result, "Suggestions applied successfully");
+  } catch (error) {
+    console.error("Apply suggestions error:", error);
+
+    if (error.message.includes("not found")) {
+      return errorResponse("Suggestion not found", "NOT_FOUND", 404);
+    }
+    if (error.message.includes("already applied")) {
+      return errorResponse(
+        "Suggestion already applied",
+        "ALREADY_APPLIED",
+        409,
+      );
+    }
+
+    return errorResponse("Failed to apply suggestions", "APPLY_FAILED", 500);
+  }
+}
+
+/**
+ * Handle GET /budget-planning/suggestions - Get suggestions
+ */
+async function handleGetSuggestions(event) {
+  const { userId, familyId } = extractUserInfo(event);
+
+  if (!userId || !familyId) {
+    return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
+  }
+
+  const queryParams = event.queryStringParameters || {};
+  const { status, targetMonth } = queryParams;
+
+  try {
+    const suggestions = await getSuggestions(userId, familyId, {
+      status,
+      targetMonth,
+    });
+
+    return successResponse(
+      { suggestions, count: suggestions.length },
+      "Suggestions retrieved successfully",
+    );
+  } catch (error) {
+    console.error("Get suggestions error:", error);
+    return errorResponse("Failed to retrieve suggestions", "FETCH_FAILED", 500);
+  }
+}
+
+/**
+ * Handle health check
+ */
+function handleHealthCheck() {
+  return successResponse(
+    {
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      service: "budget-planning",
+    },
+    "Budget Planning Lambda is healthy",
+  );
+}
 
 /**
  * Lambda handler
@@ -27,58 +216,45 @@
 exports.handler = async (event) => {
   console.log("Budget Planning Event:", JSON.stringify(event, null, 2));
 
-  const { path } = event;
+  const { httpMethod, path } = event;
 
   try {
-    // Health check endpoint
-    if (path.includes("/health")) {
+    // Handle CORS preflight
+    if (httpMethod === "OPTIONS") {
       return {
         statusCode: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          success: true,
-          message: "Budget Planning Lambda is healthy",
-          timestamp: new Date().toISOString(),
-        }),
+        headers: CORS_HEADERS,
+        body: "",
       };
     }
 
-    // TODO: Implement budget planning endpoints
-    // This is a placeholder implementation
-    return {
-      statusCode: 501,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        success: false,
-        message: "Budget planning endpoints not yet implemented",
-        error: {
-          code: "NOT_IMPLEMENTED",
-          details: "This feature is under development",
-        },
-      }),
-    };
+    // Health check endpoint
+    if (path?.includes("/health")) {
+      return handleHealthCheck();
+    }
+
+    // Route based on method and path
+    switch (httpMethod) {
+      case "POST":
+        if (path?.includes("/apply")) {
+          return await handleApplySuggestions(event);
+        }
+        if (path?.includes("/suggestions")) {
+          return await handleGenerateSuggestions(event);
+        }
+        return errorResponse("Invalid endpoint", "NOT_FOUND", 404);
+
+      case "GET":
+        if (path?.includes("/suggestions")) {
+          return await handleGetSuggestions(event);
+        }
+        return errorResponse("Invalid endpoint", "NOT_FOUND", 404);
+
+      default:
+        return errorResponse("Method not allowed", "METHOD_NOT_ALLOWED", 405);
+    }
   } catch (error) {
     console.error("Budget Planning Error:", error);
-    return {
-      statusCode: 500,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({
-        success: false,
-        message: "Internal server error",
-        error: {
-          code: "INTERNAL_ERROR",
-          message: error.message,
-        },
-      }),
-    };
+    return errorResponse("Internal server error", "INTERNAL_ERROR", 500);
   }
 };
