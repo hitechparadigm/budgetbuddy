@@ -170,18 +170,34 @@ function validateMandatoryDoc(docConfig) {
       );
     }
 
-    // Must have today's date in a version entry
-    if (!content.includes(`] - ${today}`)) {
+    // CRITICAL: Must have today's date in the FIRST version entry (most recent)
+    const lines = content.split("\n");
+    let foundFirstVersion = false;
+    let firstVersionHasToday = false;
+
+    for (const line of lines) {
+      if (line.match(/^## \[[\d.]+\] - \d{4}-\d{2}-\d{2}/)) {
+        foundFirstVersion = true;
+        if (line.includes(`] - ${today}`)) {
+          firstVersionHasToday = true;
+        }
+        break; // Only check first version entry
+      }
+    }
+
+    if (foundFirstVersion && !firstVersionHasToday) {
       result.status = "FAIL";
       result.issues.push(
-        `MANDATORY: CHANGELOG.md must have a version entry for today (${today})`,
+        `MANDATORY: CHANGELOG.md first version entry must be for today (${today})`,
       );
-      result.issues.push(`Add entry like: ## [X.Y.Z] - ${today}`);
+      result.issues.push(`Add new entry at top: ## [X.Y.Z] - ${today}`);
     }
 
     // Must have meaningful content (not just a header)
-    const lines = content.split("\n").filter((l) => l.trim().length > 0);
-    if (lines.length < 10) {
+    const meaningfulLines = content
+      .split("\n")
+      .filter((l) => l.trim().length > 0);
+    if (meaningfulLines.length < 10) {
       result.status = "FAIL";
       result.issues.push(
         "MANDATORY: CHANGELOG.md must contain detailed change descriptions",
@@ -207,14 +223,28 @@ function validateMandatoryDoc(docConfig) {
       );
     }
 
-    // Must have today's date entry
-    if (!content.includes(`## ${today}`)) {
+    // CRITICAL: Must have today's date as the FIRST entry (most recent)
+    const lines = content.split("\n");
+    let foundFirstEntry = false;
+    let firstEntryHasToday = false;
+
+    for (const line of lines) {
+      if (line.match(/^## \d{4}-\d{2}-\d{2} - /)) {
+        foundFirstEntry = true;
+        if (line.includes(`## ${today}`)) {
+          firstEntryHasToday = true;
+        }
+        break; // Only check first entry
+      }
+    }
+
+    if (foundFirstEntry && !firstEntryHasToday) {
       result.status = "FAIL";
       result.issues.push(
-        `MANDATORY: DEVELOPMENT_LOG.md must have a session entry for today (${today})`,
+        `MANDATORY: DEVELOPMENT_LOG.md first entry must be for today (${today})`,
       );
       result.issues.push(
-        `Add entry like: ## ${today} - Session Title (Session X)`,
+        `Add new entry at top: ## ${today} - Session Title (Session X)`,
       );
     }
 
