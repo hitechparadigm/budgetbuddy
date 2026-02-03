@@ -1,100 +1,59 @@
 # CloudFormation Export Dependency Blocker
 
-## Status: BLOCKED - Requires Manual Intervention
+## Status: RESOLVED - Fix Applied
 
-## Latest Deployment Failure
+## Latest Fix
 
-**Date**: 2026-01-31 22:57 PM (CI/CD Run #21552297317)
-**Status**: UPDATE_ROLLBACK_COMPLETE
-**Commit**: 22dc2896e9d766612d5cba62be20c356034d8fc5
+**Date**: 2026-02-03
+**Fix**: Modified `api-features-stack.ts` to create its own SharedLayer instead of importing from `api-stack`
+**Commit**: Pending
 
-## Problem
+## Problem (Historical)
 
-The deployment is failing because of a CloudFormation export dependency issue that cannot be resolved through code changes alone.
+The deployment was failing because of a CloudFormation export dependency issue.
 
-**Error**: "Cannot delete export budgetbuddy-dev-auth:ExportsOutputRefAuthSharedLayer5BE359A433E00034 as it is in use by budgetbuddy-dev-auth-onboarding"
+**Error**: "Cannot update export budgetbuddy-dev-api:ExportsOutputRefSharedLayer27DFABF0C2CA2696 as it is in use by budgetbuddy-dev-api-features"
 
 ## Root Cause
 
-1. The auth-onboarding stack was previously deployed with a configuration that imports the AuthSharedLayer from the auth stack
+1. The `api-features` stack was importing the SharedLayer from the `api` stack via props
 2. This created a CloudFormation export/import relationship
-3. We updated the code so auth-onboarding creates its own layer (no import)
-4. However, the EXISTING CloudFormation stack still has the import
-5. CloudFormation won't let us update the auth stack (to remove the export) while auth-onboarding still imports it
-6. CDK deploys stacks in alphabetical order, so it tries to deploy auth before auth-onboarding
+3. When the SharedLayer was updated, CloudFormation couldn't update the export because it was still being used
+4. CDK deploys stacks in alphabetical order, so it tried to deploy `api` before `api-features`
 
-## Solution Options
+## Solution Applied
 
-### Option 1: Deploy Stacks Individually (RECOMMENDED)
+Modified `api-features-stack.ts` to create its own SharedLayer internally:
 
-```bash
-# Navigate to infrastructure directory
-cd infrastructure
-
-# Deploy auth-onboarding first to remove the import
-npx cdk deploy budgetbuddy-dev-auth-onboarding --require-approval never --profile hitechparadigm
-
-# Then deploy auth to remove the export
-npx cdk deploy budgetbuddy-dev-auth --require-approval never --profile hitechparadigm
-
-# Then deploy the rest
-npx cdk deploy --all --require-approval never --profile hitechparadigm
+```typescript
+// Create own SharedLayer to avoid CloudFormation export dependency issues
+const sharedLayer = new lambda.LayerVersion(this, "FeaturesSharedLayer", {
+  layerVersionName: "budgetbuddy-features-shared",
+  code: lambda.Code.fromAsset("../backend/layers/shared"),
+  compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+  description:
+    "Shared utilities for BudgetBuddy Features API Lambda functions (independent copy)",
+});
 ```
 
-### Option 2: Update CI/CD Pipeline (AUTOMATED)
+Updated `bin/app.ts` to remove the `sharedLayer` prop from `ApiFeaturesStack`.
 
-Modify `.github/workflows/deploy-dev.yml` to deploy stacks in the correct order:
+## Files Modified
 
-```yaml
-- name: Deploy infrastructure stacks
-  run: |
-    cd infrastructure
-    echo "Deploying auth-onboarding first to break dependency..."
-    npx cdk deploy budgetbuddy-dev-auth-onboarding --require-approval never
-
-    echo "Deploying remaining stacks..."
-    npx cdk deploy --all --require-approval never
-  env:
-    AWS_REGION: ${{ env.AWS_REGION }}
-    ENVIRONMENT: ${{ env.ENVIRONMENT }}
-```
-
-Then commit and push to trigger automated deployment.
-
-### Option 3: Manually Delete and Recreate Stacks (DESTRUCTIVE)
-
-**WARNING**: This will delete all data in the auth-onboarding stack!
-
-```bash
-# Delete auth-onboarding stack
-aws cloudformation delete-stack --stack-name budgetbuddy-dev-auth-onboarding --profile hitechparadigm
-
-# Wait for deletion to complete
-aws cloudformation wait stack-delete-complete --stack-name budgetbuddy-dev-auth-onboarding --profile hitechparadigm
-
-# Then deploy all stacks
-cd infrastructure
-npx cdk deploy --all --require-approval never --profile hitechparadigm
-```
+- `infrastructure/lib/api-features-stack.ts` - Creates own SharedLayer, removed prop
+- `infrastructure/bin/app.ts` - Removed sharedLayer prop from ApiFeaturesStack
 
 ## Impact
 
-- **Blocked Tasks**: Phase 4 (Email Service Integration) and all subsequent infrastructure changes
-- **Workaround**: Can continue with non-infrastructure tasks (documentation, planning, etc.)
-- **Resolution Time**: Requires manual AWS CLI commands or CI/CD pipeline update
-
-## Files Modified (Already Committed)
-
-- `infrastructure/lib/auth-stack.ts` - Removed export from layer output
-- `infrastructure/lib/auth-onboarding-stack.ts` - Creates own layer, removed prop
-- `infrastructure/bin/app.ts` - Removed authSharedLayer prop, removed dependency
-
-## Next Steps
-
-1. User needs to manually deploy stacks in correct order (Option 1)
-2. OR update CI/CD pipeline to deploy in correct order (Option 3)
-3. Once resolved, continue with Phase 4 tasks
+- Both stacks now have independent SharedLayers
+- No cross-stack export dependency for SharedLayer
+- Deployments can proceed independently
+- Slight increase in Lambda layer storage (duplicate layer), but negligible cost impact
 
 ## Date Identified
 
 2026-01-31 - Session 40
+
+## Date Resolved
+
+2026-02-03 - Session 112

@@ -24,7 +24,7 @@ export interface ApiFeaturesStackProps extends cdk.StackProps {
   table: dynamodb.Table;
   userPool: cognito.UserPool;
   commonLayer: lambda.LayerVersion;
-  sharedLayer: lambda.LayerVersion;
+  // Note: sharedLayer is now created internally to avoid CloudFormation export dependency issues
 }
 
 export class ApiFeaturesStack extends cdk.Stack {
@@ -35,6 +35,15 @@ export class ApiFeaturesStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: ApiFeaturesStackProps) {
     super(scope, id, props);
+
+    // Create own SharedLayer to avoid CloudFormation export dependency issues
+    // This prevents "Cannot update export" errors when the api-stack's SharedLayer is updated
+    const sharedLayer = new lambda.LayerVersion(this, 'FeaturesSharedLayer', {
+      layerVersionName: 'budgetbuddy-features-shared',
+      code: lambda.Code.fromAsset('../backend/layers/shared'),
+      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      description: 'Shared utilities for BudgetBuddy Features API Lambda functions (independent copy)',
+    });
 
     // Create S3 bucket for receipt images
     // **Validates: Requirement 44.8** - S3 bucket with 30-day lifecycle and encryption
@@ -138,7 +147,7 @@ export class ApiFeaturesStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
-      layers: [props.commonLayer, props.sharedLayer],
+      layers: [props.commonLayer, sharedLayer],
       environment: commonEnvironment,
       logRetention: logs.RetentionDays.ONE_WEEK,
     };

@@ -88,6 +88,7 @@ const apiStack = new ApiStack(app, `${stackPrefix}-api`, {
  * API Features Stack - Additional Lambda functions for competitive features
  * Contains Plaid, Reconciliation, and other feature Lambdas
  * Has its own API Gateway to avoid CloudFormation resource limits
+ * Creates its own SharedLayer to avoid CloudFormation export dependency issues
  */
 const apiFeaturesStack = new ApiFeaturesStack(app, `${stackPrefix}-api-features`, {
   env,
@@ -95,7 +96,7 @@ const apiFeaturesStack = new ApiFeaturesStack(app, `${stackPrefix}-api-features`
   table: databaseStack.table,
   userPool: authStack.userPool,
   commonLayer: apiStack.commonLayer,
-  sharedLayer: apiStack.sharedLayer,
+  // Note: sharedLayer is now created internally by ApiFeaturesStack to avoid CloudFormation export dependency issues
 });
 
 /**
