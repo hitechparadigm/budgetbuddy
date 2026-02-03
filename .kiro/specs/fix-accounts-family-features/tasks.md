@@ -14,7 +14,7 @@ This implementation plan addresses critical integration bugs in Manual Accounts 
     - Use ConditionExpression for idempotent creation
     - _Requirements: 3.1, 3.2, 5.1, 5.2, 5.3_
 
-  - [ ] 1.2 Write property test for family metadata auto-creation
+  - [x] 1.2 Write property test for family metadata auto-creation
     - **Property 5: Family Metadata Auto-Creation**
     - **Validates: Requirements 3.1, 3.2, 5.3**
 

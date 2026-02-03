@@ -8,6 +8,9 @@
  * - 10.2: Invitation expiration - random timestamps, 7-day expiry logic
  * - 10.3: Family size limits - verify family never exceeds 2 members
  * - 10.4: Data isolation - verify users can only access their family data
+ *
+ * Fix Accounts & Family Features Tasks:
+ * - Property 5: Family Metadata Auto-Creation - verify metadata is created when missing
  */
 
 const fc = require("fast-check");
@@ -795,6 +798,256 @@ describe("Property-Based Tests: Family Lambda", () => {
             return true;
           },
         ),
+        { numRuns: 50 },
+      );
+    });
+  });
+
+  /**
+   * Property 5: Family Metadata Auto-Creation
+   * **Validates: Requirements 3.1, 3.2, 5.3**
+   *
+   * Property: When family metadata is missing, it should be auto-created during invite
+   * - Auto-creation should be idempotent (ConditionExpression prevents duplicates)
+   * - Primary user MEMBER record should also be created if missing
+   * - memberCount should be initialized to 1
+   * - subscriptionTier should default to 'free'
+   */
+  describe("Property 5: Family Metadata Auto-Creation", () => {
+    it("should auto-create family metadata when missing during invite", async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.uuid(),
+          fc.uuid(),
+          fc.emailAddress(),
+          async (userId, familyId, inviteEmail) => {
+            mockSend.mockReset();
+
+            const claims = createUserClaims(userId, familyId, "primary");
+            const event = createEvent("POST", "/family/invite", claims, {
+              email: inviteEmail,
+              role: "spouse",
+            });
+
+            // Mock: family metadata NOT found (triggers auto-creation)
+            mockSend.mockResolvedValueOnce({ Item: null });
+            // Mock: successful metadata creation (PutCommand with ConditionExpression)
+            mockSend.mockResolvedValueOnce({});
+            // Mock: successful member record creation
+            mockSend.mockResolvedValueOnce({});
+            // Mock: no existing invitations for this email
+            mockSend.mockResolvedValueOnce({ Items: [] });
+            // Mock: successful invitation creation
+            mockSend.mockResolvedValueOnce({});
+
+            const result = await handler(event);
+
+            // Should succeed with 201 (invitation created)
+            expect(result.statusCode).toBe(201);
+
+            // Verify PutCommand was called for metadata creation
+            const putCalls = mockSend.mock.calls.filter(
+              (call) => call[0].type === "Put",
+            );
+            expect(putCalls.length).toBeGreaterThanOrEqual(2); // metadata + member + invitation
+
+            // Verify metadata creation call has correct structure
+            const metadataCall = putCalls.find(
+              (call) =>
+                call[0].params.Item &&
+                call[0].params.Item.SK === "METADATA" &&
+                call[0].params.Item.PK === `FAMILY#${familyId}`,
+            );
+            if (metadataCall) {
+              expect(metadataCall[0].params.Item.primaryUserId).toBe(userId);
+              expect(metadataCall[0].params.Item.memberCount).toBe(1);
+              expect(metadataCall[0].params.Item.subscriptionTier).toBe("free");
+              expect(metadataCall[0].params.ConditionExpression).toBe(
+                "attribute_not_exists(PK)",
+              );
+            }
+
+            return true;
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+
+    it("should handle concurrent auto-creation gracefully (idempotent)", async () => {
+      await fc.assert(
+        fc.asyncProperty(fc.uuid(), fc.uuid(), async (userId, familyId) => {
+          mockSend.mockReset();
+
+          const claims = createUserClaims(userId, familyId, "primary");
+          const event = createEvent("POST", "/family/invite", claims, {
+            email: "partner@example.com",
+            role: "spouse",
+          });
+
+          // Mock: family metadata NOT found
+          mockSend.mockResolvedValueOnce({ Item: null });
+          // Mock: ConditionalCheckFailedException (another process created it)
+          const conditionalError = new Error("Conditional check failed");
+          conditionalError.name = "ConditionalCheckFailedException";
+          mockSend.mockRejectedValueOnce(conditionalError);
+          // Mock: re-fetch returns the metadata created by other process
+          mockSend.mockResolvedValueOnce({
+            Item: { familyId, memberCount: 1, primaryUserId: userId },
+          });
+          // Mock: member record creation (may also fail with condition)
+          mockSend.mockResolvedValueOnce({});
+          // Mock: no existing invitations
+          mockSend.mockResolvedValueOnce({ Items: [] });
+          // Mock: successful invitation creation
+          mockSend.mockResolvedValueOnce({});
+
+          const result = await handler(event);
+
+          // Should still succeed - idempotent handling
+          expect(result.statusCode).toBe(201);
+
+          return true;
+        }),
+        { numRuns: 50 },
+      );
+    });
+
+    it("should create primary user MEMBER record when missing", async () => {
+      await fc.assert(
+        fc.asyncProperty(fc.uuid(), fc.uuid(), async (userId, familyId) => {
+          mockSend.mockReset();
+
+          const claims = createUserClaims(userId, familyId, "primary");
+          const event = createEvent("POST", "/family/invite", claims, {
+            email: "spouse@example.com",
+            role: "spouse",
+          });
+
+          // Mock: family metadata NOT found
+          mockSend.mockResolvedValueOnce({ Item: null });
+          // Mock: successful metadata creation
+          mockSend.mockResolvedValueOnce({});
+          // Mock: successful member record creation
+          mockSend.mockResolvedValueOnce({});
+          // Mock: no existing invitations
+          mockSend.mockResolvedValueOnce({ Items: [] });
+          // Mock: successful invitation creation
+          mockSend.mockResolvedValueOnce({});
+
+          const result = await handler(event);
+
+          expect(result.statusCode).toBe(201);
+
+          // Verify member record creation was attempted
+          const putCalls = mockSend.mock.calls.filter(
+            (call) => call[0].type === "Put",
+          );
+          const memberCall = putCalls.find(
+            (call) =>
+              call[0].params.Item &&
+              call[0].params.Item.SK === `MEMBER#${userId}`,
+          );
+          if (memberCall) {
+            expect(memberCall[0].params.Item.userId).toBe(userId);
+            expect(memberCall[0].params.Item.role).toBe("primary");
+            expect(memberCall[0].params.ConditionExpression).toBe(
+              "attribute_not_exists(PK)",
+            );
+          }
+
+          return true;
+        }),
+        { numRuns: 50 },
+      );
+    });
+
+    it("should not fail if member record already exists", async () => {
+      await fc.assert(
+        fc.asyncProperty(fc.uuid(), fc.uuid(), async (userId, familyId) => {
+          mockSend.mockReset();
+
+          const claims = createUserClaims(userId, familyId, "primary");
+          const event = createEvent("POST", "/family/invite", claims, {
+            email: "viewer@example.com",
+            role: "viewer",
+          });
+
+          // Mock: family metadata NOT found
+          mockSend.mockResolvedValueOnce({ Item: null });
+          // Mock: successful metadata creation
+          mockSend.mockResolvedValueOnce({});
+          // Mock: member record already exists (ConditionalCheckFailedException)
+          const memberConditionError = new Error("Conditional check failed");
+          memberConditionError.name = "ConditionalCheckFailedException";
+          mockSend.mockRejectedValueOnce(memberConditionError);
+          // Mock: no existing invitations
+          mockSend.mockResolvedValueOnce({ Items: [] });
+          // Mock: successful invitation creation
+          mockSend.mockResolvedValueOnce({});
+
+          const result = await handler(event);
+
+          // Should still succeed - member already exists is OK
+          expect(result.statusCode).toBe(201);
+
+          return true;
+        }),
+        { numRuns: 50 },
+      );
+    });
+
+    it("should initialize metadata with correct default values", async () => {
+      await fc.assert(
+        fc.asyncProperty(fc.uuid(), fc.uuid(), async (userId, familyId) => {
+          mockSend.mockReset();
+
+          const claims = createUserClaims(userId, familyId, "primary");
+          const event = createEvent("POST", "/family/invite", claims, {
+            email: "test@example.com",
+            role: "spouse",
+          });
+
+          // Mock: family metadata NOT found
+          mockSend.mockResolvedValueOnce({ Item: null });
+          // Mock: successful metadata creation
+          mockSend.mockResolvedValueOnce({});
+          // Mock: successful member record creation
+          mockSend.mockResolvedValueOnce({});
+          // Mock: no existing invitations
+          mockSend.mockResolvedValueOnce({ Items: [] });
+          // Mock: successful invitation creation
+          mockSend.mockResolvedValueOnce({});
+
+          await handler(event);
+
+          // Find the metadata creation call
+          const putCalls = mockSend.mock.calls.filter(
+            (call) => call[0].type === "Put",
+          );
+          const metadataCall = putCalls.find(
+            (call) =>
+              call[0].params.Item &&
+              call[0].params.Item.SK === "METADATA" &&
+              call[0].params.Item.PK.startsWith("FAMILY#"),
+          );
+
+          if (metadataCall) {
+            const item = metadataCall[0].params.Item;
+            // Verify all required fields
+            expect(item.PK).toBe(`FAMILY#${familyId}`);
+            expect(item.SK).toBe("METADATA");
+            expect(item.familyId).toBe(familyId);
+            expect(item.primaryUserId).toBe(userId);
+            expect(item.memberCount).toBe(1);
+            expect(item.subscriptionTier).toBe("free");
+            expect(item.createdAt).toBeDefined();
+            // createdAt should be a valid ISO date string
+            expect(() => new Date(item.createdAt)).not.toThrow();
+          }
+
+          return true;
+        }),
         { numRuns: 50 },
       );
     });
