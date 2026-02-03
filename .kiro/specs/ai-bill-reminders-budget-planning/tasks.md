@@ -172,8 +172,8 @@ This implementation plan breaks down the AI-powered bill reminders and budget pl
     - Test error responses
     - _Requirements: 1.1, 8.3_
 
-- [ ] 10. Integrate with existing bills Lambda
-  - [ ] 10.1 Update backend/functions/bills/index.js
+- [-] 10. Integrate with existing bills Lambda
+  - [x] 10.1 Update backend/functions/bills/index.js
     - Add aiGenerated, sourcePatternId, aiConfidenceScore fields to bill model
     - Implement createBillFromPattern() service method
     - Set reminder schedule (7 days, 3 days, due date)
@@ -196,7 +196,7 @@ This implementation plan breaks down the AI-powered bill reminders and budget pl
     - **Property 17: Integration with Existing Bills System**
     - **Validates: Requirements 7.1, 7.2**
 
-  - [ ]\* 10.6 Write unit tests for bill creation
+  - [x]\* 10.6 Write unit tests for bill creation
     - Test bill creation with AI metadata
     - Test reminder schedule calculation
     - Test duplicate detection
