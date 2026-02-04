@@ -153,6 +153,24 @@ curl http://localhost:4566/_localstack/health
 docker-compose -f docker-compose.localstack.yml restart
 ```
 
+### Windows: Device or resource busy error
+
+If you see `OSError: [Errno 16] Device or resource busy: '/tmp/localstack'` on Windows:
+
+```bash
+# Stop and remove containers with volumes
+docker-compose -f docker-compose.localstack.yml down -v
+
+# Remove any lingering volumes
+docker volume prune -f
+
+# Restart Docker Desktop completely
+# Then start LocalStack again
+docker-compose -f docker-compose.localstack.yml up -d
+```
+
+**Alternative**: Use AWS dev environment for testing instead of LocalStack on Windows. LocalStack works better on Linux/Mac.
+
 ### Table already exists error
 
 ```bash

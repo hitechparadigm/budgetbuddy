@@ -3,7 +3,11 @@
  *
  * Usage:
  *   node scripts/test-lambda-local.js accounts create
+ *   node scripts/test-lambda-local.js accounts list
  *   node scripts/test-lambda-local.js family invite
+ *   node scripts/test-lambda-local.js family members
+ *   node scripts/test-lambda-local.js email invitation
+ *   node scripts/test-lambda-local.js email health
  */
 
 const path = require("path");
@@ -202,6 +206,86 @@ async function testFamilyMembers() {
 }
 
 /**
+ * Test email Lambda - send invitation
+ */
+async function testEmailInvitation() {
+  console.log("🧪 Testing email Lambda - send invitation\n");
+
+  const handler = require("../backend/functions/email/index");
+
+  const event = {
+    httpMethod: "POST",
+    path: "/email/send-invitation",
+    body: JSON.stringify({
+      invitedEmail: "spouse@example.com",
+      inviterName: "Test User",
+      inviterEmail: "test@example.com",
+      role: "Spouse",
+      acceptUrl: "http://localhost:3000/accept-invitation?token=abc123def456",
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    }),
+    headers: {
+      Authorization: "Bearer test-token",
+    },
+    requestContext: {
+      authorizer: {
+        claims: {
+          "custom:userId": "user_test_123",
+          email: "test@example.com",
+        },
+      },
+    },
+  };
+
+  const context = {
+    awsRequestId: "test-request-id",
+  };
+
+  try {
+    const result = await handler.handler(event, context);
+    console.log(
+      "✅ Response:",
+      JSON.stringify(JSON.parse(result.body), null, 2),
+    );
+    console.log("📊 Status Code:", result.statusCode);
+    console.log(
+      "\n📧 Note: Email won't actually send in LocalStack, but template generation is tested",
+    );
+  } catch (error) {
+    console.error("❌ Error:", error);
+  }
+}
+
+/**
+ * Test email Lambda - health check
+ */
+async function testEmailHealth() {
+  console.log("🧪 Testing email Lambda - health check\n");
+
+  const handler = require("../backend/functions/email/index");
+
+  const event = {
+    httpMethod: "GET",
+    path: "/email/health",
+  };
+
+  const context = {
+    awsRequestId: "test-request-id",
+  };
+
+  try {
+    const result = await handler.handler(event, context);
+    console.log(
+      "✅ Response:",
+      JSON.stringify(JSON.parse(result.body), null, 2),
+    );
+    console.log("📊 Status Code:", result.statusCode);
+  } catch (error) {
+    console.error("❌ Error:", error);
+  }
+}
+
+/**
  * Main test runner
  */
 async function runTest() {
@@ -225,8 +309,16 @@ async function runTest() {
     } else {
       console.error("Unknown operation. Use: invite, members");
     }
+  } else if (lambdaName === "email") {
+    if (operation === "invitation") {
+      await testEmailInvitation();
+    } else if (operation === "health") {
+      await testEmailHealth();
+    } else {
+      console.error("Unknown operation. Use: invitation, health");
+    }
   } else {
-    console.error("Unknown lambda. Use: accounts, family");
+    console.error("Unknown lambda. Use: accounts, family, email");
   }
 }
 
