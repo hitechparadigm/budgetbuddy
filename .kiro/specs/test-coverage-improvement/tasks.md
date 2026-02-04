@@ -80,7 +80,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
   - Ask the user if questions arise
 
 - [-] 3. Week 3: E2E User Journey Tests
-  - [ ] 3.1 Create onboarding journey E2E test
+  - [x] 3.1 Create onboarding journey E2E test
     - Create `tests/e2e/onboarding-journey.test.js`
     - Test registration → email verification → onboarding redirect
     - Test location/family size → AI budget generation
@@ -89,7 +89,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - Test error recovery without losing progress
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.6_
 
-  - [ ] 3.2 Create daily budget management E2E test
+  - [x] 3.2 Create daily budget management E2E test
     - Create `tests/e2e/daily-budget-management.test.js`
     - Test app open → current month budget display
     - Test transaction add → immediate total update
