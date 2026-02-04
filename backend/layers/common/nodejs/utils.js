@@ -59,7 +59,7 @@ const createResponse = (
   statusCode,
   data = null,
   message = null,
-  error = null
+  error = null,
 ) => {
   const response = {
     statusCode,
@@ -186,6 +186,13 @@ const generateId = {
   transaction: () => `txn_${uuidv4()}`,
   category: () => `cat_${uuidv4()}`,
   invitation: () => `inv_${uuidv4()}`,
+  account: () => `acc_${uuidv4()}`,
+  /**
+   * Generate ID with custom prefix
+   * @param {string} prefix - Custom prefix for the ID
+   * @returns {string} Generated ID with custom prefix
+   */
+  custom: (prefix) => `${prefix}_${uuidv4()}`,
 };
 
 /**
@@ -286,7 +293,7 @@ const dynamoHelpers = {
     if (!updates.hasOwnProperty("updatedAt")) {
       const updatedAtIndex = Object.keys(updates).length;
       updateExpressions.push(
-        `#updatedAt${updatedAtIndex} = :updatedAt${updatedAtIndex}`
+        `#updatedAt${updatedAtIndex} = :updatedAt${updatedAtIndex}`,
       );
       expressionAttributeNames[`#updatedAt${updatedAtIndex}`] = "updatedAt";
       expressionAttributeValues[`:updatedAt${updatedAtIndex}`] =
@@ -324,7 +331,7 @@ const logger = {
         message,
         timestamp: new Date().toISOString(),
         ...meta,
-      })
+      }),
     );
   },
 
@@ -335,7 +342,7 @@ const logger = {
         message,
         timestamp: new Date().toISOString(),
         ...meta,
-      })
+      }),
     );
   },
 
@@ -353,7 +360,7 @@ const logger = {
           : null,
         timestamp: new Date().toISOString(),
         ...meta,
-      })
+      }),
     );
   },
 };
@@ -402,7 +409,7 @@ const FamilyIdResolver = {
           "resolve-family-id",
           userId,
           jwtFamilyId,
-          "jwt"
+          "jwt",
         );
         return jwtFamilyId;
       }
@@ -418,7 +425,7 @@ const FamilyIdResolver = {
 
           const userProfile = await dynamoHelpers.getItem(
             `USER#${userId}`,
-            "PROFILE"
+            "PROFILE",
           );
 
           if (
@@ -438,7 +445,7 @@ const FamilyIdResolver = {
               "resolve-family-id",
               userId,
               userProfile.familyId,
-              "dynamodb"
+              "dynamodb",
             );
             return userProfile.familyId;
           } else {
@@ -479,7 +486,7 @@ const FamilyIdResolver = {
         "resolve-family-id",
         userId,
         fallbackFamilyId,
-        "fallback"
+        "fallback",
       );
       return fallbackFamilyId;
     } catch (error) {
@@ -490,7 +497,7 @@ const FamilyIdResolver = {
           userId,
           jwtFamilyId,
           resolutionTimeMs: Date.now() - startTime,
-        }
+        },
       );
 
       // Even in error case, return consistent fallback
