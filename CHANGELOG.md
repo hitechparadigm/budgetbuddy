@@ -1,5 +1,69 @@
 # Changelog
 
+## [1.9.101] - 2026-02-04
+
+### 🔧 Family Invitation Email Integration (Session 121)
+
+- **Email API Routes Added**
+  - Added `/email/send-invitation` POST endpoint (protected)
+  - Added `/email/send-removal` POST endpoint (protected)
+  - Added `/email/send-acceptance` POST endpoint (protected)
+  - All email routes require Cognito authentication
+
+- **Family Lambda Email Integration**
+  - Integrated email service call in `handleInvite()` function
+  - Fetches inviter user details from DynamoDB for personalized emails
+  - Constructs accept URL with invitation token
+  - Makes HTTP call to email service with proper authentication
+  - Graceful error handling - invitation creation succeeds even if email fails
+  - Added `API_URL` and `WEB_APP_URL` environment variables to Family Lambda
+
+- **Infrastructure Updates**
+  - Updated `api-stack.ts` to add email sending routes
+  - Added API URL environment variable to Family Lambda after API creation
+  - Email Lambda already had SES permissions configured
+
+- **Email Flow**
+  1. User clicks "Send Invitation" in Family Settings
+  2. Family Lambda creates invitation record in DynamoDB
+  3. Family Lambda calls Email Lambda via API Gateway
+  4. Email Lambda sends invitation email via SES
+  5. Recipient receives email with accept link
+  6. Recipient clicks link and accepts invitation
+
+- **Impact**
+  - Fixes issue where family invitations were created but emails never sent
+  - Users will now receive invitation emails in their inbox
+  - Email includes inviter name, role, accept URL, and expiration date
+  - Professional HTML email template with BudgetBuddy branding
+
+## [1.9.100] - 2026-02-04
+
+### 📚 Infrastructure Documentation - CDK Cross-Stack Reference Guidelines (Session 120)
+
+- **Steering Documentation Update**
+  - Added comprehensive "CDK Cross-Stack Reference Rules (CRITICAL)" section to `.kiro/steering/structure.md`
+  - Documents the Lambda Layer export conflict problem and solution pattern
+  - Provides clear examples of wrong vs correct CDK patterns
+  - Lists what CAN be shared (DynamoDB, Cognito, S3, API Gateway) vs what should NEVER be exported (Lambda Layers, Lambda Functions)
+  - Includes lessons learned from 3 occurrences (SharedLayer, AuthSharedLayer, CommonLayer)
+  - Enforcement guidelines for creating new CDK stacks to prevent future issues
+
+- **Problem Documented**
+  - When Lambda layer code changes, CDK creates new layer version with new export
+  - CloudFormation cannot update exports that are in use by dependent stacks
+  - Results in deployment failure: "Cannot update export as it is in use by [dependent stacks]"
+
+- **Solution Pattern**
+  - Each stack creates its own layer from the same source code
+  - Avoids CloudFormation export dependencies
+  - Example: `lambda.Code.fromAsset('../backend/layers/common')` in each stack
+
+- **Impact**
+  - Prevents repeating the same cross-stack reference issue
+  - Clear guidelines for all future CDK stack development
+  - Documented history of 3 occurrences with resolution commits
+
 ## [1.9.99] - 2026-02-04
 
 ### 🎨 AI-Powered Bill Reminders and Budget Planning - Frontend Implementation (Session 119)

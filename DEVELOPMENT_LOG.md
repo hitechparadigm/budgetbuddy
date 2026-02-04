@@ -1,5 +1,75 @@
 # Development Log
 
+## 2026-02-04 - Family Invitation Email Integration (Session 121)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Implement email sending for family invitations
+**Outcome**: Successfully integrated email service with family invitation flow
+
+### Work Completed
+
+1. **Email API Routes**:
+   - Added `/email/send-invitation` POST endpoint to API Gateway
+   - Added `/email/send-removal` POST endpoint to API Gateway
+   - Added `/email/send-acceptance` POST endpoint to API Gateway
+   - All routes protected with Cognito authorizer
+
+2. **Family Lambda Integration**:
+   - Updated `handleInvite()` function to call email service
+   - Fetches inviter user details from DynamoDB
+   - Constructs accept URL with invitation token
+   - Makes HTTP call to email service with JWT authentication
+   - Graceful error handling - invitation succeeds even if email fails
+
+3. **Infrastructure Updates**:
+   - Updated `api-stack.ts` to add email routes
+   - Added `API_URL` environment variable to Family Lambda
+   - Added `WEB_APP_URL` environment variable to Family Lambda
+
+### Problem Solved
+
+**Issue**: User dmytro.malyk@gmail.com clicked to send family invitation but emails never arrived in inbox.
+
+**Root Cause**:
+
+- Email Lambda existed with invitation template
+- Email Lambda had SES permissions
+- BUT: Email API routes were NOT configured in API Gateway
+- AND: Family Lambda didn't call email service (had TODO comment)
+
+**Solution**:
+
+- Added email API routes to API Gateway
+- Integrated email service call in Family Lambda
+- Email now sent automatically when invitation is created
+
+### Email Flow
+
+1. User clicks "Send Invitation" in Family Settings
+2. Family Lambda creates invitation record in DynamoDB
+3. Family Lambda fetches inviter details from DynamoDB
+4. Family Lambda calls Email Lambda via API Gateway
+5. Email Lambda sends invitation email via SES
+6. Recipient receives email with accept link
+
+### Files Modified
+
+- `infrastructure/lib/api-stack.ts` (email routes + environment variables)
+- `backend/functions/family/index.js` (email integration)
+- `CHANGELOG.md` (version 1.9.101)
+- `DEVELOPMENT_LOG.md` (this entry)
+- `README.md` (pending)
+- `docs/development-status.md` (pending)
+
+### Next Steps
+
+- Deploy changes to dev environment
+- Test email sending with real invitation
+- Verify SES configuration (sender email verification)
+- Update remaining documentation files
+
 ## 2026-02-04 - CloudFormation Export Conflict Resolution (Session 120)
 
 ### Session Summary

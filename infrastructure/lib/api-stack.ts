@@ -88,6 +88,9 @@ export class ApiStack extends cdk.Stack {
     // Create API Gateway with proper configuration
     this.api = this.createApiGateway(props.userPool);
 
+    // Update Family Lambda with API URL for email service calls
+    this.functions.familyHandler.addEnvironment('API_URL', this.api.url);
+
     // Set up API routes and integrations
     this.setupApiRoutes();
 
@@ -211,6 +214,10 @@ export class ApiStack extends cdk.Stack {
       code: lambda.Code.fromAsset('../backend/functions/family'),
       handler: 'index.handler',
       description: 'BudgetBuddy family handler for shared accounts, invitations, and member management',
+      environment: {
+        ...commonEnvironment,
+        WEB_APP_URL: 'https://app.budgetbuddy.com',
+      },
     });
 
     /**
@@ -975,6 +982,25 @@ export class ApiStack extends cdk.Stack {
     emailHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.emailHandler), {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'EmailHealthCheck',
+    });
+
+    // Email sending routes (protected)
+    const sendInvitationResource = emailResource.addResource('send-invitation');
+    sendInvitationResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+      authorizer,
+      operationName: 'SendInvitationEmail',
+    });
+
+    const sendRemovalResource = emailResource.addResource('send-removal');
+    sendRemovalResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+      authorizer,
+      operationName: 'SendRemovalEmail',
+    });
+
+    const sendAcceptanceResource = emailResource.addResource('send-acceptance');
+    sendAcceptanceResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+      authorizer,
+      operationName: 'SendAcceptanceEmail',
     });
 
     // AI routes (separate from budget for health checks)

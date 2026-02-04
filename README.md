@@ -17,6 +17,23 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
+### Recent Achievements (2026-02-04)
+
+- 🔧 **FAMILY INVITATION EMAIL INTEGRATION** - Email sending for family invitations
+  - **Email API Routes**: Added `/email/send-invitation`, `/email/send-removal`, `/email/send-acceptance` endpoints
+  - **Family Lambda Integration**: Integrated email service call in invitation creation flow
+  - **Email Flow**: Invitation → DynamoDB → Email Service → SES → Recipient inbox
+  - **Graceful Error Handling**: Invitation succeeds even if email fails
+  - **Professional Templates**: HTML email with BudgetBuddy branding, inviter details, accept URL
+  - **Impact**: Users now receive invitation emails in their inbox (fixes dmytro.malyk@gmail.com issue)
+
+- 📚 **INFRASTRUCTURE DOCUMENTATION** - CDK Cross-Stack Reference Guidelines
+  - **Steering Update**: Added comprehensive CDK cross-stack reference rules to `.kiro/steering/structure.md`
+  - **Problem Documented**: Lambda Layer export conflicts when code changes (3 occurrences: SharedLayer, AuthSharedLayer, CommonLayer)
+  - **Solution Pattern**: Each stack creates its own layer from same source to avoid CloudFormation export dependencies
+  - **Guidelines**: Clear rules on what CAN be shared (DynamoDB, Cognito, S3, API Gateway) vs NEVER export (Lambda Layers, Functions)
+  - **Impact**: Prevents repeating the same cross-stack reference issue in future CDK development
+
 ### Recent Achievements (2026-02-03)
 
 - 🧪 **TEST COVERAGE IMPROVEMENT** - Week 2 test creation tasks completed

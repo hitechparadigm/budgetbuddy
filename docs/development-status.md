@@ -1,10 +1,79 @@
 # Development Status - BudgetBuddy
 
 **Last Updated**: 2026-02-04
-**Current Phase**: AI-Powered Bill Reminders and Budget Planning - Frontend Implementation
+**Current Phase**: Family Invitation Email Integration
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - AI Bill Reminders Frontend (Session 119)
+## ✨ LATEST - Family Invitation Email Integration (Session 121)
+
+### Email Integration Complete ✅
+
+**Status**: Family invitation emails now working
+
+**Completed Work**:
+
+1. ✅ **Email API Routes**
+   - Added `/email/send-invitation` POST endpoint (protected)
+   - Added `/email/send-removal` POST endpoint (protected)
+   - Added `/email/send-acceptance` POST endpoint (protected)
+   - All routes require Cognito authentication
+
+2. ✅ **Family Lambda Integration**
+   - Integrated email service call in `handleInvite()` function
+   - Fetches inviter user details from DynamoDB
+   - Constructs accept URL with invitation token
+   - Makes HTTP call to email service with JWT authentication
+   - Graceful error handling - invitation succeeds even if email fails
+
+3. ✅ **Infrastructure Updates**
+   - Updated `api-stack.ts` to add email routes
+   - Added `API_URL` environment variable to Family Lambda
+   - Added `WEB_APP_URL` environment variable to Family Lambda
+
+**Email Flow**:
+
+1. User clicks "Send Invitation" in Family Settings
+2. Family Lambda creates invitation record in DynamoDB
+3. Family Lambda fetches inviter details from DynamoDB
+4. Family Lambda calls Email Lambda via API Gateway
+5. Email Lambda sends invitation email via SES
+6. Recipient receives email with accept link
+
+**Impact**: Fixes issue where family invitations were created but emails never sent. Users now receive invitation emails in their inbox.
+
+**Files Modified**:
+
+- `infrastructure/lib/api-stack.ts`
+- `backend/functions/family/index.js`
+
+## Infrastructure Documentation (Session 120)
+
+### CDK Cross-Stack Reference Guidelines ✅
+
+**Status**: Steering documentation updated with comprehensive guidelines
+
+**Completed Work**:
+
+1. ✅ **Steering Documentation Update**
+   - Added "CDK Cross-Stack Reference Rules (CRITICAL)" section to `.kiro/steering/structure.md`
+   - Documents Lambda Layer export conflict problem and solution
+   - Provides clear examples of wrong vs correct CDK patterns
+   - Lists what CAN be shared vs what should NEVER be exported
+   - Includes lessons learned from 3 occurrences (SharedLayer, AuthSharedLayer, CommonLayer)
+
+2. ✅ **Problem Documentation**
+   - When Lambda layer code changes, CDK creates new layer version with new export
+   - CloudFormation cannot update exports in use by dependent stacks
+   - Results in deployment failure
+
+3. ✅ **Solution Pattern**
+   - Each stack creates its own layer from same source code
+   - Avoids CloudFormation export dependencies
+   - Example: `lambda.Code.fromAsset('../backend/layers/common')` in each stack
+
+**Impact**: Prevents repeating the same cross-stack reference issue in future CDK development
+
+## AI Bill Reminders Frontend (Session 119)
 
 ### Frontend Implementation Complete ✅
 
