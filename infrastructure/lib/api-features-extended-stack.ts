@@ -444,6 +444,13 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       operationName: 'DetectPatterns',
     });
 
+    // Manual pattern creation endpoint
+    const patternsManualResource = patternsResource.addResource('manual');
+    patternsManualResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
+      authorizer,
+      operationName: 'CreateManualPattern',
+    });
+
     patternsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.patternDetectionHandler), {
       authorizer,
       operationName: 'GetPatterns',
@@ -477,6 +484,10 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
     suggestionsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.budgetPlanningHandler), {
       authorizer,
       operationName: 'GenerateBudgetSuggestions',
+    });
+    suggestionsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetPlanningHandler), {
+      authorizer,
+      operationName: 'GetBudgetSuggestions',
     });
 
     const applyResource = budgetResource.addResource('apply');
