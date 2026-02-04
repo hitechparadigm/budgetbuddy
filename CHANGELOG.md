@@ -1,5 +1,47 @@
 # Changelog
 
+## [1.9.102] - 2026-02-04
+
+### ✨ Family Invitation Management Features (Session 122)
+
+- **New Backend Endpoints**
+  - Added `GET /family/invitations` - List all pending invitations for the family (primary only)
+  - Added `POST /family/invitations/:id/resend` - Resend invitation email with new token (primary only)
+  - Added `DELETE /family/invitations/:id` - Revoke/cancel pending invitation (primary only)
+
+- **Backend Enhancements**
+  - `handleGetInvitations()` - Query and return all invitations for a family
+  - `handleResendInvitation()` - Generate new token, update invitation, resend email
+  - `handleRevokeInvitation()` - Delete invitation record from DynamoDB
+  - All endpoints enforce primary user role requirement
+  - Proper error handling for expired invitations, missing invitations, and email failures
+
+- **Frontend Updates**
+  - Updated `FamilySettings.tsx` to display pending invitations section
+  - Added "Pending Invitations" UI showing email, role, sent date, expiration date
+  - Added "Resend" button to regenerate token and resend email
+  - Added "Cancel" button to revoke invitation
+  - Updated `loadFamilyMembers()` to fetch invitations separately (primary users only)
+  - Added `handleResendInvitation()` and `handleRevokeInvitation()` functions
+  - Success/error messages for all invitation management operations
+
+- **Developer Tools**
+  - Created `scripts/fix-stuck-invitation.js` - Manual script to remove stuck invitations from DynamoDB
+  - Created `scripts/test-email-templates.js` - Test email template generation without AWS SES
+  - Enhanced `scripts/test-lambda-local.js` with email Lambda testing support
+  - Updated `docs/localstack-guide.md` with Windows troubleshooting for LocalStack issues
+
+- **Requirements Updates**
+  - Added Requirement 3A: Invitation Management and Tracking
+  - Updated Requirement 3 with acceptance criteria 8-11 for invitation management
+  - Added tasks 10.1-10.7 for invitation management implementation
+
+- **Problem Solved**
+  - **Issue**: Users couldn't track pending invitations or resend failed emails
+  - **Issue**: Stuck invitations blocked sending new invitations to the same email
+  - **Solution**: Complete invitation management UI with list, resend, and cancel capabilities
+  - **Impact**: Users can now see who they've invited, resend emails if not received, and cancel invitations
+
 ## [1.9.101] - 2026-02-04
 
 ### 🔧 Family Invitation Email Integration (Session 121)

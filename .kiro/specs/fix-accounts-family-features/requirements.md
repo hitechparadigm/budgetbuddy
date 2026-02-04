@@ -118,6 +118,24 @@ The current implementation follows AWS serverless best practices with some areas
 5. THE System SHALL prevent duplicate pending invitations to the same email address
 6. THE System SHALL enforce the family member limit (max 2 editors: primary + spouse)
 7. IF the family is full for editor roles, THEN THE System SHALL return a clear error message
+8. WHEN an invitation email fails to send, THE System SHALL still create the invitation record and allow resending
+9. THE System SHALL provide an endpoint to list all pending invitations for the family
+10. THE System SHALL provide an endpoint to resend invitation emails
+11. THE System SHALL provide an endpoint to revoke/cancel pending invitations
+
+### Requirement 3A: Invitation Management and Tracking
+
+**User Story:** As a primary account holder, I want to see and manage pending invitations, so that I can track who I've invited and resend or cancel invitations as needed.
+
+#### Acceptance Criteria
+
+1. WHEN a primary user views family settings, THE System SHALL display a list of all pending invitations
+2. THE pending invitations list SHALL show: email address, role, sent date, expiration date, and status
+3. WHEN a primary user clicks "Resend" on a pending invitation, THE System SHALL generate a new token and resend the email
+4. WHEN a primary user clicks "Cancel" on a pending invitation, THE System SHALL delete the invitation record
+5. WHEN an invitation is resent, THE System SHALL update the invitation with a new token but keep the same expiration date
+6. WHEN an invitation is cancelled, THE System SHALL allow sending a new invitation to the same email address
+7. THE System SHALL display success/error messages for resend and cancel operations
 
 ### Requirement 4: Fix Family Invitation Accept Flow
 

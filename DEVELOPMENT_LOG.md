@@ -1,5 +1,82 @@
 # Development Log
 
+## 2026-02-04 - Family Invitation Management Features (Session 122)
+
+### Session Summary
+
+**Duration**: 2 hours (autonomous mode)
+**Focus**: Add invitation tracking, resend, and cancel capabilities
+**Outcome**: Complete invitation management system with UI and backend endpoints
+
+### Work Completed
+
+1. **Backend Endpoints**:
+   - Added `GET /family/invitations` - List pending invitations
+   - Added `POST /family/invitations/:id/resend` - Resend invitation email
+   - Added `DELETE /family/invitations/:id` - Revoke invitation
+   - All endpoints enforce primary user role
+   - Proper validation and error handling
+
+2. **Frontend Updates**:
+   - Added "Pending Invitations" section to FamilySettings component
+   - Displays email, role, sent date, expiration date for each invitation
+   - "Resend" button generates new token and resends email
+   - "Cancel" button revokes invitation
+   - Updated loadFamilyMembers() to fetch invitations separately
+   - Success/error messages for all operations
+
+3. **Developer Tools**:
+   - Created `scripts/fix-stuck-invitation.js` - Remove stuck invitations manually
+   - Created `scripts/test-email-templates.js` - Test email templates locally
+   - Enhanced `scripts/test-lambda-local.js` with email Lambda support
+   - Updated LocalStack documentation with Windows troubleshooting
+
+4. **Documentation**:
+   - Updated requirements.md with Requirement 3A (Invitation Management)
+   - Updated tasks.md with tasks 10.1-10.7
+   - Updated CHANGELOG.md with session 122 entry
+   - Added comprehensive comments to all new functions
+
+### Problem Solved
+
+**Issue 1**: User couldn't see pending invitations - no way to track who was invited
+
+**Issue 2**: Stuck invitations blocked resending to same email ("Pending invitation already exists")
+
+**Issue 3**: No way to cancel invitations if email was wrong or user changed mind
+
+**Solution**:
+
+- Complete invitation management UI showing all pending invitations
+- Resend functionality with new token generation
+- Cancel functionality to remove invitations
+- Manual fix script for stuck invitations
+
+### Technical Decisions
+
+1. **Separate Invitations Endpoint**: Created dedicated `/family/invitations` endpoint instead of including in `/family/members` response
+   - Reason: Cleaner separation of concerns, only primary users need invitations
+   - Benefit: Reduces payload size for non-primary users
+
+2. **New Token on Resend**: Generate new token when resending instead of reusing original
+   - Reason: Security best practice - old token may have been compromised
+   - Benefit: Each resend creates fresh, secure token
+
+3. **Keep Same Expiration**: Don't extend expiration date when resending
+   - Reason: Prevents indefinite pending invitations
+   - Benefit: Forces cleanup of old invitations after 7 days
+
+4. **Graceful Email Failure**: Invitation record created even if email fails
+   - Reason: User can resend later without losing invitation
+   - Benefit: Better user experience, no data loss
+
+### Next Steps
+
+- Deploy and test invitation management in dev environment
+- Monitor email delivery success rates
+- Consider adding email delivery status tracking
+- Add analytics for invitation acceptance rates
+
 ## 2026-02-04 - Family Invitation Email Integration (Session 121)
 
 ### Session Summary
