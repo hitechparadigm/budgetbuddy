@@ -26,8 +26,7 @@ import { Construct } from 'constructs';
 export interface ApiFeaturesStackProps extends cdk.StackProps {
   table: dynamodb.Table;
   userPool: cognito.UserPool;
-  commonLayer: lambda.LayerVersion;
-  // Note: sharedLayer is now created internally to avoid CloudFormation export dependency issues
+  // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
 }
 
 export class ApiFeaturesStack extends cdk.Stack {
@@ -36,6 +35,15 @@ export class ApiFeaturesStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: ApiFeaturesStackProps) {
     super(scope, id, props);
+
+    // Create own CommonLayer to avoid CloudFormation export dependency issues
+    // This prevents "Cannot update export" errors when the api-stack's CommonLayer is updated
+    const commonLayer = new lambda.LayerVersion(this, 'FeaturesCommonLayer', {
+      layerVersionName: 'budgetbuddy-features-common',
+      code: lambda.Code.fromAsset('../backend/layers/common'),
+      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      description: 'Common dependencies for BudgetBuddy Features API Lambda functions (independent copy)',
+    });
 
     // Create own SharedLayer to avoid CloudFormation export dependency issues
     // This prevents "Cannot update export" errors when the api-stack's SharedLayer is updated
@@ -98,7 +106,7 @@ export class ApiFeaturesStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
-      layers: [props.commonLayer, sharedLayer],
+      layers: [commonLayer, sharedLayer],
       environment: commonEnvironment,
       logRetention: logs.RetentionDays.ONE_WEEK,
     };

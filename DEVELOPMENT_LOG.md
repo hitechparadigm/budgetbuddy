@@ -1,45 +1,54 @@
 # Development Log
 
-## 2026-02-04 - CloudFormation Export Conflict Investigation (Session 120)
+## 2026-02-04 - CloudFormation Export Conflict Resolution (Session 120)
 
 ### Session Summary
 
-**Duration**: 30 minutes
-**Focus**: Investigating and documenting CloudFormation CommonLayer export conflict
-**Outcome**: Issue documented, workaround provided, deployment workflow updated
+**Duration**: 45 minutes
+**Focus**: Resolving CloudFormation CommonLayer export conflict using lessons learned from previous SharedLayer issue
+**Outcome**: Applied proven solution - each stack creates its own layer to avoid cross-stack dependencies
 
 ### Work Completed
 
-1. **Issue Investigation**:
-   - Analyzed CI/CD deployment failure with CommonLayer export conflict
-   - Root cause: CloudFormation cannot update exports that are in use by dependent stacks
-   - Affected stacks: api-features, api-features-extended, notification
+1. **Lessons Learned Applied**:
+   - Reviewed previous SharedLayer export conflict resolution (commits f21b2a9, dfbc103)
+   - Applied same solution: remove cross-stack layer references
+   - Each stack now creates its own CommonLayer and SharedLayer from source
 
-2. **Deployment Workflow Update**:
-   - Modified `.github/workflows/deploy-dev.yml` to deploy dependent stacks first
-   - Added explicit deployment order to handle layer updates
-   - However, this doesn't fully resolve the issue when layer code changes
+2. **Infrastructure Changes**:
+   - **api-features-stack.ts**: Creates own CommonLayer (FeaturesCommonLayer)
+   - **api-features-extended-stack.ts**: Creates own CommonLayer (ExtendedCommonLayer)
+   - **notification-stack.ts**: Creates own CommonLayer (NotificationCommonLayer)
+   - **bin/app.ts**: Removed commonLayer prop from all stack instantiations
 
-3. **Documentation Created**:
-   - Created `.kiro/COMMONLAYER_EXPORT_CONFLICT.md` with:
-     - Detailed issue description
-     - Root cause analysis
-     - Three workaround options (manual update, skip changes, remove cross-stack refs)
-     - Prevention strategies
+3. **Benefits**:
+   - No more CloudFormation export conflicts when layer code changes
+   - Stacks can deploy independently without dependency issues
+   - Each stack has isolated layer versions
+   - Follows proven pattern from SharedLayer resolution
 
-### Known Issue
+### Root Cause (Repeated Issue)
 
-The CommonLayer export conflict is a CloudFormation limitation. When `backend/layers/common` code changes, CDK creates a new layer version with a new export. Dependent stacks still reference the old export, causing deployment failures.
+This was the SAME issue we had with SharedLayer export conflicts. The solution was already documented:
 
-**Workaround**: Deploy dependent stacks first, then API stack. Or avoid CommonLayer changes unless necessary.
+- `.kiro/SHARED_LAYER_EXPORT_ISSUE.md` - Previous resolution
+- Commits f21b2a9, dfbc103 - SharedLayer fix implementation
 
-**Long-term Solution**: Remove cross-stack references and have each stack create its own layer from the same source.
+**Lesson**: When layers are exported and imported across stacks, CloudFormation cannot update them when code changes. Solution: Each stack creates its own layer from the same source.
+
+### Files Modified
+
+- `infrastructure/lib/api-features-stack.ts`
+- `infrastructure/lib/api-features-extended-stack.ts`
+- `infrastructure/lib/notification-stack.ts`
+- `infrastructure/bin/app.ts`
+- `.kiro/COMMONLAYER_EXPORT_CONFLICT.md` (documentation)
 
 ### Next Steps
 
-- Consider implementing long-term solution (remove cross-stack layer references)
-- Document this pattern for other shared resources
-- Monitor for similar issues with SharedLayer
+- Deploy and verify the fix resolves the export conflict
+- Monitor for similar issues with other shared resources
+- Consider documenting this pattern in architecture docs
 
 ## 2026-02-04 - AI Bill Reminders Frontend Implementation (Session 119)
 
