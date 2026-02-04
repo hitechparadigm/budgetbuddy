@@ -320,21 +320,31 @@ async function handleInvite(event, userId, familyId, familyRole) {
     }
 
     // Check for existing pending invitation for this email
+    // Build query parameters conditionally based on whether familyId is defined
+    const queryParams = {
+      TableName: TABLE_NAME,
+      IndexName: "GSI4",
+      KeyConditionExpression: "GSI4PK = :email",
+      ExpressionAttributeNames: {
+        "#status": "status",
+      },
+      ExpressionAttributeValues: {
+        ":email": `INVITATION#${email.toLowerCase()}`,
+        ":pending": "pending",
+      },
+    };
+
+    // Only add familyId filter if it's defined
+    if (familyId) {
+      queryParams.FilterExpression =
+        "#status = :pending AND familyId = :familyId";
+      queryParams.ExpressionAttributeValues[":familyId"] = familyId;
+    } else {
+      queryParams.FilterExpression = "#status = :pending";
+    }
+
     const existingInvitations = await dynamodb.send(
-      new QueryCommand({
-        TableName: TABLE_NAME,
-        IndexName: "GSI4",
-        KeyConditionExpression: "GSI4PK = :email",
-        FilterExpression: "#status = :pending AND familyId = :familyId",
-        ExpressionAttributeNames: {
-          "#status": "status",
-        },
-        ExpressionAttributeValues: {
-          ":email": `INVITATION#${email.toLowerCase()}`,
-          ":pending": "pending",
-          ":familyId": familyId,
-        },
-      }),
+      new QueryCommand(queryParams),
     );
 
     if (existingInvitations.Items && existingInvitations.Items.length > 0) {
