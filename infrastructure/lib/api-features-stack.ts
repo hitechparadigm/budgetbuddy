@@ -280,6 +280,22 @@ export class ApiFeaturesStack extends cdk.Stack {
       description: 'BudgetBuddy debt payoff handler for debt tracking, snowball/avalanche calculations, and payment recording',
     });
 
+    // Email Lambda
+    this.functions.emailHandler = new lambda.Function(this, 'EmailHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-email-features',
+      code: lambda.Code.fromAsset('../backend/functions/email'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy email handler for family invitations and notifications via SES',
+    });
+
+    // Grant Email Lambda permission to send emails via SES
+    this.functions.emailHandler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['ses:SendEmail', 'ses:SendRawEmail'],
+      resources: ['*'],
+    }));
+
     // Note: Insights, Receipt, Pattern Detection, and Budget Planning Lambdas
     // have been moved to ApiFeaturesExtendedStack to stay under CloudFormation's 500 resource limit
   }
@@ -308,6 +324,9 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Debt Payoff routes
     this.setupDebtPayoffRoutes(authorizer);
+
+    // Email routes
+    this.setupEmailRoutes(authorizer);
 
     // Note: Insights, Receipt, Pattern Detection, and Budget Planning routes
     // have been moved to ApiFeaturesExtendedStack
@@ -736,6 +755,38 @@ export class ApiFeaturesStack extends cdk.Stack {
     debtPaymentResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
       authorizer,
       operationName: 'RecordDebtPayment',
+    });
+  }
+
+  private setupEmailRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const emailResource = this.api.root.addResource('email');
+
+    // Health endpoint (public)
+    const emailHealthResource = emailResource.addResource('health');
+    emailHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'EmailHealthCheck',
+    });
+
+    // Send invitation email (protected)
+    const sendInvitationResource = emailResource.addResource('send-invitation');
+    sendInvitationResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+      authorizer,
+      operationName: 'SendInvitationEmail',
+    });
+
+    // Send removal notification email (protected)
+    const sendRemovalResource = emailResource.addResource('send-removal');
+    sendRemovalResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+      authorizer,
+      operationName: 'SendRemovalEmail',
+    });
+
+    // Send acceptance notification email (protected)
+    const sendAcceptanceResource = emailResource.addResource('send-acceptance');
+    sendAcceptanceResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+      authorizer,
+      operationName: 'SendAcceptanceEmail',
     });
   }
 }
