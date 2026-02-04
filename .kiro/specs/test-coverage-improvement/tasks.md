@@ -114,7 +114,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - **Property 10: Bank Import Data Integrity**
     - **Validates: Requirements 8.6**
 
-  - [ ] 3.6 Create goals journey E2E test
+  - [x] 3.6 Create goals journey E2E test
     - Create `tests/e2e/goals-journey.test.js`
     - Test savings goal creation → monthly contribution calculation
     - Test debt payoff goal → timeline calculation
