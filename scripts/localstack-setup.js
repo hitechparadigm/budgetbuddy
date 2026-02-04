@@ -5,12 +5,11 @@
  * for local development and testing.
  */
 
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const {
-  DynamoDBDocumentClient,
+  DynamoDBClient,
   CreateTableCommand,
-  PutCommand,
-} = require("@aws-sdk/lib-dynamodb");
+} = require("@aws-sdk/client-dynamodb");
+const { DynamoDBDocumentClient, PutCommand } = require("@aws-sdk/lib-dynamodb");
 
 // LocalStack endpoint
 const LOCALSTACK_ENDPOINT = "http://localhost:4566";
