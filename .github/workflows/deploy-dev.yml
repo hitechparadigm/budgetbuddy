@@ -137,30 +137,31 @@ jobs:
         run: |
           echo "Deploying BudgetBuddy infrastructure to development environment..."
 
-          # Deploy stacks in specific order to break CloudFormation export dependencies
-          # The api-features stack previously imported SharedLayer from api stack
-          # We must deploy api-features first (which now creates its own SharedLayer)
-          # Then api can remove the export
+          # Deploy stacks in specific order to handle CloudFormation export dependencies
+          # When CommonLayer version changes in api stack, dependent stacks must be deployed first
+          # This allows them to continue using the old layer while api stack updates
 
-          echo "Step 1: Deploying api-features stack first to remove SharedLayer import..."
+          echo "Step 1: Deploying base stacks (database, auth, hosting)..."
+          npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-database \
+            budgetbuddy-${{ env.ENVIRONMENT }}-auth \
+            budgetbuddy-${{ env.ENVIRONMENT }}-hosting \
+            budgetbuddy-${{ env.ENVIRONMENT }}-auth-onboarding \
+            --require-approval never \
+            --context environment=${{ env.ENVIRONMENT }} || echo "Base stacks deployment may have failed, continuing..."
+
+          echo "Step 2: Deploying dependent stacks (api-features, api-features-extended, notification)..."
           npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api-features \
+            budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended \
+            budgetbuddy-${{ env.ENVIRONMENT }}-notification \
             --require-approval never \
-            --context environment=${{ env.ENVIRONMENT }} \
-            --exclusively || echo "api-features deployment may have failed, continuing..."
+            --context environment=${{ env.ENVIRONMENT }} || echo "Dependent stacks deployment may have failed, continuing..."
 
-          echo "Step 2: Deploying api-features-extended stack..."
-          npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended \
+          echo "Step 3: Deploying main API stack (may update CommonLayer export)..."
+          npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api \
             --require-approval never \
-            --context environment=${{ env.ENVIRONMENT }} \
-            --exclusively || echo "api-features-extended deployment may have failed, continuing..."
+            --context environment=${{ env.ENVIRONMENT }} || echo "API stack deployment may have failed, continuing..."
 
-          echo "Step 3: Deploying notification stack..."
-          npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-notification \
-            --require-approval never \
-            --context environment=${{ env.ENVIRONMENT }} \
-            --exclusively || echo "notification deployment may have failed, continuing..."
-
-          # Now deploy all remaining stacks (including API which can now remove the export)
+          # Deploy all remaining stacks and generate outputs
           echo "Step 4: Deploying all remaining stacks..."
           npx cdk deploy --all \
             --require-approval never \
