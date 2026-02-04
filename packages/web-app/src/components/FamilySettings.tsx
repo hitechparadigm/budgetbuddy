@@ -59,28 +59,51 @@ export const FamilySettings: React.FC = () => {
         throw new Error("Please log in to view family members");
       }
 
-      const response = await fetch(`${API_BASE}/family/members`, {
+      // Load family members
+      const membersResponse = await fetch(`${API_BASE}/family/members`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!response.ok) {
+      if (!membersResponse.ok) {
         throw new Error("Failed to load family members");
       }
 
-      const data = await response.json();
-      setMembers(data.members || []);
-      setPendingInvitations(data.pendingInvitations || []);
+      const membersData = await membersResponse.json();
+      setMembers(membersData.members || []);
 
-      // Get current user role from token or response
+      // Load pending invitations (only for primary users)
       const userData = localStorage.getItem("budgetbuddy_user");
       const currentUserId = userData ? JSON.parse(userData).userId : null;
-      const currentUser = data.members.find(
+      const currentUser = membersData.members.find(
         (m: FamilyMember) => m.userId === currentUserId,
       );
+
       if (currentUser) {
         setCurrentUserRole(currentUser.role);
+
+        // Only fetch invitations if user is primary
+        if (currentUser.role === "primary") {
+          try {
+            const invitationsResponse = await fetch(
+              `${API_BASE}/family/invitations`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              },
+            );
+
+            if (invitationsResponse.ok) {
+              const invitationsData = await invitationsResponse.json();
+              setPendingInvitations(invitationsData.invitations || []);
+            }
+          } catch (invErr) {
+            console.error("Failed to load invitations:", invErr);
+            // Don't fail the whole load if invitations fail
+          }
+        }
       }
     } catch (err) {
       setError(
@@ -249,6 +272,88 @@ export const FamilySettings: React.FC = () => {
       await loadFamilyMembers();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to leave family");
+    }
+  };
+
+  const handleResendInvitation = async (
+    invitationId: string,
+    email: string,
+  ) => {
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const token = localStorage.getItem("budgetbuddy_id_token");
+      if (!token) {
+        throw new Error("Please log in to resend invitations");
+      }
+
+      const response = await fetch(
+        `${API_BASE}/family/invitations/${invitationId}/resend`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to resend invitation");
+      }
+
+      setSuccess(`Invitation resent to ${email}!`);
+      await loadFamilyMembers();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to resend invitation",
+      );
+    }
+  };
+
+  const handleRevokeInvitation = async (
+    invitationId: string,
+    email: string,
+  ) => {
+    if (
+      !confirm(
+        `Are you sure you want to cancel the invitation to ${email}? They will not be able to join your family using this invitation.`,
+      )
+    ) {
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const token = localStorage.getItem("budgetbuddy_id_token");
+      if (!token) {
+        throw new Error("Please log in to revoke invitations");
+      }
+
+      const response = await fetch(
+        `${API_BASE}/family/invitations/${invitationId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to revoke invitation");
+      }
+
+      setSuccess(`Invitation to ${email} has been cancelled.`);
+      await loadFamilyMembers();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to revoke invitation",
+      );
     }
   };
 
@@ -521,6 +626,36 @@ export const FamilySettings: React.FC = () => {
                       {new Date(invitation.expiresAt).toLocaleDateString()}
                     </div>
                   </div>
+
+                  {/* Invitation Actions */}
+                  {currentUserRole === "primary" && (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() =>
+                          handleResendInvitation(
+                            invitation.invitationId,
+                            invitation.email,
+                          )
+                        }
+                        className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 border border-blue-300 rounded-md"
+                        title="Resend invitation email"
+                      >
+                        Resend
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleRevokeInvitation(
+                            invitation.invitationId,
+                            invitation.email,
+                          )
+                        }
+                        className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 border border-red-300 rounded-md"
+                        title="Cancel invitation"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -184,6 +184,35 @@ exports.handler = async (event) => {
       return await handleLeaveFamily(userId, familyId, familyRole);
     }
 
+    if (httpMethod === "GET" && path === "/family/invitations") {
+      return await handleGetInvitations(familyId, familyRole);
+    }
+
+    if (
+      httpMethod === "POST" &&
+      path.startsWith("/family/invitations/") &&
+      path.endsWith("/resend")
+    ) {
+      const invitationId = path.split("/")[3];
+      return await handleResendInvitation(
+        event,
+        userId,
+        familyId,
+        familyRole,
+        invitationId,
+      );
+    }
+
+    if (httpMethod === "DELETE" && path.startsWith("/family/invitations/")) {
+      const invitationId = pathParameters?.invitationId || path.split("/")[3];
+      return await handleRevokeInvitation(
+        userId,
+        familyId,
+        familyRole,
+        invitationId,
+      );
+    }
+
     return errorResponse(404, "Endpoint not found");
   } catch (error) {
     console.error("Error in family handler:", error);
@@ -1046,6 +1075,279 @@ async function handleLeaveFamily(userId, familyId, familyRole) {
   } catch (error) {
     console.error("Error in handleLeaveFamily:", error);
     return errorResponse(500, "Failed to leave family", error.message);
+  }
+}
+
+/**
+ * Get all pending invitations for the family
+ *
+ * Requirements:
+ * - User must be primary
+ * - Return list of pending invitations
+ */
+async function handleGetInvitations(familyId, familyRole) {
+  try {
+    // Validate user is primary
+    if (familyRole !== "primary") {
+      return errorResponse(403, "Only primary user can view invitations");
+    }
+
+    // Query all invitations for this family
+    const result = await dynamodb.send(
+      new QueryCommand({
+        TableName: TABLE_NAME,
+        IndexName: "GSI4",
+        KeyConditionExpression: "begins_with(GSI4PK, :invPrefix)",
+        FilterExpression: "familyId = :familyId",
+        ExpressionAttributeValues: {
+          ":invPrefix": "INVITATION#",
+          ":familyId": familyId,
+        },
+      }),
+    );
+
+    const invitations = (result.Items || []).map((inv) => ({
+      invitationId: inv.invitationId,
+      email: inv.invitedEmail,
+      role: inv.role,
+      status: inv.status,
+      createdAt: inv.createdAt,
+      expiresAt: inv.expiresAt,
+    }));
+
+    return successResponse({
+      familyId,
+      invitations,
+      count: invitations.length,
+    });
+  } catch (error) {
+    console.error("Error in handleGetInvitations:", error);
+    return errorResponse(500, "Failed to get invitations", error.message);
+  }
+}
+
+/**
+ * Resend an invitation email
+ *
+ * Requirements:
+ * - User must be primary
+ * - Invitation must exist and be pending
+ * - Resend the email
+ */
+async function handleResendInvitation(
+  event,
+  userId,
+  familyId,
+  familyRole,
+  invitationId,
+) {
+  try {
+    // Validate user is primary
+    if (familyRole !== "primary") {
+      return errorResponse(403, "Only primary user can resend invitations");
+    }
+
+    // Get the invitation
+    const invResult = await dynamodb.send(
+      new GetCommand({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `INVITATION#${invitationId}`,
+          SK: "METADATA",
+        },
+      }),
+    );
+
+    if (!invResult.Item) {
+      return errorResponse(404, "Invitation not found");
+    }
+
+    const invitation = invResult.Item;
+
+    // Verify invitation belongs to this family
+    if (invitation.familyId !== familyId) {
+      return errorResponse(403, "Invitation does not belong to your family");
+    }
+
+    // Check if invitation is still pending
+    if (invitation.status !== "pending") {
+      return errorResponse(
+        400,
+        `Cannot resend invitation with status: ${invitation.status}`,
+      );
+    }
+
+    // Check if invitation is expired
+    const now = new Date();
+    const expiresAt = new Date(invitation.expiresAt);
+    if (now > expiresAt) {
+      return errorResponse(
+        400,
+        "Invitation has expired. Please create a new one.",
+      );
+    }
+
+    // Get inviter user details for email
+    const inviterResult = await dynamodb.send(
+      new GetCommand({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `USER#${userId}`,
+          SK: "PROFILE",
+        },
+      }),
+    );
+
+    const inviter = inviterResult.Item || {};
+    const inviterName =
+      `${inviter.firstName || ""} ${inviter.lastName || ""}`.trim() ||
+      "BudgetBuddy User";
+    const inviterEmail = inviter.email || "noreply@budgetbuddy.com";
+
+    // We need to get the original token - but it's hashed!
+    // Generate a new token and update the invitation
+    const newToken = generateSecureToken();
+    const hashedToken = hashToken(newToken);
+
+    // Update invitation with new token
+    await dynamodb.send(
+      new UpdateCommand({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: invitation.PK,
+          SK: invitation.SK,
+        },
+        UpdateExpression: "SET #token = :token, updatedAt = :updatedAt",
+        ExpressionAttributeNames: {
+          "#token": "token",
+        },
+        ExpressionAttributeValues: {
+          ":token": hashedToken,
+          ":updatedAt": new Date().toISOString(),
+        },
+      }),
+    );
+
+    // Construct accept URL with new token
+    const acceptUrl = `${process.env.WEB_APP_URL || "https://app.budgetbuddy.com"}/accept-invitation?token=${newToken}`;
+
+    // Send invitation email
+    const emailPayload = {
+      invitedEmail: invitation.invitedEmail,
+      inviterName,
+      inviterEmail,
+      role: invitation.role.charAt(0).toUpperCase() + invitation.role.slice(1),
+      acceptUrl,
+      expiresAt: invitation.expiresAt,
+    };
+
+    console.log("Resending invitation email:", emailPayload);
+
+    const apiUrl =
+      process.env.EMAIL_API_URL ||
+      "https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1";
+
+    const authHeader =
+      event.headers?.Authorization || event.headers?.authorization;
+
+    try {
+      const emailResponse = await fetch(`${apiUrl}/email/send-invitation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authHeader ? { Authorization: authHeader } : {}),
+        },
+        body: JSON.stringify(emailPayload),
+      });
+
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+        console.error("Failed to resend invitation email:", errorText);
+        return errorResponse(500, "Failed to send email. Please try again.");
+      }
+
+      console.log("Invitation email resent successfully");
+    } catch (emailError) {
+      console.error("Error resending invitation email:", emailError);
+      return errorResponse(500, "Failed to send email. Please try again.");
+    }
+
+    return successResponse({
+      invitationId,
+      email: invitation.invitedEmail,
+      message: "Invitation resent successfully",
+    });
+  } catch (error) {
+    console.error("Error in handleResendInvitation:", error);
+    return errorResponse(500, "Failed to resend invitation", error.message);
+  }
+}
+
+/**
+ * Revoke/cancel a pending invitation
+ *
+ * Requirements:
+ * - User must be primary
+ * - Invitation must exist
+ * - Delete the invitation
+ */
+async function handleRevokeInvitation(
+  userId,
+  familyId,
+  familyRole,
+  invitationId,
+) {
+  try {
+    // Validate user is primary
+    if (familyRole !== "primary") {
+      return errorResponse(403, "Only primary user can revoke invitations");
+    }
+
+    // Get the invitation
+    const invResult = await dynamodb.send(
+      new GetCommand({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: `INVITATION#${invitationId}`,
+          SK: "METADATA",
+        },
+      }),
+    );
+
+    if (!invResult.Item) {
+      return errorResponse(404, "Invitation not found");
+    }
+
+    const invitation = invResult.Item;
+
+    // Verify invitation belongs to this family
+    if (invitation.familyId !== familyId) {
+      return errorResponse(403, "Invitation does not belong to your family");
+    }
+
+    // Delete the invitation
+    await dynamodb.send(
+      new DeleteCommand({
+        TableName: TABLE_NAME,
+        Key: {
+          PK: invitation.PK,
+          SK: invitation.SK,
+        },
+      }),
+    );
+
+    console.log(
+      `User ${userId} revoked invitation ${invitationId} for ${invitation.invitedEmail}`,
+    );
+
+    return successResponse({
+      message: "Invitation revoked successfully",
+      invitationId,
+      email: invitation.invitedEmail,
+    });
+  } catch (error) {
+    console.error("Error in handleRevokeInvitation:", error);
+    return errorResponse(500, "Failed to revoke invitation", error.message);
   }
 }
 

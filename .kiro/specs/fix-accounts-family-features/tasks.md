@@ -118,6 +118,45 @@ This implementation plan addresses critical integration bugs in Manual Accounts 
     - Document family invitation fixes
     - _Requirements: N/A (documentation)_
 
+- [ ] 10. Add Invitation Management Features
+  - [ ] 10.1 Add GET /family/invitations endpoint
+    - Return list of pending invitations for the family
+    - Only accessible by primary user
+    - _Requirements: 3.9, 3A.1, 3A.2_
+
+  - [ ] 10.2 Add POST /family/invitations/:id/resend endpoint
+    - Generate new token for existing invitation
+    - Resend invitation email
+    - Only accessible by primary user
+    - _Requirements: 3.10, 3A.3, 3A.5_
+
+  - [ ] 10.3 Add DELETE /family/invitations/:id endpoint
+    - Revoke/cancel pending invitation
+    - Only accessible by primary user
+    - _Requirements: 3.11, 3A.4, 3A.6_
+
+  - [ ] 10.4 Update FamilySettings component to display pending invitations
+    - Show list of pending invitations with email, role, dates
+    - Add "Resend" and "Cancel" buttons for each invitation
+    - _Requirements: 3A.1, 3A.2, 3A.7_
+
+  - [ ] 10.5 Add resend and revoke handlers in FamilySettings
+    - Implement handleResendInvitation function
+    - Implement handleRevokeInvitation function
+    - Show success/error messages
+    - _Requirements: 3A.3, 3A.4, 3A.7_
+
+  - [ ] 10.6 Create fix-stuck-invitation.js script
+    - Script to manually remove stuck invitations from DynamoDB
+    - Useful for debugging and manual fixes
+    - _Requirements: 3.8_
+
+  - [ ] 10.7 Write integration tests for invitation management
+    - Test listing invitations
+    - Test resending invitations
+    - Test revoking invitations
+    - _Requirements: 3A.1-3A.7_
+
 ## Notes
 
 - All tasks are required for comprehensive bug fixes
@@ -126,3 +165,4 @@ This implementation plan addresses critical integration bugs in Manual Accounts 
 - Property tests validate universal correctness properties
 - Unit tests validate specific examples and edge cases
 - Backend fixes should be deployed before frontend fixes are tested
+- Invitation management features address the issue of stuck invitations when email sending fails
