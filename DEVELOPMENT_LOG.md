@@ -30,7 +30,7 @@
 
 ### Problem Solved
 
-**Issue**: User dmytro.malyk@gmail.com clicked to send family invitation but emails never arrived in inbox.
+**Issue**: User d**\***o.m\*\*\*k@gmail.com clicked to send family invitation but emails never arrived in inbox.
 
 **Root Cause**:
 

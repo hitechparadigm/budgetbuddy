@@ -25,7 +25,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Email Flow**: Invitation → DynamoDB → Email Service → SES → Recipient inbox
   - **Graceful Error Handling**: Invitation succeeds even if email fails
   - **Professional Templates**: HTML email with BudgetBuddy branding, inviter details, accept URL
-  - **Impact**: Users now receive invitation emails in their inbox (fixes dmytro.malyk@gmail.com issue)
+  - **Impact**: Users now receive invitation emails in their inbox (fixes user email delivery issue)
 
 - 📚 **INFRASTRUCTURE DOCUMENTATION** - CDK Cross-Stack Reference Guidelines
   - **Steering Update**: Added comprehensive CDK cross-stack reference rules to `.kiro/steering/structure.md`

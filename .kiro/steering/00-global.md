@@ -112,6 +112,13 @@ Before writing any code:
 - Secrets in AWS Secrets Manager or SSM Parameter Store
 - Encryption at rest and in transit
 - Regular security audits (npm audit, dependency scanning)
+- **PII Protection**: Always mask Personally Identifiable Information (PII) in documentation, logs, and code examples
+  - Emails: `d*****o.m***k@gmail.com` instead of `dmytro.malyk@gmail.com`
+  - Names: `J*** D**` instead of `John Doe`
+  - Phone numbers: `+1-***-***-1234` instead of `+1-555-123-1234`
+  - Addresses: `123 M*** St, C***` instead of `123 Main St, Chicago`
+  - User IDs: `user_abc***xyz` instead of `user_abc123xyz`
+  - Use generic placeholders in code examples: `user@example.com`, `[name]`, `[phone]`, `[address]`
 
 **Testing:**
 
