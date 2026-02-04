@@ -28,6 +28,7 @@ import {
   getRecentCategories,
   type TransactionTemplate,
 } from "../components/TransactionTemplateModal";
+import MarkRecurringModal from "../components/MarkRecurringModal";
 import {
   getCurrentMonthString,
   getTodayString,
@@ -97,6 +98,15 @@ export const BudgetPage: React.FC = () => {
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showRecurringModal, setShowRecurringModal] = useState(false);
+  const [selectedTransactionForRecurring, setSelectedTransactionForRecurring] =
+    useState<{
+      id: string;
+      description: string;
+      amount: number;
+      date: string;
+      categoryName?: string;
+    } | null>(null);
   const [templateModalMode, setTemplateModalMode] = useState<"select" | "save">(
     "select",
   );
@@ -2353,6 +2363,37 @@ export const BudgetPage: React.FC = () => {
                               />
                             </svg>
                           </button>
+                          {/* Mark as Recurring button - only for expenses */}
+                          {!isIncome && (
+                            <button
+                              onClick={() => {
+                                setSelectedTransactionForRecurring({
+                                  id: txn.id,
+                                  description: txn.description,
+                                  amount: txn.amount,
+                                  date: txn.date,
+                                  categoryName: txn.categoryName,
+                                });
+                                setShowRecurringModal(true);
+                              }}
+                              className="p-1 text-gray-400 hover:text-indigo-600 rounded transition-colors flex-shrink-0 opacity-0 group-hover/transaction:opacity-100"
+                              title="Mark as recurring bill"
+                            >
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                />
+                              </svg>
+                            </button>
+                          )}
                         </div>
                       );
                     })}
@@ -2905,6 +2946,20 @@ export const BudgetPage: React.FC = () => {
         isOpen={showTutorial}
         onComplete={handleTutorialComplete}
         onSkip={handleTutorialSkip}
+      />
+
+      {/* Mark as Recurring Modal */}
+      <MarkRecurringModal
+        isOpen={showRecurringModal}
+        onClose={() => {
+          setShowRecurringModal(false);
+          setSelectedTransactionForRecurring(null);
+        }}
+        transaction={selectedTransactionForRecurring}
+        onSuccess={() => {
+          // Optionally reload data or show success message
+        }}
+        currency={currency}
       />
     </div>
   );
