@@ -390,9 +390,72 @@ async function handleInvite(event, userId, familyId, familyRole) {
 
     console.log("Invitation created:", invitationId);
 
-    // TODO: Send email via SES (will be implemented in Phase 4)
-    // For now, we'll just log the token
-    console.log("Invitation token (for testing):", token);
+    // Send invitation email via email service
+    try {
+      // Get inviter user details for email
+      const inviterResult = await dynamodb.send(
+        new GetCommand({
+          TableName: TABLE_NAME,
+          Key: {
+            PK: `USER#${userId}`,
+            SK: "PROFILE",
+          },
+        }),
+      );
+
+      const inviter = inviterResult.Item || {};
+      const inviterName =
+        `${inviter.firstName || ""} ${inviter.lastName || ""}`.trim() ||
+        "BudgetBuddy User";
+      const inviterEmail = inviter.email || "noreply@budgetbuddy.com";
+
+      // Construct accept URL with invitation token
+      const acceptUrl = `${process.env.WEB_APP_URL || "https://app.budgetbuddy.com"}/accept-invitation?token=${token}`;
+
+      // Call email service to send invitation
+      const emailPayload = {
+        invitedEmail: email.toLowerCase(),
+        inviterName,
+        inviterEmail,
+        role: role.charAt(0).toUpperCase() + role.slice(1), // Capitalize role
+        acceptUrl,
+        expiresAt,
+      };
+
+      console.log("Sending invitation email:", emailPayload);
+
+      // Make HTTP call to email service
+      const apiUrl =
+        process.env.API_URL ||
+        "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+
+      // Get JWT token from event headers for authenticated email endpoint
+      const authHeader =
+        event.headers?.Authorization || event.headers?.authorization;
+
+      const emailResponse = await fetch(`${apiUrl}/email/send-invitation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Pass through authorization for authenticated email endpoint
+          ...(authHeader ? { Authorization: authHeader } : {}),
+        },
+        body: JSON.stringify(emailPayload),
+      });
+
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+        console.error("Failed to send invitation email:", errorText);
+        // Don't fail the invitation creation if email fails
+        // Just log the error and continue
+      } else {
+        console.log("Invitation email sent successfully");
+      }
+    } catch (emailError) {
+      console.error("Error sending invitation email:", emailError);
+      // Don't fail the invitation creation if email fails
+      // Just log the error and continue
+    }
 
     // Return invitation details (without hashed token)
     return successResponse(
