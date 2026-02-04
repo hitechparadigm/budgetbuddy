@@ -39,6 +39,76 @@ inclusion: always
 
 **Infrastructure**: One stack per service group (auth, database, api, hosting, monitoring)
 
+## CDK Cross-Stack Reference Rules (CRITICAL)
+
+**NEVER export/import Lambda Layers across stacks** - This causes CloudFormation deployment failures when layer code changes.
+
+### The Problem
+
+When a Lambda layer is exported from one stack and imported by another:
+
+1. Updating layer code creates a new layer version
+2. CloudFormation tries to update the export
+3. Deployment fails: "Cannot update export as it is in use by [dependent stacks]"
+
+### The Solution
+
+**Each stack creates its own layer from the same source:**
+
+```typescript
+// ❌ WRONG - Cross-stack reference
+const apiStack = new ApiStack(app, 'api', { ... });
+const featuresStack = new FeaturesStack(app, 'features', {
+  commonLayer: apiStack.commonLayer  // BAD - creates export dependency
+});
+
+// ✅ CORRECT - Independent layers
+const apiStack = new ApiStack(app, 'api', { ... });
+const featuresStack = new FeaturesStack(app, 'features', {
+  // No layer prop - stack creates its own
+});
+
+// In FeaturesStack constructor:
+const commonLayer = new lambda.LayerVersion(this, 'FeaturesCommonLayer', {
+  code: lambda.Code.fromAsset('../backend/layers/common'),
+  // ... same source, different layer instance
+});
+```
+
+### Lessons Learned
+
+**History of this issue:**
+
+- 2026-01-31: SharedLayer export conflict (resolved in commit f21b2a9)
+- 2026-02-03: AuthSharedLayer export conflict (resolved in commit dfbc103)
+- 2026-02-04: CommonLayer export conflict (resolved - applied same pattern)
+
+**Pattern:** When you see "Cannot update export" errors, the solution is always the same - remove cross-stack references and create independent resources.
+
+### What CAN Be Shared Across Stacks
+
+**Safe to export/import:**
+
+- DynamoDB table references (rarely change)
+- Cognito User Pool references (rarely change)
+- S3 bucket references (rarely change)
+- API Gateway references (rarely change)
+
+**NEVER export/import:**
+
+- Lambda Layers (code changes frequently)
+- Lambda Functions (code changes frequently)
+- Any resource that changes with code updates
+
+### Enforcement
+
+When creating new CDK stacks:
+
+1. Check if you're passing Lambda layers as props
+2. If yes, refactor to create layers internally
+3. Document why in stack comments
+4. Reference this steering file
+
 ## How to Add a Feature
 
 1. **Create Spec**: `.kiro/specs/<feature>/` with requirements.md, design.md, tasks.md
