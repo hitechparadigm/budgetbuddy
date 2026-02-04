@@ -151,7 +151,7 @@ This implementation plan addresses critical integration bugs in Manual Accounts 
     - Useful for debugging and manual fixes
     - _Requirements: 3.8_
 
-  - [ ] 10.7 Write integration tests for invitation management
+  - [x] 10.7 Write integration tests for invitation management
     - Test listing invitations
     - Test resending invitations
     - Test revoking invitations
