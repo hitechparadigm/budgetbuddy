@@ -9,7 +9,7 @@ import { Construct } from 'constructs';
 
 export interface NotificationStackProps extends cdk.StackProps {
   table: dynamodb.Table;
-  commonLayer: lambda.LayerVersion;
+  // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
   expoAccessToken: string;
 }
 
@@ -21,6 +21,14 @@ export class NotificationStack extends cdk.Stack {
 
   constructor(scope: Construct, id: string, props: NotificationStackProps) {
     super(scope, id, props);
+
+    // Create CommonLayer for this stack to avoid CloudFormation export dependency issues
+    const commonLayer = new lambda.LayerVersion(this, 'NotificationCommonLayer', {
+      layerVersionName: 'budgetbuddy-notification-common',
+      code: lambda.Code.fromAsset('../backend/layers/common'),
+      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      description: 'Common dependencies for BudgetBuddy Notification functions',
+    });
 
     // Create SharedLayer for this stack (no longer importing from API stack)
     const sharedLayer = new lambda.LayerVersion(this, 'SharedLayer', {
@@ -35,7 +43,7 @@ export class NotificationStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/notifications'),
-      layers: [props.commonLayer, sharedLayer],
+      layers: [commonLayer, sharedLayer],
       environment: {
         TABLE_NAME: props.table.tableName,
         EXPO_ACCESS_TOKEN: props.expoAccessToken,
@@ -54,7 +62,7 @@ export class NotificationStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/budget-alerts'),
-      layers: [props.commonLayer, sharedLayer],
+      layers: [commonLayer, sharedLayer],
       environment: {
         TABLE_NAME: props.table.tableName,
         NOTIFICATION_FUNCTION_ARN: this.notificationFunction.functionArn,
@@ -77,7 +85,7 @@ export class NotificationStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/daily-reminders'),
-      layers: [props.commonLayer, sharedLayer],
+      layers: [commonLayer, sharedLayer],
       environment: {
         TABLE_NAME: props.table.tableName,
         NOTIFICATION_FUNCTION_ARN: this.notificationFunction.functionArn,
@@ -99,7 +107,7 @@ export class NotificationStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/bills-scheduler'),
-      layers: [props.commonLayer],
+      layers: [commonLayer],
       environment: {
         TABLE_NAME: props.table.tableName,
       },

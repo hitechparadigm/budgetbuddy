@@ -89,28 +89,28 @@ const apiStack = new ApiStack(app, `${stackPrefix}-api`, {
  * API Features Stack - Additional Lambda functions for competitive features
  * Contains Plaid, Reconciliation, and other feature Lambdas
  * Has its own API Gateway to avoid CloudFormation resource limits
- * Creates its own SharedLayer to avoid CloudFormation export dependency issues
+ * Creates its own CommonLayer and SharedLayer to avoid CloudFormation export dependency issues
  */
 const apiFeaturesStack = new ApiFeaturesStack(app, `${stackPrefix}-api-features`, {
   env,
   description: 'BudgetBuddy API features stack with Plaid, Reconciliation, and other feature Lambdas',
   table: databaseStack.table,
   userPool: authStack.userPool,
-  commonLayer: apiStack.commonLayer,
-  // Note: sharedLayer is now created internally by ApiFeaturesStack to avoid CloudFormation export dependency issues
+  // Note: commonLayer and sharedLayer are now created internally by ApiFeaturesStack to avoid CloudFormation export dependency issues
 });
 
 /**
  * API Features Extended Stack - AI-powered features
  * Split from api-features-stack to stay under CloudFormation's 500 resource limit
  * Contains: Insights, Receipt, Pattern Detection, Budget Planning
+ * Creates its own CommonLayer and SharedLayer to avoid CloudFormation export dependency issues
  */
 const apiFeaturesExtendedStack = new ApiFeaturesExtendedStack(app, `${stackPrefix}-api-features-extended`, {
   env,
   description: 'BudgetBuddy Extended API features stack with AI-powered features (Insights, Receipt, Pattern Detection, Budget Planning)',
   table: databaseStack.table,
   userPool: authStack.userPool,
-  commonLayer: apiStack.commonLayer,
+  // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
 });
 
 /**
@@ -125,13 +125,13 @@ const hostingStack = new HostingStack(app, `${stackPrefix}-hosting`, {
 /**
  * Notification Stack - Push notifications and daily reminders
  * Handles device registration, budget alerts, and daily reminders
- * Now creates its own SharedLayer to avoid cross-stack dependency issues
+ * Creates its own CommonLayer and SharedLayer to avoid cross-stack dependency issues
  */
 const notificationStack = new NotificationStack(app, `${stackPrefix}-notification`, {
   env,
   description: 'BudgetBuddy notification infrastructure with Lambda functions for push notifications and reminders',
   table: databaseStack.table,
-  commonLayer: apiStack.commonLayer,
+  // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
   expoAccessToken: process.env.EXPO_ACCESS_TOKEN || 'placeholder-token-configure-in-aws',
 });
 
