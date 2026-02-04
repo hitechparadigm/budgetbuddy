@@ -6,6 +6,11 @@
 
 **Recent Updates**:
 
+- Account Creation & Family Invite Fixes (2026-02-04)
+  - Fixed 500 error when creating accounts: Added generateId.custom() and generateId.account() methods to utils.js
+  - Fixed 500 error when inviting family members: Handle undefined familyId in DynamoDB query to prevent validation errors
+  - Both backend Lambda functions (accounts, family) now working correctly
+  - Deployed to development environment successfully
 - AI-Powered Bill Reminders & Budget Planning frontend complete (2026-02-04)
   - PatternReviewModal.tsx: Pattern review with approve/reject/edit actions
   - BudgetSuggestionsModal.tsx: AI budget suggestions with category selection
