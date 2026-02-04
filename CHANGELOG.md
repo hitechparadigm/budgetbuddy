@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.9.98] - 2026-02-04
+
+### 🤖 AI-Powered Bill Reminders and Budget Planning - Backend Implementation (Session 118)
+
+- **Manual Pattern Creation** (Task 15)
+  - Added `createManualPattern()` to pattern detection service
+  - Added `POST /patterns/manual` endpoint for creating patterns from transactions
+  - Supports all frequency types: weekly, bi-weekly, monthly, quarterly, annual
+  - Auto-approves manual patterns with 100% confidence
+
+- **Pattern Edit Propagation** (Task 16)
+  - Added `updateAssociatedBill()` for propagating pattern edits to bills
+  - Preserves AI metadata during user edits
+  - Maps pattern fields to bill fields correctly
+
+- **Payment Recording for Learning** (Task 17)
+  - Enhanced `markBillPaid` to store payment history
+  - Tracks amount variance and days from due date
+  - Keeps last 12 payments for pattern detection learning
+
+- **Account Deletion Cleanup** (Task 18)
+  - Added `deleteAllPatternsForFamily()` to pattern detection repository
+  - Added `deleteAllSuggestionsForFamily()` to budget planning service
+  - Batch deletion support for DynamoDB
+
+- **Sensitive Data Logging Protection** (Task 19)
+  - Created `log-sanitizer.js` in shared layer
+  - Sanitizes financial data, merchant names, account numbers
+  - Provides `createSanitizedLogger()` wrapper for safe logging
+
+- **CDK Infrastructure Updates** (Task 21)
+  - Added `POST /patterns/manual` route to API Gateway
+  - Added `GET /budget-planning/suggestions` route
+  - Updated api-features-extended-stack.ts
+
+- **API Documentation**
+  - Documented all pattern detection endpoints
+  - Documented budget planning endpoints
+  - Added AI notification types documentation
+
 ## [1.9.97] - 2026-02-03
 
 ### 🧪 Test Coverage Improvement - Week 4 AI Pattern Detection Tests (Session 117)

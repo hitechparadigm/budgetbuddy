@@ -337,11 +337,11 @@ This implementation plan breaks down the AI-powered bill reminders and budget pl
     - Test log format
     - _Requirements: 8.6_
 
-- [ ] 20. Checkpoint - Ensure all tests pass
+- [x] 20. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 21. Update CDK infrastructure stack
-  - [ ] 21.1 Update infrastructure/lib/api-features-stack.ts
+- [x] 21. Update CDK infrastructure stack
+  - [x] 21.1 Update infrastructure/lib/api-features-stack.ts
     - Add pattern-detection Lambda function
     - Add budget-planning Lambda function
     - Add DynamoDB tables (patterns, budget-suggestions)

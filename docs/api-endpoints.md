@@ -1889,3 +1889,278 @@ All services expose health check endpoints:
   "version": "1.0.0"
 }
 ```
+
+---
+
+## AI-Powered Features (v1.3)
+
+### Pattern Detection
+
+AI-powered recurring bill detection from transaction history.
+
+**Base URL**: Extended API Gateway
+
+#### POST /patterns/detect
+
+Analyze transactions and detect recurring payment patterns.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Request Body**:
+
+```json
+{
+  "analysisMonths": 6,
+  "minConfidence": 50,
+  "useAI": true
+}
+```
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "patterns": [
+      {
+        "patternId": "pattern_123",
+        "merchantName": "Netflix",
+        "suggestedBillName": "Netflix Subscription",
+        "averageAmount": 15.99,
+        "frequency": "monthly",
+        "confidenceScore": 95,
+        "nextExpectedDate": "2026-03-01",
+        "explanation": "Detected monthly payment of $15.99 to Netflix. Found 6 occurrences."
+      }
+    ],
+    "transactionsAnalyzed": 150,
+    "patternsDetected": 5
+  },
+  "message": "Pattern detection completed"
+}
+```
+
+#### POST /patterns/manual
+
+Create a manual pattern from a transaction.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Request Body**:
+
+```json
+{
+  "transaction": {
+    "transactionId": "txn_123",
+    "merchant": "Gym Membership",
+    "amount": 50.0,
+    "date": "2026-02-01",
+    "categoryId": "fitness"
+  },
+  "frequency": "monthly"
+}
+```
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "pattern": {
+      "patternId": "pattern_456",
+      "merchantName": "Gym Membership",
+      "suggestedBillName": "Gym Membership Subscription",
+      "averageAmount": 50.0,
+      "frequency": "monthly",
+      "confidenceScore": 100,
+      "status": "approved",
+      "isManual": true
+    }
+  },
+  "message": "Manual pattern created successfully"
+}
+```
+
+#### GET /patterns
+
+Get all detected patterns for the family.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Query Parameters**:
+
+- `status` (optional): Filter by status (pending, approved, rejected, ignored)
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "patterns": [...],
+    "count": 10
+  },
+  "message": "Patterns retrieved successfully"
+}
+```
+
+#### PUT /patterns/{patternId}
+
+Update a pattern (approve, reject, edit).
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Request Body** (approve):
+
+```json
+{
+  "action": "approve",
+  "billId": "bill_123"
+}
+```
+
+**Request Body** (edit):
+
+```json
+{
+  "suggestedBillName": "Updated Name",
+  "averageAmount": 20.0,
+  "frequency": "bi-weekly"
+}
+```
+
+**Response**: `200 OK`
+
+#### DELETE /patterns/{patternId}
+
+Delete (ignore) a pattern.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Response**: `200 OK`
+
+---
+
+### Budget Planning
+
+AI-powered budget suggestions based on recurring bills and spending history.
+
+#### POST /budget-planning/suggestions
+
+Generate budget suggestions for a target month.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Request Body**:
+
+```json
+{
+  "targetMonth": "2026-03",
+  "includeRecurringBills": true,
+  "includeHistoricalAverage": true
+}
+```
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "suggestionId": "suggestion_123",
+    "targetMonth": "2026-03",
+    "suggestions": [
+      {
+        "categoryId": "utilities",
+        "categoryName": "Utilities",
+        "suggestedAmount": 250.0,
+        "confidenceScore": 85,
+        "breakdown": [
+          { "item": "Electric Bill", "amount": 150.0, "type": "recurring" },
+          { "item": "Water Bill", "amount": 50.0, "type": "recurring" },
+          { "item": "Historical average", "amount": 50.0, "type": "average" }
+        ],
+        "explanation": "Based on 2 recurring bills and 3 months of spending history."
+      }
+    ],
+    "totalSuggested": 3500.0
+  },
+  "message": "Budget suggestions generated"
+}
+```
+
+#### GET /budget-planning/suggestions
+
+Get existing budget suggestions.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Query Parameters**:
+
+- `status` (optional): Filter by status (pending, applied, rejected)
+- `targetMonth` (optional): Filter by target month (YYYY-MM)
+
+**Response**: `200 OK`
+
+#### POST /budget-planning/apply
+
+Apply budget suggestions to a budget.
+
+**Headers**: `Authorization: Bearer <token>`
+
+**Request Body**:
+
+```json
+{
+  "suggestionId": "suggestion_123",
+  "selectedCategories": ["utilities", "food"]
+}
+```
+
+**Response**: `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "suggestionId": "suggestion_123",
+    "targetMonth": "2026-03",
+    "appliedCategories": ["utilities", "food"],
+    "totalApplied": 2
+  },
+  "message": "Budget suggestions applied"
+}
+```
+
+---
+
+### AI Notification Types
+
+New notification types for AI-powered features:
+
+| Type                          | Description                                      |
+| ----------------------------- | ------------------------------------------------ |
+| `PATTERN_DETECTED`            | New recurring pattern found with high confidence |
+| `PATTERN_AMOUNT_CHANGED`      | Recurring bill amount changed by >20%            |
+| `PATTERN_MISSING`             | Expected recurring transaction not found         |
+| `BUDGET_SUGGESTION_AVAILABLE` | AI budget suggestions ready for review           |
+
+**Notification Payload Example**:
+
+```json
+{
+  "type": "PATTERN_DETECTED",
+  "title": "New Recurring Bill Detected",
+  "body": "We detected a recurring payment to Netflix (monthly) for approximately $15.99.",
+  "data": {
+    "patternId": "pattern_123",
+    "actionUrl": "/bills/review-patterns",
+    "actions": [
+      { "label": "Review", "action": "review" },
+      { "label": "Dismiss", "action": "dismiss" }
+    ]
+  }
+}
+```
