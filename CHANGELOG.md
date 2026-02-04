@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.9.99] - 2026-02-04
+
+### 🎨 AI-Powered Bill Reminders and Budget Planning - Frontend Implementation (Session 119)
+
+- **Pattern Detection API Service** (Task 22)
+  - Created `patternDetectionApi.ts` with full API integration
+  - Supports detect, get, update, approve, reject, delete patterns
+  - Manual pattern creation support
+
+- **Budget Planning API Service** (Task 23)
+  - Created `budgetPlanningApi.ts` with full API integration
+  - Supports generate, get, and apply suggestions
+
+- **PatternReviewModal Component** (Task 22)
+  - Displays detected patterns with confidence scores
+  - Edit mode for modifying pattern details
+  - Approve/reject actions with bill creation
+  - AI explanation display
+
+- **BudgetSuggestionsModal Component** (Task 23)
+  - Displays AI-generated budget suggestions
+  - Category selection with breakdown details
+  - Apply selected suggestions to budget
+
+- **NotificationCenter Updates** (Task 24)
+  - Added AI notification types: pattern_detected, pattern_amount_changed, pattern_missing, budget_suggestion_available
+  - Styled icons and colors for new types
+
+- **MarkRecurringModal Component** (Task 25)
+  - Allows marking transactions as recurring
+  - Frequency selection (weekly to annual)
+  - Optional bill reminder creation
+
+- **BillsPage AI Integration** (Task 26)
+  - Added AI badge for AI-generated bills
+  - Shows confidence scores
+  - AI Scan button for pattern detection
+  - Robot emoji for AI bills
+
+- **BudgetPage Integration** (Task 25)
+  - Added "Mark as Recurring" button to transactions
+  - Integrated MarkRecurringModal
+
+- **Documentation** (Task 28)
+  - Created backend/functions/pattern-detection/README.md
+  - Created backend/functions/budget-planning/README.md
+
 ## [1.9.98] - 2026-02-04
 
 ### 🤖 AI-Powered Bill Reminders and Budget Planning - Backend Implementation (Session 118)
