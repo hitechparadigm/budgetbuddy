@@ -101,7 +101,7 @@ This implementation plan covers Weeks 2-4 of the test creation roadmap to improv
     - **Property 9: Budget Totals Invariant**
     - **Validates: Requirements 7.6**
 
-  - [ ] 3.4 Create bank connection journey E2E test
+  - [x] 3.4 Create bank connection journey E2E test
     - Create `tests/e2e/bank-connection-journey.test.js`
     - Test Plaid Link launch with correct config
     - Test access token storage and initial transaction fetch
