@@ -157,12 +157,12 @@ apiStack.addDependency(authStack);
 apiStack.addDependency(authOnboardingStack);
 apiFeaturesStack.addDependency(databaseStack);
 apiFeaturesStack.addDependency(authStack);
-apiFeaturesStack.addDependency(apiStack);
+// Temporarily removed dependency on apiStack to allow independent deployment
 apiFeaturesExtendedStack.addDependency(databaseStack);
 apiFeaturesExtendedStack.addDependency(authStack);
-apiFeaturesExtendedStack.addDependency(apiStack);
+// Temporarily removed dependency on apiStack to allow independent deployment
 notificationStack.addDependency(databaseStack);
-notificationStack.addDependency(apiStack);
+// Temporarily removed dependency on apiStack to allow independent deployment
 monitoringStack.addDependency(databaseStack);
 monitoringStack.addDependency(authStack);
 monitoringStack.addDependency(apiStack);
