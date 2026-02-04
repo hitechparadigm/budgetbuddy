@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
+import PatternReviewModal from "../components/PatternReviewModal";
 
 const API_BASE_URL =
   "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
@@ -31,6 +32,11 @@ interface Bill {
   notes: string | null;
   createdAt: string;
   updatedAt: string;
+  // AI metadata fields
+  aiGenerated?: boolean;
+  sourcePatternId?: string;
+  aiConfidenceScore?: number;
+  aiDetectedDate?: string;
 }
 
 interface BillsResponse {
@@ -47,6 +53,7 @@ export const BillsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [payingBillId, setPayingBillId] = useState<string | null>(null);
+  const [showPatternModal, setShowPatternModal] = useState(false);
   const currency = "USD";
 
   const loadBills = useCallback(async () => {
@@ -223,9 +230,23 @@ export const BillsPage: React.FC = () => {
             >
               + Add Bill
             </button>
+            <button
+              onClick={() => setShowPatternModal(true)}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+            >
+              🤖 AI Scan
+            </button>
           </div>
         </div>
       </header>
+
+      {/* Pattern Review Modal */}
+      <PatternReviewModal
+        isOpen={showPatternModal}
+        onClose={() => setShowPatternModal(false)}
+        onPatternApproved={() => loadBills()}
+        currency={currency}
+      />
 
       {/* Summary Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -331,7 +352,7 @@ export const BillsPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="text-3xl">
-                      {bill.isRecurring ? "🔄" : "📄"}
+                      {bill.aiGenerated ? "🤖" : bill.isRecurring ? "🔄" : "📄"}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -339,6 +360,14 @@ export const BillsPage: React.FC = () => {
                           {bill.name}
                         </h3>
                         {getStatusBadge(bill)}
+                        {bill.aiGenerated && (
+                          <span
+                            className="px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-100 text-indigo-800"
+                            title={`AI Confidence: ${bill.aiConfidenceScore}%`}
+                          >
+                            AI
+                          </span>
+                        )}
                       </div>
                       <div className="text-sm text-gray-500">
                         {formatDate(bill.dueDate)} •{" "}
@@ -352,6 +381,11 @@ export const BillsPage: React.FC = () => {
                       {bill.categoryName && (
                         <div className="text-xs text-gray-400 mt-1">
                           Category: {bill.categoryName}
+                          {bill.aiGenerated && bill.aiConfidenceScore && (
+                            <span className="ml-2 text-indigo-500">
+                              • {bill.aiConfidenceScore}% confidence
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
