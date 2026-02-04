@@ -1,11 +1,20 @@
 # BudgetBuddy User Journeys & Component Mapping
 
-**Last Updated**: 2026-02-03
+**Last Updated**: 2026-02-04
 **Purpose**: Comprehensive mapping of user journeys to frontend/backend components
 **Status**: Living Document - Update as features are implemented
 
 **Recent Updates**:
 
+- AI-Powered Bill Reminders & Budget Planning frontend complete (2026-02-04)
+  - PatternReviewModal.tsx: Pattern review with approve/reject/edit actions
+  - BudgetSuggestionsModal.tsx: AI budget suggestions with category selection
+  - MarkRecurringModal.tsx: Mark transactions as recurring bills
+  - NotificationCenter.tsx: Added 4 AI notification types
+  - BillsPage.tsx: AI badge, confidence scores, AI Scan button
+  - BudgetPage.tsx: "Mark as Recurring" button on transactions
+  - patternDetectionApi.ts: Full pattern detection API service
+  - budgetPlanningApi.ts: Budget planning API service
 - Fix Accounts & Family Features spec completed (2026-02-03)
   - FamilySettings.tsx: Fixed token usage (id_token), improved error handling, added unit tests
   - accountsApi.ts: Improved error handling with network error detection, better message extraction
@@ -1753,20 +1762,23 @@ _"As a user, I want AI to automatically detect my recurring bills and help me pl
 
 ### Component Mapping
 
-| Feature                  | Frontend Component           | Backend API                     | Status              |
-| ------------------------ | ---------------------------- | ------------------------------- | ------------------- |
-| Pattern Detection        | `PatternReviewModal.tsx`     | `POST /api/patterns/detect`     | ✅ Backend Complete |
-| Pattern Review           | `PatternReviewModal.tsx`     | `GET /api/patterns`             | ✅ Backend Complete |
-| Pattern Approval         | `PatternReviewModal.tsx`     | `PUT /api/patterns/{id}`        | ✅ Backend Complete |
-| Budget Suggestions       | `BudgetSuggestionsModal.tsx` | `POST /api/budget/suggestions`  | ✅ Backend Complete |
-| Apply Suggestions        | `BudgetSuggestionsModal.tsx` | `POST /api/budget/apply`        | ✅ Backend Complete |
-| Manual Pattern Creation  | `TransactionList.tsx`        | `POST /api/patterns/manual`     | 📋 Spec Ready       |
-| Pattern Notifications    | `NotificationCenter.tsx`     | Existing notification system    | ✅ Backend Complete |
-| AI Analysis Service      | Backend only                 | AWS Bedrock (Claude 3.5 Sonnet) | ✅ Implemented      |
-| Pattern Detection Lambda | Backend only                 | `pattern-detection` Lambda      | ✅ Implemented      |
-| Budget Planning Lambda   | Backend only                 | `budget-planning` Lambda        | ✅ Implemented      |
-| Bill Creation from AI    | Backend only                 | `POST /bills/from-pattern`      | ✅ Implemented      |
-| AI Notifications         | Backend only                 | `notifications` Lambda          | ✅ Implemented      |
+| Feature                  | Frontend Component           | Backend API                     | Status         |
+| ------------------------ | ---------------------------- | ------------------------------- | -------------- |
+| Pattern Detection        | `PatternReviewModal.tsx`     | `POST /api/patterns/detect`     | ✅ Complete    |
+| Pattern Review           | `PatternReviewModal.tsx`     | `GET /api/patterns`             | ✅ Complete    |
+| Pattern Approval         | `PatternReviewModal.tsx`     | `PUT /api/patterns/{id}`        | ✅ Complete    |
+| Budget Suggestions       | `BudgetSuggestionsModal.tsx` | `POST /api/budget/suggestions`  | ✅ Complete    |
+| Apply Suggestions        | `BudgetSuggestionsModal.tsx` | `POST /api/budget/apply`        | ✅ Complete    |
+| Manual Pattern Creation  | `MarkRecurringModal.tsx`     | `POST /api/patterns/manual`     | ✅ Complete    |
+| Pattern Notifications    | `NotificationCenter.tsx`     | Existing notification system    | ✅ Complete    |
+| AI Analysis Service      | Backend only                 | AWS Bedrock (Claude 3.5 Sonnet) | ✅ Implemented |
+| Pattern Detection Lambda | Backend only                 | `pattern-detection` Lambda      | ✅ Implemented |
+| Budget Planning Lambda   | Backend only                 | `budget-planning` Lambda        | ✅ Implemented |
+| Bill Creation from AI    | Backend only                 | `POST /bills/from-pattern`      | ✅ Implemented |
+| AI Notifications         | Backend only                 | `notifications` Lambda          | ✅ Implemented |
+| AI Badge on Bills        | `BillsPage.tsx`              | Bill metadata fields            | ✅ Complete    |
+| Pattern Detection API    | `patternDetectionApi.ts`     | API service layer               | ✅ Complete    |
+| Budget Planning API      | `budgetPlanningApi.ts`       | API service layer               | ✅ Complete    |
 
 ### Test Coverage (Updated 2026-02-03)
 
@@ -1829,13 +1841,10 @@ _"As a user, I want AI to automatically detect my recurring bills and help me pl
 
 ### Missing Components
 
-| Component                    | Priority | Description                                    |
-| ---------------------------- | -------- | ---------------------------------------------- |
-| `PatternReviewModal.tsx`     | HIGH     | Review and approve AI-detected patterns        |
-| `BudgetSuggestionsModal.tsx` | HIGH     | Review and apply AI budget suggestions         |
-| `PatternConfidenceBar.tsx`   | MEDIUM   | Visual confidence score indicator              |
-| `PatternExplanation.tsx`     | MEDIUM   | Expandable explanation of why pattern detected |
-| Budget planning Lambda       | HIGH     | Backend service for AI budget suggestions      |
+| Component                  | Priority | Description                                  |
+| -------------------------- | -------- | -------------------------------------------- |
+| `PatternConfidenceBar.tsx` | LOW      | Visual confidence score indicator (optional) |
+| `PatternExplanation.tsx`   | LOW      | Expandable explanation component (optional)  |
 
 ### Implementation Status
 
@@ -1845,22 +1854,30 @@ _"As a user, I want AI to automatically detect my recurring bills and help me pl
 - Design document: Architecture, algorithms, 25 correctness properties
 - Tasks document: 28 implementation tasks with testing requirements
 
-**Implementation Status**: 🔄 In Progress
+**Implementation Status**: ✅ Complete (Frontend + Backend)
 
 - Pattern Detection Service: ✅ Implemented (service layer + Lambda handler)
-- Pattern Detection Tests: ✅ Complete (21 unit tests)
-- Budget Planning Service: 📋 Not started
-- Frontend Components: 📋 Not started
-- Frontend components designed
-- Backend architecture planned
+- Pattern Detection Tests: ✅ Complete (252 tests total)
+- Budget Planning Service: ✅ Implemented (service layer + Lambda handler)
+- Budget Planning Tests: ✅ Complete (45 tests)
+- Frontend Components: ✅ Complete
+  - `PatternReviewModal.tsx` - Pattern review with approve/reject/edit
+  - `BudgetSuggestionsModal.tsx` - AI budget suggestions with category selection
+  - `MarkRecurringModal.tsx` - Mark transactions as recurring
+  - `NotificationCenter.tsx` - Updated with 4 AI notification types
+  - `BillsPage.tsx` - AI badge, confidence scores, AI Scan button
+  - `BudgetPage.tsx` - "Mark as Recurring" button on transactions
+- API Services: ✅ Complete
+  - `patternDetectionApi.ts` - Full pattern detection API integration
+  - `budgetPlanningApi.ts` - Budget planning API integration
+- Documentation: ✅ Complete
+  - `backend/functions/pattern-detection/README.md`
+  - `backend/functions/budget-planning/README.md`
 
-**Next Steps**:
+**Remaining (Optional)**:
 
-1. Review spec with stakeholders
-2. Begin Task 1: Infrastructure setup (DynamoDB tables, S3 bucket, IAM roles)
-3. Implement pattern detection algorithm (Tasks 2-4)
-4. Integrate AWS Bedrock for AI analysis (Tasks 5-6)
-5. Build frontend review interfaces (Tasks 22-26)
+- Task 27: End-to-end testing (manual verification in dev environment)
+- Property-based tests for frontend components (marked as optional in spec)
 
 ---
 
