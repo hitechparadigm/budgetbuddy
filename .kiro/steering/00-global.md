@@ -122,10 +122,25 @@ Before writing any code:
 
 **Testing:**
 
-- Unit tests for business logic
+- Unit tests for business logic (Jest with mocked AWS SDK)
 - Integration tests for critical paths
 - Property-based tests for invariants
 - End-to-end tests for user journeys
+
+**LocalStack/Docker Usage:**
+
+- **Use LocalStack ONLY when it provides clear value:**
+  - Testing complex AWS service interactions that are hard to mock
+  - Validating multi-service workflows (e.g., DynamoDB → Lambda → SQS)
+  - Debugging AWS-specific behavior that differs from mocks
+  - End-to-end integration testing with real AWS service behavior
+- **DO NOT use LocalStack for:**
+  - Simple unit tests (use Jest mocks instead - faster and simpler)
+  - Tests that can be adequately covered with mocked AWS SDK calls
+  - CI/CD pipelines (adds complexity and time)
+  - When mocked tests provide sufficient coverage
+- **Decision criteria**: If mocked tests adequately validate the logic and behavior, stick with mocks. Only introduce LocalStack when you need actual AWS service behavior or when debugging issues that mocks can't reproduce.
+- **See**: `docs/localstack-guide.md` for setup and usage details
 
 ### 4. CI/CD Deployment Monitoring (CRITICAL)
 
