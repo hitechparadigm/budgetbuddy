@@ -1,5 +1,46 @@
 # Development Log
 
+## 2026-02-04 - CloudFormation Export Conflict Investigation (Session 120)
+
+### Session Summary
+
+**Duration**: 30 minutes
+**Focus**: Investigating and documenting CloudFormation CommonLayer export conflict
+**Outcome**: Issue documented, workaround provided, deployment workflow updated
+
+### Work Completed
+
+1. **Issue Investigation**:
+   - Analyzed CI/CD deployment failure with CommonLayer export conflict
+   - Root cause: CloudFormation cannot update exports that are in use by dependent stacks
+   - Affected stacks: api-features, api-features-extended, notification
+
+2. **Deployment Workflow Update**:
+   - Modified `.github/workflows/deploy-dev.yml` to deploy dependent stacks first
+   - Added explicit deployment order to handle layer updates
+   - However, this doesn't fully resolve the issue when layer code changes
+
+3. **Documentation Created**:
+   - Created `.kiro/COMMONLAYER_EXPORT_CONFLICT.md` with:
+     - Detailed issue description
+     - Root cause analysis
+     - Three workaround options (manual update, skip changes, remove cross-stack refs)
+     - Prevention strategies
+
+### Known Issue
+
+The CommonLayer export conflict is a CloudFormation limitation. When `backend/layers/common` code changes, CDK creates a new layer version with a new export. Dependent stacks still reference the old export, causing deployment failures.
+
+**Workaround**: Deploy dependent stacks first, then API stack. Or avoid CommonLayer changes unless necessary.
+
+**Long-term Solution**: Remove cross-stack references and have each stack create its own layer from the same source.
+
+### Next Steps
+
+- Consider implementing long-term solution (remove cross-stack layer references)
+- Document this pattern for other shared resources
+- Monitor for similar issues with SharedLayer
+
 ## 2026-02-04 - AI Bill Reminders Frontend Implementation (Session 119)
 
 ### Session Summary
