@@ -4,9 +4,9 @@
 
 ### Session Summary
 
-**Duration**: 45 minutes
-**Focus**: Resolving CloudFormation CommonLayer export conflict using lessons learned from previous SharedLayer issue
-**Outcome**: Applied proven solution - each stack creates its own layer to avoid cross-stack dependencies
+**Duration**: 90 minutes
+**Focus**: Attempted to resolve CloudFormation CommonLayer export conflict - requires manual intervention
+**Outcome**: Code fixes complete, deployment blocked by AWS CloudFormation circular dependency (manual resolution required)
 
 ### Work Completed
 
@@ -19,22 +19,25 @@
    - **api-features-stack.ts**: Creates own CommonLayer (FeaturesCommonLayer)
    - **api-features-extended-stack.ts**: Creates own CommonLayer (ExtendedCommonLayer)
    - **notification-stack.ts**: Creates own CommonLayer (NotificationCommonLayer)
-   - **bin/app.ts**: Removed commonLayer prop from all stack instantiations
+   - **bin/app.ts**: Removed commonLayer prop and apiStack dependencies
 
-3. **Benefits**:
-   - No more CloudFormation export conflicts when layer code changes
-   - Stacks can deploy independently without dependency issues
-   - Each stack has isolated layer versions
-   - Follows proven pattern from SharedLayer resolution
+3. **Deployment Attempts** (3 attempts, all failed):
+   - Attempt 1: Update deployment order - FAILED (export update conflict)
+   - Attempt 2: Remove cross-stack references - FAILED (export delete conflict)
+   - Attempt 3: Remove stack dependencies - FAILED (circular dependency)
 
-### Root Cause (Repeated Issue)
+### Root Cause (Repeated Issue + Deployment Timing)
 
-This was the SAME issue we had with SharedLayer export conflicts. The solution was already documented:
+This was the SAME issue as SharedLayer, but with critical difference:
 
-- `.kiro/SHARED_LAYER_EXPORT_ISSUE.md` - Previous resolution
-- Commits f21b2a9, dfbc103 - SharedLayer fix implementation
+- **SharedLayer**: Fixed BEFORE deployment, no AWS export dependency
+- **CommonLayer**: Code changes ALREADY deployed, export dependency exists in AWS
 
-**Lesson**: When layers are exported and imported across stacks, CloudFormation cannot update them when code changes. Solution: Each stack creates its own layer from the same source.
+**Circular Dependency**: Dependent stacks in AWS reference OLD export, but CloudFormation won't delete export until dependents are updated. Cannot break cycle via CI/CD.
+
+### Manual Resolution Required
+
+**BLOCKER**: See `.kiro/COMMONLAYER_DEPLOYMENT_BLOCKER.md` for manual deployment steps.
 
 ### Files Modified
 
@@ -42,13 +45,19 @@ This was the SAME issue we had with SharedLayer export conflicts. The solution w
 - `infrastructure/lib/api-features-extended-stack.ts`
 - `infrastructure/lib/notification-stack.ts`
 - `infrastructure/bin/app.ts`
-- `.kiro/COMMONLAYER_EXPORT_CONFLICT.md` (documentation)
+- `.kiro/steering/structure.md` (prevention guidelines)
+- `.kiro/COMMONLAYER_DEPLOYMENT_BLOCKER.md` (blocker documentation)
+
+### Lessons Learned
+
+1. **Timing Matters**: Fix cross-stack references BEFORE deployment to avoid AWS circular dependencies
+2. **Prevention**: Updated steering to NEVER export/import Lambda Layers
+3. **Resolution**: Some CloudFormation issues require manual AWS intervention
 
 ### Next Steps
 
-- Deploy and verify the fix resolves the export conflict
-- Monitor for similar issues with other shared resources
-- Consider documenting this pattern in architecture docs
+- User must manually deploy stacks (see blocker doc)
+- Continue with other tasks while deployment blocked
 
 ## 2026-02-04 - AI Bill Reminders Frontend Implementation (Session 119)
 
