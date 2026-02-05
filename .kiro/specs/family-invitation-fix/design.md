@@ -1,5 +1,9 @@
 # Family Invitation Fix - Design
 
+**Last Updated**: 2026-02-05
+**Status**: ✅ COMPLETE - Deployed and Verified
+**Spec**: `.kiro/specs/family-invitation-fix/`
+
 ## Overview
 
 Fix the family invitation flow by configuring the family Lambda to use the correct Family API Gateway URL when calling the email service.

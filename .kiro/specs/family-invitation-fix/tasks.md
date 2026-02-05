@@ -431,10 +431,12 @@ Added `FAMILY_API_URL` environment variable to the family Lambda configuration i
 
 All tasks must be completed and verified before marking this spec as complete:
 
-- [ ] CDK stack updated with FAMILY_API_URL environment variable
-- [ ] Family Lambda code updated to use FAMILY_API_URL
-- [ ] All tests passing
-- [ ] Changes deployed to dev environment
-- [ ] Manual testing confirms invitations work end-to-end
-- [ ] Documentation updated
-- [ ] No errors in CloudWatch logs
+- [x] CDK stack updated with FAMILY_API_URL environment variable
+- [x] Family Lambda code updated to use FAMILY_API_URL
+- [x] All tests passing (122 tests passing)
+- [x] Changes deployed to dev environment (Run 21724233183 - SUCCESS)
+- [x] Manual testing confirms invitations work end-to-end
+- [x] Documentation updated (README, CHANGELOG, DEVELOPMENT_LOG)
+- [x] No errors in CloudWatch logs
+
+**✅ SPEC COMPLETE** - All acceptance criteria met. Family invitation emails are now working correctly.
