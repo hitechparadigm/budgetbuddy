@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.9.103] - 2026-02-05
+
+### 🔧 Family Invitation API Gateway Routes (Critical Fix)
+
+- **Infrastructure Changes**
+  - Added missing API Gateway routes for family invitation management
+  - `GET /family/invitations` - View all pending invitations (protected, primary only)
+  - `DELETE /family/invitations/{invitationId}` - Revoke pending invitation (protected, primary only)
+  - `POST /family/invitations/{invitationId}/resend` - Resend invitation email (protected, primary only)
+  - All routes use Cognito authorizer for authentication
+  - Routes properly integrated with existing family Lambda handler
+
+- **Testing**
+  - Created comprehensive test suite `invitation-management.test.js`
+  - 49 tests covering all three new endpoints
+  - Tests for authentication, authorization, error cases, and success scenarios
+  - Validates primary user role enforcement
+  - Tests for invitation not found, wrong family, expired invitations
+  - All tests passing
+
+- **Developer Tools**
+  - Created `scripts/revoke-invitation.js` - CLI tool to manually revoke pending invitations
+  - Useful for resolving "Pending invitation already exists" errors
+  - Direct DynamoDB access for emergency cleanup
+
+- **Bug Fix**
+  - Resolves issue where users couldn't manage pending invitations through UI
+  - Fixes "Pending invitation already exists for this email" error with no resolution path
+  - Lambda handlers existed but API Gateway routes were missing
+
 ## [1.9.102] - 2026-02-04
 
 ### ✨ Family Invitation Management Features (Session 122)
