@@ -6,14 +6,14 @@
 
 **Recent Updates**:
 
-- Family Stack Infrastructure Issue (2026-02-05)
-  - **BLOCKER**: Circular dependency when moving FamilyHandler to api-features-stack
-  - api-features-stack reached 488/500 CloudFormation resource limit
-  - FamilyHandler successfully removed from api-stack (✅)
-  - FamilyHandler added to api-features-stack but deployment failed (❌)
-  - **Solution Required**: Create standalone api-family-stack or move to api-features-extended-stack
-  - All family features functional in code, blocked by infrastructure deployment
-  - See `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` for detailed analysis
+- Family Stack Infrastructure Issue RESOLVED (2026-02-05)
+  - ✅ **RESOLVED**: Created standalone api-family-stack to resolve circular dependency
+  - Successfully deployed FamilyHandler and EmailHandler to dedicated stack
+  - api-family-stack: ~150 resources with own API Gateway
+  - api-features-stack: Reduced from 488 to ~340 resources (30% reduction)
+  - All family features now deployed and functional in development environment
+  - Deployment successful (Run 21715218313) with all health checks passing
+  - See `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` for implementation details
 - Account Creation & Family Invite Fixes (2026-02-04)
   - Fixed 500 error when creating accounts: Added generateId.custom() and generateId.account() methods to utils.js
   - Fixed 500 error when inviting family members: Handle undefined familyId in DynamoDB query to prevent validation errors
@@ -513,27 +513,32 @@ _"As a primary account holder, I want to invite my partner to share our budget s
 
 ### Component Mapping
 
-| Feature             | Frontend Component         | Backend API                            | Status             |
-| ------------------- | -------------------------- | -------------------------------------- | ------------------ |
-| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete        |
-| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ✅ Complete        |
-| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | ⚠️ Blocked (Infra) |
-| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ⚠️ Blocked (Infra) |
-| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ⚠️ Blocked (Infra) |
-| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ⚠️ Blocked (Infra) |
-| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ⚠️ Blocked (Infra) |
-| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ⚠️ Blocked (Infra) |
-| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ⚠️ Blocked (Infra) |
-| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ⚠️ Blocked (Infra) |
+| Feature             | Frontend Component         | Backend API                            | Status      |
+| ------------------- | -------------------------- | -------------------------------------- | ----------- |
+| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete |
+| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ✅ Complete |
+| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | ✅ Complete |
+| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ✅ Complete |
+| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ✅ Complete |
+| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ✅ Complete |
+| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ✅ Complete |
+| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ✅ Complete |
+| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ✅ Complete |
+| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ✅ Complete |
+| Email Notifications | Backend                    | `POST /email/send-invitation`          | ✅ Complete |
+| Email Notifications | Backend                    | `POST /email/send-removal`             | ✅ Complete |
+| Email Notifications | Backend                    | `POST /email/send-acceptance`          | ✅ Complete |
 
 **Infrastructure Status**:
 
-- ⚠️ **DEPLOYMENT BLOCKED**: FamilyHandler Lambda exists but cannot deploy due to CloudFormation circular dependency
-- **Root Cause**: api-features-stack at 488/500 resource limit, causing circular dependency with API Gateway
-- **Code Status**: All family backend code is complete and functional
-- **Deployment Status**: Blocked pending infrastructure refactoring (create api-family-stack or move to api-features-extended-stack)
-- **Impact**: Family features unavailable in deployed environment until infrastructure issue resolved
-- **See**: `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` for solution options
+- ✅ **DEPLOYED**: Standalone api-family-stack successfully deployed
+- **Stack**: budgetbuddy-dev-api-family with dedicated API Gateway
+- **Resources**: ~150 resources (well under CloudFormation 500 limit)
+- **Code Status**: All family backend code complete and functional
+- **Deployment Status**: ✅ Successfully deployed to development environment
+- **Health Checks**: ✅ All family and email endpoints passing
+- **Impact**: Family features fully available in deployed environment
+- **See**: `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` for implementation details
 
 ### UI/UX Requirements
 
@@ -1233,27 +1238,29 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 ### Infrastructure Blockers
 
-#### 🔴 CRITICAL: Family Features Deployment Blocked
+#### ✅ RESOLVED: Family Features Deployment (2026-02-05)
 
-**Status**: ⚠️ **DEPLOYMENT BLOCKED** (2026-02-05)
+**Status**: ✅ **DEPLOYED** - Standalone api-family-stack successfully deployed
 
-| Component       | Code Status | Deployment Status | Blocker                             |
-| --------------- | ----------- | ----------------- | ----------------------------------- |
-| FamilyHandler   | ✅ Complete | ❌ Blocked        | CloudFormation circular dependency  |
-| Family Routes   | ✅ Complete | ❌ Blocked        | api-features-stack at 488/500 limit |
-| Email Service   | ✅ Complete | ✅ Deployed       | Working (in api-features-stack)     |
-| Family Frontend | ✅ Complete | ✅ Deployed       | Working (FamilySettings.tsx)        |
+| Component       | Code Status | Deployment Status | Stack                 |
+| --------------- | ----------- | ----------------- | --------------------- |
+| FamilyHandler   | ✅ Complete | ✅ Deployed       | api-family-stack      |
+| Family Routes   | ✅ Complete | ✅ Deployed       | api-family-stack (11) |
+| Email Service   | ✅ Complete | ✅ Deployed       | api-family-stack (3)  |
+| Family Frontend | ✅ Complete | ✅ Deployed       | FamilySettings.tsx    |
 
-**Issue**: Moving FamilyHandler from api-stack to api-features-stack caused circular dependency due to CloudFormation resource limits.
+**Resolution**: Created standalone `api-family-stack.ts` with dedicated API Gateway (~150 resources).
 
-**Impact**: All family collaboration features (invite, accept, remove members, change roles) are unavailable in deployed environment.
+**Impact**: All family collaboration features (invite, accept, remove members, change roles) are now fully available in deployed environment.
 
-**Solution Options**:
+**Benefits**:
 
-1. **Recommended**: Create standalone `api-family-stack.ts` with own API Gateway (~150 resources)
-2. **Alternative**: Move FamilyHandler + 2-3 other features to `api-features-extended-stack.ts`
+- Resolved circular dependency issue
+- Reduced api-features-stack from 488 to ~340 resources (30% reduction)
+- Clear separation of concerns with dedicated API Gateway
+- Scalable architecture for future growth
 
-**See**: `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` for detailed analysis
+**See**: `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` for implementation details
 
 ---
 
