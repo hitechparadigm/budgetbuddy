@@ -91,9 +91,6 @@ export class ApiStack extends cdk.Stack {
     // Set up API routes and integrations
     this.setupApiRoutes();
 
-    // Update family Lambda with API URL for email service calls
-    this.functions.familyHandler.addEnvironment('API_URL', this.api.url);
-
     // Create outputs for client configuration
     this.createOutputs();
   }
@@ -201,25 +198,6 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ...commonEnvironment,
         BEDROCK_MODEL_ID: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
-      },
-    });
-
-    /**
-     * Family Account Management Functions
-     * Handle family creation, invitations, and member management
-     */
-    this.functions.familyHandler = new lambda.Function(this, 'FamilyHandler', {
-      ...commonProps,
-      functionName: 'budgetbuddy-family',
-      code: lambda.Code.fromAsset('../backend/functions/family'),
-      handler: 'index.handler',
-      description: 'BudgetBuddy family handler for shared accounts, invitations, and member management',
-      environment: {
-        ...commonEnvironment,
-        WEB_APP_URL: 'https://app.budgetbuddy.com',
-        // EMAIL_API_URL points to the features API where email Lambda is deployed
-        EMAIL_API_URL: 'https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1',
-        // API_URL will be set after API Gateway is created
       },
     });
 
@@ -700,80 +678,6 @@ export class ApiStack extends cdk.Stack {
       operationName: 'TransactionsHealthCheck',
     });
 
-    // Family routes (protected)
-    const familyResource = this.api.root.addResource('family');
-    familyResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      authorizer,
-      operationName: 'GetFamily',
-    });
-    familyResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      authorizer,
-      operationName: 'CreateFamily',
-    });
-
-    // Family invite endpoint (protected - primary only)
-    const familyInviteResource = familyResource.addResource('invite');
-    familyInviteResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      authorizer,
-      operationName: 'InviteFamilyMember',
-    });
-
-    // Family accept invitation endpoint (protected)
-    const familyAcceptResource = familyResource.addResource('accept-invitation');
-    familyAcceptResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      authorizer,
-      operationName: 'AcceptFamilyInvitation',
-    });
-
-    // Family members endpoint (protected)
-    const familyMembersResource = familyResource.addResource('members');
-    familyMembersResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      authorizer,
-      operationName: 'GetFamilyMembers',
-    });
-
-    // Family member by ID endpoints (protected)
-    const familyMemberIdResource = familyMembersResource.addResource('{userId}');
-    familyMemberIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      authorizer,
-      operationName: 'RemoveFamilyMember',
-    });
-
-    // Family member role endpoint (protected - primary only)
-    const familyMemberRoleResource = familyMemberIdResource.addResource('role');
-    familyMemberRoleResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      authorizer,
-      operationName: 'UpdateFamilyMemberRole',
-    });
-
-    // Family leave endpoint (protected - non-primary only)
-    const familyLeaveResource = familyResource.addResource('leave');
-    familyLeaveResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      authorizer,
-      operationName: 'LeaveFamily',
-    });
-
-    // Family invitations management endpoints (protected - primary only)
-    const familyInvitationsResource = familyResource.addResource('invitations');
-    familyInvitationsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      authorizer,
-      operationName: 'GetFamilyInvitations',
-    });
-
-    // Family invitation by ID endpoints (protected - primary only)
-    const familyInvitationIdResource = familyInvitationsResource.addResource('{invitationId}');
-    familyInvitationIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      authorizer,
-      operationName: 'RevokeFamilyInvitation',
-    });
-
-    // Family invitation resend endpoint (protected - primary only)
-    const familyInvitationResendResource = familyInvitationIdResource.addResource('resend');
-    familyInvitationResendResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      authorizer,
-      operationName: 'ResendFamilyInvitation',
-    });
-
     // Data Export routes (protected)
     const exportResource = this.api.root.addResource('export');
     exportResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.exportHandler), {
@@ -800,13 +704,6 @@ export class ApiStack extends cdk.Stack {
           statusCode: '200',
         }
       ],
-    });
-
-    // Family health endpoint
-    const familyHealthResource = familyResource.addResource('health');
-    familyHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
-      methodResponses: [{ statusCode: '200' }],
-      operationName: 'FamilyHealthCheck',
     });
 
     // Payment routes (protected)

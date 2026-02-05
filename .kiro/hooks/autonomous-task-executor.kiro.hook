@@ -1,13 +1,13 @@
 {
   "name": "Autonomous Task Executor",
-  "version": "3.0.0",
-  "description": "Enables autonomous overnight development - references steering files for detailed rules",
+  "version": "5.0.0",
+  "description": "Enables fully autonomous development with CI/CD safety",
   "when": {
-    "type": "agentStop"
+    "type": "promptSubmit"
   },
   "then": {
     "type": "askAgent",
-    "prompt": "🌙 AUTONOMOUS MODE\n\nSESSION START:\n1. Check context transfer summary (if present)\n2. Read steering files (00-global.md has full workflow)\n3. Identify next task\n\nWORKFLOW (per task):\n1. Check CI/CD: node scripts/check-cicd-status.js\n2. Implement (code + tests + docs)\n3. Commit: node scripts/safe-commit-push.js \"feat: [description]\"\n4. Monitor CI/CD, continue to next\n\nFAILURE HANDLING:\n- Validation: Fix, retry (max 3)\n- CI/CD: Analyze, fix, retry (max 2)\n- Still failing: Document, continue\n\nREFERENCE: All detailed rules in .kiro/steering/00-global.md"
+    "prompt": "🤖 AUTONOMOUS MODE ACTIVE\n\nPer-Task Workflow:\n1. Check CI/CD: node scripts/check-cicd-status.js\n   - If in_progress: WAIT 2min, check again\n   - If failed: Fix FIRST before continuing\n   - If success: Proceed\n\n2. Implement task:\n   - Code + tests + docs\n   - Follow .kiro/steering/00-global.md\n\n3. Commit safely:\n   node scripts/safe-commit-push.js \"feat: [description]\"\n   - Validates internally (no duplicate validation)\n   - Commits + pushes if validation passes\n\n4. Monitor deployment:\n   - WAIT for deployment to complete\n   - Check every 2min: node scripts/check-cicd-status.js\n   - NEVER push during deployment\n\n5. On deployment success:\n   - IMMEDIATELY start next task\n   - NO summaries, NO waiting\n\n6. On deployment failure:\n   - Analyze logs (in .kiro/cicd-status/latest.json)\n   - Fix issue\n   - Retry (max 2 attempts)\n   - If still failing: Document in DEVELOPMENT_LOG.md, continue\n\nContinuation Rules:\n- After ANY task: Start next immediately\n- NO \"what I accomplished\" messages\n- NO \"next steps\" lists\n- ONLY stop for TRUE blockers\n\nSee .kiro/steering/00-global.md for complete rules"
   },
   "enabled": true,
   "workspaceFolderName": "budgetbuddy",
