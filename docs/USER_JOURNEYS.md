@@ -6,15 +6,29 @@
 
 **Recent Updates**:
 
-- Investment Tracking Backend Started (2026-02-05)
-  - 🔄 **BACKEND STARTED**: Investment Tracking (Requirement 45, Task 12.1)
-  - **Backend**: investments Lambda function with CRUD operations and portfolio calculations
-  - **Features**: Holdings management (create, read, update, delete), portfolio overview with total value/cost basis/gain-loss, asset allocation by account type
-  - **API Endpoints**: 6 endpoints (GET portfolio, GET holdings, POST/PUT/DELETE holdings, GET performance)
-  - **Account Types**: Support for brokerage, 401k, IRA, Roth IRA, HSA, crypto
-  - **Tests**: 11 unit tests covering all CRUD operations and portfolio calculations
-  - **Status**: ✅ Backend Task 12.1 complete, ❌ Frontend not started
-  - **Files**: `backend/functions/investments/` (index.js, README.md, package.json, index.test.js)
+- Investment Tracking Backend Progress (2026-02-05)
+  - 🔄 **BACKEND IN PROGRESS**: Investment Tracking (Requirement 45, Task 12)
+  - **Task 12.1 Complete** ✅: investments Lambda function with CRUD operations and portfolio calculations
+    - **Features**: Holdings management (create, read, update, delete), portfolio overview with total value/cost basis/gain-loss, asset allocation by account type
+    - **API Endpoints**: 6 endpoints (GET portfolio, GET holdings, POST/PUT/DELETE holdings, GET performance)
+    - **Account Types**: Support for brokerage, 401k, IRA, Roth IRA, HSA, crypto
+    - **Tests**: 11 unit tests covering all CRUD operations and portfolio calculations
+    - **Files**: `backend/functions/investments/` (index.js, README.md, package.json, index.test.js)
+  - **Task 12.2 Complete** ✅: investments-price-updater Lambda function for automated stock price updates
+    - **Features**: Scheduled price updates via Alpha Vantage API, batch processing with rate limiting, automatic holding updates
+    - **Integration**: Updates all holdings with latest stock prices, respects API rate limits (5 calls/min)
+    - **Error Handling**: Graceful failure handling per symbol, detailed logging
+    - **Tests**: Comprehensive unit tests for price fetching and holding updates
+    - **Files**: `backend/functions/investments-price-updater/` (index.js, README.md, package.json, index.test.js)
+  - **Status**: ✅ Backend Tasks 12.1-12.2 complete, ❌ Frontend not started
+- Family Invitation Fix Complete (2026-02-05)
+  - ✅ **FIX COMPLETE**: Family invitation emails now working correctly
+  - **All Tasks Complete**: CDK stack update, Lambda code update, testing, deployment, verification, documentation
+  - **Solution**: Added `FAMILY_API_URL` environment variable to family Lambda configuration
+  - **Deployment**: Successfully deployed (Run 21717465771), all health checks passing
+  - **Documentation**: README, CHANGELOG, DEVELOPMENT_LOG all updated
+  - **Verification**: 122 unit tests passing, emails sending successfully
+  - **Spec**: `.kiro/specs/family-invitation-fix/` - All 6 tasks complete ✅
 - Credit Score Monitoring Complete (2026-02-05)
   - ✅ **FEATURE COMPLETE**: Credit Score Monitoring (Requirement 43, Task 11)
   - **Web Components**: CreditScorePage.tsx with personalized improvement tips
@@ -1511,35 +1525,36 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 ### Backend APIs Without Frontend
 
-| API Endpoint                        | Description                    | Priority | Status                         |
-| ----------------------------------- | ------------------------------ | -------- | ------------------------------ |
-| `GET /api/accounts`                 | List user accounts             | HIGH     | ✅ Done (AccountsPage)         |
-| `POST /api/accounts`                | Create manual account          | HIGH     | ✅ Done (AddAccountModal)      |
-| `PUT /api/accounts/{id}`            | Update account                 | HIGH     | ✅ Done (AccountCard)          |
-| `DELETE /api/accounts/{id}`         | Delete account                 | HIGH     | ✅ Done (AccountCard)          |
-| `POST /api/accounts/{id}/reconcile` | Reconcile balance              | MEDIUM   | ✅ Done (ReconcileModal)       |
-| `PUT /api/accounts/{id}/tracking`   | Toggle budget tracking         | MEDIUM   | ✅ Done (AccountCard)          |
-| `GET /api/accounts/summary`         | Net worth summary              | MEDIUM   | ✅ Done (AccountsPage)         |
-| `GET /comparison/summary`           | Peer spending comparison       | MEDIUM   | ✅ Done (PeerComparisonWidget) |
-| `GET /tips/feed`                    | Financial tips feed            | MEDIUM   | ✅ Done (TipsFeedPage)         |
-| `GET /tips/daily`                   | Daily tip                      | MEDIUM   | ✅ Done (TipsFeedPage)         |
-| `GET /learn/courses`                | Educational content            | LOW      | ✅ Done (LearnPage)            |
-| `GET /learn/progress`               | Learning progress              | LOW      | ✅ Done (LearnPage)            |
-| `GET /admin/dashboard`              | Admin metrics                  | LOW      | ✅ Done (AdminDashboard)       |
-| `GET /investments`                  | Portfolio overview             | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
-| `GET /investments/holdings`         | List holdings                  | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
-| `POST /investments/holdings`        | Add holding                    | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
-| `PUT /investments/holdings/{id}`    | Update holding                 | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
-| `DELETE /investments/holdings/{id}` | Delete holding                 | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
-| `GET /investments/performance`      | Performance over time          | LOW      | 🔄 Backend Only (Task 12.1)    |
-| `GET /notifications`                | List in-app notifications      | HIGH     | 🔄 Backend Only                |
-| `GET /notifications/{id}`           | Get single notification        | HIGH     | 🔄 Backend Only                |
-| `PUT /notifications/{id}/read`      | Mark notification as read      | HIGH     | 🔄 Backend Only                |
-| `PUT /notifications/read-all`       | Mark all as read               | HIGH     | 🔄 Backend Only                |
-| `DELETE /notifications/{id}`        | Delete notification            | MEDIUM   | 🔄 Backend Only                |
-| `GET /notifications/settings`       | Get notification preferences   | MEDIUM   | 🔄 Backend Only                |
-| `PUT /notifications/settings`       | Update notification prefs      | MEDIUM   | 🔄 Backend Only                |
-| `POST /notifications/create`        | Create notification (internal) | LOW      | 🔄 Backend Only                |
+| API Endpoint                        | Description                     | Priority | Status                         |
+| ----------------------------------- | ------------------------------- | -------- | ------------------------------ |
+| `GET /api/accounts`                 | List user accounts              | HIGH     | ✅ Done (AccountsPage)         |
+| `POST /api/accounts`                | Create manual account           | HIGH     | ✅ Done (AddAccountModal)      |
+| `PUT /api/accounts/{id}`            | Update account                  | HIGH     | ✅ Done (AccountCard)          |
+| `DELETE /api/accounts/{id}`         | Delete account                  | HIGH     | ✅ Done (AccountCard)          |
+| `POST /api/accounts/{id}/reconcile` | Reconcile balance               | MEDIUM   | ✅ Done (ReconcileModal)       |
+| `PUT /api/accounts/{id}/tracking`   | Toggle budget tracking          | MEDIUM   | ✅ Done (AccountCard)          |
+| `GET /api/accounts/summary`         | Net worth summary               | MEDIUM   | ✅ Done (AccountsPage)         |
+| `GET /comparison/summary`           | Peer spending comparison        | MEDIUM   | ✅ Done (PeerComparisonWidget) |
+| `GET /tips/feed`                    | Financial tips feed             | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /tips/daily`                   | Daily tip                       | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /learn/courses`                | Educational content             | LOW      | ✅ Done (LearnPage)            |
+| `GET /learn/progress`               | Learning progress               | LOW      | ✅ Done (LearnPage)            |
+| `GET /admin/dashboard`              | Admin metrics                   | LOW      | ✅ Done (AdminDashboard)       |
+| `GET /investments`                  | Portfolio overview              | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
+| `GET /investments/holdings`         | List holdings                   | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
+| `POST /investments/holdings`        | Add holding                     | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
+| `PUT /investments/holdings/{id}`    | Update holding                  | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
+| `DELETE /investments/holdings/{id}` | Delete holding                  | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
+| `GET /investments/performance`      | Performance over time           | LOW      | 🔄 Backend Only (Task 12.1)    |
+| `POST /investments/update-prices`   | Update stock prices (scheduled) | LOW      | 🔄 Backend Only (Task 12.2)    |
+| `GET /notifications`                | List in-app notifications       | HIGH     | 🔄 Backend Only                |
+| `GET /notifications/{id}`           | Get single notification         | HIGH     | 🔄 Backend Only                |
+| `PUT /notifications/{id}/read`      | Mark notification as read       | HIGH     | 🔄 Backend Only                |
+| `PUT /notifications/read-all`       | Mark all as read                | HIGH     | 🔄 Backend Only                |
+| `DELETE /notifications/{id}`        | Delete notification             | MEDIUM   | 🔄 Backend Only                |
+| `GET /notifications/settings`       | Get notification preferences    | MEDIUM   | 🔄 Backend Only                |
+| `PUT /notifications/settings`       | Update notification prefs       | MEDIUM   | 🔄 Backend Only                |
+| `POST /notifications/create`        | Create notification (internal)  | LOW      | 🔄 Backend Only                |
 
 ### Recently Completed Components (2026-02-03)
 
@@ -1744,7 +1759,7 @@ xl: 32px  (major sections)
 | R42 | Bank Sync (Plaid)     | Bank          | Task 10 | ✅       | ✅      | ✅ Complete    |
 | R43 | Credit Score          | Insights      | Task 11 | ✅       | ✅      | ✅ Complete    |
 | R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete    |
-| R45 | Investments           | Goals         | Task 12 | ❌       | 🔄      | 🔄 In Progress |
+| R45 | Investments           | Goals         | Task 12 | ❌       | 🔄      | 🔄 Backend 40% |
 | R46 | Peer Comparison       | Insights      | Task 13 | ✅       | ✅      | ✅ Complete    |
 | R47 | Educational Content   | Insights      | Task 14 | ✅       | ✅      | ✅ Complete    |
 | R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete    |
@@ -2383,7 +2398,7 @@ Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 - Task 9: Net Worth Tracking ✅
 - Task 10: Bank Sync UI (Plaid) ✅
 - Task 11: Credit Score Monitoring ✅
-- Task 12: Investment Tracking 🔄 (Backend: Task 12.1 ✅)
+- Task 12: Investment Tracking 🔄 (Backend: Task 12.1 ✅, Task 12.2 ✅ - 40% complete)
 - Task 13: Peer Comparison ✅
 - Task 14: Educational Content ✅
 
