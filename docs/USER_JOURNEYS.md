@@ -6,6 +6,15 @@
 
 **Recent Updates**:
 
+- Investment Tracking Backend Started (2026-02-05)
+  - 🔄 **BACKEND STARTED**: Investment Tracking (Requirement 45, Task 12.1)
+  - **Backend**: investments Lambda function with CRUD operations and portfolio calculations
+  - **Features**: Holdings management (create, read, update, delete), portfolio overview with total value/cost basis/gain-loss, asset allocation by account type
+  - **API Endpoints**: 6 endpoints (GET portfolio, GET holdings, POST/PUT/DELETE holdings, GET performance)
+  - **Account Types**: Support for brokerage, 401k, IRA, Roth IRA, HSA, crypto
+  - **Tests**: 11 unit tests covering all CRUD operations and portfolio calculations
+  - **Status**: ✅ Backend Task 12.1 complete, ❌ Frontend not started
+  - **Files**: `backend/functions/investments/` (index.js, README.md, package.json, index.test.js)
 - Credit Score Monitoring Complete (2026-02-05)
   - ✅ **FEATURE COMPLETE**: Credit Score Monitoring (Requirement 43, Task 11)
   - **Web Components**: CreditScorePage.tsx with personalized improvement tips
@@ -1493,12 +1502,12 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 #### 🟢 LOW PRIORITY (Nice to Have)
 
-| Component               | Journey          | Backend Status   | Effort   |
-| ----------------------- | ---------------- | ---------------- | -------- |
-| `CalendarView.tsx`      | Daily Management | N/A              | ✅ Done  |
-| `ReceiptUpload.tsx`     | Daily Management | ✅ Backend ready | ✅ Done  |
-| `InvestmentTracker.tsx` | Net Worth        | ❌ Not started   | 3-4 days |
-| `CreditScoreWidget.tsx` | Financial Health | ✅ Complete      | ✅ Done  |
+| Component               | Journey          | Backend Status     | Effort   |
+| ----------------------- | ---------------- | ------------------ | -------- |
+| `CalendarView.tsx`      | Daily Management | N/A                | ✅ Done  |
+| `ReceiptUpload.tsx`     | Daily Management | ✅ Backend ready   | ✅ Done  |
+| `InvestmentTracker.tsx` | Net Worth        | 🔄 Backend started | 3-4 days |
+| `CreditScoreWidget.tsx` | Financial Health | ✅ Complete        | ✅ Done  |
 
 ### Backend APIs Without Frontend
 
@@ -1517,6 +1526,12 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 | `GET /learn/courses`                | Educational content            | LOW      | ✅ Done (LearnPage)            |
 | `GET /learn/progress`               | Learning progress              | LOW      | ✅ Done (LearnPage)            |
 | `GET /admin/dashboard`              | Admin metrics                  | LOW      | ✅ Done (AdminDashboard)       |
+| `GET /investments`                  | Portfolio overview             | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
+| `GET /investments/holdings`         | List holdings                  | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
+| `POST /investments/holdings`        | Add holding                    | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
+| `PUT /investments/holdings/{id}`    | Update holding                 | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
+| `DELETE /investments/holdings/{id}` | Delete holding                 | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
+| `GET /investments/performance`      | Performance over time          | LOW      | 🔄 Backend Only (Task 12.1)    |
 | `GET /notifications`                | List in-app notifications      | HIGH     | 🔄 Backend Only                |
 | `GET /notifications/{id}`           | Get single notification        | HIGH     | 🔄 Backend Only                |
 | `PUT /notifications/{id}/read`      | Mark notification as read      | HIGH     | 🔄 Backend Only                |
@@ -1729,7 +1744,7 @@ xl: 32px  (major sections)
 | R42 | Bank Sync (Plaid)     | Bank          | Task 10 | ✅       | ✅      | ✅ Complete    |
 | R43 | Credit Score          | Insights      | Task 11 | ✅       | ✅      | ✅ Complete    |
 | R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete    |
-| R45 | Investments           | Goals         | Task 12 | ❌       | ❌      | ❌ Not started |
+| R45 | Investments           | Goals         | Task 12 | ❌       | 🔄      | 🔄 In Progress |
 | R46 | Peer Comparison       | Insights      | Task 13 | ✅       | ✅      | ✅ Complete    |
 | R47 | Educational Content   | Insights      | Task 14 | ✅       | ✅      | ✅ Complete    |
 | R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete    |
@@ -2368,7 +2383,7 @@ Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 - Task 9: Net Worth Tracking ✅
 - Task 10: Bank Sync UI (Plaid) ✅
 - Task 11: Credit Score Monitoring ✅
-- Task 12: Investment Tracking ❌
+- Task 12: Investment Tracking 🔄 (Backend: Task 12.1 ✅)
 - Task 13: Peer Comparison ✅
 - Task 14: Educational Content ✅
 
