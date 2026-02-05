@@ -105,6 +105,7 @@ main() {
 
     local api_url=$(get_stack_output "budgetbuddy-$environment-api" "ApiUrl")
     local features_api_url=$(get_stack_output "budgetbuddy-$environment-api-features" "FeaturesApiUrl")
+    local family_api_url=$(get_stack_output "budgetbuddy-$environment-api-family" "FamilyApiUrl")
     local user_pool_id=$(get_stack_output "budgetbuddy-$environment-auth" "UserPoolId")
     local user_pool_client_id=$(get_stack_output "budgetbuddy-$environment-auth" "UserPoolClientId")
     local table_name=$(get_stack_output "budgetbuddy-$environment-database" "TableName")
@@ -113,6 +114,7 @@ main() {
 
     echo "API URL: $api_url"
     echo "Features API URL: $features_api_url"
+    echo "Family API URL: $family_api_url"
     echo "User Pool ID: $user_pool_id"
     echo "User Pool Client ID: $user_pool_client_id"
     echo "DynamoDB Table: $table_name"
@@ -148,8 +150,8 @@ main() {
             ((errors++))
         fi
 
-        # Test other service endpoints (main API)
-        local services=("transactions" "ai" "family" "email")
+        # Test other service endpoints (main API - excluding family and email which moved to family stack)
+        local services=("transactions" "ai")
         for service in "${services[@]}"; do
             if test_api_endpoint "$api_url" "/$service/health"; then
                 print_success "$service service working"
@@ -169,6 +171,23 @@ main() {
     else
         print_error "API URL not found - cannot test endpoints"
         ((errors++))
+    fi
+
+    # Test Family API endpoints (family, email)
+    if [ -n "$family_api_url" ]; then
+        print_status "Testing Family API endpoints..."
+
+        local family_services=("family" "email")
+        for service in "${family_services[@]}"; do
+            if test_api_endpoint "$family_api_url" "/$service/health"; then
+                print_success "$service service working (Family API)"
+            else
+                print_error "$service service failed (Family API)"
+                ((errors++))
+            fi
+        done
+    else
+        print_warning "Family API URL not found - skipping family API health checks"
     fi
 
     # Test Features API endpoints (admin, plaid, reconciliation)
