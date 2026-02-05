@@ -1,121 +1,74 @@
 /**
- * Credit Score Page - Credit Score Monitoring and History
+ * Credit Score Page
  *
- * Displays current credit score, rating, history chart,
- * and factors affecting the score.
+ * Displays current credit score, history, and factors affecting score
+ * Requirements: 43.1, 43.3, 43.5, 43.6, 43.7
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  getCreditScore,
+  getCreditScoreHistory,
+  refreshCreditScore,
+  CreditScore,
+  CreditScoreHistory,
+} from "../services/creditScoreApi";
 
-const API_BASE_URL =
-  "https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1";
-
-interface CreditScore {
-  score: number;
-  rating: string;
-  date: string;
-  change: number;
-  factors: {
-    paymentHistory: number;
-    creditUtilization: number;
-    creditAge: number;
-    creditMix: number;
-    newCredit: number;
-  };
-}
-
-interface ScoreHistory {
-  date: string;
-  score: number;
-  change: number;
-}
-
-export default function CreditScorePage() {
-  const { tokens } = useAuth();
-  const token = tokens?.idToken;
-
-  const [currentScore, setCurrentScore] = useState<CreditScore | null>(null);
-  const [history, setHistory] = useState<ScoreHistory[]>([]);
+const CreditScorePage: React.FC = () => {
+  const navigate = useNavigate();
+  const [creditScore, setCreditScore] = useState<CreditScore | null>(null);
+  const [history, setHistory] = useState<CreditScoreHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadCreditScore = useCallback(async () => {
-    try {
-      setError(null);
-      if (!token) {
-        setError("Not authenticated");
-        return;
-      }
+  useEffect(() => {
+    loadCreditScoreData();
+  }, []);
 
-      const [scoreResponse, historyResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/credit-score`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }),
-        fetch(`${API_BASE_URL}/credit-score/history`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }),
+  const loadCreditScoreData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [scoreData, historyData] = await Promise.all([
+        getCreditScore(),
+        getCreditScoreHistory(),
       ]);
 
-      if (!scoreResponse.ok || !historyResponse.ok) {
-        throw new Error("Failed to load credit score");
-      }
-
-      const scoreData = await scoreResponse.json();
-      const historyData = await historyResponse.json();
-
-      setCurrentScore(scoreData.data || null);
-      setHistory(historyData.data?.history || []);
-    } catch (err) {
+      setCreditScore(scoreData);
+      setHistory(historyData.history);
+    } catch (err: any) {
       console.error("Error loading credit score:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load credit score",
+        err.response?.data?.message || "Failed to load credit score data",
       );
     } finally {
       setLoading(false);
     }
-  }, [token]);
-
-  useEffect(() => {
-    loadCreditScore();
-  }, [loadCreditScore]);
+  };
 
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
       setError(null);
 
-      const response = await fetch(`${API_BASE_URL}/credit-score/refresh`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const updatedScore = await refreshCreditScore();
+      setCreditScore(updatedScore);
 
-      if (!response.ok) {
-        throw new Error("Failed to refresh credit score");
-      }
-
-      await loadCreditScore();
-    } catch (err) {
+      // Reload history to include new score
+      const historyData = await getCreditScoreHistory();
+      setHistory(historyData.history);
+    } catch (err: any) {
       console.error("Error refreshing credit score:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to refresh credit score",
-      );
+      setError(err.response?.data?.message || "Failed to refresh credit score");
     } finally {
       setRefreshing(false);
     }
   };
 
-  const getRatingColor = (rating: string) => {
+  const getRatingColor = (rating: string): string => {
     switch (rating.toLowerCase()) {
       case "excellent":
         return "text-green-600";
@@ -132,225 +85,349 @@ export default function CreditScorePage() {
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 800) return "text-green-600";
-    if (score >= 740) return "text-blue-600";
-    if (score >= 670) return "text-yellow-600";
-    if (score >= 580) return "text-orange-600";
-    return "text-red-600";
+  const getImpactColor = (impact: string): string => {
+    switch (impact) {
+      case "high":
+        return "bg-red-100 text-red-800";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "low":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getImprovementTips = (): string[] => {
+    if (!creditScore || !creditScore.score) return [];
+
+    const tips: string[] = [];
+
+    if (creditScore.score < 670) {
+      tips.push(
+        "Pay all bills on time - payment history is the most important factor",
+      );
+      tips.push("Keep credit card balances below 30% of your credit limit");
+      tips.push("Avoid opening multiple new credit accounts in a short period");
+    } else if (creditScore.score < 740) {
+      tips.push(
+        "Continue making on-time payments to build a strong payment history",
+      );
+      tips.push(
+        "Pay down credit card balances to improve your credit utilization ratio",
+      );
+      tips.push(
+        "Keep old credit accounts open to maintain a longer credit history",
+      );
+    } else {
+      tips.push("Maintain your excellent payment history");
+      tips.push("Keep credit utilization low across all accounts");
+      tips.push("Monitor your credit report regularly for errors");
+    }
+
+    return tips;
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading credit score...</p>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <div className="h-32 bg-gray-200 rounded"></div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="h-64 bg-gray-200 rounded"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Credit Score</h1>
-        <p className="mt-2 text-gray-600">
-          Monitor your credit score and track changes over time
-        </p>
-      </div>
-
-      {error && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
-
-      {/* Current Score Card */}
-      {currentScore && (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Current Score
-            </h2>
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {refreshing ? "Refreshing..." : "Refresh Score"}
-            </button>
-          </div>
-
-          <div className="text-center py-8">
-            <div
-              className={`text-6xl font-bold ${getScoreColor(currentScore.score)}`}
-            >
-              {currentScore.score}
-            </div>
-            <div
-              className={`text-2xl font-semibold mt-2 ${getRatingColor(currentScore.rating)}`}
-            >
-              {currentScore.rating}
-            </div>
-            {currentScore.change !== 0 && (
-              <div
-                className={`text-lg mt-2 ${currentScore.change > 0 ? "text-green-600" : "text-red-600"}`}
-              >
-                {currentScore.change > 0 ? "+" : ""}
-                {currentScore.change} points
-              </div>
-            )}
-            <div className="text-sm text-gray-500 mt-2">
-              Last updated: {new Date(currentScore.date).toLocaleDateString()}
-            </div>
-          </div>
-
-          {/* Score Factors */}
-          <div className="mt-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Factors Affecting Your Score
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-700">Payment History</span>
-                  <span className="font-semibold">
-                    {currentScore.factors.paymentHistory}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: `${currentScore.factors.paymentHistory}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-700">Credit Utilization</span>
-                  <span className="font-semibold">
-                    {currentScore.factors.creditUtilization}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{
-                      width: `${currentScore.factors.creditUtilization}%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-700">Credit Age</span>
-                  <span className="font-semibold">
-                    {currentScore.factors.creditAge}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: `${currentScore.factors.creditAge}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-700">Credit Mix</span>
-                  <span className="font-semibold">
-                    {currentScore.factors.creditMix}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: `${currentScore.factors.creditMix}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-700">New Credit</span>
-                  <span className="font-semibold">
-                    {currentScore.factors.newCredit}%
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{ width: `${currentScore.factors.newCredit}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Score History */}
-      {history.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Score History
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Score
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Change
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {history.map((entry, index) => (
-                  <tr key={index}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(entry.date).toLocaleDateString()}
-                    </td>
-                    <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm font-semibold ${getScoreColor(entry.score)}`}
-                    >
-                      {entry.score}
-                    </td>
-                    <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm ${entry.change > 0 ? "text-green-600" : entry.change < 0 ? "text-red-600" : "text-gray-600"}`}
-                    >
-                      {entry.change > 0 ? "+" : ""}
-                      {entry.change}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {!currentScore && !loading && (
-        <div className="bg-white rounded-lg shadow-md p-12 text-center">
-          <p className="text-gray-600 mb-4">No credit score data available</p>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Credit Score</h1>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            {refreshing ? "Loading..." : "Get Credit Score"}
+            {refreshing ? (
+              <>
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                Refresh Score
+              </>
+            )}
           </button>
         </div>
-      )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <svg
+                className="h-5 w-5 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p className="text-red-800">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Current Score Card */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
+          {creditScore?.score ? (
+            <>
+              <div className="text-center mb-6">
+                <div className="text-6xl font-bold text-gray-900 mb-2">
+                  {creditScore.score}
+                </div>
+                <div
+                  className={`text-2xl font-semibold ${getRatingColor(creditScore.rating)}`}
+                >
+                  {creditScore.rating}
+                </div>
+                {creditScore.change !== 0 && (
+                  <div
+                    className={`mt-2 flex items-center justify-center gap-1 ${creditScore.changeDirection === "up" ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {creditScore.changeDirection === "up" ? (
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 10l7-7m0 0l7 7m-7-7v18"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        className="h-5 w-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                        />
+                      </svg>
+                    )}
+                    <span className="font-semibold">
+                      {Math.abs(creditScore.change)} points
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Score Range Indicator */}
+              <div className="relative h-3 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 to-blue-500 rounded-full mb-2">
+                <div
+                  className="absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-white border-4 border-gray-900 rounded-full shadow-lg"
+                  style={{
+                    left: `${((creditScore.score - 300) / 550) * 100}%`,
+                  }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-gray-600">
+                <span>300</span>
+                <span>850</span>
+              </div>
+
+              <div className="mt-4 text-center text-sm text-gray-600">
+                Last updated:{" "}
+                {new Date(creditScore.lastUpdated).toLocaleDateString()}
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <svg
+                className="h-16 w-16 text-gray-400 mx-auto mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Credit Score Data
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Connect your credit bureau account to start monitoring your
+                credit score
+              </p>
+              <button
+                onClick={() => navigate("/settings")}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Connect Account
+              </button>
+            </div>
+          )}
+        </div>
+
+        {creditScore?.score && (
+          <>
+            {/* Factors Affecting Score */}
+            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Factors Affecting Your Score
+              </h2>
+              <div className="space-y-3">
+                {creditScore.factors.map((factor, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <div className="font-semibold text-gray-900">
+                        {factor.name}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {factor.status}
+                      </div>
+                    </div>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getImpactColor(factor.impact)}`}
+                    >
+                      {factor.impact} impact
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Score History Chart */}
+            {history.length > 0 && (
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  Score History
+                </h2>
+                <div className="space-y-2">
+                  {history.map((entry, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm text-gray-600">
+                          {new Date(entry.date).toLocaleDateString("en-US", {
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </div>
+                        <div className="font-semibold text-gray-900">
+                          {entry.score}
+                        </div>
+                        <div
+                          className={`text-sm ${getRatingColor(entry.rating)}`}
+                        >
+                          {entry.rating}
+                        </div>
+                      </div>
+                      {entry.change !== 0 && (
+                        <div
+                          className={`flex items-center gap-1 text-sm ${entry.change > 0 ? "text-green-600" : "text-red-600"}`}
+                        >
+                          {entry.change > 0 ? "+" : ""}
+                          {entry.change}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Improvement Tips */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Tips to Improve Your Score
+              </h2>
+              <div className="space-y-3">
+                {getImprovementTips().map((tip, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <svg
+                      className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <p className="text-gray-700">{tip}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default CreditScorePage;
