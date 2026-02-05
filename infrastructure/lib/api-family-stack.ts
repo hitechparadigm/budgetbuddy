@@ -217,116 +217,144 @@ export class ApiFamilyStack extends cdk.Stack {
   }
 
   private setupFamilyRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    // Create Lambda integration once to avoid circular dependencies
+    const familyIntegration = new apigateway.LambdaIntegration(this.functions.familyHandler, {
+      proxy: true,
+      allowTestInvoke: true,
+    });
+
     // Family routes (protected)
     const familyResource = this.api.root.addResource('family');
-    familyResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyResource.addMethod('GET', familyIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'GetFamily',
     });
-    familyResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyResource.addMethod('POST', familyIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'CreateFamily',
     });
 
     // Family invite endpoint (protected - primary only)
     const familyInviteResource = familyResource.addResource('invite');
-    familyInviteResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyInviteResource.addMethod('POST', familyIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'InviteFamilyMember',
     });
 
     // Family accept invitation endpoint (protected)
     const familyAcceptResource = familyResource.addResource('accept-invitation');
-    familyAcceptResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyAcceptResource.addMethod('POST', familyIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'AcceptFamilyInvitation',
     });
 
     // Family members endpoint (protected)
     const familyMembersResource = familyResource.addResource('members');
-    familyMembersResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyMembersResource.addMethod('GET', familyIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'GetFamilyMembers',
     });
 
     // Family member by ID endpoints (protected)
     const familyMemberIdResource = familyMembersResource.addResource('{userId}');
-    familyMemberIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyMemberIdResource.addMethod('DELETE', familyIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'RemoveFamilyMember',
     });
 
     // Family member role endpoint (protected - primary only)
     const familyMemberRoleResource = familyMemberIdResource.addResource('role');
-    familyMemberRoleResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyMemberRoleResource.addMethod('PUT', familyIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'UpdateFamilyMemberRole',
     });
 
     // Family leave endpoint (protected - non-primary only)
     const familyLeaveResource = familyResource.addResource('leave');
-    familyLeaveResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyLeaveResource.addMethod('POST', familyIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'LeaveFamily',
     });
 
     // Family invitations management endpoints (protected - primary only)
     const familyInvitationsResource = familyResource.addResource('invitations');
-    familyInvitationsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyInvitationsResource.addMethod('GET', familyIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'GetFamilyInvitations',
     });
 
     // Family invitation by ID endpoints (protected - primary only)
     const familyInvitationIdResource = familyInvitationsResource.addResource('{invitationId}');
-    familyInvitationIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyInvitationIdResource.addMethod('DELETE', familyIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'RevokeFamilyInvitation',
     });
 
     // Family invitation resend endpoint (protected - primary only)
     const familyInvitationResendResource = familyInvitationIdResource.addResource('resend');
-    familyInvitationResendResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyInvitationResendResource.addMethod('POST', familyIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'ResendFamilyInvitation',
     });
 
     // Family health endpoint
     const familyHealthResource = familyResource.addResource('health');
-    familyHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+    familyHealthResource.addMethod('GET', familyIntegration, {
+      authorizationType: apigateway.AuthorizationType.NONE,
       methodResponses: [{ statusCode: '200' }],
       operationName: 'FamilyHealthCheck',
     });
   }
 
   private setupEmailRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    // Create Lambda integration once to avoid circular dependencies
+    const emailIntegration = new apigateway.LambdaIntegration(this.functions.emailHandler, {
+      proxy: true,
+      allowTestInvoke: true,
+    });
+
     const emailResource = this.api.root.addResource('email');
 
     // Health endpoint (public)
     const emailHealthResource = emailResource.addResource('health');
-    emailHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+    emailHealthResource.addMethod('GET', emailIntegration, {
+      authorizationType: apigateway.AuthorizationType.NONE,
       methodResponses: [{ statusCode: '200' }],
       operationName: 'EmailHealthCheck',
     });
 
     // Send invitation email (protected)
     const sendInvitationResource = emailResource.addResource('send-invitation');
-    sendInvitationResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+    sendInvitationResource.addMethod('POST', emailIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'SendInvitationEmail',
     });
 
     // Send removal notification email (protected)
     const sendRemovalResource = emailResource.addResource('send-removal');
-    sendRemovalResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+    sendRemovalResource.addMethod('POST', emailIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'SendRemovalEmail',
     });
 
     // Send acceptance notification email (protected)
     const sendAcceptanceResource = emailResource.addResource('send-acceptance');
-    sendAcceptanceResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.emailHandler), {
+    sendAcceptanceResource.addMethod('POST', emailIntegration, {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'SendAcceptanceEmail',
     });
   }
