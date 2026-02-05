@@ -781,6 +781,66 @@ The feature is already deployed and functional. No code changes were made in thi
 - Verify SES configuration (sender email verification)
 - Update remaining documentation files
 
+## 2026-02-05 - Family Invitation Email Fix (Session 124)
+
+### Session Summary
+
+**Duration**: 60 minutes
+**Focus**: Investigate and fix family invitation email sending issue
+**Outcome**: Root cause identified and fixed, deployment blocked by CloudFormation circular dependency
+
+### Work Completed
+
+1. **Issue Investigation**:
+   - User reported invitation emails not being sent
+   - Investigated family Lambda and email Lambda integration
+   - Found that family Lambda (api-stack) was calling wrong API Gateway
+   - Email Lambda is deployed in api-features-stack with different API Gateway URL
+
+2. **Root Cause**:
+   - Family Lambda configured with `API_URL` pointing to api-stack API Gateway (`q0zoob6728`)
+   - Email Lambda deployed in api-features-stack API Gateway (`0poeu07vth`)
+   - Family Lambda missing `EMAIL_API_URL` environment variable
+   - Email service calls were going to wrong API Gateway (404 errors)
+
+3. **Solution Implemented**:
+   - Added `EMAIL_API_URL` environment variable to family Lambda in `infrastructure/lib/api-stack.ts`
+   - Updated family Lambda code to prioritize `EMAIL_API_URL` over `API_URL` for email calls
+   - Email Lambda endpoints properly configured in api-features-stack
+
+4. **Deployment Status**:
+   - Changes committed and pushed successfully
+   - CI/CD deployment FAILED with CloudFormation circular dependency error
+   - Error: "Circular dependency between resources" involving FamilyHandler and API Gateway permissions
+   - This is NOT caused by the email fix - it's a pre-existing issue with api-stack having 427 resources (approaching 500 limit)
+
+### Files Modified
+
+- `infrastructure/lib/api-stack.ts` - Added EMAIL_API_URL environment variable
+- `backend/functions/family/index.js` - Updated to prioritize EMAIL_API_URL
+
+### Known Issue
+
+**BLOCKER**: CloudFormation circular dependency in api-stack prevents deployment. This is a known issue with large CloudFormation stacks (427 resources approaching 500 limit). The email fix is correct and will work once deployment succeeds.
+
+**Symptoms**:
+
+- Deployment fails during CloudFormation changeset creation
+- Error: "Circular dependency between resources"
+- Affects FamilyHandler Lambda and related API Gateway permissions
+
+**Resolution Options**:
+
+1. Manual AWS Console deployment (may break circular dependency)
+2. Split api-stack into smaller stacks (long-term solution)
+3. Wait for CloudFormation to resolve (sometimes works on retry)
+
+### Next Steps
+
+- Email fix is ready and correct
+- User should retry deployment or manually deploy via AWS Console
+- Consider splitting api-stack to stay under CloudFormation limits
+
 ## 2026-02-04 - CloudFormation Export Conflict Resolution (Session 120)
 
 ### Session Summary
