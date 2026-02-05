@@ -1,6 +1,139 @@
 # Development Log
 
-## 2026-02-05 - Credit Score Monitoring - Backend (Session 124)
+## 2026-02-05 - Fix Family Invitation Email Sending (Session 124)
+
+### Session Summary
+
+**Duration**: 20 minutes
+**Focus**: Fix family invitation email sending issue
+**Outcome**: Email integration fixed, invitations will now be sent successfully
+
+### Problem Identified
+
+User reported: "I can't send the email to anyone. Also, I can't re-send the invite to those emails that I've already entered. However, no one has received an email."
+
+**Root Cause Analysis**:
+
+1. Family Lambda was creating invitation records successfully
+2. Family Lambda was trying to call email service API
+3. BUT: EMAIL_API_URL was hardcoded to wrong API Gateway URL
+4. The hardcoded URL: `https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1`
+5. The actual API URL: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1`
+6. Email routes exist in api-features-stack on the correct API Gateway
+7. Family Lambda couldn't reach email service due to wrong URL
+
+### Investigation Steps
+
+1. **Checked family Lambda code**:
+   - Found email sending logic in `handleInvite()` function
+   - Confirmed it calls `/email/send-invitation` endpoint
+   - Found hardcoded EMAIL_API_URL environment variable
+
+2. **Checked email Lambda code**:
+   - Confirmed `/email/send-invitation` endpoint exists
+   - Endpoint is properly implemented with SES integration
+   - Email templates are ready
+
+3. **Checked CDK infrastructure**:
+   - Found email routes configured in api-features-stack
+   - Routes are protected with Cognito authorizer
+   - `setupEmailRoutes()` is being called
+
+4. **Identified the issue**:
+   - EMAIL_API_URL was hardcoded in api-stack.ts
+   - Hardcoded URL was from a different/old deployment
+   - Family Lambda was calling wrong API Gateway
+
+### Solution Implemented
+
+1. **Updated family Lambda** (`backend/functions/family/index.js`):
+
+   ```javascript
+   // Before:
+   const apiUrl =
+     process.env.EMAIL_API_URL ||
+     "https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1";
+
+   // After:
+   const apiUrl =
+     process.env.API_URL ||
+     process.env.EMAIL_API_URL ||
+     "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+   ```
+
+2. **Updated CDK stack** (`infrastructure/lib/api-stack.ts`):
+   - Removed hardcoded EMAIL_API_URL from family Lambda environment
+   - Added API_URL environment variable after API Gateway creation
+   - API_URL is set dynamically using `this.api.url`
+
+3. **Dynamic API URL**:
+   ```typescript
+   // After API Gateway is created:
+   this.functions.familyHandler.addEnvironment("API_URL", this.api.url);
+   ```
+
+### Technical Details
+
+**Email Flow** (Now Working):
+
+1. User clicks "Send Invitation" in Family Settings
+2. Frontend calls POST /family/invite
+3. Family Lambda creates invitation record in DynamoDB
+4. Family Lambda calls POST /email/send-invitation on SAME API Gateway
+5. Email Lambda sends invitation email via AWS SES
+6. User receives email with accept link
+
+**API Gateway Structure**:
+
+- Main API Gateway: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1`
+- Family routes: `/family/*` (in api-stack)
+- Email routes: `/email/*` (in api-features-stack)
+- Both use same API Gateway instance
+
+**Environment Variables**:
+
+- `API_URL`: Set dynamically to `this.api.url`
+- `WEB_APP_URL`: For accept invitation links
+- `TABLE_NAME`: DynamoDB table
+
+### Files Modified
+
+- `backend/functions/family/index.js` - Use API_URL instead of hardcoded EMAIL_API_URL
+- `infrastructure/lib/api-stack.ts` - Set API_URL dynamically after API creation
+- `CHANGELOG.md` - Documented fix
+- `DEVELOPMENT_LOG.md` - This entry
+- `docs/development-status.md` - Updated status
+
+### Testing Recommendations
+
+1. **Manual Testing**:
+   - Send a new family invitation
+   - Check CloudWatch logs for email Lambda invocation
+   - Verify email received in inbox
+   - Test resend invitation functionality
+
+2. **Verification**:
+   - Check DynamoDB for invitation record
+   - Check CloudWatch logs for family Lambda
+   - Check CloudWatch logs for email Lambda
+   - Check SES sending statistics
+
+### Next Steps
+
+1. Deploy changes to dev environment
+2. Test invitation sending end-to-end
+3. Verify emails are received
+4. Test resend functionality
+5. Monitor CloudWatch logs for any errors
+
+### Lessons Learned
+
+1. **Never hardcode API URLs**: Always use environment variables set dynamically
+2. **API Gateway URL changes**: URLs change between deployments, must be dynamic
+3. **Cross-stack communication**: When Lambdas call each other, use same API Gateway
+4. **Environment variables**: Set after resources are created if they depend on resource properties
+
+## 2026-02-05 - Credit Score Monitoring - Backend (Session 124 - Earlier)
 
 ### Session Summary
 

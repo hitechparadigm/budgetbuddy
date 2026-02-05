@@ -91,6 +91,9 @@ export class ApiStack extends cdk.Stack {
     // Set up API routes and integrations
     this.setupApiRoutes();
 
+    // Update family Lambda with API URL for email service calls
+    this.functions.familyHandler.addEnvironment('API_URL', this.api.url);
+
     // Create outputs for client configuration
     this.createOutputs();
   }
@@ -214,8 +217,7 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ...commonEnvironment,
         WEB_APP_URL: 'https://app.budgetbuddy.com',
-        // Email service is in the features API stack
-        EMAIL_API_URL: 'https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1',
+        // API_URL will be set after API Gateway is created
       },
     });
 

@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.9.108] - 2026-02-05
+
+### 🐛 Fix Family Invitation Email Sending (Session 124)
+
+- **Problem**: Family invitations were created but emails were never sent
+  - Family Lambda was using hardcoded EMAIL_API_URL pointing to wrong API Gateway
+  - Email routes exist in api-features-stack but family Lambda couldn't reach them
+  - Users couldn't send invitations or resend to existing emails
+
+- **Solution**: Fixed API URL configuration
+  - Updated family Lambda to use API_URL environment variable
+  - API_URL now set dynamically after API Gateway creation
+  - Family Lambda now calls email service on same API Gateway
+  - Removed hardcoded EMAIL_API_URL
+
+- **Changes**:
+  - `backend/functions/family/index.js`: Use API_URL instead of hardcoded EMAIL_API_URL
+  - `infrastructure/lib/api-stack.ts`: Set API_URL environment variable after API creation
+  - Family Lambda now successfully calls `/email/send-invitation` endpoint
+
+- **Impact**:
+  - Family invitation emails will now be sent successfully
+  - Users can send and resend invitations
+  - Email service properly integrated with family Lambda
+
 ## [1.9.107] - 2026-02-05
 
 ### ✨ Credit Score Monitoring - Backend Implementation (Session 124)
