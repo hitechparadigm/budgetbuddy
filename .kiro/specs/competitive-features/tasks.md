@@ -383,13 +383,13 @@
 
 ### Task 11: Credit Score Monitoring (Requirement 43)
 
-- [ ] 11.1 Backend: Create credit-score Lambda function
+- [x] 11.1 Backend: Create credit-score Lambda function
   - Create `backend/functions/credit-score/` directory
   - Integrate with credit bureau API
   - Store score history
   - **Validates: Requirement 43.1, 43.2**
 
-- [ ] 11.2 Backend: Implement score change notifications
+- [x] 11.2 Backend: Implement score change notifications
   - Notify on significant changes (±10 points)
   - **Validates: Requirement 43.8**
 
