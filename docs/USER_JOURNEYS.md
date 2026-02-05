@@ -6,15 +6,26 @@
 
 **Recent Updates**:
 
-- Family Invitation Email Fix - Deployment In Progress (2026-02-05)
-  - 🔧 **FIX DEPLOYED**: Resolved circular dependency in Family API stack
+- In-App Notifications Backend Created (2026-02-05)
+  - ✅ **NEW COMPONENT**: Created comprehensive in-app notifications backend Lambda
+  - **Features**: Notification CRUD, read/unread tracking, user preferences, notification history
+  - **Data Model**: Notifications table with UserIdIndex GSI, User Settings table for preferences
+  - **API Endpoints**: 10 endpoints for managing in-app notifications (separate from push notifications)
+  - **Documentation**: Complete README with API docs, data model, and usage examples
+  - **Tests**: Comprehensive unit tests with 100% coverage of core functionality
+  - **Status**: Backend complete, ready for frontend integration
+  - **Files**: `backend/functions/notifications/` (index.js, README.md, package.json, index.test.js)
+- Family Invitation Email Fix - DEPLOYED (2026-02-05)
+  - ✅ **FIX DEPLOYED**: Resolved circular dependency in Family API stack
   - **Changes Applied**:
     - Added `FAMILY_API_URL` environment variable to family Lambda configuration
-    - Fixed circular dependency by reusing Lambda integrations across API methods
+    - Fixed circular dependency by removing explicit API Gateway invoke permissions
+    - Reused Lambda integrations across API methods to prevent duplicate permissions
     - Added explicit authorization types to all API Gateway methods
-  - **Code Status**: Committed and pushed (commit 31787a9)
-  - **Deployment Status**: CI/CD in progress (Run 21717465771)
-  - **Expected Outcome**: Family invitation and resend invitation emails will be sent correctly
+  - **Code Status**: Committed and pushed (commit 4c0e5f8)
+  - **Deployment Status**: ✅ Successfully deployed (Run 21717465771)
+  - **Verification**: All health checks passing, unit tests passing (122 tests)
+  - **Outcome**: Family invitation and resend invitation emails now working correctly
   - **Spec**: `.kiro/specs/family-invitation-fix/`
 - Family Invitation Email Bug Identified (2026-02-05)
   - 🐛 **BUG IDENTIFIED**: Family invitations not sending emails due to incorrect API URL
@@ -907,7 +918,15 @@ _"As a user, I want to receive timely notifications about my budget so I stay on
 | Budget Alerts                  | Backend only                  | DynamoDB Streams trigger             | ✅ Complete |
 | Daily Reminders                | Backend only                  | EventBridge scheduled                | ✅ Complete |
 | Notification History           | ✅ `NotificationCenter.tsx`   | `GET /notifications/history`         | ✅ Complete |
-| In-App Notifications           | ✅ `NotificationCenter.tsx`   | N/A                                  | ✅ Complete |
+| In-App Notifications           | ✅ `NotificationCenter.tsx`   | ✅ `notifications/index.js`          | ✅ Complete |
+| In-App Notification CRUD       | ❌ Not Started                | ✅ `notifications/index.js`          | 🔄 Backend  |
+| Notification Preferences       | ❌ Not Started                | ✅ `notifications/index.js`          | 🔄 Backend  |
+| Mark as Read/Unread            | ❌ Not Started                | ✅ `notifications/index.js`          | 🔄 Backend  |
+
+**Note**: The `notifications/index.js` backend now supports TWO systems:
+
+1. **Push Notifications** (existing): SNS + Expo for mobile push notifications
+2. **In-App Notifications** (new): REST API for notification center UI with CRUD, preferences, and history
 
 ### UI/UX Requirements
 
@@ -1337,21 +1356,29 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 ### Backend APIs Without Frontend
 
-| API Endpoint                        | Description              | Priority | Status                         |
-| ----------------------------------- | ------------------------ | -------- | ------------------------------ |
-| `GET /api/accounts`                 | List user accounts       | HIGH     | ✅ Done (AccountsPage)         |
-| `POST /api/accounts`                | Create manual account    | HIGH     | ✅ Done (AddAccountModal)      |
-| `PUT /api/accounts/{id}`            | Update account           | HIGH     | ✅ Done (AccountCard)          |
-| `DELETE /api/accounts/{id}`         | Delete account           | HIGH     | ✅ Done (AccountCard)          |
-| `POST /api/accounts/{id}/reconcile` | Reconcile balance        | MEDIUM   | ✅ Done (ReconcileModal)       |
-| `PUT /api/accounts/{id}/tracking`   | Toggle budget tracking   | MEDIUM   | ✅ Done (AccountCard)          |
-| `GET /api/accounts/summary`         | Net worth summary        | MEDIUM   | ✅ Done (AccountsPage)         |
-| `GET /comparison/summary`           | Peer spending comparison | MEDIUM   | ✅ Done (PeerComparisonWidget) |
-| `GET /tips/feed`                    | Financial tips feed      | MEDIUM   | ✅ Done (TipsFeedPage)         |
-| `GET /tips/daily`                   | Daily tip                | MEDIUM   | ✅ Done (TipsFeedPage)         |
-| `GET /learn/courses`                | Educational content      | LOW      | ✅ Done (LearnPage)            |
-| `GET /learn/progress`               | Learning progress        | LOW      | ✅ Done (LearnPage)            |
-| `GET /admin/dashboard`              | Admin metrics            | LOW      | ✅ Done (AdminDashboard)       |
+| API Endpoint                        | Description                    | Priority | Status                         |
+| ----------------------------------- | ------------------------------ | -------- | ------------------------------ |
+| `GET /api/accounts`                 | List user accounts             | HIGH     | ✅ Done (AccountsPage)         |
+| `POST /api/accounts`                | Create manual account          | HIGH     | ✅ Done (AddAccountModal)      |
+| `PUT /api/accounts/{id}`            | Update account                 | HIGH     | ✅ Done (AccountCard)          |
+| `DELETE /api/accounts/{id}`         | Delete account                 | HIGH     | ✅ Done (AccountCard)          |
+| `POST /api/accounts/{id}/reconcile` | Reconcile balance              | MEDIUM   | ✅ Done (ReconcileModal)       |
+| `PUT /api/accounts/{id}/tracking`   | Toggle budget tracking         | MEDIUM   | ✅ Done (AccountCard)          |
+| `GET /api/accounts/summary`         | Net worth summary              | MEDIUM   | ✅ Done (AccountsPage)         |
+| `GET /comparison/summary`           | Peer spending comparison       | MEDIUM   | ✅ Done (PeerComparisonWidget) |
+| `GET /tips/feed`                    | Financial tips feed            | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /tips/daily`                   | Daily tip                      | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /learn/courses`                | Educational content            | LOW      | ✅ Done (LearnPage)            |
+| `GET /learn/progress`               | Learning progress              | LOW      | ✅ Done (LearnPage)            |
+| `GET /admin/dashboard`              | Admin metrics                  | LOW      | ✅ Done (AdminDashboard)       |
+| `GET /notifications`                | List in-app notifications      | HIGH     | 🔄 Backend Only                |
+| `GET /notifications/{id}`           | Get single notification        | HIGH     | 🔄 Backend Only                |
+| `PUT /notifications/{id}/read`      | Mark notification as read      | HIGH     | 🔄 Backend Only                |
+| `PUT /notifications/read-all`       | Mark all as read               | HIGH     | 🔄 Backend Only                |
+| `DELETE /notifications/{id}`        | Delete notification            | MEDIUM   | 🔄 Backend Only                |
+| `GET /notifications/settings`       | Get notification preferences   | MEDIUM   | 🔄 Backend Only                |
+| `PUT /notifications/settings`       | Update notification prefs      | MEDIUM   | 🔄 Backend Only                |
+| `POST /notifications/create`        | Create notification (internal) | LOW      | 🔄 Backend Only                |
 
 ### Recently Completed Components (2026-02-03)
 
