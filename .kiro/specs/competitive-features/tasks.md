@@ -409,7 +409,7 @@
 
 ### Task 12: Investment Tracking (Requirement 45)
 
-- [ ] 12.1 Backend: Create investments Lambda function
+- [x] 12.1 Backend: Create investments Lambda function
   - Create `backend/functions/investments/` directory
   - CRUD for holdings
   - Portfolio calculations
