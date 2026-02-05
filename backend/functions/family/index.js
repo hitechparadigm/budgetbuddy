@@ -456,9 +456,9 @@ async function handleInvite(event, userId, familyId, familyRole) {
       // Make HTTP call to email service
       // Use the same API Gateway URL (email routes are in the same API)
       const apiUrl =
-        process.env.API_URL ||
         process.env.EMAIL_API_URL ||
-        "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+        process.env.API_URL ||
+        "https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1";
 
       // Get JWT token from event headers for authenticated email endpoint
       const authHeader =
