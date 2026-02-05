@@ -453,34 +453,44 @@ async function handleInvite(event, userId, familyId, familyRole) {
 
       console.log("Sending invitation email:", emailPayload);
 
-      // Make HTTP call to email service
-      // Use the same API Gateway URL (email routes are in the same API)
-      const apiUrl =
-        process.env.EMAIL_API_URL ||
-        process.env.API_URL ||
-        "https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1";
+      // Use FAMILY_API_URL since both family and email Lambdas are in the same API Gateway
+      const apiUrl = process.env.FAMILY_API_URL;
 
-      // Get JWT token from event headers for authenticated email endpoint
-      const authHeader =
-        event.headers?.Authorization || event.headers?.authorization;
-
-      const emailResponse = await fetch(`${apiUrl}/email/send-invitation`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // Pass through authorization for authenticated email endpoint
-          ...(authHeader ? { Authorization: authHeader } : {}),
-        },
-        body: JSON.stringify(emailPayload),
-      });
-
-      if (!emailResponse.ok) {
-        const errorText = await emailResponse.text();
-        console.error("Failed to send invitation email:", errorText);
-        // Don't fail the invitation creation if email fails
-        // Just log the error and continue
+      if (!apiUrl) {
+        console.error("FAMILY_API_URL environment variable not set");
+        // Don't fail the invitation creation, just log the error
+        console.log(
+          "Invitation created but email could not be sent due to missing API URL configuration",
+        );
       } else {
-        console.log("Invitation email sent successfully");
+        // Get JWT token from event headers for authenticated email endpoint
+        const authHeader =
+          event.headers?.Authorization || event.headers?.authorization;
+
+        const emailResponse = await fetch(`${apiUrl}/email/send-invitation`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // Pass through authorization for authenticated email endpoint
+            ...(authHeader ? { Authorization: authHeader } : {}),
+          },
+          body: JSON.stringify(emailPayload),
+        });
+
+        if (!emailResponse.ok) {
+          const errorText = await emailResponse.text();
+          console.error("Failed to send invitation email:", {
+            status: emailResponse.status,
+            statusText: emailResponse.statusText,
+            error: errorText,
+            url: `${apiUrl}/email/send-invitation`,
+            payload: emailPayload,
+          });
+          // Don't fail the invitation creation if email fails
+          // Just log the error and continue
+        } else {
+          console.log("Invitation email sent successfully");
+        }
       }
     } catch (emailError) {
       console.error("Error sending invitation email:", emailError);
@@ -1245,9 +1255,16 @@ async function handleResendInvitation(
 
     console.log("Resending invitation email:", emailPayload);
 
-    const apiUrl =
-      process.env.EMAIL_API_URL ||
-      "https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1";
+    // Use FAMILY_API_URL since both family and email Lambdas are in the same API Gateway
+    const apiUrl = process.env.FAMILY_API_URL;
+
+    if (!apiUrl) {
+      console.error("FAMILY_API_URL environment variable not set");
+      return errorResponse(
+        500,
+        "Email service not configured. Please contact support.",
+      );
+    }
 
     const authHeader =
       event.headers?.Authorization || event.headers?.authorization;
@@ -1264,13 +1281,23 @@ async function handleResendInvitation(
 
       if (!emailResponse.ok) {
         const errorText = await emailResponse.text();
-        console.error("Failed to resend invitation email:", errorText);
+        console.error("Failed to resend invitation email:", {
+          status: emailResponse.status,
+          statusText: emailResponse.statusText,
+          error: errorText,
+          url: `${apiUrl}/email/send-invitation`,
+          payload: emailPayload,
+        });
         return errorResponse(500, "Failed to send email. Please try again.");
       }
 
       console.log("Invitation email resent successfully");
     } catch (emailError) {
-      console.error("Error resending invitation email:", emailError);
+      console.error("Error resending invitation email:", {
+        error: emailError.message,
+        stack: emailError.stack,
+        url: `${apiUrl}/email/send-invitation`,
+      });
       return errorResponse(500, "Failed to send email. Please try again.");
     }
 
