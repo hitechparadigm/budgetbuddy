@@ -393,13 +393,13 @@
   - Notify on significant changes (±10 points)
   - **Validates: Requirement 43.8**
 
-- [ ] 11.3 Frontend Web: Create CreditScorePage
+- [x] 11.3 Frontend Web: Create CreditScorePage
   - Display current score and rating
   - Score history chart
   - Factors affecting score
   - **Validates: Requirement 43.1, 43.3, 43.5, 43.6**
 
-- [ ] 11.4 Frontend Web: Add credit improvement tips
+- [x] 11.4 Frontend Web: Add credit improvement tips
   - Based on score factors
   - **Validates: Requirement 43.7**
 

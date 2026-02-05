@@ -98,34 +98,114 @@ const CreditScorePage: React.FC = () => {
     }
   };
 
-  const getImprovementTips = (): string[] => {
+  const getImprovementTips = (): { category: string; tips: string[] }[] => {
     if (!creditScore || !creditScore.score) return [];
 
-    const tips: string[] = [];
+    const tipsByCategory: { category: string; tips: string[] }[] = [];
 
-    if (creditScore.score < 670) {
-      tips.push(
-        "Pay all bills on time - payment history is the most important factor",
-      );
-      tips.push("Keep credit card balances below 30% of your credit limit");
-      tips.push("Avoid opening multiple new credit accounts in a short period");
-    } else if (creditScore.score < 740) {
-      tips.push(
-        "Continue making on-time payments to build a strong payment history",
-      );
-      tips.push(
-        "Pay down credit card balances to improve your credit utilization ratio",
-      );
-      tips.push(
-        "Keep old credit accounts open to maintain a longer credit history",
-      );
-    } else {
-      tips.push("Maintain your excellent payment history");
-      tips.push("Keep credit utilization low across all accounts");
-      tips.push("Monitor your credit report regularly for errors");
+    // Analyze factors to provide personalized tips
+    const hasPaymentIssues = creditScore.factors.some(
+      (f) =>
+        f.name.toLowerCase().includes("payment") &&
+        f.status.toLowerCase().includes("negative"),
+    );
+    const hasUtilizationIssues = creditScore.factors.some(
+      (f) =>
+        f.name.toLowerCase().includes("utilization") &&
+        f.status.toLowerCase().includes("negative"),
+    );
+    const hasCreditAgeIssues = creditScore.factors.some(
+      (f) =>
+        (f.name.toLowerCase().includes("age") ||
+          f.name.toLowerCase().includes("history")) &&
+        f.status.toLowerCase().includes("negative"),
+    );
+    const hasInquiryIssues = creditScore.factors.some(
+      (f) =>
+        f.name.toLowerCase().includes("inquir") &&
+        f.status.toLowerCase().includes("negative"),
+    );
+
+    // Payment History Tips
+    if (hasPaymentIssues || creditScore.score < 670) {
+      tipsByCategory.push({
+        category: "Payment History (35% of score)",
+        tips: [
+          "Set up automatic payments for all bills to never miss a due date",
+          "If you have late payments, focus on making on-time payments for the next 6-12 months",
+          "Contact creditors about payment plans if you're struggling - it's better than missing payments",
+          "Consider setting up payment reminders 3-5 days before due dates",
+        ],
+      });
     }
 
-    return tips;
+    // Credit Utilization Tips
+    if (hasUtilizationIssues || creditScore.score < 740) {
+      tipsByCategory.push({
+        category: "Credit Utilization (30% of score)",
+        tips: [
+          "Keep credit card balances below 30% of your limit (under 10% is ideal)",
+          "Pay down high-balance cards first to quickly improve utilization",
+          "Consider making multiple payments per month to keep balances low",
+          "Request credit limit increases on cards with good payment history",
+          "Avoid closing old credit cards - it reduces your total available credit",
+        ],
+      });
+    }
+
+    // Credit Age Tips
+    if (hasCreditAgeIssues) {
+      tipsByCategory.push({
+        category: "Length of Credit History (15% of score)",
+        tips: [
+          "Keep your oldest credit accounts open and active",
+          "Use old cards occasionally for small purchases to keep them active",
+          "Avoid closing accounts unless there's a compelling reason (high fees, etc.)",
+          "Be patient - credit age improves naturally over time",
+        ],
+      });
+    }
+
+    // New Credit / Inquiries Tips
+    if (hasInquiryIssues) {
+      tipsByCategory.push({
+        category: "New Credit & Inquiries (10% of score)",
+        tips: [
+          "Avoid applying for multiple credit cards or loans in a short period",
+          "Space out credit applications by at least 6 months when possible",
+          "Shop for rates within a 14-45 day window - multiple inquiries count as one",
+          "Only apply for credit when you truly need it",
+        ],
+      });
+    }
+
+    // Credit Mix Tips (if score is good but could be excellent)
+    if (creditScore.score >= 670 && creditScore.score < 800) {
+      tipsByCategory.push({
+        category: "Credit Mix (10% of score)",
+        tips: [
+          "Having different types of credit (cards, loans, mortgage) can help",
+          "Don't open accounts just for mix - only if you need them",
+          "Installment loans (auto, personal) show you can handle different payment types",
+        ],
+      });
+    }
+
+    // General Tips for All Scores
+    tipsByCategory.push({
+      category: "General Best Practices",
+      tips: [
+        "Check your credit report annually for errors at AnnualCreditReport.com",
+        "Dispute any inaccuracies you find on your credit report",
+        "Monitor your credit regularly - checking your own score doesn't hurt it",
+        "Be patient - significant score improvements typically take 3-6 months",
+        creditScore.score >= 740
+          ? "You're doing great! Maintain these habits to keep your excellent score"
+          : "Small consistent improvements add up - stay focused on your goals",
+      ],
+    });
+
+    return tipsByCategory;
   };
 
   if (loading) {
@@ -400,27 +480,90 @@ const CreditScorePage: React.FC = () => {
             {/* Improvement Tips */}
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Tips to Improve Your Score
+                Personalized Tips to Improve Your Score
               </h2>
-              <div className="space-y-3">
-                {getImprovementTips().map((tip, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <svg
-                      className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <p className="text-gray-700">{tip}</p>
+              <p className="text-gray-600 mb-6">
+                Based on your current score and factors, here are specific
+                actions you can take:
+              </p>
+              <div className="space-y-6">
+                {getImprovementTips().map((section, sectionIndex) => (
+                  <div key={sectionIndex}>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <svg
+                        className="h-5 w-5 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      {section.category}
+                    </h3>
+                    <div className="space-y-2 ml-7">
+                      {section.tips.map((tip, tipIndex) => (
+                        <div
+                          key={tipIndex}
+                          className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                        >
+                          <svg
+                            className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <p className="text-gray-700 text-sm">{tip}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Additional Resources */}
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <svg
+                    className="h-6 w-6 text-blue-600 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                  <div>
+                    <h4 className="font-semibold text-blue-900 mb-1">
+                      Want to Learn More?
+                    </h4>
+                    <p className="text-blue-800 text-sm mb-2">
+                      Check out our educational content for in-depth guides on
+                      improving your credit score and financial health.
+                    </p>
+                    <button
+                      onClick={() => navigate("/learn")}
+                      className="text-blue-600 hover:text-blue-700 font-semibold text-sm underline"
+                    >
+                      Browse Learning Resources →
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </>
