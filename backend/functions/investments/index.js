@@ -42,6 +42,7 @@ async function getPortfolio(userId) {
   // Calculate portfolio summary
   let totalValue = 0;
   let totalCostBasis = 0;
+  let totalDayChange = 0;
   const allocationMap = {};
 
   holdings.forEach((holding) => {
@@ -50,6 +51,12 @@ async function getPortfolio(userId) {
 
     totalValue += value;
     totalCostBasis += costBasis;
+
+    // Calculate day change if previous price exists
+    if (holding.previousPrice) {
+      const previousValue = holding.shares * holding.previousPrice;
+      totalDayChange += value - previousValue;
+    }
 
     // Track allocation by account type
     if (!allocationMap[holding.accountType]) {
@@ -62,6 +69,9 @@ async function getPortfolio(userId) {
   const totalGainLossPercent =
     totalCostBasis > 0 ? (totalGainLoss / totalCostBasis) * 100 : 0;
 
+  const dayChangePercent =
+    totalValue > 0 ? (totalDayChange / (totalValue - totalDayChange)) * 100 : 0;
+
   const allocation = Object.entries(allocationMap).map(([type, value]) => ({
     type,
     value,
@@ -73,8 +83,8 @@ async function getPortfolio(userId) {
     totalCostBasis,
     totalGainLoss,
     totalGainLossPercent,
-    dayChange: 0, // Will be calculated with price history
-    dayChangePercent: 0,
+    dayChange: totalDayChange,
+    dayChangePercent,
     allocation,
     holdings,
   };
@@ -264,11 +274,15 @@ exports.handler = async (event) => {
 
     // GET /investments/performance - Performance over time (placeholder)
     if (method === "GET" && pathParts[pathParts.length - 1] === "performance") {
-      // TODO: Implement performance history tracking
-      return response(200, {
-        performance: [],
-        message: "Performance tracking coming soon",
-      });
+      const period = event.queryStringParameters?.period || "1M"; // 1M, 3M, 6M, 1Y, ALL
+      const performance = await getPerformanceHistory(userId, period);
+      return response(200, performance);
+    }
+
+    // POST /investments/snapshot - Save current portfolio snapshot
+    if (method === "POST" && pathParts[pathParts.length - 1] === "snapshot") {
+      const snapshot = await savePortfolioSnapshot(userId);
+      return response(201, snapshot);
     }
 
     return response(404, { error: "Not found" });
@@ -277,3 +291,108 @@ exports.handler = async (event) => {
     return response(500, { error: error.message });
   }
 };
+
+// Get performance history
+async function getPerformanceHistory(userId, period) {
+  // Query portfolio snapshots
+  const params = {
+    TableName: TABLE_NAME,
+    KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
+    ExpressionAttributeValues: {
+      ":pk": `USER#${userId}`,
+      ":sk": "PORTFOLIO_SNAPSHOT#",
+    },
+    ScanIndexForward: false, // Most recent first
+  };
+
+  const result = await dynamodb.query(params).promise();
+  const snapshots = result.Items || [];
+
+  // Filter by period
+  const now = new Date();
+  let startDate;
+
+  switch (period) {
+    case "1M":
+      startDate = new Date(now.setMonth(now.getMonth() - 1));
+      break;
+    case "3M":
+      startDate = new Date(now.setMonth(now.getMonth() - 3));
+      break;
+    case "6M":
+      startDate = new Date(now.setMonth(now.getMonth() - 6));
+      break;
+    case "1Y":
+      startDate = new Date(now.setFullYear(now.getFullYear() - 1));
+      break;
+    case "ALL":
+      startDate = new Date(0); // Beginning of time
+      break;
+    default:
+      startDate = new Date(now.setMonth(now.getMonth() - 1));
+  }
+
+  const filteredSnapshots = snapshots
+    .filter((s) => new Date(s.date) >= startDate)
+    .reverse(); // Oldest first for chart
+
+  // Calculate performance metrics
+  if (filteredSnapshots.length === 0) {
+    return {
+      performance: [],
+      totalReturn: 0,
+      totalReturnPercent: 0,
+      message: "No performance data available yet",
+    };
+  }
+
+  const firstSnapshot = filteredSnapshots[0];
+  const lastSnapshot = filteredSnapshots[filteredSnapshots.length - 1];
+
+  const totalReturn = lastSnapshot.totalValue - firstSnapshot.totalValue;
+  const totalReturnPercent =
+    firstSnapshot.totalValue > 0
+      ? (totalReturn / firstSnapshot.totalValue) * 100
+      : 0;
+
+  return {
+    performance: filteredSnapshots.map((s) => ({
+      date: s.date,
+      totalValue: s.totalValue,
+      totalGainLoss: s.totalGainLoss,
+      totalGainLossPercent: s.totalGainLossPercent,
+    })),
+    totalReturn,
+    totalReturnPercent,
+    period,
+  };
+}
+
+// Save portfolio snapshot (called by scheduled Lambda or on-demand)
+async function savePortfolioSnapshot(userId) {
+  const portfolio = await getPortfolio(userId);
+  const now = new Date().toISOString();
+  const dateKey = now.split("T")[0]; // YYYY-MM-DD
+
+  const snapshot = {
+    PK: `USER#${userId}`,
+    SK: `PORTFOLIO_SNAPSHOT#${dateKey}`,
+    userId,
+    date: dateKey,
+    totalValue: portfolio.totalValue,
+    totalCostBasis: portfolio.totalCostBasis,
+    totalGainLoss: portfolio.totalGainLoss,
+    totalGainLossPercent: portfolio.totalGainLossPercent,
+    allocation: portfolio.allocation,
+    createdAt: now,
+  };
+
+  await dynamodb
+    .put({
+      TableName: TABLE_NAME,
+      Item: snapshot,
+    })
+    .promise();
+
+  return snapshot;
+}

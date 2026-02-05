@@ -27,8 +27,11 @@ describe("Investments Lambda Function", () => {
 
   const mockEvent = (method, path, body = null, userId = "user123") => ({
     httpMethod: method,
-    path,
+    path: path.split("?")[0], // Remove query string from path
     body: body ? JSON.stringify(body) : null,
+    queryStringParameters: path.includes("?")
+      ? Object.fromEntries(new URLSearchParams(path.split("?")[1]).entries())
+      : null,
     requestContext: {
       authorizer: {
         claims: {
@@ -296,6 +299,132 @@ describe("Investments Lambda Function", () => {
       expect(body.totalValue).toBe(1500);
       expect(body.totalCostBasis).toBe(0);
       expect(body.totalGainLossPercent).toBe(0); // Should not divide by zero
+    });
+
+    it("should calculate day change when previous price exists", async () => {
+      const mockHoldings = [
+        {
+          symbol: "AAPL",
+          shares: 10,
+          costBasis: 100,
+          currentPrice: 150,
+          previousPrice: 145,
+          accountType: "brokerage",
+        },
+        {
+          symbol: "GOOGL",
+          shares: 5,
+          costBasis: 1000,
+          currentPrice: 1500,
+          previousPrice: 1480,
+          accountType: "401k",
+        },
+      ];
+
+      mockQuery.mockResolvedValue({
+        Items: mockHoldings,
+      });
+
+      const event = mockEvent("GET", "/investments");
+      const result = await handler(event);
+      const body = JSON.parse(result.body);
+
+      // Day change: (10 * (150-145)) + (5 * (1500-1480)) = 50 + 100 = 150
+      expect(body.dayChange).toBe(150);
+      // Total value: (10*150) + (5*1500) = 9000
+      // Previous value: 9000 - 150 = 8850
+      // Day change %: (150 / 8850) * 100 ≈ 1.69%
+      expect(body.dayChangePercent).toBeCloseTo(1.69, 1);
+    });
+  });
+
+  describe("GET /investments/performance - Performance History", () => {
+    it("should return performance data for specified period", async () => {
+      const mockSnapshots = [
+        {
+          PK: "USER#user123",
+          SK: "PORTFOLIO_SNAPSHOT#2026-01-01",
+          date: "2026-01-01",
+          totalValue: 10000,
+          totalGainLoss: 500,
+          totalGainLossPercent: 5,
+        },
+        {
+          PK: "USER#user123",
+          SK: "PORTFOLIO_SNAPSHOT#2026-01-15",
+          date: "2026-01-15",
+          totalValue: 10500,
+          totalGainLoss: 1000,
+          totalGainLossPercent: 10.5,
+        },
+        {
+          PK: "USER#user123",
+          SK: "PORTFOLIO_SNAPSHOT#2026-02-01",
+          date: "2026-02-01",
+          totalValue: 11000,
+          totalGainLoss: 1500,
+          totalGainLossPercent: 15.8,
+        },
+      ];
+
+      mockQuery.mockResolvedValue({
+        Items: mockSnapshots,
+      });
+
+      const event = mockEvent("GET", "/investments/performance?period=1M");
+      const result = await handler(event);
+      const body = JSON.parse(result.body);
+
+      expect(result.statusCode).toBe(200);
+      expect(body.performance).toBeDefined();
+      expect(body.totalReturn).toBeDefined();
+      expect(body.totalReturnPercent).toBeDefined();
+      expect(body.period).toBe("1M");
+    });
+
+    it("should return empty performance when no snapshots exist", async () => {
+      mockQuery.mockResolvedValue({
+        Items: [],
+      });
+
+      const event = mockEvent("GET", "/investments/performance");
+      const result = await handler(event);
+      const body = JSON.parse(result.body);
+
+      expect(result.statusCode).toBe(200);
+      expect(body.performance).toEqual([]);
+      expect(body.totalReturn).toBe(0);
+      expect(body.message).toContain("No performance data");
+    });
+  });
+
+  describe("POST /investments/snapshot - Save Portfolio Snapshot", () => {
+    it("should save current portfolio snapshot", async () => {
+      const mockHoldings = [
+        {
+          symbol: "AAPL",
+          shares: 10,
+          costBasis: 100,
+          currentPrice: 150,
+          accountType: "brokerage",
+        },
+      ];
+
+      mockQuery.mockResolvedValue({
+        Items: mockHoldings,
+      });
+
+      mockPut.mockResolvedValue({});
+
+      const event = mockEvent("POST", "/investments/snapshot");
+      const result = await handler(event);
+      const body = JSON.parse(result.body);
+
+      expect(result.statusCode).toBe(201);
+      expect(body.date).toBeDefined();
+      expect(body.totalValue).toBe(1500);
+      expect(body.totalGainLoss).toBe(500);
+      expect(mockPut).toHaveBeenCalled();
     });
   });
 });
