@@ -5,23 +5,24 @@
 ### 🐛 Fix Family Invitation Email Sending (Session 124)
 
 - **Problem**: Family invitations were created but emails were never sent
-  - Family Lambda was using hardcoded EMAIL_API_URL pointing to wrong API Gateway
-  - Email routes exist in api-features-stack but family Lambda couldn't reach them
-  - Users couldn't send invitations or resend to existing emails
+  - Family Lambda (api-stack) was calling wrong API Gateway for email service
+  - Email Lambda deployed in api-features-stack with different API Gateway URL
+  - Family Lambda missing EMAIL_API_URL environment variable
+  - Email service calls resulted in 404 errors
 
-- **Solution**: Fixed API URL configuration
-  - Updated family Lambda to use API_URL environment variable
-  - API_URL now set dynamically after API Gateway creation
-  - Family Lambda now calls email service on same API Gateway
-  - Removed hardcoded EMAIL_API_URL
+- **Solution**: Configure family Lambda with correct email API URL
+  - Added EMAIL_API_URL environment variable to family Lambda pointing to features API Gateway
+  - Updated family Lambda to prioritize EMAIL_API_URL over API_URL for email calls
+  - Email Lambda endpoints properly configured in api-features-stack
 
 - **Changes**:
-  - `backend/functions/family/index.js`: Use API_URL instead of hardcoded EMAIL_API_URL
-  - `infrastructure/lib/api-stack.ts`: Set API_URL environment variable after API creation
-  - Family Lambda now successfully calls `/email/send-invitation` endpoint
+  - `infrastructure/lib/api-stack.ts`: Added EMAIL_API_URL environment variable
+  - `backend/functions/family/index.js`: Prioritize EMAIL_API_URL for email service calls
 
-- **Impact**:
-  - Family invitation emails will now be sent successfully
+- **Status**: Fix implemented and committed, deployment blocked by CloudFormation circular dependency (unrelated infrastructure issue)
+
+- **Impact** (once deployed):
+  - Family invitation emails will be sent successfully
   - Users can send and resend invitations
   - Email service properly integrated with family Lambda
 
