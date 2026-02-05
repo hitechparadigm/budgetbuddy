@@ -1,10 +1,48 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-02-04
-**Current Phase**: Family Invitation Email Integration
+**Last Updated**: 2026-02-05
+**Current Phase**: Family Invitation API Gateway Routes Fix
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - Family Invitation Email Integration (Session 121)
+## ✨ LATEST - Family Invitation API Gateway Routes Fix (Session 123)
+
+### Critical Bug Fix Complete ✅
+
+**Status**: API Gateway routes now properly expose invitation management endpoints
+
+**Problem Identified**:
+
+- User reported "Pending invitation already exists for this email" with no resolution path
+- Lambda handlers for invitation management existed but API Gateway routes were missing
+- Frontend couldn't call GET /family/invitations, DELETE /family/invitations/{id}, POST /family/invitations/{id}/resend
+
+**Completed Work**:
+
+1. ✅ **API Gateway Routes Added**
+   - `GET /family/invitations` - View all pending invitations (primary only)
+   - `DELETE /family/invitations/{invitationId}` - Revoke invitation (primary only)
+   - `POST /family/invitations/{invitationId}/resend` - Resend invitation email (primary only)
+   - All routes protected with Cognito authorizer
+   - Proper Lambda integration with existing handlers
+
+2. ✅ **Comprehensive Testing**
+   - Created `invitation-management.test.js` with 49 tests
+   - Tests cover authentication, authorization, permissions
+   - Tests for error scenarios (not found, wrong family, expired)
+   - All tests passing
+
+3. ✅ **Developer Tools**
+   - Created `scripts/revoke-invitation.js` for manual cleanup
+   - Direct DynamoDB access to revoke stuck invitations
+   - Resolves "Pending invitation already exists" errors
+
+**Impact**:
+
+- Users can now manage pending invitations through UI
+- "Pending invitation already exists" error now has a resolution path
+- Complete invitation lifecycle management available
+
+## ✨ Family Invitation Email Integration (Session 121-122)
 
 ### Email Integration Complete ✅
 

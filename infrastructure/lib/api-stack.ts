@@ -749,6 +749,27 @@ export class ApiStack extends cdk.Stack {
       operationName: 'LeaveFamily',
     });
 
+    // Family invitations management endpoints (protected - primary only)
+    const familyInvitationsResource = familyResource.addResource('invitations');
+    familyInvitationsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+      authorizer,
+      operationName: 'GetFamilyInvitations',
+    });
+
+    // Family invitation by ID endpoints (protected - primary only)
+    const familyInvitationIdResource = familyInvitationsResource.addResource('{invitationId}');
+    familyInvitationIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+      authorizer,
+      operationName: 'RevokeFamilyInvitation',
+    });
+
+    // Family invitation resend endpoint (protected - primary only)
+    const familyInvitationResendResource = familyInvitationIdResource.addResource('resend');
+    familyInvitationResendResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.familyHandler), {
+      authorizer,
+      operationName: 'ResendFamilyInvitation',
+    });
+
     // Data Export routes (protected)
     const exportResource = this.api.root.addResource('export');
     exportResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.exportHandler), {

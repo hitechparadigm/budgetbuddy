@@ -1,5 +1,48 @@
 # Development Log
 
+## 2026-02-05 - Family Invitation API Gateway Routes Fix (Session 123)
+
+### Session Summary
+
+**Duration**: 1 hour (autonomous mode)
+**Focus**: Add missing API Gateway routes for family invitation management
+**Outcome**: Critical bug fix - API routes now properly expose invitation management endpoints
+
+### Work Completed
+
+1. **Infrastructure Changes**:
+   - Added missing API Gateway routes in `api-stack.ts`
+   - `GET /family/invitations` - View pending invitations
+   - `DELETE /family/invitations/{invitationId}` - Revoke invitation
+   - `POST /family/invitations/{invitationId}/resend` - Resend invitation
+   - All routes use Cognito authorizer and Lambda integration
+   - Routes properly connected to existing family Lambda handlers
+
+2. **Testing**:
+   - Created comprehensive test suite `invitation-management.test.js`
+   - 49 tests covering all endpoints and edge cases
+   - Tests for authentication, authorization, permissions
+   - Tests for error scenarios (not found, wrong family, expired)
+   - All tests passing
+
+3. **Developer Tools**:
+   - Created `scripts/revoke-invitation.js` - CLI tool for manual cleanup
+   - Directly accesses DynamoDB to revoke pending invitations
+   - Resolves "Pending invitation already exists" errors
+
+### Issue Resolved
+
+**Problem**: User reported "Pending invitation already exists for this email" with no way to resolve it through UI. Investigation revealed that while the Lambda handlers for invitation management existed (handleGetInvitations, handleRevokeInvitation, handleResendInvitation), the API Gateway routes were never created. This meant the frontend couldn't call these endpoints.
+
+**Solution**: Added the three missing API Gateway routes with proper authentication and authorization. Now users can view, revoke, and resend invitations through the UI.
+
+### Technical Details
+
+- Lambda handlers were already implemented in Session 122
+- Only API Gateway route definitions were missing
+- Routes follow existing pattern: protected with Cognito authorizer, primary user only
+- No Lambda code changes needed - just infrastructure
+
 ## 2026-02-04 - Family Invitation Management Features (Session 122)
 
 ### Session Summary
