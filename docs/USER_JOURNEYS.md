@@ -1747,22 +1747,22 @@ xl: 32px  (major sections)
 
 #### Competitive Features (Requirements 35-48) - 🔄 IN PROGRESS
 
-| Req | Name                  | Journey       | Task    | Frontend | Backend | UI/UX Status   |
-| --- | --------------------- | ------------- | ------- | -------- | ------- | -------------- |
-| R35 | Subscription Tracking | Insights      | Task 4  | ✅       | ✅      | ✅ Complete    |
-| R36 | Bill Reminders        | Notifications | Task 2  | ✅       | ✅      | ✅ Complete    |
-| R37 | Debt Payoff           | Goals         | Task 5  | ✅       | ✅      | ✅ Complete    |
-| R38 | Savings Goals         | Goals         | Task 3  | ✅       | ✅      | ✅ Complete    |
-| R39 | Spending Insights     | Insights      | Task 6  | ✅       | ✅      | ✅ Complete    |
-| R40 | Rollover Budgets      | Daily         | Task 1  | ✅       | ✅      | ✅ Complete    |
-| R41 | Net Worth             | Goals         | Task 9  | ✅       | ✅      | ✅ Complete    |
-| R42 | Bank Sync (Plaid)     | Bank          | Task 10 | ✅       | ✅      | ✅ Complete    |
-| R43 | Credit Score          | Insights      | Task 11 | ✅       | ✅      | ✅ Complete    |
-| R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete    |
-| R45 | Investments           | Goals         | Task 12 | ❌       | 🔄      | 🔄 Backend 40% |
-| R46 | Peer Comparison       | Insights      | Task 13 | ✅       | ✅      | ✅ Complete    |
-| R47 | Educational Content   | Insights      | Task 14 | ✅       | ✅      | ✅ Complete    |
-| R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete    |
+| Req | Name                  | Journey       | Task    | Frontend | Backend | UI/UX Status                          |
+| --- | --------------------- | ------------- | ------- | -------- | ------- | ------------------------------------- |
+| R35 | Subscription Tracking | Insights      | Task 4  | ✅       | ✅      | ✅ Complete                           |
+| R36 | Bill Reminders        | Notifications | Task 2  | ✅       | ✅      | ✅ Complete                           |
+| R37 | Debt Payoff           | Goals         | Task 5  | ✅       | ✅      | ✅ Complete                           |
+| R38 | Savings Goals         | Goals         | Task 3  | ✅       | ✅      | ✅ Complete                           |
+| R39 | Spending Insights     | Insights      | Task 6  | ✅       | ✅      | ✅ Complete                           |
+| R40 | Rollover Budgets      | Daily         | Task 1  | ✅       | ✅      | ✅ Complete                           |
+| R41 | Net Worth             | Goals         | Task 9  | ✅       | ✅      | ✅ Complete                           |
+| R42 | Bank Sync (Plaid)     | Bank          | Task 10 | ✅       | ✅      | ✅ Complete                           |
+| R43 | Credit Score          | Insights      | Task 11 | ✅       | ✅      | ✅ Complete                           |
+| R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete                           |
+| R45 | Investments           | Goals         | Task 12 | ❌       | ✅      | 🔄 Backend Complete, Frontend Pending |
+| R46 | Peer Comparison       | Insights      | Task 13 | ✅       | ✅      | ✅ Complete                           |
+| R47 | Educational Content   | Insights      | Task 14 | ✅       | ✅      | ✅ Complete                           |
+| R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete                           |
 
 ---
 
@@ -2398,7 +2398,7 @@ Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 - Task 9: Net Worth Tracking ✅
 - Task 10: Bank Sync UI (Plaid) ✅
 - Task 11: Credit Score Monitoring ✅
-- Task 12: Investment Tracking 🔄 (Backend: Task 12.1 ✅, Task 12.2 ✅ - 40% complete)
+- Task 12: Investment Tracking 🔄 (Backend: Tasks 12.1-12.2 ✅ Complete, Frontend: Tasks 12.3-12.7 ❌ Not Started)
 - Task 13: Peer Comparison ✅
 - Task 14: Educational Content ✅
 
