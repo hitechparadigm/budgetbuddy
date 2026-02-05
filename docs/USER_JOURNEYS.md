@@ -1517,45 +1517,45 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 #### 🟢 LOW PRIORITY (Nice to Have)
 
-| Component               | Journey          | Backend Status     | Effort   |
-| ----------------------- | ---------------- | ------------------ | -------- |
-| `CalendarView.tsx`      | Daily Management | N/A                | ✅ Done  |
-| `ReceiptUpload.tsx`     | Daily Management | ✅ Backend ready   | ✅ Done  |
-| `InvestmentTracker.tsx` | Net Worth        | 🔄 Backend started | 3-4 days |
-| `CreditScoreWidget.tsx` | Financial Health | ✅ Complete        | ✅ Done  |
+| Component               | Journey          | Backend Status   | Effort  |
+| ----------------------- | ---------------- | ---------------- | ------- |
+| `CalendarView.tsx`      | Daily Management | N/A              | ✅ Done |
+| `ReceiptUpload.tsx`     | Daily Management | ✅ Backend ready | ✅ Done |
+| `InvestmentsPage.tsx`   | Net Worth        | ✅ Complete      | ✅ Done |
+| `CreditScoreWidget.tsx` | Financial Health | ✅ Complete      | ✅ Done |
 
 ### Backend APIs Without Frontend
 
-| API Endpoint                        | Description                     | Priority | Status                         |
-| ----------------------------------- | ------------------------------- | -------- | ------------------------------ |
-| `GET /api/accounts`                 | List user accounts              | HIGH     | ✅ Done (AccountsPage)         |
-| `POST /api/accounts`                | Create manual account           | HIGH     | ✅ Done (AddAccountModal)      |
-| `PUT /api/accounts/{id}`            | Update account                  | HIGH     | ✅ Done (AccountCard)          |
-| `DELETE /api/accounts/{id}`         | Delete account                  | HIGH     | ✅ Done (AccountCard)          |
-| `POST /api/accounts/{id}/reconcile` | Reconcile balance               | MEDIUM   | ✅ Done (ReconcileModal)       |
-| `PUT /api/accounts/{id}/tracking`   | Toggle budget tracking          | MEDIUM   | ✅ Done (AccountCard)          |
-| `GET /api/accounts/summary`         | Net worth summary               | MEDIUM   | ✅ Done (AccountsPage)         |
-| `GET /comparison/summary`           | Peer spending comparison        | MEDIUM   | ✅ Done (PeerComparisonWidget) |
-| `GET /tips/feed`                    | Financial tips feed             | MEDIUM   | ✅ Done (TipsFeedPage)         |
-| `GET /tips/daily`                   | Daily tip                       | MEDIUM   | ✅ Done (TipsFeedPage)         |
-| `GET /learn/courses`                | Educational content             | LOW      | ✅ Done (LearnPage)            |
-| `GET /learn/progress`               | Learning progress               | LOW      | ✅ Done (LearnPage)            |
-| `GET /admin/dashboard`              | Admin metrics                   | LOW      | ✅ Done (AdminDashboard)       |
-| `GET /investments`                  | Portfolio overview              | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
-| `GET /investments/holdings`         | List holdings                   | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
-| `POST /investments/holdings`        | Add holding                     | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
-| `PUT /investments/holdings/{id}`    | Update holding                  | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
-| `DELETE /investments/holdings/{id}` | Delete holding                  | MEDIUM   | 🔄 Backend Only (Task 12.1)    |
-| `GET /investments/performance`      | Performance over time           | LOW      | 🔄 Backend Only (Task 12.1)    |
-| `POST /investments/update-prices`   | Update stock prices (scheduled) | LOW      | 🔄 Backend Only (Task 12.2)    |
-| `GET /notifications`                | List in-app notifications       | HIGH     | 🔄 Backend Only                |
-| `GET /notifications/{id}`           | Get single notification         | HIGH     | 🔄 Backend Only                |
-| `PUT /notifications/{id}/read`      | Mark notification as read       | HIGH     | 🔄 Backend Only                |
-| `PUT /notifications/read-all`       | Mark all as read                | HIGH     | 🔄 Backend Only                |
-| `DELETE /notifications/{id}`        | Delete notification             | MEDIUM   | 🔄 Backend Only                |
-| `GET /notifications/settings`       | Get notification preferences    | MEDIUM   | 🔄 Backend Only                |
-| `PUT /notifications/settings`       | Update notification prefs       | MEDIUM   | 🔄 Backend Only                |
-| `POST /notifications/create`        | Create notification (internal)  | LOW      | 🔄 Backend Only                |
+| API Endpoint                        | Description                    | Priority | Status                         |
+| ----------------------------------- | ------------------------------ | -------- | ------------------------------ |
+| `GET /api/accounts`                 | List user accounts             | HIGH     | ✅ Done (AccountsPage)         |
+| `POST /api/accounts`                | Create manual account          | HIGH     | ✅ Done (AddAccountModal)      |
+| `PUT /api/accounts/{id}`            | Update account                 | HIGH     | ✅ Done (AccountCard)          |
+| `DELETE /api/accounts/{id}`         | Delete account                 | HIGH     | ✅ Done (AccountCard)          |
+| `POST /api/accounts/{id}/reconcile` | Reconcile balance              | MEDIUM   | ✅ Done (ReconcileModal)       |
+| `PUT /api/accounts/{id}/tracking`   | Toggle budget tracking         | MEDIUM   | ✅ Done (AccountCard)          |
+| `GET /api/accounts/summary`         | Net worth summary              | MEDIUM   | ✅ Done (AccountsPage)         |
+| `GET /comparison/summary`           | Peer spending comparison       | MEDIUM   | ✅ Done (PeerComparisonWidget) |
+| `GET /tips/feed`                    | Financial tips feed            | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /tips/daily`                   | Daily tip                      | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /learn/courses`                | Educational content            | LOW      | ✅ Done (LearnPage)            |
+| `GET /learn/progress`               | Learning progress              | LOW      | ✅ Done (LearnPage)            |
+| `GET /admin/dashboard`              | Admin metrics                  | LOW      | ✅ Done (AdminDashboard)       |
+| `GET /investments`                  | Portfolio overview             | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `GET /investments/holdings`         | List holdings                  | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `POST /investments/holdings`        | Add holding                    | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `PUT /investments/holdings/{id}`    | Update holding                 | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `DELETE /investments/holdings/{id}` | Delete holding                 | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `GET /investments/performance`      | Performance over time          | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `POST /investments/snapshot`        | Save portfolio snapshot        | LOW      | ✅ Done (InvestmentsPage)      |
+| `GET /notifications`                | List in-app notifications      | HIGH     | 🔄 Backend Only                |
+| `GET /notifications/{id}`           | Get single notification        | HIGH     | 🔄 Backend Only                |
+| `PUT /notifications/{id}/read`      | Mark notification as read      | HIGH     | 🔄 Backend Only                |
+| `PUT /notifications/read-all`       | Mark all as read               | HIGH     | 🔄 Backend Only                |
+| `DELETE /notifications/{id}`        | Delete notification            | MEDIUM   | 🔄 Backend Only                |
+| `GET /notifications/settings`       | Get notification preferences   | MEDIUM   | 🔄 Backend Only                |
+| `PUT /notifications/settings`       | Update notification prefs      | MEDIUM   | 🔄 Backend Only                |
+| `POST /notifications/create`        | Create notification (internal) | LOW      | 🔄 Backend Only                |
 
 ### Recently Completed Components (2026-02-03)
 
@@ -1748,22 +1748,22 @@ xl: 32px  (major sections)
 
 #### Competitive Features (Requirements 35-48) - 🔄 IN PROGRESS
 
-| Req | Name                  | Journey       | Task    | Frontend | Backend | UI/UX Status                          |
-| --- | --------------------- | ------------- | ------- | -------- | ------- | ------------------------------------- |
-| R35 | Subscription Tracking | Insights      | Task 4  | ✅       | ✅      | ✅ Complete                           |
-| R36 | Bill Reminders        | Notifications | Task 2  | ✅       | ✅      | ✅ Complete                           |
-| R37 | Debt Payoff           | Goals         | Task 5  | ✅       | ✅      | ✅ Complete                           |
-| R38 | Savings Goals         | Goals         | Task 3  | ✅       | ✅      | ✅ Complete                           |
-| R39 | Spending Insights     | Insights      | Task 6  | ✅       | ✅      | ✅ Complete                           |
-| R40 | Rollover Budgets      | Daily         | Task 1  | ✅       | ✅      | ✅ Complete                           |
-| R41 | Net Worth             | Goals         | Task 9  | ✅       | ✅      | ✅ Complete                           |
-| R42 | Bank Sync (Plaid)     | Bank          | Task 10 | ✅       | ✅      | ✅ Complete                           |
-| R43 | Credit Score          | Insights      | Task 11 | ✅       | ✅      | ✅ Complete                           |
-| R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete                           |
-| R45 | Investments           | Goals         | Task 12 | ❌       | ✅      | 🔄 Backend Complete, Frontend Pending |
-| R46 | Peer Comparison       | Insights      | Task 13 | ✅       | ✅      | ✅ Complete                           |
-| R47 | Educational Content   | Insights      | Task 14 | ✅       | ✅      | ✅ Complete                           |
-| R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete                           |
+| Req | Name                  | Journey       | Task    | Frontend | Backend | UI/UX Status                    |
+| --- | --------------------- | ------------- | ------- | -------- | ------- | ------------------------------- |
+| R35 | Subscription Tracking | Insights      | Task 4  | ✅       | ✅      | ✅ Complete                     |
+| R36 | Bill Reminders        | Notifications | Task 2  | ✅       | ✅      | ✅ Complete                     |
+| R37 | Debt Payoff           | Goals         | Task 5  | ✅       | ✅      | ✅ Complete                     |
+| R38 | Savings Goals         | Goals         | Task 3  | ✅       | ✅      | ✅ Complete                     |
+| R39 | Spending Insights     | Insights      | Task 6  | ✅       | ✅      | ✅ Complete                     |
+| R40 | Rollover Budgets      | Daily         | Task 1  | ✅       | ✅      | ✅ Complete                     |
+| R41 | Net Worth             | Goals         | Task 9  | ✅       | ✅      | ✅ Complete                     |
+| R42 | Bank Sync (Plaid)     | Bank          | Task 10 | ✅       | ✅      | ✅ Complete                     |
+| R43 | Credit Score          | Insights      | Task 11 | ✅       | ✅      | ✅ Complete                     |
+| R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete                     |
+| R45 | Investments           | Goals         | Task 12 | ✅       | ✅      | ✅ Web Complete, Mobile Pending |
+| R46 | Peer Comparison       | Insights      | Task 13 | ✅       | ✅      | ✅ Complete                     |
+| R47 | Educational Content   | Insights      | Task 14 | ✅       | ✅      | ✅ Complete                     |
+| R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete                     |
 
 ---
 
@@ -1903,18 +1903,17 @@ xl: 32px  (major sections)
 
 ### Next Sprint
 
-| Feature        | Journey  | Effort | Impact | Dependencies   |
-| -------------- | -------- | ------ | ------ | -------------- |
-| Investments    | Goals    | 4 days | MEDIUM | New backend    |
-| PeerComparison | Insights | 3 days | MEDIUM | Backend needed |
-| LearnPage      | Insights | 3 days | MEDIUM | Backend needed |
+| Feature        | Journey  | Effort | Impact | Dependencies   | Status      |
+| -------------- | -------- | ------ | ------ | -------------- | ----------- |
+| Investments    | Goals    | 4 days | MEDIUM | ✅ Backend     | ✅ Web Done |
+| PeerComparison | Insights | 3 days | MEDIUM | Backend needed | ✅ Complete |
+| LearnPage      | Insights | 3 days | MEDIUM | Backend needed | ✅ Complete |
 
 ### Future Sprints
 
 | Feature         | Journey | Effort | Impact | Dependencies |
 | --------------- | ------- | ------ | ------ | ------------ |
 | NetWorthTracker | Goals   | 4 days | MEDIUM | ✅ Complete  |
-| Investments     | Goals   | 4 days | MEDIUM | New backend  |
 
 ---
 
@@ -2399,7 +2398,7 @@ Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 - Task 9: Net Worth Tracking ✅
 - Task 10: Bank Sync UI (Plaid) ✅
 - Task 11: Credit Score Monitoring ✅
-- Task 12: Investment Tracking 🔄 (Backend: Tasks 12.1-12.3 ✅ Complete, Frontend: Tasks 12.4-12.7 ❌ Not Started)
+- Task 12: Investment Tracking ✅ (Backend: Tasks 12.1-12.3 ✅ Complete, Frontend Web: Task 12.4 ✅ Complete, Frontend Mobile: Tasks 12.5-12.7 ❌ Not Started)
 - Task 13: Peer Comparison ✅
 - Task 14: Educational Content ✅
 
