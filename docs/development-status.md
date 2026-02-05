@@ -1,10 +1,49 @@
 # Development Status - BudgetBuddy
 
 **Last Updated**: 2026-02-05
-**Current Phase**: Documentation Cleanup
+**Current Phase**: AI-Powered Features & Testing
 **Overall Progress**: 95% Core + 95% Competitive Features + 100% UI Polish (Web) + 100% UI Polish (Mobile)
 
-## ✨ LATEST - Documentation Cleanup (Session 124)
+## ✨ LATEST - Family Invitation API Routes Fix (Session 123)
+
+### Critical Bug Fix - Invitation Management ✅
+
+**Status**: API Gateway routes added and deployed successfully
+
+**Problem Resolved**:
+
+- Users reported "Pending invitation already exists for this email" with no way to resolve it
+- Lambda handlers existed but API Gateway routes were missing
+- Frontend couldn't access invitation management endpoints
+
+**Solution Implemented**:
+
+1. **Infrastructure Changes**:
+   - Added `GET /family/invitations` - View all pending invitations (primary only)
+   - Added `DELETE /family/invitations/{invitationId}` - Revoke invitation (primary only)
+   - Added `POST /family/invitations/{invitationId}/resend` - Resend invitation email (primary only)
+   - All routes protected with Cognito authorizer
+
+2. **Testing**:
+   - Created comprehensive test suite with 49 tests
+   - Tests cover authentication, authorization, permissions, error scenarios
+   - All tests passing
+
+3. **Developer Tools**:
+   - Created `scripts/revoke-invitation.js` - CLI tool for manual cleanup
+   - Direct DynamoDB access for emergency resolution
+
+**Impact**:
+
+- Users can now view, revoke, and resend invitations through UI
+- Resolves stuck invitation blocking issue
+- Complete invitation management workflow
+
+**Deployment**: Successfully deployed to dev environment (Run ID: 21696039614)
+
+---
+
+## 📚 Documentation Cleanup (Session 124)
 
 ### Codebase Cleanup Complete ✅
 
