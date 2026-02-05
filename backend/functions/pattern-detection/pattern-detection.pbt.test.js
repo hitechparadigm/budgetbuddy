@@ -1,10 +1,11 @@
 /**
  * Pattern Detection Property-Based Tests
  *
+ * **Property 1: Pattern Detection Output Completeness**
  * **Property 16: Pattern Confidence and Threshold**
  * **Property 17: Pattern Change Detection**
  * **Property 18: Pattern Prediction Accuracy**
- * **Validates: Requirements 11.2, 11.3, 11.5, 11.6**
+ * **Validates: Requirements 1.3, 1.4, 1.7, 2.2, 11.2, 11.3, 11.5, 11.6**
  */
 
 const fc = require("fast-check");
@@ -113,6 +114,299 @@ function generateRecurringTransactions(
 
   return transactions;
 }
+
+// ============================================================================
+// Property 1: Pattern Detection Output Completeness (Algorithm Layer)
+// ============================================================================
+
+describe("Property 1: Pattern Detection Output Completeness (Algorithm Layer)", () => {
+  describe("1.1: Required Algorithm Fields Present", () => {
+    test("all detected patterns contain required algorithm fields", () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 4, max: 10 }),
+          fc.float({
+            min: Math.fround(10),
+            max: Math.fround(100),
+            noNaN: true,
+          }),
+          fc.constantFrom("weekly", "bi-weekly", "monthly"),
+          (count, amount, frequency) => {
+            const transactions = generateRecurringTransactions(
+              "Test Merchant",
+              amount,
+              frequency,
+              count,
+              "2024-01-01",
+            );
+
+            const result = analyzeTransactions(transactions);
+
+            result.patterns.forEach((pattern) => {
+              // Required algorithm fields
+              expect(pattern).toHaveProperty("merchantName");
+              expect(pattern).toHaveProperty("averageAmount");
+              expect(pattern).toHaveProperty("frequency");
+              expect(pattern).toHaveProperty("confidenceScore");
+              expect(pattern).toHaveProperty("nextExpectedDate");
+              expect(pattern).toHaveProperty("occurrences");
+              expect(pattern).toHaveProperty("amountStdDev");
+              expect(pattern).toHaveProperty("isVariableAmount");
+              expect(pattern).toHaveProperty("timingConsistency");
+              expect(pattern).toHaveProperty("amountConsistency");
+
+              // Type validation
+              expect(typeof pattern.merchantName).toBe("string");
+              expect(typeof pattern.averageAmount).toBe("number");
+              expect(typeof pattern.frequency).toBe("string");
+              expect(typeof pattern.confidenceScore).toBe("number");
+              expect(typeof pattern.nextExpectedDate).toBe("string");
+              expect(Array.isArray(pattern.occurrences)).toBe(true);
+              expect(typeof pattern.amountStdDev).toBe("number");
+              expect(typeof pattern.isVariableAmount).toBe("boolean");
+              expect(typeof pattern.timingConsistency).toBe("number");
+              expect(typeof pattern.amountConsistency).toBe("number");
+            });
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+  });
+
+  describe("1.2: Confidence Score Range", () => {
+    test("confidence score is between 0 and 100", () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 4, max: 10 }),
+          fc.float({
+            min: Math.fround(10),
+            max: Math.fround(100),
+            noNaN: true,
+          }),
+          (count, amount) => {
+            const transactions = generateRecurringTransactions(
+              "Test Merchant",
+              amount,
+              "monthly",
+              count,
+              "2024-01-01",
+            );
+
+            const result = analyzeTransactions(transactions);
+
+            result.patterns.forEach((pattern) => {
+              expect(pattern.confidenceScore).toBeGreaterThanOrEqual(0);
+              expect(pattern.confidenceScore).toBeLessThanOrEqual(100);
+            });
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+  });
+
+  describe("1.3: Occurrences Array Non-Empty", () => {
+    test("occurrences array contains at least 3 transactions", () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 4, max: 10 }),
+          fc.float({
+            min: Math.fround(10),
+            max: Math.fround(100),
+            noNaN: true,
+          }),
+          (count, amount) => {
+            const transactions = generateRecurringTransactions(
+              "Test Merchant",
+              amount,
+              "monthly",
+              count,
+              "2024-01-01",
+            );
+
+            const result = analyzeTransactions(transactions);
+
+            result.patterns.forEach((pattern) => {
+              expect(pattern.occurrences.length).toBeGreaterThanOrEqual(3);
+            });
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+  });
+
+  describe("1.4: Valid Frequency Values", () => {
+    test("frequency is one of the valid values", () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 4, max: 10 }),
+          fc.float({
+            min: Math.fround(10),
+            max: Math.fround(100),
+            noNaN: true,
+          }),
+          (count, amount) => {
+            const transactions = generateRecurringTransactions(
+              "Test Merchant",
+              amount,
+              "monthly",
+              count,
+              "2024-01-01",
+            );
+
+            const result = analyzeTransactions(transactions);
+
+            const validFrequencies = [
+              "weekly",
+              "bi-weekly",
+              "monthly",
+              "quarterly",
+              "annual",
+            ];
+
+            result.patterns.forEach((pattern) => {
+              expect(validFrequencies).toContain(pattern.frequency);
+            });
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+  });
+
+  describe("1.5: Next Expected Date Format", () => {
+    test("next expected date is in YYYY-MM-DD format", () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 4, max: 10 }),
+          fc.float({
+            min: Math.fround(10),
+            max: Math.fround(100),
+            noNaN: true,
+          }),
+          (count, amount) => {
+            const transactions = generateRecurringTransactions(
+              "Test Merchant",
+              amount,
+              "monthly",
+              count,
+              "2024-01-01",
+            );
+
+            const result = analyzeTransactions(transactions);
+
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+            result.patterns.forEach((pattern) => {
+              expect(pattern.nextExpectedDate).toMatch(dateRegex);
+            });
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+  });
+
+  describe("1.6: Non-Empty String Fields", () => {
+    test("string fields are non-empty", () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 4, max: 10 }),
+          fc.float({
+            min: Math.fround(10),
+            max: Math.fround(100),
+            noNaN: true,
+          }),
+          (count, amount) => {
+            const transactions = generateRecurringTransactions(
+              "Test Merchant",
+              amount,
+              "monthly",
+              count,
+              "2024-01-01",
+            );
+
+            const result = analyzeTransactions(transactions);
+
+            result.patterns.forEach((pattern) => {
+              expect(pattern.merchantName.length).toBeGreaterThan(0);
+              expect(pattern.frequency.length).toBeGreaterThan(0);
+              expect(pattern.nextExpectedDate.length).toBeGreaterThan(0);
+            });
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+  });
+
+  describe("1.7: Average Amount Positive", () => {
+    test("average amount is positive", () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 4, max: 10 }),
+          fc.float({
+            min: Math.fround(10),
+            max: Math.fround(100),
+            noNaN: true,
+          }),
+          (count, amount) => {
+            const transactions = generateRecurringTransactions(
+              "Test Merchant",
+              amount,
+              "monthly",
+              count,
+              "2024-01-01",
+            );
+
+            const result = analyzeTransactions(transactions);
+
+            result.patterns.forEach((pattern) => {
+              expect(pattern.averageAmount).toBeGreaterThan(0);
+            });
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+  });
+
+  describe("1.8: Consistency Scores Range", () => {
+    test("timing and amount consistency scores are between 0 and 100", () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 4, max: 10 }),
+          fc.float({
+            min: Math.fround(10),
+            max: Math.fround(100),
+            noNaN: true,
+          }),
+          (count, amount) => {
+            const transactions = generateRecurringTransactions(
+              "Test Merchant",
+              amount,
+              "monthly",
+              count,
+              "2024-01-01",
+            );
+
+            const result = analyzeTransactions(transactions);
+
+            result.patterns.forEach((pattern) => {
+              expect(pattern.timingConsistency).toBeGreaterThanOrEqual(0);
+              expect(pattern.timingConsistency).toBeLessThanOrEqual(100);
+              expect(pattern.amountConsistency).toBeGreaterThanOrEqual(0);
+              expect(pattern.amountConsistency).toBeLessThanOrEqual(100);
+            });
+          },
+        ),
+        { numRuns: 50 },
+      );
+    });
+  });
+});
 
 // ============================================================================
 // Property 16: Pattern Confidence and Threshold
