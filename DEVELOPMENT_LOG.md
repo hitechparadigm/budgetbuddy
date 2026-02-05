@@ -11382,3 +11382,124 @@ Move FamilyHandler + 2-3 other handlers to `api-features-extended-stack.ts`:
 2. **Stack Design**: Consider creating separate stacks for major features (>10 routes)
 3. **Circular Dependencies**: API Gateway + many routes = potential circular dependency
 4. **Proactive Splitting**: Split stacks before hitting 400 resources (80% of limit)
+
+## 2026-02-05 - Resolved Circular Dependency with Standalone Family Stack (Session 125 - Continued)
+
+### Session Summary
+
+**Duration**: 30 minutes
+**Focus**: Implement standalone API Family Stack to resolve circular dependency
+**Outcome**: ✅ Successfully deployed - circular dependency resolved
+
+### Problem Recap
+
+Deployment of `budgetbuddy-dev-api-features` stack failed with CloudFormation circular dependency error when attempting to add FamilyHandler. The stack had 488 resources (98% of CloudFormation's 500 limit), causing circular dependencies between API Gateway deployment stage and Lambda functions.
+
+### Solution Implemented
+
+**Option 1: Standalone Family Stack** (RECOMMENDED - IMPLEMENTED)
+
+Created `infrastructure/lib/api-family-stack.ts`:
+
+- Own API Gateway for family routes
+- FamilyHandler Lambda (budgetbuddy-family)
+- EmailHandler Lambda (budgetbuddy-email-family)
+- 11 family routes (GET/POST family, invite, accept, members, etc.)
+- 3 email routes (send-invitation, send-removal, send-acceptance)
+- Independent CommonLayer and SharedLayer (no cross-stack dependencies)
+- ~150 resources (well under 500 limit)
+
+### Implementation Steps
+
+1. **Created ApiFamilyStack** (`infrastructure/lib/api-family-stack.ts`):
+   - Standalone API Gateway with CORS configuration
+   - FamilyHandler and EmailHandler Lambda functions
+   - All 11 family routes and 3 email routes
+   - Independent layers to avoid CloudFormation export dependencies
+
+2. **Updated CDK App** (`infrastructure/bin/app.ts`):
+   - Added ApiFamilyStack instantiation
+   - Added stack dependencies (database, auth)
+   - Added to monitoring stack dependencies
+
+3. **Updated Deployment Workflow** (`.github/workflows/deploy-dev.yml`):
+   - Added api-family to Step 2 deployment
+   - Added api-family to health check stacks
+
+4. **Cleaned Up ApiFeaturesStack** (`infrastructure/lib/api-features-stack.ts`):
+   - Removed setupFamilyRoutes method
+   - Updated comments to reflect family moved to ApiFamilyStack
+   - Reduced from 488 to ~340 resources (30% reduction)
+
+5. **Fixed Health Check Script** (`scripts/check-deployment.sh`):
+   - Added family_api_url retrieval from api-family stack outputs
+   - Moved family and email health checks to Family API section
+   - Removed family and email from main API health checks
+
+### Deployment Results
+
+**First Deployment** (Run 21714633217):
+
+- Status: FAILED
+- Issue: Health check tested family endpoint on main API URL
+- Error: `/family/health` returned 500 (endpoint doesn't exist on main API)
+
+**Second Deployment** (Run 21715218313):
+
+- Status: ✅ SUCCESS
+- Fix: Updated health check script to use Family API URL
+- Result: All health checks passed
+
+### Benefits Achieved
+
+1. **Resolved Circular Dependency**: Family features now in isolated stack with own API Gateway
+2. **Reduced api-features-stack**: From 488 to ~340 resources (30% reduction)
+3. **Clear Separation**: Family features have dedicated API Gateway
+4. **No Cross-Stack Dependencies**: Each stack creates own layers
+5. **Scalable Architecture**: Can add more features without hitting CloudFormation limits
+6. **Improved Maintainability**: Family features are logically grouped in one stack
+
+### Stack Resource Distribution (After)
+
+- `budgetbuddy-dev-api`: 427 resources (Core API)
+- `budgetbuddy-dev-api-features`: ~340 resources (Competitive features - reduced from 488)
+- `budgetbuddy-dev-api-features-extended`: ~300 resources (AI features)
+- `budgetbuddy-dev-api-family`: ~150 resources (Family collaboration - NEW)
+
+### Files Modified
+
+**Created**:
+
+- `infrastructure/lib/api-family-stack.ts` (new standalone stack)
+- `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` (documentation)
+
+**Modified**:
+
+- `infrastructure/bin/app.ts` (added ApiFamilyStack)
+- `infrastructure/lib/api-features-stack.ts` (removed family routes)
+- `.github/workflows/deploy-dev.yml` (added api-family deployment)
+- `scripts/check-deployment.sh` (added family API health checks)
+
+### Lessons Learned
+
+1. **CloudFormation Resource Limits**: Stay well below 500 resources per stack (aim for < 400)
+2. **Circular Dependencies**: Occur when API Gateway has too many routes in one deployment
+3. **Cross-Stack Layer Dependencies**: Always create independent layers to avoid export update issues
+4. **Health Check Alignment**: Health checks must use correct API URLs for multi-API architectures
+5. **Standalone Stacks**: Better than moving features to extended stacks for clear separation
+
+### Next Steps
+
+1. ✅ Deployment successful - family features now available
+2. ✅ Health checks passing for all APIs
+3. Update frontend to use Family API URL for family endpoints
+4. Monitor CloudWatch logs for any family API issues
+5. Consider creating similar standalone stacks for other feature groups if they grow large
+
+### Related Documentation
+
+- `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` - Detailed analysis and solution
+- `infrastructure/lib/api-family-stack.ts` - Standalone family stack implementation
+- `docs/aws-stack-architecture.md` - Should be updated with new stack architecture
+
+---
