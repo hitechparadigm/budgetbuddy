@@ -11232,3 +11232,153 @@ Note: LocalStack requires Docker Desktop to be running. The user has the LocalSt
 4. Consider adding familyId to JWT token during onboarding to prevent this issue
 
 ---
+
+## 2026-02-05 - CloudFormation Circular Dependency in API Features Stack (Session 125)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Resolve circular dependency error when moving FamilyHandler to api-features-stack
+**Outcome**: Issue documented, solution proposed, awaiting implementation decision
+
+### Problem Identified
+
+Deployment of `budgetbuddy-dev-api-features` stack fails with CloudFormation circular dependency error.
+
+**Error**:
+
+```
+ValidationError: Circular dependency between resources: [
+  FeaturesApiDeploymentStagev157A2DBA9,
+  FamilyHandlerB720DBEF,
+  FamilyHandlerLogRetentionB180384A,
+  ... (100+ family-related API permissions)
+]
+```
+
+**Root Cause**:
+
+1. api-features-stack has 488 resources (approaching CloudFormation's 500 resource limit)
+2. API Gateway deployment stage depends on all API method permissions
+3. API method permissions depend on Lambda functions
+4. This creates a circular dependency when too many routes exist in one API Gateway
+
+### Investigation Steps
+
+1. **Verified FamilyHandler removal from api-stack**:
+   - ✅ FamilyHandler Lambda removed from api-stack.ts
+   - ✅ All 11 family routes removed from api-stack.ts
+   - ✅ api-stack deployment succeeded (UPDATE_COMPLETE)
+
+2. **Checked api-features-stack**:
+   - ✅ FamilyHandler Lambda added correctly
+   - ✅ All 11 family routes added correctly
+   - ❌ Deployment failed with circular dependency
+
+3. **Analyzed resource counts**:
+   - api-stack: 427 resources (reduced from ~440)
+   - api-features-stack: 488 resources (increased from ~470)
+   - CloudFormation limit: 500 resources per stack
+
+4. **Identified circular dependency pattern**:
+   - FeaturesApiDeploymentStage depends on all API permissions
+   - Each API permission depends on its Lambda function
+   - Lambda functions depend on deployment stage (implicit)
+   - Result: Circular dependency
+
+### Solution Options
+
+#### Option 1: Create Standalone Family Stack (RECOMMENDED)
+
+Create `infrastructure/lib/api-family-stack.ts`:
+
+- Own API Gateway for family routes
+- FamilyHandler Lambda
+- EmailHandler Lambda (for invitations)
+- 11 family routes
+- ~150 resources (well under 500 limit)
+
+**Benefits**:
+
+- Isolates family functionality
+- Reduces api-features-stack to ~340 resources
+- No circular dependencies
+- Clear separation of concerns
+- Follows existing pattern (api-stack, api-features-stack, api-features-extended-stack)
+
+#### Option 2: Move Multiple Features to Extended Stack
+
+Move FamilyHandler + 2-3 other handlers to `api-features-extended-stack.ts`:
+
+- Family (11 routes)
+- Credit Score (4 routes)
+- Email (3 routes)
+
+**Benefits**:
+
+- Reuses existing third stack
+- Balances resource distribution
+
+**Drawbacks**:
+
+- Less clear separation
+- May still approach limits
+- Doesn't follow single-responsibility principle
+
+### Technical Details
+
+**CloudFormation Resource Limits**:
+
+- Maximum resources per stack: 500
+- Current api-features-stack: 488 (98% of limit)
+- Adding FamilyHandler pushed it over the complexity threshold
+
+**API Gateway Circular Dependency**:
+
+- Known CDK issue when API has too many routes
+- Deployment stage must be created after all routes
+- But routes need deployment stage for permissions
+- CDK tries to resolve this but fails with too many resources
+
+**Stack Resource Distribution** (Current):
+
+- budgetbuddy-dev-api: 427 resources (Core API)
+- budgetbuddy-dev-api-features: 488 resources (Competitive features)
+- budgetbuddy-dev-api-features-extended: ~300 resources (AI features)
+
+### Files Analyzed
+
+- `infrastructure/lib/api-stack.ts` (FamilyHandler removed ✅)
+- `infrastructure/lib/api-features-stack.ts` (FamilyHandler added, circular dependency ❌)
+- `infrastructure/lib/api-features-extended-stack.ts` (AI features)
+- `.kiro/cicd-status/latest.json` (deployment error logs)
+
+### Documentation Created
+
+- `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` - Detailed analysis and solution options
+
+### Next Steps
+
+**Immediate**:
+
+1. User decision: Choose Option 1 (standalone stack) or Option 2 (extended stack)
+2. Implement chosen solution
+3. Test deployment
+4. Update architecture documentation
+
+**Recommended**: Implement Option 1 (standalone family stack) for best long-term maintainability
+
+### Status
+
+- **Deployment**: FAILED (Run ID: 21712868694)
+- **Stack**: budgetbuddy-dev-api-features
+- **Resources**: 488/500 (98%)
+- **Action Required**: User decision on solution approach
+- **Blocker**: Yes - deployment cannot proceed until resolved
+
+### Lessons Learned
+
+1. **CloudFormation Limits**: Always monitor resource counts when adding features
+2. **Stack Design**: Consider creating separate stacks for major features (>10 routes)
+3. **Circular Dependencies**: API Gateway + many routes = potential circular dependency
+4. **Proactive Splitting**: Split stacks before hitting 400 resources (80% of limit)
