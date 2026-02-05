@@ -217,6 +217,8 @@ export class ApiStack extends cdk.Stack {
       environment: {
         ...commonEnvironment,
         WEB_APP_URL: 'https://app.budgetbuddy.com',
+        // EMAIL_API_URL points to the features API where email Lambda is deployed
+        EMAIL_API_URL: 'https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1',
         // API_URL will be set after API Gateway is created
       },
     });
