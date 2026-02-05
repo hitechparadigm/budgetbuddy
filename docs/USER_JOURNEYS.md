@@ -505,17 +505,18 @@ _"As a primary account holder, I want to invite my partner to share our budget s
 
 ### Component Mapping
 
-| Feature             | Frontend Component         | Backend API                       | Status      |
-| ------------------- | -------------------------- | --------------------------------- | ----------- |
-| Family Settings     | `FamilySettings.tsx`       | `GET /family`                     | ✅ Complete |
-| Member List         | `FamilySettings.tsx`       | `GET /family/members`             | ✅ Complete |
-| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`             | ✅ Complete |
-| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`             | ✅ Complete |
-| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`     | ✅ Complete |
-| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`        | ✅ Complete |
-| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`              | ✅ Complete |
-| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`         | ✅ Complete |
-| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}` | ✅ Complete |
+| Feature             | Frontend Component         | Backend API                            | Status      |
+| ------------------- | -------------------------- | -------------------------------------- | ----------- |
+| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete |
+| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ✅ Complete |
+| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | ✅ Complete |
+| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ✅ Complete |
+| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ✅ Complete |
+| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ✅ Complete |
+| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ✅ Complete |
+| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ✅ Complete |
+| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ✅ Complete |
+| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ✅ Complete |
 
 ### UI/UX Requirements
 
