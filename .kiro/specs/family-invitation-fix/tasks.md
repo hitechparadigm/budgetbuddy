@@ -18,8 +18,8 @@
 
 - [-] 4. Deployment
   - [ ] 4.1 Run validation script
-  - [-] 4.2 Commit and push changes
-  - [ ] 4.3 Wait for CI/CD deployment
+  - [x] 4.2 Commit and push changes
+  - [x] 4.3 Wait for CI/CD deployment
   - [ ] 4.4 Verify deployment success
 
 - [ ] 5. Verification
