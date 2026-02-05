@@ -415,12 +415,12 @@
   - Portfolio calculations
   - **Validates: Requirement 45.1, 45.2, 45.3**
 
-- [ ] 12.2 Backend: Integrate stock price API
+- [x] 12.2 Backend: Integrate stock price API
   - Alpha Vantage or Yahoo Finance
   - Daily price updates via scheduled Lambda
   - **Validates: Requirement 45.6**
 
-- [ ] 12.3 Backend: Add portfolio performance calculation
+- [x] 12.3 Backend: Add portfolio performance calculation
   - Total value, gain/loss
   - Asset allocation breakdown
   - **Validates: Requirement 45.3, 45.4**
