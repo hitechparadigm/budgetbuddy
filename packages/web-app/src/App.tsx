@@ -32,6 +32,7 @@ import SubscriptionsPage from "./pages/SubscriptionsPage";
 import SubscriptionFormPage from "./pages/SubscriptionFormPage";
 import DebtPayoffPage from "./pages/DebtPayoffPage";
 import DebtFormPage from "./pages/DebtFormPage";
+import CreditScorePage from "./pages/CreditScorePage";
 import { LearnPage } from "./pages/LearnPage";
 import { AboutPage } from "./pages/AboutPage";
 import { HelpCenterPage } from "./pages/HelpCenterPage";
@@ -209,6 +210,15 @@ const App: React.FC = () => {
                   element={
                     <ProtectedLayout>
                       <DebtFormPage />
+                    </ProtectedLayout>
+                  }
+                />
+                {/* Credit Score Page */}
+                <Route
+                  path="/credit-score"
+                  element={
+                    <ProtectedLayout>
+                      <CreditScorePage />
                     </ProtectedLayout>
                   }
                 />
