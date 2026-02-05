@@ -6,13 +6,22 @@
 
 **Recent Updates**:
 
-- Family Invitation Email Fix (2026-02-05)
+- Family Invitation Email Fix - Deployment In Progress (2026-02-05)
+  - 🔧 **FIX DEPLOYED**: Resolved circular dependency in Family API stack
+  - **Changes Applied**:
+    - Added `FAMILY_API_URL` environment variable to family Lambda configuration
+    - Fixed circular dependency by reusing Lambda integrations across API methods
+    - Added explicit authorization types to all API Gateway methods
+  - **Code Status**: Committed and pushed (commit 31787a9)
+  - **Deployment Status**: CI/CD in progress (Run 21717465771)
+  - **Expected Outcome**: Family invitation and resend invitation emails will be sent correctly
+  - **Spec**: `.kiro/specs/family-invitation-fix/`
+- Family Invitation Email Bug Identified (2026-02-05)
   - 🐛 **BUG IDENTIFIED**: Family invitations not sending emails due to incorrect API URL
   - **Root Cause**: Family Lambda using hardcoded main API URL instead of Family API URL
   - **Impact**: Invitation records created in DynamoDB but emails not sent to invitees
-  - **Fix In Progress**: Adding FAMILY_API_URL environment variable to family Lambda
+  - **Fix Applied**: Code changes committed in previous deployment
   - **Spec Created**: `.kiro/specs/family-invitation-fix/` with requirements, design, and tasks
-  - **Status**: Ready for implementation
 - Family Stack Infrastructure Issue RESOLVED (2026-02-05)
   - ✅ **RESOLVED**: Created standalone api-family-stack to resolve circular dependency
   - Successfully deployed FamilyHandler and EmailHandler to dedicated stack
@@ -538,24 +547,25 @@ _"As a primary account holder, I want to invite my partner to share our budget s
 
 **Known Issues (2026-02-05)**:
 
-- 🐛 **Family Invitation Emails Not Sending**:
-  - **Issue**: When sending or resending invitations, the email service is not called correctly
-  - **Root Cause**: Family Lambda using wrong API Gateway URL (main API instead of Family API)
-  - **Impact**: Invitation records created but emails not sent to invitees
-  - **Workaround**: None - invitations cannot be completed without email
-  - **Fix**: Add `FAMILY_API_URL` environment variable to family Lambda configuration
+- 🔧 **Family Invitation Emails Fix - IN DEPLOYMENT**:
+  - **Issue**: Family Lambda was using wrong API Gateway URL (main API instead of Family API)
+  - **Fix Applied**:
+    - Added `FAMILY_API_URL` environment variable to family Lambda configuration
+    - Fixed circular dependency in Family API stack by reusing Lambda integrations
+  - **Status**: Code committed, CI/CD deployment in progress
   - **Spec**: `.kiro/specs/family-invitation-fix/`
-  - **ETA**: Fix ready for deployment
+  - **Expected Resolution**: Once deployment completes, invitation emails will be sent correctly
 
 **Infrastructure Status**:
 
-- ✅ **DEPLOYED**: Standalone api-family-stack successfully deployed
+- 🔄 **DEPLOYING**: Family API stack circular dependency fix in progress
 - **Stack**: budgetbuddy-dev-api-family with dedicated API Gateway
 - **Resources**: ~150 resources (well under CloudFormation 500 limit)
-- **Code Status**: All family backend code complete and functional
-- **Deployment Status**: ✅ Successfully deployed to development environment
-- **Health Checks**: ✅ All family and email endpoints passing
-- **Impact**: Family features fully available in deployed environment
+- **Recent Changes**:
+  - Fixed circular dependency by reusing Lambda integrations across API methods
+  - Added explicit authorization types to all API Gateway methods
+  - Configured `FAMILY_API_URL` environment variable for family Lambda
+- **Deployment**: Run ID 21717465771 (in progress)
 - **See**: `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` for implementation details
 
 ### UI/UX Requirements
