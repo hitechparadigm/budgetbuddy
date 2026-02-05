@@ -1,470 +1,422 @@
-# Notification Service Lambda
+# Notifications Lambda Function
 
 ## Overview
 
-The Notification Service Lambda handles push notification delivery, device management, notification preferences, and notification history for BudgetBuddy. It serves as the central hub for all notification-related operations.
+The Notifications Lambda function manages in-app notifications for budget alerts, family activities, and system messages. It provides a comprehensive notification system that supports multiple notification types, user preferences, and read/unread tracking.
 
-**Last Updated**: January 31, 2026
-**Version**: 1.0.0
-**Status**: Production Ready
+## Features
 
-## Purpose
-
-- Register and manage device tokens for push notifications (max 10 per user)
-- Store and retrieve notification preferences with quiet hours support
-- Send push notifications via Expo Push Notification API
-- Maintain notification history with read/unread status (90-day TTL)
-- Support multiple devices per user with automatic cleanup
-
-## Handler Function
-
-**Entry Point**: `exports.handler`
-
-**Trigger**: API Gateway HTTP requests
-
-**Supported Methods**:
-
-- POST `/notifications/register-device` - Register device for push notifications
-- DELETE `/notifications/device/{deviceId}` - Remove device registration
-- GET `/notifications/preferences` - Get notification preferences
-- PUT `/notifications/preferences` - Update notification preferences
-- GET `/notifications/history` - Get notification history
-- PUT `/notifications/{notificationId}/read` - Mark notification as read
-- POST `/notifications/send` - Send push notification (internal use)
-
-## Environment Variables
-
-- `TABLE_NAME`: DynamoDB table name (default: `budgetbuddy-main`)
-- `EXPO_ACCESS_TOKEN`: Expo push notification access token
-- `SNS_TOPIC_ARN`: AWS SNS topic ARN (optional)
-
-## IAM Permissions Required
-
-- **DynamoDB**:
-  - `dynamodb:GetItem` - Get notification preferences
-  - `dynamodb:PutItem` - Store devices, preferences, notifications
-  - `dynamodb:DeleteItem` - Remove device registrations
-  - `dynamodb:Query` - Get user devices and notification history
-  - `dynamodb:UpdateItem` - Mark notifications as read
-
-- **SNS** (optional):
-  - `sns:Subscribe` - Subscribe device to SNS topic
-  - `sns:Unsubscribe` - Unsubscribe device from SNS topic
-
-- **Secrets Manager** (future):
-  - `secretsmanager:GetSecretValue` - Get Expo access token
+- Create and manage in-app notifications
+- Mark notifications as read/unread
+- Filter notifications by type and status
+- User notification preferences
+- Notification history tracking
+- Support for multiple notification types
 
 ## API Endpoints
 
-### Register Device
+### Public Endpoints
 
-**POST** `/notifications/register-device`
+#### GET /notifications/health
 
-**Request Body**:
+Health check endpoint (no authentication required).
+
+**Response:**
 
 ```json
 {
+  "status": "healthy",
+  "service": "notifications"
+}
+```
+
+### Authenticated Endpoints
+
+All endpoints below require a valid JWT token in the Authorization header.
+
+#### GET /notifications
+
+Get notifications for the authenticated user.
+
+**Query Parameters:**
+
+- `limit` (optional): Number of notifications to return (default: 50, max: 100)
+- `unreadOnly` (optional): Filter to unread notifications only (true/false, default: false)
+- `type` (optional): Filter by notification type (budget_alert, family_activity, system_message, etc.)
+
+**Response:**
+
+```json
+{
+  "notifications": [
+    {
+      "notificationId": "notif_1234567890_abc123",
+      "userId": "user-123",
+      "type": "budget_alert",
+      "title": "Budget Alert: Groceries",
+      "message": "You've spent 90% of your Groceries budget for this month",
+      "metadata": {
+        "categoryId": "cat-123",
+        "categoryName": "Groceries",
+        "percentSpent": 90
+      },
+      "isRead": false,
+      "createdAt": "2026-02-05T10:30:00Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+#### GET /notifications/{notificationId}
+
+Get a single notification by ID.
+
+**Response:**
+
+```json
+{
+  "notificationId": "notif_1234567890_abc123",
   "userId": "user-123",
-  "deviceToken": "ExponentPushToken[xxxxxx]",
-  "platform": "ios"
+  "type": "budget_alert",
+  "title": "Budget Alert: Groceries",
+  "message": "You've spent 90% of your Groceries budget for this month",
+  "metadata": {},
+  "isRead": false,
+  "createdAt": "2026-02-05T10:30:00Z"
 }
 ```
 
-**Response**:
+#### PUT /notifications/{notificationId}/read
+
+Mark a notification as read.
+
+**Response:**
 
 ```json
 {
-  "success": true,
-  "deviceToken": "ExponentPushToken[xxxxxx]"
-}
-```
-
-**Errors**:
-
-- 400: Missing required fields
-- 500: Internal server error
-
-### Remove Device
-
-**DELETE** `/notifications/device/{deviceId}`
-
-**Request Body**:
-
-```json
-{
+  "notificationId": "notif_1234567890_abc123",
   "userId": "user-123",
-  "deviceToken": "ExponentPushToken[xxxxxx]"
+  "type": "budget_alert",
+  "title": "Budget Alert: Groceries",
+  "message": "You've spent 90% of your Groceries budget for this month",
+  "metadata": {},
+  "isRead": true,
+  "readAt": "2026-02-05T11:00:00Z",
+  "createdAt": "2026-02-05T10:30:00Z"
 }
 ```
 
-**Response**:
+#### PUT /notifications/read-all
+
+Mark all notifications as read for the authenticated user.
+
+**Response:**
 
 ```json
 {
-  "success": true
+  "updated": 5
 }
 ```
 
-### Get Preferences
+#### DELETE /notifications/{notificationId}
 
-**GET** `/notifications/preferences?userId=user-123`
+Delete a notification.
 
-**Response**:
+**Response:** 204 No Content
+
+#### GET /notifications/settings
+
+Get notification preferences for the authenticated user.
+
+**Response:**
 
 ```json
 {
   "budgetAlerts": true,
-  "dailyReminders": true,
-  "reminderTime": "19:00",
-  "quietHoursStart": "22:00",
-  "quietHoursEnd": "08:00"
+  "familyActivity": true,
+  "systemMessages": true,
+  "emailNotifications": false
 }
 ```
 
-**Default Preferences**:
+#### PUT /notifications/settings
 
-- Budget alerts: Enabled
-- Daily reminders: Enabled
-- Reminder time: 7:00 PM
-- Quiet hours: 10:00 PM - 8:00 AM
+Update notification preferences.
 
-### Update Preferences
+**Request Body:**
 
-**PUT** `/notifications/preferences`
+```json
+{
+  "budgetAlerts": true,
+  "familyActivity": false,
+  "systemMessages": true,
+  "emailNotifications": true
+}
+```
 
-**Request Body**:
+**Response:**
+
+```json
+{
+  "budgetAlerts": true,
+  "familyActivity": false,
+  "systemMessages": true,
+  "emailNotifications": true
+}
+```
+
+### Internal Endpoints
+
+#### POST /notifications/create
+
+Create a notification (internal use only, called by other Lambda functions).
+
+**Request Body:**
 
 ```json
 {
   "userId": "user-123",
-  "preferences": {
-    "budgetAlerts": false,
-    "dailyReminders": true,
-    "reminderTime": "20:00",
-    "quietHoursStart": "23:00",
-    "quietHoursEnd": "07:00"
+  "type": "budget_alert",
+  "title": "Budget Alert: Groceries",
+  "message": "You've spent 90% of your Groceries budget for this month",
+  "metadata": {
+    "categoryId": "cat-123",
+    "categoryName": "Groceries",
+    "percentSpent": 90
   }
 }
 ```
 
-**Response**:
+**Response:**
 
 ```json
 {
-  "success": true,
-  "preferences": { ... }
-}
-```
-
-### Send Notification (Internal)
-
-**POST** `/notifications/send`
-
-**Request Body**:
-
-```json
-{
+  "notificationId": "notif_1234567890_abc123",
   "userId": "user-123",
-  "notification": {
-    "title": "Budget Alert",
-    "body": "You've spent 80% of your Groceries budget",
-    "data": {
-      "type": "budget_alert",
-      "budgetId": "budget-456",
-      "categoryId": "cat-789"
-    }
-  }
+  "type": "budget_alert",
+  "title": "Budget Alert: Groceries",
+  "message": "You've spent 90% of your Groceries budget for this month",
+  "metadata": {
+    "categoryId": "cat-123",
+    "categoryName": "Groceries",
+    "percentSpent": 90
+  },
+  "isRead": false,
+  "createdAt": "2026-02-05T10:30:00Z"
 }
 ```
 
-**Response**:
+## Data Model
+
+### Notification Object
+
+```typescript
+interface Notification {
+  notificationId: string; // Primary key: "notif_{timestamp}_{random}"
+  userId: string; // User who receives the notification
+  type: NotificationType; // Type of notification
+  title: string; // Notification title (short)
+  message: string; // Notification message (detailed)
+  metadata: object; // Additional context (category, amount, etc.)
+  isRead: boolean; // Read status
+  readAt?: string; // ISO timestamp when marked as read
+  createdAt: string; // ISO timestamp when created
+}
+
+type NotificationType =
+  | "budget_alert" // Budget threshold alerts (80%, 90%, 100%)
+  | "family_activity" // Family member actions (transaction added, budget changed)
+  | "system_message" // System announcements, updates
+  | "bill_reminder" // Upcoming bill due dates
+  | "savings_goal" // Savings goal milestones
+  | "debt_payoff" // Debt payoff progress
+  | "subscription_renewal" // Subscription renewal reminders
+  | "spending_insight" // Weekly spending insights
+  | "achievement" // Badges and achievements
+  | "credit_score_change"; // Credit score updates
+```
+
+### Notification Settings Object
+
+```typescript
+interface NotificationSettings {
+  userId: string; // Primary key
+  settingType: "notifications"; // Sort key
+  settings: {
+    budgetAlerts: boolean;
+    familyActivity: boolean;
+    systemMessages: boolean;
+    emailNotifications: boolean;
+  };
+  updatedAt: string; // ISO timestamp
+}
+```
+
+## DynamoDB Tables
+
+### Notifications Table
+
+**Table Name:** `budgetbuddy-{env}-notifications`
+
+**Primary Key:**
+
+- Partition Key: `notificationId` (String)
+
+**Global Secondary Indexes:**
+
+- **UserIdIndex**:
+  - Partition Key: `userId` (String)
+  - Sort Key: `createdAt` (String)
+  - Projection: ALL
+  - Purpose: Query all notifications for a user, sorted by creation time
+
+**Attributes:**
+
+- `notificationId`: String (PK)
+- `userId`: String (GSI PK)
+- `type`: String
+- `title`: String
+- `message`: String
+- `metadata`: Map
+- `isRead`: Boolean
+- `readAt`: String (optional)
+- `createdAt`: String (GSI SK)
+
+### User Settings Table
+
+**Table Name:** `budgetbuddy-{env}-user-settings`
+
+**Primary Key:**
+
+- Partition Key: `userId` (String)
+- Sort Key: `settingType` (String)
+
+**Attributes:**
+
+- `userId`: String (PK)
+- `settingType`: String (SK) - Always "notifications" for notification settings
+- `settings`: Map
+- `updatedAt`: String
+
+## Environment Variables
+
+- `NOTIFICATIONS_TABLE`: DynamoDB table name for notifications
+- `USER_SETTINGS_TABLE`: DynamoDB table name for user settings
+
+## IAM Permissions
+
+The Lambda function requires the following permissions:
 
 ```json
 {
-  "success": true,
-  "deviceCount": 2
+  "Effect": "Allow",
+  "Action": [
+    "dynamodb:GetItem",
+    "dynamodb:PutItem",
+    "dynamodb:UpdateItem",
+    "dynamodb:DeleteItem",
+    "dynamodb:Query"
+  ],
+  "Resource": [
+    "arn:aws:dynamodb:*:*:table/budgetbuddy-*-notifications",
+    "arn:aws:dynamodb:*:*:table/budgetbuddy-*-notifications/index/*",
+    "arn:aws:dynamodb:*:*:table/budgetbuddy-*-user-settings"
+  ]
 }
 ```
 
-## Data Models
+## Usage Examples
 
-### Device Registration
+### Creating a Notification from Another Service
 
 ```javascript
-{
-  PK: "USER#<userId>",
-  SK: "DEVICE#<deviceToken>",
-  deviceToken: string,
-  platform: "ios" | "android",
-  registeredAt: string (ISO 8601),
-  enabled: boolean,
-  TTL: number (90 days from lastUsedAt)
-}
+const AWS = require("aws-sdk");
+const lambda = new AWS.Lambda();
+
+const params = {
+  FunctionName: "budgetbuddy-dev-notifications",
+  InvocationType: "Event", // Async invocation
+  Payload: JSON.stringify({
+    httpMethod: "POST",
+    path: "/notifications/create",
+    body: JSON.stringify({
+      userId: "user-123",
+      type: "budget_alert",
+      title: "Budget Alert: Groceries",
+      message: "You've spent 90% of your Groceries budget",
+      metadata: {
+        categoryId: "cat-123",
+        categoryName: "Groceries",
+        percentSpent: 90,
+      },
+    }),
+  }),
+};
+
+await lambda.invoke(params).promise();
 ```
 
-### Notification Preferences
+### Frontend Integration
 
-```javascript
-{
-  PK: "USER#<userId>",
-  SK: "NOTIFICATION_PREFERENCES",
-  budgetAlerts: boolean,
-  dailyReminders: boolean,
-  reminderTime: string (HH:mm),
-  quietHoursStart: string (HH:mm),
-  quietHoursEnd: string (HH:mm),
-  updatedAt: string (ISO 8601)
-}
+```typescript
+// Get unread notifications
+const response = await fetch("/notifications?unreadOnly=true", {
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+  },
+});
+const { notifications, count } = await response.json();
+
+// Mark notification as read
+await fetch(`/notifications/${notificationId}/read`, {
+  method: "PUT",
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+  },
+});
+
+// Update notification settings
+await fetch("/notifications/settings", {
+  method: "PUT",
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    budgetAlerts: true,
+    familyActivity: false,
+    systemMessages: true,
+    emailNotifications: true,
+  }),
+});
 ```
-
-### Notification History
-
-```javascript
-{
-  PK: "USER#<userId>",
-  SK: "NOTIFICATION#<timestamp>",
-  title: string,
-  body: string,
-  data: object,
-  sentAt: string (ISO 8601),
-  read: boolean,
-  TTL: number (90 days from sentAt)
-}
-```
-
-## Functions
-
-### `registerDeviceToken(userId, deviceToken, platform)`
-
-Registers a device token for push notifications.
-
-**Parameters**:
-
-- `userId`: User ID
-- `deviceToken`: Expo push token
-- `platform`: "ios" or "android"
-
-**Returns**: `{ success: true, deviceToken }`
-
-**Throws**: Error if registration fails
-
-### `unregisterDeviceToken(userId, deviceToken)`
-
-Removes a device token registration.
-
-**Parameters**:
-
-- `userId`: User ID
-- `deviceToken`: Expo push token
-
-**Returns**: `{ success: true }`
-
-**Throws**: Error if deletion fails
-
-### `getUserDeviceTokens(userId)`
-
-Gets all enabled device tokens for a user.
-
-**Parameters**:
-
-- `userId`: User ID
-
-**Returns**: Array of `{ token, platform }` objects
-
-**Throws**: Error if query fails
-
-### `sendExpoPushNotification(tokens, title, body, data)`
-
-Sends push notifications via Expo Push Notification API.
-
-**Parameters**:
-
-- `tokens`: Array of Expo push tokens
-- `title`: Notification title
-- `body`: Notification body
-- `data`: Additional data object
-
-**Returns**: Expo API response
-
-**Throws**: Error if API call fails
-
-### `sendNotification(userId, notification)`
-
-Sends a notification to all user devices and stores in history.
-
-**Parameters**:
-
-- `userId`: User ID
-- `notification`: `{ title, body, data }` object
-
-**Returns**: `{ success: true, deviceCount }`
-
-**Throws**: Error if sending fails
-
-### `getNotificationPreferences(userId)`
-
-Gets notification preferences for a user.
-
-**Parameters**:
-
-- `userId`: User ID
-
-**Returns**: Preferences object or default preferences
-
-**Throws**: Error if query fails
-
-### `updateNotificationPreferences(userId, preferences)`
-
-Updates notification preferences for a user.
-
-**Parameters**:
-
-- `userId`: User ID
-- `preferences`: Preferences object
-
-**Returns**: `{ success: true, preferences }`
-
-**Throws**: Error if update fails
 
 ## Testing
-
-### Unit Tests
 
 Run unit tests:
 
 ```bash
+cd backend/functions/notifications
 npm test
 ```
 
-### Manual Testing
-
-Test device registration:
-
-```bash
-aws lambda invoke \
-  --function-name budgetbuddy-dev-notifications \
-  --payload '{"httpMethod":"POST","path":"/notifications/register-device","body":"{\"userId\":\"test-user\",\"deviceToken\":\"ExponentPushToken[test]\",\"platform\":\"ios\"}"}' \
-  response.json \
-  --profile hitechparadigm
-```
-
-Test get preferences:
-
-```bash
-aws lambda invoke \
-  --function-name budgetbuddy-dev-notifications \
-  --payload '{"httpMethod":"GET","path":"/notifications/preferences","queryStringParameters":{"userId":"test-user"}}' \
-  response.json \
-  --profile hitechparadigm
-```
-
-### View Logs
-
-```bash
-aws logs tail /aws/lambda/budgetbuddy-dev-notifications --follow --profile hitechparadigm
-```
-
-## Error Handling
-
-All errors are caught and returned with appropriate HTTP status codes:
-
-- **400 Bad Request**: Missing required fields or invalid input
-- **404 Not Found**: Endpoint not found
-- **500 Internal Server Error**: Unexpected errors
-
-Error response format:
-
-```json
-{
-  "error": "Error message",
-  "details": "Detailed error information"
-}
-```
-
-## Logging
-
-All requests and errors are logged to CloudWatch Logs with structured JSON format:
-
-```javascript
-console.log("Notification request:", JSON.stringify(event, null, 2));
-console.error("Error sending notification:", error);
-```
-
-## Security
-
-- All endpoints require JWT authentication (enforced by API Gateway)
-- Device tokens are validated before registration
-- User can only access their own devices and preferences
-- Notification history is user-scoped
-- CORS headers configured for allowed origins
-
-## Performance
-
-- **Memory**: 512 MB
-- **Timeout**: 30 seconds
-- **Provisioned Concurrency**: 2 (for low latency)
-- **Average Duration**: 200ms
-- **Cold Start**: ~500ms
-
-## Cost
-
-- **Per Invocation**: ~$0.000001
-- **Per Month** (10K users, 100K invocations): ~$0.50
-- **Expo Push Notifications**: Free tier (1M/month)
-
 ## Deployment
 
-Deployed via CDK as part of Notification Stack:
+The function is deployed as part of the API Features Extended stack:
 
 ```bash
 cd infrastructure
-cdk deploy budgetbuddy-dev-notification --profile hitechparadigm
+npm run build
+npx cdk deploy budgetbuddy-dev-api-features-extended --context environment=dev
 ```
-
-## Dependencies
-
-- `aws-sdk`: AWS SDK for JavaScript
-- Expo Push Notification API (external)
 
 ## Future Enhancements
 
-- [ ] Add notification history pagination
-- [ ] Add mark as read endpoint
-- [ ] Add batch notification sending
-- [ ] Add notification templates
-- [ ] Add notification scheduling
-- [ ] Add notification analytics
-- [ ] Add push notification receipts tracking
-- [ ] Add device token validation with Expo API
-- [ ] Add notification priority levels
-- [ ] Add notification grouping
-
-## Troubleshooting
-
-### No Notifications Received
-
-1. Check device is registered: Query DynamoDB for `USER#<userId>` with SK `DEVICE#*`
-2. Verify Expo push token format: Should start with `ExponentPushToken[`
-3. Check notification preferences: Ensure alerts/reminders are enabled
-4. Check CloudWatch logs for errors
-5. Verify Expo access token is correct
-
-### Device Registration Fails
-
-1. Check Expo push token format
-2. Verify DynamoDB permissions
-3. Check CloudWatch logs for errors
-4. Ensure TABLE_NAME environment variable is set
-
-### Preferences Not Saving
-
-1. Check request body format
-2. Verify DynamoDB permissions
-3. Check CloudWatch logs for errors
-4. Ensure userId is provided
-
-## References
-
-- [Expo Push Notifications Documentation](https://docs.expo.dev/push-notifications/overview/)
-- [AWS Lambda Best Practices](https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html)
-- [DynamoDB Best Practices](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/best-practices.html)
+1. **Push Notifications**: Integrate with SNS/Firebase for mobile push notifications
+2. **Email Notifications**: Send email digests for important notifications
+3. **Notification Batching**: Group similar notifications to reduce noise
+4. **Smart Notifications**: Use AI to determine optimal notification timing
+5. **Notification Templates**: Reusable templates for common notification types
+6. **Notification Scheduling**: Schedule notifications for future delivery
+7. **Notification Analytics**: Track open rates, engagement metrics

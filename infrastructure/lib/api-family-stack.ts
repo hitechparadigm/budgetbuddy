@@ -178,6 +178,10 @@ export class ApiFamilyStack extends cdk.Stack {
     _props: ApiFamilyStackProps,
     commonProps: any
   ): void {
+    // Construct API URL without stage reference to avoid circular dependency
+    // Format: https://{restApiId}.execute-api.{region}.amazonaws.com/v1
+    const apiUrlWithoutStage = `https://${this.api.restApiId}.execute-api.${cdk.Stack.of(this).region}.amazonaws.com/v1`;
+
     // Family Lambda
     this.functions.familyHandler = new lambda.Function(this, 'FamilyHandler', {
       ...commonProps,
@@ -187,7 +191,7 @@ export class ApiFamilyStack extends cdk.Stack {
       description: 'BudgetBuddy family handler for family collaboration, member management, and invitations',
       environment: {
         ...commonProps.environment,
-        FAMILY_API_URL: this.api.url, // Add Family API URL for email service calls
+        FAMILY_API_URL: apiUrlWithoutStage, // Use URL without stage reference to avoid circular dependency
       },
     });
 
