@@ -5,7 +5,7 @@
  * Requirements: 43.1, 43.2, 43.3, 43.5, 43.6, 43.7, 43.8
  */
 
-import { apiClient } from './apiClient';
+import { apiClient } from '../utils/apiClient';
 
 export interface CreditScore {
   score: number | null;
