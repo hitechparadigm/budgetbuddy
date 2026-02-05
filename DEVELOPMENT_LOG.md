@@ -1,6 +1,114 @@
 # Development Log
 
-## 2026-02-05 - Documentation Cleanup (Session 124)
+## 2026-02-05 - Family Invitation Management - User Support (Session 124)
+
+### Session Summary
+
+**Duration**: 30 minutes
+**Focus**: Investigate and resolve user's "Pending invitation already exists" error
+**Outcome**: Feature is already fully implemented - provided user guidance
+
+### User Issue
+
+User reported: "Testing again: Pending invitation already exists for this email"
+
+- Trying to invite dima.pmp@gmail.com
+- Getting error about existing pending invitation
+- Unclear how to resolve
+
+### Investigation
+
+1. **Checked Recent Work**:
+   - Session 123 (v1.9.103) added backend API routes for invitation management
+   - Session 123 also added frontend UI for managing pending invitations
+   - Feature is fully implemented and deployed
+
+2. **Verified Implementation**:
+   - ✅ Backend API routes exist and are deployed
+     - GET /family/invitations - View pending invitations
+     - DELETE /family/invitations/{id} - Revoke invitation
+     - POST /family/invitations/{id}/resend - Resend invitation
+   - ✅ Frontend UI exists in FamilySettings.tsx
+     - "Pending Invitations" section displays all pending invitations
+     - "Cancel" button to revoke invitations
+     - "Resend" button to resend invitation emails
+   - ✅ Tests passing (49 tests in invitation-management.test.js)
+
+3. **Root Cause**:
+   - A pending invitation already exists in the database for dima.pmp@gmail.com
+   - User needs to revoke the existing invitation before sending a new one
+   - The UI to do this is already available but user may not have seen it
+
+### Solution Provided
+
+**No Code Changes Needed** - Feature is fully functional
+
+**User Instructions**:
+
+1. Open the BudgetBuddy web app
+2. Navigate to Family Settings page
+3. Scroll down to find the "Pending Invitations" section
+   - This section only appears for primary account holders
+   - It only shows if there are pending invitations
+4. Find the invitation for dima.pmp@gmail.com
+5. Click the "Cancel" button next to that invitation
+6. Wait for confirmation message
+7. Send a new invitation
+
+### Technical Details
+
+**Feature Implementation** (Session 123):
+
+- Backend Lambda handlers in `backend/functions/family/index.js`
+- API Gateway routes in `infrastructure/lib/api-features-extended-stack.ts`
+- Frontend UI in `packages/web-app/src/components/FamilySettings.tsx`
+- Tests in `backend/functions/family/invitation-management.test.js`
+
+**UI Components**:
+
+```typescript
+// Pending Invitations section shows:
+- Email address of invitee
+- Role (spouse/viewer)
+- Status badge (Pending)
+- Sent date
+- Expiration date
+- Action buttons: Resend, Cancel
+```
+
+**API Endpoints Used**:
+
+- GET /family/invitations - Fetches all pending invitations
+- DELETE /family/invitations/{invitationId} - Revokes invitation
+- POST /family/invitations/{invitationId}/resend - Resends email
+
+### Files Modified
+
+- `docs/development-status.md` - Added user support section
+- `CHANGELOG.md` - Documented user support session
+- `DEVELOPMENT_LOG.md` - This entry
+
+### Lessons Learned
+
+1. **Check Existing Implementation First**: Before implementing new features, verify if they already exist
+2. **User Education**: Sometimes users need guidance on using existing features
+3. **UI Visibility**: The "Pending Invitations" section only shows when:
+   - User is primary account holder
+   - There are pending invitations
+   - This conditional rendering may make the feature less discoverable
+
+### Next Steps
+
+1. User follows the provided instructions to revoke existing invitation
+2. User sends new invitation
+3. Monitor for any issues
+4. Consider adding a more prominent indicator when pending invitations exist
+
+### No Deployment Needed
+
+The feature is already deployed and functional. No code changes were made in this session.
+
+## 2026-02-05 - Documentation Cleanup (Session 124 - Earlier)
 
 ### Session Summary
 

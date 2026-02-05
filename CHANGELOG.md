@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.9.105] - 2026-02-05
+
+### 📋 User Support - Family Invitation Management (Session 124)
+
+- **Issue Resolution**: "Pending invitation already exists for this email"
+  - User reported error when trying to invite dima.pmp@gmail.com
+  - Investigation revealed feature is already fully implemented and deployed (Session 123)
+  - No code changes needed - user just needs to use existing UI
+
+- **Solution Provided**:
+  - Navigate to Family Settings page
+  - Find "Pending Invitations" section (primary users only)
+  - Click "Cancel" button to revoke existing invitation
+  - Send new invitation
+
+- **Feature Status** (Already Deployed in Session 123):
+  - ✅ Backend API routes (GET, DELETE, POST /family/invitations)
+  - ✅ Frontend UI with Cancel and Resend buttons
+  - ✅ 49 tests passing
+  - ✅ Full documentation
+
+- **Documentation Updates**:
+  - Updated development-status.md with user support guidance
+  - Updated DEVELOPMENT_LOG.md with investigation details
+  - Clarified that feature is fully functional
+
 ## [1.9.104] - 2026-02-05
 
 ### 🧹 Documentation Cleanup (Session 124)
