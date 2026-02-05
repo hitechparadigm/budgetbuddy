@@ -425,7 +425,7 @@
   - Asset allocation breakdown
   - **Validates: Requirement 45.3, 45.4**
 
-- [ ] 12.4 Frontend Web: Create InvestmentsPage
+- [x] 12.4 Frontend Web: Create InvestmentsPage
   - Portfolio overview
   - Holdings list with performance
   - Allocation charts

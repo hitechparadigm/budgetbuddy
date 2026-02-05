@@ -33,6 +33,7 @@ import SubscriptionFormPage from "./pages/SubscriptionFormPage";
 import DebtPayoffPage from "./pages/DebtPayoffPage";
 import DebtFormPage from "./pages/DebtFormPage";
 import CreditScorePage from "./pages/CreditScorePage";
+import InvestmentsPage from "./pages/InvestmentsPage";
 import { LearnPage } from "./pages/LearnPage";
 import { AboutPage } from "./pages/AboutPage";
 import { HelpCenterPage } from "./pages/HelpCenterPage";
@@ -219,6 +220,15 @@ const App: React.FC = () => {
                   element={
                     <ProtectedLayout>
                       <CreditScorePage />
+                    </ProtectedLayout>
+                  }
+                />
+                {/* Investments Page */}
+                <Route
+                  path="/investments"
+                  element={
+                    <ProtectedLayout>
+                      <InvestmentsPage />
                     </ProtectedLayout>
                   }
                 />
