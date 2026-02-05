@@ -45,6 +45,12 @@ export const navItems: NavItem[] = [
     path: "/subscriptions",
   },
   { id: "debts", label: "Debt Payoff", icon: "💳", path: "/debts" },
+  {
+    id: "credit-score",
+    label: "Credit Score",
+    icon: "📊",
+    path: "/credit-score",
+  },
   { id: "settings", label: "Settings", icon: "⚙️", path: "/settings" },
 ];
 
