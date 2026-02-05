@@ -24,6 +24,7 @@ import { AuthOnboardingStack } from '../lib/auth-onboarding-stack';
 import { ApiStack } from '../lib/api-stack';
 import { ApiFeaturesStack } from '../lib/api-features-stack';
 import { ApiFeaturesExtendedStack } from '../lib/api-features-extended-stack';
+import { ApiFamilyStack } from '../lib/api-family-stack';
 import { HostingStack } from '../lib/hosting-stack';
 import { MonitoringStack } from '../lib/monitoring-stack';
 import { NotificationStack } from '../lib/notification-stack';
@@ -114,6 +115,19 @@ const apiFeaturesExtendedStack = new ApiFeaturesExtendedStack(app, `${stackPrefi
 });
 
 /**
+ * API Family Stack - Family collaboration features
+ * Standalone stack to avoid circular dependencies and CloudFormation resource limits
+ * Contains: Family management, member management, invitations, email notifications
+ * Creates its own CommonLayer and SharedLayer to avoid CloudFormation export dependency issues
+ */
+const apiFamilyStack = new ApiFamilyStack(app, `${stackPrefix}-api-family`, {
+  env,
+  description: 'BudgetBuddy Family API stack for family collaboration and member management',
+  table: databaseStack.table,
+  userPool: authStack.userPool,
+});
+
+/**
  * Hosting Stack - S3 and CloudFront
  * Hosts the web application and admin dashboard
  */
@@ -161,6 +175,8 @@ apiFeaturesStack.addDependency(authStack);
 apiFeaturesExtendedStack.addDependency(databaseStack);
 apiFeaturesExtendedStack.addDependency(authStack);
 // Temporarily removed dependency on apiStack to allow independent deployment
+apiFamilyStack.addDependency(databaseStack);
+apiFamilyStack.addDependency(authStack);
 notificationStack.addDependency(databaseStack);
 // Temporarily removed dependency on apiStack to allow independent deployment
 monitoringStack.addDependency(databaseStack);
@@ -168,6 +184,7 @@ monitoringStack.addDependency(authStack);
 monitoringStack.addDependency(apiStack);
 monitoringStack.addDependency(apiFeaturesStack);
 monitoringStack.addDependency(apiFeaturesExtendedStack);
+monitoringStack.addDependency(apiFamilyStack);
 monitoringStack.addDependency(notificationStack);
 
 // Add comprehensive tags to all resources for cost tracking and organization

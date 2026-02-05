@@ -149,9 +149,10 @@ jobs:
             --require-approval never \
             --context environment=${{ env.ENVIRONMENT }} || echo "Base stacks deployment may have failed, continuing..."
 
-          echo "Step 2: Deploying dependent stacks (api-features, api-features-extended, notification)..."
+          echo "Step 2: Deploying dependent stacks (api-features, api-features-extended, api-family, notification)..."
           npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api-features \
             budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended \
+            budgetbuddy-${{ env.ENVIRONMENT }}-api-family \
             budgetbuddy-${{ env.ENVIRONMENT }}-notification \
             --require-approval never \
             --context environment=${{ env.ENVIRONMENT }} || echo "Dependent stacks deployment may have failed, continuing..."
@@ -274,6 +275,7 @@ jobs:
             "budgetbuddy-${{ env.ENVIRONMENT }}-api"
             "budgetbuddy-${{ env.ENVIRONMENT }}-api-features"
             "budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended"
+            "budgetbuddy-${{ env.ENVIRONMENT }}-api-family"
             "budgetbuddy-${{ env.ENVIRONMENT }}-hosting"
             "budgetbuddy-${{ env.ENVIRONMENT }}-monitoring"
           )
