@@ -6,6 +6,18 @@
 
 **Recent Updates**:
 
+- Credit Score Monitoring Complete (2026-02-05)
+  - ✅ **FEATURE COMPLETE**: Credit Score Monitoring (Requirement 43, Task 11)
+  - **Web Components**: CreditScorePage.tsx with personalized improvement tips
+  - **Mobile Components**: CreditScoreScreen.tsx with full feature parity
+  - **Services**: creditScoreApi.ts (web), creditScore.ts (mobile)
+  - **Features**: Current score display, rating, change tracking, factors analysis, score history, personalized tips by category
+  - **Backend**: credit-score Lambda with 4 API endpoints (GET score, GET history, POST refresh, PUT settings)
+  - **Status**: ✅ Web complete, ✅ Mobile complete, ✅ Backend complete
+  - **Files**:
+    - Web: `packages/web-app/src/pages/CreditScorePage.tsx`, `packages/web-app/src/services/creditScoreApi.ts`
+    - Mobile: `packages/mobile/src/screens/CreditScoreScreen.tsx`, `packages/mobile/src/services/creditScore.ts`
+    - Backend: `backend/functions/credit-score/` (index.js, README.md, package.json)
 - In-App Notifications Backend Created (2026-02-05)
   - ✅ **NEW COMPONENT**: Created comprehensive in-app notifications backend Lambda
   - **Features**: Notification CRUD, read/unread tracking, user preferences, notification history
@@ -775,6 +787,140 @@ _"As a user, I want to scan receipts with my phone camera so I can quickly add t
 
 ---
 
+## 5.2 Credit Score Monitoring Journey
+
+### User Story
+
+_"As a user, I want to monitor my credit score and get personalized tips to improve it so I can maintain good financial health."_
+
+### Journey Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ENTRY: Insights Tab or Dashboard                                            │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  Sidebar → Credit Score | Dashboard card → "View Credit Score"               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  CREDIT SCORE DASHBOARD                                                      │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  💳 Your Credit Score                              [Refresh Score]   │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │                           750                                        │    │
+│  │                      Very Good                                       │    │
+│  │                        ↑ +15                                         │    │
+│  │                                                                      │    │
+│  │  [300 ━━━━━━━━━━━━━━━━●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 850]    │    │
+│  │                                                                      │    │
+│  │  Last updated: Feb 5, 2026                                           │    │
+│  │                                                                      │    │
+│  │  ⚠️ Checking your score does NOT affect your credit                 │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  FACTORS AFFECTING SCORE                                                     │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  📊 What's Affecting Your Score                                      │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │  Payment History                                    [HIGH IMPACT]    │    │
+│  │  All payments on time                                                │    │
+│  │                                                                      │    │
+│  │  Credit Utilization                                 [MEDIUM IMPACT]  │    │
+│  │  Using 35% of available credit                                       │    │
+│  │                                                                      │    │
+│  │  Credit Age                                         [LOW IMPACT]     │    │
+│  │  Average age: 5 years                                                │    │
+│  │                                                                      │    │
+│  │  Recent Inquiries                                   [LOW IMPACT]     │    │
+│  │  2 inquiries in last 6 months                                        │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  SCORE HISTORY                                                               │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  📈 Score History (Last 12 Months)                                   │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │  Feb 2026    750  Very Good    +15                                   │    │
+│  │  Jan 2026    735  Good         +5                                    │    │
+│  │  Dec 2025    730  Good         +10                                   │    │
+│  │  Nov 2025    720  Good         -5                                    │    │
+│  │  ...                                                                 │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  PERSONALIZED IMPROVEMENT TIPS                                               │
+│  ─────────────────────────────────────────────────────────────────────────── │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │  💡 Tips to Improve Your Score                                       │    │
+│  │  ────────────────────────────────────────────────────────────────── │    │
+│  │                                                                      │    │
+│  │  📊 Credit Utilization (30% of score)                                │    │
+│  │  ✓ Keep balances below 30% of credit limit                          │    │
+│  │  ✓ Pay down high-balance cards first                                │    │
+│  │  ✓ Make multiple payments per month                                 │    │
+│  │  ✓ Request credit limit increases                                   │    │
+│  │                                                                      │    │
+│  │  📅 Payment History (35% of score)                                   │    │
+│  │  ✓ Set up automatic payments for all bills                          │    │
+│  │  ✓ Make on-time payments for 6-12 months                            │    │
+│  │  ✓ Contact creditors about payment plans if needed                  │    │
+│  │                                                                      │    │
+│  │  📚 General Best Practices                                           │    │
+│  │  ✓ Check credit report annually for errors                          │    │
+│  │  ✓ Monitor credit regularly                                         │    │
+│  │  ✓ Be patient - improvements take 3-6 months                        │    │
+│  │  ✓ Keep up the great work!                                          │    │
+│  │                                                                      │    │
+│  │  [Browse Learning Resources →]                                       │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Component Mapping
+
+| Feature              | Frontend Component         | Backend API                  | Status      |
+| -------------------- | -------------------------- | ---------------------------- | ----------- |
+| Credit Score Page    | ✅ `CreditScorePage.tsx`   | `GET /credit-score`          | ✅ Complete |
+| Credit Score Service | ✅ `creditScoreApi.ts`     | N/A                          | ✅ Complete |
+| Score Display        | ✅ `CreditScorePage.tsx`   | `GET /credit-score`          | ✅ Complete |
+| Factors Analysis     | ✅ `CreditScorePage.tsx`   | `GET /credit-score`          | ✅ Complete |
+| Score History        | ✅ `CreditScorePage.tsx`   | `GET /credit-score/history`  | ✅ Complete |
+| Improvement Tips     | ✅ `CreditScorePage.tsx`   | N/A (client-side)            | ✅ Complete |
+| Refresh Score        | ✅ `CreditScorePage.tsx`   | `POST /credit-score/refresh` | ✅ Complete |
+| Score Settings       | ✅ `CreditScorePage.tsx`   | `PUT /credit-score/settings` | ✅ Complete |
+| Mobile Credit Score  | ✅ `CreditScoreScreen.tsx` | Same as web                  | ✅ Complete |
+| Mobile Service       | ✅ `creditScore.ts`        | N/A                          | ✅ Complete |
+| Score Notifications  | ✅ Backend                 | Daily reminders Lambda       | ✅ Complete |
+
+### UI/UX Requirements
+
+- **Clear rating display**: ✅ Show score with color-coded rating (Poor to Excellent)
+- **Change tracking**: ✅ Display score change with up/down arrows
+- **Visual score range**: ✅ Show position on 300-850 scale with gradient
+- **Factor breakdown**: ✅ List all factors with impact levels (high/medium/low)
+- **Personalized tips**: ✅ Tips organized by category based on user's factors
+- **History tracking**: ✅ Show score changes over time (last 12 months)
+- **Refresh capability**: ✅ Allow manual score refresh from credit bureau
+- **Educational content**: ✅ Link to learning resources for credit improvement
+- **Privacy messaging**: ✅ Explain soft inquiry doesn't affect credit
+- **Mobile parity**: ✅ Full feature parity between web and mobile
+
+### All Components Complete
+
+All Credit Score Monitoring components have been implemented for both web and mobile platforms.
+
+---
+
 ## 6. Debt & Savings Goals Journey
 
 ### User Story
@@ -1347,12 +1493,12 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 #### 🟢 LOW PRIORITY (Nice to Have)
 
-| Component               | Journey          | Backend Status   | Effort       |
-| ----------------------- | ---------------- | ---------------- | ------------ |
-| `CalendarView.tsx`      | Daily Management | N/A              | ✅ Done      |
-| `ReceiptUpload.tsx`     | Daily Management | ✅ Backend ready | ✅ Done      |
-| `InvestmentTracker.tsx` | Net Worth        | ❌ Not started   | 3-4 days     |
-| `CreditScoreWidget.tsx` | Financial Health | ❌ Not started   | External API |
+| Component               | Journey          | Backend Status   | Effort   |
+| ----------------------- | ---------------- | ---------------- | -------- |
+| `CalendarView.tsx`      | Daily Management | N/A              | ✅ Done  |
+| `ReceiptUpload.tsx`     | Daily Management | ✅ Backend ready | ✅ Done  |
+| `InvestmentTracker.tsx` | Net Worth        | ❌ Not started   | 3-4 days |
+| `CreditScoreWidget.tsx` | Financial Health | ✅ Complete      | ✅ Done  |
 
 ### Backend APIs Without Frontend
 
@@ -1571,22 +1717,22 @@ xl: 32px  (major sections)
 
 #### Competitive Features (Requirements 35-48) - 🔄 IN PROGRESS
 
-| Req | Name                  | Journey       | Task    | Frontend | Backend | UI/UX Status    |
-| --- | --------------------- | ------------- | ------- | -------- | ------- | --------------- |
-| R35 | Subscription Tracking | Insights      | Task 4  | ✅       | ✅      | ✅ Complete     |
-| R36 | Bill Reminders        | Notifications | Task 2  | ✅       | ✅      | ✅ Complete     |
-| R37 | Debt Payoff           | Goals         | Task 5  | ✅       | ✅      | ✅ Complete     |
-| R38 | Savings Goals         | Goals         | Task 3  | ✅       | ✅      | ✅ Complete     |
-| R39 | Spending Insights     | Insights      | Task 6  | ✅       | ✅      | ✅ Complete     |
-| R40 | Rollover Budgets      | Daily         | Task 1  | ✅       | ✅      | ✅ Complete     |
-| R41 | Net Worth             | Goals         | Task 9  | ✅       | ✅      | ✅ Complete     |
-| R42 | Bank Sync (Plaid)     | Bank          | Task 10 | ✅       | ✅      | ✅ Complete     |
-| R43 | Credit Score          | Insights      | Task 11 | ❌       | ❌      | ❌ External API |
-| R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete     |
-| R45 | Investments           | Goals         | Task 12 | ❌       | ❌      | ❌ Not started  |
-| R46 | Peer Comparison       | Insights      | Task 13 | ✅       | ✅      | ✅ Complete     |
-| R47 | Educational Content   | Insights      | Task 14 | ✅       | ✅      | ✅ Complete     |
-| R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete     |
+| Req | Name                  | Journey       | Task    | Frontend | Backend | UI/UX Status   |
+| --- | --------------------- | ------------- | ------- | -------- | ------- | -------------- |
+| R35 | Subscription Tracking | Insights      | Task 4  | ✅       | ✅      | ✅ Complete    |
+| R36 | Bill Reminders        | Notifications | Task 2  | ✅       | ✅      | ✅ Complete    |
+| R37 | Debt Payoff           | Goals         | Task 5  | ✅       | ✅      | ✅ Complete    |
+| R38 | Savings Goals         | Goals         | Task 3  | ✅       | ✅      | ✅ Complete    |
+| R39 | Spending Insights     | Insights      | Task 6  | ✅       | ✅      | ✅ Complete    |
+| R40 | Rollover Budgets      | Daily         | Task 1  | ✅       | ✅      | ✅ Complete    |
+| R41 | Net Worth             | Goals         | Task 9  | ✅       | ✅      | ✅ Complete    |
+| R42 | Bank Sync (Plaid)     | Bank          | Task 10 | ✅       | ✅      | ✅ Complete    |
+| R43 | Credit Score          | Insights      | Task 11 | ✅       | ✅      | ✅ Complete    |
+| R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete    |
+| R45 | Investments           | Goals         | Task 12 | ❌       | ❌      | ❌ Not started |
+| R46 | Peer Comparison       | Insights      | Task 13 | ✅       | ✅      | ✅ Complete    |
+| R47 | Educational Content   | Insights      | Task 14 | ✅       | ✅      | ✅ Complete    |
+| R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete    |
 
 ---
 
@@ -1728,7 +1874,6 @@ xl: 32px  (major sections)
 
 | Feature        | Journey  | Effort | Impact | Dependencies   |
 | -------------- | -------- | ------ | ------ | -------------- |
-| CreditScore    | Insights | 3 days | MEDIUM | External API   |
 | Investments    | Goals    | 4 days | MEDIUM | New backend    |
 | PeerComparison | Insights | 3 days | MEDIUM | Backend needed |
 | LearnPage      | Insights | 3 days | MEDIUM | Backend needed |
@@ -1738,7 +1883,6 @@ xl: 32px  (major sections)
 | Feature         | Journey | Effort | Impact | Dependencies |
 | --------------- | ------- | ------ | ------ | ------------ |
 | NetWorthTracker | Goals   | 4 days | MEDIUM | ✅ Complete  |
-| CreditScore     | Goals   | 3 days | MEDIUM | Partnership  |
 | Investments     | Goals   | 4 days | MEDIUM | New backend  |
 
 ---
@@ -2223,7 +2367,7 @@ Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 - Task 8: Admin Web Application ✅
 - Task 9: Net Worth Tracking ✅
 - Task 10: Bank Sync UI (Plaid) ✅
-- Task 11: Credit Score Monitoring ❌
+- Task 11: Credit Score Monitoring ✅
 - Task 12: Investment Tracking ❌
 - Task 13: Peer Comparison ✅
 - Task 14: Educational Content ✅
