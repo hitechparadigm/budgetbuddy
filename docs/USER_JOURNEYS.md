@@ -7,7 +7,7 @@
 **Recent Updates**:
 
 - Investment Tracking Backend Progress (2026-02-05)
-  - 🔄 **BACKEND IN PROGRESS**: Investment Tracking (Requirement 45, Task 12)
+  - ✅ **BACKEND COMPLETE**: Investment Tracking (Requirement 45, Task 12)
   - **Task 12.1 Complete** ✅: investments Lambda function with CRUD operations and portfolio calculations
     - **Features**: Holdings management (create, read, update, delete), portfolio overview with total value/cost basis/gain-loss, asset allocation by account type
     - **API Endpoints**: 6 endpoints (GET portfolio, GET holdings, POST/PUT/DELETE holdings, GET performance)
@@ -20,7 +20,14 @@
     - **Error Handling**: Graceful failure handling per symbol, detailed logging
     - **Tests**: Comprehensive unit tests for price fetching and holding updates
     - **Files**: `backend/functions/investments-price-updater/` (index.js, README.md, package.json, index.test.js)
-  - **Status**: ✅ Backend Tasks 12.1-12.2 complete, ❌ Frontend not started
+  - **Task 12.3 Complete** ✅: Portfolio performance calculation and history tracking
+    - **Features**: Day change calculation with previousPrice tracking, performance history with period filtering (1M, 3M, 6M, 1Y, ALL), portfolio snapshots for historical tracking
+    - **API Endpoints**: Enhanced GET /investments with dayChange/dayChangePercent, GET /investments/performance?period=<period>, POST /investments/snapshot
+    - **Data Model**: Added PORTFOLIO_SNAPSHOT#<date> sort key pattern for historical data
+    - **Calculations**: Total return, return percentage, day change tracking
+    - **Tests**: 15 unit tests covering all performance calculations and snapshot creation
+    - **Files**: Updated `backend/functions/investments/` (index.js, README.md, index.test.js)
+  - **Status**: ✅ Backend Tasks 12.1-12.3 complete, ❌ Frontend Tasks 12.4-12.7 not started
 - Family Invitation Fix Complete (2026-02-05)
   - ✅ **SPEC CLOSED**: Family invitation emails now working correctly
   - **All Tasks Complete**: CDK stack update, Lambda code update, testing, deployment, verification, documentation
@@ -2398,7 +2405,7 @@ Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 - Task 9: Net Worth Tracking ✅
 - Task 10: Bank Sync UI (Plaid) ✅
 - Task 11: Credit Score Monitoring ✅
-- Task 12: Investment Tracking 🔄 (Backend: Tasks 12.1-12.2 ✅ Complete, Frontend: Tasks 12.3-12.7 ❌ Not Started)
+- Task 12: Investment Tracking 🔄 (Backend: Tasks 12.1-12.3 ✅ Complete, Frontend: Tasks 12.4-12.7 ❌ Not Started)
 - Task 13: Peer Comparison ✅
 - Task 14: Educational Content ✅
 
