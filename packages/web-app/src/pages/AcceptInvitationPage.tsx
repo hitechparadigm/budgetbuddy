@@ -7,7 +7,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-const API_BASE = "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+// Family API is on a separate API Gateway (api-family stack)
+const API_BASE = "https://gp8jspfboa.execute-api.us-east-1.amazonaws.com/v1";
 
 export const AcceptInvitationPage: React.FC = () => {
   const navigate = useNavigate();

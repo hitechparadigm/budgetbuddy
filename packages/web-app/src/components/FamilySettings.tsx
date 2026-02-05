@@ -6,7 +6,8 @@
 
 import React, { useState, useEffect } from "react";
 
-const API_BASE = "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+// Family API is on a separate API Gateway (api-family stack)
+const API_BASE = "https://gp8jspfboa.execute-api.us-east-1.amazonaws.com/v1";
 
 interface FamilyMember {
   userId: string;
