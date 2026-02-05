@@ -280,6 +280,15 @@ export class ApiFeaturesStack extends cdk.Stack {
       description: 'BudgetBuddy debt payoff handler for debt tracking, snowball/avalanche calculations, and payment recording',
     });
 
+    // Credit Score Lambda
+    this.functions.creditScoreHandler = new lambda.Function(this, 'CreditScoreHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-credit-score',
+      code: lambda.Code.fromAsset('../backend/functions/credit-score'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy credit score handler for credit monitoring, score tracking, and improvement tips',
+    });
+
     // Email Lambda
     this.functions.emailHandler = new lambda.Function(this, 'EmailHandler', {
       ...commonProps,
@@ -324,6 +333,9 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Debt Payoff routes
     this.setupDebtPayoffRoutes(authorizer);
+
+    // Credit Score routes
+    this.setupCreditScoreRoutes(authorizer);
 
     // Email routes
     this.setupEmailRoutes(authorizer);
@@ -755,6 +767,44 @@ export class ApiFeaturesStack extends cdk.Stack {
     debtPaymentResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
       authorizer,
       operationName: 'RecordDebtPayment',
+    });
+  }
+
+  private setupCreditScoreRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const creditScoreResource = this.api.root.addResource('credit-score');
+
+    // Get current credit score
+    creditScoreResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.creditScoreHandler), {
+      authorizer,
+      operationName: 'GetCreditScore',
+    });
+
+    // Refresh credit score from bureau
+    const refreshResource = creditScoreResource.addResource('refresh');
+    refreshResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.creditScoreHandler), {
+      authorizer,
+      operationName: 'RefreshCreditScore',
+    });
+
+    // Get credit score history
+    const historyResource = creditScoreResource.addResource('history');
+    historyResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.creditScoreHandler), {
+      authorizer,
+      operationName: 'GetCreditScoreHistory',
+    });
+
+    // Update credit score settings
+    const settingsResource = creditScoreResource.addResource('settings');
+    settingsResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.creditScoreHandler), {
+      authorizer,
+      operationName: 'UpdateCreditScoreSettings',
+    });
+
+    // Health check
+    const healthResource = creditScoreResource.addResource('health');
+    healthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.creditScoreHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'CreditScoreHealthCheck',
     });
   }
 
