@@ -185,6 +185,10 @@ export class ApiFamilyStack extends cdk.Stack {
       code: lambda.Code.fromAsset('../backend/functions/family'),
       handler: 'index.handler',
       description: 'BudgetBuddy family handler for family collaboration, member management, and invitations',
+      environment: {
+        ...commonProps.environment,
+        FAMILY_API_URL: this.api.url, // Add Family API URL for email service calls
+      },
     });
 
     // Email Lambda (for family invitation emails)

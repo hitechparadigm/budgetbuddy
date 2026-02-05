@@ -6,6 +6,13 @@
 
 **Recent Updates**:
 
+- Family Invitation Email Fix (2026-02-05)
+  - 🐛 **BUG IDENTIFIED**: Family invitations not sending emails due to incorrect API URL
+  - **Root Cause**: Family Lambda using hardcoded main API URL instead of Family API URL
+  - **Impact**: Invitation records created in DynamoDB but emails not sent to invitees
+  - **Fix In Progress**: Adding FAMILY_API_URL environment variable to family Lambda
+  - **Spec Created**: `.kiro/specs/family-invitation-fix/` with requirements, design, and tasks
+  - **Status**: Ready for implementation
 - Family Stack Infrastructure Issue RESOLVED (2026-02-05)
   - ✅ **RESOLVED**: Created standalone api-family-stack to resolve circular dependency
   - Successfully deployed FamilyHandler and EmailHandler to dedicated stack
@@ -513,21 +520,32 @@ _"As a primary account holder, I want to invite my partner to share our budget s
 
 ### Component Mapping
 
-| Feature             | Frontend Component         | Backend API                            | Status      |
-| ------------------- | -------------------------- | -------------------------------------- | ----------- |
-| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete |
-| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ✅ Complete |
-| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | ✅ Complete |
-| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ✅ Complete |
-| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ✅ Complete |
-| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ✅ Complete |
-| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ✅ Complete |
-| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ✅ Complete |
-| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ✅ Complete |
-| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ✅ Complete |
-| Email Notifications | Backend                    | `POST /email/send-invitation`          | ✅ Complete |
-| Email Notifications | Backend                    | `POST /email/send-removal`             | ✅ Complete |
-| Email Notifications | Backend                    | `POST /email/send-acceptance`          | ✅ Complete |
+| Feature             | Frontend Component         | Backend API                            | Status      | Notes                                    |
+| ------------------- | -------------------------- | -------------------------------------- | ----------- | ---------------------------------------- |
+| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete |                                          |
+| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ✅ Complete |                                          |
+| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | 🐛 Bug Fix  | Email not sent - fix in progress         |
+| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ✅ Complete |                                          |
+| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ✅ Complete |                                          |
+| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ✅ Complete |                                          |
+| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ✅ Complete |                                          |
+| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ✅ Complete |                                          |
+| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ✅ Complete |                                          |
+| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | 🐛 Bug Fix  | Email not sent - fix in progress         |
+| Email Notifications | Backend                    | `POST /email/send-invitation`          | ✅ Complete | Endpoint works, but not called correctly |
+| Email Notifications | Backend                    | `POST /email/send-removal`             | ✅ Complete |                                          |
+| Email Notifications | Backend                    | `POST /email/send-acceptance`          | ✅ Complete |                                          |
+
+**Known Issues (2026-02-05)**:
+
+- 🐛 **Family Invitation Emails Not Sending**:
+  - **Issue**: When sending or resending invitations, the email service is not called correctly
+  - **Root Cause**: Family Lambda using wrong API Gateway URL (main API instead of Family API)
+  - **Impact**: Invitation records created but emails not sent to invitees
+  - **Workaround**: None - invitations cannot be completed without email
+  - **Fix**: Add `FAMILY_API_URL` environment variable to family Lambda configuration
+  - **Spec**: `.kiro/specs/family-invitation-fix/`
+  - **ETA**: Fix ready for deployment
 
 **Infrastructure Status**:
 
