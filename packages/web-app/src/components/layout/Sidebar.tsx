@@ -34,8 +34,9 @@ export const navItems: NavItem[] = [
   { id: "budget", label: "Budget", icon: "📊", path: "/budget" },
   { id: "accounts", label: "Accounts", icon: "🏦", path: "/accounts" },
   { id: "goals", label: "Goals", icon: "🎯", path: "/goals" },
-  { id: "insights", label: "Insights", icon: "📈", path: "/insights" },
-  { id: "tips", label: "Tips", icon: "💡", path: "/tips" },
+  { id: "investments", label: "Investments", icon: "📈", path: "/investments" },
+  { id: "insights", label: "Insights", icon: "💡", path: "/insights" },
+  { id: "tips", label: "Tips", icon: "💬", path: "/tips" },
   { id: "learn", label: "Learn", icon: "📚", path: "/learn" },
   { id: "bills", label: "Bills", icon: "📋", path: "/bills" },
   {
@@ -48,7 +49,7 @@ export const navItems: NavItem[] = [
   {
     id: "credit-score",
     label: "Credit Score",
-    icon: "📊",
+    icon: "🏆",
     path: "/credit-score",
   },
   { id: "settings", label: "Settings", icon: "⚙️", path: "/settings" },

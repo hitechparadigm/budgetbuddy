@@ -6,28 +6,22 @@
 
 **Recent Updates**:
 
-- Investment Tracking Backend Progress (2026-02-05)
-  - ✅ **BACKEND COMPLETE**: Investment Tracking (Requirement 45, Task 12)
-  - **Task 12.1 Complete** ✅: investments Lambda function with CRUD operations and portfolio calculations
-    - **Features**: Holdings management (create, read, update, delete), portfolio overview with total value/cost basis/gain-loss, asset allocation by account type
-    - **API Endpoints**: 6 endpoints (GET portfolio, GET holdings, POST/PUT/DELETE holdings, GET performance)
+- Investment Tracking Frontend Web Complete (2026-02-05)
+  - ✅ **WEB FRONTEND COMPLETE**: Investment Tracking Web UI (Requirement 45, Task 12.4)
+  - **Task 12.4 Complete** ✅: InvestmentsPage with portfolio overview, holdings management, and performance charts
+    - **Features**: Portfolio summary cards (total value, gain/loss, day change, cost basis), holdings table with CRUD operations, performance history chart with period selection (1M, 3M, 6M, 1Y, ALL), asset allocation by account type
+    - **Components**: InvestmentsPage.tsx with modal forms for adding/editing holdings
+    - **Services**: investmentsApi.ts with full API integration (portfolio, holdings, performance, snapshots)
     - **Account Types**: Support for brokerage, 401k, IRA, Roth IRA, HSA, crypto
-    - **Tests**: 11 unit tests covering all CRUD operations and portfolio calculations
-    - **Files**: `backend/functions/investments/` (index.js, README.md, package.json, index.test.js)
-  - **Task 12.2 Complete** ✅: investments-price-updater Lambda function for automated stock price updates
-    - **Features**: Scheduled price updates via Alpha Vantage API, batch processing with rate limiting, automatic holding updates
-    - **Integration**: Updates all holdings with latest stock prices, respects API rate limits (5 calls/min)
-    - **Error Handling**: Graceful failure handling per symbol, detailed logging
-    - **Tests**: Comprehensive unit tests for price fetching and holding updates
-    - **Files**: `backend/functions/investments-price-updater/` (index.js, README.md, package.json, index.test.js)
-  - **Task 12.3 Complete** ✅: Portfolio performance calculation and history tracking
-    - **Features**: Day change calculation with previousPrice tracking, performance history with period filtering (1M, 3M, 6M, 1Y, ALL), portfolio snapshots for historical tracking
-    - **API Endpoints**: Enhanced GET /investments with dayChange/dayChangePercent, GET /investments/performance?period=<period>, POST /investments/snapshot
-    - **Data Model**: Added PORTFOLIO_SNAPSHOT#<date> sort key pattern for historical data
-    - **Calculations**: Total return, return percentage, day change tracking
-    - **Tests**: 15 unit tests covering all performance calculations and snapshot creation
-    - **Files**: Updated `backend/functions/investments/` (index.js, README.md, index.test.js)
-  - **Status**: ✅ Backend Tasks 12.1-12.3 complete, ❌ Frontend Tasks 12.4-12.7 not started
+    - **Tests**: 16 property-based tests covering all portfolio calculations (holding value, gain/loss, percentages, portfolio totals)
+    - **Files**: `packages/web-app/src/pages/InvestmentsPage.tsx`, `packages/web-app/src/services/investmentsApi.ts`, `packages/web-app/src/pages/InvestmentsPage.test.tsx`
+    - **Router**: Integrated into App.tsx with route `/investments`
+    - **Navigation**: Added to Sidebar.tsx with 📈 icon
+  - **Backend Complete** ✅: Investment Tracking (Requirement 45, Tasks 12.1-12.3)
+    - **Task 12.1**: investments Lambda function with CRUD operations and portfolio calculations
+    - **Task 12.2**: investments-price-updater Lambda function for automated stock price updates
+    - **Task 12.3**: Portfolio performance calculation and history tracking
+  - **Status**: ✅ Backend Tasks 12.1-12.3 complete, ✅ Frontend Web Task 12.4 complete, ❌ Frontend Tasks 12.5-12.7 not started
 - Family Invitation Fix Complete (2026-02-05)
   - ✅ **SPEC CLOSED**: Family invitation emails now working correctly
   - **All Tasks Complete**: CDK stack update, Lambda code update, testing, deployment, verification, documentation
