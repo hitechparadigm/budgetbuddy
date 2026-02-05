@@ -3,49 +3,48 @@ inclusion: conditional
 fileMatchPattern: "{.github/workflows/**,scripts/deploy*,scripts/*cicd*}"
 ---
 
-# CI/CD Deployment Guidelines
+# CI/CD Deployment
 
 **ONLY load when working with CI/CD files**
 
 ## Critical Rules
 
-### Before Starting Any Task
+### No Parallel Deployments
 
-1. Check CI/CD status: `node scripts/check-cicd-status.js`
-2. Wait if deployment in progress
-3. Only proceed after successful deployment
+**NEVER run multiple deployments in parallel - they WILL conflict!**
 
-### CRITICAL: No Parallel Deployments
-
-**NEVER run multiple CI/CD deployments in parallel - they will conflict!**
-
-- Only ONE deployment can run at a time
-- Deployments modify shared AWS infrastructure (CloudFormation stacks)
-- Parallel deployments will cause:
-  - Stack update conflicts (UPDATE_IN_PROGRESS errors)
+- Only ONE deployment at a time
+- Deployments modify shared AWS infrastructure (CloudFormation)
+- Parallel deployments cause:
+  - Stack UPDATE_IN_PROGRESS conflicts
   - Resource contention
   - Deployment failures
-  - Inconsistent infrastructure state
+  - Inconsistent infrastructure
 
-**If you push while deployment is in progress:**
+**If you push during deployment:**
 
-- The new deployment will queue and wait
-- OR it will fail with "Stack is in UPDATE_IN_PROGRESS state"
-- You MUST wait for current deployment to complete
+- New deployment queues or fails with "Stack in UPDATE_IN_PROGRESS"
+- MUST wait for current deployment to complete
 
 **Workflow:**
 
-1. Push commit → Deployment starts
-2. WAIT for deployment to complete (check status every 2 minutes)
-3. Verify success with `node scripts/check-cicd-status.js`
-4. Only then push next commit
+1. Push commit → deployment starts
+2. WAIT for completion (check every 2min)
+3. Verify: `node scripts/check-cicd-status.js`
+4. Then push next commit
+
+### Before Any Task
+
+1. Check: `node scripts/check-cicd-status.js`
+2. Wait if in progress
+3. Proceed only after success
 
 ### Deployment Monitoring
 
-- NEVER start new tasks while deployment is in progress
-- NEVER start new tasks if last deployment failed
-- NEVER push new commits while deployment is running
-- ALWAYS verify deployment success before continuing
+- NEVER start tasks while deployment in progress
+- NEVER start tasks if last deployment failed
+- NEVER push while deployment running
+- ALWAYS verify success before continuing
 - ALWAYS check `.kiro/cicd-status/latest.json`
 
 ### If Deployment Failed
@@ -53,24 +52,24 @@ fileMatchPattern: "{.github/workflows/**,scripts/deploy*,scripts/*cicd*}"
 1. Read failure logs from CI/CD status
 2. Analyze error and root cause
 3. Fix the issue
-4. Commit and push the fix
+4. Commit and push fix
 5. Wait for new deployment to succeed
-6. Only then continue with next task
+6. Then continue with next task
 
 ### Deployment Commands
 
-**CRITICAL**: NEVER use direct CDK deploy commands (`cdk deploy`, `npm run deploy:dev`)
+**CRITICAL**: NEVER use direct CDK deploy (`cdk deploy`, `npm run deploy:dev`)
 
-ALL deployments MUST go through CI/CD pipeline:
+ALL deployments via CI/CD:
 
-1. Complete feature implementation
-2. Commit and push code
-3. WAIT for GitHub Actions deployment (check every 2 minutes)
-4. VERIFY deployment succeeded using check-cicd-status.js
-5. Only then proceed to next task
+1. Complete implementation
+2. Commit and push
+3. WAIT for GitHub Actions (check every 2min)
+4. VERIFY success: `node scripts/check-cicd-status.js`
+5. Then proceed to next task
 
 ## Environments
 
-- **dev**: Auto-deploy from develop branch
-- **staging**: Auto-deploy from main branch
-- **prod**: Manual approval required
+- **dev**: Auto-deploy from develop
+- **staging**: Auto-deploy from main
+- **prod**: Manual approval

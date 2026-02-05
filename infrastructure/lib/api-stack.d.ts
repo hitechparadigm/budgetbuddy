@@ -28,6 +28,7 @@ export interface ApiStackProps extends cdk.StackProps {
     userPool: cognito.UserPool;
     userPoolClient: cognito.UserPoolClient;
     authOnboardingFunction?: lambda.Function;
+    notificationFunction?: lambda.Function;
 }
 export declare class ApiStack extends cdk.Stack {
     /**
@@ -53,6 +54,11 @@ export declare class ApiStack extends cdk.Stack {
      * Part of architectural refactoring - standalone function for onboarding
      */
     private readonly authOnboardingFunction?;
+    /**
+     * Notification Service Lambda Function (optional)
+     * Handles push notifications, device management, and preferences
+     */
+    private readonly notificationFunction?;
     constructor(scope: Construct, id: string, props: ApiStackProps);
     /**
      * Create a Lambda layer with common dependencies
@@ -77,6 +83,11 @@ export declare class ApiStack extends cdk.Stack {
      * Create API Gateway REST API with proper configuration
      */
     private createApiGateway;
+    /**
+     * Add Gateway Responses to handle CORS for error responses
+     * This ensures CORS headers are present on 401, 403, 4XX, and 5XX responses
+     */
+    private addGatewayResponses;
     /**
      * Set up all API routes and Lambda integrations
      * Organizes endpoints by business domain

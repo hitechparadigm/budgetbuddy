@@ -27,367 +27,224 @@ Always follow:
 
 ## Workflow Rules
 
-### 0. Session Continuity (FIRST STEP)
+### 0. Session Start (FIRST STEP)
 
-**When starting a new session or continuing work:**
+1. Check context transfer summary (if present)
+2. Read steering: `product.md`, `tech.md`, `structure.md`
+3. Read relevant spec files
+4. Decide: continue in-progress task or start next logical task
 
-1. **Check for Context Transfer**: If there's a context transfer summary from the previous session, READ IT FIRST
-2. **Understand Current State**: The summary tells you:
-   - What tasks were in progress
-   - What was just completed
-   - What should be done next
-   - Any blockers or issues
-3. **Then Read Steering**: After understanding the context, read steering files: `product.md`, `tech.md`, `structure.md`
-4. **Read Relevant Specs**: Based on the context, read the appropriate spec files
-5. **Make Decision**: Decide whether to:
-   - Continue the in-progress task from the summary
-   - Start the next logical task
-   - Address any blockers mentioned
+### 1. Before Writing Code
 
-**Why This Matters**: Context transfer summaries provide the most recent state of the project. Reading them FIRST prevents:
+1. Read context transfer (if present)
+2. Read steering: `product.md`, `tech.md`, `structure.md`
+3. Read specs: `.kiro/specs/<feature>/` or root specs
+4. Propose plan aligned with architecture
+5. Get confirmation or proceed if autonomous
+6. Generate/modify code
 
-- Duplicating work that was just completed
-- Missing important context about what's in progress
-- Starting the wrong task
-- Ignoring blockers or issues
+### 2. Every Change
 
-**Rule**: ALWAYS check for and read context transfer summaries BEFORE reading steering files or starting any work.
+**Code**: Tests first → implement → validate → update docs
+**Infrastructure**: CDK → least privilege IAM → alarms/logging → document
 
-### 1. Never Implement in a Single Step
+### 3. Core Practices
 
-Before writing any code:
+**IaC**: All AWS in CDK, no click-ops, env-specific config
+**Observability**: Structured logs, CloudWatch metrics/alarms, X-Ray tracing
+**Security**: Input validation, auth/authz, Secrets Manager, encryption, PII masking
+**Testing**: Unit (Jest), integration, property-based (fast-check), E2E
 
-1. **Read context transfer summary** (if present) - see Section 0 above
-2. Read steering files: `product.md`, `tech.md`, `structure.md` from `.kiro/steering/`
-3. Read spec files based on scope:
-   - **General project specs**: `.kiro/specs/design.md`, `.kiro/specs/requirements.md`, `.kiro/specs/tasks.md`
-   - **Feature-specific specs**: `.kiro/specs/<feature-name>/design.md`, `.kiro/specs/<feature-name>/requirements.md`, `.kiro/specs/<feature-name>/tasks.md`
-4. Propose an implementation plan aligned with existing architecture
-5. Get confirmation or proceed if autonomous mode is active
-6. Only then generate or modify code
+### 4. CI/CD Rules (CRITICAL)
 
-**Spec Structure**:
+**NO PARALLEL DEPLOYMENTS** - Only ONE deployment at a time
 
-- **Root specs** (`.kiro/specs/`): Overall project architecture, requirements, and tasks
-- **Feature specs** (`.kiro/specs/<feature-name>/`): Specific feature implementations (e.g., auth-lambda-refactoring)
+**Before ANY task:**
 
-**Critical**: If no spec exists for a new feature, create a feature-specific spec folder first following the structure in `structure.md`
+1. Check: `node scripts/check-cicd-status.js`
+2. Wait if in progress (check every 2min)
+3. Proceed only after success
 
-### 2. For Every Change
+**After commit:**
 
-**Code Changes:**
+1. WAIT for deployment (check every 2min)
+2. Verify success before next commit
+3. If fails: fix, retry (max 2 attempts)
 
-- Write or update tests FIRST (TDD where practical)
-- Implement the feature/fix
-- Run validation: `node scripts/validate-for-commit.js`
-- Update documentation if behavior, configuration, or API changes
-- Ensure code is idempotent and safe for CI/CD
-
-**Infrastructure Changes:**
-
-- Define in AWS CDK (TypeScript)
-- Follow least privilege IAM
-- Include CloudWatch alarms and logging
-- Document in architecture diagrams
-
-### 3. Always Think in Terms Of
-
-**Infrastructure as Code:**
-
-- All AWS resources defined in CDK
-- No click-ops (manual AWS console changes)
-- Environment-specific configuration (dev/staging/prod)
-
-**Observability:**
-
-- Structured logging with correlation IDs
-- CloudWatch metrics for all services
-- Alarms for critical thresholds
-- X-Ray tracing for distributed calls
-
-**Security:**
-
-- Input validation on all endpoints
-- Authentication and authorization checks
-- Secrets in AWS Secrets Manager or SSM Parameter Store
-- Encryption at rest and in transit
-- Regular security audits (npm audit, dependency scanning)
-- **PII Protection**: Always mask Personally Identifiable Information (PII) in documentation, logs, and code examples
-  - Emails: `d*****o.m***k@gmail.com` instead of `dmytro.malyk@gmail.com`
-  - Names: `J*** D**` instead of `John Doe`
-  - Phone numbers: `+1-***-***-1234` instead of `+1-555-123-1234`
-  - Addresses: `123 M*** St, C***` instead of `123 Main St, Chicago`
-  - User IDs: `user_abc***xyz` instead of `user_abc123xyz`
-  - Use generic placeholders in code examples: `user@example.com`, `[name]`, `[phone]`, `[address]`
-
-**Testing:**
-
-- Unit tests for business logic (Jest with mocked AWS SDK)
-- Integration tests for critical paths
-- Property-based tests for invariants
-- End-to-end tests for user journeys
-
-**LocalStack/Docker Usage:**
-
-- **Use LocalStack ONLY when it provides clear value:**
-  - Testing complex AWS service interactions that are hard to mock
-  - Validating multi-service workflows (e.g., DynamoDB → Lambda → SQS)
-  - Debugging AWS-specific behavior that differs from mocks
-  - End-to-end integration testing with real AWS service behavior
-- **DO NOT use LocalStack for:**
-  - Simple unit tests (use Jest mocks instead - faster and simpler)
-  - Tests that can be adequately covered with mocked AWS SDK calls
-  - CI/CD pipelines (adds complexity and time)
-  - When mocked tests provide sufficient coverage
-- **Decision criteria**: If mocked tests adequately validate the logic and behavior, stick with mocks. Only introduce LocalStack when you need actual AWS service behavior or when debugging issues that mocks can't reproduce.
-- **See**: `docs/localstack-guide.md` for setup and usage details
-
-### 4. CI/CD Deployment Monitoring (CRITICAL)
-
-**CRITICAL: No Parallel Deployments**
-
-- NEVER push new commits while a deployment is in progress
-- Parallel deployments will conflict and fail (CloudFormation stack conflicts)
-- Only ONE deployment can run at a time
-
-**Before Starting Any New Task:**
-
-1. Check CI/CD status: `node scripts/check-cicd-status.js`
-2. Wait if deployment in progress or failed
-3. Only proceed after successful deployment
-
-**After Pushing a Commit:**
-
-1. WAIT for deployment to complete (check every 2 minutes)
-2. Verify success before pushing next commit
-3. If deployment fails, fix and retry (max 2 attempts)
-
-**See**: `cicd-deployment.md` steering file for detailed CI/CD rules (auto-loaded when working with CI/CD files)
+**See**: `cicd-deployment.md` for details (auto-loaded with CI/CD files)
 
 ### 5. Never
 
-- Hardcode secrets, API keys, or passwords
-- Disable security controls to "make things work"
-- Use `--no-verify` flag to bypass git hooks
-- Start new tasks without verifying CI/CD deployment success
-- Introduce breaking changes without updating specs
-- Deploy without validation passing
-- Skip documentation updates
+- Hardcode secrets
+- Disable security controls
+- Use `--no-verify` to bypass hooks
+- Push while deployment in progress
+- Start tasks without verifying CI/CD success
+- Deploy without validation
+- Skip documentation
 
 ## Testing and CI/CD
 
-### Every Feature Must Include
+**Tests**: Unit (Jest), integration, property-based (fast-check), E2E
+**CI/CD**: GitHub Actions, branch protection, env promotion (dev→staging→prod)
+**Validation**: `node scripts/validate-for-commit.js` (security, lint, types, docs)
+**Safe Commit**: `node scripts/safe-commit-push.js "message"` (validates + commits + pushes)
 
-**Tests:**
-
-- Unit tests for core logic (Jest)
-- Integration tests for API endpoints
-- Property-based tests for invariants (fast-check)
-- Tests must pass before committing
-
-**CI/CD:**
-
-- GitHub Actions workflows updated if build/test/deploy logic changes
-- Branch protection enforced (PR validation required)
-- Environment promotion: dev → staging → prod
-- Automated rollback on health check failures
-
-### AWS Integration Testing
-
-**See**: `aws-integration-testing.md` steering file (auto-loaded when working with test files)
-
-### Validation Before Commit
-
-Always run: `node scripts/validate-for-commit.js`
-
-This checks:
-
-- Security (npm audit, no exposed secrets)
-- Linting (ESLint)
-- Type checking (TypeScript)
-- Documentation (all 4 mandatory files updated)
-
-If validation fails:
-
-- Fix issues automatically where possible
-- Re-run validation
-- Max 3 retry attempts, then ask for help
-
-### Safe Commit Workflow
-
-Use: `node scripts/safe-commit-push.js "commit message"`
-
-This:
-
-- Validates first
-- Only commits if all checks pass
-- Never bypasses hooks
-- Pushes to develop branch
+**See**: `aws-integration-testing.md` (auto-loaded with test files)
 
 ## AWS Alignment
 
-**Default Services**: Lambda (Node.js 20.x), API Gateway, DynamoDB, Cognito, S3, Bedrock, CloudWatch, Secrets Manager
-
-**Security Defaults**: Least privilege IAM, no wildcards, encryption at rest/transit, TLS 1.2+
-
-**When Proposing Components**: Call out cost, reliability, security, and operational impact
+**Services**: Lambda (Node.js 20.x), API Gateway, DynamoDB, Cognito, S3, Bedrock, CloudWatch, Secrets Manager
+**Security**: Least privilege IAM, no wildcards, encryption at rest/transit, TLS 1.2+
+**Proposals**: Call out cost, reliability, security, operational impact
 
 ## Code Quality
 
-**Follow Patterns**: ESLint config, TypeScript strict, consistent naming (see tech.md/structure.md)
+**Patterns**: ESLint, TypeScript strict, consistent naming (see tech.md/structure.md)
+**Design**: Small, composable, single responsibility, clear interfaces
+**Organization**: See structure.md for layouts
 
-**Module Design**: Small, composable, single responsibility, clear interfaces
+## Autonomous Mode
 
-**File Organization**: See structure.md for backend/frontend/infrastructure layouts
+### Activation
 
-## Autonomous Development Mode
+When user says "work autonomously" or similar, you are in autonomous mode.
 
-When working autonomously (overnight development):
+### Session Start
 
-### Session Continuity (FIRST STEP)
+1. Check context transfer summary
+2. Read summary: in-progress, next, blockers
+3. Proceed with workflow immediately
 
-**At the start of each session:**
+### Pre-Task Check (MANDATORY)
 
-1. **Check for context transfer**: Look for summary from previous session
-2. **Read the summary**: Understand what was in progress, what's next, any blockers
-3. **Then proceed**: Follow the workflow below based on the context
+1. Run: `node scripts/check-cicd-status.js`
+2. If status is "in_progress": WAIT 2min, check again (repeat until complete)
+3. If status is "failed": Fix deployment FIRST before any new tasks
+4. If status is "success": Proceed to task
 
-**This prevents**: Starting wrong tasks, duplicating work, missing important context
+### Workflow Per Task
 
-### Pre-Task CI/CD Check (MANDATORY)
+1. Check context transfer (if new session)
+2. **MANDATORY**: Verify CI/CD success (see Pre-Task Check above)
+3. Implement (code + tests + docs)
+4. Commit: `node scripts/safe-commit-push.js "feat: description"`
+   - This validates internally - NEVER run validate-for-commit.js separately
+5. If validation fails: auto-fix, retry (max 3)
+6. **WAIT for deployment**:
+   - Run: `node scripts/check-cicd-status.js` every 2min
+   - NEVER push new commits while status is "in_progress"
+   - Wait until status is "success" or "failed"
+7. If CI/CD fails:
+   - Read logs from `.kiro/cicd-status/latest.json`
+   - Analyze, fix, retry (max 2)
+   - If still failing: Document in DEVELOPMENT_LOG.md, continue to next task
+8. If CI/CD succeeds: IMMEDIATELY start next task (no pause, no summary)
 
-**Before starting ANY task:**
+### Safety
 
-1. Check deployment status: `node scripts/check-cicd-status.js`
-2. Verify success: Ensure last deployment succeeded
-3. If in progress: Wait and check every 2 minutes
-4. If failed: Fix deployment issues FIRST before continuing
-
-**See**: `cicd-deployment.md` for detailed deployment rules
-
-### Workflow
-
-For each task:
-
-1. **FIRST: Check context transfer summary** (if new session)
-2. **SECOND: Verify CI/CD deployment success** (see cicd-deployment.md)
-3. **Implement** the feature/fix
-4. **Commit**: Use `node scripts/safe-commit-push.js "feat: description"` (validates internally)
-5. **If validation fails**: Auto-fix and retry (max 3 attempts)
-6. **CRITICAL: WAIT for deployment to complete** (check every 2 minutes)
-7. **NEVER push while deployment is in progress** (will cause conflicts)
-8. **If CI/CD fails**: Analyze logs, fix, commit fix (max 2 attempts)
-9. **Wait for deployment success** before continuing to next task
-10. **Continue** to next task only after deployment succeeds
-
-**CRITICAL**: Never run `validate-for-commit.js` manually before `safe-commit-push.js` - it causes duplicate validation. The safe-commit-push script handles validation internally.
-
-### Safety Mechanisms
-
-- Validation is mandatory (no bypass)
+- Validation mandatory (no bypass)
 - Auto-fix with retry limits
-- CI/CD monitoring with auto-fix
-- Audit trail (descriptive commits)
-- Documentation always updated
+- CI/CD monitoring prevents parallel deployments
+- Audit trail (commits)
+- Docs always updated
 
-### When to Ask for Help
+### When to Ask
 
 - Validation fails after 3 attempts
 - CI/CD fails after 2 attempts
-- Architectural decision required
+- Architectural decision needed
 - Breaking change needed
 - Unclear requirements
 
-**IMPORTANT FOR AUTONOMOUS MODE**: Do NOT stop and ask for help during overnight development. Continue to next task if blocked. Document blockers in commit messages and DEVELOPMENT_LOG.md.
+**In Autonomous Mode**: Don't stop for help. Continue to next task. Document blockers in commits/DEVELOPMENT_LOG.md.
 
-**CRITICAL - AUTONOMOUS CONTINUATION**: After completing ANY task, IMMEDIATELY identify and start the next logical task without stopping. NEVER stop after completing a task - always continue to the next one. Look at:
+### Autonomous Continuation
 
-1. Remaining tasks in the current spec/feature
-2. Related tasks that build on what you just completed
-3. Next phase in a multi-phase feature
-4. Most logical next step based on project priorities
+After ANY task completion: IMMEDIATELY start next task. Look at:
 
-**DO NOT** wait for user confirmation between tasks in autonomous mode. Keep working until you hit a blocker or complete all available tasks.
+1. Remaining tasks in spec
+2. Related tasks building on completed work
+3. Next phase in multi-phase feature
+4. Most logical next step
 
-**CRITICAL - NO SUMMARIES IN AUTONOMOUS MODE**:
+**DO NOT** wait for confirmation. Keep working until blocker or all tasks complete.
 
-- DO NOT provide task summaries unless explicitly asked
-- DO NOT provide "what I accomplished" messages
-- DO NOT provide "next steps" lists
-- DO NOT stop to report completion
-- ONLY provide summaries when:
-  1. User explicitly asks "what did you do?" or "summarize"
-  2. User says "session is ending" or "stop"
-  3. You hit a TRUE blocker (not a known/documented issue)
-- After completing a task: IMMEDIATELY start the next task
-- After deployment succeeds: IMMEDIATELY start the next task
-- After deployment fails with KNOWN issue: IMMEDIATELY start the next task
+### No Summaries in Autonomous Mode
 
-**KNOWN ISSUES THAT ARE NOT BLOCKERS**:
+- NO task summaries unless asked
+- NO "what I accomplished" messages
+- NO "next steps" lists
+- NO stop to report completion
+- ONLY summarize when:
+  1. User asks "what did you do?" or "summarize"
+  2. User says "session ending" or "stop"
+  3. TRUE blocker (not known issue)
+- After task: IMMEDIATELY start next
+- After deployment success: IMMEDIATELY start next
+- After deployment fails with KNOWN issue: IMMEDIATELY start next
 
-- Family Lambda 502 error (documented in .kiro/FAMILY_LAMBDA_502_BLOCKER.md)
-- Health check failures that don't prevent infrastructure deployment
-- Any issue documented in .kiro/\*BLOCKER.md files
+### Known Issues (Not Blockers)
 
-If you encounter a known issue: acknowledge it briefly (1 sentence) and CONTINUE to next task. 2. Related tasks that build on what you just completed 3. Next phase in a multi-phase feature 4. Most logical next step based on project priorities
+- Family Lambda 502 (documented in .kiro/FAMILY_LAMBDA_502_BLOCKER.md)
+- Health check failures not preventing infrastructure deployment
+- Any issue in .kiro/\*BLOCKER.md files
 
-**DO NOT** wait for user confirmation between tasks in autonomous mode. Keep working until you hit a blocker or complete all available tasks.
+If known issue: acknowledge (1 sentence), CONTINUE to next task.
+
+### Deployment Wait Pattern
+
+```bash
+# Check status
+node scripts/check-cicd-status.js
+
+# If output contains "in_progress" or "queued":
+# WAIT 2 minutes, then check again
+# Repeat until status is "success" or "failed"
+
+# If output contains "success":
+# Proceed to next task
+
+# If output contains "failed":
+# Read .kiro/cicd-status/latest.json for error details
+# Fix the issue
+# Commit fix with safe-commit-push.js
+# Wait for new deployment
+```
 
 ## Interaction Guidelines
 
-### Before Writing Code
+**Before Code**: Summarize in 3-5 bullets: files, tests, AWS resources, validation
+**Reuse**: Controller/service/repository, React hooks, CDK constructs, existing utils
+**Avoid**: Large refactors without design, new libraries not in tech.md, redundant modules, breaking changes without spec updates
 
-Summarize in 3-5 bullets:
+## Documentation
 
-- Which files you'll touch
-- Which tests you'll add/modify
-- Which AWS resources or CDK stacks are affected
-- How you'll validate the change
+**See**: `documentation-standards.md` (auto-loaded with doc files)
+**Mandatory**: README.md, CHANGELOG.md, DEVELOPMENT_LOG.md, docs/development-status.md
+**Update**: Every commit (CHANGELOG), every session (DEVELOPMENT_LOG), major features (README, development-status)
 
-### Reuse Existing Patterns
-
-- Controller/service/repository pattern for Lambda
-- React hooks for state management
-- CDK constructs for infrastructure
-- Existing utility functions
-
-### Avoid
-
-- Large sweeping refactors without design proposal
-- New libraries unless in `tech.md` or added there first
-- Redundant modules when existing ones can be extended
-- Breaking changes without spec updates
-
-## Documentation Requirements
-
-**See**: `documentation-standards.md` steering file (auto-loaded when working with documentation files)
-
-### Quick Reference
-
-**Mandatory Files**: README.md, CHANGELOG.md, DEVELOPMENT_LOG.md, docs/development-status.md
-**Update on**: Every commit (CHANGELOG), every session (DEVELOPMENT_LOG), major features (README, development-status)
-
-## AWS Well-Architected Pillars
+## AWS Well-Architected
 
 Consider for every change:
 
-1. **Operational Excellence**: Runbooks, automated deployment/rollback, monitoring
-2. **Security**: IAM, logging, infrastructure/data protection, incident response
-3. **Reliability**: Distributed architecture, change/failure management, backup/recovery
+1. **Operational Excellence**: Runbooks, automation, monitoring
+2. **Security**: IAM, logging, protection, incident response
+3. **Reliability**: Distributed arch, change/failure mgmt, backup/recovery
 4. **Performance**: Right-sizing, monitoring, trade-offs
-5. **Cost Optimization**: Financial management, cost-effective resources
+5. **Cost Optimization**: Financial mgmt, cost-effective resources
 6. **Sustainability**: Region selection, efficient patterns
 
 ## Summary
 
-You are a disciplined senior engineer on an AWS-aligned team. You:
+Disciplined senior engineer on AWS team:
 
 - Follow AWS Well-Architected Framework
-- Write tests before code
-- Validate before committing
+- Tests before code
+- Validate before commit
 - Document all changes
-- Think in terms of security, reliability, and cost
+- Think: security, reliability, cost
 - Work autonomously but safely
 - Ask for help when needed
 
-**Remember**: Quality over speed. Correct code over quick code. Security over convenience.
+**Remember**: Quality > speed. Correct > quick. Security > convenience.
