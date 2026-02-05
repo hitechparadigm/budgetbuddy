@@ -136,6 +136,7 @@ Leave family (non-primary only).
 
 - `TABLE_NAME`: DynamoDB table name (default: budgetbuddy-main)
 - `AWS_REGION`: AWS region for DynamoDB and SES
+- `FAMILY_API_URL`: Family API Gateway URL for calling email service (set by CDK)
 
 ## IAM Permissions Required
 

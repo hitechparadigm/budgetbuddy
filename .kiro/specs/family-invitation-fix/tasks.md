@@ -16,22 +16,22 @@
   - [x] 3.2 Add integration test for email service URL verification
   - [x] 3.3 Manual testing of invitation creation flow
 
-- [-] 4. Deployment
-  - [ ] 4.1 Run validation script
+- [x] 4. Deployment
+  - [x] 4.1 Run validation script
   - [x] 4.2 Commit and push changes
   - [x] 4.3 Wait for CI/CD deployment
-  - [ ] 4.4 Verify deployment success
+  - [x] 4.4 Verify deployment success
 
-- [ ] 5. Verification
-  - [ ] 5.1 Test invitation creation in dev environment
-  - [ ] 5.2 Verify email is sent successfully
-  - [ ] 5.3 Check CloudWatch logs for errors
-  - [ ] 5.4 Test resend invitation flow
+- [x] 5. Verification
+  - [x] 5.1 Test invitation creation in dev environment
+  - [x] 5.2 Verify email is sent successfully
+  - [x] 5.3 Check CloudWatch logs for errors
+  - [x] 5.4 Test resend invitation flow
 
-- [ ] 6. Documentation
-  - [ ] 6.1 Update backend/functions/family/README.md with FAMILY_API_URL environment variable
-  - [ ] 6.2 Update CHANGELOG.md with bug fix entry
-  - [ ] 6.3 Update DEVELOPMENT_LOG.md with issue and fix details
+- [x] 6. Documentation
+  - [x] 6.1 Update backend/functions/family/README.md with FAMILY_API_URL environment variable
+  - [x] 6.2 Update CHANGELOG.md with bug fix entry
+  - [x] 6.3 Update DEVELOPMENT_LOG.md with issue and fix details
 
 ## Task Details
 
