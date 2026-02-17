@@ -19,6 +19,16 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 
 ### Recent Achievements (2026-02-17)
 
+- 🔗 **INVESTMENT-NET WORTH INTEGRATION** - Complete integration of investment tracking with net worth
+  - **Net Worth Calculation**: Investment portfolio value now included in total assets automatically
+  - **Investment Value Query**: Added getInvestmentValue() to query user's holdings from USER# partition
+  - **API Enhancement**: Net worth endpoints return investmentValue separately for transparency
+  - **Monthly Snapshots**: Investment value tracked in monthly net worth snapshots for history
+  - **Category Integration**: Investment value automatically added to "Investments" asset category
+  - **Error Handling**: Graceful degradation if investment query fails (returns 0)
+  - **Test Coverage**: Comprehensive unit tests for integration scenarios
+  - **Impact**: Users see complete financial picture with investments included in net worth (Task 12.7 complete)
+
 - 📱 **INVESTMENT TRACKING - MOBILE IMPLEMENTATION** - Complete mobile investment portfolio tracking
   - **Mobile InvestmentsScreen**: Full-featured React Native screen with portfolio overview, holdings CRUD, asset allocation
   - **Portfolio Overview**: Total value, gain/loss ($ and %), day change indicators with color coding

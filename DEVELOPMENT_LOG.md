@@ -1,5 +1,53 @@
 # Development Log
 
+## 2026-02-17 - Investment-Net Worth Integration (Session 126)
+
+### Session Summary
+
+**Duration**: 30 minutes
+**Focus**: Integrate investment holdings into net worth calculation
+**Outcome**: Net worth now includes investment portfolio value
+
+### Work Completed
+
+1. **Net Worth Lambda Integration** (`backend/functions/net-worth/index.js`):
+   - Added getInvestmentValue() helper function to query investment holdings
+   - Modified getNetWorth() to include investment value in total assets calculation
+   - Updated getNetWorthSummary() to show investment value separately
+   - Enhanced updateNetWorthSnapshot() to track investment value in monthly snapshots
+   - Investment value automatically added to "Investments" asset category
+   - All asset/liability CRUD operations now update snapshots with investment data
+
+2. **Test Coverage** (`backend/functions/net-worth/net-worth-investments.test.js`):
+   - Created comprehensive unit tests for investment integration
+   - Tests for investment value calculation in net worth
+   - Tests for zero investment holdings scenario
+   - Tests for investment category aggregation
+   - Tests for snapshot updates with investments
+   - Error handling tests for graceful degradation
+
+3. **Integration Details**:
+   - Net worth queries USER# partition for investment holdings
+   - Investment value = Σ(shares × currentPrice) for all holdings
+   - Total assets = manual assets + investment value
+   - Net worth = total assets - total liabilities
+   - Monthly snapshots include investmentValue field
+
+4. **Task Completion**:
+   - Completed Task 12.7 (Integration: Link investments to net worth)
+
+### Technical Details
+
+- Cross-partition query: FAMILY# (net worth) queries USER# (investments)
+- Graceful error handling: Returns 0 if investment query fails
+- Backward compatible: Works with or without investment holdings
+- Performance: Single additional query per net worth request
+
+### Next Steps
+
+- All competitive features tasks complete
+- Ready for deployment and testing
+
 ## 2026-02-17 - Investment Tracking Mobile Implementation (Session 125)
 
 ### Session Summary
