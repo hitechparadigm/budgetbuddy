@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.9.109] - 2026-02-17
+
+### ✨ Investment Tracking - Mobile Implementation (Session 125)
+
+- **Mobile InvestmentsScreen** (`packages/mobile/src/screens/InvestmentsScreen.tsx`)
+  - Portfolio overview with total value, gain/loss, and day change
+  - Holdings list with CRUD operations (add, edit, delete)
+  - Asset allocation by account type
+  - Pull-to-refresh functionality
+  - Modal form for adding/editing holdings
+  - Support for 6 account types (brokerage, 401k, IRA, Roth IRA, HSA, crypto)
+
+- **Mobile Investments Service** (`packages/mobile/src/services/investments.ts`)
+  - getPortfolio() - Fetch portfolio summary with holdings
+  - getHoldings() - Get all holdings
+  - createHolding() - Add new investment holding
+  - updateHolding() - Update existing holding
+  - deleteHolding() - Remove holding
+  - getPerformance() - Get performance history
+  - saveSnapshot() - Save portfolio snapshot
+
+- **Features**:
+  - Real-time portfolio value calculation
+  - Gain/loss tracking ($ and %)
+  - Day change indicators
+  - Account type categorization
+  - Asset allocation visualization
+  - Responsive mobile UI with React Native
+
+- **Validates**: Requirement 45 (Investment Tracking)
+
 ## [1.9.108] - 2026-02-05
 
 ### 🐛 Fix Family Invitation Email Sending (Session 124)

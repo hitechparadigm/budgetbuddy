@@ -17,7 +17,18 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
-### Recent Achievements (2026-02-04)
+### Recent Achievements (2026-02-17)
+
+- 📱 **INVESTMENT TRACKING - MOBILE IMPLEMENTATION** - Complete mobile investment portfolio tracking
+  - **Mobile InvestmentsScreen**: Full-featured React Native screen with portfolio overview, holdings CRUD, asset allocation
+  - **Portfolio Overview**: Total value, gain/loss ($ and %), day change indicators with color coding
+  - **Holdings Management**: Add, edit, delete holdings with modal form, support for 6 account types
+  - **Asset Allocation**: Visual breakdown by account type (brokerage, 401k, IRA, Roth IRA, HSA, crypto)
+  - **Mobile Investments Service**: Complete API integration with getPortfolio, CRUD operations, performance tracking
+  - **UX Features**: Pull-to-refresh, loading states, error handling, responsive mobile design
+  - **Impact**: Mobile users can now track investment portfolios alongside budgets (Task 12.6 complete)
+
+### Previous Achievements (2026-02-04)
 
 - 🔧 **FAMILY INVITATION EMAIL INTEGRATION** - Email sending for family invitations
   - **Email API Routes**: Added `/email/send-invitation`, `/email/send-removal`, `/email/send-acceptance` endpoints
