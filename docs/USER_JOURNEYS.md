@@ -1,11 +1,23 @@
 # BudgetBuddy User Journeys & Component Mapping
 
-**Last Updated**: 2026-02-05
+**Last Updated**: 2026-02-17
 **Purpose**: Comprehensive mapping of user journeys to frontend/backend components
 **Status**: Living Document - Update as features are implemented
 
 **Recent Updates**:
 
+- Investment-Net Worth Integration Complete (2026-02-17)
+  - ✅ **INTEGRATION COMPLETE**: Investment holdings now included in net worth calculation (Requirement 45.8, Task 12.7)
+  - **Task 12.7 Complete** ✅: Net worth automatically includes investment portfolio value
+    - **Backend Integration**: Modified net-worth Lambda to query investment holdings from USER# partition
+    - **Calculation**: Total assets = manual assets + investment value (Σ shares × currentPrice)
+    - **API Enhancement**: Net worth endpoints return investmentValue separately for transparency
+    - **Monthly Snapshots**: Investment value tracked in monthly net worth snapshots for history
+    - **Category Integration**: Investment value automatically added to "Investments" asset category
+    - **Error Handling**: Graceful degradation if investment query fails (returns 0)
+    - **Tests**: Comprehensive unit tests for integration scenarios (net-worth-investments.test.js)
+    - **Files**: `backend/functions/net-worth/index.js`, `backend/functions/net-worth/net-worth-investments.test.js`
+  - **Status**: ✅ All Investment Tracking tasks complete (Tasks 12.1-12.7)
 - Investment Tracking Frontend Web Complete (2026-02-05)
   - ✅ **WEB FRONTEND COMPLETE**: Investment Tracking Web UI (Requirement 45, Task 12.4)
   - **Task 12.4 Complete** ✅: InvestmentsPage with portfolio overview, holdings management, and performance charts
@@ -21,7 +33,6 @@
     - **Task 12.1**: investments Lambda function with CRUD operations and portfolio calculations
     - **Task 12.2**: investments-price-updater Lambda function for automated stock price updates
     - **Task 12.3**: Portfolio performance calculation and history tracking
-  - **Status**: ✅ Backend Tasks 12.1-12.3 complete, ✅ Frontend Web Task 12.4 complete, ❌ Frontend Tasks 12.5-12.7 not started
 - Family Invitation Fix Complete (2026-02-05)
   - ✅ **SPEC CLOSED**: Family invitation emails now working correctly
   - **All Tasks Complete**: CDK stack update, Lambda code update, testing, deployment, verification, documentation
@@ -2398,12 +2409,12 @@ Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 - Task 9: Net Worth Tracking ✅
 - Task 10: Bank Sync UI (Plaid) ✅
 - Task 11: Credit Score Monitoring ✅
-- Task 12: Investment Tracking ✅ (Backend: Tasks 12.1-12.3 ✅ Complete, Frontend Web: Task 12.4 ✅ Complete, Frontend Mobile: Tasks 12.5-12.7 ❌ Not Started)
+- Task 12: Investment Tracking ✅ (All tasks complete: Backend 12.1-12.3 ✅, Frontend Web 12.4 ✅, Frontend Mobile 12.5-12.6 ✅, Integration 12.7 ✅)
 - Task 13: Peer Comparison ✅
 - Task 14: Educational Content ✅
 
 ---
 
 _Document maintained by BudgetBuddy Development Team_
-_Last reviewed: 2026-02-02_
+_Last reviewed: 2026-02-17_
 _Hook: `update-user-journeys` enforces updates on feature completion_
