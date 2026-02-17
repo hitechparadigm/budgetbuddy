@@ -1,5 +1,62 @@
 # Development Log
 
+## 2026-02-17 - Investment Tracking Mobile Implementation (Session 125)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Complete mobile investment tracking implementation
+**Outcome**: Mobile InvestmentsScreen created with full CRUD functionality
+
+### Work Completed
+
+1. **Mobile Investments Service** (`packages/mobile/src/services/investments.ts`):
+   - Created investments service mirroring web API
+   - Implemented all CRUD operations for holdings
+   - Added portfolio summary and performance methods
+   - Integrated with existing mobile API infrastructure
+
+2. **Mobile InvestmentsScreen** (`packages/mobile/src/screens/InvestmentsScreen.tsx`):
+   - Created comprehensive investment tracking screen
+   - Portfolio overview cards (total value, gain/loss, day change)
+   - Holdings list with detailed information
+   - Add/edit/delete holding functionality
+   - Modal form for holding management
+   - Asset allocation visualization
+   - Pull-to-refresh support
+   - Error handling and loading states
+
+3. **Features Implemented**:
+   - Real-time portfolio calculations
+   - Gain/loss tracking ($ and %)
+   - Day change indicators with color coding
+   - Support for 6 account types
+   - Responsive mobile UI with React Native
+   - Form validation for holding data
+
+4. **Task Completion**:
+   - Marked Task 12.5 (Frontend Web: Add holding form) as complete (already implemented)
+   - Completed Task 12.6 (Frontend Mobile: Create InvestmentsScreen)
+
+### Technical Details
+
+- Used React Native components (View, Text, ScrollView, Modal, TextInput)
+- Implemented SafeAreaView for proper mobile layout
+- Added RefreshControl for pull-to-refresh
+- Created styled components following mobile design patterns
+- Integrated with investments service API
+
+### Next Steps
+
+- Task 12.7: Integration - Link investments to net worth calculation
+- Continue with remaining competitive features tasks
+
+### Validation Status
+
+- Code created and tasks updated
+- Documentation update in progress
+- Ready for commit after documentation validation
+
 ## 2026-02-05 - Fix Family Invitation Email Sending (Session 124)
 
 ### Session Summary

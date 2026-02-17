@@ -431,12 +431,12 @@
   - Allocation charts
   - **Validates: Requirement 45.3, 45.4, 45.5**
 
-- [ ] 12.5 Frontend Web: Add holding form
+- [x] 12.5 Frontend Web: Add holding form
   - Add/edit holdings
   - Account type selection
   - **Validates: Requirement 45.2**
 
-- [ ] 12.6 Frontend Mobile: Create InvestmentsScreen
+- [x] 12.6 Frontend Mobile: Create InvestmentsScreen
   - Mirror web implementation
   - **Validates: Requirement 45**
 
