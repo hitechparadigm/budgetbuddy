@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.9.110] - 2026-02-17
+
+### 🔗 Investment-Net Worth Integration (Session 126)
+
+- **Net Worth Integration** (`backend/functions/net-worth/index.js`)
+  - Integrated investment holdings into net worth calculation
+  - Added getInvestmentValue() helper to query user's investment holdings
+  - Modified getNetWorth() to include investment value in total assets
+  - Updated getNetWorthSummary() to show investment value separately
+  - Enhanced updateNetWorthSnapshot() to include investment value in monthly snapshots
+  - Investment value automatically added to "Investments" asset category
+
+- **Test Coverage** (`backend/functions/net-worth/net-worth-investments.test.js`)
+  - Unit tests for investment value calculation in net worth
+  - Tests for zero investment holdings scenario
+  - Tests for investment category aggregation
+  - Tests for snapshot updates with investments
+  - Error handling tests for graceful degradation
+
+- **Features**:
+  - Net worth now includes real-time investment portfolio value
+  - Investment value displayed separately in API responses
+  - Monthly snapshots track investment value over time
+  - Graceful error handling if investment query fails
+  - Seamless integration between USER# (investments) and FAMILY# (net worth) data
+
+- **Validates**: Requirement 45.8 (Link investments to net worth)
+
 ## [1.9.109] - 2026-02-17
 
 ### ✨ Investment Tracking - Mobile Implementation (Session 125)

@@ -147,7 +147,7 @@ exports.handler = async (event, context) => {
 /**
  * Get complete net worth with assets and liabilities
  * GET /net-worth
- * **Validates: Requirement 41.1, 41.3** - View net worth
+ * **Validates: Requirement 41.1, 41.3, 45.8** - View net worth with investments
  */
 async function getNetWorth(event, user) {
   const permissionError = checkPermission(event, "budget:view");
@@ -181,8 +181,12 @@ async function getNetWorth(event, user) {
     },
   });
 
-  // Calculate totals
-  const totalAssets = assets.reduce((sum, a) => sum + (a.value || 0), 0);
+  // Get investment holdings for the user
+  const investmentValue = await getInvestmentValue(user.userId);
+
+  // Calculate totals (include investment value in assets)
+  const manualAssets = assets.reduce((sum, a) => sum + (a.value || 0), 0);
+  const totalAssets = manualAssets + investmentValue;
   const totalLiabilities = liabilities.reduce(
     (sum, l) => sum + (l.balance || 0),
     0,
@@ -195,6 +199,13 @@ async function getNetWorth(event, user) {
     "category",
     ASSET_CATEGORIES,
   );
+
+  // Add investment value to investments category
+  if (investmentValue > 0) {
+    assetsByCategory.investments.total += investmentValue;
+    assetsByCategory.investments.investmentValue = investmentValue;
+  }
+
   const liabilitiesByCategory = groupByCategory(
     liabilities,
     "category",
@@ -206,6 +217,7 @@ async function getNetWorth(event, user) {
       netWorth: Math.round(netWorth * 100) / 100,
       totalAssets: Math.round(totalAssets * 100) / 100,
       totalLiabilities: Math.round(totalLiabilities * 100) / 100,
+      investmentValue: Math.round(investmentValue * 100) / 100,
       assets: assets.map(formatAssetResponse),
       liabilities: liabilities.map(formatLiabilityResponse),
       assetsByCategory,
@@ -219,6 +231,7 @@ async function getNetWorth(event, user) {
 /**
  * Get net worth summary
  * GET /net-worth/summary
+ * **Validates: Requirement 45.8** - Include investments in net worth
  */
 async function getNetWorthSummary(event, user) {
   const permissionError = checkPermission(event, "budget:view");
@@ -250,8 +263,12 @@ async function getNetWorthSummary(event, user) {
     },
   });
 
-  // Calculate totals
-  const totalAssets = assets.reduce((sum, a) => sum + (a.value || 0), 0);
+  // Get investment holdings for the user
+  const investmentValue = await getInvestmentValue(user.userId);
+
+  // Calculate totals (include investment value in assets)
+  const manualAssets = assets.reduce((sum, a) => sum + (a.value || 0), 0);
+  const totalAssets = manualAssets + investmentValue;
   const totalLiabilities = liabilities.reduce(
     (sum, l) => sum + (l.balance || 0),
     0,
@@ -280,6 +297,7 @@ async function getNetWorthSummary(event, user) {
       netWorth: Math.round(netWorth * 100) / 100,
       totalAssets: Math.round(totalAssets * 100) / 100,
       totalLiabilities: Math.round(totalLiabilities * 100) / 100,
+      investmentValue: Math.round(investmentValue * 100) / 100,
       assetCount: assets.length,
       liabilityCount: liabilities.length,
       monthlyChange:
@@ -442,7 +460,7 @@ async function createAsset(event, user) {
   await dynamoHelpers.putItem(asset);
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId);
+  await updateNetWorthSnapshot(familyId, user.userId);
 
   logger.info("Asset created", { assetId, familyId, name: body.name });
 
@@ -494,7 +512,7 @@ async function updateAsset(event, user, assetId) {
   );
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId);
+  await updateNetWorthSnapshot(familyId, user.userId);
 
   logger.info("Asset updated", { assetId, familyId });
 
@@ -534,7 +552,7 @@ async function deleteAsset(event, user, assetId) {
   });
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId);
+  await updateNetWorthSnapshot(familyId, user.userId);
 
   logger.info("Asset deleted", { assetId, familyId });
 
@@ -633,7 +651,7 @@ async function createLiability(event, user) {
   await dynamoHelpers.putItem(liability);
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId);
+  await updateNetWorthSnapshot(familyId, user.userId);
 
   logger.info("Liability created", { liabilityId, familyId, name: body.name });
 
@@ -690,7 +708,7 @@ async function updateLiability(event, user, liabilityId) {
   );
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId);
+  await updateNetWorthSnapshot(familyId, user.userId);
 
   logger.info("Liability updated", { liabilityId, familyId });
 
@@ -734,7 +752,7 @@ async function deleteLiability(event, user, liabilityId) {
   );
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId);
+  await updateNetWorthSnapshot(familyId, user.userId);
 
   logger.info("Liability deleted", { liabilityId, familyId });
 
@@ -744,9 +762,41 @@ async function deleteLiability(event, user, liabilityId) {
 // ============ Helper Functions ============
 
 /**
- * Update net worth snapshot for current month
+ * Get total investment value for a user
+ * **Validates: Requirement 45.8** - Include investments in net worth
  */
-async function updateNetWorthSnapshot(familyId) {
+async function getInvestmentValue(userId) {
+  try {
+    // Query investment holdings
+    const holdings = await dynamoHelpers.queryByPK(`USER#${userId}`, {
+      FilterExpression: "begins_with(SK, :sk)",
+      ExpressionAttributeValues: {
+        ":sk": "HOLDING#",
+      },
+    });
+
+    if (!holdings || holdings.length === 0) {
+      return 0;
+    }
+
+    // Calculate total value
+    const totalValue = holdings.reduce((sum, holding) => {
+      const value = (holding.shares || 0) * (holding.currentPrice || 0);
+      return sum + value;
+    }, 0);
+
+    return totalValue;
+  } catch (error) {
+    logger.error("Error getting investment value", error, { userId });
+    return 0; // Return 0 on error to not break net worth calculation
+  }
+}
+
+/**
+ * Update net worth snapshot for current month
+ * **Validates: Requirement 45.8** - Include investments in snapshots
+ */
+async function updateNetWorthSnapshot(familyId, userId) {
   try {
     const currentMonth = getCurrentMonthKey();
 
@@ -770,7 +820,14 @@ async function updateNetWorthSnapshot(familyId) {
       },
     });
 
-    const totalAssets = assets.reduce((sum, a) => sum + (a.value || 0), 0);
+    // Get investment value if userId is provided
+    let investmentValue = 0;
+    if (userId) {
+      investmentValue = await getInvestmentValue(userId);
+    }
+
+    const manualAssets = assets.reduce((sum, a) => sum + (a.value || 0), 0);
+    const totalAssets = manualAssets + investmentValue;
     const totalLiabilities = liabilities.reduce(
       (sum, l) => sum + (l.balance || 0),
       0,
@@ -786,6 +843,7 @@ async function updateNetWorthSnapshot(familyId) {
       netWorth: Math.round(netWorth * 100) / 100,
       totalAssets: Math.round(totalAssets * 100) / 100,
       totalLiabilities: Math.round(totalLiabilities * 100) / 100,
+      investmentValue: Math.round(investmentValue * 100) / 100,
       assetCount: assets.length,
       liabilityCount: liabilities.length,
       updatedAt: new Date().toISOString(),
@@ -797,6 +855,7 @@ async function updateNetWorthSnapshot(familyId) {
       familyId,
       month: currentMonth,
       netWorth,
+      investmentValue,
     });
   } catch (error) {
     logger.error("Error updating net worth snapshot", error, { familyId });
