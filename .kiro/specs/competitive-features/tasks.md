@@ -440,7 +440,7 @@
   - Mirror web implementation
   - **Validates: Requirement 45**
 
-- [ ] 12.7 Integration: Link investments to net worth
+- [x] 12.7 Integration: Link investments to net worth
   - Include investment value in net worth calculation
   - **Validates: Requirement 45.8**
 
