@@ -40,6 +40,7 @@
     "@aws-sdk/client-bedrock-runtime": "^3.980.0",
     "@aws-sdk/client-dynamodb": "^3.980.0",
     "@aws-sdk/lib-dynamodb": "^3.980.0",
+    "@playwright/test": "^1.58.2",
     "@types/jest": "^30.0.0",
     "aws-sdk": "^2.1693.0",
     "eslint": "^9.39.2",

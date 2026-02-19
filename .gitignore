@@ -127,3 +127,8 @@ auth-logs.txt
 *.log
 logs/
 debug-*.txt
+
+# Playwright test artifacts
+test-results/
+playwright-report/
+playwright/.cache/
