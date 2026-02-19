@@ -2327,6 +2327,96 @@ All optimization work has been completed:
 **Autonomous Capability**: 100% maintained
 **Best Practices**: Fully aligned with Kiro documentation
 
+### E2E Testing Infrastructure (Spec Created 2026-02-17)
+
+**Status**: 📋 Spec Ready - Implementation Pending
+
+A comprehensive End-to-End testing infrastructure has been designed to validate complete user journeys and catch regressions before deployment.
+
+**Spec Location**: `.kiro/specs/e2e-testing-infrastructure/`
+
+**Key Features**:
+
+- **Playwright Setup**: Cross-browser testing (Chromium, Firefox, WebKit)
+- **Test Fixtures**: Reusable authentication and data management utilities
+- **4 Critical User Journey Tests**:
+  1. New User Onboarding Journey (registration → AI budget → first transaction)
+  2. Daily Budget Management Journey (transaction entry, budget updates, month navigation)
+  3. Bank Account Connection Journey (Plaid integration, transaction import)
+  4. Debt & Savings Goals Journey (goal creation, progress tracking, completion)
+- **CI/CD Integration**: Automated test execution on every PR
+- **Performance Benchmarking**: Page load < 2s, API < 500ms, TTI < 3s
+- **Cost Management**: Per-test < $0.10, daily < $5, monthly < $100
+- **Property-Based Testing**: 28 correctness properties for infrastructure validation
+
+**Component Mapping**:
+
+| Component                 | File/Location                               | Status     |
+| ------------------------- | ------------------------------------------- | ---------- |
+| Playwright Config         | `playwright.config.js`                      | ❌ Pending |
+| Test Fixtures             | `tests/e2e/fixtures/base-fixture.js`        | ❌ Pending |
+| Auth Utilities            | `tests/e2e/utils/auth.js`                   | ❌ Pending |
+| Data Manager              | `tests/e2e/utils/data-manager.js`           | ❌ Pending |
+| Performance Utils         | `tests/e2e/utils/performance.js`            | ❌ Pending |
+| Cost Tracker              | `tests/e2e/utils/cost-tracker.js`           | ❌ Pending |
+| Page Objects              | `tests/e2e/pages/*.js`                      | ❌ Pending |
+| Onboarding Journey Test   | `tests/e2e/onboarding-journey.test.js`      | ❌ Pending |
+| Budget Management Test    | `tests/e2e/daily-budget-management.test.js` | ❌ Pending |
+| Bank Connection Test      | `tests/e2e/bank-connection-journey.test.js` | ❌ Pending |
+| Goals Journey Test        | `tests/e2e/goals-journey.test.js`           | ❌ Pending |
+| CI/CD Workflow            | `.github/workflows/e2e-tests.yml`           | ❌ Pending |
+| Custom Reporter           | `tests/e2e/reporters/custom-reporter.js`    | ❌ Pending |
+| Cost Monitoring Script    | `scripts/monitor-e2e-costs.js`              | ❌ Pending |
+| Performance Tracking      | `scripts/track-e2e-performance.js`          | ❌ Pending |
+| E2E Testing Documentation | `tests/e2e/README.md`                       | ❌ Pending |
+
+**Requirements Coverage**:
+
+- ✅ 14 requirements with 140+ acceptance criteria
+- ✅ Complete design with architecture diagrams
+- ✅ 28 correctness properties for property-based testing
+- ✅ 23 implementation tasks organized in phases
+- ✅ Error handling strategy
+- ✅ Cost optimization strategy
+- ✅ Performance benchmarking strategy
+
+**Implementation Tasks** (23 total):
+
+1. Install and configure Playwright
+2. Implement authentication utilities
+3. Implement data manager
+4. Checkpoint - Ensure utilities tests pass
+5. Implement base test fixture
+6. Implement page object models (6 pages)
+7. Checkpoint - Ensure page object tests pass
+8. Implement performance measurement utilities
+9. Implement cost tracking utilities
+10. Checkpoint - Ensure utility tests pass
+11. Implement New User Onboarding Journey E2E test
+12. Implement Daily Budget Management Journey E2E test
+13. Implement Bank Account Connection Journey E2E test
+14. Implement Debt and Savings Goals Journey E2E test
+15. Checkpoint - Ensure all E2E tests pass
+16. Implement test reporter enhancements
+17. Implement CI/CD integration
+18. Implement cross-browser testing configuration
+19. Create E2E testing documentation
+20. Implement cost monitoring and alerting
+21. Implement performance trend tracking
+22. Final checkpoint - Run full E2E test suite
+23. Update project documentation
+
+**Next Steps**:
+
+1. Review and approve spec
+2. Begin implementation with Task 1 (Playwright setup)
+3. Implement utilities and fixtures (Tasks 2-5)
+4. Create page objects (Task 6)
+5. Implement 4 user journey tests (Tasks 11-14)
+6. Integrate with CI/CD pipeline (Task 17)
+
+---
+
 ### Infrastructure Stack Architecture (Updated 2026-02-03)
 
 The CDK infrastructure has been split to stay under CloudFormation's 500 resource limit:

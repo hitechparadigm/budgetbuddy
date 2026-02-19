@@ -1,5 +1,71 @@
 # Changelog
 
+## [1.9.112] - 2026-02-19
+
+### 🧪 E2E Testing Infrastructure - Playwright Setup Complete (Session 127)
+
+- **Playwright Configuration** (`playwright.config.js`)
+  - Installed @playwright/test for browser automation
+  - Configured cross-browser testing (Chromium, Firefox, WebKit)
+  - Added mobile viewport testing (Pixel 5, iPhone 12)
+  - Set test timeouts (60s per test, 30min global)
+  - Configured retry strategy (2 retries in CI, 0 locally)
+  - Set up reporters (HTML, JSON, JUnit, list)
+  - Enabled screenshot/video capture on failure only
+  - Configured base URL with localhost fallback
+
+- **Test Infrastructure** (`tests/e2e/`)
+  - Created test directory structure (fixtures/, utils/, pages/, reporters/)
+  - Added test artifacts to .gitignore (test-results/, playwright-report/)
+  - Set up parallel execution (2 workers in CI, 1 locally)
+
+- **Configuration Tests** (`tests/e2e/playwright.config.test.js`)
+  - 27 unit tests validating Playwright configuration
+  - Tests for browser targets, timeouts, retry strategy
+  - Tests for reporters, shared settings, parallel execution
+  - Tests for CI vs local environment differences
+
+- **Validates**: Requirements 1.1-1.10 (Playwright Setup and Configuration)
+- **Status**: Task 1 complete, ready for Task 2 (authentication utilities)
+
+## [1.9.111] - 2026-02-19
+
+### 🧪 E2E Testing Infrastructure - Spec Created (Session 127)
+
+- **Playwright Configuration** (`playwright.config.js`)
+  - Installed @playwright/test for browser automation
+  - Configured cross-browser testing (Chromium, Firefox, WebKit)
+  - Added mobile viewport testing (Pixel 5, iPhone 12)
+  - Set test timeouts (60s per test, 30min global)
+  - Configured retry strategy (2 retries in CI, 0 locally)
+  - Set up reporters (HTML, JSON, JUnit, list)
+  - Enabled screenshot/video capture on failure only
+  - Configured base URL with localhost fallback
+
+- **Test Infrastructure** (`tests/e2e/`)
+  - Created test directory structure (fixtures/, utils/, pages/, reporters/)
+  - Added test artifacts to .gitignore (test-results/, playwright-report/)
+  - Set up parallel execution (2 workers in CI, 1 locally)
+
+- **Configuration Tests** (`tests/e2e/playwright.config.test.js`)
+  - 27 unit tests validating Playwright configuration
+  - Tests for browser targets, timeouts, retry strategy
+  - Tests for reporters, shared settings, parallel execution
+  - Tests for CI vs local environment differences
+
+- **Spec Created** (`.kiro/specs/e2e-testing-infrastructure/`)
+  - 14 requirements with 140+ acceptance criteria
+  - Complete design with 28 correctness properties
+  - 23 implementation tasks organized in phases
+  - Architecture for 4 critical user journey tests
+
+- **Documentation** (`docs/USER_JOURNEYS.md`)
+  - Added E2E Testing Infrastructure section to Development Infrastructure journey
+  - Documented spec status, component mapping, implementation tasks
+  - Listed all 15 components with pending status
+
+- **Validates**: Requirements 1.1-1.10 (Playwright Setup and Configuration)
+
 ## [1.9.110] - 2026-02-17
 
 ### 🔗 Investment-Net Worth Integration (Session 126)
