@@ -1,5 +1,18 @@
 # Development Log
 
+## 2026-04-02 - USER_JOURNEYS Audit & AWS SDK Fix (Session 128)
+
+### Session Summary
+
+**Duration**: 30 minutes
+**Focus**: Component audit of USER_JOURNEYS.md and fix CI/CD blocking AWS SDK version conflict
+**Outcome**: Documentation updated, AWS SDK versions aligned, ready for deployment
+
+### Work Completed
+
+1. **USER_JOURNEYS.md Component Audit**: Added undocumented backend Lambdas (transaction-planning, reconciliation, scheduled-backup), updated notification frontend status, fixed Notification Center checklist inconsistencies, added transaction-planning APIs to gap analysis
+2. **AWS SDK Fix**: Aligned all @aws-sdk packages to ^3.993.0 to resolve ERESOLVE peer dependency conflict blocking CI/CD
+
 ## 2026-02-19 - E2E Testing Infrastructure - Playwright Setup (Session 127 - Part 2)
 
 ### Session Summary
