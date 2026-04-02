@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.9.113] - 2026-04-02
+
+### 📝 Documentation & Dependency Fix
+
+- **USER_JOURNEYS.md Component Audit**
+  - Added transaction-planning Lambda to Daily Budget Management journey
+  - Added reconciliation Lambda to Manual Account Management journey
+  - Added scheduled-backup Lambda to Settings journey
+  - Updated notification frontend status (notificationsApi.ts now covers CRUD, preferences, mark as read)
+  - Updated Notification Center checklist items (bell icon, dropdown, mark as read, grouping)
+  - Added 6 transaction-planning API endpoints to gap analysis as Backend Only
+  - Updated 7 notification API endpoints from Backend Only to Done
+
+- **AWS SDK Version Alignment** (`package.json`)
+  - Aligned @aws-sdk/client-dynamodb, @aws-sdk/lib-dynamodb, @aws-sdk/client-bedrock-runtime to ^3.993.0
+  - Fixes ERESOLVE peer dependency conflict that was blocking CI/CD pipeline
+
 ## [1.9.112] - 2026-02-19
 
 ### 🧪 E2E Testing Infrastructure - Playwright Setup Complete (Session 127)

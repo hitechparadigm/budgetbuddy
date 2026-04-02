@@ -1,11 +1,24 @@
 # BudgetBuddy User Journeys & Component Mapping
 
-**Last Updated**: 2026-02-17
+**Last Updated**: 2026-04-01
 **Purpose**: Comprehensive mapping of user journeys to frontend/backend components
 **Status**: Living Document - Update as features are implemented
 
 **Recent Updates**:
 
+- Component Audit & Gap Sync (2026-04-01)
+  - ✅ **Transaction Planning Backend**: Added `transaction-planning` Lambda to Journey 2 (Daily Budget Management) — full CRUD, recurring transaction generation, and execution
+  - ✅ **Reconciliation Backend**: Added `reconciliation` Lambda to Journey 3.1 (Manual Account Management) — standalone reconciliation service
+  - ✅ **Scheduled Backup Backend**: Added `scheduled-backup` Lambda to Journey 8 (Settings) — automated backup scheduling
+  - ✅ **Notifications API Service**: Added `notificationsApi.ts` to Journey 7 (Notifications) — web frontend API service for in-app notifications
+  - ✅ **E2E Testing Infrastructure**: Updated Journey 10 with 7 E2E test files, page objects, fixtures, utils, and reporters
+  - ✅ **Notification Center Checklist**: Updated Section 12 item 11 to reflect `NotificationCenter.tsx` and `notificationsApi.ts` completion
+  - Updated gap analysis tables and requirements traceability
+- User Journeys Audit & Status Sync (2026-04-01)
+  - ✅ **Family Invitation Email Fix DEPLOYED**: Send Invitation and Resend Invitation now working correctly (was 🐛 Bug Fix, now ✅ Complete)
+  - ✅ **R45 Investment Tracking Mobile Complete**: InvestmentsScreen.tsx implemented (Session 125), all Tasks 12.1-12.7 done
+  - ✅ **E2E Testing Infrastructure Progress**: Auth utilities, data manager, base fixture, page objects, and 4 journey test files all created
+  - Updated component mapping tables and gap analysis to reflect current implementation state
 - Investment-Net Worth Integration Complete (2026-02-17)
   - ✅ **INTEGRATION COMPLETE**: Investment holdings now included in net worth calculation (Requirement 45.8, Task 12.7)
   - **Task 12.7 Complete** ✅: Net worth automatically includes investment portfolio value
@@ -274,22 +287,26 @@ _"As a user, I want to quickly add transactions and see my budget status so I ca
 
 ### Component Mapping
 
-| Feature            | Frontend Component          | Backend API                 | Status      |
-| ------------------ | --------------------------- | --------------------------- | ----------- |
-| Dashboard          | `BudgetPage.tsx`            | `GET /budget?month=YYYY-MM` | ✅ Complete |
-| Sidebar Nav        | `Sidebar.tsx` + `AppLayout` | N/A                         | ✅ Complete |
-| Month Nav          | `MonthNavigator.tsx`        | N/A                         | ✅ Complete |
-| Category List      | `BudgetPage.tsx` (inline)   | `GET /budget`               | ✅ Complete |
-| Add Transaction    | `TransactionModal.tsx`      | `POST /transactions`        | ✅ Complete |
-| Edit Transaction   | `TransactionModal.tsx`      | `PUT /transactions/{id}`    | ✅ Complete |
-| Delete Transaction | `TransactionList.tsx`       | `DELETE /transactions/{id}` | ✅ Complete |
-| Summary View       | `SummaryModal.tsx`          | `GET /budget`               | ✅ Complete |
-| Transaction List   | `TransactionList.tsx`       | `GET /transactions`         | ✅ Complete |
-| Search/Filter      | ✅ `TransactionFilters.tsx` | `GET /transactions?search=` | ✅ Complete |
-| Quick Actions      | ✅ `QuickActionsFAB.tsx`    | N/A                         | ✅ Complete |
-| Batch Entry        | `TransactionModal.tsx`      | `POST /transactions`        | ✅ Complete |
-| Account Selection  | `TransactionModal.tsx`      | N/A                         | ✅ Complete |
-| Account Filter     | `TransactionFilters.tsx`    | `GET /transactions`         | ✅ Complete |
+| Feature            | Frontend Component          | Backend API                                     | Status      |
+| ------------------ | --------------------------- | ----------------------------------------------- | ----------- |
+| Dashboard          | `BudgetPage.tsx`            | `GET /budget?month=YYYY-MM`                     | ✅ Complete |
+| Sidebar Nav        | `Sidebar.tsx` + `AppLayout` | N/A                                             | ✅ Complete |
+| Month Nav          | `MonthNavigator.tsx`        | N/A                                             | ✅ Complete |
+| Category List      | `BudgetPage.tsx` (inline)   | `GET /budget`                                   | ✅ Complete |
+| Add Transaction    | `TransactionModal.tsx`      | `POST /transactions`                            | ✅ Complete |
+| Edit Transaction   | `TransactionModal.tsx`      | `PUT /transactions/{id}`                        | ✅ Complete |
+| Delete Transaction | `TransactionList.tsx`       | `DELETE /transactions/{id}`                     | ✅ Complete |
+| Summary View       | `SummaryModal.tsx`          | `GET /budget`                                   | ✅ Complete |
+| Transaction List   | `TransactionList.tsx`       | `GET /transactions`                             | ✅ Complete |
+| Search/Filter      | ✅ `TransactionFilters.tsx` | `GET /transactions?search=`                     | ✅ Complete |
+| Quick Actions      | ✅ `QuickActionsFAB.tsx`    | N/A                                             | ✅ Complete |
+| Batch Entry        | `TransactionModal.tsx`      | `POST /transactions`                            | ✅ Complete |
+| Account Selection  | `TransactionModal.tsx`      | N/A                                             | ✅ Complete |
+| Account Filter     | `TransactionFilters.tsx`    | `GET /transactions`                             | ✅ Complete |
+| Planned Txns       | ❌ Not Started              | `POST /transaction-planning`                    | 🔄 Backend  |
+| Planned Txn List   | ❌ Not Started              | `GET /transaction-planning`                     | 🔄 Backend  |
+| Execute Planned    | ❌ Not Started              | `POST /transaction-planning/execute`            | 🔄 Backend  |
+| Recurring Gen      | ❌ Not Started              | `POST /transaction-planning/generate-recurring` | 🔄 Backend  |
 
 ### UI/UX Requirements
 
@@ -496,6 +513,7 @@ _"As a user, I want to manually track accounts that aren't connected to banks so
 | Update Account       | N/A                   | `PUT /api/accounts/{id}`            | ✅ Complete |
 | Delete Account       | N/A                   | `DELETE /api/accounts/{id}`         | ✅ Complete |
 | Reconcile Account    | N/A                   | `POST /api/accounts/{id}/reconcile` | ✅ Complete |
+| Reconciliation Svc   | N/A                   | `reconciliation` Lambda             | ✅ Complete |
 | Toggle Tracking      | N/A                   | `PUT /api/accounts/{id}/tracking`   | ✅ Complete |
 | Accounts Summary     | N/A                   | `GET /api/accounts/summary`         | ✅ Complete |
 | Account Types        | `account.ts` (shared) | N/A                                 | ✅ Complete |
@@ -587,43 +605,42 @@ _"As a primary account holder, I want to invite my partner to share our budget s
 
 ### Component Mapping
 
-| Feature             | Frontend Component         | Backend API                            | Status      | Notes                                    |
-| ------------------- | -------------------------- | -------------------------------------- | ----------- | ---------------------------------------- |
-| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete |                                          |
-| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ✅ Complete |                                          |
-| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | 🐛 Bug Fix  | Email not sent - fix in progress         |
-| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ✅ Complete |                                          |
-| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ✅ Complete |                                          |
-| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ✅ Complete |                                          |
-| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ✅ Complete |                                          |
-| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ✅ Complete |                                          |
-| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ✅ Complete |                                          |
-| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | 🐛 Bug Fix  | Email not sent - fix in progress         |
-| Email Notifications | Backend                    | `POST /email/send-invitation`          | ✅ Complete | Endpoint works, but not called correctly |
-| Email Notifications | Backend                    | `POST /email/send-removal`             | ✅ Complete |                                          |
-| Email Notifications | Backend                    | `POST /email/send-acceptance`          | ✅ Complete |                                          |
+| Feature             | Frontend Component         | Backend API                            | Status      | Notes |
+| ------------------- | -------------------------- | -------------------------------------- | ----------- | ----- |
+| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete |       |
+| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ✅ Complete |       |
+| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | ✅ Complete |       |
+| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ✅ Complete |       |
+| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ✅ Complete |       |
+| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ✅ Complete |       |
+| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ✅ Complete |       |
+| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ✅ Complete |       |
+| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ✅ Complete |       |
+| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ✅ Complete |       |
+| Email Notifications | Backend                    | `POST /email/send-invitation`          | ✅ Complete |       |
+| Email Notifications | Backend                    | `POST /email/send-removal`             | ✅ Complete |       |
+| Email Notifications | Backend                    | `POST /email/send-acceptance`          | ✅ Complete |       |
 
-**Known Issues (2026-02-05)**:
+**Resolved Issues (2026-04-01)**:
 
-- 🔧 **Family Invitation Emails Fix - IN DEPLOYMENT**:
-  - **Issue**: Family Lambda was using wrong API Gateway URL (main API instead of Family API)
+- ✅ **Family Invitation Pending List Fix - COMPLETE**:
+  - **Issue**: `handleGetInvitations` used invalid `begins_with` on DynamoDB GSI partition key, causing the query to fail. Frontend silently swallowed the error, hiding the "Pending Invitations" section.
   - **Fix Applied**:
-    - Added `FAMILY_API_URL` environment variable to family Lambda configuration
-    - Fixed circular dependency in Family API stack by reusing Lambda integrations
-  - **Status**: Code committed, CI/CD deployment in progress
-  - **Spec**: `.kiro/specs/family-invitation-fix/`
-  - **Expected Resolution**: Once deployment completes, invitation emails will be sent correctly
+    - Replaced invalid `QueryCommand` with `ScanCommand` + `FilterExpression` in `backend/functions/family/index.js`
+    - Added `invitationWarning` state and amber warning banner in `FamilySettings.tsx` for error visibility
+  - **Status**: ✅ Fixed and tested (3 property-based tests passing)
+  - **Spec**: `.kiro/specs/family-invitation-pending-fix/` — ✅ CLOSED
 
 **Infrastructure Status**:
 
-- 🔄 **DEPLOYING**: Family API stack circular dependency fix in progress
+- ✅ **DEPLOYED**: Family API stack with dedicated API Gateway
 - **Stack**: budgetbuddy-dev-api-family with dedicated API Gateway
 - **Resources**: ~150 resources (well under CloudFormation 500 limit)
-- **Recent Changes**:
+- **Changes Applied**:
   - Fixed circular dependency by reusing Lambda integrations across API methods
   - Added explicit authorization types to all API Gateway methods
   - Configured `FAMILY_API_URL` environment variable for family Lambda
-- **Deployment**: Run ID 21717465771 (in progress)
+- **Deployment**: ✅ Complete (Run ID 21717465771)
 - **See**: `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` for implementation details
 
 ### UI/UX Requirements
@@ -1100,9 +1117,9 @@ _"As a user, I want to receive timely notifications about my budget so I stay on
 | Daily Reminders                | Backend only                  | EventBridge scheduled                | ✅ Complete |
 | Notification History           | ✅ `NotificationCenter.tsx`   | `GET /notifications/history`         | ✅ Complete |
 | In-App Notifications           | ✅ `NotificationCenter.tsx`   | ✅ `notifications/index.js`          | ✅ Complete |
-| In-App Notification CRUD       | ❌ Not Started                | ✅ `notifications/index.js`          | 🔄 Backend  |
-| Notification Preferences       | ❌ Not Started                | ✅ `notifications/index.js`          | 🔄 Backend  |
-| Mark as Read/Unread            | ❌ Not Started                | ✅ `notifications/index.js`          | 🔄 Backend  |
+| In-App Notification CRUD       | ✅ `notificationsApi.ts`      | ✅ `notifications/index.js`          | ✅ Complete |
+| Notification Preferences       | ✅ `NotificationSettings.tsx` | ✅ `notifications/index.js`          | ✅ Complete |
+| Mark as Read/Unread            | ✅ `notificationsApi.ts`      | ✅ `notifications/index.js`          | ✅ Complete |
 
 **Note**: The `notifications/index.js` backend now supports TWO systems:
 
@@ -1358,6 +1375,7 @@ _"As a user, I want to customize my app experience and manage my account setting
 | Family Settings       | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete |
 | Export Data           | `ExportModal.tsx`          | `POST /export/csv`, `POST /export/pdf` | ✅ Complete |
 | Backup/Restore        | `BackupModal.tsx`          | `POST /backup`, `POST /restore`        | ✅ Complete |
+| Scheduled Backup      | Backend only               | `scheduled-backup` Lambda              | ✅ Complete |
 | Theme Toggle          | `ThemeContext.tsx`         | N/A (local)                            | ✅ Complete |
 | Delete Account        | `DeleteAccountModal.tsx`   | `DELETE /auth/account`                 | ✅ Complete |
 | About Page            | `AboutPage.tsx`            | N/A (static)                           | ✅ Complete |
@@ -1537,36 +1555,42 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 
 ### Backend APIs Without Frontend
 
-| API Endpoint                        | Description                    | Priority | Status                         |
-| ----------------------------------- | ------------------------------ | -------- | ------------------------------ |
-| `GET /api/accounts`                 | List user accounts             | HIGH     | ✅ Done (AccountsPage)         |
-| `POST /api/accounts`                | Create manual account          | HIGH     | ✅ Done (AddAccountModal)      |
-| `PUT /api/accounts/{id}`            | Update account                 | HIGH     | ✅ Done (AccountCard)          |
-| `DELETE /api/accounts/{id}`         | Delete account                 | HIGH     | ✅ Done (AccountCard)          |
-| `POST /api/accounts/{id}/reconcile` | Reconcile balance              | MEDIUM   | ✅ Done (ReconcileModal)       |
-| `PUT /api/accounts/{id}/tracking`   | Toggle budget tracking         | MEDIUM   | ✅ Done (AccountCard)          |
-| `GET /api/accounts/summary`         | Net worth summary              | MEDIUM   | ✅ Done (AccountsPage)         |
-| `GET /comparison/summary`           | Peer spending comparison       | MEDIUM   | ✅ Done (PeerComparisonWidget) |
-| `GET /tips/feed`                    | Financial tips feed            | MEDIUM   | ✅ Done (TipsFeedPage)         |
-| `GET /tips/daily`                   | Daily tip                      | MEDIUM   | ✅ Done (TipsFeedPage)         |
-| `GET /learn/courses`                | Educational content            | LOW      | ✅ Done (LearnPage)            |
-| `GET /learn/progress`               | Learning progress              | LOW      | ✅ Done (LearnPage)            |
-| `GET /admin/dashboard`              | Admin metrics                  | LOW      | ✅ Done (AdminDashboard)       |
-| `GET /investments`                  | Portfolio overview             | MEDIUM   | ✅ Done (InvestmentsPage)      |
-| `GET /investments/holdings`         | List holdings                  | MEDIUM   | ✅ Done (InvestmentsPage)      |
-| `POST /investments/holdings`        | Add holding                    | MEDIUM   | ✅ Done (InvestmentsPage)      |
-| `PUT /investments/holdings/{id}`    | Update holding                 | MEDIUM   | ✅ Done (InvestmentsPage)      |
-| `DELETE /investments/holdings/{id}` | Delete holding                 | MEDIUM   | ✅ Done (InvestmentsPage)      |
-| `GET /investments/performance`      | Performance over time          | MEDIUM   | ✅ Done (InvestmentsPage)      |
-| `POST /investments/snapshot`        | Save portfolio snapshot        | LOW      | ✅ Done (InvestmentsPage)      |
-| `GET /notifications`                | List in-app notifications      | HIGH     | 🔄 Backend Only                |
-| `GET /notifications/{id}`           | Get single notification        | HIGH     | 🔄 Backend Only                |
-| `PUT /notifications/{id}/read`      | Mark notification as read      | HIGH     | 🔄 Backend Only                |
-| `PUT /notifications/read-all`       | Mark all as read               | HIGH     | 🔄 Backend Only                |
-| `DELETE /notifications/{id}`        | Delete notification            | MEDIUM   | 🔄 Backend Only                |
-| `GET /notifications/settings`       | Get notification preferences   | MEDIUM   | 🔄 Backend Only                |
-| `PUT /notifications/settings`       | Update notification prefs      | MEDIUM   | 🔄 Backend Only                |
-| `POST /notifications/create`        | Create notification (internal) | LOW      | 🔄 Backend Only                |
+| API Endpoint                                    | Description                    | Priority | Status                         |
+| ----------------------------------------------- | ------------------------------ | -------- | ------------------------------ |
+| `GET /api/accounts`                             | List user accounts             | HIGH     | ✅ Done (AccountsPage)         |
+| `POST /api/accounts`                            | Create manual account          | HIGH     | ✅ Done (AddAccountModal)      |
+| `PUT /api/accounts/{id}`                        | Update account                 | HIGH     | ✅ Done (AccountCard)          |
+| `DELETE /api/accounts/{id}`                     | Delete account                 | HIGH     | ✅ Done (AccountCard)          |
+| `POST /api/accounts/{id}/reconcile`             | Reconcile balance              | MEDIUM   | ✅ Done (ReconcileModal)       |
+| `PUT /api/accounts/{id}/tracking`               | Toggle budget tracking         | MEDIUM   | ✅ Done (AccountCard)          |
+| `GET /api/accounts/summary`                     | Net worth summary              | MEDIUM   | ✅ Done (AccountsPage)         |
+| `GET /comparison/summary`                       | Peer spending comparison       | MEDIUM   | ✅ Done (PeerComparisonWidget) |
+| `GET /tips/feed`                                | Financial tips feed            | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /tips/daily`                               | Daily tip                      | MEDIUM   | ✅ Done (TipsFeedPage)         |
+| `GET /learn/courses`                            | Educational content            | LOW      | ✅ Done (LearnPage)            |
+| `GET /learn/progress`                           | Learning progress              | LOW      | ✅ Done (LearnPage)            |
+| `GET /admin/dashboard`                          | Admin metrics                  | LOW      | ✅ Done (AdminDashboard)       |
+| `GET /investments`                              | Portfolio overview             | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `GET /investments/holdings`                     | List holdings                  | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `POST /investments/holdings`                    | Add holding                    | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `PUT /investments/holdings/{id}`                | Update holding                 | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `DELETE /investments/holdings/{id}`             | Delete holding                 | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `GET /investments/performance`                  | Performance over time          | MEDIUM   | ✅ Done (InvestmentsPage)      |
+| `POST /investments/snapshot`                    | Save portfolio snapshot        | LOW      | ✅ Done (InvestmentsPage)      |
+| `GET /notifications`                            | List in-app notifications      | HIGH     | ✅ Done (notificationsApi.ts)  |
+| `GET /notifications/{id}`                       | Get single notification        | HIGH     | ✅ Done (notificationsApi.ts)  |
+| `PUT /notifications/{id}/read`                  | Mark notification as read      | HIGH     | ✅ Done (notificationsApi.ts)  |
+| `PUT /notifications/read-all`                   | Mark all as read               | HIGH     | ✅ Done (notificationsApi.ts)  |
+| `DELETE /notifications/{id}`                    | Delete notification            | MEDIUM   | ✅ Done (notificationsApi.ts)  |
+| `GET /notifications/settings`                   | Get notification preferences   | MEDIUM   | ✅ Done (NotificationSettings) |
+| `PUT /notifications/settings`                   | Update notification prefs      | MEDIUM   | ✅ Done (NotificationSettings) |
+| `POST /notifications/create`                    | Create notification (internal) | LOW      | 🔄 Backend Only                |
+| `POST /transaction-planning`                    | Create planned transaction     | MEDIUM   | 🔄 Backend Only                |
+| `GET /transaction-planning`                     | List planned transactions      | MEDIUM   | 🔄 Backend Only                |
+| `PUT /transaction-planning/{id}`                | Update planned transaction     | MEDIUM   | 🔄 Backend Only                |
+| `DELETE /transaction-planning/{id}`             | Delete planned transaction     | MEDIUM   | 🔄 Backend Only                |
+| `POST /transaction-planning/execute`            | Execute planned transaction    | MEDIUM   | 🔄 Backend Only                |
+| `POST /transaction-planning/generate-recurring` | Generate recurring txns        | LOW      | 🔄 Backend Only                |
 
 ### Recently Completed Components (2026-02-03)
 
@@ -1759,22 +1783,22 @@ xl: 32px  (major sections)
 
 #### Competitive Features (Requirements 35-48) - 🔄 IN PROGRESS
 
-| Req | Name                  | Journey       | Task    | Frontend | Backend | UI/UX Status                    |
-| --- | --------------------- | ------------- | ------- | -------- | ------- | ------------------------------- |
-| R35 | Subscription Tracking | Insights      | Task 4  | ✅       | ✅      | ✅ Complete                     |
-| R36 | Bill Reminders        | Notifications | Task 2  | ✅       | ✅      | ✅ Complete                     |
-| R37 | Debt Payoff           | Goals         | Task 5  | ✅       | ✅      | ✅ Complete                     |
-| R38 | Savings Goals         | Goals         | Task 3  | ✅       | ✅      | ✅ Complete                     |
-| R39 | Spending Insights     | Insights      | Task 6  | ✅       | ✅      | ✅ Complete                     |
-| R40 | Rollover Budgets      | Daily         | Task 1  | ✅       | ✅      | ✅ Complete                     |
-| R41 | Net Worth             | Goals         | Task 9  | ✅       | ✅      | ✅ Complete                     |
-| R42 | Bank Sync (Plaid)     | Bank          | Task 10 | ✅       | ✅      | ✅ Complete                     |
-| R43 | Credit Score          | Insights      | Task 11 | ✅       | ✅      | ✅ Complete                     |
-| R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete                     |
-| R45 | Investments           | Goals         | Task 12 | ✅       | ✅      | ✅ Web Complete, Mobile Pending |
-| R46 | Peer Comparison       | Insights      | Task 13 | ✅       | ✅      | ✅ Complete                     |
-| R47 | Educational Content   | Insights      | Task 14 | ✅       | ✅      | ✅ Complete                     |
-| R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete                     |
+| Req | Name                  | Journey       | Task    | Frontend | Backend | UI/UX Status |
+| --- | --------------------- | ------------- | ------- | -------- | ------- | ------------ |
+| R35 | Subscription Tracking | Insights      | Task 4  | ✅       | ✅      | ✅ Complete  |
+| R36 | Bill Reminders        | Notifications | Task 2  | ✅       | ✅      | ✅ Complete  |
+| R37 | Debt Payoff           | Goals         | Task 5  | ✅       | ✅      | ✅ Complete  |
+| R38 | Savings Goals         | Goals         | Task 3  | ✅       | ✅      | ✅ Complete  |
+| R39 | Spending Insights     | Insights      | Task 6  | ✅       | ✅      | ✅ Complete  |
+| R40 | Rollover Budgets      | Daily         | Task 1  | ✅       | ✅      | ✅ Complete  |
+| R41 | Net Worth             | Goals         | Task 9  | ✅       | ✅      | ✅ Complete  |
+| R42 | Bank Sync (Plaid)     | Bank          | Task 10 | ✅       | ✅      | ✅ Complete  |
+| R43 | Credit Score          | Insights      | Task 11 | ✅       | ✅      | ✅ Complete  |
+| R44 | Receipt Scanning      | Daily         | Task 7  | ✅       | ✅      | ✅ Complete  |
+| R45 | Investments           | Goals         | Task 12 | ✅       | ✅      | ✅ Complete  |
+| R46 | Peer Comparison       | Insights      | Task 13 | ✅       | ✅      | ✅ Complete  |
+| R47 | Educational Content   | Insights      | Task 14 | ✅       | ✅      | ✅ Complete  |
+| R48 | Admin Dashboard       | Admin         | Task 8  | ✅       | ✅      | ✅ Complete  |
 
 ---
 
@@ -1887,10 +1911,10 @@ xl: 32px  (major sections)
 
 **11. Notification Center** - ✅ COMPLETE
 
-- [ ] Bell icon with badge count
-- [ ] Notification dropdown/drawer
-- [ ] Mark as read
-- [ ] Notification grouping
+- [x] Bell icon with badge count
+- [x] Notification dropdown/drawer
+- [x] Mark as read
+- [x] Notification grouping
 - [ ] Deep links to relevant screens
 
 ---
@@ -2329,13 +2353,13 @@ All optimization work has been completed:
 
 ### E2E Testing Infrastructure (Implementation Started 2026-02-18)
 
-**Status**: 🚧 Foundation Complete - Journey Tests Pending
+**Status**: 🚧 Journey Tests Created - CI/CD & Reporting Pending
 
 A comprehensive End-to-End testing infrastructure has been designed to validate complete user journeys and catch regressions before deployment.
 
 **Spec Location**: `.kiro/specs/e2e-testing-infrastructure/`
 
-**Recent Progress** (2026-02-18):
+**Recent Progress** (2026-04-01):
 
 - ✅ **Foundation Complete**: All core utilities and page objects implemented
 - ✅ **Playwright Setup**: Cross-browser configuration with Chromium, Firefox, WebKit
@@ -2343,7 +2367,8 @@ A comprehensive End-to-End testing infrastructure has been designed to validate 
 - ✅ **Test Fixtures**: Base fixture combining auth + data management with automatic cleanup
 - ✅ **Page Objects**: 6 page object models (Login, Registration, Onboarding, Budget, Accounts, Goals)
 - ✅ **Unit Tests**: 100+ unit tests covering all utilities (all passing)
-- 🚧 **Next Phase**: Implement 4 critical user journey E2E tests
+- ✅ **Journey Tests Created**: All 4 critical user journey E2E test files exist
+- 🚧 **Next Phase**: CI/CD integration, custom reporter, cost monitoring, documentation
 
 **Key Features**:
 
@@ -2375,10 +2400,10 @@ A comprehensive End-to-End testing infrastructure has been designed to validate 
 | Page Objects - Budget     | `tests/e2e/pages/BudgetPage.js`             | ✅ Complete |
 | Page Objects - Accounts   | `tests/e2e/pages/AccountsPage.js`           | ✅ Complete |
 | Page Objects - Goals      | `tests/e2e/pages/GoalsPage.js`              | ✅ Complete |
-| Onboarding Journey Test   | `tests/e2e/onboarding-journey.test.js`      | ❌ Pending  |
-| Budget Management Test    | `tests/e2e/daily-budget-management.test.js` | ❌ Pending  |
-| Bank Connection Test      | `tests/e2e/bank-connection-journey.test.js` | ❌ Pending  |
-| Goals Journey Test        | `tests/e2e/goals-journey.test.js`           | ❌ Pending  |
+| Onboarding Journey Test   | `tests/e2e/onboarding-journey.test.js`      | ✅ Complete |
+| Budget Management Test    | `tests/e2e/daily-budget-management.test.js` | ✅ Complete |
+| Bank Connection Test      | `tests/e2e/bank-connection-journey.test.js` | ✅ Complete |
+| Goals Journey Test        | `tests/e2e/goals-journey.test.js`           | ✅ Complete |
 | CI/CD Workflow            | `.github/workflows/e2e-tests.yml`           | ❌ Pending  |
 | Custom Reporter           | `tests/e2e/reporters/custom-reporter.js`    | ❌ Pending  |
 | Cost Monitoring Script    | `scripts/monitor-e2e-costs.js`              | ❌ Pending  |
@@ -2521,5 +2546,5 @@ Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 ---
 
 _Document maintained by BudgetBuddy Development Team_
-_Last reviewed: 2026-02-17_
+_Last reviewed: 2026-04-01_
 _Hook: `update-user-journeys` enforces updates on feature completion_
