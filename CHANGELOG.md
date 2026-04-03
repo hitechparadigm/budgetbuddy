@@ -4,6 +4,12 @@
 
 ### 📝 Documentation & Dependency Fix
 
+- **Security Fix: Hardcoded E2E Test Password** (`tests/e2e/fixtures/base-fixture.js`)
+  - Replaced hardcoded password with `process.env.E2E_TEST_PASSWORD` + `generateTestPassword()` helper
+  - Fixes CI/CD security scan failure in pre-deployment validation
+
+- **npm audit fix**: Resolved 6 of 7 dev dependency vulnerabilities (remaining: aws-sdk v2 low severity)
+
 - **USER_JOURNEYS.md Component Audit**
   - Added transaction-planning Lambda to Daily Budget Management journey
   - Added reconciliation Lambda to Manual Account Management journey
