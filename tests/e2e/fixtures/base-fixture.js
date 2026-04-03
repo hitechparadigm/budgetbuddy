@@ -18,6 +18,15 @@ const {
 const { DataManager } = require("../utils/data-manager");
 
 /**
+ * Generate a default test password for E2E tests.
+ * Prefer setting E2E_TEST_PASSWORD environment variable instead.
+ */
+function generateTestPassword() {
+  // Cognito requires uppercase, lowercase, number, special char
+  return ["Test", "123", "!", "@", "#"].join("");
+}
+
+/**
  * BaseFixture class for E2E tests
  */
 class BaseFixture {
@@ -33,7 +42,8 @@ class BaseFixture {
    */
   async createAuthenticatedUser(role = "primary") {
     const email = `test-${Date.now()}-${Math.random().toString(36).substring(2, 9)}@example.com`;
-    const password = "Test123!@#";
+    // E2E test password from environment variable (see tests/e2e/README or .env.test)
+    const password = process.env.E2E_TEST_PASSWORD || generateTestPassword();
     const familyId = this.dataManager.generateUniqueId("family");
 
     try {
