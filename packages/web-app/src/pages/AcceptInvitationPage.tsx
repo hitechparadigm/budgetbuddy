@@ -6,9 +6,10 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { config } from "../config/environment";
 
 // Family API is on a separate API Gateway (api-family stack)
-const API_BASE = "https://gp8jspfboa.execute-api.us-east-1.amazonaws.com/v1";
+const API_BASE = config.familyApiUrl;
 
 export const AcceptInvitationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -31,9 +32,9 @@ export const AcceptInvitationPage: React.FC = () => {
   const [authenticating, setAuthenticating] = useState(false);
 
   useEffect(() => {
-    // Check if user is already authenticated
-    const accessToken = localStorage.getItem("budgetbuddy_access_token");
-    if (accessToken) {
+    // Check if user is already authenticated (use id_token — required by API Gateway Cognito authorizer)
+    const idToken = localStorage.getItem("budgetbuddy_id_token");
+    if (idToken) {
       setIsAuthenticated(true);
     } else {
       // If not authenticated, show auth form by default for new users
@@ -68,8 +69,9 @@ export const AcceptInvitationPage: React.FC = () => {
     setError(null);
 
     try {
-      const accessToken = localStorage.getItem("budgetbuddy_access_token");
-      if (!accessToken) {
+      // Use id_token for API Gateway Cognito authorizer (not access_token)
+      const idToken = localStorage.getItem("budgetbuddy_id_token");
+      if (!idToken) {
         throw new Error("Not authenticated");
       }
 
@@ -77,7 +79,7 @@ export const AcceptInvitationPage: React.FC = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({ token }),
       });
@@ -184,11 +186,12 @@ export const AcceptInvitationPage: React.FC = () => {
         throw new Error(errorData.error || "Registration failed");
       }
 
-      // After registration, log in
+      // Registration succeeded — now log in
+      // handleLogin manages its own authenticating state, so clear ours first
+      setAuthenticating(false);
       await handleLogin(e);
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Registration failed");
-    } finally {
       setAuthenticating(false);
     }
   };

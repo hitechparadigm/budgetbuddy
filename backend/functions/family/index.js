@@ -498,7 +498,7 @@ async function handleInvite(event, userId, familyId, familyRole) {
       // Just log the error and continue
     }
 
-    // Return invitation details (without hashed token)
+    // Return invitation details
     return successResponse(
       {
         invitationId,
@@ -506,8 +506,6 @@ async function handleInvite(event, userId, familyId, familyRole) {
         role,
         expiresAt,
         status: "pending",
-        // Include token in response for testing (remove in production)
-        token,
       },
       201,
     );
@@ -667,9 +665,37 @@ async function handleAcceptInvitation(event, userId) {
       }),
     );
 
-    // Update user's familyId and role in Cognito
-    // This will be handled by the auth service when user logs in next time
-    // For now, we'll just return the family details
+    // Update user's familyId and role in their DynamoDB profile so subsequent
+    // API calls (budget, transactions, etc.) use the correct shared familyId.
+    // The JWT still carries the old familyId until the user refreshes their token,
+    // but the profile record is the authoritative source for family membership.
+    try {
+      await dynamodb.send(
+        new UpdateCommand({
+          TableName: TABLE_NAME,
+          Key: {
+            PK: `USER#${userId}`,
+            SK: "PROFILE",
+          },
+          UpdateExpression:
+            "SET familyId = :familyId, familyRole = :role, familyJoinedAt = :joinedAt",
+          ExpressionAttributeValues: {
+            ":familyId": invitation.familyId,
+            ":role": invitation.role,
+            ":joinedAt": joinedAt,
+          },
+        }),
+      );
+      console.log(
+        `Updated familyId to ${invitation.familyId} in profile for user ${userId}`,
+      );
+    } catch (profileUpdateError) {
+      // Non-fatal: member record was already created, log and continue
+      console.error(
+        "Failed to update user profile familyId (non-fatal):",
+        profileUpdateError,
+      );
+    }
 
     console.log(
       `User ${userId} accepted invitation and joined family ${invitation.familyId}`,
@@ -1104,16 +1130,21 @@ async function handleGetInvitations(familyId, familyRole) {
       return errorResponse(403, "Only primary user can view invitations");
     }
 
-    // Query all invitations for this family
+    // Query all pending invitations for this family using Scan + FilterExpression.
+    // GSI4 is keyed by invitee email (GSI4PK = INVITATION#<email>), not by familyId,
+    // so we cannot use a GSI query here. We scan with familyId + status filters.
+    // begins_with is only valid on sort keys in KeyConditionExpression — it is NOT
+    // valid on partition keys or in FilterExpression, so it is intentionally omitted.
     const result = await dynamodb.send(
-      new QueryCommand({
+      new ScanCommand({
         TableName: TABLE_NAME,
-        IndexName: "GSI4",
-        KeyConditionExpression: "begins_with(GSI4PK, :invPrefix)",
-        FilterExpression: "familyId = :familyId",
+        FilterExpression: "familyId = :familyId AND #status = :status",
+        ExpressionAttributeNames: {
+          "#status": "status",
+        },
         ExpressionAttributeValues: {
-          ":invPrefix": "INVITATION#",
           ":familyId": familyId,
+          ":status": "pending",
         },
       }),
     );
