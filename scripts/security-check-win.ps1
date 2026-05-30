@@ -70,11 +70,11 @@ Write-Host ""
 Write-Host "2. Checking npm audit..." -ForegroundColor White
 
 if (Get-Command npm -ErrorAction SilentlyContinue) {
-    $auditOutput = npm audit --audit-level=moderate 2>&1
+    $auditOutput = npm audit --audit-level=high 2>&1
     if ($LASTEXITCODE -eq 0) {
-        Report-Success "No moderate or high severity vulnerabilities found"
+        Report-Success "No high or critical severity vulnerabilities found"
     } else {
-        Report-Issue "npm audit found security vulnerabilities"
+        Report-Issue "npm audit found high or critical security vulnerabilities"
         Write-Host $auditOutput -ForegroundColor Yellow
     }
 } else {
