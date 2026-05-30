@@ -1,10 +1,33 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-04-02
-**Current Phase**: E2E Testing Infrastructure Implementation
+**Last Updated**: 2026-05-30
+**Current Phase**: Accessibility & Dark Mode Improvements
 **Overall Progress**: 95% Core + 100% Competitive Features + E2E Testing (10%)
 
-## ✨ LATEST - E2E Testing Infrastructure - Playwright Setup Complete (Session 127)
+## ✨ LATEST - Accessibility & Dark Mode Heuristic Review (Session 129)
+
+### Heuristic Review Fixes ✅
+
+**Status**: Complete - All high-tier and medium-tier accessibility issues resolved
+
+**Completed Work**:
+
+1. ✅ **Accessibility Fixes** (5 high-tier violations resolved)
+   - TransactionModal: focus trap, Escape key, ARIA dialog roles
+   - AuthPage: ARIA tab roles
+   - Navigation: aria-hidden on emoji icons
+   - LoginForm: visible focus indicators
+   - AppLayout: skip link target
+
+2. ✅ **Design Token System**
+   - CSS custom properties for all semantic colors
+   - Light and dark mode values
+   - Tailwind config extended to reference tokens
+
+3. ✅ **Dark Mode Support**
+   - Sidebar, AppLayout, TransactionModal, AuthPage, LoginForm
+
+## Previous - E2E Testing Infrastructure - Playwright Setup Complete (Session 127)
 
 ### Task 1: Playwright Configuration ✅
 

@@ -59,12 +59,14 @@ export const AuthPage: React.FC = () => {
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">BudgetBuddy</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            BudgetBuddy
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
             AI-powered family budgeting made simple
           </p>
         </div>
@@ -72,10 +74,17 @@ export const AuthPage: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-2 px-4 shadow-sm rounded-t-lg">
-          <nav className="flex space-x-8" aria-label="Tabs">
+        <div className="bg-white dark:bg-gray-800 py-2 px-4 shadow-sm rounded-t-lg">
+          <nav
+            className="flex space-x-8"
+            aria-label="Authentication"
+            role="tablist"
+          >
             <button
               onClick={switchToLogin}
+              role="tab"
+              aria-selected={authMode === "login"}
+              aria-controls="auth-tabpanel"
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 authMode === "login"
                   ? "border-blue-500 text-blue-600"
@@ -86,6 +95,9 @@ export const AuthPage: React.FC = () => {
             </button>
             <button
               onClick={switchToRegister}
+              role="tab"
+              aria-selected={authMode === "register"}
+              aria-controls="auth-tabpanel"
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 authMode === "register"
                   ? "border-green-500 text-green-600"
@@ -99,7 +111,11 @@ export const AuthPage: React.FC = () => {
       </div>
 
       {/* Form Content */}
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+      <div
+        id="auth-tabpanel"
+        role="tabpanel"
+        className="sm:mx-auto sm:w-full sm:max-w-md"
+      >
         {authMode === "login" ? (
           <LoginForm
             onSuccess={handleAuthSuccess}
@@ -115,7 +131,7 @@ export const AuthPage: React.FC = () => {
 
       {/* Footer */}
       <div className="mt-8 text-center">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           © 2025 BudgetBuddy. All rights reserved.
         </p>
       </div>

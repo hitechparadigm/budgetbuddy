@@ -1,0 +1,26 @@
+/**
+ * Environment Configuration
+ *
+ * Centralized environment variables for the web application.
+ * All API URLs and environment-specific settings should be accessed through this module.
+ */
+
+export const config = {
+  /** Main API Gateway URL (auth, budget, transactions, family) */
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1',
+
+  /** Features API Gateway URL (learn, tips, insights, pattern-detection, budget-planning) */
+  featuresApiUrl: import.meta.env.VITE_FEATURES_API_URL || 'https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1',
+
+  /** Google OAuth Web Client ID */
+  googleClientId: import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID || '',
+
+  /** Current environment */
+  appEnv: import.meta.env.VITE_APP_ENV || 'development',
+
+  /** Whether the app is running in production */
+  isProduction: import.meta.env.VITE_APP_ENV === 'production',
+
+  /** Whether the app is running in development */
+  isDevelopment: import.meta.env.DEV,
+} as const;

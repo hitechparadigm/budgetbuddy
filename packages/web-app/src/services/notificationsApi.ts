@@ -3,7 +3,9 @@
  * Handles notification history, preferences, and read status
  */
 
-const MAIN_API_BASE = 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
+import { config } from '../config/environment';
+
+const MAIN_API_BASE = config.apiBaseUrl;
 
 // Get token from localStorage
 function getToken(): string | null {
