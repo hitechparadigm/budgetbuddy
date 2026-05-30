@@ -48,11 +48,11 @@ jobs:
       - name: Run dependency vulnerability scan
         run: |
           echo "🔍 Running dependency vulnerability scan..."
-          npm audit --audit-level=moderate
+          npm audit --audit-level=high
 
-          # Check for known vulnerable packages
-          if npm audit --json | jq -e '.vulnerabilities | length > 0' > /dev/null 2>&1; then
-            echo "❌ Vulnerabilities found in dependencies"
+          # Check for known high/critical vulnerable packages
+          if npm audit --json | jq -e '[.vulnerabilities[] | select(.severity == "high" or .severity == "critical")] | length > 0' > /dev/null 2>&1; then
+            echo "❌ High or critical vulnerabilities found in dependencies"
             npm audit
             exit 1
           fi

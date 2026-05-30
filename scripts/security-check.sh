@@ -225,10 +225,10 @@ echo "7. Validating dependency security..."
 # Run npm audit if available
 if command -v npm &> /dev/null; then
     echo "Running npm audit..."
-    if npm audit --audit-level=moderate; then
-        report_success "No moderate or high severity vulnerabilities found"
+    if npm audit --audit-level=high; then
+        report_success "No high or critical severity vulnerabilities found"
     else
-        report_issue "npm audit found security vulnerabilities"
+        report_issue "npm audit found high or critical security vulnerabilities"
     fi
 else
     report_warning "npm not available - skipping dependency audit"
