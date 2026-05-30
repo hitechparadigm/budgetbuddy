@@ -1,10 +1,10 @@
 /**
  * Monitoring Stack for BudgetBuddy Application
- * 
+ *
  * Creates CloudWatch dashboards, alarms, and monitoring infrastructure
  * for observability, alerting, and performance tracking across all
  * application components.
- * 
+ *
  * Key Features:
  * - Application performance dashboards
  * - Error rate and latency alarms
@@ -31,6 +31,7 @@ export interface MonitoringStackProps extends cdk.StackProps {
     table: dynamodb.Table;
     userPool: cognito.UserPool;
     api: apigateway.RestApi;
+    alertEmail?: string;
 }
 
 export class MonitoringStack extends cdk.Stack {
@@ -50,7 +51,7 @@ export class MonitoringStack extends cdk.Stack {
         super(scope, id, props);
 
         // Create SNS topic for alerts
-        this.createAlertTopic();
+        this.createAlertTopic(props.alertEmail);
 
         // Create CloudWatch dashboard
         this.createApplicationDashboard(props);
@@ -66,14 +67,18 @@ export class MonitoringStack extends cdk.Stack {
      * Create SNS topic for critical alerts and notifications
      * Administrators can subscribe to receive alerts via email/SMS
      */
-    private createAlertTopic(): void {
+    private createAlertTopic(alertEmail?: string): void {
         this.alertTopic = new sns.Topic(this, 'AlertTopic', {
-            topicName: 'budgetbuddy-alerts',
+            topicName: `${this.stackName}-alerts`,
             displayName: 'BudgetBuddy Critical Infrastructure Alerts',
-
-            // Add email subscription for admin notifications
-            // Note: Email will need to be confirmed after deployment
         });
+
+        // Add email subscription if provided
+        if (alertEmail) {
+            this.alertTopic.addSubscription(
+                new subscriptions.EmailSubscription(alertEmail)
+            );
+        }
 
         // Add comprehensive cost allocation tags
         cdk.Tags.of(this.alertTopic).add('Component', 'Monitoring');
@@ -81,6 +86,12 @@ export class MonitoringStack extends cdk.Stack {
         cdk.Tags.of(this.alertTopic).add('AlertType', 'Critical');
         cdk.Tags.of(this.alertTopic).add('CostCenter', 'BudgetBuddy-Operations');
         cdk.Tags.of(this.alertTopic).add('NotificationMethod', 'Email-SMS');
+
+        // Output the SNS topic ARN for reference
+        new cdk.CfnOutput(this, 'AlertTopicArn', {
+            value: this.alertTopic.topicArn,
+            description: 'SNS topic ARN for BudgetBuddy infrastructure alerts',
+        });
     }
 
     /**
