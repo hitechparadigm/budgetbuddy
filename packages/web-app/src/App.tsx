@@ -39,6 +39,7 @@ import { HelpCenterPage } from "./pages/HelpCenterPage";
 import { TermsOfServicePage } from "./pages/TermsOfServicePage";
 import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { LandingPage } from "./pages/LandingPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const App: React.FC = () => {
@@ -256,8 +257,8 @@ const App: React.FC = () => {
                   <Route path="/terms" element={<TermsOfServicePage />} />
                   {/* Privacy Policy Page */}
                   <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                  {/* Default redirect to budget (main app) */}
-                  <Route path="/" element={<Navigate to="/budget" replace />} />
+                  {/* Landing page for unauthenticated users, redirect to budget for authenticated */}
+                  <Route path="/" element={<LandingPage />} />
                   {/* Catch all - show 404 page */}
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
