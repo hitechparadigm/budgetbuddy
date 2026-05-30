@@ -41,6 +41,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [mfaChallenge, setMfaChallenge] = useState<MFAChallenge | null>(null);
   const [mfaVerifying, setMfaVerifying] = useState(false);
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
 
   const {
     register,
@@ -170,13 +171,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   if (mfaChallenge) {
     return (
       <div className="w-full max-w-md mx-auto">
-        <div className="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
           <div className="mb-6 text-center">
             <div className="text-4xl mb-4">🔐</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
               Two-Factor Authentication
             </h2>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Enter the 6-digit code from your authenticator app
             </p>
           </div>
@@ -199,12 +200,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
         <div className="mb-6 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             Welcome Back
           </h2>
-          <p className="text-gray-600">Sign in to your BudgetBuddy account</p>
+          <p className="text-gray-600 dark:text-gray-400">Sign in to your BudgetBuddy account</p>
         </div>
 
         {displayError && (
@@ -241,10 +242,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         {/* Divider */}
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
+            <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">
+            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
               Or continue with email
             </span>
           </div>
@@ -255,7 +256,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
               Email Address
             </label>
@@ -280,7 +281,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
               Password
             </label>
@@ -351,7 +352,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               <button
                 type="button"
                 onClick={onSwitchToRegister}
-                className="font-medium text-blue-600 hover:text-blue-500 focus:outline-none focus:underline"
+                className="font-medium text-blue-600 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
                 disabled={isSubmitting || loading}
               >
                 Sign up here
@@ -362,17 +363,26 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
         {/* Forgot Password Link */}
         <div className="mt-4 text-center">
-          <button
-            type="button"
-            className="text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:underline"
-            disabled={isSubmitting || loading}
-            onClick={() => {
-              // TODO: Implement forgot password functionality
-              alert("Forgot password functionality coming soon!");
-            }}
-          >
-            Forgot your password?
-          </button>
+          {forgotPasswordSent ? (
+            <p className="text-sm text-green-600" role="status">
+              Password reset is not yet available. Please contact support at{" "}
+              <a
+                href="mailto:support@budgetbuddy.app"
+                className="font-medium underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+              >
+                support@budgetbuddy.app
+              </a>
+            </p>
+          ) : (
+            <button
+              type="button"
+              className="text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+              disabled={isSubmitting || loading}
+              onClick={() => setForgotPasswordSent(true)}
+            >
+              Forgot your password?
+            </button>
+          )}
         </div>
       </div>
     </div>

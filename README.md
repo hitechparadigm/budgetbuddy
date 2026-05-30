@@ -17,7 +17,15 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
-### Recent Achievements (2026-04-01)
+### Recent Achievements (2026-05-30)
+
+- ♿ **ACCESSIBILITY & DARK MODE HEURISTIC REVIEW** - Comprehensive UI review using design-system-scaffold power
+  - Fixed 5 high-tier accessibility violations (focus trap, ARIA roles, skip link, focus indicators)
+  - Added CSS custom properties design token system for theming
+  - Added dark mode support to Sidebar, AppLayout, TransactionModal, AuthPage, LoginForm
+  - Replaced alert() forgot password with inline support message
+
+### Previous Achievements (2026-04-01)
 
 - 📝 **USER_JOURNEYS COMPONENT AUDIT** - Comprehensive audit syncing documentation with codebase
   - Added undocumented backend Lambdas (transaction-planning, reconciliation, scheduled-backup)

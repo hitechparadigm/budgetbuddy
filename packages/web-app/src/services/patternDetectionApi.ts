@@ -3,7 +3,9 @@
  * Handles AI-powered recurring bill pattern detection
  */
 
-const EXTENDED_API_BASE = 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
+import { config } from '../config/environment';
+
+const EXTENDED_API_BASE = config.apiBaseUrl;
 
 // Get token from localStorage
 function getToken(): string | null {

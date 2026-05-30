@@ -39,7 +39,9 @@ export const Navigation: React.FC = () => {
             to={item.path}
             className={`nav-link ${location.pathname === item.path ? "active" : ""}`}
           >
-            <span className="nav-icon">{item.icon}</span>
+            <span className="nav-icon" aria-hidden="true">
+              {item.icon}
+            </span>
             <span className="nav-label">{item.label}</span>
           </Link>
         ))}
