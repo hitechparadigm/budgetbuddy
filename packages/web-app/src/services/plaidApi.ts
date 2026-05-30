@@ -5,8 +5,9 @@
  * transaction sync, and pending transaction management.
  */
 
-const API_BASE_URL =
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+import { config } from '../config/environment';
+
+const API_BASE_URL = config.apiBaseUrl;
 
 export interface LinkedAccount {
   accountId: string;

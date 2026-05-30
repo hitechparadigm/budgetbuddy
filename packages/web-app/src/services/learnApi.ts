@@ -4,7 +4,9 @@
  * Handles educational content API calls for courses, lessons, quizzes, and badges.
  */
 
-const API_BASE = import.meta.env.VITE_FEATURES_API_URL || 'https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1';
+import { config } from '../config/environment';
+
+const API_BASE = config.featuresApiUrl;
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('budgetbuddy_access_token');

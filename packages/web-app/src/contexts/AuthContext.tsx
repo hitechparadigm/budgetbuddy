@@ -252,48 +252,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       // Send Google ID token to backend for verification and user creation/linking
-      const response = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Google Sign-In failed");
-      }
-
-      const loginResult = await response.json();
+      const response = await apiClient.post("/auth/google", { idToken });
 
       const user: User = {
-        userId: loginResult.user.userId,
-        email: loginResult.user.email,
-        firstName: loginResult.user.firstName,
-        lastName: loginResult.user.lastName,
-        accountType: loginResult.user.accountType as "single" | "family",
-        subscriptionTier: loginResult.user.subscriptionTier as
-          | "free"
-          | "premium",
+        userId: response.user.userId,
+        email: response.user.email,
+        firstName: response.user.firstName,
+        lastName: response.user.lastName,
+        accountType: response.user.accountType as "single" | "family",
+        subscriptionTier: response.user.subscriptionTier as "free" | "premium",
         onboardingCompleted: false,
         timezone:
-          loginResult.user.timezone ||
+          response.user.timezone ||
           Intl.DateTimeFormat().resolvedOptions().timeZone,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
       const tokens: AuthTokens = {
-        accessToken: loginResult.accessToken,
-        refreshToken: loginResult.refreshToken,
-        idToken: loginResult.idToken,
-        expiresIn: loginResult.expiresIn,
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        idToken: response.idToken,
+        expiresIn: response.expiresIn,
       };
 
-      // Store tokens in localStorage
-      localStorage.setItem("budgetbuddy_access_token", tokens.accessToken);
-      localStorage.setItem("budgetbuddy_refresh_token", tokens.refreshToken);
-      localStorage.setItem("budgetbuddy_id_token", tokens.idToken);
-      localStorage.setItem("budgetbuddy_user", JSON.stringify(user));
+      // Store tokens via apiClient
+      apiClient.setTokens(tokens);
 
       setAuthState({
         isAuthenticated: true,
@@ -304,9 +288,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     } catch (error) {
       const errorMessage =
-        error instanceof Error
+        error instanceof ApiClientError
           ? error.message
-          : "Google Sign-In failed. Please try again.";
+          : error instanceof Error
+            ? error.message
+            : "Google Sign-In failed. Please try again.";
 
       setAuthState((prev) => ({
         ...prev,
