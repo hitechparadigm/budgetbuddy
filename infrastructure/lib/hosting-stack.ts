@@ -1,10 +1,10 @@
 /**
  * Hosting Stack for BudgetBuddy Application
- * 
+ *
  * Creates S3 buckets and CloudFront distributions for hosting the web application
  * and admin dashboard. Provides global content delivery with SSL/TLS termination
  * and caching for optimal performance.
- * 
+ *
  * Key Features:
  * - S3 buckets for static website hosting
  * - CloudFront distributions for global CDN
@@ -19,6 +19,10 @@ import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
+
+export interface HostingStackProps extends cdk.StackProps {
+  environment?: string;
+}
 
 export class HostingStack extends cdk.Stack {
   /**
@@ -45,11 +49,13 @@ export class HostingStack extends cdk.Stack {
    */
   public adminDistribution: cloudfront.Distribution;
 
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: HostingStackProps) {
     super(scope, id, props);
 
+    const envName = props?.environment || this.node.tryGetContext('environment') || 'dev';
+
     // Create S3 buckets for hosting
-    this.createS3Buckets();
+    this.createS3Buckets(envName);
 
     // Create CloudFront distributions
     this.createCloudFrontDistributions();
@@ -62,27 +68,27 @@ export class HostingStack extends cdk.Stack {
    * Create S3 buckets for hosting web application and admin dashboard
    * Configured for static website hosting with proper security settings
    */
-  private createS3Buckets(): void {
+  private createS3Buckets(envName: string): void {
     /**
      * S3 bucket for web application (React app)
      * Hosts the main user-facing application
      */
     this.webBucket = new s3.Bucket(this, 'WebBucket', {
-      bucketName: 'budgetbuddy-web-app',
-      
+      bucketName: `budgetbuddy-${envName}-web-app`,
+
       // Block all public access - CloudFront will access via OAI
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      
+
       // Enable versioning for rollback capability
       versioned: true,
-      
+
       // Automatic cleanup of old versions to control costs
       lifecycleRules: [{
         id: 'DeleteOldVersions',
         enabled: true,
         noncurrentVersionExpiration: cdk.Duration.days(30),
       }],
-      
+
       // Remove bucket when stack is deleted (for dev environments)
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
@@ -93,21 +99,21 @@ export class HostingStack extends cdk.Stack {
      * Hosts the administrative interface for managing users and content
      */
     this.adminBucket = new s3.Bucket(this, 'AdminBucket', {
-      bucketName: 'budgetbuddy-admin-dashboard',
-      
+      bucketName: `budgetbuddy-${envName}-admin-dashboard`,
+
       // Block all public access - CloudFront will access via OAI
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      
+
       // Enable versioning for rollback capability
       versioned: true,
-      
+
       // Automatic cleanup of old versions
       lifecycleRules: [{
         id: 'DeleteOldVersions',
         enabled: true,
         noncurrentVersionExpiration: cdk.Duration.days(30),
       }],
-      
+
       // Remove bucket when stack is deleted
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
@@ -119,7 +125,7 @@ export class HostingStack extends cdk.Stack {
     cdk.Tags.of(this.webBucket).add('ContentType', 'Static-Website');
     cdk.Tags.of(this.webBucket).add('CostCenter', 'BudgetBuddy-Frontend');
     cdk.Tags.of(this.webBucket).add('BackupRequired', 'No');
-    
+
     cdk.Tags.of(this.adminBucket).add('Component', 'AdminHosting');
     cdk.Tags.of(this.adminBucket).add('Service', 'S3');
     cdk.Tags.of(this.adminBucket).add('ContentType', 'Admin-Dashboard');
@@ -138,23 +144,23 @@ export class HostingStack extends cdk.Stack {
      */
     this.webDistribution = new cloudfront.Distribution(this, 'WebDistribution', {
       comment: 'budgetbuddy-web - Global CDN for React web application with SPA routing support',
-      
+
       // S3 origin with Origin Access Identity for security
       defaultRootObject: 'index.html',
-      
+
       // Default behavior for all requests
       defaultBehavior: {
         origin: new origins.S3Origin(this.webBucket),
-        
+
         // Viewer protocol policy - redirect HTTP to HTTPS
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        
+
         // Caching policy optimized for SPA
         cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-        
+
         // Allowed HTTP methods
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
-        
+
         // Compress responses for better performance
         compress: true,
       },
@@ -187,7 +193,7 @@ export class HostingStack extends cdk.Stack {
 
       // Price class for cost optimization
       priceClass: cloudfront.PriceClass.PRICE_CLASS_100, // US, Canada, Europe
-      
+
       // Enable IPv6 for better global reach
       enableIpv6: true,
     });
@@ -198,9 +204,9 @@ export class HostingStack extends cdk.Stack {
      */
     this.adminDistribution = new cloudfront.Distribution(this, 'AdminDistribution', {
       comment: 'budgetbuddy-admin - Global CDN for admin dashboard with security isolation',
-      
+
       defaultRootObject: 'index.html',
-      
+
       defaultBehavior: {
         origin: new origins.S3Origin(this.adminBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -235,7 +241,7 @@ export class HostingStack extends cdk.Stack {
     cdk.Tags.of(this.webDistribution).add('PriceClass', 'US-Canada-Europe');
     cdk.Tags.of(this.webDistribution).add('CostCenter', 'BudgetBuddy-CDN');
     cdk.Tags.of(this.webDistribution).add('CachingEnabled', 'Yes');
-    
+
     cdk.Tags.of(this.adminDistribution).add('Component', 'AdminCDN');
     cdk.Tags.of(this.adminDistribution).add('Service', 'CloudFront');
     cdk.Tags.of(this.adminDistribution).add('PriceClass', 'US-Canada-Europe');
@@ -284,6 +290,17 @@ export class HostingStack extends cdk.Stack {
       value: this.webDistribution.distributionDomainName,
       description: 'CloudFront domain name for BudgetBuddy web application public access',
       exportName: 'budgetbuddy-web-distribution-domain',
+    });
+
+    // Convenience outputs for deployment workflows
+    new cdk.CfnOutput(this, 'CloudFrontDistributionId', {
+      value: this.webDistribution.distributionId,
+      description: 'CloudFront distribution ID (alias for deployment workflows)',
+    });
+
+    new cdk.CfnOutput(this, 'CloudFrontUrl', {
+      value: `https://${this.webDistribution.distributionDomainName}`,
+      description: 'Full HTTPS URL for the BudgetBuddy web application',
     });
 
     new cdk.CfnOutput(this, 'AdminDistributionId', {

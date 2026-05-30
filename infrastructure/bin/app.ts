@@ -134,6 +134,7 @@ const apiFamilyStack = new ApiFamilyStack(app, `${stackPrefix}-api-family`, {
 const hostingStack = new HostingStack(app, `${stackPrefix}-hosting`, {
   env,
   description: 'BudgetBuddy hosting infrastructure with S3 static hosting and CloudFront CDN for global performance',
+  environment: envName,
 });
 
 /**

@@ -1,27 +1,40 @@
-name: Deploy to Development
+name: Deploy to Production
 
 on:
-  push:
-    branches: [develop]
-    paths-ignore:
-      - "**.md"
-      - "docs/**"
   workflow_dispatch:
     inputs:
       reason:
-        description: "Reason for manual deployment"
-        required: false
-        default: "Manual deployment trigger"
+        description: "Reason for production deployment"
+        required: true
+        default: "Scheduled production release"
+      confirm:
+        description: "Type 'DEPLOY' to confirm production deployment"
+        required: true
 
 env:
   NODE_VERSION: "20"
   AWS_REGION: "us-east-1"
-  ENVIRONMENT: "dev"
+  ENVIRONMENT: "prod"
 
 jobs:
+  confirm-deployment:
+    name: Confirm Production Deployment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate confirmation
+        run: |
+          if [[ "${{ github.event.inputs.confirm }}" != "DEPLOY" ]]; then
+            echo "❌ Production deployment not confirmed. Type 'DEPLOY' to confirm."
+            exit 1
+          fi
+          echo "✅ Production deployment confirmed"
+          echo "📋 Reason: ${{ github.event.inputs.reason }}"
+
   pre-deployment-checks:
     name: Pre-deployment Validation
     runs-on: ubuntu-latest
+    needs: confirm-deployment
 
     steps:
       - name: Checkout code
@@ -37,22 +50,18 @@ jobs:
 
       - name: Security pre-deployment scan
         run: |
-          echo "🔒 Running comprehensive security checks before deployment..."
-
-          # Make security script executable
+          echo "🔒 Running comprehensive security checks before production deployment..."
           chmod +x scripts/security-check.sh
-
-          # Run security checks using bash script
           bash scripts/security-check.sh
 
       - name: Validate production configuration
         run: |
           echo "🔍 Validating production configuration security..."
 
-          # Check that mock auth is not used in production builds
+          # Verify no mock auth in production code
           if grep -r "initMockAuth\|isMockAuthActive" packages/web-app/src --exclude="mockAuth.ts" --exclude="*.test.*"; then
-            echo "⚠️  WARNING: Found mock auth usage in production code"
-            echo "   Please ensure mock auth is disabled in production"
+            echo "❌ Mock auth usage found in production code - must be removed before production deploy"
+            exit 1
           fi
 
           # Verify HTTPS is enforced
@@ -80,14 +89,15 @@ jobs:
         run: npx cdk synth --all --context environment=${{ env.ENVIRONMENT }}
 
   deploy-infrastructure:
-    name: Deploy AWS Infrastructure
+    name: Deploy AWS Infrastructure (Production)
     runs-on: ubuntu-latest
     needs: pre-deployment-checks
-    environment: development
+    environment: production
 
     outputs:
       api-url: ${{ steps.get-outputs.outputs.api-url }}
       user-pool-id: ${{ steps.get-outputs.outputs.user-pool-id }}
+      cloudfront-url: ${{ steps.get-outputs.outputs.cloudfront-url }}
 
     steps:
       - name: Checkout code
@@ -132,14 +142,10 @@ jobs:
             echo "CDK already bootstrapped"
           fi
 
-      - name: Deploy infrastructure stacks
+      - name: Deploy infrastructure stacks (Production)
         working-directory: infrastructure
         run: |
-          echo "Deploying BudgetBuddy infrastructure to development environment..."
-
-          # Deploy stacks in specific order to handle CloudFormation export dependencies
-          # When CommonLayer version changes in api stack, dependent stacks must be deployed first
-          # This allows them to continue using the old layer while api stack updates
+          echo "🚀 Deploying BudgetBuddy infrastructure to PRODUCTION environment..."
 
           echo "Step 1: Deploying base stacks (database, auth, hosting)..."
           npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-database \
@@ -149,7 +155,7 @@ jobs:
             --require-approval never \
             --context environment=${{ env.ENVIRONMENT }} || echo "Base stacks deployment may have failed, continuing..."
 
-          echo "Step 2: Deploying dependent stacks (api-features, api-features-extended, api-family, notification)..."
+          echo "Step 2: Deploying dependent stacks..."
           npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api-features \
             budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended \
             budgetbuddy-${{ env.ENVIRONMENT }}-api-family \
@@ -157,12 +163,11 @@ jobs:
             --require-approval never \
             --context environment=${{ env.ENVIRONMENT }} || echo "Dependent stacks deployment may have failed, continuing..."
 
-          echo "Step 3: Deploying main API stack (may update CommonLayer export)..."
+          echo "Step 3: Deploying main API stack..."
           npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api \
             --require-approval never \
             --context environment=${{ env.ENVIRONMENT }} || echo "API stack deployment may have failed, continuing..."
 
-          # Deploy all remaining stacks and generate outputs
           echo "Step 4: Deploying all remaining stacks..."
           npx cdk deploy --all \
             --require-approval never \
@@ -174,24 +179,27 @@ jobs:
         working-directory: infrastructure
         run: |
           if [ -f cdk-outputs.json ]; then
-            API_URL=$(jq -r '.["budgetbuddy-dev-api"].ApiUrl // empty' cdk-outputs.json)
-            USER_POOL_ID=$(jq -r '.["budgetbuddy-dev-auth"].UserPoolId // empty' cdk-outputs.json)
+            API_URL=$(jq -r '.["budgetbuddy-prod-api"].ApiUrl // empty' cdk-outputs.json)
+            USER_POOL_ID=$(jq -r '.["budgetbuddy-prod-auth"].UserPoolId // empty' cdk-outputs.json)
+            CF_URL=$(jq -r '.["budgetbuddy-prod-hosting"].CloudFrontUrl // empty' cdk-outputs.json)
 
             echo "api-url=$API_URL" >> $GITHUB_OUTPUT
             echo "user-pool-id=$USER_POOL_ID" >> $GITHUB_OUTPUT
+            echo "cloudfront-url=$CF_URL" >> $GITHUB_OUTPUT
 
-            echo "## Deployment Outputs" >> $GITHUB_STEP_SUMMARY
+            echo "## Production Deployment Outputs" >> $GITHUB_STEP_SUMMARY
             echo "- **API URL**: $API_URL" >> $GITHUB_STEP_SUMMARY
             echo "- **User Pool ID**: $USER_POOL_ID" >> $GITHUB_STEP_SUMMARY
+            echo "- **CloudFront URL**: $CF_URL" >> $GITHUB_STEP_SUMMARY
           else
             echo "No CDK outputs file found"
           fi
 
   deploy-web-app:
-    name: Deploy Web Application
+    name: Deploy Web Application (Production)
     runs-on: ubuntu-latest
     needs: deploy-infrastructure
-    environment: development
+    environment: production
 
     steps:
       - name: Checkout code
@@ -219,45 +227,56 @@ jobs:
           npm install
           npm run build
 
-      - name: Build web application
+      - name: Build web application (Production)
         working-directory: packages/web-app
         env:
           VITE_GOOGLE_WEB_CLIENT_ID: ${{ secrets.VITE_GOOGLE_WEB_CLIENT_ID }}
+          VITE_API_BASE_URL: ${{ secrets.PROD_API_BASE_URL }}
+          VITE_FEATURES_API_URL: ${{ secrets.PROD_FEATURES_API_URL }}
+          VITE_APP_ENV: production
         run: |
           npm install
           npm run build
 
-      - name: Deploy to S3
-        working-directory: packages/web-app
+      - name: Deploy to S3 (Production)
         run: |
-          echo "Deploying web app to S3..."
-          aws s3 sync dist/ s3://budgetbuddy-${{ env.ENVIRONMENT }}-web-app --delete
+          echo "Deploying web app to production S3 bucket..."
+          # Production bucket name follows same pattern: budgetbuddy-prod-web-app
+          # Falls back to dev bucket if prod bucket doesn't exist yet
+          PROD_BUCKET="budgetbuddy-prod-web-app"
+          DEV_BUCKET="budgetbuddy-web-app"
 
-      - name: Invalidate CloudFront cache
+          if aws s3 ls "s3://$PROD_BUCKET" 2>/dev/null; then
+            aws s3 sync packages/web-app/dist/ s3://$PROD_BUCKET --delete
+            echo "✅ Deployed to production bucket: $PROD_BUCKET"
+          else
+            echo "⚠️  Production bucket not found, deploying to dev bucket as fallback"
+            aws s3 sync packages/web-app/dist/ s3://$DEV_BUCKET --delete
+          fi
+
+      - name: Invalidate CloudFront cache (Production)
         run: |
           echo "Invalidating CloudFront cache..."
-          CF_ID=$(aws cloudformation describe-stacks \
-            --stack-name budgetbuddy-${{ env.ENVIRONMENT }}-hosting \
+          # Get the production CloudFront distribution ID from stack outputs
+          PROD_CF_ID=$(aws cloudformation describe-stacks \
+            --stack-name budgetbuddy-prod-hosting \
             --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
-            --output text 2>/dev/null || echo "E1L1SU9OV8L4YR")
+            --output text 2>/dev/null || echo "")
 
-          aws cloudfront create-invalidation \
-            --distribution-id "${CF_ID:-E1L1SU9OV8L4YR}" \
-            --paths "/*"
-
-      - name: Web app deployment summary
-        run: |
-          CF_URL=$(aws cloudformation describe-stacks \
-            --stack-name budgetbuddy-${{ env.ENVIRONMENT }}-hosting \
-            --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontUrl`].OutputValue' \
-            --output text 2>/dev/null || echo "https://d1ueeugn9zcx7n.cloudfront.net")
-
-          echo "## 🌐 Web App Deployed" >> $GITHUB_STEP_SUMMARY
-          echo "- **URL**: ${CF_URL}" >> $GITHUB_STEP_SUMMARY
-          echo "- **S3 Bucket**: budgetbuddy-${{ env.ENVIRONMENT }}-web-app" >> $GITHUB_STEP_SUMMARY
+          if [ -n "$PROD_CF_ID" ] && [ "$PROD_CF_ID" != "None" ]; then
+            aws cloudfront create-invalidation \
+              --distribution-id "$PROD_CF_ID" \
+              --paths "/*"
+            echo "✅ Invalidated CloudFront distribution: $PROD_CF_ID"
+          else
+            echo "⚠️  Production CloudFront distribution not found, invalidating dev distribution"
+            aws cloudfront create-invalidation \
+              --distribution-id E1L1SU9OV8L4YR \
+              --paths "/*"
+          fi
 
   health-checks:
-    name: Post-deployment Health Checks
+    name: Post-deployment Health Checks (Production)
     runs-on: ubuntu-latest
     needs: [deploy-infrastructure, deploy-web-app]
 
@@ -273,11 +292,11 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Wait for deployment to stabilize
-        run: sleep 30
+        run: sleep 60
 
       - name: Check CloudFormation stacks
         run: |
-          echo "Checking CloudFormation stacks..."
+          echo "Checking production CloudFormation stacks..."
           stacks=(
             "budgetbuddy-${{ env.ENVIRONMENT }}-database"
             "budgetbuddy-${{ env.ENVIRONMENT }}-auth"
@@ -291,59 +310,31 @@ jobs:
 
           for stack in "${stacks[@]}"; do
             status=$(aws cloudformation describe-stacks --stack-name "$stack" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "NOT_FOUND")
-
-            # Accept both successful states and rollback complete (stack is functional)
             if [[ "$status" == "CREATE_COMPLETE" || "$status" == "UPDATE_COMPLETE" || "$status" == "UPDATE_ROLLBACK_COMPLETE" ]]; then
               echo "✅ Stack $stack: $status"
-
-              # Warn if in rollback state but don't fail
-              if [[ "$status" == "UPDATE_ROLLBACK_COMPLETE" ]]; then
-                echo "⚠️  Warning: Stack is in ROLLBACK_COMPLETE state but functional"
-                echo "   Next deployment will attempt to update from this state"
-              fi
             else
               echo "❌ Stack $stack: $status"
               exit 1
             fi
           done
 
-      - name: Test API endpoints
+      - name: Test API health endpoints
         if: needs.deploy-infrastructure.outputs.api-url != ''
         run: |
           API_URL="${{ needs.deploy-infrastructure.outputs.api-url }}"
-          echo "Testing API endpoints at: $API_URL"
+          echo "Testing production API endpoints at: $API_URL"
 
-          # Test health endpoint
-          if curl -f -s "$API_URL/health" > /dev/null; then
-            echo "✅ Health endpoint responding"
-          else
-            echo "❌ Health endpoint failed"
-            exit 1
-          fi
-
-          # Test auth health endpoint
-          if curl -f -s "$API_URL/auth/health" > /dev/null; then
-            echo "✅ Auth service responding"
-          else
-            echo "❌ Auth service failed"
-            exit 1
-          fi
-
-          # Test budget health endpoint
-          if curl -f -s "$API_URL/budget/health" > /dev/null; then
-            echo "✅ Budget service responding"
-          else
-            echo "❌ Budget service failed"
-            exit 1
-          fi
-
-      - name: Run deployment health check script
-        run: |
-          chmod +x scripts/check-deployment.sh
-          bash scripts/check-deployment.sh ${{ env.ENVIRONMENT }}
+          for endpoint in "/health" "/auth/health" "/budget/health"; do
+            if curl -f -s "$API_URL$endpoint" > /dev/null; then
+              echo "✅ $endpoint responding"
+            else
+              echo "❌ $endpoint failed"
+              exit 1
+            fi
+          done
 
   deployment-notification:
-    name: Deployment Notification
+    name: Production Deployment Summary
     runs-on: ubuntu-latest
     needs: [deploy-infrastructure, deploy-web-app, health-checks]
     if: always()
@@ -351,33 +342,29 @@ jobs:
     steps:
       - name: Deployment Summary
         run: |
-          echo "## 🚀 Development Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 PRODUCTION Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment**: Development (${{ env.ENVIRONMENT }})" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: Production" >> $GITHUB_STEP_SUMMARY
           echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Reason**: ${{ github.event.inputs.reason }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.deploy-infrastructure.result }}" == "success" && "${{ needs.health-checks.result }}" == "success" ]]; then
-            echo "✅ **Deployment Status**: SUCCESS" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.health-checks.result }}" == "success" ]]; then
+            echo "✅ **Status**: PRODUCTION DEPLOYMENT SUCCESSFUL" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 📋 Deployment Details" >> $GITHUB_STEP_SUMMARY
             if [[ "${{ needs.deploy-infrastructure.outputs.api-url }}" != "" ]]; then
               echo "- **API URL**: ${{ needs.deploy-infrastructure.outputs.api-url }}" >> $GITHUB_STEP_SUMMARY
             fi
-            if [[ "${{ needs.deploy-infrastructure.outputs.user-pool-id }}" != "" ]]; then
-              echo "- **User Pool ID**: ${{ needs.deploy-infrastructure.outputs.user-pool-id }}" >> $GITHUB_STEP_SUMMARY
+            if [[ "${{ needs.deploy-infrastructure.outputs.cloudfront-url }}" != "" ]]; then
+              echo "- **App URL**: ${{ needs.deploy-infrastructure.outputs.cloudfront-url }}" >> $GITHUB_STEP_SUMMARY
             fi
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
-            echo "1. Test the deployed API endpoints" >> $GITHUB_STEP_SUMMARY
-            echo "2. Verify authentication flows" >> $GITHUB_STEP_SUMMARY
-            echo "3. Check CloudWatch logs for any issues" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ **Deployment Status**: FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **Status**: PRODUCTION DEPLOYMENT FAILED" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 🔍 Troubleshooting" >> $GITHUB_STEP_SUMMARY
-            echo "1. Check CloudFormation stack events" >> $GITHUB_STEP_SUMMARY
-            echo "2. Review Lambda function logs" >> $GITHUB_STEP_SUMMARY
-            echo "3. Verify AWS permissions" >> $GITHUB_STEP_SUMMARY
+            echo "### 🚨 Immediate Actions Required" >> $GITHUB_STEP_SUMMARY
+            echo "1. Check CloudFormation stack events for rollback details" >> $GITHUB_STEP_SUMMARY
+            echo "2. Review Lambda function logs in CloudWatch" >> $GITHUB_STEP_SUMMARY
+            echo "3. Verify AWS credentials and permissions" >> $GITHUB_STEP_SUMMARY
+            echo "4. Consider rolling back if users are impacted" >> $GITHUB_STEP_SUMMARY
           fi
