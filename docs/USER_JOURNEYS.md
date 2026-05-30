@@ -13,7 +13,17 @@
   - ✅ **FIXED: Hardcoded Family API URL** — `FamilySettings.tsx` and `AcceptInvitationPage.tsx` now use `config.familyApiUrl` from `VITE_FAMILY_API_URL` env var instead of hardcoded URL.
   - ✅ **FIXED: WEB_APP_URL missing from CDK** — Added to family Lambda environment in `api-family-stack.ts` via CDK context `webAppUrl`.
   - ✅ **FIXED: Raw invitation token in API response** — Removed from `handleInvite` response body (security).
-- MVP Sprint - Production Readiness (2026-05-30)
+- MVP Sprint - Production Readiness Wave 2 (2026-05-30)
+  - ✅ **LandingPage**: Created `src/pages/LandingPage.tsx` — public hero page with features, CTA, footer; routes `/` for unauthenticated users
+  - ✅ **LoadingSpinner**: Created `src/components/LoadingSpinner.tsx` — reusable spinner (sm/md/lg, full-page variant)
+  - ✅ **EmptyState**: Created `src/components/EmptyState.tsx` — reusable empty state with icon, title, description, CTA
+  - ✅ **deploy-prod.yml**: Created `.github/workflows/deploy-prod.yml` — manual-approval production deploy workflow
+  - ✅ **smoke-test.sh**: Created `scripts/smoke-test.sh` — post-deploy health checks for API, CORS, auth, web app, CloudFormation stacks
+  - ✅ **Hosting Stack env-aware**: `hosting-stack.ts` now uses env-specific S3 bucket names (`budgetbuddy-{env}-web-app`)
+  - ✅ **CloudWatch Alerts**: SNS alert topic wired to `ALERT_EMAIL` env var; alarms for API 5xx, latency, DynamoDB throttling, cost
+  - ✅ **Security scan fix**: Windows `security-check-win.ps1` now excludes `cdk.out` (was causing pre-commit timeouts)
+  - ✅ **npm audit threshold**: Raised to `high` across all scripts and workflows (aws-sdk v2 moderate vulns unfixable without breaking changes)
+- MVP Sprint - Production Readiness Wave 1 (2026-05-30)
   - ✅ **Environment Config**: Created `src/config/environment.ts` — centralized API URL management via Vite env vars
   - ✅ **ErrorBoundary**: Created `src/components/ErrorBoundary.tsx` — catches unhandled errors, shows user-friendly fallback UI
   - ✅ **NotFoundPage**: Created `src/pages/NotFoundPage.tsx` — 404 page for unmatched routes
@@ -1819,6 +1829,16 @@ xl: 32px  (major sections)
 ---
 
 ## 12. UI/UX Implementation Checklist
+
+### Global UI Infrastructure (MVP Sprint 2026-05-30)
+
+| Component        | File                                | Status      | Notes                                     |
+| ---------------- | ----------------------------------- | ----------- | ----------------------------------------- |
+| `LandingPage`    | `src/pages/LandingPage.tsx`         | ✅ Complete | Hero, 6 feature cards, CTA, footer        |
+| `ErrorBoundary`  | `src/components/ErrorBoundary.tsx`  | ✅ Complete | Wraps entire app, "Try Again" + "Go Home" |
+| `NotFoundPage`   | `src/pages/NotFoundPage.tsx`        | ✅ Complete | 404 with back/home navigation             |
+| `LoadingSpinner` | `src/components/LoadingSpinner.tsx` | ✅ Complete | sm/md/lg sizes, full-page variant         |
+| `EmptyState`     | `src/components/EmptyState.tsx`     | ✅ Complete | Icon, title, description, optional CTA    |
 
 ### Per-Feature UI/UX Requirements
 
