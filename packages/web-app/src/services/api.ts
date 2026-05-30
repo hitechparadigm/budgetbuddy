@@ -3,7 +3,9 @@
  * Direct API calls without complex package dependencies
  */
 
-const API_BASE = 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
+import { config } from '../config/environment';
+
+const API_BASE = config.apiBaseUrl;
 
 // Simple token management
 class TokenManager {

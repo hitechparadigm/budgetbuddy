@@ -1,11 +1,12 @@
 /**
  * Simple API Client for Web App
- * Temporary implementation until workspace dependencies work
+ * Handles authentication, token management, and API requests
  */
 
 import type { LoginRequest, RegisterRequest, AuthTokens } from '../types';
+import { config } from '../config/environment';
 
-const API_BASE_URL = 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
+const API_BASE_URL = config.apiBaseUrl;
 
 export class ApiClientError extends Error {
   constructor(
@@ -37,11 +38,6 @@ class SimpleApiClient {
     headers.set('Content-Type', 'application/json');
 
     const accessToken = this.getAccessToken();
-    console.log("API CLIENT DEBUG - Making request:");
-    console.log("  - URL:", url);
-    console.log("  - Method:", options.method || 'GET');
-    console.log("  - Has access token:", !!accessToken);
-    console.log("  - Access token preview:", accessToken ? accessToken.substring(0, 20) + '...' : 'none');
 
     if (accessToken) {
       headers.set('Authorization', `Bearer ${accessToken}`);
@@ -52,6 +48,39 @@ class SimpleApiClient {
         ...options,
         headers,
       });
+
+      // Handle 401 - attempt token refresh
+      if (response.status === 401 && this.getRefreshToken()) {
+        const refreshed = await this.refreshTokens();
+        if (refreshed) {
+          // Retry the original request with new token
+          const newToken = this.getAccessToken();
+          if (newToken) {
+            headers.set('Authorization', `Bearer ${newToken}`);
+          }
+          const retryResponse = await fetch(url, { ...options, headers });
+          if (!retryResponse.ok) {
+            let errorData;
+            try {
+              errorData = await retryResponse.json();
+            } catch {
+              errorData = { message: `HTTP ${retryResponse.status}: ${retryResponse.statusText}` };
+            }
+            throw new ApiClientError(
+              errorData.message || 'An error occurred',
+              retryResponse.status
+            );
+          }
+          return await retryResponse.json();
+        } else {
+          // Refresh failed - clear tokens and redirect to login
+          this.clearTokens();
+          if (typeof window !== 'undefined') {
+            window.location.href = '/auth';
+          }
+          throw new ApiClientError('Session expired. Please log in again.', 401);
+        }
+      }
 
       if (!response.ok) {
         let errorData;
@@ -72,9 +101,42 @@ class SimpleApiClient {
       if (error instanceof ApiClientError) {
         throw error;
       }
-      console.error('Network error details:', error);
       throw new ApiClientError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`, 0);
     }
+  }
+
+  private async refreshTokens(): Promise<boolean> {
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) return false;
+
+      const data = await response.json();
+      if (data.accessToken && data.idToken) {
+        this.setTokens({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken || refreshToken,
+          idToken: data.idToken,
+          expiresIn: data.expiresIn || 3600,
+        });
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  private getRefreshToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('budgetbuddy_refresh_token');
   }
 
   async register(data: RegisterRequest) {
@@ -122,11 +184,6 @@ class SimpleApiClient {
       adjustedAmount: number;
     }>;
   }) {
-    console.log("API CLIENT DEBUG - completeOnboarding called");
-    console.log("  - Data:", data);
-    console.log("  - Access token exists:", !!this.getAccessToken());
-    console.log("  - Access token length:", this.getAccessToken()?.length || 0);
-
     return this.request('/auth/onboarding', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -140,10 +197,10 @@ class SimpleApiClient {
     });
   }
 
-  async post(endpoint: string, data: any) {
+  async post(endpoint: string, data?: any) {
     return this.request(endpoint, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: data !== undefined ? JSON.stringify(data) : undefined,
     });
   }
 

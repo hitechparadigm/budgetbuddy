@@ -54,7 +54,7 @@ export async function getCreditScoreHistory(): Promise<{ history: CreditScoreHis
  * Refresh credit score from credit bureau
  */
 export async function refreshCreditScore(): Promise<CreditScore> {
-  const response = await apiClient.post('/credit-score/refresh');
+  const response = await apiClient.post('/credit-score/refresh', {});
   return response.data;
 }
 
