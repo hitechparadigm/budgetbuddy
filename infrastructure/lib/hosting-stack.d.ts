@@ -16,6 +16,9 @@ import * as cdk from 'aws-cdk-lib';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import { Construct } from 'constructs';
+export interface HostingStackProps extends cdk.StackProps {
+    environment?: string;
+}
 export declare class HostingStack extends cdk.Stack {
     /**
      * S3 bucket for web application hosting
@@ -37,7 +40,7 @@ export declare class HostingStack extends cdk.Stack {
      * Exposed for monitoring and DNS configuration
      */
     adminDistribution: cloudfront.Distribution;
-    constructor(scope: Construct, id: string, props?: cdk.StackProps);
+    constructor(scope: Construct, id: string, props?: HostingStackProps);
     /**
      * Create S3 buckets for hosting web application and admin dashboard
      * Configured for static website hosting with proper security settings

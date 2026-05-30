@@ -231,21 +231,30 @@ jobs:
         working-directory: packages/web-app
         run: |
           echo "Deploying web app to S3..."
-          aws s3 sync dist/ s3://budgetbuddy-web-app --delete
+          aws s3 sync dist/ s3://budgetbuddy-${{ env.ENVIRONMENT }}-web-app --delete
 
       - name: Invalidate CloudFront cache
         run: |
           echo "Invalidating CloudFront cache..."
+          CF_ID=$(aws cloudformation describe-stacks \
+            --stack-name budgetbuddy-${{ env.ENVIRONMENT }}-hosting \
+            --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
+            --output text 2>/dev/null || echo "E1L1SU9OV8L4YR")
+
           aws cloudfront create-invalidation \
-            --distribution-id E1L1SU9OV8L4YR \
+            --distribution-id "${CF_ID:-E1L1SU9OV8L4YR}" \
             --paths "/*"
 
       - name: Web app deployment summary
         run: |
+          CF_URL=$(aws cloudformation describe-stacks \
+            --stack-name budgetbuddy-${{ env.ENVIRONMENT }}-hosting \
+            --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontUrl`].OutputValue' \
+            --output text 2>/dev/null || echo "https://d1ueeugn9zcx7n.cloudfront.net")
+
           echo "## 🌐 Web App Deployed" >> $GITHUB_STEP_SUMMARY
-          echo "- **URL**: https://d1ueeugn9zcx7n.cloudfront.net" >> $GITHUB_STEP_SUMMARY
-          echo "- **S3 Bucket**: budgetbuddy-web-app" >> $GITHUB_STEP_SUMMARY
-          echo "- **CloudFront**: E1L1SU9OV8L4YR" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: ${CF_URL}" >> $GITHUB_STEP_SUMMARY
+          echo "- **S3 Bucket**: budgetbuddy-${{ env.ENVIRONMENT }}-web-app" >> $GITHUB_STEP_SUMMARY
 
   health-checks:
     name: Post-deployment Health Checks

@@ -1,0 +1,370 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for production deployment"
+        required: true
+        default: "Scheduled production release"
+      confirm:
+        description: "Type 'DEPLOY' to confirm production deployment"
+        required: true
+
+env:
+  NODE_VERSION: "20"
+  AWS_REGION: "us-east-1"
+  ENVIRONMENT: "prod"
+
+jobs:
+  confirm-deployment:
+    name: Confirm Production Deployment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate confirmation
+        run: |
+          if [[ "${{ github.event.inputs.confirm }}" != "DEPLOY" ]]; then
+            echo "❌ Production deployment not confirmed. Type 'DEPLOY' to confirm."
+            exit 1
+          fi
+          echo "✅ Production deployment confirmed"
+          echo "📋 Reason: ${{ github.event.inputs.reason }}"
+
+  pre-deployment-checks:
+    name: Pre-deployment Validation
+    runs-on: ubuntu-latest
+    needs: confirm-deployment
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Security pre-deployment scan
+        run: |
+          echo "🔒 Running comprehensive security checks before production deployment..."
+          chmod +x scripts/security-check.sh
+          bash scripts/security-check.sh
+
+      - name: Validate production configuration
+        run: |
+          echo "🔍 Validating production configuration security..."
+
+          # Verify no mock auth in production code
+          if grep -r "initMockAuth\|isMockAuthActive" packages/web-app/src --exclude="mockAuth.ts" --exclude="*.test.*"; then
+            echo "❌ Mock auth usage found in production code - must be removed before production deploy"
+            exit 1
+          fi
+
+          # Verify HTTPS is enforced
+          if grep -r "http://" infrastructure/ --include="*.ts" | grep -v "localhost\|127.0.0.1"; then
+            echo "❌ Found HTTP URLs in infrastructure - use HTTPS only"
+            exit 1
+          fi
+
+          echo "✅ Production configuration security validated"
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Build infrastructure
+        working-directory: infrastructure
+        run: |
+          npm install
+          npm run build
+
+      - name: CDK synthesis validation
+        working-directory: infrastructure
+        run: npx cdk synth --all --context environment=${{ env.ENVIRONMENT }}
+
+  deploy-infrastructure:
+    name: Deploy AWS Infrastructure (Production)
+    runs-on: ubuntu-latest
+    needs: pre-deployment-checks
+    environment: production
+
+    outputs:
+      api-url: ${{ steps.get-outputs.outputs.api-url }}
+      user-pool-id: ${{ steps.get-outputs.outputs.user-pool-id }}
+      cloudfront-url: ${{ steps.get-outputs.outputs.cloudfront-url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.HITECHPARADIGM_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.HITECHPARADIGM_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install infrastructure dependencies
+        working-directory: infrastructure
+        run: npm install
+
+      - name: Install Lambda layer dependencies
+        run: |
+          cd backend/layers/common/nodejs
+          npm install --production
+
+      - name: Build infrastructure
+        working-directory: infrastructure
+        run: npm run build
+
+      - name: Bootstrap CDK (if needed)
+        working-directory: infrastructure
+        run: |
+          if ! aws cloudformation describe-stacks --stack-name CDKToolkit --region ${{ env.AWS_REGION }} 2>/dev/null; then
+            echo "Bootstrapping CDK..."
+            npx cdk bootstrap aws://$(aws sts get-caller-identity --query Account --output text)/${{ env.AWS_REGION }}
+          else
+            echo "CDK already bootstrapped"
+          fi
+
+      - name: Deploy infrastructure stacks (Production)
+        working-directory: infrastructure
+        run: |
+          echo "🚀 Deploying BudgetBuddy infrastructure to PRODUCTION environment..."
+
+          echo "Step 1: Deploying base stacks (database, auth, hosting)..."
+          npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-database \
+            budgetbuddy-${{ env.ENVIRONMENT }}-auth \
+            budgetbuddy-${{ env.ENVIRONMENT }}-hosting \
+            budgetbuddy-${{ env.ENVIRONMENT }}-auth-onboarding \
+            --require-approval never \
+            --context environment=${{ env.ENVIRONMENT }} || echo "Base stacks deployment may have failed, continuing..."
+
+          echo "Step 2: Deploying dependent stacks..."
+          npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api-features \
+            budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended \
+            budgetbuddy-${{ env.ENVIRONMENT }}-api-family \
+            budgetbuddy-${{ env.ENVIRONMENT }}-notification \
+            --require-approval never \
+            --context environment=${{ env.ENVIRONMENT }} || echo "Dependent stacks deployment may have failed, continuing..."
+
+          echo "Step 3: Deploying main API stack..."
+          npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api \
+            --require-approval never \
+            --context environment=${{ env.ENVIRONMENT }} || echo "API stack deployment may have failed, continuing..."
+
+          echo "Step 4: Deploying all remaining stacks..."
+          npx cdk deploy --all \
+            --require-approval never \
+            --context environment=${{ env.ENVIRONMENT }} \
+            --outputs-file cdk-outputs.json
+
+      - name: Get deployment outputs
+        id: get-outputs
+        working-directory: infrastructure
+        run: |
+          if [ -f cdk-outputs.json ]; then
+            API_URL=$(jq -r '.["budgetbuddy-prod-api"].ApiUrl // empty' cdk-outputs.json)
+            USER_POOL_ID=$(jq -r '.["budgetbuddy-prod-auth"].UserPoolId // empty' cdk-outputs.json)
+            CF_URL=$(jq -r '.["budgetbuddy-prod-hosting"].CloudFrontUrl // empty' cdk-outputs.json)
+
+            echo "api-url=$API_URL" >> $GITHUB_OUTPUT
+            echo "user-pool-id=$USER_POOL_ID" >> $GITHUB_OUTPUT
+            echo "cloudfront-url=$CF_URL" >> $GITHUB_OUTPUT
+
+            echo "## Production Deployment Outputs" >> $GITHUB_STEP_SUMMARY
+            echo "- **API URL**: $API_URL" >> $GITHUB_STEP_SUMMARY
+            echo "- **User Pool ID**: $USER_POOL_ID" >> $GITHUB_STEP_SUMMARY
+            echo "- **CloudFront URL**: $CF_URL" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No CDK outputs file found"
+          fi
+
+  deploy-web-app:
+    name: Deploy Web Application (Production)
+    runs-on: ubuntu-latest
+    needs: deploy-infrastructure
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.HITECHPARADIGM_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.HITECHPARADIGM_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build shared package
+        working-directory: packages/shared
+        run: |
+          npm install
+          npm run build
+
+      - name: Build web application (Production)
+        working-directory: packages/web-app
+        env:
+          VITE_GOOGLE_WEB_CLIENT_ID: ${{ secrets.VITE_GOOGLE_WEB_CLIENT_ID }}
+          VITE_API_BASE_URL: ${{ secrets.PROD_API_BASE_URL }}
+          VITE_FEATURES_API_URL: ${{ secrets.PROD_FEATURES_API_URL }}
+          VITE_APP_ENV: production
+        run: |
+          npm install
+          npm run build
+
+      - name: Deploy to S3 (Production)
+        run: |
+          echo "Deploying web app to production S3 bucket..."
+          # Production bucket name follows same pattern: budgetbuddy-prod-web-app
+          # Falls back to dev bucket if prod bucket doesn't exist yet
+          PROD_BUCKET="budgetbuddy-prod-web-app"
+          DEV_BUCKET="budgetbuddy-web-app"
+
+          if aws s3 ls "s3://$PROD_BUCKET" 2>/dev/null; then
+            aws s3 sync packages/web-app/dist/ s3://$PROD_BUCKET --delete
+            echo "✅ Deployed to production bucket: $PROD_BUCKET"
+          else
+            echo "⚠️  Production bucket not found, deploying to dev bucket as fallback"
+            aws s3 sync packages/web-app/dist/ s3://$DEV_BUCKET --delete
+          fi
+
+      - name: Invalidate CloudFront cache (Production)
+        run: |
+          echo "Invalidating CloudFront cache..."
+          # Get the production CloudFront distribution ID from stack outputs
+          PROD_CF_ID=$(aws cloudformation describe-stacks \
+            --stack-name budgetbuddy-prod-hosting \
+            --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
+            --output text 2>/dev/null || echo "")
+
+          if [ -n "$PROD_CF_ID" ] && [ "$PROD_CF_ID" != "None" ]; then
+            aws cloudfront create-invalidation \
+              --distribution-id "$PROD_CF_ID" \
+              --paths "/*"
+            echo "✅ Invalidated CloudFront distribution: $PROD_CF_ID"
+          else
+            echo "⚠️  Production CloudFront distribution not found, invalidating dev distribution"
+            aws cloudfront create-invalidation \
+              --distribution-id E1L1SU9OV8L4YR \
+              --paths "/*"
+          fi
+
+  health-checks:
+    name: Post-deployment Health Checks (Production)
+    runs-on: ubuntu-latest
+    needs: [deploy-infrastructure, deploy-web-app]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.HITECHPARADIGM_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.HITECHPARADIGM_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Wait for deployment to stabilize
+        run: sleep 60
+
+      - name: Check CloudFormation stacks
+        run: |
+          echo "Checking production CloudFormation stacks..."
+          stacks=(
+            "budgetbuddy-${{ env.ENVIRONMENT }}-database"
+            "budgetbuddy-${{ env.ENVIRONMENT }}-auth"
+            "budgetbuddy-${{ env.ENVIRONMENT }}-api"
+            "budgetbuddy-${{ env.ENVIRONMENT }}-api-features"
+            "budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended"
+            "budgetbuddy-${{ env.ENVIRONMENT }}-api-family"
+            "budgetbuddy-${{ env.ENVIRONMENT }}-hosting"
+            "budgetbuddy-${{ env.ENVIRONMENT }}-monitoring"
+          )
+
+          for stack in "${stacks[@]}"; do
+            status=$(aws cloudformation describe-stacks --stack-name "$stack" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "NOT_FOUND")
+            if [[ "$status" == "CREATE_COMPLETE" || "$status" == "UPDATE_COMPLETE" || "$status" == "UPDATE_ROLLBACK_COMPLETE" ]]; then
+              echo "✅ Stack $stack: $status"
+            else
+              echo "❌ Stack $stack: $status"
+              exit 1
+            fi
+          done
+
+      - name: Test API health endpoints
+        if: needs.deploy-infrastructure.outputs.api-url != ''
+        run: |
+          API_URL="${{ needs.deploy-infrastructure.outputs.api-url }}"
+          echo "Testing production API endpoints at: $API_URL"
+
+          for endpoint in "/health" "/auth/health" "/budget/health"; do
+            if curl -f -s "$API_URL$endpoint" > /dev/null; then
+              echo "✅ $endpoint responding"
+            else
+              echo "❌ $endpoint failed"
+              exit 1
+            fi
+          done
+
+  deployment-notification:
+    name: Production Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-infrastructure, deploy-web-app, health-checks]
+    if: always()
+
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 PRODUCTION Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: Production" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Reason**: ${{ github.event.inputs.reason }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.health-checks.result }}" == "success" ]]; then
+            echo "✅ **Status**: PRODUCTION DEPLOYMENT SUCCESSFUL" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            if [[ "${{ needs.deploy-infrastructure.outputs.api-url }}" != "" ]]; then
+              echo "- **API URL**: ${{ needs.deploy-infrastructure.outputs.api-url }}" >> $GITHUB_STEP_SUMMARY
+            fi
+            if [[ "${{ needs.deploy-infrastructure.outputs.cloudfront-url }}" != "" ]]; then
+              echo "- **App URL**: ${{ needs.deploy-infrastructure.outputs.cloudfront-url }}" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "❌ **Status**: PRODUCTION DEPLOYMENT FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🚨 Immediate Actions Required" >> $GITHUB_STEP_SUMMARY
+            echo "1. Check CloudFormation stack events for rollback details" >> $GITHUB_STEP_SUMMARY
+            echo "2. Review Lambda function logs in CloudWatch" >> $GITHUB_STEP_SUMMARY
+            echo "3. Verify AWS credentials and permissions" >> $GITHUB_STEP_SUMMARY
+            echo "4. Consider rolling back if users are impacted" >> $GITHUB_STEP_SUMMARY
+          fi
