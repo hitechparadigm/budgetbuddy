@@ -144,6 +144,8 @@ jobs:
 
       - name: Deploy infrastructure stacks (Production)
         working-directory: infrastructure
+        env:
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
         run: |
           echo "🚀 Deploying BudgetBuddy infrastructure to PRODUCTION environment..."
 

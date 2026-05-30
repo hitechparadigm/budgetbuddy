@@ -27,6 +27,7 @@ export interface MonitoringStackProps extends cdk.StackProps {
     table: dynamodb.Table;
     userPool: cognito.UserPool;
     api: apigateway.RestApi;
+    alertEmail?: string;
 }
 export declare class MonitoringStack extends cdk.Stack {
     /**

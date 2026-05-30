@@ -162,6 +162,7 @@ const monitoringStack = new MonitoringStack(app, `${stackPrefix}-monitoring`, {
   table: databaseStack.table,
   userPool: authStack.userPool,
   api: apiStack.api,
+  alertEmail: process.env.ALERT_EMAIL,
 });
 
 // Add stack dependencies to ensure proper deployment order
