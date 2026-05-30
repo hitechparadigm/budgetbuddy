@@ -6,6 +6,13 @@
 
 **Recent Updates**:
 
+- Family Invitation Bug Fixes (2026-05-30)
+  - ✅ **FIXED: Accept invitation was returning 401** — `AcceptInvitationPage.tsx` was sending `access_token` instead of `id_token` to the Cognito authorizer. Every accept attempt silently failed.
+  - ✅ **FIXED: Pending invitations never loaded** — `handleGetInvitations` used invalid `begins_with` on a DynamoDB partition key in `FilterExpression`. Removed the clause; scan now works correctly. "Pending Invitations" section and Cancel/Resend buttons now visible.
+  - ✅ **FIXED: familyId not updated after accepting** — `handleAcceptInvitation` now writes `familyId`, `familyRole`, `familyJoinedAt` to the user's DynamoDB profile. Previously, accepted members still saw their own budget instead of the shared family budget.
+  - ✅ **FIXED: Hardcoded Family API URL** — `FamilySettings.tsx` and `AcceptInvitationPage.tsx` now use `config.familyApiUrl` from `VITE_FAMILY_API_URL` env var instead of hardcoded URL.
+  - ✅ **FIXED: WEB_APP_URL missing from CDK** — Added to family Lambda environment in `api-family-stack.ts` via CDK context `webAppUrl`.
+  - ✅ **FIXED: Raw invitation token in API response** — Removed from `handleInvite` response body (security).
 - MVP Sprint - Production Readiness (2026-05-30)
   - ✅ **Environment Config**: Created `src/config/environment.ts` — centralized API URL management via Vite env vars
   - ✅ **ErrorBoundary**: Created `src/components/ErrorBoundary.tsx` — catches unhandled errors, shows user-friendly fallback UI
