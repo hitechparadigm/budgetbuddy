@@ -1,11 +1,20 @@
 # BudgetBuddy User Journeys & Component Mapping
 
-**Last Updated**: 2026-04-01
+**Last Updated**: 2026-05-30
 **Purpose**: Comprehensive mapping of user journeys to frontend/backend components
 **Status**: Living Document - Update as features are implemented
 
 **Recent Updates**:
 
+- MVP Sprint - Production Readiness (2026-05-30)
+  - ✅ **Environment Config**: Created `src/config/environment.ts` — centralized API URL management via Vite env vars
+  - ✅ **ErrorBoundary**: Created `src/components/ErrorBoundary.tsx` — catches unhandled errors, shows user-friendly fallback UI
+  - ✅ **NotFoundPage**: Created `src/pages/NotFoundPage.tsx` — 404 page for unmatched routes
+  - ✅ **Token Refresh**: Added automatic token refresh logic to `apiClient.ts` — handles 401 → refresh → retry
+  - ✅ **Google OAuth Fix**: Fixed `AuthContext.tsx` to use API Gateway URL instead of relative `/api/auth/google`
+  - ✅ **API URL Centralization**: All 12 web service files now use `config.apiBaseUrl` instead of hardcoded URLs
+  - ✅ **Mock Auth Removed**: Removed `initMockAuth()` from production builds in `App.tsx`
+  - 📋 **MVP Sprint Plan**: Created `docs/MVP-SPRINT-PLAN.md` with 13 tasks across 2 weeks
 - Component Audit & Gap Sync (2026-04-01)
   - ✅ **Transaction Planning Backend**: Added `transaction-planning` Lambda to Journey 2 (Daily Budget Management) — full CRUD, recurring transaction generation, and execution
   - ✅ **Reconciliation Backend**: Added `reconciliation` Lambda to Journey 3.1 (Manual Account Management) — standalone reconciliation service
