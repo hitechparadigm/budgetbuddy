@@ -1,5 +1,29 @@
 # Development Log
 
+## 2026-05-30 - Family Invitation Bug Fixes (Session 130)
+
+### Session Summary
+
+**Duration**: 30 minutes
+**Focus**: Investigate and fix all family invitation bugs blocking the MVP
+**Outcome**: 6 bugs fixed across backend Lambda, CDK stack, and frontend components
+
+### Work Completed
+
+1. **Root cause analysis**: Used context-gatherer to map the full invitation flow and identify all bugs
+2. **Backend fixes** (`backend/functions/family/index.js`):
+   - Fixed `handleGetInvitations`: removed invalid `begins_with` on DynamoDB partition key in FilterExpression
+   - Fixed `handleAcceptInvitation`: now updates user's `familyId` in DynamoDB profile after accepting
+   - Removed raw invitation token from `handleInvite` API response (security)
+3. **CDK fix** (`infrastructure/lib/api-family-stack.ts`): Added `WEB_APP_URL` env var to family Lambda
+4. **Frontend fixes**:
+   - `AcceptInvitationPage.tsx`: Fixed `access_token` → `id_token` (was causing 401 on every accept)
+   - `AcceptInvitationPage.tsx`: Fixed `isAuthenticated` check to use `id_token`
+   - `AcceptInvitationPage.tsx`: Fixed misleading error in register→login chain
+   - `FamilySettings.tsx` + `AcceptInvitationPage.tsx`: Replaced hardcoded API URL with `config.familyApiUrl`
+   - `environment.ts`: Added `familyApiUrl` field
+   - `.env.development` + `.env.production`: Added `VITE_FAMILY_API_URL`
+
 ## 2026-05-30 - Accessibility & Dark Mode Heuristic Review (Session 129)
 
 ### Session Summary

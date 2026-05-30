@@ -1,5 +1,42 @@
 # Changelog
 
+## [1.9.115] - 2026-05-30
+
+### 🐛 Family Invitation Bug Fixes
+
+- **Fix: Pending invitations never loaded** (`backend/functions/family/index.js`)
+  - `handleGetInvitations` used invalid `begins_with(GSI4PK, ...)` in `FilterExpression` — `begins_with` is only valid on sort keys in `KeyConditionExpression`, not on partition keys in `FilterExpression`
+  - Fixed: removed `begins_with` clause, now scans with `familyId = :familyId AND #status = :status`
+  - Result: "Pending Invitations" section now renders correctly; Cancel/Resend buttons visible
+
+- **Fix: Accept invitation returned 401** (`packages/web-app/src/pages/AcceptInvitationPage.tsx`)
+  - `handleAcceptInvitation` was sending `access_token` to API Gateway Cognito authorizer which requires `id_token`
+  - Fixed: changed to `budgetbuddy_id_token` for all auth checks in `AcceptInvitationPage`
+  - Also fixed `isAuthenticated` check to use `id_token` instead of `access_token`
+
+- **Fix: User familyId not updated after accepting invitation** (`backend/functions/family/index.js`)
+  - After accepting, user's `USER#<id>/PROFILE` record was not updated with new `familyId`
+  - Fixed: `handleAcceptInvitation` now updates `familyId`, `familyRole`, `familyJoinedAt` in DynamoDB profile
+  - Result: subsequent API calls (budget, transactions) now use the correct shared familyId
+
+- **Fix: Hardcoded Family API Gateway URL** (`FamilySettings.tsx`, `AcceptInvitationPage.tsx`)
+  - Both files had hardcoded `https://gp8jspfboa.execute-api.us-east-1.amazonaws.com/v1`
+  - Fixed: now use `config.familyApiUrl` from `environment.ts` (driven by `VITE_FAMILY_API_URL`)
+  - Added `VITE_FAMILY_API_URL` to `.env.development` and `.env.production`
+  - Added `familyApiUrl` to `src/config/environment.ts`
+
+- **Fix: WEB_APP_URL missing from CDK family stack** (`infrastructure/lib/api-family-stack.ts`)
+  - Family Lambda was using hardcoded `https://app.budgetbuddy.com` fallback in invitation emails
+  - Fixed: added `WEB_APP_URL` to Lambda environment, driven by CDK context `webAppUrl`
+
+- **Fix: Raw invitation token in API response** (`backend/functions/family/index.js`)
+  - `handleInvite` was returning plaintext token in response body (security issue)
+  - Fixed: removed token from response
+
+- **Fix: Misleading error in register→login chain** (`AcceptInvitationPage.tsx`)
+  - `handleRegister` called `handleLogin` which had its own `finally` block, causing double `setAuthenticating(false)` and wrong error message if login failed after successful registration
+  - Fixed: `handleRegister` now clears its own state before delegating to `handleLogin`
+
 ## [1.9.114] - 2026-05-30
 
 ### ♿ Accessibility & Dark Mode - Heuristic Review Fixes

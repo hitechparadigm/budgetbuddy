@@ -192,6 +192,7 @@ export class ApiFamilyStack extends cdk.Stack {
       environment: {
         ...commonProps.environment,
         FAMILY_API_URL: apiUrlWithoutStage, // Use URL without stage reference to avoid circular dependency
+        WEB_APP_URL: this.node.tryGetContext('webAppUrl') || 'https://app.budgetbuddy.com',
       },
     });
 

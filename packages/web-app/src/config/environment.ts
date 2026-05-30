@@ -12,6 +12,9 @@ export const config = {
   /** Features API Gateway URL (learn, tips, insights, pattern-detection, budget-planning) */
   featuresApiUrl: import.meta.env.VITE_FEATURES_API_URL || 'https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1',
 
+  /** Family API Gateway URL (separate stack to avoid circular dependencies) */
+  familyApiUrl: import.meta.env.VITE_FAMILY_API_URL || 'https://gp8jspfboa.execute-api.us-east-1.amazonaws.com/v1',
+
   /** Google OAuth Web Client ID */
   googleClientId: import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID || '',
 

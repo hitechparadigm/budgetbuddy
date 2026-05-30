@@ -5,9 +5,10 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { config } from "../config/environment";
 
 // Family API is on a separate API Gateway (api-family stack)
-const API_BASE = "https://gp8jspfboa.execute-api.us-east-1.amazonaws.com/v1";
+const API_BASE = config.familyApiUrl;
 
 interface FamilyMember {
   userId: string;
@@ -33,6 +34,9 @@ export const FamilySettings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [invitationWarning, setInvitationWarning] = useState<string | null>(
+    null,
+  );
 
   // Invite form state
   const [showInviteForm, setShowInviteForm] = useState(false);
@@ -99,10 +103,21 @@ export const FamilySettings: React.FC = () => {
             if (invitationsResponse.ok) {
               const invitationsData = await invitationsResponse.json();
               setPendingInvitations(invitationsData.invitations || []);
+              setInvitationWarning(null);
+            } else {
+              const errBody = await invitationsResponse
+                .json()
+                .catch(() => ({}));
+              setInvitationWarning(
+                errBody.error ||
+                  "Could not load pending invitations. Please try again.",
+              );
             }
           } catch (invErr) {
             console.error("Failed to load invitations:", invErr);
-            // Don't fail the whole load if invitations fail
+            setInvitationWarning(
+              "Could not load pending invitations. Please try again.",
+            );
           }
         }
       }
@@ -432,6 +447,12 @@ export const FamilySettings: React.FC = () => {
       {success && (
         <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
           {success}
+        </div>
+      )}
+
+      {invitationWarning && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800">
+          ⚠️ {invitationWarning}
         </div>
       )}
 
