@@ -150,24 +150,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
           ${isMobile && !collapsed ? "fixed inset-y-0 left-0 z-50 w-64" : ""}
           ${!isMobile && collapsed ? "w-16" : ""}
           ${!isMobile && !collapsed ? "w-64" : ""}
-          bg-white border-r border-gray-200 flex flex-col transition-all duration-300
+          bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300
         `}
         aria-label="Main navigation"
       >
         {/* Header with logo and collapse toggle */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">$</span>
               </div>
               {!collapsed && (
-                <span className="font-semibold text-gray-900">BudgetBuddy</span>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  BudgetBuddy
+                </span>
               )}
             </div>
             <button
               onClick={onToggleCollapse}
-              className="text-gray-400 hover:text-gray-600 p-1 rounded"
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded"
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               <svg
@@ -210,8 +212,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     ${collapsed && !isMobile ? "justify-center px-2" : "space-x-3 px-3"}
                     ${
                       isActive(item.path)
-                        ? "bg-green-50 text-green-700 font-medium"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                        ? "bg-green-50 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-300 font-medium border-l-3 border-green-700 dark:border-emerald-400"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
                     }
                   `}
                   title={collapsed ? item.label : undefined}
@@ -234,18 +236,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         {/* User Profile Section */}
-        <div className="mt-auto border-t border-gray-200 p-4">
+        <div className="mt-auto border-t border-gray-200 dark:border-gray-700 p-4">
           {!collapsed && (
             <div className="mb-3">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                  <span className="text-gray-600">👤</span>
+                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                  <span className="text-gray-600 dark:text-gray-300">👤</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                     {userName || "User"}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {userEmail || ""}
                   </p>
                 </div>
@@ -255,7 +257,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={handleLogout}
             className={`
-              w-full flex items-center py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors
+              w-full flex items-center py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors
               ${collapsed && !isMobile ? "justify-center px-2" : "space-x-3 px-3"}
             `}
             title={collapsed ? "Logout" : undefined}
