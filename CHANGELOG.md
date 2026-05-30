@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.9.114] - 2026-05-30
+
+### ♿ Accessibility & Dark Mode - Heuristic Review Fixes
+
+- **Accessibility Fixes**:
+  - Added `id="main-content"` + `tabIndex={-1}` to AppLayout `<main>` for skip link target
+  - Added focus trap, Escape key handler, `role="dialog"`, `aria-modal`, `aria-labelledby` to TransactionModal
+  - Added ARIA tab roles (`role="tablist"`, `role="tab"`, `aria-selected`, `role="tabpanel"`) to AuthPage
+  - Added `aria-hidden="true"` to emoji icons in Navigation.tsx
+  - Improved focus indicators on LoginForm links (ring instead of underline-only)
+  - Added `border-l-3` indicator for active sidebar nav item (color-blind support)
+  - Replaced `alert()` forgot password with inline support message
+
+- **Design Token System** (`index.css`, `tailwind.config.js`):
+  - Added CSS custom properties for all semantic colors (background, foreground, surface, border, muted, accent, primary, success, destructive, ring, sidebar)
+  - Light and dark mode token values defined in `:root` and `.dark`
+  - Tailwind config extended to reference CSS variables for gradual migration
+
+- **Dark Mode Support**:
+  - Sidebar: container, borders, nav items (active/inactive), user profile, logout
+  - AppLayout: background, mobile header
+  - TransactionModal: dialog, title, labels, inputs, error, buttons
+  - AuthPage: page background, card, tabs, footer
+  - LoginForm: card, headings, labels, divider
+
 ## [1.9.113] - 2026-04-02
 
 ### 📝 Documentation & Dependency Fix

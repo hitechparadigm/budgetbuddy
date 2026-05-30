@@ -1,5 +1,30 @@
 # Development Log
 
+## 2026-05-30 - Accessibility & Dark Mode Heuristic Review (Session 129)
+
+### Session Summary
+
+**Duration**: 45 minutes
+**Focus**: Design system heuristic review of web app UI, fixing accessibility and dark mode gaps
+**Outcome**: 5 high-tier, 7 medium-tier, and 5 low-tier findings identified; all critical fixes applied
+
+### Work Completed
+
+1. **Heuristic Review**: Scanned all pages, components, and layout files against design-system-scaffold power guidelines (54 heuristics across 9 domains)
+2. **High-Tier Fixes (Accessibility)**:
+   - TransactionModal: focus trap + Escape + ARIA dialog roles
+   - AuthPage: ARIA tab roles (tablist, tab, aria-selected, tabpanel)
+   - Navigation: aria-hidden on emoji icons
+   - LoginForm: visible focus indicators (ring instead of underline)
+   - AppLayout: skip link target (id="main-content")
+3. **Medium-Tier Fixes**:
+   - Sidebar active state: added border-l indicator for color-blind users
+   - Forgot password: replaced alert() with inline support message
+4. **Low-Tier Fixes (Theme & Dark Mode)**:
+   - Created CSS custom properties design token system (light + dark)
+   - Extended tailwind.config.js to reference CSS variables
+   - Added dark: variants to Sidebar, AppLayout, TransactionModal, AuthPage, LoginForm
+
 ## 2026-04-02 - USER_JOURNEYS Audit & AWS SDK Fix (Session 128)
 
 ### Session Summary

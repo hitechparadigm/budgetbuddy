@@ -9,7 +9,7 @@
  * **Validates: Requirements 1.1-1.9, 4.1-4.8**
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Account } from "../../hooks/useAccounts";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
@@ -230,20 +230,79 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     onClose();
   };
 
+  // Focus trap: track focusable elements and trap Tab key
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        handleClose();
+        return;
+      }
+
+      if (e.key !== "Tab" || !modalRef.current) return;
+
+      const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
+  // Auto-focus first input when modal opens
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      const firstInput = modalRef.current.querySelector<HTMLElement>(
+        "select, input, button",
+      );
+      if (firstInput) {
+        setTimeout(() => firstInput.focus(), 50);
+      }
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const canSaveTemplate = formData.categoryId && formData.description;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={handleClose}
+      aria-hidden="true"
+    >
       <div
-        className="bg-white rounded-lg max-w-md w-full p-6"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transaction-modal-title"
+        className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3
+              id="transaction-modal-title"
+              className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+            >
               {type === "income"
                 ? "Add Income Transaction"
                 : "Add Expense Transaction"}
@@ -305,7 +364,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div>
             <label
               htmlFor="categoryId"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
               Category *
             </label>
@@ -314,7 +373,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               name="categoryId"
               value={formData.categoryId}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             >
               <option value="">Select a category...</option>
@@ -330,7 +389,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div>
             <label
               htmlFor="accountId"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
               Account (optional)
             </label>
@@ -339,7 +398,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               name="accountId"
               value={formData.accountId || ""}
               onChange={handleAccountChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">No account selected</option>
               {ACCOUNT_TYPE_ORDER.map((accountType) => {
@@ -372,7 +431,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div>
             <label
               htmlFor="amount"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
               Amount *
             </label>
@@ -386,7 +445,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 min="0.01"
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-8 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="0.00"
                 required
               />
@@ -397,7 +456,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div>
             <label
               htmlFor="description"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
               Description
             </label>
@@ -407,7 +466,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter description..."
             />
           </div>
@@ -416,7 +475,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           <div>
             <label
               htmlFor="date"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
               Date *
             </label>
@@ -426,7 +485,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               name="date"
               value={formData.date}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
           </div>
@@ -442,7 +501,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             />
             <label
               htmlFor="createAnother"
-              className="ml-2 text-sm text-gray-700"
+              className="ml-2 text-sm text-gray-700 dark:text-gray-300"
             >
               Create another transaction after saving
             </label>
@@ -450,7 +509,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
               {error}
             </div>
           )}
@@ -460,7 +519,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
               disabled={isSubmitting}
             >
               {createAnother && batchCount > 0 ? "Done" : "Cancel"}
