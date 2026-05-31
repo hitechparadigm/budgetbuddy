@@ -54,7 +54,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       setLoading(true);
       // Use the correct API Gateway URL, not a relative path
       const response = await fetch(
-        `${config.apiBaseUrl}/notifications/preferences?userId=${userId}`,
+        `${config.featuresApiUrl}/notifications/preferences?userId=${userId}`,
         { headers: getAuthHeaders() },
       );
 
@@ -107,7 +107,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       }
 
       const response = await fetch(
-        `${config.apiBaseUrl}/notifications/preferences`,
+        `${config.featuresApiUrl}/notifications/preferences`,
         {
           method: "PUT",
           headers: getAuthHeaders(),

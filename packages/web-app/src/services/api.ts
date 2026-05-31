@@ -43,7 +43,7 @@ export class ApiError extends Error {
   }
 }
 
-// Core API function
+// Core API function — uses id_token for API Gateway Cognito authorizer
 async function apiCall<T = any>(
   endpoint: string,
   options: RequestInit = {}
@@ -53,8 +53,13 @@ async function apiCall<T = any>(
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
 
-  // Add auth token if available
-  const token = TokenManager.getToken();
+  // API Gateway Cognito authorizer requires the id_token, not access_token
+  const idToken = typeof window !== 'undefined'
+    ? localStorage.getItem('budgetbuddy_id_token')
+    : null;
+  const accessToken = TokenManager.getToken();
+  const token = idToken || accessToken;
+
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }

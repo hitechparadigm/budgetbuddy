@@ -1,6 +1,74 @@
 # Changelog
 
-## [1.9.115] - 2026-05-30
+## [1.9.116] - 2026-05-31
+
+### 🐛 Bug Fixes (Round 2 — User Testing Session)
+
+#### Bug 1: Category sorting — budget categories and dropdown not sorted A-Z
+
+- **Root cause**: `budget.groups.map()` renders categories in the order returned by the backend (insertion order). No sort applied on render.
+- **Fix**: Sort `group.categories` A-Z by name before rendering in `BudgetPage.tsx`; sort `categories` array A-Z before passing to `TransactionModal`
+- **Files**: `packages/web-app/src/pages/BudgetPage.tsx`
+
+#### Bug 2: Settings — Country/City not pre-populated
+
+- **Root cause**: `profileApi.getProfile()` returns `profile` as the raw response body, but `SettingsPage.tsx` reads `profile.location` — the API returns the profile directly (not nested under `.data`). The `profileApi.getProfile()` in `api.ts` calls `/auth/profile` which returns the profile object directly, but `apiClient.getProfile()` in `apiClient.ts` also calls `/auth/profile`. Two different API clients exist and `SettingsPage` uses `profileApi` from `api.ts` which may not parse the response correctly.
+- **Fix**: Ensure `profileApi.getProfile()` returns the parsed profile with `location`, `currency`, `timezone` fields; add fallback parsing
+- **Files**: `packages/web-app/src/services/api.ts`, `packages/web-app/src/pages/SettingsPage.tsx`
+
+#### Bug 3: Currency selected at registration shows USD in Settings
+
+- **Root cause**: `apiClient.completeOnboarding()` TypeScript type definition does NOT include `currency` field — TypeScript strips it from the serialized body. Backend never receives currency, defaults to `"USD"`.
+- **Fix**: Add `currency?: string` to `completeOnboarding` type signature in `apiClient.ts`
+- **Files**: `packages/web-app/src/utils/apiClient.ts`
+
+#### Bug 4: Dark theme only partial
+
+- **Root cause**: CSS variables for dark mode ARE correctly defined in `index.css`. The `ThemeContext` correctly applies `dark` class to `<html>`. However, `BudgetPage.tsx` and other pages use hardcoded Tailwind classes (`bg-gray-50`, `text-gray-900`, `bg-white`) without `dark:` variants instead of using the CSS variable-based design tokens (`bg-background`, `text-foreground`, `bg-surface`).
+- **Fix**: Replace hardcoded light-mode classes with CSS variable tokens in `BudgetPage.tsx` group headers and category rows; fix `ProtectedLayout` loading state which uses `bg-gray-50` without dark variant
+- **Files**: `packages/web-app/src/pages/BudgetPage.tsx`, `packages/web-app/src/components/layout/ProtectedLayout.tsx`
+
+#### Bug 5: "Failed to load notification preferences" error
+
+- **Root cause**: `NotificationSettings.tsx` was using relative URL `/api/notifications/preferences` — fixed in previous session but the fix used `config.apiBaseUrl` which points to the main API Gateway. The notifications Lambda is deployed in the `api-features` stack on a **different API Gateway URL** (`0poeu07vth.execute-api.us-east-1.amazonaws.com`), not the main one.
+- **Fix**: Use `config.featuresApiUrl` instead of `config.apiBaseUrl` in `NotificationSettings.tsx`
+- **Files**: `packages/web-app/src/components/NotificationSettings.tsx`
+
+#### Bug 6: Family invitation email never arrives
+
+- **Root cause**: The `FAMILY_API_URL` env var is set in CDK but the email Lambda (`budgetbuddy-email-family`) uses SES. SES in sandbox mode can only send to **verified email addresses**. The invited email address is not verified in SES sandbox.
+- **Fix**: Document SES sandbox limitation; add clear UI message that email delivery requires SES production access OR the recipient must be a verified SES address in dev
+- **Additional**: The accept URL path was fixed (`/family/accept?token=`) in previous session
+
+#### Bug 7: Dark screen after login in Edge private window
+
+- **Root cause**: Edge private window blocks `localStorage`. `ThemeContext` reads `localStorage.getItem('budgetbuddy-theme-mode')` which throws or returns null in private mode. The inline script in `index.html` also reads localStorage. When localStorage is blocked, the app may crash silently.
+- **Fix**: Wrap all `localStorage` access in try/catch; fall back to system theme if localStorage unavailable
+- **Files**: `packages/web-app/src/contexts/ThemeContext.tsx`, `packages/web-app/index.html`
+
+#### Bug 8: Goals — can't edit/delete (previous fix didn't work)
+
+- **Root cause**: Previous fix added Edit/Delete buttons to `GoalsPage.tsx` but the `GoalFormPage.tsx` edit mode reads `goalId` from URL params and calls `GET /goals/:goalId` — this endpoint may not exist or returns 404. Also the Delete button calls `DELETE /goals/:goalId` but the backend route may not be wired.
+- **Fix**: Verify backend routes exist; fix GoalFormPage to handle edit correctly
+- **Files**: `packages/web-app/src/pages/GoalsPage.tsx`, `packages/web-app/src/pages/GoalFormPage.tsx`
+
+#### Bug 9 (New): No account selection at transaction entry — account should be created at registration
+
+- **Root cause**: `TransactionModal` has an account dropdown but it's populated from `accounts` prop which comes from a separate Plaid/accounts API call. New users have no accounts. The requirement is to create a default "Cash" account at registration/onboarding.
+- **Fix**: Create a default "Cash" account during onboarding completion in `auth-onboarding` Lambda
+- **Files**: `backend/functions/auth-onboarding/index.js`
+
+#### Bug 10 (New): Income/Savings/Giving must always appear at top of budget groups
+
+- **Root cause**: `budget.groups.map()` renders groups in backend order. No fixed ordering enforced on frontend.
+- **Fix**: Sort groups so `income` type always first, `savings` second, `expense` last before rendering
+- **Files**: `packages/web-app/src/pages/BudgetPage.tsx`
+
+#### Bug 11 (New): Can't add custom groups/sub-categories
+
+- **Root cause**: The "Add Budget Item" modal only adds categories to existing groups. There is no UI to create a new group.
+- **Fix**: Add "New Group" option to the budget item modal; allow naming a new group and selecting its type
+- **Files**: `packages/web-app/src/pages/BudgetPage.tsx`, `packages/web-app/src/components/budget/AddBudgetItem.tsx`
 
 ### 🐛 Family Invitation Bug Fixes
 
