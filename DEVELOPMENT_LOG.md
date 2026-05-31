@@ -1,5 +1,37 @@
 # Development Log
 
+## 2026-05-31 - E2E CI/CD Integration (Session 131)
+
+### Session Summary
+
+**Duration**: 30 minutes
+**Focus**: Implement E2E testing CI/CD integration (tasks 17, 19 of e2e-testing-infrastructure spec)
+**Outcome**: GitHub Actions workflow, branch protection docs, and E2E README created
+
+### Work Completed
+
+1. **E2E GitHub Actions workflow** (`.github/workflows/e2e-tests.yml`):
+   - Triggers after `Deploy to Development` succeeds (post-deploy validation)
+   - Supports `workflow_dispatch` for manual runs with configurable URL and browser
+   - Chromium runs automatically; Firefox/WebKit available on manual trigger
+   - Uploads screenshots, videos, and HTML reports as artifacts on failure
+   - 35-minute timeout with 2 retries (matching playwright.config.js)
+2. **Branch protection docs** (`.github/BRANCH_PROTECTION.md`):
+   - Documents all required status checks for `develop` branch
+   - Documents required GitHub secrets for E2E tests
+   - Documents minimal IAM permissions for E2E test user
+3. **E2E testing README** (`tests/e2e/README.md`):
+   - Local setup, required env vars, test structure overview
+   - Code examples for page objects and base fixture usage
+   - Debugging guide (artifacts, tracing, headed mode)
+   - Performance benchmarks and cost control thresholds
+
+### Files Changed
+
+- `.github/workflows/e2e-tests.yml` — new file
+- `.github/BRANCH_PROTECTION.md` — new file
+- `tests/e2e/README.md` — new file
+
 ## 2026-05-30 - Family Invitation Bug Fixes (Session 130)
 
 ### Session Summary
