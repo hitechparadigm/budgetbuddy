@@ -76,8 +76,14 @@ exports.handler = async (event) => {
       throw new AuthenticationError("User ID not found in token");
     }
 
-    // Extract familyId from JWT if available
-    const jwtFamilyId = payload["custom:familyId"] || null;
+    // Extract familyId from JWT if available — guard against Cognito storing "undefined" as a string
+    const rawFamilyId = payload["custom:familyId"];
+    const jwtFamilyId =
+      rawFamilyId &&
+      String(rawFamilyId).trim() !== "undefined" &&
+      String(rawFamilyId).trim() !== "null"
+        ? rawFamilyId
+        : null;
 
     // Parse and validate request body
     if (!event.body) {
