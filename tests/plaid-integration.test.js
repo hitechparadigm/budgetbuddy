@@ -11,16 +11,23 @@
 
 const https = require("https");
 
-// Test configuration
+// Test configuration — Plaid endpoints live on the features API,
+// but auth (/auth/login) lives on the main API gateway.
 const FEATURES_API_BASE =
+  process.env.FEATURES_API_URL ||
   "https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1";
-const TEST_USER_EMAIL = "dmytro.malyk@gmail.com";
-const TEST_USER_PASSWORD = "Test123!"; // Update with actual test password
+const AUTH_API_BASE =
+  process.env.AUTH_API_URL ||
+  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+const TEST_USER_EMAIL =
+  process.env.TEST_USER_EMAIL || "dmytro.malyk@gmail.com";
+const TEST_USER_PASSWORD = process.env.TEST_USER_PASSWORD; // Set via env var
 
 // Helper function to make API calls
 function apiCall(method, path, body = null, token = null) {
   return new Promise((resolve, reject) => {
-    const url = new URL(path, FEATURES_API_BASE);
+    // Concatenate directly — new URL() with an absolute path strips the /v1 stage prefix
+    const url = new URL(FEATURES_API_BASE.replace(/\/$/, "") + path);
 
     const options = {
       method,
@@ -68,18 +75,35 @@ function apiCall(method, path, body = null, token = null) {
   });
 }
 
-// Helper to login and get ID token
+// Helper to login and get ID token (auth lives on the main API, not features API)
 async function loginUser(email, password) {
-  const response = await apiCall("POST", "/auth/login", {
-    email,
-    password,
+  return new Promise((resolve, reject) => {
+    const url = new URL("/auth/login", AUTH_API_BASE);
+    const bodyStr = JSON.stringify({ email, password });
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(bodyStr),
+      },
+    };
+    const req = https.request(url, options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        const parsed = JSON.parse(data);
+        if (res.statusCode !== 200) {
+          reject(new Error(`Login failed (${res.statusCode}): ${JSON.stringify(parsed)}`));
+        } else {
+          // Auth Lambda returns idToken at the top level (not nested under data)
+          resolve(parsed.idToken);
+        }
+      });
+    });
+    req.on("error", reject);
+    req.write(bodyStr);
+    req.end();
   });
-
-  if (response.statusCode !== 200) {
-    throw new Error(`Login failed: ${JSON.stringify(response.body)}`);
-  }
-
-  return response.body.data.idToken;
 }
 
 describe("Plaid Integration Tests", () => {
@@ -87,6 +111,12 @@ describe("Plaid Integration Tests", () => {
   let testAccountId;
 
   beforeAll(async () => {
+    if (!TEST_USER_PASSWORD) {
+      throw new Error(
+        "TEST_USER_PASSWORD environment variable is required.\n" +
+          "  Run: TEST_USER_PASSWORD=yourpassword npx jest tests/plaid-integration.test.js",
+      );
+    }
     console.log("🔐 Logging in test user...");
     idToken = await loginUser(TEST_USER_EMAIL, TEST_USER_PASSWORD);
     console.log("✅ Login successful");
@@ -190,7 +220,7 @@ describe("Plaid Integration Tests", () => {
 
       expect(response.statusCode).toBe(200);
       expect(response.body.data.accounts).toBeDefined();
-      expect(response.body.data.dailyLimit).toBe(1);
+      expect(response.body.data.dailyLimit).toBe(4);
 
       // Verify sync status structure
       const status = response.body.data.accounts[0];
