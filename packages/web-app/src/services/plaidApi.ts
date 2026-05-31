@@ -7,7 +7,7 @@
 
 import { config } from '../config/environment';
 
-const API_BASE_URL = config.apiBaseUrl;
+const API_BASE_URL = config.featuresApiUrl;
 
 export interface LinkedAccount {
   accountId: string;
