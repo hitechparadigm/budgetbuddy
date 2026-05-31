@@ -1,12 +1,13 @@
 name: E2E Tests
 
 on:
-  # Run after dev deployment succeeds
-  workflow_run:
-    workflows: ["Deploy to Development"]
-    types: [completed]
-    branches: [develop]
-  # Allow manual runs
+  # E2E tests are not yet complete — disabled automatic runs to reduce noise
+  # Re-enable by adding workflow_run trigger once tests are stable
+  # workflow_run:
+  #   workflows: ["Deploy to Development"]
+  #   types: [completed]
+  #   branches: [develop]
+  # Allow manual runs only
   workflow_dispatch:
     inputs:
       base_url:
@@ -102,7 +103,6 @@ jobs:
       needs.check-trigger.outputs.should_run == 'true' &&
       (github.event_name == 'workflow_dispatch' && (inputs.browsers == 'firefox' || inputs.browsers == 'all'))
     timeout-minutes: 35
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -156,7 +156,6 @@ jobs:
       needs.check-trigger.outputs.should_run == 'true' &&
       (github.event_name == 'workflow_dispatch' && (inputs.browsers == 'webkit' || inputs.browsers == 'all'))
     timeout-minutes: 35
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
