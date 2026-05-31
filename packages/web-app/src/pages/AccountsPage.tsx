@@ -17,6 +17,7 @@ import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 import { AccountCard } from "../components/accounts/AccountCard";
 import { AddAccountModal } from "../components/accounts/AddAccountModal";
 import { ReconcileModal } from "../components/accounts/ReconcileModal";
+import { BankAccounts } from "../components/BankAccounts";
 import {
   useAccounts,
   useAccountsSummary,
@@ -56,6 +57,9 @@ export const AccountsPage: React.FC = () => {
   const { summary, isLoading: summaryLoading } = useAccountsSummary();
   const { createAccount, deleteAccount, reconcileAccount, setAccountTracking } =
     useAccountMutations();
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<"manual" | "connected">("manual");
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -191,20 +195,53 @@ export const AccountsPage: React.FC = () => {
               <h1 className="text-xl font-semibold text-gray-900">Accounts</h1>
             </div>
             <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-              >
-                <span>+</span>
-                <span>Add Manual Account</span>
-              </button>
+              {activeTab === "manual" && (
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                >
+                  <span>+</span>
+                  <span>Add Manual Account</span>
+                </button>
+              )}
             </div>
+          </div>
+
+          {/* Tab switcher */}
+          <div className="flex space-x-1 mt-4 border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab("manual")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                activeTab === "manual"
+                  ? "border-green-600 text-green-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Manual Accounts
+            </button>
+            <button
+              onClick={() => setActiveTab("connected")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center space-x-1 ${
+                activeTab === "connected"
+                  ? "border-green-600 text-green-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <span>🏦</span>
+              <span>Connected Banks</span>
+            </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 py-6">
+        {/* Connected Banks Tab */}
+        {activeTab === "connected" && <BankAccounts />}
+
+        {/* Manual Accounts Tab */}
+        {activeTab === "manual" && (
+          <div>
         {/* Summary Cards */}
         {!summaryLoading && summary && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -277,6 +314,8 @@ export const AccountsPage: React.FC = () => {
             {ACCOUNT_TYPE_ORDER.map((type) =>
               renderAccountGroup(type, accountsByType[type]),
             )}
+          </div>
+        )}
           </div>
         )}
       </main>
