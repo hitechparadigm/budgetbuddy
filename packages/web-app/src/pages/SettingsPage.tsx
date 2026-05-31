@@ -70,9 +70,19 @@ export const SettingsPage: React.FC = () => {
           setCurrency(profile.currency);
         }
 
-        // Set location from profile
+        // Set location from profile — handle both object and JSON string forms
         if (profile.location) {
-          setLocationForm(profile.location);
+          const loc =
+            typeof profile.location === "string"
+              ? JSON.parse(profile.location)
+              : profile.location;
+          if (loc && (loc.country || loc.city)) {
+            setLocationForm({
+              country: loc.country || "",
+              city: loc.city || "",
+              zipCode: loc.zipCode || "",
+            });
+          }
         }
       } catch (error) {
         console.error("Failed to load profile:", error);

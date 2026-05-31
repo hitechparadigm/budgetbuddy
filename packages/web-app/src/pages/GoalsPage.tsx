@@ -185,6 +185,34 @@ export const GoalsPage: React.FC = () => {
     setShowContributeModal(true);
   };
 
+  // Delete goal permanently
+  const handleDeleteGoal = async (goal: Goal) => {
+    if (!window.confirm(`Delete "${goal.name}"? This cannot be undone.`))
+      return;
+
+    try {
+      setError(null);
+      const token = localStorage.getItem("budgetbuddy_id_token");
+      if (!token) {
+        navigate("/auth");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/goals/${goal.goalId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to delete goal");
+      await loadGoals();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete goal");
+    }
+  };
+
   // Archive/restore goal
   const handleArchiveGoal = async (goal: Goal, archive: boolean) => {
     try {
@@ -538,12 +566,30 @@ export const GoalsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       {goal.status === "active" && (
-                        <button
-                          onClick={() => openContributeModal(goal)}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                        >
-                          + Add Funds
-                        </button>
+                        <>
+                          <button
+                            onClick={() =>
+                              navigate(`/goals/${goal.goalId}/edit`)
+                            }
+                            className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Edit goal"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDeleteGoal(goal)}
+                            className="px-3 py-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete goal"
+                          >
+                            🗑️
+                          </button>
+                          <button
+                            onClick={() => openContributeModal(goal)}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                          >
+                            + Add Funds
+                          </button>
+                        </>
                       )}
                       {(goal.status === "completed" ||
                         goal.status === "paused") && (

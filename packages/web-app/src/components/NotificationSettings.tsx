@@ -1,4 +1,12 @@
+/**
+ * Notification Settings Component
+ *
+ * Allows users to configure push notification preferences.
+ * Uses correct API Gateway URL and Tailwind dark mode classes.
+ */
+
 import React, { useState, useEffect } from "react";
+import { config } from "../config/environment";
 
 interface NotificationPreferences {
   budgetAlertsEnabled: boolean;
@@ -29,21 +37,40 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     text: string;
   } | null>(null);
 
-  // Load preferences on mount
   useEffect(() => {
     loadPreferences();
   }, [userId]);
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("budgetbuddy_id_token");
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+  };
+
   const loadPreferences = async () => {
     try {
       setLoading(true);
+      // Use the correct API Gateway URL, not a relative path
       const response = await fetch(
-        `/api/notifications/preferences?userId=${userId}`,
+        `${config.apiBaseUrl}/notifications/preferences?userId=${userId}`,
+        { headers: getAuthHeaders() },
       );
 
       if (response.ok) {
         const data = await response.json();
-        setPreferences(data);
+        const prefs = data.data || data;
+        if (prefs && typeof prefs === "object") {
+          setPreferences((prev) => ({ ...prev, ...prefs }));
+        }
+      } else if (response.status === 404) {
+        // No preferences saved yet — use defaults silently
+      } else {
+        setMessage({
+          type: "error",
+          text: "Failed to load notification preferences",
+        });
       }
     } catch (error) {
       console.error("Error loading preferences:", error);
@@ -61,7 +88,6 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       setSaving(true);
       setMessage(null);
 
-      // Validate time formats
       if (!isValidTimeFormat(preferences.reminderTime)) {
         setMessage({
           type: "error",
@@ -80,21 +106,19 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
         return;
       }
 
-      const response = await fetch("/api/notifications/preferences", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${config.apiBaseUrl}/notifications/preferences`,
+        {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ userId, preferences }),
         },
-        body: JSON.stringify({
-          userId,
-          preferences,
-        }),
-      });
+      );
 
       if (response.ok) {
         setMessage({
           type: "success",
-          text: "Notification preferences saved successfully!",
+          text: "Notification preferences saved!",
         });
       } else {
         setMessage({ type: "error", text: "Failed to save preferences" });
@@ -107,108 +131,155 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     }
   };
 
-  const isValidTimeFormat = (time: string): boolean => {
-    return /^([01]\d|2[0-3]):([0-5]\d)$/.test(time);
-  };
+  const isValidTimeFormat = (time: string): boolean =>
+    /^([01]\d|2[0-3]):([0-5]\d)$/.test(time);
 
   const handleToggle = (
     field: "budgetAlertsEnabled" | "dailyRemindersEnabled",
   ) => {
-    setPreferences((prev) => ({
-      ...prev,
-      [field]: !prev[field],
-    }));
+    setPreferences((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
   const handleTimeChange = (
     field: "reminderTime" | "quietHoursStart" | "quietHoursEnd",
     value: string,
   ) => {
-    setPreferences((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setPreferences((prev) => ({ ...prev, [field]: value }));
   };
 
   if (loading) {
     return (
-      <div className="notification-settings">
-        <h3>Notification Preferences</h3>
-        <p>Loading...</p>
+      <div className="flex items-center gap-3 py-4 text-gray-500 dark:text-gray-400">
+        <div className="h-5 w-5 rounded-full border-2 border-gray-300 border-t-emerald-600 animate-spin" />
+        <span className="text-sm">Loading notification preferences...</span>
       </div>
     );
   }
 
   return (
-    <div className="notification-settings">
-      <h3>Notification Preferences</h3>
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        Notification Preferences
+      </h3>
 
       {message && (
-        <div className={`message ${message.type}`}>{message.text}</div>
+        <div
+          className={`p-3 rounded-lg text-sm ${
+            message.type === "success"
+              ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300"
+              : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300"
+          }`}
+        >
+          {message.text}
+        </div>
       )}
 
-      <div className="setting-group">
-        <label className="toggle-label">
-          <input
-            type="checkbox"
-            checked={preferences.budgetAlertsEnabled}
-            onChange={() => handleToggle("budgetAlertsEnabled")}
+      {/* Budget Alerts */}
+      <div className="flex items-start justify-between py-4 border-b border-gray-200 dark:border-gray-700">
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">
+            Budget Alerts
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Receive alerts when spending reaches 80%, 90%, or 100% of your
+            budget
+          </p>
+        </div>
+        <button
+          role="switch"
+          aria-checked={preferences.budgetAlertsEnabled}
+          onClick={() => handleToggle("budgetAlertsEnabled")}
+          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+            preferences.budgetAlertsEnabled
+              ? "bg-emerald-600"
+              : "bg-gray-200 dark:bg-gray-700"
+          }`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+              preferences.budgetAlertsEnabled
+                ? "translate-x-5"
+                : "translate-x-0"
+            }`}
           />
-          <span className="toggle-text">Budget Alerts</span>
-        </label>
-        <p className="setting-description">
-          Receive alerts when spending reaches 80%, 90%, or 100% of your budget
-        </p>
+        </button>
       </div>
 
-      <div className="setting-group">
-        <label className="toggle-label">
-          <input
-            type="checkbox"
-            checked={preferences.dailyRemindersEnabled}
-            onChange={() => handleToggle("dailyRemindersEnabled")}
+      {/* Daily Reminders */}
+      <div className="flex items-start justify-between py-4 border-b border-gray-200 dark:border-gray-700">
+        <div>
+          <p className="font-medium text-gray-900 dark:text-white">
+            Daily Reminders
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Receive daily reminders to log your expenses
+          </p>
+        </div>
+        <button
+          role="switch"
+          aria-checked={preferences.dailyRemindersEnabled}
+          onClick={() => handleToggle("dailyRemindersEnabled")}
+          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+            preferences.dailyRemindersEnabled
+              ? "bg-emerald-600"
+              : "bg-gray-200 dark:bg-gray-700"
+          }`}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+              preferences.dailyRemindersEnabled
+                ? "translate-x-5"
+                : "translate-x-0"
+            }`}
           />
-          <span className="toggle-text">Daily Reminders</span>
-        </label>
-        <p className="setting-description">
-          Receive daily reminders to log your expenses
-        </p>
+        </button>
       </div>
 
-      <div className="setting-group">
-        <label htmlFor="reminderTime">Reminder Time</label>
-        <input
-          id="reminderTime"
-          type="time"
-          value={preferences.reminderTime}
-          onChange={(e) => handleTimeChange("reminderTime", e.target.value)}
-          className="time-input"
-        />
-        <p className="setting-description">
-          Time of day to receive daily reminders (24-hour format)
-        </p>
-      </div>
+      {/* Reminder Time */}
+      {preferences.dailyRemindersEnabled && (
+        <div className="py-4 border-b border-gray-200 dark:border-gray-700">
+          <label
+            htmlFor="reminderTime"
+            className="block font-medium text-gray-900 dark:text-white mb-2"
+          >
+            Reminder Time
+          </label>
+          <input
+            id="reminderTime"
+            type="time"
+            value={preferences.reminderTime}
+            onChange={(e) => handleTimeChange("reminderTime", e.target.value)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          />
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Time of day to receive daily reminders
+          </p>
+        </div>
+      )}
 
-      <div className="setting-group">
-        <label>Quiet Hours</label>
-        <div className="time-range">
+      {/* Quiet Hours */}
+      <div className="py-4">
+        <p className="font-medium text-gray-900 dark:text-white mb-2">
+          Quiet Hours
+        </p>
+        <div className="flex items-center gap-3">
           <input
             type="time"
             value={preferences.quietHoursStart}
             onChange={(e) =>
               handleTimeChange("quietHoursStart", e.target.value)
             }
-            className="time-input"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
-          <span className="time-separator">to</span>
+          <span className="text-gray-500 dark:text-gray-400">to</span>
           <input
             type="time"
             value={preferences.quietHoursEnd}
             onChange={(e) => handleTimeChange("quietHoursEnd", e.target.value)}
-            className="time-input"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
-        <p className="setting-description">
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           No notifications will be sent during these hours
         </p>
       </div>
@@ -216,121 +287,10 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       <button
         onClick={savePreferences}
         disabled={saving}
-        className="save-button"
+        className="w-full px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
       >
         {saving ? "Saving..." : "Save Preferences"}
       </button>
-
-      <style jsx>{`
-        .notification-settings {
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-
-        h3 {
-          margin-bottom: 20px;
-          font-size: 24px;
-          font-weight: 600;
-        }
-
-        .message {
-          padding: 12px;
-          border-radius: 4px;
-          margin-bottom: 20px;
-        }
-
-        .message.success {
-          background-color: #d4edda;
-          color: #155724;
-          border: 1px solid #c3e6cb;
-        }
-
-        .message.error {
-          background-color: #f8d7da;
-          color: #721c24;
-          border: 1px solid #f5c6cb;
-        }
-
-        .setting-group {
-          margin-bottom: 24px;
-          padding-bottom: 24px;
-          border-bottom: 1px solid #e0e0e0;
-        }
-
-        .setting-group:last-of-type {
-          border-bottom: none;
-        }
-
-        .toggle-label {
-          display: flex;
-          align-items: center;
-          cursor: pointer;
-          font-size: 16px;
-          font-weight: 500;
-        }
-
-        .toggle-label input[type="checkbox"] {
-          width: 20px;
-          height: 20px;
-          margin-right: 12px;
-          cursor: pointer;
-        }
-
-        .toggle-text {
-          user-select: none;
-        }
-
-        .setting-description {
-          margin-top: 8px;
-          font-size: 14px;
-          color: #666;
-        }
-
-        label {
-          display: block;
-          margin-bottom: 8px;
-          font-weight: 500;
-        }
-
-        .time-input {
-          padding: 8px 12px;
-          border: 1px solid #ccc;
-          border-radius: 4px;
-          font-size: 16px;
-        }
-
-        .time-range {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .time-separator {
-          color: #666;
-        }
-
-        .save-button {
-          padding: 12px 24px;
-          background-color: #4caf50;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          font-size: 16px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: background-color 0.2s;
-        }
-
-        .save-button:hover:not(:disabled) {
-          background-color: #45a049;
-        }
-
-        .save-button:disabled {
-          background-color: #ccc;
-          cursor: not-allowed;
-        }
-      `}</style>
     </div>
   );
 };
