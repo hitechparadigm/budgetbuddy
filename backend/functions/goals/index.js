@@ -15,7 +15,7 @@ const {
   generateId,
   dynamoHelpers,
   logger,
-  FamilyIdResolver,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
 const { checkPermission } = require("/opt/nodejs/shared");
@@ -135,15 +135,14 @@ async function getGoals(event, user) {
   const permissionError = checkPermission(event, "budget:view");
   if (permissionError) return permissionError;
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
 
-  logger.info("Getting goals", { familyId });
+  BudgetAccessResolver.assertPermission(role, "budget.read", budgetStatus);
 
-  const goals = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  logger.info("Getting goals", { budgetId });
+
+  const goals = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -196,14 +195,13 @@ async function getGoal(event, user, goalId) {
   const permissionError = checkPermission(event, "budget:view");
   if (permissionError) return permissionError;
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+
+  BudgetAccessResolver.assertPermission(role, "budget.read", budgetStatus);
 
   const goal = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `GOAL#${goalId}`,
   );
 
@@ -225,11 +223,10 @@ async function createGoal(event, user) {
   const permissionError = checkPermission(event, "budget:create");
   if (permissionError) return permissionError;
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+
+  BudgetAccessResolver.assertPermission(role, "budget.edit", budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -240,7 +237,7 @@ async function createGoal(event, user) {
   }
 
   // Check goal limit (max 10 active goals)
-  const existingGoals = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const existingGoals = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND #status = :active AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeNames: { "#status": "status" },
@@ -260,11 +257,11 @@ async function createGoal(event, user) {
   const priority = existingGoals.length + 1;
 
   const goal = {
-    PK: `FAMILY#${familyId}`,
+    PK: `BUDGET#${budgetId}`,
     SK: `GOAL#${goalId}`,
     entityType: "GOAL",
     goalId,
-    familyId,
+    budgetId,
     name: body.name,
     icon: body.icon || "🎯",
     targetAmount: body.targetAmount,
@@ -296,7 +293,7 @@ async function createGoal(event, user) {
 
   logger.info("Goal created successfully", {
     goalId,
-    familyId,
+    budgetId,
     name: body.name,
   });
 
@@ -311,16 +308,15 @@ async function updateGoal(event, user, goalId) {
   const permissionError = checkPermission(event, "budget:edit");
   if (permissionError) return permissionError;
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+
+  BudgetAccessResolver.assertPermission(role, "budget.edit", budgetStatus);
 
   const body = parseRequestBody(event.body);
 
   const existingGoal = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `GOAL#${goalId}`,
   );
   if (!existingGoal || existingGoal.isDeleted) {
@@ -358,12 +354,12 @@ async function updateGoal(event, user, goalId) {
   }
 
   const updatedGoal = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `GOAL#${goalId}`,
     updates,
   );
 
-  logger.info("Goal updated successfully", { goalId, familyId });
+  logger.info("Goal updated successfully", { goalId, budgetId });
 
   return successResponse(
     formatGoalResponse(updatedGoal),
@@ -379,11 +375,10 @@ async function contributeToGoal(event, user, goalId) {
   const permissionError = checkPermission(event, "budget:edit");
   if (permissionError) return permissionError;
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+
+  BudgetAccessResolver.assertPermission(role, "budget.edit", budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -392,7 +387,7 @@ async function contributeToGoal(event, user, goalId) {
   }
 
   const existingGoal = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `GOAL#${goalId}`,
   );
   if (!existingGoal || existingGoal.isDeleted) {
@@ -426,7 +421,7 @@ async function contributeToGoal(event, user, goalId) {
   // Send milestone notifications (async, don't block response)
   if (milestones.newMilestones.length > 0) {
     sendMilestoneNotifications(
-      familyId,
+      budgetId,
       milestones.newMilestones,
       existingGoal,
     ).catch((err) =>
@@ -456,14 +451,14 @@ async function contributeToGoal(event, user, goalId) {
   };
 
   const result = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `GOAL#${goalId}`,
     updates,
   );
 
   logger.info("Contribution added to goal", {
     goalId,
-    familyId,
+    budgetId,
     amount: body.amount,
     newTotal: newAmount,
     progress: progress.progressPercent,
@@ -488,11 +483,10 @@ async function reorderGoals(event, user) {
   const permissionError = checkPermission(event, "budget:edit");
   if (permissionError) return permissionError;
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+
+  BudgetAccessResolver.assertPermission(role, "budget.edit", budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -504,7 +498,7 @@ async function reorderGoals(event, user) {
 
   // Update priority for each goal
   const updatePromises = body.goalIds.map((goalId, index) =>
-    dynamoHelpers.updateItem(`FAMILY#${familyId}`, `GOAL#${goalId}`, {
+    dynamoHelpers.updateItem(`BUDGET#${budgetId}`, `GOAL#${goalId}`, {
       priority: index + 1,
       updatedAt: currentTime,
     }),
@@ -512,7 +506,7 @@ async function reorderGoals(event, user) {
 
   await Promise.all(updatePromises);
 
-  logger.info("Goals reordered", { familyId, goalCount: body.goalIds.length });
+  logger.info("Goals reordered", { budgetId, goalCount: body.goalIds.length });
 
   return successResponse(null, "Goals reordered successfully");
 }
@@ -525,14 +519,13 @@ async function deleteGoal(event, user, goalId) {
   const permissionError = checkPermission(event, "budget:delete");
   if (permissionError) return permissionError;
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+
+  BudgetAccessResolver.assertPermission(role, "budget.edit", budgetStatus);
 
   const existingGoal = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `GOAL#${goalId}`,
   );
   if (!existingGoal || existingGoal.isDeleted) {
@@ -540,13 +533,13 @@ async function deleteGoal(event, user, goalId) {
   }
 
   // Soft delete
-  await dynamoHelpers.updateItem(`FAMILY#${familyId}`, `GOAL#${goalId}`, {
+  await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, `GOAL#${goalId}`, {
     isDeleted: true,
     deletedAt: new Date().toISOString(),
     deletedBy: user.userId,
   });
 
-  logger.info("Goal deleted", { goalId, familyId });
+  logger.info("Goal deleted", { goalId, budgetId });
 
   return successResponse(null, "Goal deleted successfully");
 }
@@ -670,22 +663,22 @@ function formatGoalResponse(goal) {
 
 /**
  * Send push notifications for milestone achievements
- * @param {string} familyId - Family ID to send notifications to
+ * @param {string} budgetId - Budget ID to send notifications to
  * @param {Array} newMilestones - Array of milestone objects with threshold and message
  * @param {Object} goal - The goal object
  */
-async function sendMilestoneNotifications(familyId, newMilestones, goal) {
+async function sendMilestoneNotifications(budgetId, newMilestones, goal) {
   try {
-    // Get all family members to notify
-    const familyMembers = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    // Get all budget members to notify
+    const budgetMembers = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       FilterExpression: "entityType = :type",
       ExpressionAttributeValues: { ":type": "MEMBER" },
     });
 
-    // Get user IDs from family members
-    const userIds = familyMembers.map((m) => m.userId).filter(Boolean);
+    // Get user IDs from budget members
+    const userIds = budgetMembers.map((m) => m.userId).filter(Boolean);
     if (userIds.length === 0) {
-      logger.info("No family members to notify for milestone");
+      logger.info("No budget members to notify for milestone");
       return;
     }
 
@@ -703,7 +696,7 @@ async function sendMilestoneNotifications(familyId, newMilestones, goal) {
           entityType: "NOTIFICATION",
           notificationId,
           userId,
-          familyId,
+          budgetId,
           type: "goal_milestone",
           title: `🎯 Goal Milestone Reached!`,
           body: milestone.message,
@@ -722,7 +715,7 @@ async function sendMilestoneNotifications(familyId, newMilestones, goal) {
 
     await Promise.all(notificationPromises);
     logger.info("Milestone notifications stored", {
-      familyId,
+      budgetId,
       milestoneCount: newMilestones.length,
       userCount: userIds.length,
     });
@@ -731,7 +724,7 @@ async function sendMilestoneNotifications(familyId, newMilestones, goal) {
     // notification service that polls for undelivered notifications
     // or via SNS/SQS integration
   } catch (error) {
-    logger.error("Error sending milestone notifications", error, { familyId });
+    logger.error("Error sending milestone notifications", error, { budgetId });
     throw error;
   }
 }

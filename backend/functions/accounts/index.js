@@ -4,20 +4,20 @@
  * Handles account CRUD operations, balance tracking, and reconciliation.
  * Supports both manual accounts and connected accounts (via Plaid).
  *
- * Version: 1.0.0
+ * Version: 2.0.0 — Budget model (BUDGET# keys, BudgetAccessResolver)
  */
 
 const {
   successResponse,
   errorResponse,
+  createResponse,
   parseRequestBody,
   getUserFromEvent,
   dynamoHelpers,
   logger,
-  FamilyIdResolver,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
-const { checkPermission } = require("/opt/nodejs/shared");
 const service = require("./service");
 
 /**
@@ -40,7 +40,7 @@ exports.handler = async (event, context) => {
         {
           status: "healthy",
           service: "accounts",
-          version: "1.0.0",
+          version: "2.0.0",
         },
         "Accounts service is healthy",
       );
@@ -60,47 +60,40 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Extract user information from JWT token
-    const user = getUserFromEvent(event);
-    logger.info("User authenticated", {
-      userId: user.userId,
-      familyId: user.familyId,
+    // Extract user information from JWT token (userId only — no familyId)
+    const { userId } = getUserFromEvent(event);
+    logger.info("User authenticated", { userId });
+
+    // Resolve budget access from DynamoDB (REQ-3)
+    const { budgetId, role, budgetStatus } =
+      await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+
+    logger.info("Budget access resolved", {
+      userId,
+      budgetId,
+      role,
+      budgetStatus,
     });
-
-    // Resolve family ID
-    const familyId = await FamilyIdResolver.resolveFamilyId(
-      user.userId,
-      user.familyId,
-      dynamoHelpers,
-    );
-
-    FamilyIdResolver.logFamilyIdResolution(
-      "accounts-service",
-      httpMethod,
-      user.userId,
-      familyId,
-      user.familyId ? "jwt" : "dynamodb-or-fallback",
-    );
 
     // Route to appropriate handler
     // GET /accounts - List all accounts
     if (httpMethod === "GET" && path === "/accounts") {
-      return await listAccounts(event, user, familyId);
+      return await listAccounts(event, userId, budgetId, role, budgetStatus);
     }
 
     // GET /accounts/summary - Get accounts summary
     if (httpMethod === "GET" && path === "/accounts/summary") {
-      return await getAccountsSummary(event, user, familyId);
+      return await getAccountsSummary(event, userId, budgetId, role, budgetStatus);
     }
 
     // GET /accounts/:id - Get single account
     if (httpMethod === "GET" && pathParameters && pathParameters.accountId) {
-      return await getAccount(event, user, familyId, pathParameters.accountId);
+      return await getAccount(event, userId, budgetId, role, budgetStatus, pathParameters.accountId);
     }
 
     // POST /accounts - Create account
     if (httpMethod === "POST" && path === "/accounts") {
-      return await createAccount(event, user, familyId);
+      return await createAccount(event, userId, budgetId, role, budgetStatus);
     }
 
     // PUT /accounts/:id - Update account
@@ -109,23 +102,29 @@ exports.handler = async (event, context) => {
       if (path.endsWith("/reconcile")) {
         return await reconcileAccount(
           event,
-          user,
-          familyId,
+          userId,
+          budgetId,
+          role,
+          budgetStatus,
           pathParameters.accountId,
         );
       }
       if (path.endsWith("/tracking")) {
         return await setAccountTracking(
           event,
-          user,
-          familyId,
+          userId,
+          budgetId,
+          role,
+          budgetStatus,
           pathParameters.accountId,
         );
       }
       return await updateAccount(
         event,
-        user,
-        familyId,
+        userId,
+        budgetId,
+        role,
+        budgetStatus,
         pathParameters.accountId,
       );
     }
@@ -139,8 +138,10 @@ exports.handler = async (event, context) => {
     ) {
       return await reconcileAccount(
         event,
-        user,
-        familyId,
+        userId,
+        budgetId,
+        role,
+        budgetStatus,
         pathParameters.accountId,
       );
     }
@@ -149,8 +150,10 @@ exports.handler = async (event, context) => {
     if (httpMethod === "DELETE" && pathParameters && pathParameters.accountId) {
       return await deleteAccount(
         event,
-        user,
-        familyId,
+        userId,
+        budgetId,
+        role,
+        budgetStatus,
         pathParameters.accountId,
       );
     }
@@ -164,16 +167,18 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
-    if (error.message.includes("No user claims")) {
+    if (error.message && error.message.includes("No user claims")) {
       return errorResponse.unauthorized("Authentication required");
     }
 
-    if (error.message.includes("Invalid JSON")) {
+    if (error.message && error.message.includes("Invalid JSON")) {
       return errorResponse.badRequest("Invalid JSON in request body");
     }
 
     if (error.statusCode) {
-      return errorResponse.custom(error.statusCode, error.message);
+      return createResponse(error.statusCode, null, error.message, {
+        code: "ACCESS_DENIED",
+      });
     }
 
     return errorResponse.internalError(
@@ -183,20 +188,14 @@ exports.handler = async (event, context) => {
 };
 
 /**
- * List all accounts for a family
+ * List all accounts for a budget
  * GET /accounts
  */
-async function listAccounts(event, user, familyId) {
-  const permissionError = checkPermission(event, "account:view");
-  if (permissionError) {
-    logger.warn("Permission denied for listing accounts", {
-      userId: user.userId,
-      role: user.familyRole,
-    });
-    return permissionError;
-  }
+async function listAccounts(event, userId, budgetId, role, budgetStatus) {
+  // Read access — all roles permitted (account.read)
+  BudgetAccessResolver.assertPermission(role, "account.read", budgetStatus);
 
-  logger.info("Listing accounts", { userId: user.userId, familyId });
+  logger.info("Listing accounts", { userId, budgetId });
 
   // Parse query filters
   const queryParams = event.queryStringParameters || {};
@@ -212,9 +211,9 @@ async function listAccounts(event, user, familyId) {
     filters.isTracked = queryParams.isTracked === "true";
   }
 
-  const accounts = await service.getAccounts(familyId, filters);
+  const accounts = await service.getAccounts(budgetId, filters);
 
-  logger.info("Accounts retrieved", { familyId, count: accounts.length });
+  logger.info("Accounts retrieved", { budgetId, count: accounts.length });
 
   return successResponse(
     { accounts, count: accounts.length },
@@ -226,15 +225,12 @@ async function listAccounts(event, user, familyId) {
  * Get accounts summary
  * GET /accounts/summary
  */
-async function getAccountsSummary(event, user, familyId) {
-  const permissionError = checkPermission(event, "account:view");
-  if (permissionError) {
-    return permissionError;
-  }
+async function getAccountsSummary(event, userId, budgetId, role, budgetStatus) {
+  BudgetAccessResolver.assertPermission(role, "account.read", budgetStatus);
 
-  logger.info("Getting accounts summary", { userId: user.userId, familyId });
+  logger.info("Getting accounts summary", { userId, budgetId });
 
-  const summary = await service.getAccountsSummary(familyId);
+  const summary = await service.getAccountsSummary(budgetId);
 
   return successResponse(summary, "Accounts summary retrieved successfully");
 }
@@ -243,16 +239,13 @@ async function getAccountsSummary(event, user, familyId) {
  * Get a single account
  * GET /accounts/:id
  */
-async function getAccount(event, user, familyId, accountId) {
-  const permissionError = checkPermission(event, "account:view");
-  if (permissionError) {
-    return permissionError;
-  }
+async function getAccount(event, userId, budgetId, role, budgetStatus, accountId) {
+  BudgetAccessResolver.assertPermission(role, "account.read", budgetStatus);
 
-  logger.info("Getting account", { userId: user.userId, familyId, accountId });
+  logger.info("Getting account", { userId, budgetId, accountId });
 
   try {
-    const account = await service.getAccount(familyId, accountId);
+    const account = await service.getAccount(budgetId, accountId);
     return successResponse(account, "Account retrieved successfully");
   } catch (error) {
     if (error.statusCode === 404) {
@@ -266,26 +259,20 @@ async function getAccount(event, user, familyId, accountId) {
  * Create a new account
  * POST /accounts
  */
-async function createAccount(event, user, familyId) {
-  const permissionError = checkPermission(event, "account:create");
-  if (permissionError) {
-    logger.warn("Permission denied for creating account", {
-      userId: user.userId,
-      role: user.familyRole,
-    });
-    return permissionError;
-  }
+async function createAccount(event, userId, budgetId, role, budgetStatus) {
+  // Write operation — requires account.manage permission (owner, partner only)
+  BudgetAccessResolver.assertPermission(role, "account.manage", budgetStatus);
 
-  logger.info("Creating account", { userId: user.userId, familyId });
+  logger.info("Creating account", { userId, budgetId });
 
   const requestBody = parseRequestBody(event.body);
 
   try {
-    const account = await service.createAccount(familyId, requestBody);
+    const account = await service.createAccount(budgetId, requestBody);
 
     logger.info("Account created", {
       accountId: account.accountId,
-      familyId,
+      budgetId,
       accountType: account.accountType,
     });
 
@@ -302,24 +289,22 @@ async function createAccount(event, user, familyId) {
  * Update an account
  * PUT /accounts/:id
  */
-async function updateAccount(event, user, familyId, accountId) {
-  const permissionError = checkPermission(event, "account:edit");
-  if (permissionError) {
-    return permissionError;
-  }
+async function updateAccount(event, userId, budgetId, role, budgetStatus, accountId) {
+  // Write operation — requires account.manage permission
+  BudgetAccessResolver.assertPermission(role, "account.manage", budgetStatus);
 
-  logger.info("Updating account", { userId: user.userId, familyId, accountId });
+  logger.info("Updating account", { userId, budgetId, accountId });
 
   const requestBody = parseRequestBody(event.body);
 
   try {
     const account = await service.updateAccount(
-      familyId,
+      budgetId,
       accountId,
       requestBody,
     );
 
-    logger.info("Account updated", { accountId, familyId });
+    logger.info("Account updated", { accountId, budgetId });
 
     return successResponse(account, "Account updated successfully");
   } catch (error) {
@@ -337,18 +322,16 @@ async function updateAccount(event, user, familyId, accountId) {
  * Delete an account
  * DELETE /accounts/:id
  */
-async function deleteAccount(event, user, familyId, accountId) {
-  const permissionError = checkPermission(event, "account:delete");
-  if (permissionError) {
-    return permissionError;
-  }
+async function deleteAccount(event, userId, budgetId, role, budgetStatus, accountId) {
+  // Write operation — requires account.manage permission
+  BudgetAccessResolver.assertPermission(role, "account.manage", budgetStatus);
 
-  logger.info("Deleting account", { userId: user.userId, familyId, accountId });
+  logger.info("Deleting account", { userId, budgetId, accountId });
 
   try {
-    await service.deleteAccount(familyId, accountId, user.userId);
+    await service.deleteAccount(budgetId, accountId, userId);
 
-    logger.info("Account deleted", { accountId, familyId });
+    logger.info("Account deleted", { accountId, budgetId });
 
     return successResponse(null, "Account deleted successfully");
   } catch (error) {
@@ -364,17 +347,15 @@ async function deleteAccount(event, user, familyId, accountId) {
 
 /**
  * Reconcile account balance
- * POST /accounts/:id/reconcile
+ * POST /accounts/:id/reconcile or PUT /accounts/:id/reconcile
  */
-async function reconcileAccount(event, user, familyId, accountId) {
-  const permissionError = checkPermission(event, "account:edit");
-  if (permissionError) {
-    return permissionError;
-  }
+async function reconcileAccount(event, userId, budgetId, role, budgetStatus, accountId) {
+  // Write operation — requires account.manage permission
+  BudgetAccessResolver.assertPermission(role, "account.manage", budgetStatus);
 
   logger.info("Reconciling account", {
-    userId: user.userId,
-    familyId,
+    userId,
+    budgetId,
     accountId,
   });
 
@@ -382,14 +363,14 @@ async function reconcileAccount(event, user, familyId, accountId) {
 
   try {
     const result = await service.reconcileAccount(
-      familyId,
+      budgetId,
       accountId,
       requestBody,
     );
 
     logger.info("Account reconciled", {
       accountId,
-      familyId,
+      budgetId,
       previousBalance: result.previousBalance,
       newBalance: result.account.currentBalance,
       adjustment: result.adjustmentAmount,
@@ -411,15 +392,13 @@ async function reconcileAccount(event, user, familyId, accountId) {
  * Set account tracking status
  * PUT /accounts/:id/tracking
  */
-async function setAccountTracking(event, user, familyId, accountId) {
-  const permissionError = checkPermission(event, "account:edit");
-  if (permissionError) {
-    return permissionError;
-  }
+async function setAccountTracking(event, userId, budgetId, role, budgetStatus, accountId) {
+  // Write operation — requires account.manage permission
+  BudgetAccessResolver.assertPermission(role, "account.manage", budgetStatus);
 
   logger.info("Setting account tracking", {
-    userId: user.userId,
-    familyId,
+    userId,
+    budgetId,
     accountId,
   });
 
@@ -427,14 +406,14 @@ async function setAccountTracking(event, user, familyId, accountId) {
 
   try {
     const account = await service.setAccountTracking(
-      familyId,
+      budgetId,
       accountId,
       requestBody,
     );
 
     logger.info("Account tracking updated", {
       accountId,
-      familyId,
+      budgetId,
       isTracked: account.isTracked,
     });
 

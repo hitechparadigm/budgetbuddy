@@ -179,6 +179,7 @@ class SimpleApiClient {
     familySize: number;
     currentMonth: string;
     currency?: string;
+    budgetType?: 'personal' | 'family' | 'shared';
     selectedCategories: Array<{
       name: string;
       icon: string;

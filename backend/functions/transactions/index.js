@@ -15,6 +15,7 @@ const {
   generateId,
   dynamoHelpers,
   logger,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
 const {
@@ -34,20 +35,17 @@ try {
   // Accounts service not available - balance updates will be skipped
 }
 
-// Import permission checking from shared layer
-const { checkPermission } = require("/opt/nodejs/shared");
-
 /**
  * Update linked goals when a savings transaction is created
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} categoryId - Category ID of the transaction
  * @param {number} amount - Transaction amount
  * @param {string} operation - 'add' or 'subtract'
  */
-async function updateLinkedGoals(familyId, categoryId, amount, operation) {
+async function updateLinkedGoals(budgetId, categoryId, amount, operation) {
   try {
     // Find goals linked to this category
-    const goals = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    const goals = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       FilterExpression:
         "entityType = :entityType AND linkedCategoryId = :categoryId AND #status = :active AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
       ExpressionAttributeNames: { "#status": "status" },
@@ -130,7 +128,7 @@ async function updateLinkedGoals(familyId, categoryId, amount, operation) {
 
       // Update the goal
       await dynamoHelpers.updateItem(
-        `FAMILY#${familyId}`,
+        `BUDGET#${budgetId}`,
         `GOAL#${goal.goalId}`,
         {
           currentAmount: newAmount,
@@ -146,7 +144,7 @@ async function updateLinkedGoals(familyId, categoryId, amount, operation) {
 
       logger.info("Linked goal updated from transaction", {
         goalId: goal.goalId,
-        familyId,
+        budgetId,
         categoryId,
         operation,
         amount,
@@ -158,7 +156,7 @@ async function updateLinkedGoals(familyId, categoryId, amount, operation) {
   } catch (error) {
     // Log but don't fail the transaction if goal update fails
     logger.error("Failed to update linked goals", {
-      familyId,
+      budgetId,
       categoryId,
       amount,
       operation,
@@ -169,14 +167,14 @@ async function updateLinkedGoals(familyId, categoryId, amount, operation) {
 
 /**
  * Update account balance when a transaction is created, updated, or deleted
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID (may be null)
  * @param {string} transactionType - 'income' or 'expense'
  * @param {number} amount - Transaction amount
  * @param {string} operation - 'add' or 'subtract'
  */
 async function updateAccountBalance(
-  familyId,
+  budgetId,
   accountId,
   transactionType,
   amount,
@@ -189,10 +187,10 @@ async function updateAccountBalance(
 
   try {
     // Get the account to determine its type
-    const account = await accountsService.getAccount(familyId, accountId);
+    const account = await accountsService.getAccount(budgetId, accountId);
     if (!account) {
       logger.warn("Account not found for balance update", {
-        familyId,
+        budgetId,
         accountId,
       });
       return;
@@ -212,13 +210,13 @@ async function updateAccountBalance(
 
     // Update the account balance
     await accountsService.updateAccountBalance(
-      familyId,
+      budgetId,
       accountId,
       balanceChange,
     );
 
     logger.info("Account balance updated from transaction", {
-      familyId,
+      budgetId,
       accountId,
       transactionType,
       amount,
@@ -228,7 +226,7 @@ async function updateAccountBalance(
   } catch (error) {
     // Log but don't fail the transaction if account update fails
     logger.error("Failed to update account balance", {
-      familyId,
+      budgetId,
       accountId,
       transactionType,
       amount,
@@ -279,19 +277,16 @@ exports.handler = async (event, context) => {
     }
 
     // Extract user information from JWT token
-    const user = getUserFromEvent(event);
-    logger.info("User authenticated", {
-      userId: user.userId,
-      familyId: user.familyId,
-    });
+    const { userId } = getUserFromEvent(event);
+    logger.info("User authenticated", { userId });
 
     // Route to appropriate handler based on HTTP method and path
     if (httpMethod === "POST" && path === "/transactions") {
-      return await createTransaction(event, user);
+      return await createTransaction(event, userId);
     }
 
     if (httpMethod === "GET" && path === "/transactions") {
-      return await getTransactions(event, user);
+      return await getTransactions(event, userId);
     }
 
     if (
@@ -299,7 +294,7 @@ exports.handler = async (event, context) => {
       pathParameters &&
       pathParameters.transactionId
     ) {
-      return await getTransaction(event, user, pathParameters.transactionId);
+      return await getTransaction(event, userId, pathParameters.transactionId);
     }
 
     if (
@@ -307,7 +302,7 @@ exports.handler = async (event, context) => {
       pathParameters &&
       pathParameters.transactionId
     ) {
-      return await updateTransaction(event, user, pathParameters.transactionId);
+      return await updateTransaction(event, userId, pathParameters.transactionId);
     }
 
     if (
@@ -315,7 +310,7 @@ exports.handler = async (event, context) => {
       pathParameters &&
       pathParameters.transactionId
     ) {
-      return await deleteTransaction(event, user, pathParameters.transactionId);
+      return await deleteTransaction(event, userId, pathParameters.transactionId);
     }
 
     // Default response for unhandled routes
@@ -373,21 +368,12 @@ exports.handler = async (event, context) => {
  * Create a new transaction
  * POST /transactions
  */
-async function createTransaction(event, user) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "transaction:create");
-  if (permissionError) {
-    logger.warn("Permission denied for transaction creation", {
-      userId: user.userId,
-      role: user.familyRole,
-    });
-    return permissionError;
-  }
+async function createTransaction(event, userId) {
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'transaction.create', budgetStatus);
 
-  logger.info("Creating new transaction", {
-    userId: user.userId,
-    familyId: user.familyId,
-  });
+  logger.info("Creating new transaction", { userId, budgetId });
 
   const requestBody = parseRequestBody(event.body);
 
@@ -423,7 +409,6 @@ async function createTransaction(event, user) {
     throw new ValidationError("Date must be in YYYY-MM-DD format", "date");
   }
 
-  const familyId = user.familyId || `family_${user.userId}`;
   const transactionId = generateId.transaction();
   const currentTime = new Date().toISOString();
   const budgetMonth = requestBody.date.substring(0, 7); // Extract YYYY-MM from date
@@ -432,15 +417,15 @@ async function createTransaction(event, user) {
   let transactionCurrency = "USD";
   try {
     const budget = await dynamoHelpers.getItem(
-      `FAMILY#${familyId}`,
-      `BUDGET#${budgetMonth}`,
+      `BUDGET#${budgetId}`,
+      `PERIOD#${budgetMonth}`,
     );
     if (budget && budget.currency) {
       transactionCurrency = budget.currency;
     }
   } catch (error) {
     logger.warn("Could not fetch budget currency, defaulting to USD", {
-      familyId,
+      budgetId,
       budgetMonth,
       error: error.message,
     });
@@ -448,15 +433,15 @@ async function createTransaction(event, user) {
 
   // Create transaction object
   const transaction = {
-    PK: `FAMILY#${familyId}`,
+    PK: `BUDGET#${budgetId}`,
     SK: `TRANSACTION#${transactionId}`,
-    GSI1PK: `FAMILY#${familyId}`,
+    GSI1PK: `BUDGET#${budgetId}`,
     GSI1SK: `DATE#${requestBody.date}`,
     GSI2PK: `CATEGORY#${requestBody.categoryId}`,
     GSI2SK: `DATE#${requestBody.date}`,
     entityType: "TRANSACTION",
     transactionId,
-    familyId,
+    budgetId,
     budgetMonth,
     amount: requestBody.amount,
     currency: requestBody.currency || transactionCurrency, // Use provided currency or budget's currency
@@ -466,8 +451,7 @@ async function createTransaction(event, user) {
     date: requestBody.date,
     merchantName: requestBody.merchantName || null,
     accountId: requestBody.accountId || null, // Optional account association
-    createdBy: user.userId,
-    createdByName: `${user.firstName} ${user.lastName}`,
+    createdBy: userId,
     createdAt: currentTime,
     updatedAt: currentTime,
   };
@@ -477,7 +461,7 @@ async function createTransaction(event, user) {
 
   // Update budget calculations (only for tracked accounts)
   await updateBudgetCalculations(
-    familyId,
+    budgetId,
     budgetMonth,
     requestBody.categoryId,
     requestBody.type,
@@ -492,7 +476,7 @@ async function createTransaction(event, user) {
     requestBody.categoryId.toLowerCase().includes("saving")
   ) {
     await updateLinkedGoals(
-      familyId,
+      budgetId,
       requestBody.categoryId,
       requestBody.amount,
       "add",
@@ -502,7 +486,7 @@ async function createTransaction(event, user) {
   // Update account balance if transaction is linked to an account
   if (requestBody.accountId) {
     await updateAccountBalance(
-      familyId,
+      budgetId,
       requestBody.accountId,
       requestBody.type,
       requestBody.amount,
@@ -512,7 +496,7 @@ async function createTransaction(event, user) {
 
   logger.info("Transaction created successfully", {
     transactionId,
-    familyId,
+    budgetId,
     type: requestBody.type,
     amount: requestBody.amount,
   });
@@ -520,7 +504,7 @@ async function createTransaction(event, user) {
   return successResponse(
     {
       transactionId,
-      familyId,
+      budgetId,
       budgetMonth,
       amount: transaction.amount,
       currency: transaction.currency,
@@ -531,7 +515,6 @@ async function createTransaction(event, user) {
       merchantName: transaction.merchantName,
       accountId: transaction.accountId,
       createdBy: transaction.createdBy,
-      createdByName: transaction.createdByName,
       createdAt: transaction.createdAt,
       updatedAt: transaction.updatedAt,
     },
@@ -543,23 +526,13 @@ async function createTransaction(event, user) {
  * Get transactions with filtering
  * GET /transactions?categoryId=...&type=...&startDate=...&endDate=...&limit=...&nextToken=...
  */
-async function getTransactions(event, user) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) {
-    logger.warn("Permission denied for viewing transactions", {
-      userId: user.userId,
-      role: user.familyRole,
-    });
-    return permissionError;
-  }
+async function getTransactions(event, userId) {
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'transaction.read', budgetStatus);
 
-  logger.info("Getting transactions for family", {
-    userId: user.userId,
-    familyId: user.familyId,
-  });
+  logger.info("Getting transactions for budget", { userId, budgetId });
 
-  const familyId = user.familyId || `family_${user.userId}`;
   const queryParams = event.queryStringParameters || {};
 
   // Build query options based on filters
@@ -632,16 +605,16 @@ async function getTransactions(event, user) {
     );
   }
 
-  // Query transactions for the family
+  // Query transactions for the budget
   const result = await dynamoHelpers.queryByPK(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     queryOptions,
   );
 
   // Format transactions for response
   const transactions = result.map((transaction) => ({
     transactionId: transaction.transactionId,
-    familyId: transaction.familyId,
+    budgetId: transaction.budgetId,
     budgetMonth: transaction.budgetMonth,
     amount: transaction.amount,
     type: transaction.type,
@@ -651,7 +624,6 @@ async function getTransactions(event, user) {
     merchantName: transaction.merchantName,
     accountId: transaction.accountId || null,
     createdBy: transaction.createdBy,
-    createdByName: transaction.createdByName,
     createdAt: transaction.createdAt,
     updatedAt: transaction.updatedAt,
   }));
@@ -660,7 +632,7 @@ async function getTransactions(event, user) {
   transactions.sort((a, b) => b.date.localeCompare(a.date));
 
   logger.info("Transactions retrieved successfully", {
-    familyId,
+    budgetId,
     transactionCount: transactions.length,
   });
 
@@ -682,28 +654,15 @@ async function getTransactions(event, user) {
  * Get a specific transaction by ID
  * GET /transactions/{transactionId}
  */
-async function getTransaction(event, user, transactionId) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) {
-    logger.warn("Permission denied for viewing transaction", {
-      userId: user.userId,
-      role: user.familyRole,
-      transactionId,
-    });
-    return permissionError;
-  }
+async function getTransaction(event, userId, transactionId) {
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'transaction.read', budgetStatus);
 
-  logger.info("Getting specific transaction", {
-    userId: user.userId,
-    familyId: user.familyId,
-    transactionId,
-  });
-
-  const familyId = user.familyId || `family_${user.userId}`;
+  logger.info("Getting specific transaction", { userId, budgetId, transactionId });
 
   const transaction = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `TRANSACTION#${transactionId}`,
   );
 
@@ -713,15 +672,12 @@ async function getTransaction(event, user, transactionId) {
     );
   }
 
-  logger.info("Transaction retrieved successfully", {
-    transactionId,
-    familyId,
-  });
+  logger.info("Transaction retrieved successfully", { transactionId, budgetId });
 
   return successResponse(
     {
       transactionId: transaction.transactionId,
-      familyId: transaction.familyId,
+      budgetId: transaction.budgetId,
       budgetMonth: transaction.budgetMonth,
       amount: transaction.amount,
       type: transaction.type,
@@ -731,7 +687,6 @@ async function getTransaction(event, user, transactionId) {
       merchantName: transaction.merchantName,
       accountId: transaction.accountId || null,
       createdBy: transaction.createdBy,
-      createdByName: transaction.createdByName,
       createdAt: transaction.createdAt,
       updatedAt: transaction.updatedAt,
     },
@@ -743,30 +698,18 @@ async function getTransaction(event, user, transactionId) {
  * Update an existing transaction
  * PUT /transactions/{transactionId}
  */
-async function updateTransaction(event, user, transactionId) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "transaction:edit");
-  if (permissionError) {
-    logger.warn("Permission denied for updating transaction", {
-      userId: user.userId,
-      role: user.familyRole,
-      transactionId,
-    });
-    return permissionError;
-  }
+async function updateTransaction(event, userId, transactionId) {
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'transaction.edit', budgetStatus);
 
-  logger.info("Updating transaction", {
-    userId: user.userId,
-    familyId: user.familyId,
-    transactionId,
-  });
+  logger.info("Updating transaction", { userId, budgetId, transactionId });
 
   const requestBody = parseRequestBody(event.body);
-  const familyId = user.familyId || `family_${user.userId}`;
 
   // Check if transaction exists
   const existingTransaction = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `TRANSACTION#${transactionId}`,
   );
 
@@ -839,7 +782,7 @@ async function updateTransaction(event, user, transactionId) {
 
   // Update the transaction
   const updatedTransaction = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `TRANSACTION#${transactionId}`,
     updates,
   );
@@ -848,7 +791,7 @@ async function updateTransaction(event, user, transactionId) {
   if (budgetUpdateNeeded) {
     // Remove old transaction impact (use old accountId for tracking check)
     await updateBudgetCalculations(
-      familyId,
+      budgetId,
       existingTransaction.budgetMonth,
       oldCategoryId,
       oldType,
@@ -862,7 +805,7 @@ async function updateTransaction(event, user, transactionId) {
       oldType === "income" ||
       oldCategoryId.toLowerCase().includes("saving")
     ) {
-      await updateLinkedGoals(familyId, oldCategoryId, oldAmount, "subtract");
+      await updateLinkedGoals(budgetId, oldCategoryId, oldAmount, "subtract");
     }
 
     // Add new transaction impact
@@ -873,7 +816,7 @@ async function updateTransaction(event, user, transactionId) {
     const newAccountId = updatedTransaction.accountId;
 
     await updateBudgetCalculations(
-      familyId,
+      budgetId,
       newBudgetMonth,
       newCategoryId,
       newType,
@@ -887,7 +830,7 @@ async function updateTransaction(event, user, transactionId) {
       newType === "income" ||
       newCategoryId.toLowerCase().includes("saving")
     ) {
-      await updateLinkedGoals(familyId, newCategoryId, newAmount, "add");
+      await updateLinkedGoals(budgetId, newCategoryId, newAmount, "add");
     }
   }
 
@@ -900,7 +843,7 @@ async function updateTransaction(event, user, transactionId) {
     // Reverse old account balance if there was an old account
     if (oldAccountId) {
       await updateAccountBalance(
-        familyId,
+        budgetId,
         oldAccountId,
         oldType,
         oldAmount,
@@ -911,7 +854,7 @@ async function updateTransaction(event, user, transactionId) {
     // Apply new account balance if there is a new account
     if (newAccountId) {
       await updateAccountBalance(
-        familyId,
+        budgetId,
         newAccountId,
         newType,
         newAmount,
@@ -920,15 +863,12 @@ async function updateTransaction(event, user, transactionId) {
     }
   }
 
-  logger.info("Transaction updated successfully", {
-    transactionId,
-    familyId,
-  });
+  logger.info("Transaction updated successfully", { transactionId, budgetId });
 
   return successResponse(
     {
       transactionId: updatedTransaction.transactionId,
-      familyId: updatedTransaction.familyId,
+      budgetId: updatedTransaction.budgetId,
       budgetMonth: updatedTransaction.budgetMonth,
       amount: updatedTransaction.amount,
       type: updatedTransaction.type,
@@ -938,7 +878,6 @@ async function updateTransaction(event, user, transactionId) {
       merchantName: updatedTransaction.merchantName,
       accountId: updatedTransaction.accountId || null,
       createdBy: updatedTransaction.createdBy,
-      createdByName: updatedTransaction.createdByName,
       createdAt: updatedTransaction.createdAt,
       updatedAt: updatedTransaction.updatedAt,
     },
@@ -950,29 +889,16 @@ async function updateTransaction(event, user, transactionId) {
  * Delete a transaction
  * DELETE /transactions/{transactionId}
  */
-async function deleteTransaction(event, user, transactionId) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "transaction:delete");
-  if (permissionError) {
-    logger.warn("Permission denied for deleting transaction", {
-      userId: user.userId,
-      role: user.familyRole,
-      transactionId,
-    });
-    return permissionError;
-  }
+async function deleteTransaction(event, userId, transactionId) {
+  const { budgetId, role, budgetStatus } =
+    await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'transaction.delete', budgetStatus);
 
-  logger.info("Deleting transaction", {
-    userId: user.userId,
-    familyId: user.familyId,
-    transactionId,
-  });
-
-  const familyId = user.familyId || `family_${user.userId}`;
+  logger.info("Deleting transaction", { userId, budgetId, transactionId });
 
   // Check if transaction exists
   const existingTransaction = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `TRANSACTION#${transactionId}`,
   );
 
@@ -984,18 +910,18 @@ async function deleteTransaction(event, user, transactionId) {
 
   // Mark transaction as deleted (soft delete for audit trail)
   await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `TRANSACTION#${transactionId}`,
     {
       isDeleted: true,
       deletedAt: new Date().toISOString(),
-      deletedBy: user.userId,
+      deletedBy: userId,
     },
   );
 
   // Update budget calculations (subtract the transaction impact, only for tracked accounts)
   await updateBudgetCalculations(
-    familyId,
+    budgetId,
     existingTransaction.budgetMonth,
     existingTransaction.categoryId,
     existingTransaction.type,
@@ -1010,7 +936,7 @@ async function deleteTransaction(event, user, transactionId) {
     existingTransaction.categoryId.toLowerCase().includes("saving")
   ) {
     await updateLinkedGoals(
-      familyId,
+      budgetId,
       existingTransaction.categoryId,
       existingTransaction.amount,
       "subtract",
@@ -1020,7 +946,7 @@ async function deleteTransaction(event, user, transactionId) {
   // Reverse account balance if transaction was linked to an account
   if (existingTransaction.accountId) {
     await updateAccountBalance(
-      familyId,
+      budgetId,
       existingTransaction.accountId,
       existingTransaction.type,
       existingTransaction.amount,
@@ -1028,10 +954,7 @@ async function deleteTransaction(event, user, transactionId) {
     );
   }
 
-  logger.info("Transaction deleted successfully", {
-    transactionId,
-    familyId,
-  });
+  logger.info("Transaction deleted successfully", { transactionId, budgetId });
 
   return successResponse(null, "Transaction deleted successfully");
 }

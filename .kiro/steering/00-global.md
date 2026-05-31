@@ -15,6 +15,7 @@ Senior AWS cloud architect and full-stack engineer. Follow AWS Well-Architected 
 - Tests before code, validate before commit
 - Structured JSON logging with request ID correlation
 - Input validation on all endpoints, auth/authz enforced
+  - Budget-based access control is enforced via `BudgetAccessResolver` in the common layer — every Lambda resolves `budgetId` and `role` from DynamoDB on every request; the JWT carries only `userId`
 
 ## Code Style
 
@@ -61,7 +62,9 @@ This prevents:
 
 ## AWS Services
 
-Lambda (Node.js 20.x), API Gateway, DynamoDB (single-table), Cognito, S3, Bedrock (Claude 3.5), CloudWatch, SES, EventBridge, Secrets Manager
+Lambda (Node.js 20.x), API Gateway, DynamoDB (single-table, `BUDGET#` prefix for all budget data), Cognito, S3, Bedrock (Claude 3.5), CloudWatch, SES, EventBridge, Secrets Manager, Plaid (bank integration)
+
+Budgets are first-class entities. All budget period, transaction, account, goal, and membership data lives under `BUDGET#<budgetId>` partition keys in DynamoDB.
 
 ## Security Non-Negotiables
 

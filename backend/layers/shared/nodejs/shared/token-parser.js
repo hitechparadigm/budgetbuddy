@@ -92,22 +92,4 @@ module.exports = {
   parseAuthToken,
   parseIdToken,
   parseGoogleToken,
-  sanitizeFamilyId,
 };
-
-/**
- * Sanitize a familyId value from a JWT token claim.
- *
- * Cognito stores custom attributes as strings. When a user hasn't completed
- * onboarding, custom:familyId may be the literal string "undefined", "null",
- * or an empty string — all of which must be treated as absent.
- *
- * @param {any} value - Raw value from JWT claim
- * @returns {string|null} Valid familyId string, or null if absent/invalid
- */
-function sanitizeFamilyId(value) {
-  if (!value) return null;
-  const str = String(value).trim();
-  if (str === "" || str === "undefined" || str === "null") return null;
-  return str;
-}

@@ -12,6 +12,7 @@
  */
 
 const {
+  createResponse,
   successResponse,
   errorResponse,
   parseRequestBody,
@@ -19,11 +20,8 @@ const {
   generateId,
   dynamoHelpers,
   logger,
-  FamilyIdResolver,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
-
-// Import permission checking from shared layer
-const { checkPermission } = require("/opt/nodejs/shared");
 
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
@@ -80,10 +78,10 @@ exports.handler = async (event, context) => {
     }
 
     // Extract user information from JWT token
-    const user = getUserFromEvent(event);
+    const { userId } = getUserFromEvent(event);
+    const user = { userId };
     logger.info("User authenticated", {
       userId: user.userId,
-      familyId: user.familyId,
     });
 
     // Route to appropriate handler based on HTTP method and path
@@ -139,11 +137,18 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
-    if (error.message.includes("No user claims")) {
+    // Handle structured errors thrown by BudgetAccessResolver
+    if (error.statusCode && error.message) {
+      return createResponse(error.statusCode, null, error.message, {
+        code: error.statusCode === 403 ? "FORBIDDEN" : "NOT_FOUND",
+      });
+    }
+
+    if (error.message && error.message.includes("No user claims")) {
       return errorResponse.unauthorized("Authentication required");
     }
 
-    if (error.message.includes("Invalid JSON")) {
+    if (error.message && error.message.includes("Invalid JSON")) {
       return errorResponse.badRequest("Invalid JSON in request body");
     }
 
@@ -158,19 +163,8 @@ exports.handler = async (event, context) => {
  * POST /budget
  */
 async function createBudget(event, user) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "budget:create");
-  if (permissionError) {
-    logger.warn("Permission denied for budget creation", {
-      userId: user.userId,
-      role: user.familyRole,
-    });
-    return permissionError;
-  }
-
   logger.info("Creating new budget", {
     userId: user.userId,
-    familyId: user.familyId,
   });
 
   const requestBody = parseRequestBody(event.body);
@@ -185,21 +179,14 @@ async function createBudget(event, user) {
     return errorResponse.badRequest("Month must be in YYYY-MM format");
   }
 
-  // Use centralized FamilyIdResolver to get familyId consistently
-  const familyId = await FamilyIdResolver.resolveFamilyId(
+  // Resolve budget access from DynamoDB
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(
     user.userId,
-    user.familyId,
     dynamoHelpers,
   );
 
-  // Log the resolution for debugging
-  FamilyIdResolver.logFamilyIdResolution(
-    "budget-service",
-    "create-budget",
-    user.userId,
-    familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback",
-  );
+  // Enforce write permission
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   // Get user's currency from profile (default to USD if not found)
   let userCurrency = "USD";
@@ -218,19 +205,19 @@ async function createBudget(event, user) {
     });
   }
 
-  const budgetId = generateId.budget();
+  const newBudgetItemId = generateId.budget();
   const currentTime = new Date().toISOString();
 
   // Check if budget already exists for this month
   const existingBudget = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
-    `BUDGET#${requestBody.month}`,
+    `BUDGET#${budgetId}`,
+    `PERIOD#${requestBody.month}`,
   );
 
   if (existingBudget) {
     // Budget exists - update it instead of returning conflict
     logger.info("Budget already exists, updating existing budget", {
-      familyId,
+      budgetId,
       month: requestBody.month,
     });
 
@@ -252,21 +239,19 @@ async function createBudget(event, user) {
 
     // Update the existing budget
     const updatedBudget = await dynamoHelpers.updateItem(
-      `FAMILY#${familyId}`,
-      `BUDGET#${requestBody.month}`,
+      `BUDGET#${budgetId}`,
+      `PERIOD#${requestBody.month}`,
       updates,
     );
 
     logger.info("Budget updated successfully", {
       budgetId: updatedBudget.budgetId,
-      familyId,
       month: requestBody.month,
     });
 
     return successResponse(
       {
         budgetId: updatedBudget.budgetId,
-        familyId: updatedBudget.familyId,
         month: updatedBudget.month,
         currency: updatedBudget.currency,
         totalIncome: updatedBudget.totalIncome,
@@ -285,13 +270,12 @@ async function createBudget(event, user) {
 
   // Initialize default budget structure
   const budget = {
-    PK: `FAMILY#${familyId}`,
-    SK: `BUDGET#${requestBody.month}`,
-    GSI2PK: `BUDGET#${requestBody.month}`,
-    GSI2SK: `FAMILY#${familyId}`,
+    PK: `BUDGET#${budgetId}`,
+    SK: `PERIOD#${requestBody.month}`,
+    GSI2PK: `PERIOD#${requestBody.month}`,
+    GSI2SK: `BUDGET#${budgetId}`,
     entityType: "BUDGET",
-    budgetId,
-    familyId,
+    budgetId: newBudgetItemId,
     month: requestBody.month,
     currency: requestBody.currency || userCurrency, // Use provided currency or user's default
     totalIncome: 0,
@@ -324,14 +308,12 @@ async function createBudget(event, user) {
 
   logger.info("Budget created successfully", {
     budgetId,
-    familyId,
     month: requestBody.month,
   });
 
   return successResponse(
     {
-      budgetId,
-      familyId,
+      budgetId: budget.budgetId,
       month: requestBody.month,
       currency: budget.currency,
       totalIncome: budget.totalIncome,
@@ -353,39 +335,21 @@ async function createBudget(event, user) {
  * GET /budget
  */
 async function getBudgets(event, user) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) {
-    logger.warn("Permission denied for viewing budgets", {
-      userId: user.userId,
-      role: user.familyRole,
-    });
-    return permissionError;
-  }
-
-  logger.info("Getting budgets for family", {
+  logger.info("Getting budgets", {
     userId: user.userId,
-    familyId: user.familyId,
   });
 
-  // Use centralized FamilyIdResolver to get familyId consistently
-  const familyId = await FamilyIdResolver.resolveFamilyId(
+  // Resolve budget access from DynamoDB
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(
     user.userId,
-    user.familyId,
     dynamoHelpers,
   );
 
-  // Log the resolution for debugging
-  FamilyIdResolver.logFamilyIdResolution(
-    "budget-service",
-    "get-budgets",
-    user.userId,
-    familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback",
-  );
+  // Enforce read permission
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  // Query all active (non-deleted) budgets for the family
-  const budgets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  // Query all active (non-deleted) budgets for the budget
+  const budgets = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
       ":entityType": "BUDGET",
@@ -396,7 +360,6 @@ async function getBudgets(event, user) {
   // Transform DynamoDB items to API response format
   const formattedBudgets = budgets.map((budget) => ({
     budgetId: budget.budgetId,
-    familyId: budget.familyId,
     month: budget.month,
     totalIncome: budget.totalIncome,
     totalSavings: budget.totalSavings,
@@ -414,7 +377,7 @@ async function getBudgets(event, user) {
   formattedBudgets.sort((a, b) => b.month.localeCompare(a.month));
 
   logger.info("Budgets retrieved successfully", {
-    familyId,
+    budgetId,
     budgetCount: formattedBudgets.length,
   });
 
@@ -432,36 +395,18 @@ async function getBudgets(event, user) {
  * GET /budget/current?month=YYYY-MM
  */
 async function getCurrentBudget(event, user) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) {
-    logger.warn("Permission denied for viewing current budget", {
-      userId: user.userId,
-      role: user.familyRole,
-    });
-    return permissionError;
-  }
-
   logger.info("Getting current budget", {
     userId: user.userId,
-    familyId: user.familyId,
   });
 
-  // Use centralized FamilyIdResolver to get familyId consistently
-  const familyId = await FamilyIdResolver.resolveFamilyId(
+  // Resolve budget access from DynamoDB
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(
     user.userId,
-    user.familyId,
     dynamoHelpers,
   );
 
-  // Log the resolution for debugging
-  FamilyIdResolver.logFamilyIdResolution(
-    "budget-service",
-    "get-current-budget",
-    user.userId,
-    familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback",
-  );
+  // Enforce read permission
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   // Extract month from query parameter
   const queryParams = event.queryStringParameters || {};
@@ -474,8 +419,8 @@ async function getCurrentBudget(event, user) {
   }
 
   let budget = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
-    `BUDGET#${month}`,
+    `BUDGET#${budgetId}`,
+    `PERIOD#${month}`,
   );
 
   // Treat soft-deleted budgets as non-existent
@@ -484,22 +429,21 @@ async function getCurrentBudget(event, user) {
   // If no budget exists for this month, create one with recurring items from previous month
   if (!budget) {
     logger.info("No budget found for month, creating with recurring items", {
-      familyId,
+      budgetId,
       month,
     });
 
-    budget = await createBudgetWithRecurringItems(familyId, month);
+    budget = await createBudgetWithRecurringItems(budgetId, month);
   }
 
   logger.info("Budget retrieved successfully", {
-    familyId,
+    budgetId,
     month,
   });
 
   return successResponse(
     {
       budgetId: budget.budgetId,
-      familyId: budget.familyId,
       month: budget.month,
       totalIncome: budget.totalIncome,
       totalSavings: budget.totalSavings,
@@ -521,40 +465,21 @@ async function getCurrentBudget(event, user) {
  * GET /budget/{budgetId}
  */
 async function getBudget(event, user, budgetId) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) {
-    logger.warn("Permission denied for viewing budget", {
-      userId: user.userId,
-      role: user.familyRole,
-      budgetId,
-    });
-    return permissionError;
-  }
-
   logger.info("Getting specific budget", {
     userId: user.userId,
-    familyId: user.familyId,
     budgetId,
   });
 
-  // Use centralized FamilyIdResolver to get familyId consistently
-  const familyId = await FamilyIdResolver.resolveFamilyId(
+  // Resolve budget access from DynamoDB
+  const { budgetId: resolvedBudgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(
     user.userId,
-    user.familyId,
     dynamoHelpers,
   );
 
-  // Log the resolution for debugging
-  FamilyIdResolver.logFamilyIdResolution(
-    "budget-service",
-    "get-budget",
-    user.userId,
-    familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback",
-  );
+  // Enforce read permission
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  // Extract month from budgetId or query parameter
+  // Extract month from query parameter
   const queryParams = event.queryStringParameters || {};
   const month = queryParams.month;
 
@@ -565,8 +490,8 @@ async function getBudget(event, user, budgetId) {
   }
 
   const budget = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
-    `BUDGET#${month}`,
+    `BUDGET#${resolvedBudgetId}`,
+    `PERIOD#${month}`,
   );
 
   if (!budget) {
@@ -574,15 +499,13 @@ async function getBudget(event, user, budgetId) {
   }
 
   logger.info("Budget retrieved successfully", {
-    budgetId,
-    familyId,
+    budgetId: resolvedBudgetId,
     month,
   });
 
   return successResponse(
     {
       budgetId: budget.budgetId,
-      familyId: budget.familyId,
       month: budget.month,
       totalIncome: budget.totalIncome,
       totalSavings: budget.totalSavings,
@@ -604,40 +527,21 @@ async function getBudget(event, user, budgetId) {
  * PUT /budget/{budgetId}
  */
 async function updateBudget(event, user, budgetId) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) {
-    logger.warn("Permission denied for updating budget", {
-      userId: user.userId,
-      role: user.familyRole,
-      budgetId,
-    });
-    return permissionError;
-  }
-
   logger.info("Updating budget", {
     userId: user.userId,
-    familyId: user.familyId,
     budgetId,
   });
 
   const requestBody = parseRequestBody(event.body);
 
-  // Use centralized FamilyIdResolver to get familyId consistently
-  const familyId = await FamilyIdResolver.resolveFamilyId(
+  // Resolve budget access from DynamoDB
+  const { budgetId: resolvedBudgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(
     user.userId,
-    user.familyId,
     dynamoHelpers,
   );
 
-  // Log the resolution for debugging
-  FamilyIdResolver.logFamilyIdResolution(
-    "budget-service",
-    "update-budget",
-    user.userId,
-    familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback",
-  );
+  // Enforce write permission
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   // Extract month from request body or query parameter
   let month =
@@ -647,7 +551,7 @@ async function updateBudget(event, user, budgetId) {
   // If no month provided, try to find the budget by budgetId
   if (!month) {
     // Query all budgets to find the one with this budgetId
-    const budgets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    const budgets = await dynamoHelpers.queryByPK(`BUDGET#${resolvedBudgetId}`, {
       FilterExpression: "entityType = :entityType AND budgetId = :budgetId",
       ExpressionAttributeValues: {
         ":entityType": "BUDGET",
@@ -664,8 +568,8 @@ async function updateBudget(event, user, budgetId) {
 
   // Check if budget exists
   const existingBudget = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
-    `BUDGET#${month}`,
+    `BUDGET#${resolvedBudgetId}`,
+    `PERIOD#${month}`,
   );
 
   if (!existingBudget) {
@@ -688,21 +592,19 @@ async function updateBudget(event, user, budgetId) {
 
   // Update the budget
   const updatedBudget = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
-    `BUDGET#${month}`,
+    `BUDGET#${resolvedBudgetId}`,
+    `PERIOD#${month}`,
     updates,
   );
 
   logger.info("Budget updated successfully", {
-    budgetId,
-    familyId,
+    budgetId: resolvedBudgetId,
     month,
   });
 
   return successResponse(
     {
       budgetId: updatedBudget.budgetId,
-      familyId: updatedBudget.familyId,
       month: updatedBudget.month,
       totalIncome: updatedBudget.totalIncome,
       totalSavings: updatedBudget.totalSavings,
@@ -723,38 +625,19 @@ async function updateBudget(event, user, budgetId) {
  * DELETE /budget/{budgetId}
  */
 async function deleteBudget(event, user, budgetId) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "budget:delete");
-  if (permissionError) {
-    logger.warn("Permission denied for deleting budget", {
-      userId: user.userId,
-      role: user.familyRole,
-      budgetId,
-    });
-    return permissionError;
-  }
-
   logger.info("Deleting budget", {
     userId: user.userId,
-    familyId: user.familyId,
     budgetId,
   });
 
-  // Use centralized FamilyIdResolver to get familyId consistently
-  const familyId = await FamilyIdResolver.resolveFamilyId(
+  // Resolve budget access from DynamoDB
+  const { budgetId: resolvedBudgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(
     user.userId,
-    user.familyId,
     dynamoHelpers,
   );
 
-  // Log the resolution for debugging
-  FamilyIdResolver.logFamilyIdResolution(
-    "budget-service",
-    "delete-budget",
-    user.userId,
-    familyId,
-    user.familyId ? "jwt" : "dynamodb-or-fallback",
-  );
+  // Enforce write permission
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const month =
     event.queryStringParameters && event.queryStringParameters.month;
@@ -767,26 +650,23 @@ async function deleteBudget(event, user, budgetId) {
 
   // Check if budget exists
   const existingBudget = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
-    `BUDGET#${month}`,
+    `BUDGET#${resolvedBudgetId}`,
+    `PERIOD#${month}`,
   );
 
   if (!existingBudget) {
     return errorResponse.notFound(`Budget not found for ${month}`);
   }
 
-  // Delete the budget (implement delete operation)
-  // Note: DynamoDB delete operation would be implemented here
-  // For now, we'll mark it as deleted by updating a status field
-  await dynamoHelpers.updateItem(`FAMILY#${familyId}`, `BUDGET#${month}`, {
+  // Soft-delete the budget by marking it as deleted
+  await dynamoHelpers.updateItem(`BUDGET#${resolvedBudgetId}`, `PERIOD#${month}`, {
     isDeleted: true,
     deletedAt: new Date().toISOString(),
     deletedBy: user.userId,
   });
 
   logger.info("Budget deleted successfully", {
-    budgetId,
-    familyId,
+    budgetId: resolvedBudgetId,
     month,
   });
 
@@ -808,20 +688,8 @@ async function deleteBudget(event, user, budgetId) {
  * **Validates: Requirement 40.7** - Enable/disable rollover per category
  */
 async function updateCategoryRollover(event, user, categoryId) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) {
-    logger.warn("Permission denied for updating category rollover", {
-      userId: user.userId,
-      role: user.familyRole,
-      categoryId,
-    });
-    return permissionError;
-  }
-
   logger.info("Updating category rollover settings", {
     userId: user.userId,
-    familyId: user.familyId,
     categoryId,
   });
 
@@ -848,17 +716,19 @@ async function updateCategoryRollover(event, user, categoryId) {
     return errorResponse.badRequest("rolloverEnabled must be a boolean");
   }
 
-  // Use centralized FamilyIdResolver to get familyId consistently
-  const familyId = await FamilyIdResolver.resolveFamilyId(
+  // Resolve budget access from DynamoDB
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(
     user.userId,
-    user.familyId,
     dynamoHelpers,
   );
 
+  // Enforce write permission
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
+
   // Get the budget
   const budget = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
-    `BUDGET#${requestBody.month}`,
+    `BUDGET#${budgetId}`,
+    `PERIOD#${requestBody.month}`,
   );
 
   if (!budget) {
@@ -914,8 +784,8 @@ async function updateCategoryRollover(event, user, categoryId) {
 
   // Update the budget
   const updatedBudget = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
-    `BUDGET#${requestBody.month}`,
+    `BUDGET#${budgetId}`,
+    `PERIOD#${requestBody.month}`,
     {
       groups: updatedGroups,
       totalRollover: calculateTotalRollover(updatedGroups),
@@ -925,7 +795,7 @@ async function updateCategoryRollover(event, user, categoryId) {
 
   logger.info("Category rollover settings updated successfully", {
     categoryId,
-    familyId,
+    budgetId,
     month: requestBody.month,
     rolloverEnabled: requestBody.rolloverEnabled,
   });
@@ -954,20 +824,8 @@ async function updateCategoryRollover(event, user, categoryId) {
  * **Validates: Requirement 40.7** - Reset rollover (start fresh)
  */
 async function resetCategoryRollover(event, user, categoryId) {
-  // Check permission before proceeding
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) {
-    logger.warn("Permission denied for resetting category rollover", {
-      userId: user.userId,
-      role: user.familyRole,
-      categoryId,
-    });
-    return permissionError;
-  }
-
   logger.info("Resetting category rollover", {
     userId: user.userId,
-    familyId: user.familyId,
     categoryId,
   });
 
@@ -990,17 +848,19 @@ async function resetCategoryRollover(event, user, categoryId) {
     );
   }
 
-  // Use centralized FamilyIdResolver to get familyId consistently
-  const familyId = await FamilyIdResolver.resolveFamilyId(
+  // Resolve budget access from DynamoDB
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(
     user.userId,
-    user.familyId,
     dynamoHelpers,
   );
 
+  // Enforce write permission
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
+
   // Get the budget
   const budget = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
-    `BUDGET#${requestBody.month}`,
+    `BUDGET#${budgetId}`,
+    `PERIOD#${requestBody.month}`,
   );
 
   if (!budget) {
@@ -1041,8 +901,8 @@ async function resetCategoryRollover(event, user, categoryId) {
 
   // Update the budget
   const updatedBudget = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
-    `BUDGET#${requestBody.month}`,
+    `BUDGET#${budgetId}`,
+    `PERIOD#${requestBody.month}`,
     {
       groups: updatedGroups,
       totalRollover: calculateTotalRollover(updatedGroups),
@@ -1052,7 +912,7 @@ async function resetCategoryRollover(event, user, categoryId) {
 
   logger.info("Category rollover reset successfully", {
     categoryId,
-    familyId,
+    budgetId,
     month: requestBody.month,
     previousRollover,
   });
@@ -1231,25 +1091,24 @@ function calculateRollover(previousCategory) {
  * **Validates: Requirement 40.4** - Calculate available budget
  * **Validates: Requirement 40.5** - Handle overspent categories (negative rollover)
  */
-async function createBudgetWithRecurringItems(familyId, month) {
+async function createBudgetWithRecurringItems(budgetId, month) {
   try {
     // Get the previous month's budget to copy recurring items
     const previousMonth = getPreviousMonth(month);
     const previousBudget = await dynamoHelpers.getItem(
-      `FAMILY#${familyId}`,
-      `BUDGET#${previousMonth}`,
+      `BUDGET#${budgetId}`,
+      `PERIOD#${previousMonth}`,
     );
 
     // Create base budget structure
     const newBudget = {
-      PK: `FAMILY#${familyId}`,
-      SK: `BUDGET#${month}`,
-      GSI1PK: `FAMILY#${familyId}`,
-      GSI1SK: `BUDGET#${month}`,
+      PK: `BUDGET#${budgetId}`,
+      SK: `PERIOD#${month}`,
+      GSI1PK: `BUDGET#${budgetId}`,
+      GSI1SK: `PERIOD#${month}`,
 
       entityType: "BUDGET",
       budgetId: month,
-      familyId,
       month,
 
       groups: {
@@ -1271,7 +1130,7 @@ async function createBudgetWithRecurringItems(familyId, month) {
     // If previous budget exists, copy all items (they become recurring by default)
     if (previousBudget && previousBudget.groups) {
       logger.info("Copying items from previous month as recurring", {
-        familyId,
+        budgetId,
         previousMonth,
         currentMonth: month,
       });
@@ -1327,7 +1186,7 @@ async function createBudgetWithRecurringItems(familyId, month) {
       newBudget.totalRollover = calculateTotalRollover(newBudget.groups);
 
       logger.info("Recurring items copied with rollover calculation", {
-        familyId,
+        budgetId,
         month,
         totalIncome: newBudget.totalIncome,
         totalExpenses: newBudget.totalExpenses,
@@ -1335,7 +1194,7 @@ async function createBudgetWithRecurringItems(familyId, month) {
       });
     } else {
       logger.info("No previous budget found, creating empty budget", {
-        familyId,
+        budgetId,
         month,
       });
     }
@@ -1351,7 +1210,7 @@ async function createBudgetWithRecurringItems(familyId, month) {
         message: error.message,
         stack: error.stack,
       },
-      familyId,
+      budgetId,
       month,
     });
     throw error;

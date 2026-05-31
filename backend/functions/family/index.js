@@ -711,11 +711,12 @@ async function handleAcceptInvitation(event, userId) {
             SK: "PROFILE",
           },
           UpdateExpression:
-            "SET familyId = :familyId, familyRole = :role, familyJoinedAt = :joinedAt",
+            "SET familyId = :familyId, familyRole = :role, familyJoinedAt = :joinedAt, onboardingCompleted = :completed",
           ExpressionAttributeValues: {
             ":familyId": invitation.familyId,
             ":role": invitation.role,
             ":joinedAt": joinedAt,
+            ":completed": true,
           },
         }),
       );
@@ -1450,7 +1451,7 @@ async function handleRevokeInvitation(
 function successResponse(data, statusCode = 200) {
   return {
     statusCode,
-    headers: CORS_HEADERS,
+    headers: getCorsHeaders({}),
     body: JSON.stringify(data),
   };
 }
@@ -1465,7 +1466,7 @@ function errorResponse(statusCode, message, details = null) {
   }
   return {
     statusCode,
-    headers: CORS_HEADERS,
+    headers: getCorsHeaders({}),
     body: JSON.stringify(body),
   };
 }
