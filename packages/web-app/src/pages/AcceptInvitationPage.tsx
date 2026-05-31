@@ -1,15 +1,14 @@
 /**
  * Accept Invitation Page
  *
- * Allows users to accept family invitations via email link
+ * Allows users to accept budget invitations via email link
  */
 
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { config } from "../config/environment";
+import { budgetService } from "../services/budgetService";
 
-// Family API is on a separate API Gateway (api-family stack)
-const API_BASE = config.familyApiUrl;
 // Auth endpoints are on the main API Gateway
 const AUTH_API_BASE = config.apiBaseUrl;
 
@@ -83,26 +82,14 @@ export const AcceptInvitationPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`${API_BASE}/family/accept-invitation`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({ token }),
-      });
+      // Accept the invitation via the budgets API — returns { budgetId, role, message }
+      const data = await budgetService.acceptInvitation(token);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to accept invitation");
-      }
-
-      const data = await response.json();
-
-      // Success! Redirect to budget page
-      navigate("/budget", {
+      // Success! Redirect directly to the budget (no token refresh needed —
+      // role is resolved from DynamoDB on every request, not from the JWT).
+      navigate(`/budget/${data.budgetId}`, {
         state: {
-          message: `Successfully joined family! You are now a ${data.role}.`,
+          message: `Successfully joined budget! You are now a ${data.role}.`,
         },
       });
     } catch (err) {

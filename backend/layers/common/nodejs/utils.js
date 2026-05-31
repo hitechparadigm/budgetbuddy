@@ -148,7 +148,9 @@ const parseRequestBody = (body) => {
 };
 
 /**
- * Extract user information from Cognito JWT token
+ * Extract user information from Cognito JWT token.
+ * Budget access and role are resolved from DynamoDB via BudgetAccessResolver —
+ * the JWT carries only userId.
  * @param {Object} event - API Gateway event
  * @returns {Object} User information from token
  */
@@ -162,16 +164,13 @@ const getUserFromEvent = (event) => {
     throw new Error("No user claims found in request");
   }
 
-  // Handle missing custom attributes gracefully
   // CRITICAL: Use custom:userId if available, fallback to sub
-  // This ensures consistency with auth-onboarding Lambda
+  // familyId and role are intentionally omitted — resolved from DynamoDB via BudgetAccessResolver
   return {
     userId: claims["custom:userId"] || claims.sub,
     email: claims.email,
     firstName: claims.given_name || claims["cognito:username"],
     lastName: claims.family_name || "User",
-    familyId: claims["custom:familyId"] || null,
-    role: claims["custom:familyRole"] || "primary",
     subscriptionTier: claims["custom:subscriptionTier"] || "free",
   };
 };
@@ -180,13 +179,12 @@ const getUserFromEvent = (event) => {
  * Generate unique identifiers with prefixes for different entity types
  */
 const generateId = {
-  user: () => `user_${uuidv4()}`,
-  family: () => `family_${uuidv4()}`,
-  budget: () => `budget_${uuidv4()}`,
+  user:        () => `user_${uuidv4()}`,
+  budget:      () => `budget_${uuidv4()}`,
   transaction: () => `txn_${uuidv4()}`,
-  category: () => `cat_${uuidv4()}`,
-  invitation: () => `inv_${uuidv4()}`,
-  account: () => `acc_${uuidv4()}`,
+  category:    () => `cat_${uuidv4()}`,
+  invitation:  () => `inv_${uuidv4()}`,
+  account:     () => `acc_${uuidv4()}`,
   /**
    * Generate ID with custom prefix
    * @param {string} prefix - Custom prefix for the ID
@@ -366,261 +364,165 @@ const logger = {
 };
 
 /**
- * Family ID Resolution Utility
+ * Budget Access Resolver
  *
- * Provides consistent family ID resolution across Auth and Budget services
- * to prevent partition key mismatches that cause "No budgets exist" errors.
+ * Replaces FamilyIdResolver. Resolves budget access from DynamoDB on every request.
+ * The JWT carries only userId — budget membership and role are always read from DynamoDB,
+ * which structurally eliminates the stale-JWT bug (REQ-11).
  *
- * Resolution order:
- * 1. JWT token familyId (if available)
- * 2. DynamoDB user profile lookup
- * 3. Fallback pattern: family_${userId}
+ * Usage:
+ *   const { budgetId, role, budgetType, budgetStatus, subscriptionTier } =
+ *     await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+ *   BudgetAccessResolver.assertPermission(role, action, budgetStatus);
  */
-const FamilyIdResolver = {
+const BudgetAccessResolver = {
   /**
-   * Resolve familyId consistently across all services
-   * @param {string} userId - User ID from JWT token
-   * @param {string|null} jwtFamilyId - Family ID from JWT token (may be null)
+   * Resolve budget access for a user.
+   *
+   * Resolution order:
+   * 1. Read USER#<userId>/PROFILE → get defaultBudgetId and subscriptionTier
+   * 2. Use requestedBudgetId if provided, otherwise use defaultBudgetId
+   * 3. Read BUDGET#<budgetId>/MEMBER#<userId> → get role, status, expiresAt
+   * 4. Read BUDGET#<budgetId>/METADATA → get budgetType, status
+   *
+   * @param {string} userId - User ID from JWT
    * @param {Object} dynamoHelpers - DynamoDB helper functions
-   * @returns {Promise<string>} Resolved family ID
+   * @param {string|null} requestedBudgetId - Optional explicit budget ID (e.g. from path param)
+   * @returns {Promise<{ budgetId, role, budgetType, budgetStatus, expiresAt, subscriptionTier }>}
+   * @throws {{ statusCode: number, message: string }} On any access denial
    */
-  async resolveFamilyId(userId, jwtFamilyId = null, dynamoHelpers = null) {
-    const startTime = Date.now();
-
-    logger.info("FamilyIdResolver.resolveFamilyId started", {
-      userId,
-      jwtFamilyId,
-      hasDynamoHelpers: !!dynamoHelpers,
-      timestamp: new Date().toISOString(),
-    });
-
-    try {
-      // Step 1: Try JWT familyId if available
-      if (jwtFamilyId) {
-        logger.info("Using familyId from JWT token", {
-          userId,
-          familyId: jwtFamilyId,
-          source: "jwt",
-          resolutionTimeMs: Date.now() - startTime,
-        });
-
-        this.logFamilyIdResolution(
-          "unknown",
-          "resolve-family-id",
-          userId,
-          jwtFamilyId,
-          "jwt",
-        );
-        return jwtFamilyId;
-      }
-
-      // Step 2: Lookup familyId from user profile in DynamoDB
-      if (dynamoHelpers) {
-        try {
-          logger.info("Looking up familyId from DynamoDB user profile", {
-            userId,
-            userProfileKey: `USER#${userId}`,
-            sortKey: "PROFILE",
-          });
-
-          const userProfile = await dynamoHelpers.getItem(
-            `USER#${userId}`,
-            "PROFILE",
-          );
-
-          if (
-            userProfile?.familyId &&
-            typeof userProfile.familyId === "string" &&
-            userProfile.familyId.trim().length > 0
-          ) {
-            logger.info("Using familyId from DynamoDB profile", {
-              userId,
-              familyId: userProfile.familyId,
-              source: "dynamodb",
-              resolutionTimeMs: Date.now() - startTime,
-            });
-
-            this.logFamilyIdResolution(
-              "unknown",
-              "resolve-family-id",
-              userId,
-              userProfile.familyId,
-              "dynamodb",
-            );
-            return userProfile.familyId;
-          } else {
-            logger.warn("User profile found but no valid familyId field", {
-              userId,
-              profileExists: !!userProfile,
-              profileKeys: userProfile ? Object.keys(userProfile) : [],
-              familyIdType: userProfile?.familyId
-                ? typeof userProfile.familyId
-                : "undefined",
-              familyIdValue: userProfile?.familyId,
-            });
-          }
-        } catch (error) {
-          logger.error("Failed to lookup familyId from DynamoDB", error, {
-            userId,
-            userProfileKey: `USER#${userId}`,
-            sortKey: "PROFILE",
-          });
-        }
-      } else {
-        logger.warn("No DynamoDB helpers provided, skipping profile lookup", {
-          userId,
-        });
-      }
-
-      // Step 3: Consistent fallback pattern
-      const fallbackFamilyId = `family_${userId}`;
-      logger.info("Using fallback familyId pattern", {
-        userId,
-        familyId: fallbackFamilyId,
-        source: "fallback",
-        resolutionTimeMs: Date.now() - startTime,
-      });
-
-      this.logFamilyIdResolution(
-        "unknown",
-        "resolve-family-id",
-        userId,
-        fallbackFamilyId,
-        "fallback",
-      );
-      return fallbackFamilyId;
-    } catch (error) {
-      logger.error(
-        "Critical error in FamilyIdResolver.resolveFamilyId",
-        error,
-        {
-          userId,
-          jwtFamilyId,
-          resolutionTimeMs: Date.now() - startTime,
-        },
-      );
-
-      // Even in error case, return consistent fallback
-      const fallbackFamilyId = `family_${userId}`;
-      logger.warn("Returning fallback familyId due to error", {
-        userId,
-        familyId: fallbackFamilyId,
-        source: "error-fallback",
-      });
-
-      return fallbackFamilyId;
+  async resolveAccess(userId, dynamoHelpers, requestedBudgetId = null) {
+    // Step 1: Load user profile
+    const profile = await dynamoHelpers.getItem(`USER#${userId}`, "PROFILE");
+    if (!profile) {
+      throw { statusCode: 403, message: "User profile not found" };
     }
+
+    // Step 2: Determine which budget to resolve
+    const budgetId = requestedBudgetId || profile.defaultBudgetId;
+    if (!budgetId) {
+      throw {
+        statusCode: 403,
+        message: "No active budget found. Please complete onboarding.",
+      };
+    }
+
+    // Step 3: Verify membership
+    const membership = await dynamoHelpers.getItem(
+      `BUDGET#${budgetId}`,
+      `MEMBER#${userId}`,
+    );
+    if (
+      !membership ||
+      membership.status === "revoked" ||
+      membership.status === "left"
+    ) {
+      throw {
+        statusCode: 403,
+        message: "You do not have access to this budget.",
+      };
+    }
+
+    // Step 4: Check viewer expiry
+    if (membership.expiresAt && new Date(membership.expiresAt) < new Date()) {
+      throw {
+        statusCode: 403,
+        message:
+          "Your viewer access has expired. Contact the budget owner to renew.",
+      };
+    }
+
+    // Step 5: Load budget metadata
+    const budget = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, "METADATA");
+    if (!budget) {
+      throw { statusCode: 404, message: "Budget not found." };
+    }
+    if (budget.status === "deleted") {
+      throw { statusCode: 403, message: "This budget has been deleted." };
+    }
+
+    return {
+      budgetId,
+      role: membership.role,
+      budgetType: budget.budgetType,
+      budgetStatus: budget.status,
+      expiresAt: membership.expiresAt || null,
+      subscriptionTier: profile.subscriptionTier || "free",
+    };
   },
 
   /**
-   * Log family ID resolution for debugging and monitoring
-   * @param {string} service - Service name (auth-service, budget-service)
-   * @param {string} operation - Operation name (onboarding, get-budgets, etc.)
-   * @param {string} userId - User ID
-   * @param {string} familyId - Resolved family ID
-   * @param {'jwt'|'dynamodb'|'fallback'} source - Resolution source
+   * Assert that a role is permitted to perform an action on a budget.
+   *
+   * Permission matrix (16 actions):
+   * - Read actions (budget.read, transaction.read, category.read, account.read, report.read):
+   *     owner, partner, household_member, viewer
+   * - Write actions (transaction.create, transaction.edit):
+   *     owner, partner, household_member
+   * - Elevated write (transaction.delete, budget.edit, category.edit, account.manage,
+   *     member.invite, budget.export):
+   *     owner, partner
+   * - Owner-only (member.remove, budget.archive, budget.delete):
+   *     owner
+   *
+   * Archived budgets are read-only for all roles.
+   *
+   * @param {string} role - Member role (owner | partner | household_member | viewer)
+   * @param {string} action - Action key (e.g. 'transaction.create')
+   * @param {string} [budgetStatus='active'] - Budget status (active | archived | deleted)
+   * @throws {{ statusCode: number, message: string }} If permission is denied or action unknown
    */
-  logFamilyIdResolution(service, operation, userId, familyId, source) {
-    const logData = {
-      service,
-      operation,
-      userId,
-      familyId,
-      source,
-      partitionKey: `FAMILY#${familyId}`,
-      timestamp: new Date().toISOString(),
+  assertPermission(role, action, budgetStatus = "active") {
+    // Archived budgets are read-only for everyone
+    if (budgetStatus === "archived") {
+      const READ_ACTIONS = [
+        "budget.read",
+        "transaction.read",
+        "category.read",
+        "account.read",
+        "report.read",
+      ];
+      if (!READ_ACTIONS.includes(action)) {
+        throw {
+          statusCode: 403,
+          message: "This budget is archived and is read-only.",
+        };
+      }
+    }
+
+    const PERMISSIONS = {
+      // Read — all roles
+      "budget.read":        ["owner", "partner", "household_member", "viewer"],
+      "transaction.read":   ["owner", "partner", "household_member", "viewer"],
+      "category.read":      ["owner", "partner", "household_member", "viewer"],
+      "account.read":       ["owner", "partner", "household_member", "viewer"],
+      "report.read":        ["owner", "partner", "household_member", "viewer"],
+      // Write — owner, partner, household_member
+      "transaction.create": ["owner", "partner", "household_member"],
+      "transaction.edit":   ["owner", "partner", "household_member"],
+      // Elevated write — owner, partner
+      "transaction.delete": ["owner", "partner"],
+      "budget.edit":        ["owner", "partner"],
+      "category.edit":      ["owner", "partner"],
+      "account.manage":     ["owner", "partner"],
+      "member.invite":      ["owner", "partner"],
+      "budget.export":      ["owner", "partner"],
+      // Owner only
+      "member.remove":      ["owner"],
+      "budget.archive":     ["owner"],
+      "budget.delete":      ["owner"],
     };
 
-    // Use structured logging for easy CloudWatch filtering
-    logger.info("FAMILY_ID_RESOLUTION", logData);
-
-    // Also log with specific prefix for easy searching
-    console.log("FAMILY_ID_RESOLUTION:", JSON.stringify(logData, null, 2));
-  },
-
-  /**
-   * Validate that two services resolved the same familyId
-   * @param {string} authFamilyId - Family ID from auth service
-   * @param {string} budgetFamilyId - Family ID from budget service
-   * @param {string} userId - User ID for context
-   * @throws {Error} If family IDs don't match
-   */
-  validateFamilyIdConsistency(authFamilyId, budgetFamilyId, userId) {
-    if (authFamilyId !== budgetFamilyId) {
-      const error = new Error(`Family ID mismatch detected for user ${userId}`);
-
-      logger.error("FAMILY_ID_MISMATCH", error, {
-        userId,
-        authFamilyId,
-        budgetFamilyId,
-        authPartitionKey: `FAMILY#${authFamilyId}`,
-        budgetPartitionKey: `FAMILY#${budgetFamilyId}`,
-        timestamp: new Date().toISOString(),
-      });
-
-      throw error;
+    const allowed = PERMISSIONS[action];
+    if (!allowed) {
+      throw { statusCode: 400, message: `Unknown action: ${action}` };
     }
-
-    logger.info("Family ID consistency validated", {
-      userId,
-      familyId: authFamilyId,
-      partitionKey: `FAMILY#${authFamilyId}`,
-    });
-  },
-
-  /**
-   * Handle legacy users with different familyId patterns
-   * @param {string} userId - User ID
-   * @param {Object} dynamoHelpers - DynamoDB helper functions
-   * @returns {Promise<string|null>} Found legacy familyId or null
-   */
-  async findLegacyFamilyId(userId, dynamoHelpers) {
-    const possibleFamilyIds = [
-      `family_${userId}`, // Current fallback pattern
-      `family_user_${userId}`, // Alternative pattern seen in logs
-      userId, // Direct userId (legacy)
-    ];
-
-    logger.info("Searching for legacy familyId patterns", {
-      userId,
-      possiblePatterns: possibleFamilyIds,
-    });
-
-    // Check which familyId has existing budgets
-    for (const familyId of possibleFamilyIds) {
-      try {
-        const budgets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
-          FilterExpression: "entityType = :entityType",
-          ExpressionAttributeValues: {
-            ":entityType": "BUDGET",
-          },
-          Limit: 1, // Just check if any exist
-        });
-
-        if (budgets.length > 0) {
-          logger.info("Found existing budgets with legacy familyId", {
-            userId,
-            familyId,
-            budgetCount: budgets.length,
-            partitionKey: `FAMILY#${familyId}`,
-          });
-          return familyId;
-        }
-      } catch (error) {
-        logger.warn("Error checking legacy familyId pattern", {
-          userId,
-          familyId,
-          error: error.message,
-        });
-      }
+    if (!allowed.includes(role)) {
+      throw {
+        statusCode: 403,
+        message: "You do not have permission to perform this action.",
+      };
     }
-
-    logger.info("No legacy familyId patterns found with existing budgets", {
-      userId,
-      checkedPatterns: possibleFamilyIds,
-    });
-
-    return null;
   },
 };
 
@@ -634,7 +536,7 @@ module.exports = {
   generateId,
   dynamoHelpers,
   logger,
-  FamilyIdResolver, // Add the new utility
+  BudgetAccessResolver,
 };
 
 // Force rebuild timestamp: 2025-10-28T01:00:00Z

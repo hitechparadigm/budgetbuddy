@@ -1,7 +1,8 @@
 /**
  * AI-Powered Onboarding Page
  *
- * Provides location-based budget suggestions with AI-powered category recommendations
+ * Provides location-based budget suggestions with AI-powered category recommendations.
+ * Includes a budget type selection step (REQ-12) before the main onboarding flow.
  */
 
 import React, { useState } from "react";
@@ -14,10 +15,62 @@ import {
 import { apiClient } from "../utils/apiClient";
 import { getCurrentMonthString } from "../utils/monthHelpers";
 
+type BudgetType = "personal" | "family" | "shared";
+
+type OnboardingPageStep = "budget-type" | "budget-setup";
+
+const BUDGET_TYPE_OPTIONS: {
+  value: BudgetType;
+  label: string;
+  description: string;
+  icon: string;
+}[] = [
+  {
+    value: "personal",
+    label: "Personal Budget",
+    description: "just for me",
+    icon: "👤",
+  },
+  {
+    value: "family",
+    label: "Family Budget",
+    description: "for me and my spouse/partner",
+    icon: "👫",
+  },
+  {
+    value: "shared",
+    label: "Shared Budget",
+    description: "for roommates or shared expenses",
+    icon: "🏠",
+  },
+];
+
+const FAMILY_BUDGET_DISCLOSURE =
+  "A Family Budget is a fully transparent household budget. Both partners will see all income, expenses, accounts, debts, savings goals, and transactions. There are no hidden categories or private sections.";
+
 export const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
+  const [pageStep, setPageStep] = useState<OnboardingPageStep>("budget-type");
+  const [selectedBudgetType, setSelectedBudgetType] =
+    useState<BudgetType>("personal");
+  const [showFamilyDisclosure, setShowFamilyDisclosure] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /** Called when the user clicks Continue on the budget-type step. */
+  const handleBudgetTypeNext = () => {
+    if (selectedBudgetType === "family") {
+      setShowFamilyDisclosure(true);
+    } else {
+      setPageStep("budget-setup");
+    }
+  };
+
+  /** Called when the user confirms the Family Budget disclosure. */
+  const handleFamilyDisclosureConfirm = () => {
+    setShowFamilyDisclosure(false);
+    setPageStep("budget-setup");
+  };
 
   const handleComplete = async (
     suggestions: OnboardingSuggestions,
@@ -36,6 +89,7 @@ export const OnboardingPage: React.FC = () => {
         currentMonth: getCurrentMonthString(),
         selectedCategoriesCount: selectedCategories.length,
         currency,
+        budgetType: selectedBudgetType,
       });
 
       console.log(
@@ -50,6 +104,7 @@ export const OnboardingPage: React.FC = () => {
         familySize: suggestions.familySize,
         currentMonth: getCurrentMonthString(), // Send timezone-aware current month
         currency, // Pass currency to backend
+        budgetType: selectedBudgetType, // Pass budget type to backend (REQ-12)
         selectedCategories: selectedCategories.map((c) => ({
           name: c.name,
           icon: c.icon,
@@ -121,11 +176,113 @@ export const OnboardingPage: React.FC = () => {
           <p className="text-sm">{error}</p>
         </div>
       )}
-      <OnboardingFlow
-        onComplete={handleComplete}
-        onSkip={handleSkip}
-        isSubmitting={isSubmitting}
-      />
+
+      {/* Family Budget transparency disclosure modal */}
+      {showFamilyDisclosure && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-3">
+              👫 Family Budget — Full Transparency
+            </h3>
+            <p className="text-gray-700 leading-relaxed">{FAMILY_BUDGET_DISCLOSURE}</p>
+            <div className="mt-6 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowFamilyDisclosure(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={handleFamilyDisclosureConfirm}
+                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-medium"
+              >
+                I Understand, Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 1: Budget type selection */}
+      {pageStep === "budget-type" && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
+            {/* Header */}
+            <div className="p-6 border-b">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Welcome to BudgetBuddy! 🎉
+                </h2>
+                <button
+                  onClick={handleSkip}
+                  className="text-gray-500 hover:text-gray-700 text-sm"
+                >
+                  Skip for now
+                </button>
+              </div>
+              <p className="text-gray-600 mt-2">
+                Let's set up your budget with personalized suggestions
+              </p>
+            </div>
+
+            <div className="p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                What kind of budget are you creating?
+              </h3>
+              <p className="text-gray-600 text-sm mb-6">
+                Choose the option that best fits your household.
+              </p>
+
+              <div className="space-y-3">
+                {BUDGET_TYPE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setSelectedBudgetType(option.value)}
+                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                      selectedBudgetType === option.value
+                        ? "border-green-500 bg-green-50"
+                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{option.icon}</span>
+                      <div>
+                        <div className="font-semibold text-gray-900">
+                          {option.label}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          — {option.description}
+                        </div>
+                      </div>
+                      {selectedBudgetType === option.value && (
+                        <span className="ml-auto text-green-500 text-xl">✓</span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-8 flex justify-end">
+                <button
+                  onClick={handleBudgetTypeNext}
+                  className="bg-green-500 text-white px-8 py-2 rounded-lg hover:bg-green-600 font-medium"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: Main onboarding flow (location, currency, family size, categories) */}
+      {pageStep === "budget-setup" && (
+        <OnboardingFlow
+          onComplete={handleComplete}
+          onSkip={handleSkip}
+          isSubmitting={isSubmitting}
+        />
+      )}
     </>
   );
 };

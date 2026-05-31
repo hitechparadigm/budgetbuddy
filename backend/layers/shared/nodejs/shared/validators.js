@@ -162,10 +162,35 @@ function validateLoginInput(input) {
   return errors;
 }
 
+/**
+ * Valid roles that can be assigned to budget members (excluding owner, which is set at creation)
+ */
+const validRoles = ['partner', 'household_member', 'viewer'];
+
+/**
+ * Validate a budget member role
+ *
+ * @param {string} role - Role to validate
+ * @returns {string|null} Error message if invalid, null if valid
+ */
+function validateRole(role) {
+  if (!role || typeof role !== 'string') {
+    return 'Role is required and must be a string';
+  }
+
+  if (!validRoles.includes(role)) {
+    return `Role must be one of: ${validRoles.join(', ')}`;
+  }
+
+  return null;
+}
+
 module.exports = {
   validateEmail,
   validatePassword,
   validateOnboardingInput,
   validateRegistrationInput,
   validateLoginInput,
+  validateRole,
+  validRoles,
 };

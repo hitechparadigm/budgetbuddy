@@ -306,13 +306,13 @@ export class ApiStack extends cdk.Stack {
     });
 
     // Grant additional permissions for specific functions
-    this.grantAdditionalPermissions();
+    this.grantAdditionalPermissions(props.userPool.userPoolArn);
   }
 
   /**
    * Grant additional AWS service permissions to specific functions
    */
-  private grantAdditionalPermissions(): void {
+  private grantAdditionalPermissions(userPoolArn: string): void {
     // Auth Handler needs Cognito permissions
     this.functions.authHandler.addToRolePolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
@@ -330,7 +330,7 @@ export class ApiStack extends cdk.Stack {
         'cognito-idp:AdminSetUserPassword',
         'cognito-idp:AdminDeleteUser',
       ],
-      resources: [props.userPool.userPoolArn],
+      resources: [userPoolArn],
     }));
 
     // AI Handler needs Bedrock permissions

@@ -101,18 +101,23 @@ export class AuthStack extends cdk.Stack {
           mutable: false, // User ID should not change once set
         }),
 
-        // Family account association
+        // Legacy: family account association — kept because Cognito schema attributes
+        // cannot be deleted once created. Must NOT be required; not written during
+        // registration. Budget membership is now resolved from DynamoDB via
+        // BudgetAccessResolver, not from Cognito attributes.
         familyId: new cognito.StringAttribute({
           minLen: 0,
           maxLen: 50,
-          mutable: true,
+          mutable: true, // optional — never set during registration
         }),
 
-        // User role within family (primary, spouse, viewer)
+        // Legacy: user role within family — kept because Cognito schema attributes
+        // cannot be deleted once created. Must NOT be required; not written during
+        // registration. Role is now resolved from DynamoDB via BudgetAccessResolver.
         familyRole: new cognito.StringAttribute({
           minLen: 0,
           maxLen: 20,
-          mutable: true,
+          mutable: true, // optional — never set during registration
         }),
 
         // Account type (single or family)
@@ -248,6 +253,9 @@ export class AuthStack extends cdk.Stack {
           'country'
         ),
 
+      // Write attributes: familyId and familyRole are intentionally excluded.
+      // Budget membership and role are resolved from DynamoDB via BudgetAccessResolver,
+      // not stored in Cognito. Only userId is written during registration.
       writeAttributes: new cognito.ClientAttributes()
         .withStandardAttributes({
           email: true,
@@ -257,8 +265,6 @@ export class AuthStack extends cdk.Stack {
         })
         .withCustomAttributes(
           'userId',
-          'familyId',
-          'familyRole',
           'accountType',
           'subscriptionTier',
           'onboardingCompleted',

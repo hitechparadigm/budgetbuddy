@@ -1,10 +1,18 @@
 # BudgetBuddy User Journeys & Component Mapping
 
-**Last Updated**: 2026-05-30
+**Last Updated**: 2026-05-31
 **Purpose**: Comprehensive mapping of user journeys to frontend/backend components
 **Status**: Living Document - Update as features are implemented
 
 **Recent Updates**:
+
+- Budget Model Redesign Spec Updated (2026-05-31)
+  - 📋 **Spec renamed to Budget terminology** — All `Plan` / `planId` / `PlanAccessResolver` references updated to `Budget` / `budgetId` / `BudgetAccessResolver` throughout spec, steering files, and this document
+  - 📋 **DynamoDB key schema updated** — `PLAN#<planId>` → `BUDGET#<budgetId>`, `BUDGET_MONTH#<month>` → `PERIOD#<month>`
+  - 📋 **API routes updated** — `/plans/*` → `/budgets/*`; CDK stack renamed `api-family-stack` → `api-budgets-stack`
+  - 📋 **Section 4 updated** — Family Collaboration Journey now reflects Budget model redesign: new roles (owner/partner/household_member/viewer), budget types (personal/family/shared), viewer expiry, budget switcher, and `BudgetMembersPage` replacing `FamilySettings`
+  - 📋 **Infrastructure table updated** — `budgetbuddy-dev-api-family` → `budgetbuddy-dev-api-budgets` (pending deployment)
+  - 📋 **Spec location**: `.kiro/specs/plan-model-redesign/` — 19 tasks, implementation not yet started
 
 - Family Invitation Bug Fixes (2026-05-30)
   - ✅ **FIXED: Accept invitation was returning 401** — `AcceptInvitationPage.tsx` was sending `access_token` instead of `id_token` to the Cognito authorizer. Every accept attempt silently failed.
@@ -195,7 +203,7 @@
 1. [New User Onboarding Journey](#1-new-user-onboarding-journey)
 2. [Daily Budget Management Journey](#2-daily-budget-management-journey)
 3. [Bank Account Connection Journey](#3-bank-account-connection-journey)
-4. [Family Collaboration Journey](#4-family-collaboration-journey)
+4. [Budget Collaboration Journey](#4-budget-collaboration-journey)
 5. [Financial Insights Journey](#5-financial-insights-journey)
 6. [Debt & Savings Goals Journey](#6-debt--savings-goals-journey)
 7. [Notifications & Reminders Journey](#7-notifications--reminders-journey)
@@ -599,30 +607,35 @@ All Account Management UI components have been implemented:
 
 ---
 
-## 4. Family Collaboration Journey
+## 4. Budget Collaboration Journey
+
+> **⚠️ REDESIGN IN PROGRESS** — This journey is being redesigned as part of the Budget Model Redesign spec (`.kiro/specs/plan-model-redesign/`). The current implementation uses the old `FAMILY#` model. The new implementation will use `BUDGET#` keys, `BudgetAccessResolver`, and the components listed below. Implementation has not started yet.
 
 ### User Story
 
-_"As a primary account holder, I want to invite my partner to share our budget so we can manage finances together."_
+_"As a budget owner, I want to invite my partner, household members, or a financial advisor to my budget so we can collaborate with the right level of access."_
 
-### Journey Flow
+### Journey Flow (Target — Budget Model)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  STEP 1: Access Family Settings                                              │
+│  STEP 1: Onboarding — Choose Budget Type                                     │
 │  ─────────────────────────────────────────────────────────────────────────── │
-│  Settings → Family Settings | Sidebar → Family icon                          │
+│  What kind of budget are you creating?                                       │
+│  ○ Personal Budget — just for me                                             │
+│  ○ Family Budget — for me and my spouse/partner (full transparency)          │
+│  ○ Shared Budget — for roommates or shared expenses only                     │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  STEP 2: Family Members View                                                 │
+│  STEP 2: Budget Members View                                                 │
 │  ─────────────────────────────────────────────────────────────────────────── │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  👨‍👩‍👧 Family Members (1/2 editors)                                      │    │
+│  │  👨‍👩‍👧 Budget Members                                                    │    │
 │  │  ────────────────────────────────────────────────────────────────── │    │
-│  │  👤 John Smith (you)          Primary        john@email.com         │    │
+│  │  👤 John Smith (you)          Owner          john@email.com         │    │
 │  │                                                                      │    │
-│  │  [+ Invite Partner]                                                  │    │
+│  │  [+ Invite Member]                                                   │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     ↓
@@ -630,92 +643,129 @@ _"As a primary account holder, I want to invite my partner to share our budget s
 │  STEP 3: Send Invitation                                                     │
 │  ─────────────────────────────────────────────────────────────────────────── │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │  Invite Family Member                                                │    │
+│  │  Invite Budget Member                                                │    │
 │  │  ────────────────────────────────────────────────────────────────── │    │
 │  │  Email: [partner@email.com                    ]                      │    │
 │  │                                                                      │    │
-│  │  Role: ○ Spouse (can edit budget)                                    │    │
-│  │        ○ Viewer (read-only access)                                   │    │
+│  │  Role: ○ Partner (full access, trusted co-budgeter)                  │    │
+│  │        ○ Household Member (can add transactions)                     │    │
+│  │        ○ Viewer (read-only)                                          │    │
+│  │                                                                      │    │
+│  │  Viewer expiry: ○ 30 days  ○ 60 days  ○ 90 days  ○ No expiry        │    │
+│  │  Access label: [Financial Advisor          ] (optional)              │    │
 │  │                                                                      │    │
 │  │  [Cancel]                              [Send Invitation]             │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  STEP 4: Partner Receives Email                                              │
+│  STEP 4: Invitee Receives Email & Accepts                                    │
 │  ─────────────────────────────────────────────────────────────────────────── │
-│  Email contains:                                                             │
-│  • Invitation message from John                                              │
-│  • Role being granted (Spouse/Viewer)                                        │
-│  • "Accept Invitation" button with secure token                              │
-│  • Expiration notice (7 days)                                                │
+│  New User: Register → Create account → Auto-join budget                      │
+│  Existing User: Login → Authenticate → Auto-join budget                      │
+│                                                                              │
+│  → defaultBudgetId updated → Redirect to shared budget                       │
 └─────────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  STEP 5: Partner Accepts Invitation                                          │
+│  STEP 5: Budget Switcher                                                     │
 │  ─────────────────────────────────────────────────────────────────────────── │
-│  New User: Register form → Create account → Auto-join family                 │
-│  Existing User: Login form → Authenticate → Auto-join family                 │
-│                                                                              │
-│  → Redirect to shared budget with success message                            │
+│  User has multiple budgets → Budget switcher appears in header               │
+│  Personal Budget | Family Budget | House Budget                              │
+│  Click to switch → defaultBudgetId updated → Budget data reloads             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Mapping
+### Component Mapping — Target State (Budget Model)
 
-| Feature             | Frontend Component         | Backend API                            | Status                            | Notes |
-| ------------------- | -------------------------- | -------------------------------------- | --------------------------------- | ----- |
-| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete                       |       |
-| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ✅ Complete                       |       |
-| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | ✅ Complete                       |       |
-| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ✅ Complete (UX fixed 2026-05-31) |
-| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ✅ Complete                       |       |
-| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ✅ Complete                       |       |
-| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ✅ Complete                       |       |
-| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ✅ Complete                       |       |
-| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ✅ Complete                       |       |
-| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ✅ Complete                       |       |
-| Email Notifications | Backend                    | `POST /email/send-invitation`          | ✅ Complete                       |       |
-| Email Notifications | Backend                    | `POST /email/send-removal`             | ✅ Complete                       |       |
-| Email Notifications | Backend                    | `POST /email/send-acceptance`          | ✅ Complete                       |       |
+> Components marked ❌ are planned but not yet implemented. Components marked ⚠️ exist under the old Family model and will be replaced.
 
-**Resolved Issues (2026-04-01)**:
+| Feature               | Frontend Component          | Backend API                              | Status                                    | Notes |
+| --------------------- | --------------------------- | ---------------------------------------- | ----------------------------------------- | ----- |
+| Budget Members Page   | ❌ `BudgetMembersPage.tsx`  | `GET /budgets/{budgetId}/members`        | ❌ Planned (replaces `FamilySettings`)    | REQ-4 |
+| Budget Switcher       | ❌ `BudgetSwitcher.tsx`     | `GET /budgets` + `PUT /budgets/active`   | ❌ Planned                                | REQ-4 |
+| Send Invitation       | ❌ `BudgetMembersPage.tsx`  | `POST /budgets/{budgetId}/invite`        | ❌ Planned (replaces `/family/invite`)    | REQ-5 |
+| Accept Invitation     | ⚠️ `AcceptInvitationPage.tsx` | `POST /budgets/accept-invitation`      | ⚠️ Needs update (route + budgetId logic) | REQ-6 |
+| Remove Member         | ❌ `BudgetMembersPage.tsx`  | `DELETE /budgets/{budgetId}/members/{id}`| ❌ Planned                                | REQ-4 |
+| Change Role           | ❌ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/members/{id}`   | ❌ Planned                                | REQ-4 |
+| Leave Budget          | ❌ `BudgetMembersPage.tsx`  | `POST /budgets/{budgetId}/leave`         | ❌ Planned                                | REQ-8 |
+| Pending Invitations   | ❌ `BudgetMembersPage.tsx`  | `GET /budgets/{budgetId}/invitations`    | ❌ Planned                                | REQ-5 |
+| Revoke Invitation     | ❌ `BudgetMembersPage.tsx`  | `DELETE /budgets/{budgetId}/invitations/{id}` | ❌ Planned                           | REQ-5 |
+| Resend Invitation     | ❌ `BudgetMembersPage.tsx`  | `POST /budgets/{budgetId}/invitations/{id}/resend` | ❌ Planned                    | REQ-5 |
+| Extend Viewer Access  | ❌ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/members/{id}/extend` | ❌ Planned                          | REQ-7 |
+| Archive Budget        | ❌ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/archive`        | ❌ Planned                                | REQ-15 |
+| Restore Budget        | ❌ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/restore`        | ❌ Planned                                | REQ-15 |
+| Delete Budget         | ❌ `BudgetMembersPage.tsx`  | `DELETE /budgets/{budgetId}`             | ❌ Planned                                | REQ-15 |
+| Budget Type Selection | ❌ `OnboardingPage.tsx`     | `PUT /auth/onboarding` (budgetType)      | ❌ Planned                                | REQ-12 |
+| Email Notifications   | Backend                     | `POST /email/send-invitation`            | ✅ Complete (reuse existing)              |       |
+| Email Notifications   | Backend                     | `POST /email/send-removal`               | ✅ Complete (reuse existing)              |       |
+| Email Notifications   | Backend                     | `POST /email/send-acceptance`            | ✅ Complete (reuse existing)              |       |
 
-- ✅ **Family Invitation Pending List Fix - COMPLETE**:
-  - **Issue**: `handleGetInvitations` used invalid `begins_with` on DynamoDB GSI partition key, causing the query to fail. Frontend silently swallowed the error, hiding the "Pending Invitations" section.
-  - **Fix Applied**:
-    - Replaced invalid `QueryCommand` with `ScanCommand` + `FilterExpression` in `backend/functions/family/index.js`
-    - Added `invitationWarning` state and amber warning banner in `FamilySettings.tsx` for error visibility
-  - **Status**: ✅ Fixed and tested (3 property-based tests passing)
-  - **Spec**: `.kiro/specs/family-invitation-pending-fix/` — ✅ CLOSED
+### Current State (Old Family Model — Being Replaced)
 
-**Infrastructure Status**:
+The following components exist under the old `FAMILY#` model and will be replaced by the Budget model redesign:
 
-- ✅ **DEPLOYED**: Family API stack with dedicated API Gateway
-- **Stack**: budgetbuddy-dev-api-family with dedicated API Gateway
-- **Resources**: ~150 resources (well under CloudFormation 500 limit)
-- **Changes Applied**:
-  - Fixed circular dependency by reusing Lambda integrations across API methods
-  - Added explicit authorization types to all API Gateway methods
-  - Configured `FAMILY_API_URL` environment variable for family Lambda
-- **Deployment**: ✅ Complete (Run ID 21717465771)
-- **See**: `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md` for implementation details
+| Feature             | Frontend Component         | Backend API                            | Status                            |
+| ------------------- | -------------------------- | -------------------------------------- | --------------------------------- |
+| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ⚠️ Will be replaced               |
+| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ⚠️ Will be replaced               |
+| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | ⚠️ Will be replaced               |
+| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ⚠️ Route will change              |
+| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ⚠️ Will be replaced               |
+| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ⚠️ Will be replaced               |
+| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ⚠️ Will be replaced               |
+| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ⚠️ Will be replaced               |
+| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ⚠️ Will be replaced               |
+| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ⚠️ Will be replaced               |
+
+**Infrastructure Status (Current)**:
+
+- ✅ **DEPLOYED**: Family API stack with dedicated API Gateway (`budgetbuddy-dev-api-family`)
+- 📋 **PLANNED**: Will be replaced by `budgetbuddy-dev-api-budgets` stack after Budget Model Redesign implementation
+
+**Resolved Issues (Historical — Old Model)**:
+
+- ✅ Family Invitation Pending List Fix (2026-04-01) — `.kiro/specs/family-invitation-pending-fix/` CLOSED
+- ✅ Accept Invitation 401 fix (2026-05-30) — id_token vs access_token
+- ✅ familyId not updated after accepting (2026-05-30)
+- ✅ FAMILY#undefined data isolation bug (2026-05-30)
+
+### Roles (New Budget Model)
+
+| Role | Access | Use Case |
+|---|---|---|
+| **Owner** | Full admin — delete, archive, manage members | Budget creator |
+| **Partner** | Full read/write, equal household visibility | Spouse/common-law partner |
+| **Household Member** | Add/edit transactions, view everything | Adult child, in-law, roommate on family budget |
+| **Viewer** | Read-only, optionally time-limited | Financial advisor, accountant, adult child learning |
+
+### Budget Types (New Budget Model)
+
+| Type | Transparency | Use Case |
+|---|---|---|
+| **Personal** | Private — owner only | Individual budget |
+| **Family** | Full — Owner and Partner see everything, no hidden data | Couple/household |
+| **Shared** | Limited — shared expenses only, personal budgets stay private | Roommates, in-laws, shared costs |
 
 ### UI/UX Requirements
 
-- **Clear role explanation**: Tooltip explaining Spouse vs Viewer permissions
+- **Budget type disclosure**: Show transparency warning before creating Family Budget
+- **Role explanation**: Tooltip explaining each role's permissions
+- **Viewer expiry display**: Show "Access until Aug 31, 2026" with Revoke/Extend buttons
 - **Confirmation dialogs**: Confirm before removing members or leaving
-- **Real-time sync**: Show when partner makes changes (WebSocket future)
-- **Activity indicators**: Show who made last change on transactions
-- **Invitation status**: Show pending/accepted/expired status
+- **Budget switcher**: Slack-style switcher in header when user has multiple budgets
+- **Invitation status**: Show pending/accepted/expired/revoked status
 
-### Missing Components
+### Planned Components (Budget Model Redesign)
 
-| Component                   | Priority | Description                       |
-| --------------------------- | -------- | --------------------------------- |
-| `FamilyActivityFeed.tsx`    | MEDIUM   | Show recent family member actions |
-| `RealTimeSyncIndicator.tsx` | LOW      | Show when data is syncing         |
-| `MemberAvatars.tsx`         | LOW      | Show who's viewing budget         |
+| Component                   | Priority | Description                                    |
+| --------------------------- | -------- | ---------------------------------------------- |
+| `BudgetMembersPage.tsx`     | HIGH     | Replaces `FamilySettings.tsx` — full member management |
+| `BudgetSwitcher.tsx`        | HIGH     | Header switcher for users with multiple budgets |
+| `BudgetTypeSelector.tsx`    | HIGH     | Onboarding step — personal/family/shared choice |
+| `ViewerExpiryPicker.tsx`    | MEDIUM   | 30/60/90 days / No expiry selector             |
+| `BudgetActivityFeed.tsx`    | LOW      | Show recent member actions                     |
+| `MemberAvatars.tsx`         | LOW      | Show who's viewing budget                      |
 
 ---
 
@@ -2222,7 +2272,7 @@ _"As a user, I want AI to automatically detect my recurring bills and help me pl
 
 - **Data encryption**: All transaction data encrypted in transit (TLS 1.2+) and at rest
 - **No data retention**: AWS Bedrock doesn't retain transaction data in logs
-- **Family scoping**: AI only accesses authenticated user's family data
+- **Budget scoping**: AI only accesses authenticated user's budget data
 - **Audit logging**: All AI operations logged (without sensitive details)
 - **User deletion**: All AI patterns deleted when account deleted
 
@@ -2542,7 +2592,9 @@ The CDK infrastructure has been split to stay under CloudFormation's 500 resourc
 | `budgetbuddy-dev-auth-onboarding`       | Standalone onboarding Lambda               | ~15       | ✅ Complete |
 | `budgetbuddy-dev-api`                   | Core API (budget, transactions, auth, etc) | ~412      | ✅ Complete |
 | `budgetbuddy-dev-api-features`          | Feature APIs (Plaid, Admin, Tips, etc)     | ~350      | ✅ Complete |
-| `budgetbuddy-dev-api-features-extended` | AI-powered APIs (Insights, Receipt, etc)   | ~150      | ✅ NEW      |
+| `budgetbuddy-dev-api-features-extended` | AI-powered APIs (Insights, Receipt, etc)   | ~150      | ✅ Complete |
+| `budgetbuddy-dev-api-family`            | Family/Budget collaboration API            | ~150      | ⚠️ Will be renamed to `api-budgets` |
+| `budgetbuddy-dev-api-budgets`           | Budget collaboration API (new model)       | ~150      | 📋 Planned (replaces `api-family`) |
 | `budgetbuddy-dev-hosting`               | S3 + CloudFront                            | ~30       | ✅ Complete |
 | `budgetbuddy-dev-notification`          | Push notifications, reminders              | ~40       | ✅ Complete |
 | `budgetbuddy-dev-monitoring`            | CloudWatch dashboards, alarms              | ~25       | ✅ Complete |
@@ -2590,7 +2642,7 @@ The CDK infrastructure has been split to stay under CloudFormation's 500 resourc
 | Onboarding    | New User Onboarding                  |
 | Daily         | Daily Budget Management              |
 | Bank          | Bank Account Connection              |
-| Family        | Family Collaboration                 |
+| Family        | Budget Collaboration                 |
 | Insights      | Financial Insights                   |
 | Goals         | Debt & Savings Goals                 |
 | Notifications | Notifications                        |
@@ -2620,5 +2672,5 @@ Tasks are defined in `.kiro/specs/competitive-features/tasks.md`:
 ---
 
 _Document maintained by BudgetBuddy Development Team_
-_Last reviewed: 2026-04-01_
+_Last reviewed: 2026-05-31_
 _Hook: `update-user-journeys` enforces updates on feature completion_

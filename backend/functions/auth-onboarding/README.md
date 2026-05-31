@@ -22,6 +22,7 @@ This Lambda function processes the final step of user onboarding:
   "country": "United States",
   "familySize": 2,
   "currentMonth": "2026-01",
+  "budgetType": "personal",
   "selectedCategories": [
     {
       "name": "Groceries",
@@ -37,6 +38,8 @@ This Lambda function processes the final step of user onboarding:
 }
 ```
 
+`budgetType` is optional and defaults to `"personal"`. Accepted values: `"personal"`, `"family"`, `"shared"`.
+
 ## Response Format
 
 ### Success (200)
@@ -45,16 +48,19 @@ This Lambda function processes the final step of user onboarding:
 {
   "message": "Onboarding completed successfully",
   "budgetCreated": true,
-  "budgetId": "budget_1234567890_abc123",
+  "budgetId": "budget_xyz",
   "month": "2026-01",
   "totalExpenses": 2500,
   "categoriesCreated": 2,
   "debugInfo": {
     "userId": "user-id",
-    "familyId": "family_user-id",
-    "partitionKey": "FAMILY#family_user-id",
-    "sortKey": "BUDGET#2026-01",
-    "resolutionSource": "jwt"
+    "budgetId": "budget_xyz",
+    "partitionKey": "BUDGET#budget_xyz",
+    "sortKey": "PERIOD#2026-01",
+    "budgetType": "personal",
+    "budgetVerified": true,
+    "lambdaFunction": "budgetbuddy-auth-onboarding",
+    "timestamp": "2026-01-01T00:00:00.000Z"
   }
 }
 ```
@@ -110,30 +116,28 @@ All imports are at the top of the file to prevent ReferenceError bugs:
 
 1. AWS SDK imports
 2. Shared utilities from Lambda Layer
-3. Local utilities (dynamo-helpers, family-id-resolver)
+3. Local utilities (dynamo-helpers)
 4. Environment variables
 
 This prevents the recurring bug where imports were placed near usage but referenced earlier in the code.
 
-### Family ID Resolution
+### Budget ID Resolution
 
-Uses centralized `FamilyIdResolver` to ensure consistent family ID resolution:
+Reads `defaultBudgetId` from the user's DynamoDB profile (`USER#<userId>/PROFILE`).
+No JWT-based family ID resolution — the JWT carries only `userId`.
 
-1. Try JWT token familyId first
-2. Fallback to DynamoDB user profile lookup
-3. Final fallback: `family_${userId}` pattern
+### Budget Period Creation
 
-This prevents partition key mismatches that cause "No budgets exist" errors.
+Creates initial budget period with:
 
-### Budget Creation
-
-Creates initial budget with:
-
-- Partition key: `FAMILY#${familyId}`
-- Sort key: `BUDGET#${currentMonth}`
+- Partition key: `BUDGET#<defaultBudgetId>`
+- Sort key: `PERIOD#<currentMonth>`
 - Expense categories from user selections
 - Zero income and savings (user adds later)
-- Verification step to confirm budget was created
+- Verification step to confirm period was created
+
+If `budgetType` is `"family"` or `"shared"`, also updates `BUDGET#<defaultBudgetId>/METADATA`
+to set the `budgetType` field.
 
 ## Testing
 
