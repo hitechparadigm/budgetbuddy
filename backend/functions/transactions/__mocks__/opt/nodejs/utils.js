@@ -109,7 +109,14 @@ module.exports = {
     debug: jest.fn(),
   },
 
-  FamilyIdResolver: {
-    resolveFamilyId: jest.fn().mockResolvedValue("FAMILY#user_123456789"),
+  BudgetAccessResolver: {
+    resolveAccess: jest.fn().mockResolvedValue({
+      budgetId: 'budget_test123',
+      role: 'owner',
+      budgetType: 'family',
+      budgetStatus: 'active',
+      subscriptionTier: 'free',
+    }),
+    assertPermission: jest.fn(), // no-op by default (permission granted)
   },
 };

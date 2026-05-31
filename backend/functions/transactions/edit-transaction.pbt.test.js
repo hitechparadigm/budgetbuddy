@@ -9,21 +9,20 @@
  * Validates: Requirements 1.3, 1.4, 1.6
  */
 
-const fc = require("fast-check");
+const fc = require('fast-check');
 
 // Mocks are loaded via jest.config.js moduleNameMapper
-const { dynamoHelpers, getUserFromEvent } = require("/opt/nodejs/utils");
-const { checkPermission } = require("/opt/nodejs/shared");
+const { dynamoHelpers, getUserFromEvent, BudgetAccessResolver } = require('/opt/nodejs/utils');
 
 // Import handler after mocks are set up
-const { handler } = require("./index");
+const { handler } = require('./index');
 
 // Arbitrary generators for transaction data
 // Use integer cents and convert to dollars to avoid float precision issues
 const validAmount = fc
   .integer({ min: 1, max: 10000000 })
   .map((cents) => cents / 100);
-const validType = fc.constantFrom("income", "expense");
+const validType = fc.constantFrom('income', 'expense');
 const validCategoryId = fc
   .stringOf(fc.constantFrom(..."abcdefghijklmnopqrstuvwxyz0123456789_"), {
     minLength: 5,
@@ -45,8 +44,8 @@ const validDate = fc
     fc.integer({ min: 1, max: 28 }),
   )
   .map(([year, month, day]) => {
-    const m = String(month).padStart(2, "0");
-    const d = String(day).padStart(2, "0");
+    const m = String(month).padStart(2, '0');
+    const d = String(day).padStart(2, '0');
     return `${year}-${m}-${d}`;
   });
 
@@ -59,34 +58,39 @@ const invalidAmount = fc.oneof(
 );
 const invalidType = fc
   .string({ minLength: 1, maxLength: 20 })
-  .filter((s) => !["income", "expense"].includes(s));
+  .filter((s) => !['income', 'expense'].includes(s));
 const invalidDate = fc.oneof(
-  fc.constant("2025/11/15"),
-  fc.constant("11-15-2025"),
-  fc.constant("15/11/2025"),
-  fc.constant("invalid"),
-  fc.constant(""),
+  fc.constant('2025/11/15'),
+  fc.constant('11-15-2025'),
+  fc.constant('15/11/2025'),
+  fc.constant('invalid'),
+  fc.constant(''),
   fc
     .string({ minLength: 1, maxLength: 20 })
     .filter((s) => !/^\d{4}-\d{2}-\d{2}$/.test(s)),
 );
 
-describe("Transaction Editing Property-Based Tests", () => {
+describe('Transaction Editing Property-Based Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Default user with edit permission
+    // Default user
     getUserFromEvent.mockReturnValue({
-      userId: "user_123456789",
-      familyId: "family123",
-      familyRole: "primary",
-      firstName: "Test",
-      lastName: "User",
-      email: "test@example.com",
+      userId: 'user_123456789',
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@example.com',
     });
 
-    // Default: no permission error
-    checkPermission.mockReturnValue(null);
+    // Default: resolveAccess succeeds with owner role, assertPermission is a no-op
+    BudgetAccessResolver.resolveAccess.mockResolvedValue({
+      budgetId: 'budget_test123',
+      role: 'owner',
+      budgetType: 'family',
+      budgetStatus: 'active',
+      subscriptionTier: 'free',
+    });
+    BudgetAccessResolver.assertPermission.mockImplementation(() => {});
   });
 
   /**
@@ -97,7 +101,7 @@ describe("Transaction Editing Property-Based Tests", () => {
    *
    * **Validates: Requirements 1.6**
    */
-  test("Property 1: Transaction Edit Round-Trip - edited values are persisted and retrievable", async () => {
+  test('Property 1: Transaction Edit Round-Trip - edited values are persisted and retrievable', async () => {
     await fc.assert(
       fc.asyncProperty(
         validAmount,
@@ -105,48 +109,46 @@ describe("Transaction Editing Property-Based Tests", () => {
         validDescription,
         validMerchantName,
         async (newAmount, newCategoryId, newDescription, newMerchantName) => {
-          // Setup: Mock existing transaction
+          // Setup: Mock existing transaction using BUDGET# key
           const originalTransaction = {
-            PK: "FAMILY#family123",
-            SK: "TRANSACTION#trans_roundtrip",
-            entityType: "TRANSACTION",
-            transactionId: "trans_roundtrip",
-            familyId: "family123",
+            PK: 'BUDGET#budget_test123',
+            SK: 'TRANSACTION#trans_roundtrip',
+            entityType: 'TRANSACTION',
+            transactionId: 'trans_roundtrip',
+            budgetId: 'budget_test123',
             amount: 100,
-            type: "expense",
-            categoryId: "cat_original",
-            description: "Original",
-            merchantName: "Original Store",
-            date: "2025-11-15",
-            budgetMonth: "2025-11",
+            type: 'expense',
+            categoryId: 'cat_original',
+            description: 'Original',
+            merchantName: 'Original Store',
+            date: '2025-11-15',
+            budgetMonth: '2025-11',
             accountId: null,
-            createdBy: "user_123456789",
-            createdByName: "Test User",
-            createdAt: "2025-11-15T10:00:00Z",
-            updatedAt: "2025-11-15T10:00:00Z",
+            createdBy: 'user_123456789',
+            createdByName: 'Test User',
+            createdAt: '2025-11-15T10:00:00Z',
+            updatedAt: '2025-11-15T10:00:00Z',
           };
 
           // Track what was updated
           let updatedValues = {};
 
           dynamoHelpers.getItem.mockResolvedValue(originalTransaction);
-          dynamoHelpers.updateItem.mockImplementation(
-            async (pk, sk, updates) => {
-              updatedValues = updates;
-              return {
-                ...originalTransaction,
-                ...updates,
-              };
-            },
-          );
+          dynamoHelpers.updateItem.mockImplementation(async (pk, sk, updates) => {
+            updatedValues = updates;
+            return {
+              ...originalTransaction,
+              ...updates,
+            };
+          });
           dynamoHelpers.queryByPK.mockResolvedValue([]);
 
           // Edit the transaction
           const editEvent = {
-            httpMethod: "PUT",
-            path: "/transactions/trans_roundtrip",
-            pathParameters: { transactionId: "trans_roundtrip" },
-            headers: { Authorization: "Bearer valid-token" },
+            httpMethod: 'PUT',
+            path: '/transactions/trans_roundtrip',
+            pathParameters: { transactionId: 'trans_roundtrip' },
+            headers: { Authorization: 'Bearer valid-token' },
             body: JSON.stringify({
               amount: newAmount,
               categoryId: newCategoryId,
@@ -155,18 +157,12 @@ describe("Transaction Editing Property-Based Tests", () => {
             }),
             requestContext: {
               authorizer: {
-                claims: {
-                  "custom:userId": "user_123456789",
-                  "custom:familyId": "family123",
-                  "custom:familyRole": "primary",
-                },
+                claims: { 'custom:userId': 'user_123456789' },
               },
             },
           };
 
-          const editResponse = await handler(editEvent, {
-            awsRequestId: "test-roundtrip",
-          });
+          const editResponse = await handler(editEvent, { awsRequestId: 'test-roundtrip' });
 
           // Verify edit succeeded
           expect(editResponse.statusCode).toBe(200);
@@ -197,58 +193,50 @@ describe("Transaction Editing Property-Based Tests", () => {
    *
    * **Validates: Requirements 1.3**
    */
-  test("Property 2: Transaction Date Validation - valid dates accepted, invalid rejected", async () => {
+  test('Property 2: Transaction Date Validation - valid dates accepted, invalid rejected', async () => {
     // Test valid dates are accepted
     await fc.assert(
       fc.asyncProperty(validDate, async (date) => {
         const originalTransaction = {
-          PK: "FAMILY#family123",
-          SK: "TRANSACTION#trans_date",
-          entityType: "TRANSACTION",
-          transactionId: "trans_date",
-          familyId: "family123",
+          PK: 'BUDGET#budget_test123',
+          SK: 'TRANSACTION#trans_date',
+          entityType: 'TRANSACTION',
+          transactionId: 'trans_date',
+          budgetId: 'budget_test123',
           amount: 100,
-          type: "expense",
-          categoryId: "cat_test",
-          description: "Test",
-          date: "2025-11-15",
-          budgetMonth: "2025-11",
+          type: 'expense',
+          categoryId: 'cat_test',
+          description: 'Test',
+          date: '2025-11-15',
+          budgetMonth: '2025-11',
           accountId: null,
-          createdBy: "user_123456789",
-          createdByName: "Test User",
-          createdAt: "2025-11-15T10:00:00Z",
-          updatedAt: "2025-11-15T10:00:00Z",
+          createdBy: 'user_123456789',
+          createdByName: 'Test User',
+          createdAt: '2025-11-15T10:00:00Z',
+          updatedAt: '2025-11-15T10:00:00Z',
         };
 
         dynamoHelpers.getItem.mockResolvedValue(originalTransaction);
-        dynamoHelpers.updateItem.mockImplementation(
-          async (pk, sk, updates) => ({
-            ...originalTransaction,
-            ...updates,
-          }),
-        );
+        dynamoHelpers.updateItem.mockImplementation(async (pk, sk, updates) => ({
+          ...originalTransaction,
+          ...updates,
+        }));
         dynamoHelpers.queryByPK.mockResolvedValue([]);
 
         const event = {
-          httpMethod: "PUT",
-          path: "/transactions/trans_date",
-          pathParameters: { transactionId: "trans_date" },
-          headers: { Authorization: "Bearer valid-token" },
+          httpMethod: 'PUT',
+          path: '/transactions/trans_date',
+          pathParameters: { transactionId: 'trans_date' },
+          headers: { Authorization: 'Bearer valid-token' },
           body: JSON.stringify({ date }),
           requestContext: {
             authorizer: {
-              claims: {
-                "custom:userId": "user_123456789",
-                "custom:familyId": "family123",
-                "custom:familyRole": "primary",
-              },
+              claims: { 'custom:userId': 'user_123456789' },
             },
           },
         };
 
-        const response = await handler(event, {
-          awsRequestId: "test-date-valid",
-        });
+        const response = await handler(event, { awsRequestId: 'test-date-valid' });
 
         // Valid dates should be accepted (200)
         expect(response.statusCode).toBe(200);
@@ -265,46 +253,40 @@ describe("Transaction Editing Property-Based Tests", () => {
     await fc.assert(
       fc.asyncProperty(invalidDate, async (date) => {
         const originalTransaction = {
-          PK: "FAMILY#family123",
-          SK: "TRANSACTION#trans_date_invalid",
-          entityType: "TRANSACTION",
-          transactionId: "trans_date_invalid",
-          familyId: "family123",
+          PK: 'BUDGET#budget_test123',
+          SK: 'TRANSACTION#trans_date_invalid',
+          entityType: 'TRANSACTION',
+          transactionId: 'trans_date_invalid',
+          budgetId: 'budget_test123',
           amount: 100,
-          type: "expense",
-          categoryId: "cat_test",
-          description: "Test",
-          date: "2025-11-15",
-          budgetMonth: "2025-11",
+          type: 'expense',
+          categoryId: 'cat_test',
+          description: 'Test',
+          date: '2025-11-15',
+          budgetMonth: '2025-11',
           accountId: null,
-          createdBy: "user_123456789",
-          createdByName: "Test User",
-          createdAt: "2025-11-15T10:00:00Z",
-          updatedAt: "2025-11-15T10:00:00Z",
+          createdBy: 'user_123456789',
+          createdByName: 'Test User',
+          createdAt: '2025-11-15T10:00:00Z',
+          updatedAt: '2025-11-15T10:00:00Z',
         };
 
         dynamoHelpers.getItem.mockResolvedValue(originalTransaction);
 
         const event = {
-          httpMethod: "PUT",
-          path: "/transactions/trans_date_invalid",
-          pathParameters: { transactionId: "trans_date_invalid" },
-          headers: { Authorization: "Bearer valid-token" },
+          httpMethod: 'PUT',
+          path: '/transactions/trans_date_invalid',
+          pathParameters: { transactionId: 'trans_date_invalid' },
+          headers: { Authorization: 'Bearer valid-token' },
           body: JSON.stringify({ date }),
           requestContext: {
             authorizer: {
-              claims: {
-                "custom:userId": "user_123456789",
-                "custom:familyId": "family123",
-                "custom:familyRole": "primary",
-              },
+              claims: { 'custom:userId': 'user_123456789' },
             },
           },
         };
 
-        const response = await handler(event, {
-          awsRequestId: "test-date-invalid",
-        });
+        const response = await handler(event, { awsRequestId: 'test-date-invalid' });
 
         // Invalid dates should be rejected (400)
         expect(response.statusCode).toBe(400);
@@ -321,50 +303,44 @@ describe("Transaction Editing Property-Based Tests", () => {
    *
    * **Validates: Requirements 1.4**
    */
-  test("Property 3: Transaction Invalid Data Rejection - invalid amounts rejected", async () => {
+  test('Property 3: Transaction Invalid Data Rejection - invalid amounts rejected', async () => {
     await fc.assert(
       fc.asyncProperty(invalidAmount, async (amount) => {
         const originalTransaction = {
-          PK: "FAMILY#family123",
-          SK: "TRANSACTION#trans_invalid",
-          entityType: "TRANSACTION",
-          transactionId: "trans_invalid",
-          familyId: "family123",
+          PK: 'BUDGET#budget_test123',
+          SK: 'TRANSACTION#trans_invalid',
+          entityType: 'TRANSACTION',
+          transactionId: 'trans_invalid',
+          budgetId: 'budget_test123',
           amount: 100,
-          type: "expense",
-          categoryId: "cat_test",
-          description: "Test",
-          date: "2025-11-15",
-          budgetMonth: "2025-11",
+          type: 'expense',
+          categoryId: 'cat_test',
+          description: 'Test',
+          date: '2025-11-15',
+          budgetMonth: '2025-11',
           accountId: null,
-          createdBy: "user_123456789",
-          createdByName: "Test User",
-          createdAt: "2025-11-15T10:00:00Z",
-          updatedAt: "2025-11-15T10:00:00Z",
+          createdBy: 'user_123456789',
+          createdByName: 'Test User',
+          createdAt: '2025-11-15T10:00:00Z',
+          updatedAt: '2025-11-15T10:00:00Z',
         };
 
         dynamoHelpers.getItem.mockResolvedValue(originalTransaction);
 
         const event = {
-          httpMethod: "PUT",
-          path: "/transactions/trans_invalid",
-          pathParameters: { transactionId: "trans_invalid" },
-          headers: { Authorization: "Bearer valid-token" },
+          httpMethod: 'PUT',
+          path: '/transactions/trans_invalid',
+          pathParameters: { transactionId: 'trans_invalid' },
+          headers: { Authorization: 'Bearer valid-token' },
           body: JSON.stringify({ amount }),
           requestContext: {
             authorizer: {
-              claims: {
-                "custom:userId": "user_123456789",
-                "custom:familyId": "family123",
-                "custom:familyRole": "primary",
-              },
+              claims: { 'custom:userId': 'user_123456789' },
             },
           },
         };
 
-        const response = await handler(event, {
-          awsRequestId: "test-invalid-amount",
-        });
+        const response = await handler(event, { awsRequestId: 'test-invalid-amount' });
 
         // Invalid amounts should be rejected (400)
         expect(response.statusCode).toBe(400);
@@ -373,50 +349,44 @@ describe("Transaction Editing Property-Based Tests", () => {
     );
   });
 
-  test("Property 3: Transaction Invalid Data Rejection - invalid types rejected", async () => {
+  test('Property 3: Transaction Invalid Data Rejection - invalid types rejected', async () => {
     await fc.assert(
       fc.asyncProperty(invalidType, async (type) => {
         const originalTransaction = {
-          PK: "FAMILY#family123",
-          SK: "TRANSACTION#trans_invalid_type",
-          entityType: "TRANSACTION",
-          transactionId: "trans_invalid_type",
-          familyId: "family123",
+          PK: 'BUDGET#budget_test123',
+          SK: 'TRANSACTION#trans_invalid_type',
+          entityType: 'TRANSACTION',
+          transactionId: 'trans_invalid_type',
+          budgetId: 'budget_test123',
           amount: 100,
-          type: "expense",
-          categoryId: "cat_test",
-          description: "Test",
-          date: "2025-11-15",
-          budgetMonth: "2025-11",
+          type: 'expense',
+          categoryId: 'cat_test',
+          description: 'Test',
+          date: '2025-11-15',
+          budgetMonth: '2025-11',
           accountId: null,
-          createdBy: "user_123456789",
-          createdByName: "Test User",
-          createdAt: "2025-11-15T10:00:00Z",
-          updatedAt: "2025-11-15T10:00:00Z",
+          createdBy: 'user_123456789',
+          createdByName: 'Test User',
+          createdAt: '2025-11-15T10:00:00Z',
+          updatedAt: '2025-11-15T10:00:00Z',
         };
 
         dynamoHelpers.getItem.mockResolvedValue(originalTransaction);
 
         const event = {
-          httpMethod: "PUT",
-          path: "/transactions/trans_invalid_type",
-          pathParameters: { transactionId: "trans_invalid_type" },
-          headers: { Authorization: "Bearer valid-token" },
+          httpMethod: 'PUT',
+          path: '/transactions/trans_invalid_type',
+          pathParameters: { transactionId: 'trans_invalid_type' },
+          headers: { Authorization: 'Bearer valid-token' },
           body: JSON.stringify({ type }),
           requestContext: {
             authorizer: {
-              claims: {
-                "custom:userId": "user_123456789",
-                "custom:familyId": "family123",
-                "custom:familyRole": "primary",
-              },
+              claims: { 'custom:userId': 'user_123456789' },
             },
           },
         };
 
-        const response = await handler(event, {
-          awsRequestId: "test-invalid-type",
-        });
+        const response = await handler(event, { awsRequestId: 'test-invalid-type' });
 
         // Invalid types should be rejected (400)
         expect(response.statusCode).toBe(400);
@@ -431,26 +401,26 @@ describe("Transaction Editing Property-Based Tests", () => {
    * For any valid type change (income <-> expense), the system SHALL
    * accept the change and update the transaction type correctly.
    */
-  test("Property: Type Change Consistency - valid type changes accepted", async () => {
+  test('Property: Type Change Consistency - valid type changes accepted', async () => {
     await fc.assert(
       fc.asyncProperty(validType, async (newType) => {
         const originalTransaction = {
-          PK: "FAMILY#family123",
-          SK: "TRANSACTION#trans_type",
-          entityType: "TRANSACTION",
-          transactionId: "trans_type",
-          familyId: "family123",
+          PK: 'BUDGET#budget_test123',
+          SK: 'TRANSACTION#trans_type',
+          entityType: 'TRANSACTION',
+          transactionId: 'trans_type',
+          budgetId: 'budget_test123',
           amount: 100,
-          type: "expense", // Original type
-          categoryId: "cat_test",
-          description: "Test",
-          date: "2025-11-15",
-          budgetMonth: "2025-11",
+          type: 'expense', // Original type
+          categoryId: 'cat_test',
+          description: 'Test',
+          date: '2025-11-15',
+          budgetMonth: '2025-11',
           accountId: null,
-          createdBy: "user_123456789",
-          createdByName: "Test User",
-          createdAt: "2025-11-15T10:00:00Z",
-          updatedAt: "2025-11-15T10:00:00Z",
+          createdBy: 'user_123456789',
+          createdByName: 'Test User',
+          createdAt: '2025-11-15T10:00:00Z',
+          updatedAt: '2025-11-15T10:00:00Z',
         };
 
         let updatedType = null;
@@ -466,25 +436,19 @@ describe("Transaction Editing Property-Based Tests", () => {
         dynamoHelpers.queryByPK.mockResolvedValue([]);
 
         const event = {
-          httpMethod: "PUT",
-          path: "/transactions/trans_type",
-          pathParameters: { transactionId: "trans_type" },
-          headers: { Authorization: "Bearer valid-token" },
+          httpMethod: 'PUT',
+          path: '/transactions/trans_type',
+          pathParameters: { transactionId: 'trans_type' },
+          headers: { Authorization: 'Bearer valid-token' },
           body: JSON.stringify({ type: newType }),
           requestContext: {
             authorizer: {
-              claims: {
-                "custom:userId": "user_123456789",
-                "custom:familyId": "family123",
-                "custom:familyRole": "primary",
-              },
+              claims: { 'custom:userId': 'user_123456789' },
             },
           },
         };
 
-        const response = await handler(event, {
-          awsRequestId: "test-type-change",
-        });
+        const response = await handler(event, { awsRequestId: 'test-type-change' });
 
         // Valid type changes should be accepted
         expect(response.statusCode).toBe(200);
