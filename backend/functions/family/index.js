@@ -439,7 +439,7 @@ async function handleInvite(event, userId, familyId, familyRole) {
       const inviterEmail = inviter.email || "noreply@budgetbuddy.com";
 
       // Construct accept URL with invitation token
-      const acceptUrl = `${process.env.WEB_APP_URL || "https://app.budgetbuddy.com"}/accept-invitation?token=${token}`;
+      const acceptUrl = `${process.env.WEB_APP_URL || "https://app.budgetbuddy.com"}/family/accept?token=${token}`;
 
       // Call email service to send invitation
       const emailPayload = {
@@ -1272,7 +1272,7 @@ async function handleResendInvitation(
     );
 
     // Construct accept URL with new token
-    const acceptUrl = `${process.env.WEB_APP_URL || "https://app.budgetbuddy.com"}/accept-invitation?token=${newToken}`;
+    const acceptUrl = `${process.env.WEB_APP_URL || "https://app.budgetbuddy.com"}/family/accept?token=${newToken}`;
 
     // Send invitation email
     const emailPayload = {

@@ -138,6 +138,12 @@ export const BudgetPage: React.FC = () => {
   const { filters, setFilters, hasActiveFilters, clearFilters } =
     useTransactionFilters();
 
+  // Sort state for transaction list
+  const [sortBy, setSortBy] = useState<"date" | "amount" | "description">(
+    "date",
+  );
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
   const [budgetItemForm, setBudgetItemForm] = useState({
     name: "",
     icon: "💰",
@@ -682,6 +688,21 @@ export const BudgetPage: React.FC = () => {
       return true;
     });
   }, [allTransactions, filters]);
+
+  // Sort filtered transactions
+  const sortedTransactions = useMemo(() => {
+    return [...filteredTransactions].sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === "date") {
+        cmp = a.date.localeCompare(b.date);
+      } else if (sortBy === "amount") {
+        cmp = a.amount - b.amount;
+      } else if (sortBy === "description") {
+        cmp = a.description.localeCompare(b.description);
+      }
+      return sortOrder === "asc" ? cmp : -cmp;
+    });
+  }, [filteredTransactions, sortBy, sortOrder]);
 
   const openTransactionModal = (type: "income" | "expense") => {
     setTransactionType(type);
@@ -2278,7 +2299,7 @@ export const BudgetPage: React.FC = () => {
 
                 {/* Filtered Transactions */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
                     <span>
                       {hasActiveFilters
                         ? `${filteredTransactions.length} result${filteredTransactions.length !== 1 ? "s" : ""}`
@@ -2293,9 +2314,43 @@ export const BudgetPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Transaction list using filtered data */}
+                  {/* Sort controls */}
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                    <span>Sort:</span>
+                    {(["date", "amount", "description"] as const).map(
+                      (field) => (
+                        <button
+                          key={field}
+                          onClick={() => {
+                            if (sortBy === field) {
+                              setSortOrder((o) =>
+                                o === "asc" ? "desc" : "asc",
+                              );
+                            } else {
+                              setSortBy(field);
+                              setSortOrder(field === "date" ? "desc" : "asc");
+                            }
+                          }}
+                          className={`px-2 py-0.5 rounded capitalize transition-colors ${
+                            sortBy === field
+                              ? "bg-emerald-100 text-emerald-700 font-medium"
+                              : "hover:bg-gray-100"
+                          }`}
+                        >
+                          {field}{" "}
+                          {sortBy === field
+                            ? sortOrder === "asc"
+                              ? "↑"
+                              : "↓"
+                            : ""}
+                        </button>
+                      ),
+                    )}
+                  </div>
+
+                  {/* Transaction list using sorted+filtered data */}
                   <div className="space-y-3">
-                    {filteredTransactions.map((txn) => {
+                    {sortedTransactions.map((txn) => {
                       const isIncome = txn.groupType === "income";
                       return (
                         <div
@@ -2399,7 +2454,7 @@ export const BudgetPage: React.FC = () => {
                     })}
 
                     {/* Empty state */}
-                    {filteredTransactions.length === 0 && (
+                    {sortedTransactions.length === 0 && (
                       <div className="text-center py-8 text-gray-400">
                         {hasActiveFilters ? (
                           <>
