@@ -3,73 +3,56 @@ inclusion: conditional
 fileMatchPattern: "{.github/workflows/**,scripts/deploy*,scripts/*cicd*}"
 ---
 
-# CI/CD Deployment
+# CI/CD Rules
 
-**ONLY load when working with CI/CD files**
+## Critical: No Parallel Deployments
 
-## Critical Rules
+- Only ONE deployment at a time (CloudFormation conflicts cause failures)
+- **Before EVERY push**: run `node scripts/check-cicd-status.js`
+  - If `IN_PROGRESS` or `QUEUED`: **STOP. Wait 2 minutes. Check again.**
+  - If `FAILED`: fix the failure FIRST, then push
+  - If `SUCCESS`: proceed with push
+- **NEVER push while status is "in_progress" or "queued"**
+- After push: wait for completion, check every 2min
 
-### No Parallel Deployments
+## Deployment Flow
 
-**NEVER run multiple deployments in parallel - they WILL conflict!**
+1. Check CI/CD status — must be SUCCESS before proceeding
+2. Complete implementation + tests
+3. `node scripts/safe-commit-push.js "type: description"`
+   - This script validates internally — do NOT run separate validation
+4. Wait for GitHub Actions to complete
+5. Verify: `node scripts/check-cicd-status.js`
 
-- Only ONE deployment at a time
-- Deployments modify shared AWS infrastructure (CloudFormation)
-- Parallel deployments cause:
-  - Stack UPDATE_IN_PROGRESS conflicts
-  - Resource contention
-  - Deployment failures
-  - Inconsistent infrastructure
+## If Failed
 
-**If you push during deployment:**
-
-- New deployment queues or fails with "Stack in UPDATE_IN_PROGRESS"
-- MUST wait for current deployment to complete
-
-**Workflow:**
-
-1. Push commit → deployment starts
-2. WAIT for completion (check every 2min)
-3. Verify: `node scripts/check-cicd-status.js`
-4. Then push next commit
-
-### Before Any Task
-
-1. Check: `node scripts/check-cicd-status.js`
-2. Wait if in progress
-3. Proceed only after success
-
-### Deployment Monitoring
-
-- NEVER start tasks while deployment in progress
-- NEVER start tasks if last deployment failed
-- NEVER push while deployment running
-- ALWAYS verify success before continuing
-- ALWAYS check `.kiro/cicd-status/latest.json`
-
-### If Deployment Failed
-
-1. Read failure logs from CI/CD status
-2. Analyze error and root cause
-3. Fix the issue
-4. Commit and push fix
-5. Wait for new deployment to succeed
-6. Then continue with next task
-
-### Deployment Commands
-
-**CRITICAL**: NEVER use direct CDK deploy (`cdk deploy`, `npm run deploy:dev`)
-
-ALL deployments via CI/CD:
-
-1. Complete implementation
-2. Commit and push
-3. WAIT for GitHub Actions (check every 2min)
-4. VERIFY success: `node scripts/check-cicd-status.js`
-5. Then proceed to next task
+1. Read `.kiro/cicd-status/latest.json` for error details
+2. Fix the issue
+3. Commit fix, push (after confirming no other deployment in progress)
+4. Max 2 retry attempts — if still failing, document in DEVELOPMENT_LOG.md
 
 ## Environments
 
-- **dev**: Auto-deploy from develop
-- **staging**: Auto-deploy from main
-- **prod**: Manual approval
+- dev: auto-deploy from `develop` branch on every push
+- staging: auto-deploy from `main` branch
+- prod: manual approval via `deploy-prod.yml` workflow dispatch
+
+## Deployment Summary in GitHub Actions
+
+The `deploy-dev.yml` workflow automatically generates a deployment summary in
+GitHub Actions that includes:
+
+- What was deployed (commit message / PR title)
+- Which stacks were updated
+- API URL and CloudFront URL
+- Health check results
+
+To make the summary more descriptive, use conventional commit messages:
+
+- `fix: description` — bug fixes
+- `feat: description` — new features
+- `docs: description` — documentation only
+- `chore: description` — maintenance tasks
+- `refactor: description` — code refactoring
+
+The commit message becomes the deployment title in GitHub Actions.

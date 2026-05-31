@@ -13,6 +13,12 @@ on:
         required: false
         default: "Manual deployment trigger"
 
+# Prevent parallel deployments — queue them instead of cancelling
+# This avoids CloudFormation conflicts when multiple commits are pushed quickly
+concurrency:
+  group: deploy-development
+  cancel-in-progress: false
+
 env:
   NODE_VERSION: "20"
   AWS_REGION: "us-east-1"
@@ -349,35 +355,67 @@ jobs:
     if: always()
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
       - name: Deployment Summary
         run: |
           echo "## 🚀 Development Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Environment**: Development (${{ env.ENVIRONMENT }})" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "**Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
+          # What was deployed — from commit message
+          COMMIT_MSG=$(git log -1 --pretty=format:"%s")
+          COMMIT_BODY=$(git log -1 --pretty=format:"%b")
+          echo "### 📦 What Was Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "**$COMMIT_MSG**" >> $GITHUB_STEP_SUMMARY
+          if [[ -n "$COMMIT_BODY" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "$COMMIT_BODY" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Classify the change type from commit prefix
+          if [[ "$COMMIT_MSG" == fix:* ]]; then
+            echo "🐛 **Type**: Bug Fix" >> $GITHUB_STEP_SUMMARY
+          elif [[ "$COMMIT_MSG" == feat:* ]]; then
+            echo "✨ **Type**: New Feature" >> $GITHUB_STEP_SUMMARY
+          elif [[ "$COMMIT_MSG" == docs:* ]]; then
+            echo "📚 **Type**: Documentation" >> $GITHUB_STEP_SUMMARY
+          elif [[ "$COMMIT_MSG" == chore:* ]]; then
+            echo "🔧 **Type**: Maintenance" >> $GITHUB_STEP_SUMMARY
+          elif [[ "$COMMIT_MSG" == refactor:* ]]; then
+            echo "♻️ **Type**: Refactor" >> $GITHUB_STEP_SUMMARY
+          elif [[ "$COMMIT_MSG" == security:* || "$COMMIT_MSG" == *security* ]]; then
+            echo "🔒 **Type**: Security Fix" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Files changed
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | head -20)
+          if [[ -n "$CHANGED" ]]; then
+            echo "### 📁 Files Changed" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$CHANGED" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
           if [[ "${{ needs.deploy-infrastructure.result }}" == "success" && "${{ needs.health-checks.result }}" == "success" ]]; then
-            echo "✅ **Deployment Status**: SUCCESS" >> $GITHUB_STEP_SUMMARY
+            echo "### ✅ Deployment Status: SUCCESS" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 📋 Deployment Details" >> $GITHUB_STEP_SUMMARY
+            echo "**App URL**: https://d1ueeugn9zcx7n.cloudfront.net" >> $GITHUB_STEP_SUMMARY
             if [[ "${{ needs.deploy-infrastructure.outputs.api-url }}" != "" ]]; then
-              echo "- **API URL**: ${{ needs.deploy-infrastructure.outputs.api-url }}" >> $GITHUB_STEP_SUMMARY
+              echo "**API URL**: ${{ needs.deploy-infrastructure.outputs.api-url }}" >> $GITHUB_STEP_SUMMARY
             fi
-            if [[ "${{ needs.deploy-infrastructure.outputs.user-pool-id }}" != "" ]]; then
-              echo "- **User Pool ID**: ${{ needs.deploy-infrastructure.outputs.user-pool-id }}" >> $GITHUB_STEP_SUMMARY
-            fi
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 🎯 Next Steps" >> $GITHUB_STEP_SUMMARY
-            echo "1. Test the deployed API endpoints" >> $GITHUB_STEP_SUMMARY
-            echo "2. Verify authentication flows" >> $GITHUB_STEP_SUMMARY
-            echo "3. Check CloudWatch logs for any issues" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ **Deployment Status**: FAILED" >> $GITHUB_STEP_SUMMARY
+            echo "### ❌ Deployment Status: FAILED" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 🔍 Troubleshooting" >> $GITHUB_STEP_SUMMARY
-            echo "1. Check CloudFormation stack events" >> $GITHUB_STEP_SUMMARY
-            echo "2. Review Lambda function logs" >> $GITHUB_STEP_SUMMARY
-            echo "3. Verify AWS permissions" >> $GITHUB_STEP_SUMMARY
+            echo "Check the job logs above for details." >> $GITHUB_STEP_SUMMARY
           fi
