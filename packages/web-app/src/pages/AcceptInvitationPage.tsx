@@ -38,10 +38,12 @@ export const AcceptInvitationPage: React.FC = () => {
     const idToken = localStorage.getItem("budgetbuddy_id_token");
     if (idToken) {
       setIsAuthenticated(true);
+      setShowAuthForm(false);
     } else {
-      // If not authenticated, show auth form by default for new users
+      // Not authenticated — always show auth form for invited users
+      setIsAuthenticated(false);
       setShowAuthForm(true);
-      setAuthMode("register"); // Default to register for invited users
+      setAuthMode("register"); // Default to register for new invited users
     }
 
     // Validate token exists
@@ -51,7 +53,6 @@ export const AcceptInvitationPage: React.FC = () => {
       return;
     }
 
-    // Load invitation details (optional - could be done on accept)
     setLoading(false);
   }, [token]);
 
@@ -64,6 +65,7 @@ export const AcceptInvitationPage: React.FC = () => {
     // Check if user is authenticated
     if (!isAuthenticated) {
       setShowAuthForm(true);
+      setAuthMode("register");
       return;
     }
 
@@ -74,7 +76,11 @@ export const AcceptInvitationPage: React.FC = () => {
       // Use id_token for API Gateway Cognito authorizer (not access_token)
       const idToken = localStorage.getItem("budgetbuddy_id_token");
       if (!idToken) {
-        throw new Error("Not authenticated");
+        // Redirect to auth form silently
+        setShowAuthForm(true);
+        setAuthMode("register");
+        setAccepting(false);
+        return;
       }
 
       const response = await fetch(`${API_BASE}/family/accept-invitation`, {
