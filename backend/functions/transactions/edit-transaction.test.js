@@ -9,47 +9,51 @@
  */
 
 // Mocks are loaded via jest.config.js moduleNameMapper
-const { dynamoHelpers, getUserFromEvent } = require("/opt/nodejs/utils");
-const { checkPermission } = require("/opt/nodejs/shared");
+const { dynamoHelpers, getUserFromEvent, BudgetAccessResolver } = require('/opt/nodejs/utils');
 
 // Import handler after mocks are set up
-const { handler } = require("./index");
+const { handler } = require('./index');
 
-describe("Transaction Editing (Req 12)", () => {
+describe('Transaction Editing (Req 12)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Default user with edit permission
+    // Default user
     getUserFromEvent.mockReturnValue({
-      userId: "user_123456789",
-      familyId: "family123",
-      familyRole: "primary",
-      firstName: "Test",
-      lastName: "User",
-      email: "test@example.com",
+      userId: 'user_123456789',
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@example.com',
     });
 
-    // Default: no permission error
-    checkPermission.mockReturnValue(null);
+    // Default: resolveAccess succeeds with owner role, assertPermission is a no-op
+    BudgetAccessResolver.resolveAccess.mockResolvedValue({
+      budgetId: 'budget_test123',
+      role: 'owner',
+      budgetType: 'family',
+      budgetStatus: 'active',
+      subscriptionTier: 'free',
+    });
+    BudgetAccessResolver.assertPermission.mockImplementation(() => {});
 
-    // Mock existing transaction
+    // Mock existing transaction using BUDGET# key
     dynamoHelpers.getItem.mockResolvedValue({
-      PK: "FAMILY#family123",
-      SK: "TRANSACTION#trans123",
-      entityType: "TRANSACTION",
-      transactionId: "trans123",
-      familyId: "family123",
+      PK: 'BUDGET#budget_test123',
+      SK: 'TRANSACTION#trans123',
+      entityType: 'TRANSACTION',
+      transactionId: 'trans123',
+      budgetId: 'budget_test123',
       amount: 100,
-      type: "expense",
-      categoryId: "cat_groceries",
-      description: "Walmart",
-      merchantName: "Walmart",
-      date: "2025-11-15",
-      budgetMonth: "2025-11",
-      createdBy: "user_123456789",
-      createdByName: "Test User",
-      createdAt: "2025-11-15T10:00:00Z",
-      updatedAt: "2025-11-15T10:00:00Z",
+      type: 'expense',
+      categoryId: 'cat_groceries',
+      description: 'Walmart',
+      merchantName: 'Walmart',
+      date: '2025-11-15',
+      budgetMonth: '2025-11',
+      createdBy: 'user_123456789',
+      createdByName: 'Test User',
+      createdAt: '2025-11-15T10:00:00Z',
+      updatedAt: '2025-11-15T10:00:00Z',
     });
 
     // Mock update to return updated transaction
@@ -57,19 +61,19 @@ describe("Transaction Editing (Req 12)", () => {
       return {
         PK: pk,
         SK: sk,
-        entityType: "TRANSACTION",
-        transactionId: "trans123",
-        familyId: "family123",
-        amount: updates.amount || 100,
-        type: updates.type || "expense",
-        categoryId: updates.categoryId || "cat_groceries",
-        description: updates.description || "Walmart",
-        merchantName: updates.merchantName || "Walmart",
-        date: updates.date || "2025-11-15",
-        budgetMonth: updates.budgetMonth || "2025-11",
-        createdBy: "user_123456789",
-        createdByName: "Test User",
-        createdAt: "2025-11-15T10:00:00Z",
+        entityType: 'TRANSACTION',
+        transactionId: 'trans123',
+        budgetId: 'budget_test123',
+        amount: updates.amount !== undefined ? updates.amount : 100,
+        type: updates.type || 'expense',
+        categoryId: updates.categoryId || 'cat_groceries',
+        description: updates.description || 'Walmart',
+        merchantName: updates.merchantName || 'Walmart',
+        date: updates.date || '2025-11-15',
+        budgetMonth: updates.budgetMonth || '2025-11',
+        createdBy: 'user_123456789',
+        createdByName: 'Test User',
+        createdAt: '2025-11-15T10:00:00Z',
         updatedAt: updates.updatedAt,
       };
     });
@@ -78,337 +82,254 @@ describe("Transaction Editing (Req 12)", () => {
     dynamoHelpers.queryByPK.mockResolvedValue([]);
   });
 
-  test("should update transaction amount", async () => {
+  test('should update transaction amount', async () => {
     const event = {
-      httpMethod: "PUT",
-      path: "/transactions/trans123",
-      pathParameters: { transactionId: "trans123" },
-      headers: {
-        Authorization: "Bearer valid-token",
-      },
-      body: JSON.stringify({
-        amount: 150,
-      }),
+      httpMethod: 'PUT',
+      path: '/transactions/trans123',
+      pathParameters: { transactionId: 'trans123' },
+      headers: { Authorization: 'Bearer valid-token' },
+      body: JSON.stringify({ amount: 150 }),
       requestContext: {
         authorizer: {
-          claims: {
-            "custom:userId": "user_123456789",
-            "custom:familyId": "family123",
-            "custom:familyRole": "primary",
-          },
+          claims: { 'custom:userId': 'user_123456789' },
         },
       },
     };
 
-    const response = await handler(event, { awsRequestId: "test-123" });
+    const response = await handler(event, { awsRequestId: 'test-123' });
 
     expect(response.statusCode).toBe(200);
 
-    // Verify transaction was updated
+    // Verify transaction was updated with BUDGET# key
     expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
-      "FAMILY#family123",
-      "TRANSACTION#trans123",
-      expect.objectContaining({
-        amount: 150,
-      }),
+      'BUDGET#budget_test123',
+      'TRANSACTION#trans123',
+      expect.objectContaining({ amount: 150 }),
     );
 
     const body = JSON.parse(response.body);
     expect(body.data.amount).toBe(150);
   });
 
-  test("should update transaction category", async () => {
+  test('should update transaction category', async () => {
     const event = {
-      httpMethod: "PUT",
-      path: "/transactions/trans123",
-      pathParameters: { transactionId: "trans123" },
-      headers: {
-        Authorization: "Bearer valid-token",
-      },
-      body: JSON.stringify({
-        categoryId: "cat_dining",
-      }),
+      httpMethod: 'PUT',
+      path: '/transactions/trans123',
+      pathParameters: { transactionId: 'trans123' },
+      headers: { Authorization: 'Bearer valid-token' },
+      body: JSON.stringify({ categoryId: 'cat_dining' }),
       requestContext: {
         authorizer: {
-          claims: {
-            "custom:userId": "user_123456789",
-            "custom:familyId": "family123",
-            "custom:familyRole": "primary",
-          },
+          claims: { 'custom:userId': 'user_123456789' },
         },
       },
     };
 
-    const response = await handler(event, { awsRequestId: "test-123" });
+    const response = await handler(event, { awsRequestId: 'test-123' });
 
     expect(response.statusCode).toBe(200);
 
-    // Verify transaction was updated
     expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
-      "FAMILY#family123",
-      "TRANSACTION#trans123",
-      expect.objectContaining({
-        categoryId: "cat_dining",
-      }),
+      'BUDGET#budget_test123',
+      'TRANSACTION#trans123',
+      expect.objectContaining({ categoryId: 'cat_dining' }),
     );
   });
 
-  test("should update transaction description and merchant", async () => {
+  test('should update transaction description and merchant', async () => {
     const event = {
-      httpMethod: "PUT",
-      path: "/transactions/trans123",
-      pathParameters: { transactionId: "trans123" },
-      headers: {
-        Authorization: "Bearer valid-token",
-      },
+      httpMethod: 'PUT',
+      path: '/transactions/trans123',
+      pathParameters: { transactionId: 'trans123' },
+      headers: { Authorization: 'Bearer valid-token' },
       body: JSON.stringify({
-        description: "Target Shopping",
-        merchantName: "Target",
+        description: 'Target Shopping',
+        merchantName: 'Target',
       }),
       requestContext: {
         authorizer: {
-          claims: {
-            "custom:userId": "user_123456789",
-            "custom:familyId": "family123",
-            "custom:familyRole": "primary",
-          },
+          claims: { 'custom:userId': 'user_123456789' },
         },
       },
     };
 
-    const response = await handler(event, { awsRequestId: "test-123" });
+    const response = await handler(event, { awsRequestId: 'test-123' });
 
     expect(response.statusCode).toBe(200);
 
-    // Verify transaction was updated
     expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
-      "FAMILY#family123",
-      "TRANSACTION#trans123",
+      'BUDGET#budget_test123',
+      'TRANSACTION#trans123',
       expect.objectContaining({
-        description: "Target Shopping",
-        merchantName: "Target",
+        description: 'Target Shopping',
+        merchantName: 'Target',
       }),
     );
 
     const body = JSON.parse(response.body);
-    expect(body.data.description).toBe("Target Shopping");
-    expect(body.data.merchantName).toBe("Target");
+    expect(body.data.description).toBe('Target Shopping');
+    expect(body.data.merchantName).toBe('Target');
   });
 
-  test("should update transaction date and budget month", async () => {
+  test('should update transaction date and budget month', async () => {
     const event = {
-      httpMethod: "PUT",
-      path: "/transactions/trans123",
-      pathParameters: { transactionId: "trans123" },
-      headers: {
-        Authorization: "Bearer valid-token",
-      },
-      body: JSON.stringify({
-        date: "2025-12-01",
-      }),
+      httpMethod: 'PUT',
+      path: '/transactions/trans123',
+      pathParameters: { transactionId: 'trans123' },
+      headers: { Authorization: 'Bearer valid-token' },
+      body: JSON.stringify({ date: '2025-12-01' }),
       requestContext: {
         authorizer: {
-          claims: {
-            "custom:userId": "user_123456789",
-            "custom:familyId": "family123",
-            "custom:familyRole": "primary",
-          },
+          claims: { 'custom:userId': 'user_123456789' },
         },
       },
     };
 
-    const response = await handler(event, { awsRequestId: "test-123" });
+    const response = await handler(event, { awsRequestId: 'test-123' });
 
     expect(response.statusCode).toBe(200);
 
-    // Verify transaction was updated with new date and budget month
     expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
-      "FAMILY#family123",
-      "TRANSACTION#trans123",
+      'BUDGET#budget_test123',
+      'TRANSACTION#trans123',
       expect.objectContaining({
-        date: "2025-12-01",
-        budgetMonth: "2025-12",
+        date: '2025-12-01',
+        budgetMonth: '2025-12',
       }),
     );
   });
 
-  test("should return 404 if transaction not found", async () => {
+  test('should return 404 if transaction not found', async () => {
     dynamoHelpers.getItem.mockResolvedValue(null);
 
     const event = {
-      httpMethod: "PUT",
-      path: "/transactions/nonexistent",
-      pathParameters: { transactionId: "nonexistent" },
-      headers: {
-        Authorization: "Bearer valid-token",
-      },
-      body: JSON.stringify({
-        amount: 150,
-      }),
+      httpMethod: 'PUT',
+      path: '/transactions/nonexistent',
+      pathParameters: { transactionId: 'nonexistent' },
+      headers: { Authorization: 'Bearer valid-token' },
+      body: JSON.stringify({ amount: 150 }),
       requestContext: {
         authorizer: {
-          claims: {
-            "custom:userId": "user_123456789",
-            "custom:familyId": "family123",
-            "custom:familyRole": "primary",
-          },
+          claims: { 'custom:userId': 'user_123456789' },
         },
       },
     };
 
-    const response = await handler(event, { awsRequestId: "test-123" });
+    const response = await handler(event, { awsRequestId: 'test-123' });
 
     expect(response.statusCode).toBe(404);
   });
 
-  test("should validate amount is positive", async () => {
+  test('should validate amount is positive', async () => {
     const event = {
-      httpMethod: "PUT",
-      path: "/transactions/trans123",
-      pathParameters: { transactionId: "trans123" },
-      headers: {
-        Authorization: "Bearer valid-token",
-      },
-      body: JSON.stringify({
-        amount: -50,
-      }),
+      httpMethod: 'PUT',
+      path: '/transactions/trans123',
+      pathParameters: { transactionId: 'trans123' },
+      headers: { Authorization: 'Bearer valid-token' },
+      body: JSON.stringify({ amount: -50 }),
       requestContext: {
         authorizer: {
-          claims: {
-            "custom:userId": "user_123456789",
-            "custom:familyId": "family123",
-            "custom:familyRole": "primary",
-          },
+          claims: { 'custom:userId': 'user_123456789' },
         },
       },
     };
 
-    const response = await handler(event, { awsRequestId: "test-123" });
+    const response = await handler(event, { awsRequestId: 'test-123' });
 
     expect(response.statusCode).toBe(400);
   });
 
-  test("should validate transaction type", async () => {
+  test('should validate transaction type', async () => {
     const event = {
-      httpMethod: "PUT",
-      path: "/transactions/trans123",
-      pathParameters: { transactionId: "trans123" },
-      headers: {
-        Authorization: "Bearer valid-token",
-      },
-      body: JSON.stringify({
-        type: "invalid",
-      }),
+      httpMethod: 'PUT',
+      path: '/transactions/trans123',
+      pathParameters: { transactionId: 'trans123' },
+      headers: { Authorization: 'Bearer valid-token' },
+      body: JSON.stringify({ type: 'invalid' }),
       requestContext: {
         authorizer: {
-          claims: {
-            "custom:userId": "user_123456789",
-            "custom:familyId": "family123",
-            "custom:familyRole": "primary",
-          },
+          claims: { 'custom:userId': 'user_123456789' },
         },
       },
     };
 
-    const response = await handler(event, { awsRequestId: "test-123" });
+    const response = await handler(event, { awsRequestId: 'test-123' });
 
     expect(response.statusCode).toBe(400);
   });
 
-  test("should validate date format", async () => {
+  test('should validate date format', async () => {
     const event = {
-      httpMethod: "PUT",
-      path: "/transactions/trans123",
-      pathParameters: { transactionId: "trans123" },
-      headers: {
-        Authorization: "Bearer valid-token",
-      },
-      body: JSON.stringify({
-        date: "11/15/2025",
-      }),
+      httpMethod: 'PUT',
+      path: '/transactions/trans123',
+      pathParameters: { transactionId: 'trans123' },
+      headers: { Authorization: 'Bearer valid-token' },
+      body: JSON.stringify({ date: '11/15/2025' }),
       requestContext: {
         authorizer: {
-          claims: {
-            "custom:userId": "user_123456789",
-            "custom:familyId": "family123",
-            "custom:familyRole": "primary",
-          },
+          claims: { 'custom:userId': 'user_123456789' },
         },
       },
     };
 
-    const response = await handler(event, { awsRequestId: "test-123" });
+    const response = await handler(event, { awsRequestId: 'test-123' });
 
     expect(response.statusCode).toBe(400);
   });
 
-  test("should check edit permission before updating", async () => {
-    // Mock permission denied
-    checkPermission.mockReturnValue({
-      statusCode: 403,
-      headers: { "Access-Control-Allow-Origin": "*" },
-      body: JSON.stringify({ error: "Permission denied" }),
+  test('should return 403 when viewer tries to edit transaction', async () => {
+    // Mock assertPermission to throw 403 for viewer role
+    BudgetAccessResolver.resolveAccess.mockResolvedValue({
+      budgetId: 'budget_test123',
+      role: 'viewer',
+      budgetType: 'family',
+      budgetStatus: 'active',
+      subscriptionTier: 'free',
+    });
+    BudgetAccessResolver.assertPermission.mockImplementationOnce(() => {
+      throw { statusCode: 403, message: 'You do not have permission to perform this action.' };
     });
 
     const event = {
-      httpMethod: "PUT",
-      path: "/transactions/trans123",
-      pathParameters: { transactionId: "trans123" },
-      headers: {
-        Authorization: "Bearer valid-token",
-      },
-      body: JSON.stringify({
-        amount: 150,
-      }),
+      httpMethod: 'PUT',
+      path: '/transactions/trans123',
+      pathParameters: { transactionId: 'trans123' },
+      headers: { Authorization: 'Bearer valid-token' },
+      body: JSON.stringify({ amount: 150 }),
       requestContext: {
         authorizer: {
-          claims: {
-            "custom:userId": "user_456",
-            "custom:familyId": "family123",
-            "custom:familyRole": "viewer",
-          },
+          claims: { 'custom:userId': 'user_456' },
         },
       },
     };
 
-    const response = await handler(event, { awsRequestId: "test-123" });
+    const response = await handler(event, { awsRequestId: 'test-123' });
 
     expect(response.statusCode).toBe(403);
   });
 
-  test("should update accountId field", async () => {
+  test('should update accountId field', async () => {
     const event = {
-      httpMethod: "PUT",
-      path: "/transactions/trans123",
-      pathParameters: { transactionId: "trans123" },
-      headers: {
-        Authorization: "Bearer valid-token",
-      },
-      body: JSON.stringify({
-        accountId: "acc_checking123",
-      }),
+      httpMethod: 'PUT',
+      path: '/transactions/trans123',
+      pathParameters: { transactionId: 'trans123' },
+      headers: { Authorization: 'Bearer valid-token' },
+      body: JSON.stringify({ accountId: 'acc_checking123' }),
       requestContext: {
         authorizer: {
-          claims: {
-            "custom:userId": "user_123456789",
-            "custom:familyId": "family123",
-            "custom:familyRole": "primary",
-          },
+          claims: { 'custom:userId': 'user_123456789' },
         },
       },
     };
 
-    const response = await handler(event, { awsRequestId: "test-123" });
+    const response = await handler(event, { awsRequestId: 'test-123' });
 
     expect(response.statusCode).toBe(200);
 
-    // Verify accountId was updated
     expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
-      "FAMILY#family123",
-      "TRANSACTION#trans123",
-      expect.objectContaining({
-        accountId: "acc_checking123",
-      }),
+      'BUDGET#budget_test123',
+      'TRANSACTION#trans123',
+      expect.objectContaining({ accountId: 'acc_checking123' }),
     );
   });
 });

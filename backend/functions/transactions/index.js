@@ -322,6 +322,15 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
+    // Handle plain objects thrown by BudgetAccessResolver.assertPermission
+    if (error && typeof error === 'object' && error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Forbidden', message: error.message || 'Permission denied' }),
+      };
+    }
+
     // Handle specific error types
     if (error instanceof ValidationError) {
       return errorResponse.badRequest(error.message);
