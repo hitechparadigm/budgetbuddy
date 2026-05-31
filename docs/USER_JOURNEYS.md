@@ -13,7 +13,19 @@
   - ✅ **FIXED: Hardcoded Family API URL** — `FamilySettings.tsx` and `AcceptInvitationPage.tsx` now use `config.familyApiUrl` from `VITE_FAMILY_API_URL` env var instead of hardcoded URL.
   - ✅ **FIXED: WEB_APP_URL missing from CDK** — Added to family Lambda environment in `api-family-stack.ts` via CDK context `webAppUrl`.
   - ✅ **FIXED: Raw invitation token in API response** — Removed from `handleInvite` response body (security).
-- MVP Sprint - Production Readiness Wave 2 (2026-05-30)
+- Bug Fixes Wave 1 (2026-05-30)
+  - ✅ **Transaction Sorting**: Added sort controls (date/amount/description ↑↓) to `BudgetPage.tsx` transaction list
+  - ✅ **Settings Location Pre-populate**: Fixed `SettingsPage.tsx` to handle `profile.location` as both object and JSON string
+  - ✅ **Notification Settings URL**: Fixed `NotificationSettings.tsx` — was using relative `/api/notifications/preferences`, now uses `config.apiBaseUrl`; rewrote with Tailwind dark mode classes
+  - ✅ **Goals Edit/Delete**: Added Edit (✏️) and Delete (🗑️) buttons to `GoalsPage.tsx` goal cards; wired to `GoalFormPage` and new `handleDeleteGoal()`
+  - ✅ **Family Invite Accept URL**: Fixed `backend/functions/family/index.js` — accept link was `/accept-invitation?token=`, now `/family/accept?token=` matching app route
+  - ✅ **Family Invite WEB_APP_URL**: Fixed `infrastructure/lib/api-family-stack.ts` — default was `https://app.budgetbuddy.com`, now `https://d1ueeugn9zcx7n.cloudfront.net`
+  - ✅ **Dark Theme Notifications**: Rewrote `NotificationSettings.tsx` with full Tailwind `dark:` variant support and toggle switches
+- Critical Security Fix (2026-05-30)
+  - 🔒 **Data Isolation Bug**: Fixed `FAMILY#undefined` cross-user data leak — Cognito stores unset `custom:familyId` as the literal string `"undefined"`, causing all pre-onboarding users to share the same DynamoDB partition
+  - Fixed in: `backend/functions/family/index.js`, `backend/functions/auth-onboarding/index.js`, `backend/functions/auth-onboarding/utils/family-id-resolver.js`, `backend/functions/auth/index.js`
+  - Added `sanitizeFamilyId()` helper to `backend/layers/shared/nodejs/shared/token-parser.js`
+  - Deleted 2 corrupted `FAMILY#undefined` DynamoDB records from dev environment
   - ✅ **LandingPage**: Created `src/pages/LandingPage.tsx` — public hero page with features, CTA, footer; routes `/` for unauthenticated users
   - ✅ **LoadingSpinner**: Created `src/components/LoadingSpinner.tsx` — reusable spinner (sm/md/lg, full-page variant)
   - ✅ **EmptyState**: Created `src/components/EmptyState.tsx` — reusable empty state with icon, title, description, CTA
@@ -1044,21 +1056,22 @@ _"As a user with debt, I want to create a payoff plan and track my savings goals
 
 ### Component Mapping
 
-| Feature         | Frontend Component        | Backend API                | Status      |
-| --------------- | ------------------------- | -------------------------- | ----------- |
-| Goals Page      | ✅ `GoalsPage.tsx`        | `GET /goals`               | ✅ Complete |
-| Goal Form       | ✅ `GoalFormPage.tsx`     | `POST /goals`              | ✅ Complete |
-| Update Goal     | ✅ `GoalFormPage.tsx`     | `PUT /goals/{id}`          | ✅ Complete |
-| Goal Progress   | ✅ `GoalsPage.tsx`        | `GET /goals/{id}/progress` | ✅ Complete |
-| Goal Reordering | ✅ `GoalsPage.tsx`        | `PUT /goals/reorder`       | ✅ Complete |
-| Goal Archive    | ✅ `GoalsPage.tsx`        | N/A (local state)          | ✅ Complete |
-| Confetti        | ✅ `Confetti.tsx`         | N/A                        | ✅ Complete |
-| Debt List       | ✅ `DebtPayoffPage.tsx`   | `GET /debts`               | ✅ Complete |
-| Add Debt        | ✅ `DebtFormPage.tsx`     | `POST /debts`              | ✅ Complete |
-| Debt Calculator | ✅ `DebtPayoffPage.tsx`   | `POST /debts/calculate`    | ✅ Complete |
-| Payoff Timeline | ✅ `DebtPayoffPage.tsx`   | `GET /debts/timeline`      | ✅ Complete |
-| Mobile Goals    | ✅ `GoalsScreen.tsx`      | Same as web                | ✅ Complete |
-| Mobile Debt     | ✅ `DebtPayoffScreen.tsx` | Same as web                | ✅ Complete |
+| Feature         | Frontend Component                      | Backend API                | Status                         |
+| --------------- | --------------------------------------- | -------------------------- | ------------------------------ |
+| Goals Page      | ✅ `GoalsPage.tsx`                      | `GET /goals`               | ✅ Complete                    |
+| Goal Form       | ✅ `GoalFormPage.tsx`                   | `POST /goals`              | ✅ Complete                    |
+| Edit Goal       | ✅ `GoalsPage.tsx` → `GoalFormPage.tsx` | `PUT /goals/{id}`          | ✅ Complete (fixed 2026-05-30) |
+| Delete Goal     | ✅ `GoalsPage.tsx`                      | `DELETE /goals/{id}`       | ✅ Complete (fixed 2026-05-30) |
+| Goal Progress   | ✅ `GoalsPage.tsx`                      | `GET /goals/{id}/progress` | ✅ Complete                    |
+| Goal Reordering | ✅ `GoalsPage.tsx`                      | `PUT /goals/reorder`       | ✅ Complete                    |
+| Goal Archive    | ✅ `GoalsPage.tsx`                      | N/A (local state)          | ✅ Complete                    |
+| Confetti        | ✅ `Confetti.tsx`                       | N/A                        | ✅ Complete                    |
+| Debt List       | ✅ `DebtPayoffPage.tsx`                 | `GET /debts`               | ✅ Complete                    |
+| Add Debt        | ✅ `DebtFormPage.tsx`                   | `POST /debts`              | ✅ Complete                    |
+| Debt Calculator | ✅ `DebtPayoffPage.tsx`                 | `POST /debts/calculate`    | ✅ Complete                    |
+| Payoff Timeline | ✅ `DebtPayoffPage.tsx`                 | `GET /debts/timeline`      | ✅ Complete                    |
+| Mobile Goals    | ✅ `GoalsScreen.tsx`                    | Same as web                | ✅ Complete                    |
+| Mobile Debt     | ✅ `DebtPayoffScreen.tsx`               | Same as web                | ✅ Complete                    |
 
 ### UI/UX Requirements
 
