@@ -9,6 +9,7 @@ import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 
 const API_BASE_URL =
+  process.env.EXPO_PUBLIC_FEATURES_API_URL ||
   "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
 
 export interface LinkedAccount {
