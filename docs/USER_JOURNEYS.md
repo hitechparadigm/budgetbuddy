@@ -13,7 +13,8 @@
   - ✅ **FIXED: Hardcoded Family API URL** — `FamilySettings.tsx` and `AcceptInvitationPage.tsx` now use `config.familyApiUrl` from `VITE_FAMILY_API_URL` env var instead of hardcoded URL.
   - ✅ **FIXED: WEB_APP_URL missing from CDK** — Added to family Lambda environment in `api-family-stack.ts` via CDK context `webAppUrl`.
   - ✅ **FIXED: Raw invitation token in API response** — Removed from `handleInvite` response body (security).
-- Bug Fixes Round 3 — Family Invitation Flow (2026-05-31)
+- Bug Fixes Round 4 — Accept Invitation UX (2026-05-31)
+  - ✅ **AcceptInvitationPage UX**: Show register form immediately for unauthenticated users — removed confusing "Not authenticated" error; form now appears on page load for new users (same pattern as Slack/Notion invitations)
   - ✅ **FamilySettings userId from JWT**: Fixed `FamilySettings.tsx` — was reading userId from `budgetbuddy_user` localStorage (only set for Google OAuth), now reads from JWT token directly. Pending invitations now show for email/password users.
   - ✅ **FamilySettings 409 handling**: When inviting an already-pending email, shows helpful message "Use the Resend button below" instead of generic error
   - ✅ **AcceptInvitationPage auth API URL**: Fixed `AcceptInvitationPage.tsx` — register/login calls were hitting family API Gateway instead of main API Gateway
@@ -662,21 +663,21 @@ _"As a primary account holder, I want to invite my partner to share our budget s
 
 ### Component Mapping
 
-| Feature             | Frontend Component         | Backend API                            | Status      | Notes |
-| ------------------- | -------------------------- | -------------------------------------- | ----------- | ----- |
-| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete |       |
-| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ✅ Complete |       |
-| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | ✅ Complete |       |
-| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ✅ Complete |       |
-| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ✅ Complete |       |
-| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ✅ Complete |       |
-| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ✅ Complete |       |
-| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ✅ Complete |       |
-| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ✅ Complete |       |
-| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ✅ Complete |       |
-| Email Notifications | Backend                    | `POST /email/send-invitation`          | ✅ Complete |       |
-| Email Notifications | Backend                    | `POST /email/send-removal`             | ✅ Complete |       |
-| Email Notifications | Backend                    | `POST /email/send-acceptance`          | ✅ Complete |       |
+| Feature             | Frontend Component         | Backend API                            | Status                            | Notes |
+| ------------------- | -------------------------- | -------------------------------------- | --------------------------------- | ----- |
+| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ✅ Complete                       |       |
+| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ✅ Complete                       |       |
+| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | ✅ Complete                       |       |
+| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ✅ Complete (UX fixed 2026-05-31) |
+| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ✅ Complete                       |       |
+| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ✅ Complete                       |       |
+| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ✅ Complete                       |       |
+| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ✅ Complete                       |       |
+| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ✅ Complete                       |       |
+| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ✅ Complete                       |       |
+| Email Notifications | Backend                    | `POST /email/send-invitation`          | ✅ Complete                       |       |
+| Email Notifications | Backend                    | `POST /email/send-removal`             | ✅ Complete                       |       |
+| Email Notifications | Backend                    | `POST /email/send-acceptance`          | ✅ Complete                       |       |
 
 **Resolved Issues (2026-04-01)**:
 
