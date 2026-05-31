@@ -103,7 +103,7 @@ export const SettingsPage: React.FC = () => {
         }
 
         const apiUrl =
-          "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+          import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
         const response = await fetch(`${apiUrl}/auth/mfa/status`, {
           method: "GET",
           headers: {
@@ -233,7 +233,7 @@ export const SettingsPage: React.FC = () => {
 
       const apiUrl =
         import.meta.env.VITE_API_URL ||
-        "https://your-api-url.execute-api.us-east-1.amazonaws.com/v1";
+        import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
       const response = await fetch(`${apiUrl}/export?type=json`, {
         method: "GET",
         headers: {
@@ -292,7 +292,7 @@ export const SettingsPage: React.FC = () => {
 
       const apiUrl =
         import.meta.env.VITE_API_URL ||
-        "https://your-api-url.execute-api.us-east-1.amazonaws.com/v1";
+        import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
       const response = await fetch(`${apiUrl}/restore`, {
         method: "POST",
         headers: {
@@ -350,7 +350,7 @@ export const SettingsPage: React.FC = () => {
       }
 
       const apiUrl =
-        "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+        import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
       const response = await fetch(`${apiUrl}/auth/mfa/disable`, {
         method: "POST",
         headers: {

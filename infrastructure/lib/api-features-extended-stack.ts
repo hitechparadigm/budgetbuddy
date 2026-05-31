@@ -128,7 +128,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       deployOptions: {
         stageName: 'v1',
         loggingLevel: apigateway.MethodLoggingLevel.INFO,
-        dataTraceEnabled: true,
+        dataTraceEnabled: false, // Never log full request/response bodies — contains financial data
         metricsEnabled: true,
       },
     });

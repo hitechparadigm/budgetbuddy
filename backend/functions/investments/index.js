@@ -4,18 +4,29 @@ const { v4: uuidv4 } = require("uuid");
 
 const TABLE_NAME = process.env.TABLE_NAME || "BudgetBuddyTable";
 
-// CORS headers
-const headers = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization",
-  "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-};
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://d1ueeugn9zcx7n.cloudfront.net",
+  "https://d2ubhx2a13s7gc.cloudfront.net",
+  "https://app.budgetbuddy.com",
+];
+
+function getCorsHeaders(origin) {
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[2];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Headers": "Content-Type,Authorization",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+  };
+}
 
 // Response helper
-function response(statusCode, body) {
+function response(statusCode, body, origin = "") {
   return {
     statusCode,
-    headers,
+    headers: getCorsHeaders(origin),
     body: JSON.stringify(body),
   };
 }

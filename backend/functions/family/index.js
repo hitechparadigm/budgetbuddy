@@ -38,14 +38,25 @@ const dynamodb = DynamoDBDocumentClient.from(client);
 
 const TABLE_NAME = process.env.TABLE_NAME || "budgetbuddy-main";
 
-/**
- * CORS headers for all responses
- */
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type,Authorization",
-  "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-};
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://d1ueeugn9zcx7n.cloudfront.net",
+  "https://d2ubhx2a13s7gc.cloudfront.net",
+  "https://app.budgetbuddy.com",
+];
+
+function getCorsHeaders(event) {
+  const origin = event?.headers?.Origin || event?.headers?.origin || "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[2];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Headers": "Content-Type,Authorization",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+  };
+}
+
 
 /**
  * Main Lambda handler
@@ -53,13 +64,14 @@ const CORS_HEADERS = {
  */
 exports.handler = async (event) => {
   try {
-    console.log("Family Lambda invoked:", JSON.stringify(event, null, 2));
+    // Structured logging — do not log full event (contains JWT tokens)
+    console.log(JSON.stringify({ level: "info", message: "Family Lambda invoked", httpMethod: event.httpMethod, path: event.path }));
 
     // Handle OPTIONS requests for CORS preflight
     if (event.httpMethod === "OPTIONS") {
       return {
         statusCode: 200,
-        headers: CORS_HEADERS,
+        headers: getCorsHeaders(event),
         body: "",
       };
     }
@@ -572,6 +584,18 @@ async function handleAcceptInvitation(event, userId) {
     }
 
     const invitation = scanResult.Items[0];
+
+    // Verify the accepting user's email matches the invited email
+    // Prevents an invitation sent to alice@example.com from being accepted by bob@example.com
+    const acceptingUserEmail = event.requestContext?.authorizer?.claims?.email ||
+      event.requestContext?.authorizer?.claims?.["cognito:username"] || "";
+    if (
+      invitation.invitedEmail &&
+      acceptingUserEmail &&
+      invitation.invitedEmail.toLowerCase() !== acceptingUserEmail.toLowerCase()
+    ) {
+      return errorResponse(403, "This invitation was sent to a different email address");
+    }
 
     // Check if invitation is expired
     const now = new Date();

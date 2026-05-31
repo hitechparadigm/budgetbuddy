@@ -39,7 +39,7 @@ interface ReceiptUploadProps {
 }
 
 // API configuration
-const API_BASE = "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
 
 const getToken = (): string | null => {
   return localStorage.getItem("budgetbuddy_id_token");

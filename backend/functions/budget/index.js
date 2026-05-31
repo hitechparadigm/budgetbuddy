@@ -25,6 +25,18 @@ const {
 // Import permission checking from shared layer
 const { checkPermission } = require("/opt/nodejs/shared");
 
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://d1ueeugn9zcx7n.cloudfront.net",
+  "https://d2ubhx2a13s7gc.cloudfront.net",
+  "https://app.budgetbuddy.com",
+];
+
+function getCorsOrigin(origin) {
+  return ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[2];
+}
+
 /**
  * Main Lambda handler for budget operations
  * Routes requests to appropriate handlers based on HTTP method and path
@@ -53,10 +65,12 @@ exports.handler = async (event, context) => {
 
     // Handle CORS preflight requests
     if (httpMethod === "OPTIONS") {
+      const origin = event.headers?.Origin || event.headers?.origin || "";
       return {
         statusCode: 200,
         headers: {
-          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Origin": getCorsOrigin(origin),
+          "Access-Control-Allow-Credentials": "true",
           "Access-Control-Allow-Headers":
             "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
           "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
@@ -370,49 +384,14 @@ async function getBudgets(event, user) {
     user.familyId ? "jwt" : "dynamodb-or-fallback",
   );
 
-  console.log("getBudgets: CRITICAL DEBUG - Family ID resolution:");
-  console.log("  - user.familyId from JWT:", user.familyId);
-  console.log("  - user.userId from JWT:", user.userId);
-  console.log("  - Final familyId used for query:", familyId);
-  console.log("  - Query PK will be:", `FAMILY#${familyId}`);
-
-  // Query all budgets for the family
+  // Query all active (non-deleted) budgets for the family
   const budgets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
-    FilterExpression: "entityType = :entityType",
+    FilterExpression: "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
       ":entityType": "BUDGET",
+      ":false": false,
     },
   });
-
-  console.log("getBudgets: Raw query result:", budgets.length, "items found");
-  console.log("getBudgets: First budget item (if any):", budgets[0] || "none");
-
-  // CRITICAL DEBUG: Log all budget months to identify the mismatch
-  if (budgets.length > 0) {
-    console.log(
-      "getBudgets: All budget months found:",
-      budgets.map((b) => b.month),
-    );
-    console.log(
-      "getBudgets: All budget PKs found:",
-      budgets.map((b) => b.PK),
-    );
-    console.log(
-      "getBudgets: All budget familyIds found:",
-      budgets.map((b) => b.familyId),
-    );
-  } else {
-    console.log(
-      "getBudgets: No budgets found - checking if any budgets exist at all",
-    );
-
-    // Query without filter to see if there are ANY budgets for this family
-    const allItems = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`);
-    console.log("getBudgets: All items for family:", allItems.length);
-    if (allItems.length > 0) {
-      console.log("getBudgets: Sample items found:", allItems.slice(0, 3));
-    }
-  }
 
   // Transform DynamoDB items to API response format
   const formattedBudgets = budgets.map((budget) => ({
@@ -498,6 +477,9 @@ async function getCurrentBudget(event, user) {
     `FAMILY#${familyId}`,
     `BUDGET#${month}`,
   );
+
+  // Treat soft-deleted budgets as non-existent
+  if (budget?.isDeleted) budget = null;
 
   // If no budget exists for this month, create one with recurring items from previous month
   if (!budget) {

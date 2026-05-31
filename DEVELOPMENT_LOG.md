@@ -1,5 +1,64 @@
 # Development Log
 
+## 2026-05-31 - Security Hardening & Architecture Fixes (Session 132)
+
+### Session Summary
+
+**Duration**: 2 hours
+**Focus**: Full architecture review findings — fix all critical security, data, and code quality issues
+**Outcome**: 14 fixes across infrastructure, auth, backend, and frontend
+
+### Work Completed
+
+**Infrastructure (CDK):**
+- Disabled `dataTraceEnabled` on all 4 API Gateways (was logging passwords and bank tokens to CloudWatch)
+- Gated DynamoDB `removalPolicy` on environment — RETAIN in prod, DESTROY in dev (prevented accidental full data loss)
+- Scoped Cognito IAM to specific User Pool ARN (was `*`)
+- Scoped SES IAM to account identity ARN (was `*`)
+- Moved Stripe secret from Lambda env var to Secrets Manager reference
+- Added `GOOGLE_CLIENT_ID` env var to auth Lambda for verified Google OAuth
+
+**Auth Lambda (`backend/functions/auth/index.js`):**
+- Added `google-auth-library` dependency — Google ID tokens now verified with `verifyIdToken()` (was completely unverified — full auth bypass)
+- Added `decodeCognitoToken()` helper that validates issuer and expiry before trusting JWT claims on fallback paths
+- Replaced all 3 unsafe `Buffer.from(tokenParts[1])` fallback decodes with validated helper
+- Fixed hardcoded `region: "us-east-1"` → `process.env.AWS_REGION`
+
+**Family Lambda (`backend/functions/family/index.js`):**
+- Added email ownership check in `handleAcceptInvitation` — invited email must match authenticated user's email
+- Replaced wildcard CORS with explicit allowlist + per-request origin validation
+- Removed full event dump from CloudWatch logs (contained JWT tokens)
+
+**Budget Lambda (`backend/functions/budget/index.js`):**
+- Fixed soft-delete bug: `getBudgets` now filters `isDeleted = false` — deleted budgets were being returned to users
+- Added `isDeleted` check in `getCurrentBudget` too
+- Added explicit CORS allowlist (was wildcard `*`)
+- Removed all `CRITICAL DEBUG` console.log statements that dumped DynamoDB payloads
+
+**Investments Lambda (`backend/functions/investments/index.js`):**
+- Replaced wildcard CORS with explicit allowlist
+
+**Frontend:**
+- 16 files: replaced hardcoded `https://q0zoob6728...` with `import.meta.env.VITE_API_BASE_URL` fallback
+- `AdminLogin.tsx`: replaced fake "any 6-digit code" stub with real Cognito login API call
+- `CreditScorePage.tsx`: added prominent simulation disclaimer (data is not from real credit bureau)
+- `packages/mobile/.env.local`: removed `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_SECRET` (was being bundled into app binary)
+- `packages/mobile/.env.example`: documented that client secret must never use `EXPO_PUBLIC_` prefix
+
+### Files Changed
+
+- `infrastructure/lib/api-stack.ts`, `api-features-stack.ts`, `api-features-extended-stack.ts`, `api-family-stack.ts`
+- `infrastructure/lib/database-stack.ts`
+- `backend/functions/auth/index.js`, `auth/package.json`
+- `backend/functions/family/index.js`
+- `backend/functions/budget/index.js`
+- `backend/functions/investments/index.js`
+- `packages/web-app/src/pages/admin/AdminLogin.tsx`
+- `packages/web-app/src/pages/CreditScorePage.tsx`
+- `packages/web-app/src/pages/admin/AdminDashboard.tsx`, `AdminUsers.tsx`
+- 14 other frontend files (hardcoded URL fix)
+- `packages/mobile/.env.local`, `.env.example`
+
 ## 2026-05-31 - E2E CI/CD Integration (Session 131)
 
 ### Session Summary

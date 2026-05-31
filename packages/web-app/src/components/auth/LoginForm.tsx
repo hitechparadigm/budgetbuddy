@@ -115,7 +115,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       setSubmitError(null);
 
       const apiUrl =
-        "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+        import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
       const response = await fetch(`${apiUrl}/auth/mfa/respond`, {
         method: "POST",
         headers: {
