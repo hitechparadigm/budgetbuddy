@@ -13,7 +13,15 @@
   - ✅ **FIXED: Hardcoded Family API URL** — `FamilySettings.tsx` and `AcceptInvitationPage.tsx` now use `config.familyApiUrl` from `VITE_FAMILY_API_URL` env var instead of hardcoded URL.
   - ✅ **FIXED: WEB_APP_URL missing from CDK** — Added to family Lambda environment in `api-family-stack.ts` via CDK context `webAppUrl`.
   - ✅ **FIXED: Raw invitation token in API response** — Removed from `handleInvite` response body (security).
-- Bug Fixes Wave 1 (2026-05-30)
+- Bug Fixes Round 2 — Deployed (2026-05-31)
+  - ✅ **Currency type fix**: Added `currency?: string` to `apiClient.completeOnboarding()` — was silently dropped by TypeScript, CAD now saves correctly
+  - ✅ **Notification preferences URL**: Fixed `NotificationSettings.tsx` to use `config.featuresApiUrl` (features API Gateway) instead of `config.apiBaseUrl` (main API)
+  - ✅ **Dark theme Edge private window**: Wrapped all `localStorage` calls in try/catch in `ThemeContext.tsx` and `index.html` — private browsing no longer crashes the app
+  - ✅ **Category sort A-Z**: Categories sorted A-Z within each budget group in `BudgetPage.tsx`; transaction modal dropdown also sorted A-Z
+  - ✅ **Group order fixed**: Budget groups now always render Income → Savings → Expense in `BudgetPage.tsx`
+  - ✅ **Default Cash account**: Created at onboarding completion in `auth-onboarding/index.js` so transaction account dropdown has an option immediately
+  - ✅ **Settings profile token**: Fixed `api.ts` `profileApi.getProfile()` to use `id_token` (Cognito authorizer requires id_token, not access_token)
+  - ✅ **Mobile budget sort**: Applied same group/category sort to `BudgetScreen.tsx`
   - ✅ **Transaction Sorting**: Added sort controls (date/amount/description ↑↓) to `BudgetPage.tsx` transaction list
   - ✅ **Settings Location Pre-populate**: Fixed `SettingsPage.tsx` to handle `profile.location` as both object and JSON string
   - ✅ **Notification Settings URL**: Fixed `NotificationSettings.tsx` — was using relative `/api/notifications/preferences`, now uses `config.apiBaseUrl`; rewrote with Tailwind dark mode classes
@@ -1843,15 +1851,20 @@ xl: 32px  (major sections)
 
 ## 12. UI/UX Implementation Checklist
 
-### Global UI Infrastructure (MVP Sprint 2026-05-30)
+### Global UI Infrastructure (MVP Sprint 2026-05-30, Bug Fixes 2026-05-31)
 
-| Component        | File                                | Status      | Notes                                     |
-| ---------------- | ----------------------------------- | ----------- | ----------------------------------------- |
-| `LandingPage`    | `src/pages/LandingPage.tsx`         | ✅ Complete | Hero, 6 feature cards, CTA, footer        |
-| `ErrorBoundary`  | `src/components/ErrorBoundary.tsx`  | ✅ Complete | Wraps entire app, "Try Again" + "Go Home" |
-| `NotFoundPage`   | `src/pages/NotFoundPage.tsx`        | ✅ Complete | 404 with back/home navigation             |
-| `LoadingSpinner` | `src/components/LoadingSpinner.tsx` | ✅ Complete | sm/md/lg sizes, full-page variant         |
-| `EmptyState`     | `src/components/EmptyState.tsx`     | ✅ Complete | Icon, title, description, optional CTA    |
+| Component              | File                                               | Status      | Notes                                                       |
+| ---------------------- | -------------------------------------------------- | ----------- | ----------------------------------------------------------- |
+| `LandingPage`          | `src/pages/LandingPage.tsx`                        | ✅ Complete | Hero, 6 feature cards, CTA, footer                          |
+| `ErrorBoundary`        | `src/components/ErrorBoundary.tsx`                 | ✅ Complete | Wraps entire app, "Try Again" + "Go Home"                   |
+| `NotFoundPage`         | `src/pages/NotFoundPage.tsx`                       | ✅ Complete | 404 with back/home navigation                               |
+| `LoadingSpinner`       | `src/components/LoadingSpinner.tsx`                | ✅ Complete | sm/md/lg sizes, full-page variant                           |
+| `EmptyState`           | `src/components/EmptyState.tsx`                    | ✅ Complete | Icon, title, description, optional CTA                      |
+| `NotificationSettings` | `src/components/NotificationSettings.tsx`          | ✅ Fixed    | URL corrected to features API; dark mode toggle switches    |
+| `ThemeContext`         | `src/contexts/ThemeContext.tsx`                    | ✅ Fixed    | localStorage wrapped in try/catch for Edge private mode     |
+| `BudgetPage` groups    | `src/pages/BudgetPage.tsx`                         | ✅ Fixed    | Groups sorted Income→Savings→Expense; categories sorted A-Z |
+| `TransactionModal`     | `src/components/transactions/TransactionModal.tsx` | ✅ Fixed    | Category dropdown sorted A-Z                                |
+| `apiClient`            | `src/utils/apiClient.ts`                           | ✅ Fixed    | Added `currency?: string` to `completeOnboarding()` type    |
 
 ### Per-Feature UI/UX Requirements
 
