@@ -10,6 +10,8 @@ import { config } from "../config/environment";
 
 // Family API is on a separate API Gateway (api-family stack)
 const API_BASE = config.familyApiUrl;
+// Auth endpoints are on the main API Gateway
+const AUTH_API_BASE = config.apiBaseUrl;
 
 export const AcceptInvitationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -122,7 +124,7 @@ export const AcceptInvitationPage: React.FC = () => {
     setAuthError(null);
 
     try {
-      const response = await fetch(`${API_BASE}/auth/login`, {
+      const response = await fetch(`${AUTH_API_BASE}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -168,7 +170,7 @@ export const AcceptInvitationPage: React.FC = () => {
     setAuthError(null);
 
     try {
-      const response = await fetch(`${API_BASE}/auth/register`, {
+      const response = await fetch(`${AUTH_API_BASE}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
