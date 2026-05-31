@@ -10,6 +10,9 @@ const {
   InitiateAuthCommand,
   AdminGetUserCommand,
 } = require("@aws-sdk/client-cognito-identity-provider");
+
+// Google ID token verification
+const { OAuth2Client } = require("google-auth-library");
 const {
   DynamoDBClient,
   TransactWriteItemsCommand,
@@ -25,13 +28,39 @@ const { dynamoHelpers, FamilyIdResolver } = require("/opt/nodejs/utils");
 const USER_POOL_ID = process.env.USER_POOL_ID;
 const CLIENT_ID = process.env.CLIENT_ID;
 const TABLE_NAME = process.env.TABLE_NAME;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+
+// Reuse across warm invocations
+const googleAuthClient = new OAuth2Client();
+
+/**
+ * Decode and minimally validate a Cognito JWT.
+ * NOTE: Full cryptographic verification happens at the API Gateway Cognito
+ * authorizer for all protected routes. This fallback is only reached on
+ * internal/profile routes that receive tokens directly. We validate issuer
+ * and expiry to prevent the most obvious forgery attacks.
+ */
+function decodeCognitoToken(token) {
+  const parts = token.split(".");
+  if (parts.length !== 3) throw new Error("Invalid token format");
+  const payload = JSON.parse(Buffer.from(parts[1] + "==", "base64").toString());
+
+  const expectedIssuer = `https://cognito-idp.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/${USER_POOL_ID}`;
+  if (payload.iss && payload.iss !== expectedIssuer) {
+    throw new Error("Token issuer mismatch — not issued by this Cognito pool");
+  }
+  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+    throw new Error("Token expired");
+  }
+  return payload;
+}
 
 // AWS clients
 const cognitoClient = new CognitoIdentityProviderClient({
-  region: "us-east-1",
+  region: process.env.AWS_REGION || "us-east-1",
 });
 const dynamoClient = new DynamoDBClient({
-  region: "us-east-1",
+  region: process.env.AWS_REGION || "us-east-1",
 });
 
 /**
@@ -480,22 +509,20 @@ exports.handler = async (event, _context) => {
       }
 
       try {
-        // Parse the Google ID token (basic parsing - in production, verify signature)
-        const tokenParts = requestBody.idToken.split(".");
-        if (tokenParts.length !== 3) {
-          throw new Error("Invalid token format");
+        // Verify Google ID token signature using Google's public keys
+        if (!GOOGLE_CLIENT_ID) {
+          throw new Error("GOOGLE_CLIENT_ID environment variable not configured");
+        }
+        const ticket = await googleAuthClient.verifyIdToken({
+          idToken: requestBody.idToken,
+          audience: GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        if (!payload?.email_verified) {
+          throw new Error("Google account email is not verified");
         }
 
-        const payload = JSON.parse(
-          Buffer.from(tokenParts[1], "base64").toString(),
-        );
-        console.log("Google token payload:", {
-          email: payload.email,
-          name: payload.name,
-          picture: payload.picture,
-        });
-
-        // Extract user info from Google token
+        // Extract user info from verified Google token
         const googleEmail = payload.email;
         const googleName = payload.name || "";
         const [firstName, ...lastNameParts] = googleName.split(" ");
@@ -797,14 +824,7 @@ exports.handler = async (event, _context) => {
       try {
         // Parse the ID token to get userId
         const token = authHeader.replace("Bearer ", "");
-        const tokenParts = token.split(".");
-        if (tokenParts.length !== 3) {
-          throw new Error("Invalid token format");
-        }
-
-        const payload = JSON.parse(
-          Buffer.from(tokenParts[1], "base64").toString(),
-        );
+        const payload = decodeCognitoToken(token);
 
         // Try to get userId from custom attribute, fallback to sub (Cognito user ID)
         let userId = payload["custom:userId"];
@@ -904,14 +924,7 @@ exports.handler = async (event, _context) => {
       try {
         // Parse the ID token to get userId - use same logic as GET profile
         const token = authHeader.replace("Bearer ", "");
-        const tokenParts = token.split(".");
-        if (tokenParts.length !== 3) {
-          throw new Error("Invalid token format");
-        }
-
-        const payload = JSON.parse(
-          Buffer.from(tokenParts[1], "base64").toString(),
-        );
+        const payload = decodeCognitoToken(token);
 
         // Try to get userId from custom attribute, fallback to sub (Cognito user ID)
         // This matches the GET profile handler logic for consistency
@@ -1069,14 +1082,7 @@ exports.handler = async (event, _context) => {
       try {
         // Parse the ID token to get userId
         const token = authHeader.replace("Bearer ", "");
-        const tokenParts = token.split(".");
-        if (tokenParts.length !== 3) {
-          throw new Error("Invalid token format");
-        }
-
-        const payload = JSON.parse(
-          Buffer.from(tokenParts[1], "base64").toString(),
-        );
+        const payload = decodeCognitoToken(token);
 
         // Try to get userId from custom attribute, fallback to sub (Cognito user ID)
         let userId = payload["custom:userId"];

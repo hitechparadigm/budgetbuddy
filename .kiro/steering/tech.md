@@ -2,400 +2,43 @@
 inclusion: always
 ---
 
-# Technology Steering – BudgetBuddy
+# Technology Stack
 
-## Technology Stack
+## Frontend
 
-### Frontend Stack
+- **Web**: React 18+ / Vite / TypeScript strict / Tailwind / React Router v6 / React Query / Zod
+- **Mobile**: React Native + Expo / TypeScript / React Navigation v6 / SQLite + AsyncStorage
 
-**Web Application:**
+## Backend
 
-- **Framework**: React 18+ with Vite
-- **Language**: TypeScript (strict mode)
-- **State Management**: React Context + React Query
-- **UI Library**: Tailwind CSS
-- **Routing**: React Router v6
-- **Forms**: React Hook Form + Zod validation
-- **HTTP Client**: Fetch API with custom wrapper
+- **Runtime**: Node.js 20.x on AWS Lambda (serverless)
+- **API**: AWS API Gateway (REST) with Cognito authorizer
+- **Pattern**: Handler -> Service -> Repository (one Lambda per endpoint group)
+- **Layers**: Common (DynamoDB helpers), Shared (CORS, validation)
 
-**Mobile Application:**
+## Data
 
-- **Framework**: React Native + Expo
-- **Language**: TypeScript (strict mode)
-- **Navigation**: React Navigation v6
-- **State Management**: React Context + React Query
-- **UI Components**: Custom component library
-- **Offline Storage**: SQLite + AsyncStorage
-- **Secure Storage**: Expo SecureStore
+- **DB**: DynamoDB single-table (PK: `USER#`/`FAMILY#`, SK: entity-specific)
+- **Storage**: S3 (uploads, exports, 30-day lifecycle)
+- **Cache**: Not yet (future: ElastiCache Redis)
 
-### Backend Stack
+## Auth
 
-**API Layer:**
+- Cognito User Pools + Google OAuth 2.0 (PKCE)
+- RBAC: Primary, Spouse, Viewer roles
+- Data isolation via familyId
 
-- **Runtime**: Node.js 20.x
-- **Framework**: AWS Lambda (serverless)
-- **API Gateway**: AWS API Gateway (REST API)
-- **Language**: JavaScript (ES2022)
-- **Validation**: Manual validation (consider Zod)
-- **Error Handling**: Centralized error formatter
+## Infrastructure
 
-**Architecture Pattern:**
+- CDK v2 (TypeScript), modular stacks, env-specific context
+- CI/CD: GitHub Actions (dev auto-deploy on develop, staging on main, prod manual)
 
-- **Style**: Serverless microservices
-- **Pattern**: Handler → Service → Repository
-- **Layers**: Lambda layers for shared code
-- **Separation**: One Lambda per endpoint group
+## Forbidden
 
-### Data Layer
+- Moment.js (use native Date), Lodash (use ES6+), jQuery, axios (use fetch)
 
-**Primary Database:**
+## Adding Dependencies
 
-- **Service**: Amazon DynamoDB
-- **Design**: Single-table design
-- **Partition Key**: `PK` (e.g., `USER#<userId>`, `FAMILY#<familyId>`)
-- **Sort Key**: `SK` (e.g., `BUDGET#<budgetId>`, `TRANSACTION#<transactionId>`)
-- **GSIs**: As needed for access patterns
-- **Backup**: Point-in-time recovery enabled
-
-**Caching:**
-
-- **Not implemented yet**
-- **Future**: ElastiCache (Redis) for hot data
-- **Use cases**: User sessions, frequently accessed budgets
-
-**File Storage:**
-
-- **Service**: Amazon S3
-- **Use cases**: User uploads, exports, backups
-- **Encryption**: SSE-S3 (server-side encryption)
-- **Lifecycle**: Automatic deletion after 30 days
-
-### Authentication & Authorization
-
-**Identity Provider:**
-
-- **Service**: AWS Cognito User Pools
-- **Auth Flow**: USER_PASSWORD_AUTH + REFRESH_TOKEN_AUTH
-- **Token Type**: JWT (access + refresh tokens)
-- **Token Expiration**: Access 1 hour, Refresh 30 days
-- **MFA**: Not implemented (future)
-
-**OAuth Integration:**
-
-- **Provider**: Google Sign-In
-- **Flow**: OAuth 2.0 with PKCE
-- **Credentials**: AWS Secrets Manager
-- **Platforms**: Web, iOS, Android (separate client IDs)
-
-**Authorization:**
-
-- **Model**: Role-based access control (RBAC)
-- **Roles**: Primary, Spouse, Viewer
-- **Enforcement**: Lambda authorizer + application logic
-- **Data Isolation**: Family-level (via familyId)
-
-### AI & Machine Learning
-
-**AI Service:**
-
-- **Provider**: AWS Bedrock
-- **Model**: Claude 3.5 Sonnet
-- **Use Cases**: Budget generation, category suggestions
-- **Cost**: Pay-per-use (~$0.01 per request)
-
-**Data:**
-
-- **City Expense Data**: 348 cities across 9 countries
-- **Storage**: Static JSON files in codebase
-- **Update Frequency**: Quarterly
-
-### Infrastructure as Code
-
-**IaC Tool:**
-
-- **Framework**: AWS CDK (TypeScript)
-- **Version**: CDK v2.100+
-- **Stacks**: Modular (auth, database, api, hosting, monitoring)
-- **Environments**: dev, staging, prod
-- **Deployment**: GitHub Actions CI/CD
-
-**Rules:**
-
-- All AWS resources MUST be defined in CDK
-- No click-ops (manual AWS console changes)
-- Environment-specific configuration via context
-- Stack dependencies explicitly defined
-
-### Observability
-
-**Logging:**
-
-- **Service**: CloudWatch Logs
-- **Format**: Structured JSON
-- **Retention**: 7 days (dev), 30 days (prod)
-- **Correlation**: Request ID in all logs
-- **Levels**: ERROR, WARN, INFO, DEBUG
-
-**Metrics:**
-
-- **Service**: CloudWatch Metrics
-- **Custom Metrics**: API latency, error rates, user actions
-- **Dashboards**: Per-service dashboards
-- **Alarms**: Critical thresholds (error rate, latency)
-
-**Tracing:**
-
-- **Service**: AWS X-Ray
-- **Enabled**: All Lambda functions
-- **Sampling**: 10% in prod, 100% in dev
-- **Use Cases**: Performance debugging, dependency mapping
-
-**Monitoring:**
-
-- **Health Checks**: `/health` endpoints on all services
-- **Uptime Monitoring**: CloudWatch Synthetics (future)
-- **Alerting**: SNS → Email/Slack
-
-### Security Baselines
-
-**Secrets Management:**
-
-- **Service**: AWS Secrets Manager + SSM Parameter Store
-- **Secrets**: API keys, OAuth credentials, database passwords
-- **Rotation**: Automatic (where supported)
-- **Access**: IAM-based, least privilege
-
-**No Secrets in Code:**
-
-- **Rule**: NEVER hardcode secrets, keys, or passwords
-- **Validation**: Pre-commit hook scans for secrets
-- **Storage**: Environment variables from Secrets Manager
-- **Rotation**: Automated where possible
-
-**Network Security:**
-
-- **API Gateway**: Public endpoints with throttling
-- **Lambda**: No VPC (serverless, no network access needed)
-- **DynamoDB**: IAM-based access control
-- **S3**: Bucket policies + IAM
-
-**Data Protection:**
-
-- **Encryption at Rest**: All services (DynamoDB, S3, Secrets Manager)
-- **Encryption in Transit**: TLS 1.2+ for all endpoints
-- **PII Handling**: Encrypted, access logged
-- **Data Retention**: 7 years (compliance)
-
-**IAM Best Practices:**
-
-- **Least Privilege**: Minimal permissions per role
-- **Service Roles**: One role per Lambda function
-- **No Wildcards**: Explicit resource ARNs
-- **Regular Audits**: IAM Access Analyzer
-
-**Authentication:**
-
-- **Password Policy**: Min 8 chars, complexity requirements
-- **Session Management**: JWT with short expiration
-- **Token Storage**: Secure (SecureStore on mobile, httpOnly cookies on web)
-- **Logout**: Token invalidation
-
-### Testing Tooling
-
-**Frameworks**: Jest (unit/integration), fast-check (property-based), Playwright (E2E - future)
-**Coverage**: > 80% | **Security**: npm audit weekly, Dependabot, ESLint rules
-**See**: `.kiro/steering/00-global.md` for detailed testing guidelines and AWS integration testing rules
-
-### CI/CD Pipeline
-
-**Platform**: GitHub Actions | **Triggers**: Push to develop/main, PRs | **Environments**: dev, staging, prod
-**Workflow**: Validate → Build → Deploy → Health Checks (see `.kiro/steering/00-global.md` for detailed CI/CD monitoring rules)
-**Branch Protection**: main (PR + approval), develop (all checks), feature/\* (none)
-**Deployment**: dev (auto on develop), staging (auto on main), prod (manual approval)
-
-### Code Quality Standards
-
-**Linting:**
-
-- **Tool**: ESLint 9+ (flat config)
-- **Rules**: Airbnb base + custom rules
-- **Auto-fix**: `npm run lint`
-- **CI**: Blocks on errors, warns on warnings
-
-**Type Checking:**
-
-- **Tool**: TypeScript (strict mode)
-- **Target**: ES2022
-- **Module**: ESNext
-- **CI**: Blocks on errors
-
-**Code Style:**
-
-- **Formatter**: Prettier (future)
-- **Line Length**: 100 characters
-- **Indentation**: 2 spaces
-- **Quotes**: Single quotes
-
-**Naming Conventions:**
-
-- **Files**: kebab-case (e.g., `user-service.js`)
-- **Functions**: camelCase (e.g., `getUserById`)
-- **Classes**: PascalCase (e.g., `UserService`)
-- **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_RETRIES`)
-- **Interfaces**: PascalCase with `I` prefix (e.g., `IUser`)
-
-### Dependency Management
-
-**Package Manager:**
-
-- **Tool**: npm (not yarn or pnpm)
-- **Lock File**: package-lock.json (committed)
-- **Workspaces**: Monorepo with npm workspaces
-
-**Dependency Rules:**
-
-- **Audit**: Weekly `npm audit` (blocks on high/critical)
-- **Updates**: Monthly dependency updates
-- **Overrides**: Use `overrides` for security fixes
-- **Peer Dependencies**: Explicitly installed
-
-**Allowed Libraries:**
-
-- **Frontend**: React, React Router, React Query, Tailwind, Zod
-- **Backend**: AWS SDK, fast-check, Jest
-- **Infrastructure**: AWS CDK, constructs
-
-**Forbidden Libraries:**
-
-- **Moment.js**: Use native Date or date-fns
-- **Lodash**: Use native ES6+ methods
-- **jQuery**: Use native DOM APIs or React
-
-**Adding New Libraries:**
-
-1. Check if existing library can be used
-2. Evaluate bundle size, maintenance, security
-3. Add to `tech.md` (this file)
-4. Document rationale in PR
-
-### Performance Optimization
-
-**Frontend:**
-
-- **Code Splitting**: Route-based lazy loading
-- **Bundle Size**: < 500KB initial load
-- **Caching**: Service worker (future)
-- **Images**: Lazy loading, WebP format
-
-**Backend:**
-
-- **Cold Starts**: Lambda layers, provisioned concurrency (if needed)
-- **Database**: Single-table design, efficient queries
-- **Caching**: In-memory caching, ElastiCache (future)
-- **Async Processing**: SQS for background jobs (future)
-
-**API:**
-
-- **Pagination**: Limit 50 items per page
-- **Compression**: Gzip enabled
-- **Throttling**: API Gateway rate limiting
-- **Caching**: CloudFront for static assets
-
-### Cost Optimization
-
-**Serverless First:**
-
-- **Lambda**: Pay per invocation
-- **DynamoDB**: On-demand pricing (dev), provisioned (prod)
-- **API Gateway**: Pay per request
-- **S3**: Lifecycle policies for old data
-
-**Right-Sizing:**
-
-- **Lambda Memory**: 512MB default, tune per function
-- **DynamoDB**: On-demand for unpredictable workloads
-- **CloudWatch Logs**: 7-day retention (dev), 30-day (prod)
-
-**Monitoring:**
-
-- **Cost Explorer**: Weekly cost reviews
-- **Budgets**: Alerts at 80% of monthly budget
-- **Tagging**: All resources tagged with environment, service
-
-### Development Workflow
-
-**Local Dev**: Frontend `npm run dev`, Backend SAM (future), DB DynamoDB Local (future)
-**AWS Profile**: `hitechparadigm`
-**Commands**: See `.kiro/steering/00-global.md` for validation, safe-commit, and deployment workflows
-
-### Documentation Standards
-
-**Code Documentation:**
-
-- **JSDoc**: For public APIs and complex functions
-- **README**: Per Lambda function, per CDK stack
-- **Inline Comments**: Only for non-obvious logic
-
-**Architecture Documentation:**
-
-- **Diagrams**: Text-based (Mermaid or PlantUML)
-- **ADRs**: Architecture Decision Records in `docs/`
-- **Runbooks**: Operational procedures in `docs/`
-
-**API Documentation:**
-
-- **Format**: OpenAPI 3.0 (future)
-- **Location**: `docs/api-endpoints.md`
-- **Examples**: Request/response samples
-
-### Versioning
-
-**Semantic Versioning:**
-
-- **Format**: MAJOR.MINOR.PATCH (e.g., 1.4.0)
-- **MAJOR**: Breaking changes
-- **MINOR**: New features (backward compatible)
-- **PATCH**: Bug fixes
-
-**Git Workflow:**
-
-- **Branches**: main, develop, feature/_, bugfix/_
-- **Commits**: Conventional commits (feat, fix, docs, etc.)
-- **Tags**: Version tags on main branch
-
-### Environment Configuration
-
-**Environments:**
-
-- **dev**: Development (auto-deploy from develop)
-- **staging**: Pre-production (auto-deploy from main)
-- **prod**: Production (manual approval)
-
-**Configuration:**
-
-- **CDK Context**: Environment-specific values
-- **Secrets Manager**: Environment-specific secrets
-- **Environment Variables**: Injected at deploy time
-
-**Differences:**
-
-- **dev**: Verbose logging, no alarms, on-demand DynamoDB
-- **staging**: Production-like, alarms enabled
-- **prod**: Minimal logging, all alarms, provisioned DynamoDB
-
-## Technology Decisions Summary
-
-**Serverless**: No management, auto-scaling, pay-per-use (trade-off: cold starts, vendor lock-in)
-**DynamoDB**: Serverless, high performance, auto-scaling (trade-off: NoSQL modeling, limited queries)
-**React Native**: Code sharing, single codebase iOS/Android (trade-off: performance vs native)
-**CDK**: TypeScript, AWS-native, type safety (trade-off: AWS-only, steeper learning)
-
-## Summary
-
-**Stack**: React + React Native + Node.js Lambda + DynamoDB + CDK
-**Architecture**: Serverless microservices
-**Testing**: Jest + fast-check + property-based testing
-**CI/CD**: GitHub Actions with automated deployment
-**Security**: AWS best practices, Secrets Manager, encryption everywhere
-**Observability**: CloudWatch Logs + Metrics + X-Ray
-**Principles**: Serverless first, IaC (CDK), TDD, security by default, cost-conscious
+- Check if existing lib works first
+- Evaluate bundle size, maintenance, security
+- Use exact/pinned versions, npm only

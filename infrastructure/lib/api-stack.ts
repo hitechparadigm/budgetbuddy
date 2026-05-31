@@ -157,6 +157,7 @@ export class ApiStack extends cdk.Stack {
         ...commonEnvironment,
         USER_POOL_ID: props.userPool.userPoolId,
         CLIENT_ID: props.userPoolClient.userPoolClientId,
+        GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
       },
     });
 
@@ -213,7 +214,7 @@ export class ApiStack extends cdk.Stack {
       description: 'BudgetBuddy payment handler for Stripe integration and subscription management',
       environment: {
         ...commonEnvironment,
-        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
+        STRIPE_SECRET_NAME: 'budgetbuddy/stripe/secret', // fetched at runtime from Secrets Manager
       },
     });
 
@@ -329,7 +330,7 @@ export class ApiStack extends cdk.Stack {
         'cognito-idp:AdminSetUserPassword',
         'cognito-idp:AdminDeleteUser',
       ],
-      resources: ['*'], // Cognito permissions are typically broad for user pool operations
+      resources: [props.userPool.userPoolArn],
     }));
 
     // AI Handler needs Bedrock permissions
@@ -349,18 +350,17 @@ export class ApiStack extends cdk.Stack {
         'ses:SendEmail',
         'ses:SendRawEmail',
       ],
-      resources: ['*'], // SES permissions are typically broad
+      resources: [
+        `arn:aws:ses:${this.region}:${this.account}:identity/*`,
+        `arn:aws:ses:${this.region}:${this.account}:configuration-set/*`,
+      ],
     }));
 
-    // Payment Handler needs additional logging for webhook debugging
+    // Payment Handler reads Stripe secret from Secrets Manager at runtime
     this.functions.paymentHandler.addToRolePolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
-      actions: [
-        'logs:CreateLogGroup',
-        'logs:CreateLogStream',
-        'logs:PutLogEvents',
-      ],
-      resources: ['*'],
+      actions: ['secretsmanager:GetSecretValue'],
+      resources: [`arn:aws:secretsmanager:${this.region}:${this.account}:secret:budgetbuddy/stripe/*`],
     }));
   }
 
@@ -405,7 +405,7 @@ export class ApiStack extends cdk.Stack {
       deployOptions: {
         stageName: 'v1',
         loggingLevel: apigateway.MethodLoggingLevel.INFO,
-        dataTraceEnabled: true,
+        dataTraceEnabled: false, // Never log full request/response bodies — contains passwords, tokens, PII
         metricsEnabled: true,
         // Force deployment when Lambda integrations change
         description: `Deployment ${new Date().toISOString()}`,

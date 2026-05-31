@@ -132,6 +132,39 @@ Leave family (non-primary only).
 }
 ```
 
+### GET /family/invitations
+
+Get all pending invitations for the family (primary only).
+
+Uses a DynamoDB `ScanCommand` with `FilterExpression` to find invitations matching the family. Note: `begins_with` is only valid on sort keys, not partition keys — GSI4 partitions by email (`GSI4PK = INVITATION#<email>`), so a Scan with filters is used instead of a GSI query.
+
+**Response:**
+
+```json
+{
+  "familyId": "uuid",
+  "invitations": [
+    {
+      "invitationId": "uuid",
+      "email": "partner@example.com",
+      "role": "spouse",
+      "status": "pending",
+      "createdAt": "2026-01-01T12:00:00Z",
+      "expiresAt": "2026-01-08T12:00:00Z"
+    }
+  ],
+  "count": 1
+}
+```
+
+### DELETE /family/invitations/:invitationId
+
+Revoke a pending invitation (primary only).
+
+### POST /family/invitations/:invitationId/resend
+
+Resend invitation email with a new token (primary only).
+
 ## Environment Variables
 
 - `TABLE_NAME`: DynamoDB table name (default: budgetbuddy-main)

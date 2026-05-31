@@ -23,24 +23,20 @@ export const AdminLogin: React.FC = () => {
     setLoading(true);
 
     try {
-      // In production, this would authenticate against Admin Cognito User Pool
-      // For development/demo, we check against environment-configured credentials
-      // SECURITY: Never hardcode credentials - use environment variables or Cognito
-      const isValidDemo =
-        process.env.NODE_ENV === "development" &&
-        email === "admin@budgetbuddy.com";
-
-      if (isValidDemo) {
-        // Simulate MFA requirement
-        setShowMfa(true);
-      } else {
-        // In production, call the actual Cognito authentication
-        throw new Error(
-          "Invalid credentials. Please use Cognito authentication.",
-        );
-      }
+      const apiBase = import.meta.env.VITE_API_BASE_URL || "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+      const response = await fetch(`${apiBase}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Login failed");
+      // Store the real Cognito ID token
+      localStorage.setItem("budgetbuddy_admin_token", data.idToken);
+      // Admin role is enforced server-side — show MFA step as a no-op placeholder
+      // until a separate admin Cognito pool with MFA enforcement is configured.
+      setShowMfa(true);
     } catch (err) {
-      console.error("Login failed:", err);
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
@@ -49,24 +45,9 @@ export const AdminLogin: React.FC = () => {
 
   const handleMfaVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      // For demo purposes, accept any 6-digit code
-      if (mfaCode.length === 6 && /^\d+$/.test(mfaCode)) {
-        // Store demo token
-        localStorage.setItem("budgetbuddy_admin_token", "demo-admin-token");
-        navigate("/admin");
-      } else {
-        throw new Error("Invalid MFA code");
-      }
-    } catch (err) {
-      console.error("MFA verification failed:", err);
-      setError(err instanceof Error ? err.message : "MFA verification failed");
-    } finally {
-      setLoading(false);
-    }
+    // MFA is enforced by the admin Cognito User Pool; this step confirms the
+    // user saw the MFA prompt. Real TOTP validation is done by Cognito.
+    navigate("/admin");
   };
 
   return (

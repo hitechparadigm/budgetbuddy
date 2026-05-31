@@ -69,9 +69,10 @@ export class DatabaseStack extends cdk.Stack {
       // Ensures data is encrypted at rest for compliance
       encryption: dynamodb.TableEncryption.AWS_MANAGED,
 
-      // Automatic removal when stack is deleted (for dev environments)
-      // Change to RETAIN for production environments
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      // RETAIN in production to prevent accidental data loss on stack deletion
+      removalPolicy: this.node.tryGetContext('environment') === 'prod'
+        ? cdk.RemovalPolicy.RETAIN
+        : cdk.RemovalPolicy.DESTROY,
     });
 
     /**

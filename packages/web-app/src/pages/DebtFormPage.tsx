@@ -9,7 +9,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
 const API_BASE_URL =
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
 
 const DEBT_TYPES = [
   { value: "credit_card", label: "💳 Credit Card" },

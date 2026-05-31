@@ -229,6 +229,16 @@ const CreditScorePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
+        {/* Simulation disclaimer — remove when real credit bureau integration is live */}
+        <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+          <span className="text-amber-600 mt-0.5">⚠️</span>
+          <p className="text-sm text-amber-800">
+            <strong>Demonstration only.</strong> The credit score and history shown here are
+            simulated data for illustration purposes. This feature requires a credit bureau
+            partnership and is not connected to any real credit reporting agency.
+          </p>
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Credit Score</h1>

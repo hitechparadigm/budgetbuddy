@@ -9,7 +9,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const ADMIN_API_URL =
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/admin";
+  `${import.meta.env.VITE_API_BASE_URL || "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1"}/admin`;
 
 interface DashboardStats {
   totalUsers: number;

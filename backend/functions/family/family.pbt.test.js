@@ -1385,3 +1385,134 @@ describe("Property-Based Tests: Family Lambda", () => {
     });
   });
 });
+
+/**
+ * Bugfix: Family Invitation Pending Fix
+ * Property 1: Bug Condition — handleGetInvitations returns pending invitations
+ *
+ * Bug: handleGetInvitations uses begins_with on GSI4 partition key (invalid DynamoDB pattern).
+ * This test encodes the EXPECTED behavior: for any primary user whose family has pending
+ * invitations, handleGetInvitations should return 200 with the correct invitations.
+ *
+ * EXPECTED: FAILS on unfixed code (proves bug exists), PASSES after fix.
+ */
+describe("Bugfix Property 1: handleGetInvitations returns pending invitations", () => {
+  it("should return all pending invitations for a primary user's family", async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.uuid(),
+        fc.uuid(),
+        fc.array(
+          fc.record({
+            invitationId: fc.uuid(),
+            invitedEmail: fc.emailAddress(),
+            role: fc.constantFrom("spouse", "viewer"),
+            status: fc.constant("pending"),
+            createdAt: fc.constant(new Date().toISOString()),
+            expiresAt: fc.constant(
+              new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            ),
+            familyId: fc.constant("PLACEHOLDER"),
+            GSI4PK: fc.constant("PLACEHOLDER"),
+          }),
+          { minLength: 1, maxLength: 5 },
+        ),
+        async (userId, familyId, invitations) => {
+          mockSend.mockReset();
+
+          // Fill in familyId and GSI4PK for each invitation
+          const dbInvitations = invitations.map((inv) => ({
+            ...inv,
+            familyId,
+            GSI4PK: `INVITATION#${inv.invitedEmail}`,
+          }));
+
+          const claims = createUserClaims(userId, familyId, "primary");
+          const event = createEvent("GET", "/family/invitations", claims);
+
+          // Mock: ScanCommand returns the pending invitations for this family
+          // The FIXED code should use ScanCommand with FilterExpression
+          mockSend.mockResolvedValueOnce({ Items: dbInvitations });
+
+          const result = await handler(event);
+          const body = JSON.parse(result.body);
+          const data = body.data || body;
+
+          // Expected: 200 with non-empty invitations array
+          expect(result.statusCode).toBe(200);
+          expect(data.invitations).toBeDefined();
+          expect(data.invitations.length).toBe(invitations.length);
+
+          // Each invitation should have the correct fields
+          data.invitations.forEach((inv, idx) => {
+            expect(inv.invitationId).toBe(invitations[idx].invitationId);
+            expect(inv.email).toBe(invitations[idx].invitedEmail);
+            expect(inv.role).toBe(invitations[idx].role);
+          });
+
+          return true;
+        },
+      ),
+      { numRuns: 50 },
+    );
+  });
+});
+
+/**
+ * Bugfix: Family Invitation Pending Fix
+ * Property 2: Preservation — Non-Primary Access Denied and Empty Family Behavior
+ *
+ * These tests capture baseline behavior that must be preserved after the fix.
+ * Run on UNFIXED code first to confirm they pass, then re-run after fix.
+ */
+describe("Bugfix Property 2: Preservation — role access and empty state", () => {
+  it("should return 403 for all non-primary roles", async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.constantFrom("spouse", "viewer"),
+        fc.uuid(),
+        fc.uuid(),
+        async (role, userId, familyId) => {
+          mockSend.mockReset();
+
+          const claims = createUserClaims(userId, familyId, role);
+          const event = createEvent("GET", "/family/invitations", claims);
+
+          const result = await handler(event);
+          const body = JSON.parse(result.body);
+
+          expect(result.statusCode).toBe(403);
+          expect(body.error).toContain("Only primary user");
+
+          return true;
+        },
+      ),
+      { numRuns: 50 },
+    );
+  });
+
+  it("should return empty invitations array when no invitations exist", async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.uuid(), fc.uuid(), async (userId, familyId) => {
+        mockSend.mockReset();
+
+        const claims = createUserClaims(userId, familyId, "primary");
+        const event = createEvent("GET", "/family/invitations", claims);
+
+        // Mock: query/scan returns no items
+        mockSend.mockResolvedValueOnce({ Items: [] });
+
+        const result = await handler(event);
+        const body = JSON.parse(result.body);
+        const data = body.data || body;
+
+        expect(result.statusCode).toBe(200);
+        expect(data.invitations).toEqual([]);
+        expect(data.count).toBe(0);
+
+        return true;
+      }),
+      { numRuns: 50 },
+    );
+  });
+});
