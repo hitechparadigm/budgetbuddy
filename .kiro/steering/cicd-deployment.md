@@ -8,11 +8,13 @@ fileMatchPattern: "{.github/workflows/**,scripts/deploy*,scripts/*cicd*}"
 ## Critical: No Parallel Deployments
 
 - Only ONE deployment at a time (CloudFormation conflicts cause failures)
+- Only ONE agent/session may push at a time
 - **Before EVERY push**: run `node scripts/check-cicd-status.js`
   - If `IN_PROGRESS` or `QUEUED`: **STOP. Wait 2 minutes. Check again.**
   - If `FAILED`: fix the failure FIRST, then push
   - If `SUCCESS`: proceed with push
 - **NEVER push while status is "in_progress" or "queued"**
+- **NEVER push if another Kiro session is actively working on this repo**
 - After push: wait for completion, check every 2min
 
 ## Deployment Flow

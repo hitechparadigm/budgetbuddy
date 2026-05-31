@@ -13,7 +13,18 @@
   - ✅ **FIXED: Hardcoded Family API URL** — `FamilySettings.tsx` and `AcceptInvitationPage.tsx` now use `config.familyApiUrl` from `VITE_FAMILY_API_URL` env var instead of hardcoded URL.
   - ✅ **FIXED: WEB_APP_URL missing from CDK** — Added to family Lambda environment in `api-family-stack.ts` via CDK context `webAppUrl`.
   - ✅ **FIXED: Raw invitation token in API response** — Removed from `handleInvite` response body (security).
-- Bug Fixes Round 2 — Deployed (2026-05-31)
+- Bug Fixes Round 3 — Family Invitation Flow (2026-05-31)
+  - ✅ **FamilySettings userId from JWT**: Fixed `FamilySettings.tsx` — was reading userId from `budgetbuddy_user` localStorage (only set for Google OAuth), now reads from JWT token directly. Pending invitations now show for email/password users.
+  - ✅ **FamilySettings 409 handling**: When inviting an already-pending email, shows helpful message "Use the Resend button below" instead of generic error
+  - ✅ **AcceptInvitationPage auth API URL**: Fixed `AcceptInvitationPage.tsx` — register/login calls were hitting family API Gateway instead of main API Gateway
+  - ✅ **AccountsPage JSX syntax error**: Fixed broken JSX structure in `AccountsPage.tsx` that was causing build failures
+  - ✅ **Invitation familyId data fix**: Patched existing DynamoDB invitation records missing `familyId` field (created before FAMILY#undefined fix)
+  - ✅ **Email Lambda FROM_EMAIL**: Set `FROM_EMAIL=info@hitechparadigm.com` directly on `budgetbuddy-email-family` Lambda env var — was defaulting to unverified `noreply@budgetbuddy.com`
+  - ✅ **SES verified addresses**: Verified 5 email addresses in SES sandbox: `dmytro.malyk@gmail.com`, `dima.pmp@gmail.com`, `info@hitechparadigm.com`, `t1@taxprocanada.ca`, `dmalyk@taxprocanada.ca`
+- CI/CD Improvements (2026-05-31)
+  - ✅ **Concurrency lock**: Added `concurrency: group: deploy-development` to `deploy-dev.yml` — prevents parallel CloudFormation deployments, queues instead
+  - ✅ **Rich deployment summary**: GitHub Actions summary now shows commit message, change type (🐛/✨/🔒), files changed, and app/API URLs
+  - ✅ **Steering updated**: `cicd-deployment.md` now explicitly enforces check-before-push rule
   - ✅ **Currency type fix**: Added `currency?: string` to `apiClient.completeOnboarding()` — was silently dropped by TypeScript, CAD now saves correctly
   - ✅ **Notification preferences URL**: Fixed `NotificationSettings.tsx` to use `config.featuresApiUrl` (features API Gateway) instead of `config.apiBaseUrl` (main API)
   - ✅ **Dark theme Edge private window**: Wrapped all `localStorage` calls in try/catch in `ThemeContext.tsx` and `index.html` — private browsing no longer crashes the app
