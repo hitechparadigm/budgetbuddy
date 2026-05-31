@@ -23,6 +23,15 @@ const {
 const { v4: uuidv4 } = require("uuid");
 const crypto = require("crypto");
 
+// Sanitize familyId from JWT — Cognito stores unset custom attributes as the
+// literal string "undefined", which must be treated as absent.
+function sanitizeFamilyId(value) {
+  if (!value) return null;
+  const str = String(value).trim();
+  if (str === "" || str === "undefined" || str === "null") return null;
+  return str;
+}
+
 // Initialize DynamoDB Document Client
 const client = new DynamoDBClient({});
 const dynamodb = DynamoDBDocumentClient.from(client);
@@ -72,7 +81,7 @@ exports.handler = async (event) => {
     if (authorizerClaims && authorizerClaims["custom:userId"]) {
       // Use authorizer claims if available
       userId = authorizerClaims["custom:userId"];
-      familyId = authorizerClaims["custom:familyId"];
+      familyId = sanitizeFamilyId(authorizerClaims["custom:familyId"]);
       familyRole = authorizerClaims["custom:familyRole"] || "primary";
     } else {
       // Fall back to parsing the Authorization header directly
@@ -95,7 +104,7 @@ exports.handler = async (event) => {
 
         // Try custom:userId first, fall back to sub
         userId = payload["custom:userId"] || payload.sub;
-        familyId = payload["custom:familyId"];
+        familyId = sanitizeFamilyId(payload["custom:familyId"]);
         familyRole = payload["custom:familyRole"] || "primary";
 
         if (!userId) {

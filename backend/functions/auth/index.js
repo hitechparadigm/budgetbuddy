@@ -14,7 +14,7 @@ const {
   DynamoDBClient,
   TransactWriteItemsCommand,
   GetItemCommand,
-  UpdateItemCommand,  
+  UpdateItemCommand,
   PutItemCommand, // eslint-disable-line no-unused-vars
 } = require("@aws-sdk/client-dynamodb");
 
@@ -1092,7 +1092,14 @@ exports.handler = async (event, _context) => {
         }
 
         // Extract familyId from JWT if available (may be null)
-        const jwtFamilyId = payload["custom:familyId"] || null;
+        // Guard against Cognito storing "undefined" as a literal string
+        const rawFamilyId = payload["custom:familyId"];
+        const jwtFamilyId =
+          rawFamilyId &&
+          String(rawFamilyId).trim() !== "undefined" &&
+          String(rawFamilyId).trim() !== "null"
+            ? rawFamilyId
+            : null;
 
         // Parse request body
         let requestBody = null;

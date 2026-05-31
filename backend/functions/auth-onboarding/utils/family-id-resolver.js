@@ -20,7 +20,7 @@
 async function resolveFamilyId(
   userId,
   jwtFamilyId = null,
-  dynamoHelpers = null
+  dynamoHelpers = null,
 ) {
   const startTime = Date.now();
 
@@ -32,8 +32,9 @@ async function resolveFamilyId(
   });
 
   try {
-    // Step 1: Try JWT familyId if available
-    if (jwtFamilyId) {
+    // Step 1: Try JWT familyId if available — guard against Cognito storing "undefined" as a string
+    const sanitized = jwtFamilyId && String(jwtFamilyId).trim();
+    if (sanitized && sanitized !== "undefined" && sanitized !== "null") {
       console.log("Using familyId from JWT token", {
         userId,
         familyId: jwtFamilyId,
@@ -46,7 +47,7 @@ async function resolveFamilyId(
         "resolve-family-id",
         userId,
         jwtFamilyId,
-        "jwt"
+        "jwt",
       );
       return jwtFamilyId;
     }
@@ -62,7 +63,7 @@ async function resolveFamilyId(
 
         const userProfile = await dynamoHelpers.getItem(
           `USER#${userId}`,
-          "PROFILE"
+          "PROFILE",
         );
 
         if (
@@ -82,7 +83,7 @@ async function resolveFamilyId(
             "resolve-family-id",
             userId,
             userProfile.familyId,
-            "dynamodb"
+            "dynamodb",
           );
           return userProfile.familyId;
         } else {
@@ -123,7 +124,7 @@ async function resolveFamilyId(
       "resolve-family-id",
       userId,
       fallbackFamilyId,
-      "fallback"
+      "fallback",
     );
     return fallbackFamilyId;
   } catch (error) {
