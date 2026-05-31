@@ -53,12 +53,26 @@ const resolveTheme = (mode: ThemeMode): ResolvedTheme => {
   return mode;
 };
 
+// Safe localStorage helpers — Edge private mode blocks localStorage
+const safeGetItem = (key: string): string | null => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+const safeSetItem = (key: string, value: string): void => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* ignore */
+  }
+};
+
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [mode, setModeState] = useState<ThemeMode>(() => {
     // Check localStorage for saved theme mode
-    const savedMode = localStorage.getItem(
-      "budgetbuddy-theme-mode",
-    ) as ThemeMode;
+    const savedMode = safeGetItem("budgetbuddy-theme-mode") as ThemeMode;
     if (savedMode && ["light", "dark", "system"].includes(savedMode)) {
       // Apply theme immediately during initialization to prevent flash
       const resolved = resolveTheme(savedMode);
@@ -95,7 +109,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const resolved = resolveTheme(mode);
     setTheme(resolved);
     applyTheme(resolved);
-    localStorage.setItem("budgetbuddy-theme-mode", mode);
+    safeSetItem("budgetbuddy-theme-mode", mode);
   }, [mode, applyTheme]);
 
   // Listen for system theme changes when in system mode

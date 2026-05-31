@@ -178,6 +178,7 @@ class SimpleApiClient {
     country: string;
     familySize: number;
     currentMonth: string;
+    currency?: string;
     selectedCategories: Array<{
       name: string;
       icon: string;

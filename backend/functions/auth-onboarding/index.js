@@ -220,6 +220,28 @@ exports.handler = async (event) => {
     await dynamoHelpers.putItem(budget);
     console.log("Initial budget created from onboarding selections");
 
+    // Create a default "Cash" account for the user
+    const cashAccountId = `acc_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    const cashAccount = {
+      PK: `FAMILY#${familyId}`,
+      SK: `ACCOUNT#${cashAccountId}`,
+      entityType: "ACCOUNT",
+      accountId: cashAccountId,
+      familyId,
+      userId,
+      nickname: "Cash",
+      accountType: "cash",
+      accountSubtype: "cash",
+      balance: 0,
+      currency,
+      isDefault: true,
+      isManual: true,
+      createdAt: currentTime,
+      updatedAt: currentTime,
+    };
+    await dynamoHelpers.putItem(cashAccount);
+    console.log("Default Cash account created:", cashAccountId);
+
     FamilyIdResolver.logFamilyIdResolution(
       "auth-onboarding",
       "budget-creation",

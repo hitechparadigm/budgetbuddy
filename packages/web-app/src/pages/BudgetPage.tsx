@@ -998,7 +998,9 @@ export const BudgetPage: React.FC = () => {
           );
           const updatedGroup = {
             ...group,
-            categories: [...group.categories, newCategory],
+            categories: [...group.categories, newCategory].sort((a, b) =>
+              a.name.localeCompare(b.name)
+            ),
           };
           console.log(
             "[handleBudgetItemSubmit] Group after:",
@@ -1781,7 +1783,13 @@ export const BudgetPage: React.FC = () => {
               className="p-4 lg:p-6 space-y-6 lg:space-y-8"
               data-tutorial="budget-categories"
             >
-              {budget.groups.map((group) => (
+              {/* Sort groups: income first, savings second, expense last */}
+              {[...budget.groups]
+                .sort((a, b) => {
+                  const order = { income: 0, savings: 1, expense: 2 };
+                  return (order[a.type] ?? 3) - (order[b.type] ?? 3);
+                })
+                .map((group) => (
                 <div key={group.id} className="space-y-4">
                   {/* Group Header */}
                   <div className="flex items-center justify-between">
@@ -1822,9 +1830,11 @@ export const BudgetPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Categories */}
+                  {/* Categories — sorted A-Z */}
                   <div className="space-y-2">
-                    {group.categories.map((category) => (
+                    {[...group.categories]
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((category) => (
                       <div
                         key={category.id}
                         className={`group/item flex flex-col md:flex-row md:items-center justify-between py-3 px-4 rounded-lg space-y-2 md:space-y-0 ${

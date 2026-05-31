@@ -377,7 +377,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               required
             >
               <option value="">Select a category...</option>
-              {categories.map((cat) => (
+              {[...categories].sort((a, b) => a.name.localeCompare(b.name)).map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.icon} {cat.name}
                 </option>

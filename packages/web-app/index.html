@@ -9,12 +9,21 @@
     <!-- Apply theme before React loads to prevent flash of light theme -->
     <script>
         (function() {
-            var mode = localStorage.getItem('budgetbuddy-theme-mode');
-            var isDark = mode === 'dark' ||
-                (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ||
-                (!mode && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            if (isDark) {
-                document.documentElement.classList.add('dark');
+            try {
+                var mode = localStorage.getItem('budgetbuddy-theme-mode');
+                var isDark = mode === 'dark' ||
+                    (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ||
+                    (!mode && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch(e) {
+                // localStorage blocked (e.g. private browsing) — fall back to system preference
+                try {
+                    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        document.documentElement.classList.add('dark');
+                    }
+                } catch(e2) { /* ignore */ }
             }
         })();
     </script>

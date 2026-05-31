@@ -229,9 +229,10 @@ export default function BudgetScreen() {
     return monthNames[month - 1];
   };
 
-  // Memoize categories for performance
+  // Memoize categories for performance — sorted A-Z
   const quickAddCategories = useMemo(() => {
-    return monthlyOverview?.budgets || [];
+    const cats = monthlyOverview?.budgets || [];
+    return [...cats].sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
   }, [monthlyOverview?.budgets]);
 
   const fabActions = [
