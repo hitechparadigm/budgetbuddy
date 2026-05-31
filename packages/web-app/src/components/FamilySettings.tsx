@@ -78,9 +78,21 @@ export const FamilySettings: React.FC = () => {
       const membersData = await membersResponse.json();
       setMembers(membersData.members || []);
 
-      // Load pending invitations (only for primary users)
-      const userData = localStorage.getItem("budgetbuddy_user");
-      const currentUserId = userData ? JSON.parse(userData).userId : null;
+      // Get current userId from JWT token (works for both email and Google login)
+      // budgetbuddy_user is only set for Google OAuth — don't rely on it
+      let currentUserId: string | null = null;
+      try {
+        const idToken = localStorage.getItem("budgetbuddy_id_token");
+        if (idToken) {
+          const payload = JSON.parse(atob(idToken.split(".")[1]));
+          currentUserId = payload["custom:userId"] || payload.sub || null;
+        }
+      } catch {
+        // fallback: try budgetbuddy_user
+        const userData = localStorage.getItem("budgetbuddy_user");
+        currentUserId = userData ? JSON.parse(userData).userId : null;
+      }
+
       const currentUser = membersData.members.find(
         (m: FamilyMember) => m.userId === currentUserId,
       );
@@ -157,6 +169,12 @@ export const FamilySettings: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        // 409 = pending invitation already exists — tell user to use Resend
+        if (response.status === 409) {
+          throw new Error(
+            `A pending invitation already exists for ${inviteEmail}. Use the Resend button below to resend it.`,
+          );
+        }
         throw new Error(errorData.error || "Failed to send invitation");
       }
 
@@ -534,10 +552,20 @@ export const FamilySettings: React.FC = () => {
           </div>
         ) : (
           members.map((member) => {
-            const roleInfo = getRoleDisplay(member.role);
-            const userData = localStorage.getItem("budgetbuddy_user");
-            const currentUserId = userData ? JSON.parse(userData).userId : null;
+            // Get current userId from JWT token
+            let currentUserId: string | null = null;
+            try {
+              const idToken = localStorage.getItem("budgetbuddy_id_token");
+              if (idToken) {
+                const payload = JSON.parse(atob(idToken.split(".")[1]));
+                currentUserId = payload["custom:userId"] || payload.sub || null;
+              }
+            } catch {
+              const userData = localStorage.getItem("budgetbuddy_user");
+              currentUserId = userData ? JSON.parse(userData).userId : null;
+            }
             const isCurrentUser = member.userId === currentUserId;
+            const roleInfo = getRoleDisplay(member.role);
 
             return (
               <div
