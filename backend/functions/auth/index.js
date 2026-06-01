@@ -11,8 +11,21 @@ const {
   AdminGetUserCommand,
 } = require("@aws-sdk/client-cognito-identity-provider");
 
-// Google ID token verification
-const { OAuth2Client } = require("google-auth-library");
+// Google ID token verification — lazy-loaded to avoid cold-start failure
+// when google-auth-library is not bundled in the deployment package.
+// The package is only required when the /auth/google endpoint is called.
+let _OAuth2Client = null;
+let _googleAuthClient = null;
+function getGoogleAuthClient() {
+  if (!_googleAuthClient) {
+    // eslint-disable-next-line global-require
+    const { OAuth2Client } = require("google-auth-library");
+    _OAuth2Client = OAuth2Client;
+    _googleAuthClient = new OAuth2Client();
+  }
+  return _googleAuthClient;
+}
+
 const {
   DynamoDBClient,
   TransactWriteItemsCommand,
@@ -29,9 +42,6 @@ const USER_POOL_ID = process.env.USER_POOL_ID;
 const CLIENT_ID = process.env.CLIENT_ID;
 const TABLE_NAME = process.env.TABLE_NAME;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-
-// Reuse across warm invocations
-const googleAuthClient = new OAuth2Client();
 
 /**
  * Decode and minimally validate a Cognito JWT.
@@ -451,7 +461,7 @@ exports.handler = async (event, _context) => {
         if (!GOOGLE_CLIENT_ID) {
           throw new Error("GOOGLE_CLIENT_ID environment variable not configured");
         }
-        const ticket = await googleAuthClient.verifyIdToken({
+        const ticket = await getGoogleAuthClient().verifyIdToken({
           idToken: requestBody.idToken,
           audience: GOOGLE_CLIENT_ID,
         });
