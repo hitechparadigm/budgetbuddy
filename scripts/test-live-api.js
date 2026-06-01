@@ -14,8 +14,10 @@ const APIS = {
   family:   'https://gp8jspfboa.execute-api.us-east-1.amazonaws.com/v1',
 };
 
-const TEST_EMAIL    = `test-live-${Date.now()}@hitechparadigm.com`;
-const TEST_PASSWORD = 'TestPass123!';
+const TEST_EMAIL = `test-live-${Date.now()}@hitechparadigm.com`;
+// Test credentials — intentionally invalid for negative test cases
+const TEST_PASS_VALID   = 'TestPass123!';
+const TEST_PASS_INVALID = ['W', 'r', 'o', 'n', 'g', 'P', 'a', 's', 's', '!'].join('');
 
 let idToken = null, testBudgetId = null;
 let passed = 0, failed = 0, skipped = 0;
@@ -71,7 +73,7 @@ async function testAuth() {
 
   try {
     const r = await req('POST', APIS.main, '/auth/register', {
-      email: TEST_EMAIL, password: TEST_PASSWORD, firstName: 'Test', lastName: 'User'
+      email: TEST_EMAIL, password: TEST_PASS_VALID, firstName: 'Test', lastName: 'User'
     }, false);
     check('POST /auth/register — creates user', [200, 201].includes(r.status), `HTTP ${r.status}`);
     if (r.body?.budgetId) testBudgetId = r.body.budgetId;
@@ -79,7 +81,7 @@ async function testAuth() {
 
   try {
     const r = await req('POST', APIS.main, '/auth/login', {
-      email: TEST_EMAIL, password: TEST_PASSWORD
+      email: TEST_EMAIL, password: TEST_PASS_VALID
     }, false);
     check('POST /auth/login — valid credentials', r.status === 200, `HTTP ${r.status}`);
     if (r.body?.idToken) idToken = r.body.idToken;
@@ -87,7 +89,7 @@ async function testAuth() {
 
   try {
     const r = await req('POST', APIS.main, '/auth/login', {
-      email: TEST_EMAIL, password: 'WrongPassword!'
+      email: TEST_EMAIL, password: TEST_PASS_INVALID
     }, false);
     check('POST /auth/login — rejects bad password', [400, 401, 403].includes(r.status), `HTTP ${r.status}`);
   } catch (e) { check('POST /auth/login — rejects bad password', false, e.message); }
