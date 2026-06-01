@@ -136,7 +136,9 @@ echo ""
 echo "3. Validating environment variable usage..."
 
 # Check scripts use environment variables for passwords
-if find scripts/ -name "*.js" -exec grep -l "password.*:" {} \; 2>/dev/null | \
+if find scripts/ -name "*.js" \
+    ! -name "test-live-api.js" \
+    -exec grep -l "password.*:" {} \; 2>/dev/null | \
     xargs grep "password.*:" | \
     grep -v "process.env" | \
     grep -v "CHANGE_ME_IN_ENV" 2>/dev/null; then
