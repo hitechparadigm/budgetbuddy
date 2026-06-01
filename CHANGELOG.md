@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.9.121] - 2026-06-01
+
+### 🧹 Chore: Major codebase cleanup — align with BUDGET# architecture
+
+**CI/CD:**
+- Added `api-budgets` stack to both `deploy-dev.yml` and `deploy-prod.yml` Step 2 and health checks
+- `api-budgets` was previously never deployed by CI/CD — this was a critical gap
+
+**Frontend:**
+- Wired `BudgetMembersPage` into `App.tsx` router at `/budget/members` (was orphaned)
+- Added "Members" nav item to `Sidebar.tsx`
+- Replaced deprecated `FamilySettings` component in `SettingsPage.tsx` with a link to `/budget/members`
+- Changed `/family/accept` route to `/budgets/accept` — matches the URL the backend sends in invitation emails
+- Removed `familyId` from `BudgetContext.tsx` Budget interface
+- Removed `familyId` from `MockUser` interface and `mockUser` constant in `mockAuth.ts`
+- Removed stale `localStorage.removeItem("familyId")` from `Sidebar.tsx` logout handler
+
+**Infrastructure:**
+- Updated `app.ts` comments: `ApiFamilyStack` marked deprecated, `ApiBudgetsStack` marked active
+- Updated `auth-onboarding-stack.ts` layer description: `FamilyIdResolver` → `BudgetAccessResolver`
+- Updated `database-stack.ts` GSI comments: `FAMILY#` → `BUDGET#` in all 4 GSI descriptions
+
+**Tests:**
+- Deleted `tests/family-id-resolver.test.js` — tests a removed utility
+
+**cdk.out:**
+- Deleted `infrastructure/cdk.out` — regenerated on every CDK synth/deploy; was causing slow security scans
+
 ## [1.9.120] - 2026-06-01
 
 ### 🐛 Fix: Onboarding 409 treated as success + family Lambda dead code removed

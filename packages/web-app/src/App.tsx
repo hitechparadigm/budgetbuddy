@@ -21,6 +21,7 @@ import { OnboardingPage } from "./pages/OnboardingPage";
 import { AIBudgetGenerationPage } from "./pages/AIBudgetGenerationPage";
 import { AcceptInvitationPage } from "./pages/AcceptInvitationPage";
 import { AccountsPage } from "./pages/AccountsPage";
+import { BudgetMembersPage } from "./pages/BudgetMembersPage";
 import { TipsFeedPage } from "./pages/TipsFeedPage";
 import { InsightsPage } from "./pages/InsightsPage";
 import { BillsPage } from "./pages/BillsPage";
@@ -59,7 +60,7 @@ const App: React.FC = () => {
                     element={<AIBudgetGenerationPage />}
                   />
                   <Route
-                    path="/family/accept"
+                    path="/budgets/accept"
                     element={<AcceptInvitationPage />}
                   />
                   {/* Main Budget App - With Sidebar Layout */}
@@ -86,6 +87,15 @@ const App: React.FC = () => {
                     element={
                       <ProtectedLayout>
                         <AccountsPage />
+                      </ProtectedLayout>
+                    }
+                  />
+                  {/* Budget Members Page — manage members, invitations, budget settings */}
+                  <Route
+                    path="/budget/members"
+                    element={
+                      <ProtectedLayout>
+                        <BudgetMembersPage />
                       </ProtectedLayout>
                     }
                   />

@@ -79,13 +79,13 @@ export class DatabaseStack extends cdk.Stack {
      * GSI1 - Family-based queries
      *
      * Access Patterns:
-     * - Get all users in a family
-     * - Get family metadata and members
-     * - Query family-specific data
+     * - Get all members in a budget
+     * - Get budget metadata and members
+     * - Query budget-specific data
      *
      * Key Structure:
-     * - GSI1PK: "FAMILY#<familyId>"
-     * - GSI1SK: "USER#<userId>" or "METADATA" or other family-related data
+     * - GSI1PK: "BUDGET#<budgetId>"
+     * - GSI1SK: "USER#<userId>" or "METADATA" or other budget-related data
      */
     this.table.addGlobalSecondaryIndex({
       indexName: 'GSI1',
@@ -112,7 +112,7 @@ export class DatabaseStack extends cdk.Stack {
      *
      * Key Structure:
      * - GSI2PK: Entity type with date (e.g., "BUDGET#2024-01", "SUBSCRIPTION#active")
-     * - GSI2SK: "DATE#<date>" or "FAMILY#<familyId>"
+     * - GSI2SK: "DATE#<date>" or "BUDGET#<budgetId>"
      */
     this.table.addGlobalSecondaryIndex({
       indexName: 'GSI2',
@@ -137,7 +137,7 @@ export class DatabaseStack extends cdk.Stack {
      *
      * Key Structure:
      * - GSI3PK: "BUDGET#<month>" or "CATEGORY#<categoryId>"
-     * - GSI3SK: "CATEGORY#<categoryId>" or "FAMILY#<familyId>"
+     * - GSI3SK: "CATEGORY#<categoryId>" or "BUDGET#<budgetId>"
      */
     this.table.addGlobalSecondaryIndex({
       indexName: 'GSI3',
@@ -157,12 +157,12 @@ export class DatabaseStack extends cdk.Stack {
      *
      * Access Patterns:
      * - Get pending invitations by email address
-     * - Check if user has been invited to a family
+     * - Check if user has been invited to a budget
      * - Query invitation status and expiration
      *
      * Key Structure:
      * - GSI4PK: "INVITATION#<invitedEmail>"
-     * - GSI4SK: "CREATED#<timestamp>" or "FAMILY#<familyId>"
+     * - GSI4SK: "CREATED#<timestamp>" or "BUDGET#<budgetId>"
      */
     this.table.addGlobalSecondaryIndex({
       indexName: 'GSI4',

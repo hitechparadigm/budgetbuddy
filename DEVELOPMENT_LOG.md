@@ -1,6 +1,36 @@
 # Development Log
 
-## 2026-06-01 - Onboarding 409 fix + family Lambda cleanup (Session 135)
+## 2026-06-01 - Major codebase cleanup — align with BUDGET# architecture (Session 136)
+
+### Work Completed
+
+1. **CI/CD workflows** (`deploy-dev.yml`, `deploy-prod.yml`):
+   - Added `api-budgets` stack to Step 2 deploy and health checks in both workflows
+   - `api-budgets` was never deployed by CI/CD — critical gap now closed
+
+2. **Frontend routing** (`App.tsx`, `Sidebar.tsx`):
+   - Wired `BudgetMembersPage` into router at `/budget/members` (was orphaned)
+   - Added "Members 👥" nav item to sidebar
+   - Changed `/family/accept` route to `/budgets/accept` (matches backend email URL)
+
+3. **SettingsPage.tsx**: Replaced deprecated `FamilySettings` component (called 410 API) with a
+   "Manage Members →" link to `/budget/members`
+
+4. **Removed `familyId` references**:
+   - `BudgetContext.tsx` Budget interface
+   - `mockAuth.ts` MockUser interface and mockUser constant
+   - `Sidebar.tsx` logout handler (stale `localStorage.removeItem("familyId")`)
+
+5. **Infrastructure comments updated**:
+   - `app.ts`: ApiFamilyStack marked deprecated, ApiBudgetsStack marked active
+   - `auth-onboarding-stack.ts`: `FamilyIdResolver` → `BudgetAccessResolver` in layer description
+   - `database-stack.ts`: All 4 GSI comments updated from `FAMILY#` to `BUDGET#`
+
+6. **Deleted**: `tests/family-id-resolver.test.js` (tests a removed utility)
+
+7. **Deleted**: `infrastructure/cdk.out` (regenerated on every CDK synth; was causing slow security scans)
+
+
 
 ### Work Completed
 

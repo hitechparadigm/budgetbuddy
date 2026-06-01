@@ -52,13 +52,13 @@ export class AuthOnboardingStack extends cdk.Stack {
 
     /**
      * Common Lambda Layer
-     * Contains DynamoDB helpers and FamilyIdResolver utilities
+     * Contains DynamoDB helpers and BudgetAccessResolver utilities
      */
     const commonLayer = new lambda.LayerVersion(this, 'CommonLayer', {
       layerVersionName: 'budgetbuddy-common-onboarding',
       code: lambda.Code.fromAsset('../backend/layers/common'),
       compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
-      description: 'Common utilities for auth-onboarding Lambda (DynamoDB helpers, FamilyIdResolver)',
+      description: 'Common utilities for auth-onboarding Lambda (DynamoDB helpers, BudgetAccessResolver)',
     });
 
     /**
@@ -81,7 +81,7 @@ export class AuthOnboardingStack extends cdk.Stack {
       // Attach shared utilities layers
       layers: [
         authSharedLayer, // CORS, token parsing, validation, error handling (created locally)
-        commonLayer,     // DynamoDB helpers, FamilyIdResolver
+        commonLayer,     // DynamoDB helpers, BudgetAccessResolver
       ],
 
       // Environment variables

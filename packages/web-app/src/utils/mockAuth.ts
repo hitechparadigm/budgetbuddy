@@ -13,7 +13,6 @@ const MOCK_JWT_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJNT0NLX1V
 
 export interface MockUser {
   userId: string;
-  familyId: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -21,7 +20,6 @@ export interface MockUser {
 
 export const mockUser: MockUser = {
   userId: 'user_123',
-  familyId: 'family_test_20251026', // Updated to match existing budgets in database
   firstName: 'John',
   lastName: 'Doe',
   email: 'test@example.com'

@@ -116,10 +116,10 @@ const apiFeaturesExtendedStack = new ApiFeaturesExtendedStack(app, `${stackPrefi
 });
 
 /**
- * API Family Stack - Family collaboration features
- * Standalone stack to avoid circular dependencies and CloudFormation resource limits
- * Contains: Family management, member management, invitations, email notifications
- * Creates its own CommonLayer and SharedLayer to avoid CloudFormation export dependency issues
+ * API Family Stack - Family collaboration features (DEPRECATED)
+ * Returns 410 Gone for all requests. Kept deployed during transition period.
+ * Will be removed once all clients have migrated to /budgets/* endpoints.
+ * @deprecated Use ApiBudgetsStack instead.
  */
 const apiFamilyStack = new ApiFamilyStack(app, `${stackPrefix}-api-family`, {
   env,
@@ -130,8 +130,8 @@ const apiFamilyStack = new ApiFamilyStack(app, `${stackPrefix}-api-family`, {
 
 /**
  * API Budgets Stack - Budget collaboration features (replaces api-family-stack)
- * Part of the Budget Model Redesign (REQ-4). Kept alongside ApiFamilyStack until
- * deployment is verified and the old family Lambda can be safely retired.
+ * Part of the Budget Model Redesign. This is the active stack for all budget
+ * collaboration, member management, and invitation features.
  * Contains: Budget management, member management, invitations, email notifications
  * Creates its own CommonLayer and SharedLayer to avoid CloudFormation export dependency issues
  */
