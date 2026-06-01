@@ -17,6 +17,32 @@ const {
   getSuggestions,
 } = require("./budget-planning-service");
 
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const { DynamoDBDocumentClient, GetCommand } = require("@aws-sdk/lib-dynamodb");
+
+const _dynamoClient = new DynamoDBClient({
+  region: process.env.AWS_REGION || "us-east-1",
+});
+const _docClient = DynamoDBDocumentClient.from(_dynamoClient);
+const TABLE_NAME = process.env.TABLE_NAME;
+
+/**
+ * Resolve familyId for a user from DynamoDB
+ * Falls back to userId if no family profile exists (solo user)
+ */
+async function resolveFamilyId(userId) {
+  try {
+    const result = await _docClient.send(new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: `USER#${userId}`, SK: "PROFILE" },
+    }));
+    return result.Item?.familyId || userId;
+  } catch (err) {
+    console.warn("Could not resolve familyId, falling back to userId:", err.message);
+    return userId;
+  }
+}
+
 /**
  * CORS headers for all responses
  */
@@ -64,8 +90,7 @@ function errorResponse(message, code = "ERROR", statusCode = 400) {
 function extractUserInfo(event) {
   const claims = event.requestContext?.authorizer?.claims || {};
   const userId = claims.sub || claims["cognito:username"];
-  const familyId = claims["custom:familyId"] || claims.familyId;
-  return { userId, familyId };
+  return { userId };
 }
 
 /**
@@ -84,12 +109,13 @@ function parseBody(event) {
  * Handle POST /budget-planning/suggestions - Generate suggestions
  */
 async function handleGenerateSuggestions(event) {
-  const { userId, familyId } = extractUserInfo(event);
+  const { userId } = extractUserInfo(event);
 
-  if (!userId || !familyId) {
+  if (!userId) {
     return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
   }
 
+  const familyId = await resolveFamilyId(userId);
   const body = parseBody(event);
   const { targetMonth, includeRecurringBills, includeHistoricalAverage } = body;
 
@@ -127,12 +153,13 @@ async function handleGenerateSuggestions(event) {
  * Handle POST /budget-planning/apply - Apply suggestions
  */
 async function handleApplySuggestions(event) {
-  const { userId, familyId } = extractUserInfo(event);
+  const { userId } = extractUserInfo(event);
 
-  if (!userId || !familyId) {
+  if (!userId) {
     return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
   }
 
+  const familyId = await resolveFamilyId(userId);
   const body = parseBody(event);
   const { suggestionId, selectedCategories } = body;
 
@@ -171,12 +198,13 @@ async function handleApplySuggestions(event) {
  * Handle GET /budget-planning/suggestions - Get suggestions
  */
 async function handleGetSuggestions(event) {
-  const { userId, familyId } = extractUserInfo(event);
+  const { userId } = extractUserInfo(event);
 
-  if (!userId || !familyId) {
+  if (!userId) {
     return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
   }
 
+  const familyId = await resolveFamilyId(userId);
   const queryParams = event.queryStringParameters || {};
   const { status, targetMonth } = queryParams;
 

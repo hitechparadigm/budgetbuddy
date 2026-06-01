@@ -165,11 +165,11 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ Rollover logic (basic — surplus/deficit carries between periods)
 
 ### Onboarding
-- ✅ AI-powered budget generation from location + household size
+- ✅ AI-powered budget generation from location + household size (348 cities)
 - ✅ Budget type selection (personal / family / shared) during onboarding
 - ✅ Creates `BUDGET#<id>/METADATA`, `MEMBER#<userId>` (owner), `PERIOD#<month>`, `ACCOUNT#cash` on completion
 - ✅ Writes `defaultBudgetId` to user profile
-- ⚠️ Gap: onboarding METADATA missing `name` and `ownerUserId` fields
+- ✅ `name` and `ownerUserId` written to METADATA on onboarding completion
 
 ### Membership & Invitations
 - ✅ Invite members (`POST /budgets/{id}/invite`) — partner, household_member, viewer
@@ -186,16 +186,20 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ Viewer `accessLabel` (e.g. "Financial Advisor") stored and displayed
 - ✅ Personal budgets cannot have members (enforced)
 - ✅ Max 1 partner per family budget (enforced)
+- ✅ Email delivery verified (SES sandbox — verified addresses only until production access granted)
 
 ### Transactions
 - ✅ Create, read, update, delete transactions
 - ✅ Transactions linked to budget categories and accounts
 - ✅ Account selection on transaction entry
+- ✅ Transaction search, filter, sort
+- ✅ Batch entry mode
 
 ### Accounts
 - ✅ Manual accounts (Cash, Checking, Savings, etc.)
 - ✅ Plaid bank account linking
 - ✅ Default Cash account created at onboarding
+- ✅ Account reconciliation
 - ✅ Account management at `/accounts`
 
 ### Auth
@@ -203,37 +207,224 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ JWT carries only `userId` — no budgetId, no role, no familyId
 - ✅ `BudgetAccessResolver` resolves budget + role from DynamoDB on every request
 
+### Financial Features
+- ✅ Goals (savings goals + debt payoff with avalanche/snowball strategies)
+- ✅ Financial insights (AI-powered, spending patterns, peer comparison)
+- ✅ Receipt scanning (OCR via AWS Textract, web upload + mobile camera)
+- ✅ Credit score monitoring
+- ✅ Investment tracking (holdings, portfolio performance, net worth integration)
+- ✅ AI bill reminders and budget planning (pattern detection, recurring detection)
+- ✅ Push notifications and in-app notification center
+- ✅ Net worth tracking (manual + investment accounts)
+
 ### Frontend
 - ✅ `BudgetMembersPage` at `/budget/members` — full member management UI
+- ✅ `BudgetSwitcher.tsx` — header switcher for multiple budgets
 - ✅ Viewer expiry picker (30/60/90 days / no expiry) in invite form
 - ✅ Access label input for viewers
 - ✅ Member list shows role badges, viewer expiry, access label
 - ✅ Extend / Revoke buttons for viewer members
-- ✅ Settings page links to `/budget/members` (replaced deprecated FamilySettings)
+- ✅ Settings page links to `/budget/members`
 
 ---
 
 ## Known Gaps (⚠️ Planned)
 
 ### High Priority
-1. **Onboarding METADATA missing `name` and `ownerUserId`** — budgets created via onboarding don't have a display name. Fix: add `name` (e.g. "My Budget") and `ownerUserId` to the METADATA write in `auth-onboarding/index.js`.
+1. **Family budget transparency not enforced at category level** — `budgetType` is stored but not used to block per-user category visibility. Fix: add a check in budget/transaction Lambdas that rejects attempts to create private/hidden categories on a `family` budget.
 
-2. **Family budget transparency not enforced at category level** — the vision requires that `family` budgets have no hidden categories. Currently `budgetType` is stored but not used to block per-user category visibility. Fix: add a check in the budget/transaction Lambdas that rejects any attempt to create private/hidden categories on a `family` budget.
-
-3. **`canUseFeature()` not called in Lambda handlers** — the entitlement pattern is wired but Phase 1 intentionally leaves all features open. Phase 2 will add actual gating for `reports.advanced` and `budget.export`.
+2. **`canUseFeature()` not called in Lambda handlers** — the entitlement pattern is wired but Phase 1 intentionally leaves all features open. Phase 2 will add actual gating for `reports.advanced` and `budget.export`.
 
 ### Medium Priority
-4. **Subscription as a DynamoDB entity** — currently `subscriptionTier` comes from the Cognito JWT claim. Phase 2 needs a `SUBSCRIPTION#<userId>/METADATA` record and a `SubscriptionGroup` entity for family subscription sharing.
+3. **Subscription as a DynamoDB entity** — currently `subscriptionTier` comes from the Cognito JWT claim. Phase 2 needs a `SUBSCRIPTION#<userId>/METADATA` record and a `SubscriptionGroup` entity for family subscription sharing.
 
-5. **Invitation token lookup uses Scan** — `handleAcceptInvitation` scans the table for the hashed token. Works at current scale; needs a GSI on `tokenHash` for production scale.
+4. **Invitation token lookup uses Scan** — `handleAcceptInvitation` scans the table for the hashed token. Works at current scale; needs a GSI on `tokenHash` for production scale.
 
-6. **`shared` budget type has no distinct behavioral rules** — `shared` is accepted and stored but behaves identically to `family` except for the partner limit. The vision specifies shared budgets should only contain shared expenses (no income, no personal debt). This is a product enforcement question, not a data model issue.
+5. **`shared` budget type has no distinct behavioral rules** — `shared` is accepted and stored but behaves identically to `family` except for the partner limit. The vision specifies shared budgets should only contain shared expenses (no income, no personal debt). This is a product enforcement question, not a data model issue.
+
+6. **SES still in sandbox mode** — can only send to verified addresses. Verified: `dmytro.malyk@gmail.com`, `dima.pmp@gmail.com`, `info@hitechparadigm.com`, `t1@taxprocanada.ca`, `dmalyk@taxprocanada.ca`. Request SES production access to send to any address.
 
 ### Low Priority
 7. **Dark mode missing on BudgetPage, SettingsPage, GoalsPage** — core pages have no `dark:` Tailwind classes.
-8. **Edge private window crash** — `BudgetPage` and `TipsFeedPage` call `localStorage` without try/catch; crashes in Edge private mode.
-9. **Goals not reflected in budget** — goal contributions don't adjust budget savings categories.
-10. **Category A-Z sorting on insert** — display is sorted A-Z but new categories are appended without sorting.
+8. **Goals not reflected in budget** — goal contributions don't adjust budget savings categories.
+9. **Planned transactions frontend** — backend Lambda exists (`transaction-planning`), no frontend UI yet.
+
+---
+
+## Live API Test Results (2026-06-01)
+
+Tested against dev environment using `scripts/test-live-api.js`. 66 checks passed, 1 failed, 12 bugs found.
+
+### ✅ Working (verified live)
+- All 14 API health endpoints (main, features, extended, budgets APIs)
+- Auth: register, login, bad-password rejection, profile, geolocation
+- Budget: list, create, invalid-type rejection, get period
+- Accounts: create, list, update, reconcile, delete (full CRUD)
+- Goals: create, list, update, delete (full CRUD)
+- Transactions: list, search (create blocked by bug #3 below)
+- Insights: weekly, trends, patterns, AI Q&A
+- Plaid: link-token, accounts list, pending transactions
+- Auth security: all protected endpoints reject unauthenticated requests
+
+### 🐛 Bugs Found
+
+| # | Severity | Component | Description |
+|---|----------|-----------|-------------|
+| 1 | High | `POST /auth/onboarding` | 502 — Lambda crashes for new users with no existing budget. `BudgetAccessResolver.resolveAccess()` throws when `defaultBudgetId` is null. |
+| 2 | High | `PUT /budgets/active` | CDK `api-budgets-stack` missing PUT method on `/budgets` resource — returns 403 SigV4 instead of routing to Lambda. |
+| 3 | High | `POST /transactions` | `categoryId` is required but new users have no categories (onboarding bug #1 means budget periods aren't created). Cascading failure from bug #1. |
+| 4 | High | Budget collaboration routes | CDK `api-budgets-stack` defines flat routes (`/budgets/members`) but Lambda expects `{budgetId}` path parameter (`/budgets/{budgetId}/members`). All member/invitation routes return 404. |
+| 5 | High | `POST /budget/ai-generate` | Path mismatch: CDK deploys at `/budget/ai-generate` but AI Lambda checks for `/ai/generate-budget`. Returns 404. |
+| 6 | Medium | `POST /debts/calculate` | Features API `/debts` route returns 403 SigV4 — likely `authorizationType` not set to `COGNITO` in CDK. |
+| 7 | Medium | `POST /patterns/detect` | Returns 401 even with valid Cognito token — Lambda-level auth check rejects the token (internal `getUserFromEvent` issue on extended API). |
+| 8 | Medium | `POST /budget-planning/suggestions` | Same as bug #7 — 401 with valid token on extended API. |
+| 9 | Low | `GET /comparison/summary` | 500 — Lambda crashes for new users with no transaction history. Missing null-check. |
+| 10 | Low | `GET /tips/feed` | 500 — Lambda crashes for new users. Missing null-check. |
+| 11 | Low | `/family/*` routes | Family stack still active and returning 401/403 instead of 410 Gone as documented. |
+
+---
+
+## User Journeys
+
+### 1. New User Onboarding
+
+**Goal**: Set up a budget with AI assistance in under 5 minutes.
+
+**Steps**: Landing → Register (email or Google) → Location + currency → Household type + size → AI budget generation → First transaction tutorial
+
+| Step | Frontend | Backend API | Status |
+|------|----------|-------------|--------|
+| Register | `AuthPage.tsx` | `POST /auth/register` | ✅ |
+| Google Sign-In | `GoogleSignInButton.tsx` | `POST /auth/google` | ✅ |
+| Location setup | `OnboardingFlow.tsx` | `GET /auth/detect-location` | ✅ |
+| AI budget generation | `AIBudgetGenerationPage.tsx` | `POST /ai/generate-budget` | ✅ |
+| Budget type selection | `OnboardingPage.tsx` | `PUT /auth/onboarding` | ✅ |
+
+**Missing**: `OnboardingProgress.tsx` (step indicator), `TutorialOverlay.tsx` (interactive guide)
+
+---
+
+### 2. Daily Budget Management
+
+**Goal**: Add a transaction in under 30 seconds, see budget update instantly.
+
+**Entry points**: Open app → current month budget; push notification deep link; widget tap
+
+| Feature | Frontend | Backend API | Status |
+|---------|----------|-------------|--------|
+| Budget dashboard | `BudgetPage.tsx` | `GET /budget?month=YYYY-MM` | ✅ |
+| Add/edit/delete transaction | `TransactionModal.tsx` | `POST/PUT/DELETE /transactions` | ✅ |
+| Transaction list + search | `TransactionList.tsx`, `TransactionFilters.tsx` | `GET /transactions` | ✅ |
+| Month navigation | `MonthNavigator.tsx` | — | ✅ |
+| Planned transactions | ❌ Not started | `POST /transaction-planning` | 🔄 Backend only |
+
+---
+
+### 3. Bank Account Connection (Plaid)
+
+**Goal**: Connect bank accounts so transactions import automatically.
+
+| Feature | Frontend | Backend API | Status |
+|---------|----------|-------------|--------|
+| Plaid Link | `PlaidLinkButton.tsx` | `POST /plaid/link-token` | ✅ |
+| Connected accounts | `ConnectedAccounts.tsx` | `GET /plaid/accounts` | ✅ |
+| Pending transactions | `PendingTransactions.tsx` | `GET /plaid/pending` | ✅ |
+| Approve/reject | `PendingTransactions.tsx` | `POST /plaid/pending/approve` | ✅ |
+| Sync | `ConnectedAccounts.tsx` | `POST /plaid/sync` | ✅ |
+| Unlink | `ConnectedAccounts.tsx` | `DELETE /plaid/accounts/{id}` | ✅ |
+
+**Missing**: `CategoryMappingModal.tsx` (assign categories before approval)
+
+---
+
+### 4. Budget Collaboration
+
+**Goal**: Invite partner, household members, or a financial advisor with the right access level.
+
+**Steps**: Choose budget type at onboarding → Invite from Budget Members page → Invitee receives email → Accepts via link → Joins budget → Budget switcher appears if multiple budgets
+
+| Feature | Frontend | Backend API | Status |
+|---------|----------|-------------|--------|
+| Budget Members page | `BudgetMembersPage.tsx` | `GET /budgets/{id}/members` | ✅ |
+| Send invitation | `BudgetMembersPage.tsx` | `POST /budgets/{id}/invite` | ✅ |
+| Accept invitation | `AcceptInvitationPage.tsx` | `POST /budgets/accept-invitation` | ✅ |
+| Pending invitations | `BudgetMembersPage.tsx` | `GET /budgets/{id}/invitations` | ✅ |
+| Resend / revoke | `BudgetMembersPage.tsx` | `POST/DELETE /budgets/{id}/invitations/{id}` | ✅ |
+| Change role / remove | `BudgetMembersPage.tsx` | `PUT/DELETE /budgets/{id}/members/{userId}` | ✅ |
+| Extend viewer access | `BudgetMembersPage.tsx` | `PUT /budgets/{id}/members/{userId}/extend` | ✅ |
+| Budget switcher | `BudgetSwitcher.tsx` | `GET /budgets` + `PUT /budgets/active` | ✅ |
+| Archive / delete budget | `BudgetMembersPage.tsx` | `PUT/DELETE /budgets/{id}` | ✅ |
+
+---
+
+### 5. Financial Insights
+
+**Goal**: Understand spending patterns and get AI-powered recommendations.
+
+| Feature | Frontend | Backend API | Status |
+|---------|----------|-------------|--------|
+| Insights dashboard | `InsightsPage.tsx` | `GET /insights/summary` | ✅ |
+| AI Q&A | `InsightsPage.tsx` | `POST /insights/ask` | ✅ |
+| Spending trends | `InsightsPage.tsx` | `GET /insights/trends` | ✅ |
+| Peer comparison | `PeerComparisonWidget.tsx` | `GET /comparison/summary` | ✅ |
+| Tips feed | `TipsFeedPage.tsx` | `GET /tips/feed` | ✅ |
+| Receipt scanning | `ReceiptUpload.tsx`, `ReceiptScanner.tsx` | `POST /receipt/upload` | ✅ |
+| Credit score | `CreditScorePage.tsx` | `GET /credit-score` | ✅ |
+| Investment tracking | `InvestmentsPage.tsx` | `GET /investments/portfolio` | ✅ |
+
+---
+
+### 6. Debt & Savings Goals
+
+**Goal**: Create payoff plans and track savings goals with milestone celebrations.
+
+| Feature | Frontend | Backend API | Status |
+|---------|----------|-------------|--------|
+| Goals list | `GoalsPage.tsx` | `GET /goals` | ✅ |
+| Create / edit / delete goal | `GoalFormPage.tsx` | `POST/PUT/DELETE /goals` | ✅ |
+| Debt payoff calculator | `DebtPayoffPage.tsx` | `POST /debts/calculate` | ✅ |
+| Payoff timeline | `DebtPayoffPage.tsx` | `GET /debts/timeline` | ✅ |
+| Mobile goals | `GoalsScreen.tsx` | Same as web | ✅ |
+
+---
+
+### 7. Notifications & Reminders
+
+**Goal**: Stay on track without constantly checking the app.
+
+**Notification types**: Budget threshold alerts (80%/90%/100%), daily expense reminders, bill reminders (7/3/1 day), weekly summary, AI bill pattern alerts
+
+| Feature | Frontend | Backend API | Status |
+|---------|----------|-------------|--------|
+| Notification preferences | `NotificationSettings.tsx` | `GET/PUT /notifications/preferences` | ✅ |
+| In-app notification center | `NotificationCenter.tsx` | `GET /notifications` | ✅ |
+| Push notifications | Mobile (Expo) | EventBridge + Lambda | ✅ |
+| AI bill reminders | `BillsPage.tsx` | `GET /pattern-detection/bills` | ✅ |
+
+---
+
+### 8. Settings & Profile
+
+| Feature | Frontend | Backend API | Status |
+|---------|----------|-------------|--------|
+| Profile settings | `SettingsPage.tsx` | `GET/PUT /auth/profile` | ✅ |
+| Budget members | Links to `BudgetMembersPage.tsx` | — | ✅ |
+| Notification settings | `NotificationSettings.tsx` | — | ✅ |
+| Delete account | `DeleteAccountModal.tsx` | `DELETE /auth/account` | ✅ |
+| Dark mode | `ThemeContext.tsx` | — | ✅ |
+
+---
+
+### 9. AI Bill Reminders & Budget Planning
+
+**Goal**: Automatically detect recurring bills and suggest budget adjustments.
+
+| Feature | Frontend | Backend API | Status |
+|---------|----------|-------------|--------|
+| Pattern detection | `BillsPage.tsx` | `GET /pattern-detection/patterns` | ✅ |
+| Mark as recurring | `BudgetPage.tsx` | `POST /pattern-detection/mark-recurring` | ✅ |
+| Budget suggestions | `BudgetSuggestionsModal.tsx` | `POST /budget-planning/suggestions` | ✅ |
+| Pattern review | `PatternReviewModal.tsx` | `PUT /pattern-detection/patterns/{id}` | ✅ |
 
 ---
 

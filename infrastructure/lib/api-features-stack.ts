@@ -737,23 +737,34 @@ export class ApiFeaturesStack extends cdk.Stack {
     const debtsResource = this.api.root.addResource('debts');
     debtsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'GetDebts',
     });
     debtsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'CreateDebt',
     });
 
     const debtsSummaryResource = debtsResource.addResource('summary');
     debtsSummaryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'GetDebtsSummary',
     });
 
     const debtsPayoffPlanResource = debtsResource.addResource('payoff-plan');
     debtsPayoffPlanResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'GetPayoffPlan',
+    });
+
+    const debtsCalculateResource = debtsResource.addResource('calculate');
+    debtsCalculateResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'CalculateDebtPayoff',
     });
 
     const debtsHealthResource = debtsResource.addResource('health');
@@ -765,16 +776,19 @@ export class ApiFeaturesStack extends cdk.Stack {
     const debtIdResource = debtsResource.addResource('{debtId}');
     debtIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'UpdateDebt',
     });
     debtIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'DeleteDebt',
     });
 
     const debtPaymentResource = debtIdResource.addResource('payment');
     debtPaymentResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.debtPayoffHandler), {
       authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'RecordDebtPayment',
     });
   }

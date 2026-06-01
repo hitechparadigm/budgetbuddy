@@ -24,6 +24,32 @@ const {
   createManualPattern,
 } = require("./pattern-detection-service");
 
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const { DynamoDBDocumentClient, GetCommand } = require("@aws-sdk/lib-dynamodb");
+
+const _dynamoClient = new DynamoDBClient({
+  region: process.env.AWS_REGION || "us-east-1",
+});
+const _docClient = DynamoDBDocumentClient.from(_dynamoClient);
+const TABLE_NAME = process.env.TABLE_NAME;
+
+/**
+ * Resolve familyId for a user from DynamoDB
+ * Falls back to userId if no family profile exists (solo user)
+ */
+async function resolveFamilyId(userId) {
+  try {
+    const result = await _docClient.send(new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: `USER#${userId}`, SK: "PROFILE" },
+    }));
+    return result.Item?.familyId || userId;
+  } catch (err) {
+    console.warn("Could not resolve familyId, falling back to userId:", err.message);
+    return userId;
+  }
+}
+
 /**
  * CORS headers for all responses
  */
@@ -76,14 +102,13 @@ function errorResponse(message, code = "ERROR", statusCode = 400) {
 /**
  * Extract user info from event
  * @param {Object} event - Lambda event
- * @returns {Object} User info (userId, familyId)
+ * @returns {Object} User info (userId)
  */
 function extractUserInfo(event) {
   const claims = event.requestContext?.authorizer?.claims || {};
   const userId = claims.sub || claims["cognito:username"];
-  const familyId = claims["custom:familyId"] || claims.familyId;
 
-  return { userId, familyId };
+  return { userId };
 }
 
 /**
@@ -118,12 +143,13 @@ function getPathParam(event, paramName) {
  * @returns {Promise<Object>} Lambda response
  */
 async function handleDetectPatterns(event) {
-  const { userId, familyId } = extractUserInfo(event);
+  const { userId } = extractUserInfo(event);
 
-  if (!userId || !familyId) {
+  if (!userId) {
     return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
   }
 
+  const familyId = await resolveFamilyId(userId);
   const body = parseBody(event);
   const { analysisMonths, minConfidence, useAI } = body;
 
@@ -152,12 +178,13 @@ async function handleDetectPatterns(event) {
  * @returns {Promise<Object>} Lambda response
  */
 async function handleGetPatterns(event) {
-  const { userId, familyId } = extractUserInfo(event);
+  const { userId } = extractUserInfo(event);
 
-  if (!userId || !familyId) {
+  if (!userId) {
     return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
   }
 
+  const familyId = await resolveFamilyId(userId);
   const queryParams = event.queryStringParameters || {};
   const { status } = queryParams;
 
@@ -180,16 +207,18 @@ async function handleGetPatterns(event) {
  * @returns {Promise<Object>} Lambda response
  */
 async function handleGetPattern(event) {
-  const { userId, familyId } = extractUserInfo(event);
+  const { userId } = extractUserInfo(event);
   const patternId = getPathParam(event, "patternId");
 
-  if (!userId || !familyId) {
+  if (!userId) {
     return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
   }
 
   if (!patternId) {
     return errorResponse("Pattern ID is required", "MISSING_PARAM", 400);
   }
+
+  const familyId = await resolveFamilyId(userId);
 
   try {
     const patterns = await getPatterns(userId, familyId);
@@ -212,16 +241,18 @@ async function handleGetPattern(event) {
  * @returns {Promise<Object>} Lambda response
  */
 async function handleUpdatePattern(event) {
-  const { userId, familyId } = extractUserInfo(event);
+  const { userId } = extractUserInfo(event);
   const patternId = getPathParam(event, "patternId");
 
-  if (!userId || !familyId) {
+  if (!userId) {
     return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
   }
 
   if (!patternId) {
     return errorResponse("Pattern ID is required", "MISSING_PARAM", 400);
   }
+
+  const familyId = await resolveFamilyId(userId);
 
   const body = parseBody(event);
   const { action, ...updates } = body;
@@ -266,16 +297,18 @@ async function handleUpdatePattern(event) {
  * @returns {Promise<Object>} Lambda response
  */
 async function handleDeletePattern(event) {
-  const { userId, familyId } = extractUserInfo(event);
+  const { userId } = extractUserInfo(event);
   const patternId = getPathParam(event, "patternId");
 
-  if (!userId || !familyId) {
+  if (!userId) {
     return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
   }
 
   if (!patternId) {
     return errorResponse("Pattern ID is required", "MISSING_PARAM", 400);
   }
+
+  const familyId = await resolveFamilyId(userId);
 
   try {
     // Use ignore status for soft delete
@@ -302,11 +335,13 @@ async function handleDeletePattern(event) {
  * @returns {Promise<Object>} Lambda response
  */
 async function handleCreateManualPattern(event) {
-  const { userId, familyId } = extractUserInfo(event);
+  const { userId } = extractUserInfo(event);
 
-  if (!userId || !familyId) {
+  if (!userId) {
     return errorResponse("Unauthorized", "UNAUTHORIZED", 401);
   }
+
+  const familyId = await resolveFamilyId(userId);
 
   const body = parseBody(event);
   const { transaction, frequency } = body;

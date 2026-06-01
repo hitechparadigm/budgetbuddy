@@ -234,28 +234,34 @@ export class ApiBudgetsStack extends cdk.Stack {
       allowTestInvoke: true,
     });
 
-    // Budgets routes (protected)
+    // /budgets — list, create
     const budgetsResource = this.api.root.addResource('budgets');
     budgetsResource.addMethod('GET', budgetsIntegration, {
       authorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO,
-      operationName: 'GetBudget',
+      operationName: 'GetBudgets',
     });
     budgetsResource.addMethod('POST', budgetsIntegration, {
       authorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'CreateBudget',
     });
-
-    // Budgets invite endpoint (protected - owner only)
-    const budgetsInviteResource = budgetsResource.addResource('invite');
-    budgetsInviteResource.addMethod('POST', budgetsIntegration, {
+    // Bug 2 fix: PUT /budgets/active — set active budget
+    budgetsResource.addMethod('PUT', budgetsIntegration, {
       authorizer,
       authorizationType: apigateway.AuthorizationType.COGNITO,
-      operationName: 'InviteBudgetMember',
+      operationName: 'SetActiveBudget',
     });
 
-    // Budgets accept invitation endpoint (protected)
+    // /budgets/active — explicit resource so API Gateway routes PUT /budgets/active correctly
+    const budgetsActiveResource = budgetsResource.addResource('active');
+    budgetsActiveResource.addMethod('PUT', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'SetActiveBudgetExplicit',
+    });
+
+    // /budgets/accept-invitation — accept a budget invitation (no budgetId needed)
     const budgetsAcceptResource = budgetsResource.addResource('accept-invitation');
     budgetsAcceptResource.addMethod('POST', budgetsIntegration, {
       authorizer,
@@ -263,68 +269,107 @@ export class ApiBudgetsStack extends cdk.Stack {
       operationName: 'AcceptBudgetInvitation',
     });
 
-    // Budgets members endpoint (protected)
-    const budgetsMembersResource = budgetsResource.addResource('members');
-    budgetsMembersResource.addMethod('GET', budgetsIntegration, {
-      authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      operationName: 'GetBudgetMembers',
-    });
-
-    // Budgets member by ID endpoints (protected)
-    const budgetsMemberIdResource = budgetsMembersResource.addResource('{userId}');
-    budgetsMemberIdResource.addMethod('DELETE', budgetsIntegration, {
-      authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      operationName: 'RemoveBudgetMember',
-    });
-
-    // Budgets member role endpoint (protected - owner only)
-    const budgetsMemberRoleResource = budgetsMemberIdResource.addResource('role');
-    budgetsMemberRoleResource.addMethod('PUT', budgetsIntegration, {
-      authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      operationName: 'UpdateBudgetMemberRole',
-    });
-
-    // Budgets leave endpoint (protected - non-owner only)
-    const budgetsLeaveResource = budgetsResource.addResource('leave');
-    budgetsLeaveResource.addMethod('POST', budgetsIntegration, {
-      authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      operationName: 'LeaveBudget',
-    });
-
-    // Budgets invitations management endpoints (protected - owner only)
-    const budgetsInvitationsResource = budgetsResource.addResource('invitations');
-    budgetsInvitationsResource.addMethod('GET', budgetsIntegration, {
-      authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      operationName: 'GetBudgetInvitations',
-    });
-
-    // Budgets invitation by ID endpoints (protected - owner only)
-    const budgetsInvitationIdResource = budgetsInvitationsResource.addResource('{invitationId}');
-    budgetsInvitationIdResource.addMethod('DELETE', budgetsIntegration, {
-      authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      operationName: 'RevokeBudgetInvitation',
-    });
-
-    // Budgets invitation resend endpoint (protected - owner only)
-    const budgetsInvitationResendResource = budgetsInvitationIdResource.addResource('resend');
-    budgetsInvitationResendResource.addMethod('POST', budgetsIntegration, {
-      authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
-      operationName: 'ResendBudgetInvitation',
-    });
-
-    // Budgets health endpoint
+    // /budgets/health — health check (public)
     const budgetsHealthResource = budgetsResource.addResource('health');
     budgetsHealthResource.addMethod('GET', budgetsIntegration, {
       authorizationType: apigateway.AuthorizationType.NONE,
       methodResponses: [{ statusCode: '200' }],
       operationName: 'BudgetsHealthCheck',
+    });
+
+    // Bug 3 fix: /budgets/{budgetId} — budget-scoped routes with path parameter
+    const budgetIdResource = budgetsResource.addResource('{budgetId}');
+
+    // DELETE /budgets/{budgetId} — delete a budget
+    budgetIdResource.addMethod('DELETE', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'DeleteBudget',
+    });
+
+    // /budgets/{budgetId}/invite — send invitation
+    const budgetInviteResource = budgetIdResource.addResource('invite');
+    budgetInviteResource.addMethod('POST', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'InviteBudgetMember',
+    });
+
+    // /budgets/{budgetId}/leave — leave a budget
+    const budgetLeaveResource = budgetIdResource.addResource('leave');
+    budgetLeaveResource.addMethod('POST', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'LeaveBudget',
+    });
+
+    // /budgets/{budgetId}/archive — archive a budget
+    const budgetArchiveResource = budgetIdResource.addResource('archive');
+    budgetArchiveResource.addMethod('PUT', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'ArchiveBudget',
+    });
+
+    // /budgets/{budgetId}/restore — restore an archived budget
+    const budgetRestoreResource = budgetIdResource.addResource('restore');
+    budgetRestoreResource.addMethod('PUT', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'RestoreBudget',
+    });
+
+    // /budgets/{budgetId}/members — list members
+    const budgetMembersResource = budgetIdResource.addResource('members');
+    budgetMembersResource.addMethod('GET', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'GetBudgetMembers',
+    });
+
+    // /budgets/{budgetId}/members/{userId} — update or remove a specific member
+    const budgetMemberIdResource = budgetMembersResource.addResource('{userId}');
+    budgetMemberIdResource.addMethod('PUT', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'UpdateBudgetMemberRole',
+    });
+    budgetMemberIdResource.addMethod('DELETE', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'RemoveBudgetMember',
+    });
+
+    // /budgets/{budgetId}/members/{userId}/extend — extend viewer access
+    const budgetMemberExtendResource = budgetMemberIdResource.addResource('extend');
+    budgetMemberExtendResource.addMethod('PUT', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'ExtendBudgetViewerAccess',
+    });
+
+    // /budgets/{budgetId}/invitations — list pending invitations
+    const budgetInvitationsResource = budgetIdResource.addResource('invitations');
+    budgetInvitationsResource.addMethod('GET', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'GetBudgetInvitations',
+    });
+
+    // /budgets/{budgetId}/invitations/{invitationId} — revoke a specific invitation
+    const budgetInvitationIdResource = budgetInvitationsResource.addResource('{invitationId}');
+    budgetInvitationIdResource.addMethod('DELETE', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'RevokeBudgetInvitation',
+    });
+
+    // /budgets/{budgetId}/invitations/{invitationId}/resend — resend an invitation
+    const budgetInvitationResendResource = budgetInvitationIdResource.addResource('resend');
+    budgetInvitationResendResource.addMethod('POST', budgetsIntegration, {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'ResendBudgetInvitation',
     });
   }
 
