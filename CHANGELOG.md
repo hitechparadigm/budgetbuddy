@@ -1,6 +1,16 @@
 # Changelog
 
-## [1.9.124] - 2026-06-01
+## [1.9.125] - 2026-06-01
+
+### 🐛 Fix: Live API bugs — onboarding 502, budgets routing, AI path mismatch, debts auth
+
+- **Bug 1 — POST /auth/onboarding 502**: Removed `throw { statusCode: 403 }` when user profile doesn't exist during first-time onboarding. A new user's profile may not exist yet (Cognito post-confirmation trigger is async). Now treats missing profile as "no existing budget" and proceeds safely. `BudgetAccessResolver.resolveAccess()` is never called before the budget is created.
+- **Bug 2 — PUT /budgets/active missing from CDK**: Added `PUT` method to `/budgets` resource in `api-budgets-stack.ts` with `operationName: 'SetActiveBudget'`. Also added explicit `/budgets/active` resource with PUT for direct path routing.
+- **Bug 3 — Budget collaboration routes: CDK flat vs Lambda `{budgetId}` mismatch**: Restructured `api-budgets-stack.ts` to use `{budgetId}` path parameter routes matching what the Lambda reads from `pathParameters.budgetId`. Added: `DELETE /budgets/{budgetId}`, `PUT /budgets/{budgetId}/archive`, `PUT /budgets/{budgetId}/restore`, `GET/PUT/DELETE /budgets/{budgetId}/members`, `PUT /budgets/{budgetId}/members/{userId}/extend`, `GET/DELETE /budgets/{budgetId}/invitations/{invitationId}`, `POST /budgets/{budgetId}/invitations/{invitationId}/resend`.
+- **Bug 4 — AI generate path mismatch**: Updated `backend/functions/ai/index.js` route check to accept both `/ai/generate-budget` and `/budget/ai-generate` (CDK path) plus their `/v1/` prefixed variants.
+- **Bug 5 — POST /debts/calculate returns 403 SigV4**: Added explicit `authorizationType: apigateway.AuthorizationType.COGNITO` to all debt payoff routes in `api-features-stack.ts`. Also added missing `POST /debts/calculate` route.
+
+
 
 ### 🐛 Fix: Email invitation delivery — verified end-to-end
 

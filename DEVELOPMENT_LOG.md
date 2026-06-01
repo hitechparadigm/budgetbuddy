@@ -1,5 +1,45 @@
 # Development Log
 
+## 2026-06-01 - Live API bug fixes: onboarding 502, budgets routing, AI path, debts auth (Session 141)
+
+### Work Completed
+
+1. **Bug 1 — POST /auth/onboarding returns 502**:
+   - Root cause: `throw { statusCode: 403, message: 'User profile not found' }` was crashing first-time onboarding when the Cognito post-confirmation trigger hadn't yet created the user profile
+   - Fix: Replaced hard throw with safe optional chaining (`userProfile?.defaultBudgetId`). Missing profile is treated as "no existing budget" — onboarding proceeds normally
+   - File: `backend/functions/auth-onboarding/index.js`
+
+2. **Bug 2 — PUT /budgets/active missing from CDK**:
+   - Root cause: CDK only defined GET and POST on `/budgets`; PUT was never routed to the Lambda
+   - Fix: Added `PUT` method to `/budgets` resource + explicit `/budgets/active` resource with PUT
+   - File: `infrastructure/lib/api-budgets-stack.ts`
+
+3. **Bug 3 — Budget collaboration routes: CDK flat vs Lambda `{budgetId}` mismatch**:
+   - Root cause: CDK defined flat routes (`/budgets/members`, `/budgets/invitations`, etc.) but Lambda reads `pathParameters.budgetId` which is always `undefined` on flat routes
+   - Fix: Completely restructured `setupBudgetsRoutes()` to use `{budgetId}` path parameter. Added all missing routes: archive, restore, delete budget, member extend, invitation CRUD with resend
+   - File: `infrastructure/lib/api-budgets-stack.ts`
+
+4. **Bug 4 — AI generate path mismatch**:
+   - Root cause: CDK deploys AI Lambda at `/budget/ai-generate` but Lambda only checked `path === '/ai/generate-budget'`
+   - Fix: Updated route check to accept all four path variants: `/ai/generate-budget`, `/budget/ai-generate`, `/v1/budget/ai-generate`, `/v1/ai/generate-budget`
+   - File: `backend/functions/ai/index.js`
+
+5. **Bug 5 — POST /debts/calculate returns 403 SigV4**:
+   - Root cause: Debt payoff routes in CDK lacked explicit `authorizationType: apigateway.AuthorizationType.COGNITO`, causing API Gateway to default to `AWS_IAM`
+   - Fix: Added `authorizationType: apigateway.AuthorizationType.COGNITO` to all debt routes. Also added missing `POST /debts/calculate` route
+   - File: `infrastructure/lib/api-features-stack.ts`
+
+### Files Changed
+
+- `backend/functions/auth-onboarding/index.js` — Bug 1 fix
+- `backend/functions/ai/index.js` — Bug 4 fix
+- `infrastructure/lib/api-budgets-stack.ts` — Bug 2 + Bug 3 fix
+- `infrastructure/lib/api-features-stack.ts` — Bug 5 fix
+- `CHANGELOG.md` — v1.9.125 entry
+- `DEVELOPMENT_LOG.md` — this entry
+
+---
+
 ## 2026-06-01 - Email invitation fix verified + USER_JOURNEYS.md updated (Session 140)
 
 ### Work Completed
