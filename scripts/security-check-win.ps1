@@ -24,7 +24,7 @@ Write-Host "1. Checking for exposed secrets..." -ForegroundColor White
 
 # Check for JWT tokens (exclude source maps)
 $jwtPattern = "eyJ[A-Za-z0-9+/=]{100,}"
-$sourceFiles = Get-ChildItem -Path "." -Recurse -Include "*.js","*.ts","*.json" | Where-Object { $_.FullName -notmatch "node_modules|\.git|coverage|\.github|mockAuth\.ts|\.test\.|cdk\.out" }
+$sourceFiles = Get-ChildItem -Path "." -Recurse -Include "*.js","*.ts","*.json" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "node_modules|\.git|coverage|\.github|mockAuth\.ts|\.test\.|cdk\.out" }
 
 $foundJWT = $false
 foreach ($file in $sourceFiles) {
