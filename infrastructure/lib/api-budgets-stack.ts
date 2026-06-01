@@ -204,6 +204,11 @@ export class ApiBudgetsStack extends cdk.Stack {
       code: lambda.Code.fromAsset('../backend/functions/email'),
       handler: 'index.handler',
       description: 'BudgetBuddy email handler for budget invitations and notifications via SES',
+      environment: {
+        ...commonEnvironment,
+        // info@hitechparadigm.com is verified in SES for sending
+        FROM_EMAIL: this.node.tryGetContext('fromEmail') || 'info@hitechparadigm.com',
+      },
     });
 
     // Grant Email Lambda permission to send emails via SES
