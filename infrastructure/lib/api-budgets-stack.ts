@@ -231,7 +231,7 @@ export class ApiBudgetsStack extends cdk.Stack {
     // Create Lambda integration once to avoid circular dependencies
     const budgetsIntegration = new apigateway.LambdaIntegration(this.functions.budgetsHandler, {
       proxy: true,
-      allowTestInvoke: true,
+      allowTestInvoke: false, // Prevents duplicate test-invoke permissions — fixes Lambda policy size limit (20KB)
     });
 
     // /budgets — list, create
@@ -377,7 +377,7 @@ export class ApiBudgetsStack extends cdk.Stack {
     // Create Lambda integration once to avoid circular dependencies
     const emailIntegration = new apigateway.LambdaIntegration(this.functions.emailHandler, {
       proxy: true,
-      allowTestInvoke: true,
+      allowTestInvoke: false, // Prevents duplicate test-invoke permissions — fixes Lambda policy size limit (20KB)
     });
 
     const emailResource = this.api.root.addResource('email');
