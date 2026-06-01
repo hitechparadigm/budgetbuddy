@@ -10,10 +10,15 @@ const dynamoHelpers = {
   deleteItem: jest.fn(),
 };
 
-const FamilyIdResolver = {
-  resolve: jest.fn().mockImplementation((userId, familyId) => {
-    return familyId || `family_${userId}`;
+const BudgetAccessResolver = {
+  resolveAccess: jest.fn().mockResolvedValue({
+    budgetId: 'budget_test_123',
+    role: 'owner',
+    budgetType: 'personal',
+    budgetStatus: 'active',
+    subscriptionTier: 'free',
   }),
+  assertPermission: jest.fn(),
 };
 
 const logger = {
@@ -85,7 +90,7 @@ const generateId = {
 
 module.exports = {
   dynamoHelpers,
-  FamilyIdResolver,
+  BudgetAccessResolver,
   logger,
   successResponse,
   errorResponse,

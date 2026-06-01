@@ -49,10 +49,14 @@ module.exports = {
     error: jest.fn(),
     warn: jest.fn(),
   },
-  FamilyIdResolver: {
-    resolveFamilyId: jest.fn(
-      async (userId, familyId) => familyId || `family_${userId}`,
-    ),
-    logFamilyIdResolution: jest.fn(),
+  BudgetAccessResolver: {
+    resolveAccess: jest.fn().mockResolvedValue({
+      budgetId: 'budget_test_123',
+      role: 'owner',
+      budgetType: 'personal',
+      budgetStatus: 'active',
+      subscriptionTier: 'free',
+    }),
+    assertPermission: jest.fn(),
   },
 };

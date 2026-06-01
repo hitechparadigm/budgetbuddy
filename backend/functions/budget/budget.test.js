@@ -80,7 +80,7 @@ describe("Budget Lambda Handler", () => {
       const mockBudgets = [
         {
           budgetId: "budget_123",
-          familyId: "family_user_123456789", // Matches fallback format
+          budgetId: "budget_user_123456789", // Matches fallback format
           month: "2026-01",
           totalIncome: 0,
           totalSavings: 0,
@@ -114,7 +114,7 @@ describe("Budget Lambda Handler", () => {
 
       // Verify the query used the correct familyId format
       expect(dynamoHelpers.queryByPK).toHaveBeenCalledWith(
-        "FAMILY#family_user_123456789", // Should use fallback format
+        "BUDGET#family_user_123456789", // Should use fallback format
         expect.objectContaining({
           FilterExpression: "entityType = :entityType",
           ExpressionAttributeValues: {
@@ -146,7 +146,7 @@ describe("Budget Lambda Handler", () => {
       const mockBudgets = [
         {
           budgetId: "budget_1",
-          familyId: "family_user_123456789",
+          budgetId: "budget_user_123456789",
           month: "2025-11",
           totalIncome: 0,
           totalSavings: 0,
@@ -159,7 +159,7 @@ describe("Budget Lambda Handler", () => {
         },
         {
           budgetId: "budget_2",
-          familyId: "family_user_123456789",
+          budgetId: "budget_user_123456789",
           month: "2026-01",
           totalIncome: 0,
           totalSavings: 0,
@@ -239,9 +239,9 @@ describe("Budget Lambda Handler", () => {
       // Verify budget was created with correct familyId format
       expect(dynamoHelpers.putItem).toHaveBeenCalledWith(
         expect.objectContaining({
-          PK: "FAMILY#family_user_123456789",
+          PK: "BUDGET#family_user_123456789",
           SK: "BUDGET#2026-01",
-          familyId: "family_user_123456789",
+          budgetId: "budget_user_123456789",
           month: "2026-01",
           totalExpenses: 500,
           groups: expect.objectContaining({
@@ -262,7 +262,7 @@ describe("Budget Lambda Handler", () => {
       // Mock existing budget
       const existingBudget = {
         budgetId: "budget_existing",
-        familyId: "family_user_123456789",
+        budgetId: "budget_user_123456789",
         month: "2026-01",
         totalExpenses: 300,
       };
@@ -280,7 +280,7 @@ describe("Budget Lambda Handler", () => {
 
       // Should update existing budget, not create new one
       expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
-        "FAMILY#family_user_123456789",
+        "BUDGET#family_user_123456789",
         "BUDGET#2026-01",
         expect.objectContaining({
           groups: expect.any(Object),
@@ -341,7 +341,7 @@ describe("Budget Lambda Handler", () => {
 
       const mockBudget = {
         budgetId: "budget_123",
-        familyId: "family_user_123456789",
+        budgetId: "budget_user_123456789",
         month: "2026-01",
         totalIncome: 0,
         totalSavings: 0,
@@ -371,7 +371,7 @@ describe("Budget Lambda Handler", () => {
 
       // Verify correct query parameters
       expect(dynamoHelpers.getItem).toHaveBeenCalledWith(
-        "FAMILY#family_user_123456789",
+        "BUDGET#family_user_123456789",
         "BUDGET#2026-01",
       );
 
@@ -401,7 +401,7 @@ describe("Budget Lambda Handler", () => {
       // Mock previous month budget for recurring items
       const previousBudget = {
         budgetId: "budget_prev",
-        familyId: "family_user_123456789",
+        budgetId: "budget_user_123456789",
         month: "2025-12",
         groups: {
           income: [],
@@ -426,9 +426,9 @@ describe("Budget Lambda Handler", () => {
       // Should create new budget with recurring items
       expect(dynamoHelpers.putItem).toHaveBeenCalledWith(
         expect.objectContaining({
-          PK: "FAMILY#family_user_123456789",
+          PK: "BUDGET#family_user_123456789",
           SK: "BUDGET#2026-01",
-          familyId: "family_user_123456789",
+          budgetId: "budget_user_123456789",
           month: "2026-01",
         }),
       );
@@ -512,32 +512,31 @@ describe("Concurrent Edits - Last Write Wins", () => {
 
     // Reset shared mock
     const shared = require("/opt/nodejs/shared");
-    shared.checkPermission.mockReturnValue(null);
   });
 
   test("should use last-write-wins for concurrent budget updates", async () => {
     const {
       dynamoHelpers,
       getUserFromEvent,
-      FamilyIdResolver,
+      BudgetAccessResolver,
     } = require("/opt/nodejs/utils");
 
     // Mock user extraction
     getUserFromEvent.mockReturnValue({
       userId: "user_primary",
-      familyId: "family_123",
+      budgetId: "budget_123",
       familyRole: "primary",
     });
 
-    // Mock FamilyIdResolver
-    FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+    // Mock BudgetAccessResolver
+    BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
     // Existing budget
     const existingBudget = {
-      PK: "FAMILY#family_123",
+      PK: "BUDGET#family_123",
       SK: "BUDGET#2026-02",
       budgetId: "budget_123",
-      familyId: "family_123",
+      budgetId: "budget_123",
       month: "2026-02",
       totalIncome: 5000,
       totalExpenses: 2000,
@@ -592,7 +591,7 @@ describe("Concurrent Edits - Last Write Wins", () => {
 
     // Verify updateItem was called with correct PK, SK, and updates
     expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
-      "FAMILY#family_123",
+      "BUDGET#family_123",
       "BUDGET#2026-02",
       expect.objectContaining({
         groups: expect.any(Object),
@@ -604,23 +603,23 @@ describe("Concurrent Edits - Last Write Wins", () => {
     const {
       dynamoHelpers,
       getUserFromEvent,
-      FamilyIdResolver,
+      BudgetAccessResolver,
     } = require("/opt/nodejs/utils");
 
     getUserFromEvent.mockReturnValue({
       userId: "user_spouse",
-      familyId: "family_123",
+      budgetId: "budget_123",
       familyRole: "spouse",
     });
 
-    // Mock FamilyIdResolver
-    FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+    // Mock BudgetAccessResolver
+    BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
     const existingBudget = {
-      PK: "FAMILY#family_123",
+      PK: "BUDGET#family_123",
       SK: "BUDGET#2026-02",
       budgetId: "budget_123",
-      familyId: "family_123",
+      budgetId: "budget_123",
       month: "2026-02",
       totalIncome: 5000,
       totalExpenses: 2000,
@@ -675,7 +674,7 @@ describe("Concurrent Edits - Last Write Wins", () => {
 
     // Verify updateItem was called
     expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
-      "FAMILY#family_123",
+      "BUDGET#family_123",
       "BUDGET#2026-02",
       expect.objectContaining({
         groups: expect.any(Object),
@@ -687,18 +686,18 @@ describe("Concurrent Edits - Last Write Wins", () => {
     const {
       dynamoHelpers,
       getUserFromEvent,
-      FamilyIdResolver,
+      BudgetAccessResolver,
     } = require("/opt/nodejs/utils");
 
-    // Mock FamilyIdResolver for both calls
-    FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+    // Mock BudgetAccessResolver for both calls
+    BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
     // Simulate concurrent updates by having both users read the same initial state
     const initialBudget = {
-      PK: "FAMILY#family_123",
+      PK: "BUDGET#family_123",
       SK: "BUDGET#2026-02",
       budgetId: "budget_123",
-      familyId: "family_123",
+      budgetId: "budget_123",
       month: "2026-02",
       totalIncome: 5000,
       totalExpenses: 2000,
@@ -731,7 +730,7 @@ describe("Concurrent Edits - Last Write Wins", () => {
     // Mock user for first call
     getUserFromEvent.mockReturnValueOnce({
       userId: "user_primary",
-      familyId: "family_123",
+      budgetId: "budget_123",
       familyRole: "primary",
     });
 
@@ -762,7 +761,7 @@ describe("Concurrent Edits - Last Write Wins", () => {
     // Mock user for second call
     getUserFromEvent.mockReturnValueOnce({
       userId: "user_spouse",
-      familyId: "family_123",
+      budgetId: "budget_123",
       familyRole: "spouse",
     });
 

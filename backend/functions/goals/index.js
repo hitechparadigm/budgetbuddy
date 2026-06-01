@@ -18,7 +18,6 @@ const {
   BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
-const { checkPermission } = require("/opt/nodejs/shared");
 
 // Goal templates for quick creation
 const GOAL_TEMPLATES = [
@@ -118,7 +117,14 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
-    if (error.message.includes("No user claims")) {
+    if (error && typeof error === 'object' && error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Forbidden', message: error.message || 'Permission denied' }),
+      };
+    }
+    if (error.message && error.message.includes("No user claims")) {
       return errorResponse.unauthorized("Authentication required");
     }
     return errorResponse.internalError(
@@ -132,9 +138,6 @@ exports.handler = async (event, context) => {
  * GET /goals
  */
 async function getGoals(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
-
   const { budgetId, role, budgetStatus } =
     await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
 
@@ -192,9 +195,6 @@ async function getGoalTemplates() {
  * GET /goals/{goalId}
  */
 async function getGoal(event, user, goalId) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
-
   const { budgetId, role, budgetStatus } =
     await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
 
@@ -220,9 +220,6 @@ async function getGoal(event, user, goalId) {
  * POST /goals
  */
 async function createGoal(event, user) {
-  const permissionError = checkPermission(event, "budget:create");
-  if (permissionError) return permissionError;
-
   const { budgetId, role, budgetStatus } =
     await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
 
@@ -305,9 +302,6 @@ async function createGoal(event, user) {
  * PUT /goals/{goalId}
  */
 async function updateGoal(event, user, goalId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
   const { budgetId, role, budgetStatus } =
     await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
 
@@ -372,9 +366,6 @@ async function updateGoal(event, user, goalId) {
  * POST /goals/{goalId}/contribute
  */
 async function contributeToGoal(event, user, goalId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
   const { budgetId, role, budgetStatus } =
     await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
 
@@ -480,9 +471,6 @@ async function contributeToGoal(event, user, goalId) {
  * PUT /goals/reorder
  */
 async function reorderGoals(event, user) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
   const { budgetId, role, budgetStatus } =
     await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
 
@@ -516,9 +504,6 @@ async function reorderGoals(event, user) {
  * DELETE /goals/{goalId}
  */
 async function deleteGoal(event, user, goalId) {
-  const permissionError = checkPermission(event, "budget:delete");
-  if (permissionError) return permissionError;
-
   const { budgetId, role, budgetStatus } =
     await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
 

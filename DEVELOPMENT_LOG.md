@@ -1,6 +1,17 @@
 # Development Log
 
-## 2026-06-01 - Onboarding 403 Fix — Checkpoint (Session 134)
+## 2026-06-01 - Onboarding 409 fix + family Lambda cleanup (Session 135)
+
+### Work Completed
+
+1. **OnboardingPage.tsx**: 409 response from `/auth/onboarding` now treated as success — navigates
+   to `/budget`. Prevents user getting stuck when the first onboarding call succeeded but the UI
+   retried (e.g. double-click on "Create Budget" button).
+2. **family/index.js**: Removed ~1000 lines of unreachable dead code that followed the 410 early
+   return. File reduced from 1114 lines to 70. Fixes `no-unreachable` ESLint error that was
+   blocking commits.
+
+
 
 ### Session Summary
 

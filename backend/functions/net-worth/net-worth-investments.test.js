@@ -47,16 +47,18 @@ jest.mock("/opt/nodejs/utils", () => ({
     info: jest.fn(),
     error: jest.fn(),
   },
-  FamilyIdResolver: {
-    resolveFamilyId: jest.fn(
-      async (userId, familyId) => familyId || "test-family-123",
-    ),
+  BudgetAccessResolver: {
+    resolveAccess: jest.fn().mockResolvedValue({
+      budgetId: 'budget_test_123',
+      role: 'owner',
+      budgetType: 'personal',
+      budgetStatus: 'active',
+      subscriptionTier: 'free',
+    }),
+    assertPermission: jest.fn(),
   },
 }));
 
-jest.mock("/opt/nodejs/shared", () => ({
-  checkPermission: jest.fn(() => null),
-}));
 
 const { dynamoHelpers } = require("/opt/nodejs/utils");
 

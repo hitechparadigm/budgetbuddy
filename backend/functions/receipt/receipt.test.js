@@ -70,20 +70,20 @@ jest.mock(
       warn: jest.fn(),
       error: jest.fn(),
     },
-    FamilyIdResolver: {
-      resolveFamilyId: jest.fn().mockResolvedValue("test-family-123"),
+    BudgetAccessResolver: {
+      resolveAccess: jest.fn().mockResolvedValue({
+        budgetId: 'budget_test_123',
+        role: 'owner',
+        budgetType: 'personal',
+        budgetStatus: 'active',
+        subscriptionTier: 'free',
+      }),
+      assertPermission: jest.fn(),
     },
   }),
   { virtual: true },
 );
 
-jest.mock(
-  "/opt/nodejs/shared",
-  () => ({
-    checkPermission: jest.fn(() => null),
-  }),
-  { virtual: true },
-);
 
 const { handler } = require("./index");
 const { dynamoHelpers, getUserFromEvent } = require("/opt/nodejs/utils");

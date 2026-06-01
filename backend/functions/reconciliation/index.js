@@ -15,10 +15,9 @@ const {
   generateId,
   dynamoHelpers,
   logger,
-  FamilyIdResolver,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
-const { checkPermission } = require("/opt/nodejs/shared");
 
 // Matching thresholds
 const AMOUNT_TOLERANCE = 0.5; // ±$0.50
@@ -98,7 +97,14 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
-    if (error.message.includes("No user claims")) {
+    if (error && typeof error === 'object' && error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Forbidden', message: error.message || 'Permission denied' }),
+      };
+    }
+    if (error.message && error.message.includes("No user claims")) {
       return errorResponse.unauthorized("Authentication required");
     }
     return errorResponse.internalError(
@@ -112,23 +118,17 @@ exports.handler = async (event, context) => {
  * GET /reconcile/status
  */
 async function getReconciliationStatus(event, user) {
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   // Get receipts
-  const receipts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const receipts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType",
     ExpressionAttributeValues: { ":entityType": "RECEIPT" },
   });
 
   // Get bank transactions (from Plaid)
-  const bankTransactions = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const bankTransactions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType AND #source = :plaid",
     ExpressionAttributeNames: { "#source": "source" },
     ExpressionAttributeValues: {
@@ -138,7 +138,7 @@ async function getReconciliationStatus(event, user) {
   });
 
   // Get existing matches
-  const matches = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const matches = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType",
     ExpressionAttributeValues: { ":entityType": "RECONCILIATION_MATCH" },
   });
@@ -177,20 +177,14 @@ async function getReconciliationStatus(event, user) {
  * GET /reconcile/unmatched
  */
 async function getUnmatchedItems(event, user) {
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const queryParams = event.queryStringParameters || {};
   const type = queryParams.type || "all"; // receipts, transactions, all
 
   // Get existing matches
-  const matches = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const matches = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType",
     ExpressionAttributeValues: { ":entityType": "RECONCILIATION_MATCH" },
   });
@@ -201,7 +195,7 @@ async function getUnmatchedItems(event, user) {
   const result = { unmatchedReceipts: [], unmatchedTransactions: [] };
 
   if (type === "receipts" || type === "all") {
-    const receipts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    const receipts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       FilterExpression: "entityType = :entityType",
       ExpressionAttributeValues: { ":entityType": "RECEIPT" },
     });
@@ -211,7 +205,7 @@ async function getUnmatchedItems(event, user) {
   }
 
   if (type === "transactions" || type === "all") {
-    const transactions = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    const transactions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       FilterExpression: "entityType = :entityType AND #source = :plaid",
       ExpressionAttributeNames: { "#source": "source" },
       ExpressionAttributeValues: {
@@ -232,14 +226,8 @@ async function getUnmatchedItems(event, user) {
  * GET /reconcile/suggestions
  */
 async function getMatchSuggestions(event, user) {
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const queryParams = event.queryStringParameters || {};
   const { receiptId, transactionId } = queryParams;
@@ -251,7 +239,7 @@ async function getMatchSuggestions(event, user) {
   }
 
   // Get existing matches to exclude
-  const matches = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const matches = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType",
     ExpressionAttributeValues: { ":entityType": "RECONCILIATION_MATCH" },
   });
@@ -264,7 +252,7 @@ async function getMatchSuggestions(event, user) {
   if (receiptId) {
     // Find matching transactions for this receipt
     const receipt = await dynamoHelpers.getItem(
-      `FAMILY#${familyId}`,
+      `BUDGET#${budgetId}`,
       `RECEIPT#${receiptId}`,
     );
 
@@ -272,7 +260,7 @@ async function getMatchSuggestions(event, user) {
       return errorResponse.notFound("Receipt not found");
     }
 
-    const transactions = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    const transactions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       FilterExpression: "entityType = :entityType AND #source = :plaid",
       ExpressionAttributeNames: { "#source": "source" },
       ExpressionAttributeValues: {
@@ -293,7 +281,7 @@ async function getMatchSuggestions(event, user) {
   } else if (transactionId) {
     // Find matching receipts for this transaction
     const transaction = await dynamoHelpers.getItem(
-      `FAMILY#${familyId}`,
+      `BUDGET#${budgetId}`,
       `TRANSACTION#${transactionId}`,
     );
 
@@ -301,7 +289,7 @@ async function getMatchSuggestions(event, user) {
       return errorResponse.notFound("Transaction not found");
     }
 
-    const receipts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    const receipts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       FilterExpression: "entityType = :entityType",
       ExpressionAttributeValues: { ":entityType": "RECEIPT" },
     });
@@ -328,14 +316,8 @@ async function getMatchSuggestions(event, user) {
  * POST /reconcile/match
  */
 async function createMatch(event, user) {
-  const permissionError = checkPermission(event, "transaction:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -347,7 +329,7 @@ async function createMatch(event, user) {
 
   // Verify receipt exists
   const receipt = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `RECEIPT#${body.receiptId}`,
   );
   if (!receipt) {
@@ -356,7 +338,7 @@ async function createMatch(event, user) {
 
   // Verify transaction exists
   const transaction = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `TRANSACTION#${body.transactionId}`,
   );
   if (!transaction) {
@@ -364,7 +346,7 @@ async function createMatch(event, user) {
   }
 
   // Check if either is already matched
-  const existingMatches = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const existingMatches = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (receiptId = :receiptId OR transactionId = :transactionId)",
     ExpressionAttributeValues: {
@@ -385,11 +367,11 @@ async function createMatch(event, user) {
   const confidence = calculateMatchConfidence(receipt, transaction);
 
   const match = {
-    PK: `FAMILY#${familyId}`,
+    PK: `BUDGET#${budgetId}`,
     SK: `RECONCILIATION_MATCH#${matchId}`,
     entityType: "RECONCILIATION_MATCH",
     matchId,
-    familyId,
+    budgetId,
     receiptId: body.receiptId,
     transactionId: body.transactionId,
     confidence: confidence.score,
@@ -403,7 +385,7 @@ async function createMatch(event, user) {
 
   // Update receipt with linked transaction
   await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `RECEIPT#${body.receiptId}`,
     {
       linkedTransactionId: body.transactionId,
@@ -413,7 +395,7 @@ async function createMatch(event, user) {
 
   // Update transaction with linked receipt
   await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `TRANSACTION#${body.transactionId}`,
     {
       linkedReceiptId: body.receiptId,
@@ -439,14 +421,8 @@ async function createMatch(event, user) {
  * POST /reconcile/unmatch
  */
 async function removeMatch(event, user) {
-  const permissionError = checkPermission(event, "transaction:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -455,7 +431,7 @@ async function removeMatch(event, user) {
   }
 
   const match = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `RECONCILIATION_MATCH#${body.matchId}`,
   );
 
@@ -465,7 +441,7 @@ async function removeMatch(event, user) {
 
   // Remove links from receipt and transaction
   await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `RECEIPT#${match.receiptId}`,
     {
       linkedTransactionId: null,
@@ -474,7 +450,7 @@ async function removeMatch(event, user) {
   );
 
   await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `TRANSACTION#${match.transactionId}`,
     {
       linkedReceiptId: null,
@@ -485,7 +461,7 @@ async function removeMatch(event, user) {
   // Delete the match record
   // Note: In production, might want to soft delete for audit trail
   await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `RECONCILIATION_MATCH#${body.matchId}`,
     {
       isDeleted: true,
@@ -504,20 +480,14 @@ async function removeMatch(event, user) {
  * POST /reconcile/auto
  */
 async function autoReconcile(event, user) {
-  const permissionError = checkPermission(event, "transaction:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const body = parseRequestBody(event.body);
   const minConfidence = body.minConfidence || HIGH_CONFIDENCE_THRESHOLD;
 
   // Get existing matches
-  const existingMatches = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const existingMatches = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType",
     ExpressionAttributeValues: { ":entityType": "RECONCILIATION_MATCH" },
   });
@@ -528,7 +498,7 @@ async function autoReconcile(event, user) {
   );
 
   // Get unmatched receipts
-  const receipts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const receipts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType",
     ExpressionAttributeValues: { ":entityType": "RECEIPT" },
   });
@@ -537,7 +507,7 @@ async function autoReconcile(event, user) {
   );
 
   // Get unmatched transactions
-  const transactions = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const transactions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType AND #source = :plaid",
     ExpressionAttributeNames: { "#source": "source" },
     ExpressionAttributeValues: {
@@ -576,11 +546,11 @@ async function autoReconcile(event, user) {
       const confidence = calculateMatchConfidence(receipt, bestMatch);
 
       const match = {
-        PK: `FAMILY#${familyId}`,
+        PK: `BUDGET#${budgetId}`,
         SK: `RECONCILIATION_MATCH#${matchId}`,
         entityType: "RECONCILIATION_MATCH",
         matchId,
-        familyId,
+        budgetId,
         receiptId: receipt.receiptId,
         transactionId: bestMatch.transactionId,
         confidence: confidence.score,
@@ -594,7 +564,7 @@ async function autoReconcile(event, user) {
 
       // Update links
       await dynamoHelpers.updateItem(
-        `FAMILY#${familyId}`,
+        `BUDGET#${budgetId}`,
         `RECEIPT#${receipt.receiptId}`,
         {
           linkedTransactionId: bestMatch.transactionId,
@@ -603,7 +573,7 @@ async function autoReconcile(event, user) {
       );
 
       await dynamoHelpers.updateItem(
-        `FAMILY#${familyId}`,
+        `BUDGET#${budgetId}`,
         `TRANSACTION#${bestMatch.transactionId}`,
         { linkedReceiptId: receipt.receiptId, reconciledAt: currentTime },
       );
@@ -614,7 +584,7 @@ async function autoReconcile(event, user) {
   }
 
   logger.info("Auto-reconciliation completed", {
-    familyId,
+    budgetId,
     matchesCreated: newMatches.length,
     minConfidence,
   });
@@ -637,17 +607,11 @@ async function autoReconcile(event, user) {
  * GET /reconcile/{matchId}
  */
 async function getMatch(event, user, matchId) {
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const match = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `RECONCILIATION_MATCH#${matchId}`,
   );
 

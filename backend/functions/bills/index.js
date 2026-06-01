@@ -15,10 +15,9 @@ const {
   generateId,
   dynamoHelpers,
   logger,
-  FamilyIdResolver,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
-const { checkPermission } = require("/opt/nodejs/shared");
 
 /**
  * Main Lambda handler for bill operations
@@ -101,7 +100,14 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
-    if (error.message.includes("No user claims")) {
+    if (error && typeof error === 'object' && error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Forbidden', message: error.message || 'Permission denied' }),
+      };
+    }
+    if (error.message && error.message.includes("No user claims")) {
       return errorResponse.unauthorized("Authentication required");
     }
     return errorResponse.internalError(
@@ -115,18 +121,12 @@ exports.handler = async (event, context) => {
  * GET /bills
  */
 async function getBills(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  logger.info("Getting bills", { budgetId });
 
-  logger.info("Getting bills", { familyId });
-
-  const bills = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const bills = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -150,14 +150,8 @@ async function getBills(event, user) {
  * GET /bills/upcoming
  */
 async function getUpcomingBills(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const today = new Date();
   const thirtyDaysLater = new Date(today);
@@ -167,12 +161,12 @@ async function getUpcomingBills(event, user) {
   const futureStr = thirtyDaysLater.toISOString().split("T")[0];
 
   logger.info("Getting upcoming bills", {
-    familyId,
+    budgetId,
     from: todayStr,
     to: futureStr,
   });
 
-  const bills = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const bills = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND dueDate >= :today AND dueDate <= :future AND #status <> :paid AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeNames: { "#status": "status" },
@@ -200,22 +194,16 @@ async function getUpcomingBills(event, user) {
  * GET /bills/calendar?month=YYYY-MM
  */
 async function getBillsCalendar(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const queryParams = event.queryStringParameters || {};
   const month = queryParams.month || new Date().toISOString().substring(0, 7);
 
-  logger.info("Getting bills calendar", { familyId, month });
+  logger.info("Getting bills calendar", { budgetId, month });
 
   // Query bills for the month using GSI
-  const bills = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const bills = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND begins_with(dueDate, :month) AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -260,14 +248,8 @@ async function getBillsCalendar(event, user) {
  * POST /bills
  */
 async function createBill(event, user) {
-  const permissionError = checkPermission(event, "budget:create");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'transaction.create', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -296,13 +278,13 @@ async function createBill(event, user) {
   }
 
   const bill = {
-    PK: `FAMILY#${familyId}`,
+    PK: `BUDGET#${budgetId}`,
     SK: `BILL#${billId}`,
     GSI1PK: `BILLS#${body.dueDate.substring(0, 7)}`,
     GSI1SK: `${body.dueDate}#${billId}`,
     entityType: "BILL",
     billId,
-    familyId,
+    budgetId,
     name: body.name,
     amount: body.amount,
     dueDate: body.dueDate,
@@ -331,7 +313,7 @@ async function createBill(event, user) {
 
   logger.info("Bill created successfully", {
     billId,
-    familyId,
+    budgetId,
     name: body.name,
   });
 
@@ -343,20 +325,14 @@ async function createBill(event, user) {
  * PUT /bills/{billId}
  */
 async function updateBill(event, user, billId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
   // Find the bill
   const existingBill = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `BILL#${billId}`,
   );
   if (!existingBill) {
@@ -392,12 +368,12 @@ async function updateBill(event, user, billId) {
   }
 
   const updatedBill = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `BILL#${billId}`,
     updates,
   );
 
-  logger.info("Bill updated successfully", { billId, familyId });
+  logger.info("Bill updated successfully", { billId, budgetId });
 
   return successResponse(
     formatBillResponse(updatedBill),
@@ -410,20 +386,14 @@ async function updateBill(event, user, billId) {
  * POST /bills/{billId}/pay
  */
 async function markBillPaid(event, user, billId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const body = parseRequestBody(event.body) || {};
 
   // Find the bill
   const existingBill = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `BILL#${billId}`,
   );
   if (!existingBill) {
@@ -443,13 +413,13 @@ async function markBillPaid(event, user, billId) {
   if (existingBill.categoryId) {
     transactionId = generateId.custom("txn");
     const transaction = {
-      PK: `FAMILY#${familyId}`,
+      PK: `BUDGET#${budgetId}`,
       SK: `TRANSACTION#${transactionId}`,
-      GSI1PK: `FAMILY#${familyId}`,
+      GSI1PK: `BUDGET#${budgetId}`,
       GSI1SK: `TRANSACTION#${paidDate}#${transactionId}`,
       entityType: "TRANSACTION",
       transactionId,
-      familyId,
+      budgetId,
       type: "expense",
       amount: paidAmount,
       categoryId: existingBill.categoryId,
@@ -521,13 +491,13 @@ async function markBillPaid(event, user, billId) {
     // Create next bill occurrence
     const nextBillId = generateId.custom("bill");
     nextBill = {
-      PK: `FAMILY#${familyId}`,
+      PK: `BUDGET#${budgetId}`,
       SK: `BILL#${nextBillId}`,
       GSI1PK: `BILLS#${nextDueDate.substring(0, 7)}`,
       GSI1SK: `${nextDueDate}#${nextBillId}`,
       entityType: "BILL",
       billId: nextBillId,
-      familyId,
+      budgetId,
       name: existingBill.name,
       amount: existingBill.amount,
       dueDate: nextDueDate,
@@ -552,12 +522,12 @@ async function markBillPaid(event, user, billId) {
   }
 
   const updatedBill = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `BILL#${billId}`,
     updates,
   );
 
-  logger.info("Bill marked as paid", { billId, familyId, transactionId });
+  logger.info("Bill marked as paid", { billId, budgetId, transactionId });
 
   return successResponse(
     {
@@ -574,17 +544,11 @@ async function markBillPaid(event, user, billId) {
  * DELETE /bills/{billId}
  */
 async function deleteBill(event, user, billId) {
-  const permissionError = checkPermission(event, "budget:delete");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const existingBill = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `BILL#${billId}`,
   );
   if (!existingBill) {
@@ -592,13 +556,13 @@ async function deleteBill(event, user, billId) {
   }
 
   // Soft delete
-  await dynamoHelpers.updateItem(`FAMILY#${familyId}`, `BILL#${billId}`, {
+  await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, `BILL#${billId}`, {
     isDeleted: true,
     deletedAt: new Date().toISOString(),
     deletedBy: user.userId,
   });
 
-  logger.info("Bill deleted", { billId, familyId });
+  logger.info("Bill deleted", { billId, budgetId });
 
   return successResponse(null, "Bill deleted successfully");
 }
@@ -692,14 +656,8 @@ function formatBillResponse(bill) {
  * - Duplicate detection to prevent redundant bills
  */
 async function createBillFromPattern(event, user) {
-  const permissionError = checkPermission(event, "budget:create");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'transaction.create', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -740,7 +698,7 @@ async function createBillFromPattern(event, user) {
 
   // Check for duplicate bills (same merchant name and frequency)
   const duplicateBill = await checkForDuplicateBill(
-    familyId,
+    budgetId,
     body.merchantName,
     body.frequency,
   );
@@ -767,13 +725,13 @@ async function createBillFromPattern(event, user) {
   const reminderSchedule = calculateReminderSchedule(dueDate);
 
   const bill = {
-    PK: `FAMILY#${familyId}`,
+    PK: `BUDGET#${budgetId}`,
     SK: `BILL#${billId}`,
     GSI1PK: `BILLS#${dueDate.substring(0, 7)}`,
     GSI1SK: `${dueDate}#${billId}`,
     entityType: "BILL",
     billId,
-    familyId,
+    budgetId,
     name: body.suggestedBillName,
     merchantName: body.merchantName,
     amount: body.averageAmount,
@@ -804,7 +762,7 @@ async function createBillFromPattern(event, user) {
 
   logger.info("Bill created from AI pattern", {
     billId,
-    familyId,
+    budgetId,
     patternId: body.patternId,
     merchantName: body.merchantName,
     confidenceScore: body.confidenceScore,
@@ -820,8 +778,8 @@ async function createBillFromPattern(event, user) {
  * Check for duplicate bills with same merchant name and frequency
  * Returns the existing bill if found, null otherwise
  */
-async function checkForDuplicateBill(familyId, merchantName, frequency) {
-  const bills = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+async function checkForDuplicateBill(budgetId, merchantName, frequency) {
+  const bills = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
