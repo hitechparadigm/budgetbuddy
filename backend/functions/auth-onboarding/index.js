@@ -102,12 +102,12 @@ exports.handler = async (event) => {
     console.log('  - budgetType:', requestBody.budgetType || 'personal');
 
     // Read defaultBudgetId from user profile
+    // NOTE: During first-time onboarding the profile may not exist yet (Cognito post-confirmation
+    // trigger creates it asynchronously). Treat a missing profile as "no existing budget" and
+    // proceed — do NOT call BudgetAccessResolver.resolveAccess() here, as the user has no budget yet.
     const userProfile = await dynamoHelpers.getItem(`USER#${userId}`, 'PROFILE');
-    if (!userProfile) {
-      throw { statusCode: 403, message: 'User profile not found' };
-    }
 
-    const existingBudgetId = userProfile.defaultBudgetId;
+    const existingBudgetId = userProfile?.defaultBudgetId;
     if (existingBudgetId) {
       // Re-onboarding guard: budget already exists, prevent duplicate creation
       return {

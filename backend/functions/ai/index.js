@@ -98,8 +98,8 @@ exports.handler = async (event, context) => {
 
     logger.info('Budget access resolved', { userId, budgetId, role, budgetType });
 
-    // Route: POST /ai/generate-budget
-    if (httpMethod === 'POST' && path === '/ai/generate-budget') {
+    // Route: POST /ai/generate-budget  (also handles CDK path /budget/ai-generate)
+    if (httpMethod === 'POST' && (path === '/ai/generate-budget' || path === '/budget/ai-generate' || path === '/v1/budget/ai-generate' || path === '/v1/ai/generate-budget')) {
       return await handleGenerateBudget(event, {
         userId,
         budgetId,

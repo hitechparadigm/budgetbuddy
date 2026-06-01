@@ -601,6 +601,11 @@ async function analyzeUserSpending(userId) {
     subscriptionHeavy: false,
   };
 
+  // New users may have no transactions yet — return default patterns
+  if (!transactions || transactions.length === 0) {
+    return patterns;
+  }
+
   const categoryTotals = {};
   let totalExpenses = 0;
   let totalIncome = 0;

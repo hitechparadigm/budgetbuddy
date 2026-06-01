@@ -1,13 +1,13 @@
 {
   "enabled": true,
-  "name": "Update User Journeys on Feature",
-  "description": "Reminds to update docs/USER_JOURNEYS.md when implementing new features to keep component mapping and gap analysis current",
+  "name": "Update Product Requirements on Feature",
+  "description": "Reminds to update docs/product-requirements.md when implementing new features to keep component mapping and gap analysis current",
   "version": "1",
   "when": {
     "type": "agentStop"
   },
   "then": {
     "type": "askAgent",
-    "prompt": "Before completing this task, check if any new frontend or backend components were created or modified. If so, update docs/USER_JOURNEYS.md to reflect: 1) Component status changes (❌ → ✅), 2) New components added to mapping tables, 3) Gap analysis updates, 4) Requirements traceability updates. This keeps the user journeys document as the single source of truth for feature implementation status."
+    "prompt": "Before completing this task, check if any new frontend or backend components were created or modified. If so, update docs/product-requirements.md to reflect: 1) Component status changes (❌ → ✅), 2) New components added to the relevant User Journey mapping table, 3) Known Gaps updates (move items from ⚠️ Planned to ✅ Built when done), 4) Implemented Features section updates. This keeps product-requirements.md as the single source of truth for feature implementation status."
   }
 }

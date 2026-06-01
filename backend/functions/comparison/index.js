@@ -377,9 +377,9 @@ async function getUserSpendingByCategory(userId) {
     },
   });
 
-  // Aggregate by category
+  // Aggregate by category — guard against null/undefined result for new users
   const categorySpending = {};
-  for (const tx of transactions) {
+  for (const tx of (transactions || [])) {
     if (tx.type === "expense") {
       const category = mapToComparisonCategory(tx.category);
       categorySpending[category] =

@@ -37,7 +37,7 @@ DynamoDB table refs, Cognito User Pool refs, S3 bucket refs (rarely change)
    - Check feature entitlements: `canUseFeature(subscriptionTier, featureKey)` — never check tier directly
 3. Infrastructure: CDK stack with Lambda/IAM/alarms
 4. Frontend: components/services/types + tests
-5. Docs: Update CHANGELOG, DEVELOPMENT_LOG, USER_JOURNEYS.md
+5. Docs: Update CHANGELOG, DEVELOPMENT_LOG, product-requirements.md
 
 ## Lambda Access Pattern
 
