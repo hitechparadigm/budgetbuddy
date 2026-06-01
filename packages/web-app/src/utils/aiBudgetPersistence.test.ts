@@ -6,8 +6,8 @@
  *
  * Root Cause Investigation:
  * - AI budget is saved with POST /budget (returns 409 if already exists)
- * - GET /budget queries by familyId
- * - Possible familyId mismatch between save and retrieval
+ * - GET /budget queries by budgetId
+ * - Possible budgetId mismatch between save and retrieval
  */
 
 describe('AI Budget Persistence (Requirement 16)', () => {
@@ -38,7 +38,7 @@ describe('AI Budget Persistence (Requirement 16)', () => {
     mockApiClient.post.mockResolvedValueOnce({
       data: {
         budgetId: 'budget-123',
-        familyId: 'family-456',
+        budgetId: 'budget-123',
         ...aiBudget,
       },
     });
@@ -46,7 +46,7 @@ describe('AI Budget Persistence (Requirement 16)', () => {
     // Save AI budget
     const saveResponse = await mockApiClient.post('/budget', aiBudget);
     expect(saveResponse.data.budgetId).toBe('budget-123');
-    expect(saveResponse.data.familyId).toBe('family-456');
+    expect(saveResponse.data.budgetId).toBe('family-456');
 
     // Mock successful budget retrieval with same familyId
     mockApiClient.get.mockResolvedValueOnce({
@@ -54,7 +54,7 @@ describe('AI Budget Persistence (Requirement 16)', () => {
         budgets: [
           {
             budgetId: 'budget-123',
-            familyId: 'family-456',
+            budgetId: 'budget-123',
             month: '2025-11',
             ...aiBudget.groups,
           },
@@ -67,7 +67,7 @@ describe('AI Budget Persistence (Requirement 16)', () => {
     const getResponse = await mockApiClient.get('/budget');
     expect(getResponse.data.budgets).toHaveLength(1);
     expect(getResponse.data.budgets[0].month).toBe('2025-11');
-    expect(getResponse.data.budgets[0].familyId).toBe('family-456');
+    expect(getResponse.data.budgets[0].budgetId).toBe('family-456');
   });
 
   it('should handle budget update when budget already exists (409 → update)', async () => {
@@ -85,7 +85,7 @@ describe('AI Budget Persistence (Requirement 16)', () => {
     mockApiClient.post.mockResolvedValueOnce({
       data: {
         budgetId: 'budget-123',
-        familyId: 'family-456',
+        budgetId: 'budget-123',
         ...aiBudget,
         updatedAt: new Date().toISOString(),
       },
@@ -101,7 +101,7 @@ describe('AI Budget Persistence (Requirement 16)', () => {
         budgets: [
           {
             budgetId: 'budget-123',
-            familyId: 'family-456',
+            budgetId: 'budget-123',
             month: '2025-11',
           },
         ],
@@ -120,7 +120,7 @@ describe('AI Budget Persistence (Requirement 16)', () => {
         budgets: [
           {
             budgetId: 'budget-123',
-            familyId: 'family-456',
+            budgetId: 'budget-123',
             month: '2025-11',
           },
         ],
@@ -138,3 +138,4 @@ describe('AI Budget Persistence (Requirement 16)', () => {
     // (In actual app, this would check navigation state)
   });
 });
+

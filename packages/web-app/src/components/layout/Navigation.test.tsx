@@ -83,7 +83,6 @@ describe("Navigation Logout (Requirement 43)", () => {
   it("should clear user data from localStorage on logout", () => {
     // Add some user data
     localStorage.setItem("userId", "user-123");
-    localStorage.setItem("familyId", "family-456");
 
     renderNavigation();
 
@@ -93,7 +92,6 @@ describe("Navigation Logout (Requirement 43)", () => {
 
     // User data should be cleared
     expect(localStorage.getItem("userId")).toBeNull();
-    expect(localStorage.getItem("familyId")).toBeNull();
   });
 
   it("should be accessible via keyboard", () => {

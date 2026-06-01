@@ -20,7 +20,6 @@ export const Navigation: React.FC = () => {
 
     // Clear user data
     localStorage.removeItem("userId");
-    localStorage.removeItem("familyId");
 
     // Redirect to login page
     navigate("/login");

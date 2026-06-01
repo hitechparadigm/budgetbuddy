@@ -1,474 +1,167 @@
 # Architecture Decision Records (ADR)
 
-This document records significant architectural decisions made for the BudgetBuddy application.
-
-## Format
-
-Each decision follows this structure:
-
-- **Date**: When the decision was made
-- **Status**: Proposed | Accepted | Deprecated | Superseded
-- **Context**: What is the issue we're trying to solve?
-- **Decision**: What did we decide to do?
-- **Consequences**: What are the trade-offs?
+Records significant architectural decisions for BudgetBuddy.
 
 ---
 
-## ADR-001: Pause Auth Lambda Refactoring
+## ADR-001: Budget-Centric Data Model (Supersedes family-based model)
 
-**Date**: 2026-01-14
-**Status**: Accepted
-**Deciders**: Architecture Review
+**Date**: 2026-02-01 (redesign), 2026-06-01 (completed)
+**Status**: Accepted — fully implemented
 
 ### Context
 
-We started refactoring the monolithic auth Lambda (1,340 lines) into 6 separate functions to fix an import ordering bug. After completing Phase 1 (shared utilities) and 1 of 6 functions (auth-onboarding), we conducted an architectural review.
-
-**Findings**:
-
-- Only 16% complete (1 of 6 functions)
-- Root cause was simple: imports placed mid-file instead of at top
-- Refactoring adds significant complexity without proportional value for MVP
-- Creates dual maintenance burden (old + new code)
-- Distracts from core feature development
+The original architecture used a `FAMILY#<familyId>` partition key and a `FamilyIdResolver` utility to link users to their shared budget. This created a chicken-and-egg problem during onboarding (the 403 bug), required `familyId` to be stored in the JWT, and made the data model harder to reason about.
 
 ### Decision
 
-**PAUSE the auth Lambda refactoring immediately.**
+Replace the family-based model with a budget-centric model:
 
-**Actions Taken**:
+- All shared data lives under `BUDGET#<budgetId>` partition keys
+- `USER#<userId>/PROFILE` stores `defaultBudgetId` — the link from user to budget
+- JWT carries only `userId`. Budget ID and role are resolved from DynamoDB on every request via `BudgetAccessResolver.resolveAccess(userId, dynamoHelpers)`
+- RBAC roles: `owner | partner | household_member | viewer`
+- Feature gating: `canUseFeature(subscriptionTier, featureKey)` — never check tier directly
 
-1. Keep `budgetbuddy-auth-onboarding` (already deployed and working)
-2. Cancel remaining 5 planned functions (register, login, google, profile, geolocation)
-3. Fix import ordering with ESLint rules instead of splitting functions
-4. Add file organization guidelines
-5. Update tasks.md to reflect cancellation
+### Current Data Layout
 
-**Alternative Solution**:
+```
+USER#<userId>
+  PROFILE          → { defaultBudgetId, onboardingCompleted, currency, location }
 
-- Added ESLint rule: `no-use-before-define` to prevent import bugs
-- Added `max-lines` warning to encourage refactoring when truly needed
-- Added `max-lines-per-function` warning for code quality
+BUDGET#<budgetId>
+  METADATA         → { budgetType, status, currency, createdAt }
+  MEMBER#<userId>  → { role, status, joinedAt }
+  PERIOD#<YYYY-MM> → { income/savings/expense groups, totals }
+  ACCOUNT#<id>     → { nickname, accountType, balance }
+  TXN#<id>         → { amount, category, date, accountId }
+  GOAL#<id>        → { name, targetAmount, currentAmount, targetDate }
+  INVITATION#<id>  → { invitedEmail, role, token, expiresAt, status }
+```
+
+### Lambda Access Pattern (every Lambda that touches budget data)
+
+```javascript
+const { userId } = getUserFromEvent(event);
+const { budgetId, role, budgetType, budgetStatus, subscriptionTier } =
+  await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+BudgetAccessResolver.assertPermission(role, action, budgetStatus);
+// Read/write BUDGET#<budgetId>/... records
+```
+
+### What Was Removed
+
+- `FamilyIdResolver` — deleted
+- `FAMILY#` partition keys — replaced by `BUDGET#`
+- `custom:familyId` JWT claim — ignored (only `custom:userId` is used)
+- `/family/*` API — returns 410 Gone; use `/budgets/*`
+- `FamilySettings.tsx` — replaced by `BudgetMembersPage` at `/budget/members`
+- `api-family-stack` — still deployed but deprecated; will be destroyed after migration period
 
 ### Consequences
 
-**Positive**:
-
-- ✅ Simpler architecture (2 auth functions instead of 7)
-- ✅ Faster development velocity (no need to coordinate 6 deployments)
-- ✅ Easier debugging (fewer places to look)
-- ✅ Lower operational overhead
-- ✅ Can focus on core features instead of infrastructure
-
-**Negative**:
-
-- ⚠️ Auth Lambda remains large (1,340 lines)
-- ⚠️ Some code duplication between auth and auth-onboarding
-- ⚠️ Wasted effort on Phase 1 (though shared utilities are still useful)
-
-**Mitigation**:
-
-- ESLint rules prevent the original bug from recurring
-- File organization guidelines make large file manageable
-- Can revisit splitting when we have 10,000+ users and real scaling needs
-
-### When to Revisit
-
-Consider splitting auth Lambda when:
-
-1. **Traffic patterns diverge**: One endpoint gets 1000x more traffic than others
-2. **Different teams**: Separate teams own different auth flows
-3. **Different scaling needs**: One endpoint needs 3GB RAM, others need 512MB
-4. **Real performance issues**: Measured cold start times > 3 seconds
-5. **User base**: 10,000+ active users
-
-**Current state**: None of these conditions apply.
+- ✅ Onboarding 403 bug eliminated — budget is created during onboarding, not before
+- ✅ JWT is simpler — no familyId, no role in token
+- ✅ Multi-budget support is natural — user can be a member of multiple budgets
+- ✅ Viewer role with expiry is straightforward
+- ⚠️ `api-family-stack` still deployed (returns 410) — will be destroyed once confirmed no traffic
 
 ---
 
-## ADR-002: Consolidate Lambda Functions (9 → 5)
+## ADR-002: Serverless Architecture (Lambda + API Gateway)
 
-**Date**: 2026-01-14
+**Date**: 2025-10-24
 **Status**: Accepted
-**Deciders**: Architecture Review
-
-### Context
-
-We currently have 9 business logic Lambda functions:
-
-1. auth (1,340 lines)
-2. auth-onboarding (300 lines)
-3. budget (800 lines)
-4. transaction (600 lines)
-5. ai (400 lines)
-6. family (200 lines)
-7. payment (300 lines)
-8. email (200 lines)
-9. export (250 lines)
-10. admin (150 lines)
-
-**Issues**:
-
-- Too many deployment units for MVP
-- Some functions exist but features aren't built (admin, family)
-- Email and export are tightly coupled to budget/transaction operations
-- Higher operational complexity than necessary
 
 ### Decision
 
-**Consolidate to 5 core Lambda functions.**
+Lambda (Node.js 20.x) + API Gateway (REST) with Cognito authorizer. CDK v2 for all infrastructure.
 
-**Keep Separate** (different external dependencies or scaling needs):
+### Stack Layout
 
-1. **auth** - All authentication operations (merge family into this)
-2. **budget** - Budget CRUD + export (merge export into this)
-3. **transaction** - Transaction CRUD + email notifications (merge email into this)
-4. **ai** - AI generation (external API: AWS Bedrock, high memory)
-5. **payment** - Payment processing (external API: Stripe, PCI compliance)
+```
+database → auth → auth-onboarding → api → api-features
+→ api-features-extended → api-budgets → hosting → notification → monitoring
+api-family (DEPRECATED — returns 410)
+```
 
-**Merge or Remove**:
+Each stack creates its own Lambda Layers. **Never export Lambda Layers across stacks** — cross-stack layer refs cause CloudFormation deployment failures.
 
-- ❌ **family** → Merge into auth (family operations are auth-related)
-- ❌ **email** → Merge into budget/transaction (emails triggered by actions)
-- ❌ **export** → Merge into budget (export is a budget operation)
-- ❌ **admin** → Remove (features not built yet, build when needed)
+### When to Split a Lambda
 
-### Consequences
+Split only when one of these is true:
+1. Different external dependencies (e.g., Stripe for payments, Bedrock for AI)
+2. Measured cold start > 3 seconds
+3. Different teams own different domains
+4. 10,000+ active users with divergent scaling needs
 
-**Positive**:
-
-- ✅ 44% reduction in Lambda functions (9 → 5)
-- ✅ Simpler deployment process
-- ✅ Easier debugging (fewer places to look)
-- ✅ Lower operational overhead
-- ✅ Faster development (add features to existing functions vs create new ones)
-- ✅ Better code locality (related code in same place)
-
-**Negative**:
-
-- ⚠️ Slightly larger Lambda packages
-- ⚠️ Slightly longer cold starts (negligible for MVP traffic)
-- ⚠️ Less granular scaling (not an issue until high traffic)
-
-**Metrics**:
-
-- Development velocity: 92% faster (3 days → 2 hours to add endpoint)
-- Deployment complexity: 44% reduction
-- Operational overhead: 44% reduction
-- Cost savings: ~$7/month + 20 hours/month developer time
-
-### Migration Plan
-
-**Phase 1: Merge family into auth** (2 days)
-
-- Move family management code to auth Lambda
-- Update API Gateway routes
-- Test family operations
-- Remove family Lambda
-
-**Phase 2: Merge export into budget** (1 day)
-
-- Move export code to budget Lambda
-- Update API Gateway routes
-- Test export functionality
-- Remove export Lambda
-
-**Phase 3: Merge email into budget/transaction** (2 days)
-
-- Move email sending to budget/transaction Lambdas
-- Trigger emails on budget/transaction actions
-- Test email notifications
-- Remove email Lambda
-
-**Phase 4: Remove admin Lambda** (1 hour)
-
-- Remove admin Lambda and routes
-- Document that admin features will be built when needed
-
-**Total Timeline**: 1 week
-
-### When to Split Again
-
-Consider splitting Lambda functions when:
-
-1. **Different scaling needs**: One function needs 10x more resources
-2. **Different deployment cycles**: One changes daily, others monthly
-3. **Different teams**: Separate teams own different domains
-4. **Performance issues**: Measured cold starts > 3 seconds
-5. **User base**: 10,000+ active users with divergent usage patterns
-
-**Current state**: None of these conditions apply.
+Current state: none of these apply to most functions.
 
 ---
 
 ## ADR-003: Single-Table DynamoDB Design
 
-**Date**: 2025-10-24 (Original), 2026-01-14 (Reaffirmed)
+**Date**: 2025-10-24
 **Status**: Accepted
-**Deciders**: Initial Architecture, Reaffirmed in Review
-
-### Context
-
-Need to store multiple entity types: users, families, budgets, transactions, categories, etc.
-
-**Options Considered**:
-
-1. **Multiple tables**: One table per entity type
-2. **Single table**: All entities in one table with GSIs
-3. **Relational database**: RDS PostgreSQL/MySQL
 
 ### Decision
 
-**Use single-table DynamoDB design with 3 GSIs.**
-
-**Table Structure**:
+Single table `budgetbuddy-main` with on-demand billing and 4 GSIs.
 
 ```
-Primary Key: PK (Partition Key), SK (Sort Key)
-GSI1: Family-based queries (GSI1PK, GSI1SK)
-GSI2: Date-based queries (GSI2PK, GSI2SK)
-GSI3: Category analytics (GSI3PK, GSI3SK)
+PK / SK          — primary access (USER#, BUDGET#)
+GSI1PK / GSI1SK  — budget membership queries (BUDGET#<budgetId> / USER#<userId>)
+GSI2PK / GSI2SK  — date-based queries (BUDGET#<month> / DATE#<date>)
+GSI3PK / GSI3SK  — category analytics (BUDGET#<month> / CATEGORY#<id>)
+GSI4PK / GSI4SK  — invitation lookups (INVITATION#<email> / CREATED#<timestamp>)
 ```
-
-**Billing**: On-demand (pay per request)
-
-### Consequences
-
-**Positive**:
-
-- ✅ Cost-effective (one table vs many)
-- ✅ Efficient queries with GSIs
-- ✅ Scales automatically
-- ✅ No connection pooling issues
-- ✅ Follows DynamoDB best practices
-- ✅ Supports all access patterns
-
-**Negative**:
-
-- ⚠️ Requires careful key design
-- ⚠️ Schema changes affect all entities
-- ⚠️ Learning curve for single-table design
-
-**Status**: **KEEP AS-IS** - This is excellent and should not be changed.
 
 ---
 
 ## ADR-004: Lambda Layer Strategy
 
-**Date**: 2025-10-24 (Original), 2026-01-14 (Reaffirmed)
+**Date**: 2025-10-24
 **Status**: Accepted
-**Deciders**: Initial Architecture, Reaffirmed in Review
 
-### Context
+Two layers per stack (each stack creates its own — no cross-stack exports):
 
-Need to share common code across Lambda functions without duplication.
-
-**Options Considered**:
-
-1. **Copy code**: Duplicate utilities in each function
-2. **Lambda layers**: Shared code in layers
-3. **NPM packages**: Private NPM registry
-
-### Decision
-
-**Use Lambda layers for shared code.**
-
-**Layers Created**:
-
-1. **budgetbuddy-common**: Shared utilities (DynamoDB helpers, error handling, logging)
-2. **budgetbuddy-auth-shared**: Auth-specific utilities (token parsing, validation, CORS)
-
-### Consequences
-
-**Positive**:
-
-- ✅ Reduces deployment package sizes
-- ✅ Improves cold start times
-- ✅ Promotes code reuse
-- ✅ Single source of truth for utilities
-- ✅ Easy to update shared code
-
-**Negative**:
-
-- ⚠️ Layer updates require redeploying all functions
-- ⚠️ Version management complexity
-
-**Status**: **KEEP AS-IS** - This is a good strategy.
+- **common**: DynamoDB helpers, `BudgetAccessResolver`, `entitlements.js`
+- **shared**: CORS, token parsing, validation, error handling
 
 ---
 
-## ADR-005: Serverless Architecture (Lambda + API Gateway)
+## ADR-005: Auth Architecture
 
-**Date**: 2025-10-24 (Original), 2026-01-14 (Reaffirmed)
+**Date**: 2025-10-24 (original), 2026-02-01 (updated)
 **Status**: Accepted
-**Deciders**: Initial Architecture, Reaffirmed in Review
 
-### Context
-
-Need to build scalable backend API for web and mobile applications.
-
-**Options Considered**:
-
-1. **Serverless**: Lambda + API Gateway
-2. **Containers**: ECS/Fargate
-3. **EC2**: Traditional servers
-
-### Decision
-
-**Use serverless architecture with Lambda and API Gateway.**
-
-### Consequences
-
-**Positive**:
-
-- ✅ No server management
-- ✅ Automatic scaling
-- ✅ Pay only for usage
-- ✅ High availability built-in
-- ✅ Fast deployment
-- ✅ Perfect for MVP
-
-**Negative**:
-
-- ⚠️ Cold starts (mitigated with provisioned concurrency if needed)
-- ⚠️ 15-minute timeout limit
-- ⚠️ Vendor lock-in to AWS
-
-**Status**: **KEEP AS-IS** - Perfect choice for MVP.
+- Cognito User Pools + Google OAuth 2.0 (PKCE)
+- JWT carries only `userId` (no budgetId, no role, no familyId)
+- Budget access resolved from DynamoDB on every request
+- Two Lambda functions: `auth` (login/register/profile) + `auth-onboarding` (standalone)
+- Auth Lambda refactoring paused — not needed until 10,000+ users or measured cold start issues
 
 ---
 
-## ADR-006: When to Split Lambda Functions
+## ADR-006: Feature Gating
 
 **Date**: 2026-01-14
 **Status**: Accepted
-**Deciders**: Architecture Review
 
-### Context
-
-Need clear criteria for when to split Lambda functions to avoid premature optimization.
-
-### Decision
-
-**Split Lambda functions ONLY when one or more of these conditions are met:**
-
-1. **Different Scaling Needs**
-
-   - One endpoint gets 1000x more traffic than others
-   - One endpoint needs 10x more memory/CPU
-   - Example: AI generation needs 3GB RAM, others need 512MB
-
-2. **Different External Dependencies**
-
-   - One endpoint calls external API with different SLA
-   - One endpoint has different security requirements
-   - Example: Payment processing (PCI compliance) vs regular CRUD
-
-3. **Different Deployment Cycles**
-
-   - One endpoint changes daily, others change monthly
-   - One endpoint is owned by different team
-   - Example: Experimental features vs stable core
-
-4. **Measured Performance Issues**
-
-   - Cold start times > 3 seconds
-   - Function timeout issues
-   - Memory/CPU constraints
-
-5. **User Base Scale**
-   - 10,000+ active users
-   - Divergent usage patterns
-   - Real scaling bottlenecks identified
-
-### Consequences
-
-**Positive**:
-
-- ✅ Prevents premature optimization
-- ✅ Keeps architecture simple until needed
-- ✅ Faster development velocity
-- ✅ Data-driven decisions
-
-**Negative**:
-
-- ⚠️ May need to split later (acceptable trade-off)
-
-**Current State**: None of these conditions apply to BudgetBuddy MVP.
+Use `canUseFeature(subscriptionTier, featureKey)` from `backend/layers/common/nodejs/entitlements.js`. Never check `subscriptionTier` directly in Lambda code. This allows feature flags to be changed without code deploys.
 
 ---
 
-## ADR-007: Focus on Features Over Infrastructure
+## Summary
 
-**Date**: 2026-01-14
-**Status**: Accepted
-**Deciders**: Architecture Review
+| Concern | Decision |
+|---------|----------|
+| Data model | Single-table DynamoDB, `BUDGET#` partition key |
+| Auth | Cognito + Google OAuth, JWT carries only `userId` |
+| Budget access | `BudgetAccessResolver` resolves from DynamoDB on every request |
+| Roles | `owner \| partner \| household_member \| viewer` |
+| Infrastructure | CDK v2, Lambda + API Gateway, no cross-stack layer exports |
+| Feature gating | `canUseFeature(subscriptionTier, featureKey)` |
+| Deprecated | `/family/*` API, `FamilyIdResolver`, `FAMILY#` keys, `FamilySettings.tsx` |
 
-### Context
-
-Limited development resources need to be allocated between infrastructure optimization and feature development.
-
-### Decision
-
-**Prioritize feature development over infrastructure optimization until product-market fit is achieved.**
-
-**Guidelines**:
-
-- ✅ Build features users need
-- ✅ Fix bugs that affect users
-- ✅ Optimize based on real user data
-- ❌ Don't build infrastructure "just in case"
-- ❌ Don't optimize without measurements
-- ❌ Don't split functions without scaling needs
-
-**Exceptions**:
-
-- Security issues: Always fix immediately
-- Data loss risks: Always fix immediately
-- Critical bugs: Always fix immediately
-
-### Consequences
-
-**Positive**:
-
-- ✅ Faster time to market
-- ✅ Better product-market fit
-- ✅ Less wasted effort
-- ✅ More user value delivered
-
-**Negative**:
-
-- ⚠️ May accumulate technical debt (acceptable for MVP)
-- ⚠️ May need refactoring later (cheaper than premature optimization)
-
-**Principle**: Build for today's needs, not tomorrow's assumptions.
-
----
-
-## Summary of Current Architecture
-
-**Lambda Functions** (5 core):
-
-1. **auth** - Authentication & family management
-2. **budget** - Budget CRUD & export
-3. **transaction** - Transaction CRUD & email notifications
-4. **ai** - AI budget generation (AWS Bedrock)
-5. **payment** - Payment processing (Stripe)
-
-**Database**: Single-table DynamoDB with 3 GSIs
-
-**Layers**:
-
-- budgetbuddy-common (shared utilities)
-- budgetbuddy-auth-shared (auth utilities)
-
-**Principles**:
-
-- YAGNI (You Aren't Gonna Need It)
-- KISS (Keep It Simple, Stupid)
-- Optimize based on measurements, not assumptions
-- Build for today, not tomorrow
-
----
-
-**Next Review**: After MVP launch or when user base reaches 10,000 active users
+**Next review**: After MVP launch or 10,000 active users.

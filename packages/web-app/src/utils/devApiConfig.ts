@@ -171,3 +171,4 @@ export function disableMockData(): void {
   localStorage.setItem('budgetbuddy_use_mock_data', 'false');
   console.log('🔧 Mock data mode disabled');
 }
+

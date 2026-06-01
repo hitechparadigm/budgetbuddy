@@ -39,7 +39,6 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
   // Create default budget structure
   const getDefaultBudget = (): MonthlyBudget => ({
     budgetId: 'budget_001',
-    familyId: 'family_123',
     month: `${currentYear}-${currentMonth.toString().padStart(2, '0')}`,
     year: currentYear,
     status: 'active',

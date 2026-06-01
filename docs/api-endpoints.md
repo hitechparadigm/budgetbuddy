@@ -1,8 +1,8 @@
 # API Endpoints Documentation
 
 **Base URL**: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1`
-**Last Updated**: 2026-02-02
-**API Version**: 1.2 (Competitive Features)
+**Last Updated**: 2026-06-01
+**API Version**: 1.3 (Budget Model Redesign)
 
 ## Authentication
 
@@ -383,7 +383,7 @@ Get all transactions with optional filtering.
     "transactions": [
       {
         "transactionId": "txn_123",
-        "familyId": "family_456",
+        "budgetId": "budget_456",
         "userId": "user_789",
         "amount": 50.0,
         "currency": "USD",
@@ -434,7 +434,7 @@ Create a new transaction.
   "message": "Transaction created successfully",
   "data": {
     "transactionId": "txn_123",
-    "familyId": "family_456",
+    "budgetId": "budget_456",
     "amount": 50.0,
     "currency": "USD",
     "type": "expense",
@@ -470,7 +470,7 @@ Get a specific transaction by ID.
   "data": {
     "transaction": {
       "transactionId": "txn_123",
-      "familyId": "family_456",
+      "budgetId": "budget_456",
       "amount": 50.0,
       "type": "expense",
       "categoryId": "cat_groceries_001",
@@ -1113,47 +1113,35 @@ curl -X POST https://api.budgetbuddy.com/v1/transactions \
 - Additional currencies (50+ total)
 - Cryptocurrency support (BTC, ETH, etc.)
 
-## Family Collaboration
+## Budget Collaboration
 
-### Overview
-
-BudgetBuddy supports family account sharing with role-based permissions. Families can have up to 2 members (primary + spouse/partner). The primary user manages invitations and member roles.
+> **Note**: The old `/family/*` API is **deprecated** and returns `410 Gone` for all requests. Use `/budgets/*` instead.
 
 ### Roles and Permissions
 
-| Role    | Invite | Update Roles | Remove Members | View Members | Leave Family |
-| ------- | ------ | ------------ | -------------- | ------------ | ------------ |
-| Primary | ✅     | ✅           | ✅             | ✅           | ❌           |
-| Spouse  | ❌     | ❌           | ❌             | ✅           | ✅           |
-| Viewer  | ❌     | ❌           | ❌             | ✅           | ✅           |
+| Role | Invite | Edit Budget | Add Transactions | View | Leave |
+|------|--------|-------------|-----------------|------|-------|
+| `owner` | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `partner` | ❌ | ✅ | ✅ | ✅ | ✅ |
+| `household_member` | ❌ | ❌ | ✅ | ✅ | ✅ |
+| `viewer` | ❌ | ❌ | ❌ | ✅ | ✅ |
 
-### GET /family/health
+### POST /budgets/invite
 
-Health check for family service.
-
-**Response**: `200 OK`
-
-```json
-{
-  "status": "healthy",
-  "service": "family"
-}
-```
-
-### POST /family/invite
-
-Send an invitation to join the family.
+Send an invitation to join the budget.
 
 **Headers**: `Authorization: Bearer <token>`
 
-**Permissions**: Primary user only
+**Permissions**: Owner only
 
 **Request Body**:
 
 ```json
 {
   "email": "partner@example.com",
-  "role": "spouse"
+  "role": "partner",
+  "viewerExpiresAt": null,
+  "accessLabel": null
 }
 ```
 
@@ -1163,27 +1151,15 @@ Send an invitation to join the family.
 {
   "invitationId": "inv_123",
   "email": "partner@example.com",
-  "role": "spouse",
+  "role": "partner",
   "status": "pending",
-  "expiresAt": "2026-02-07T10:00:00Z",
-  "token": "abc123..."
+  "expiresAt": "2026-02-07T10:00:00Z"
 }
 ```
 
-**Error Responses**:
+### POST /budgets/accept-invitation
 
-- `400 Bad Request`: Invalid email or role
-- `403 Forbidden`: Only primary user can send invitations
-- `409 Conflict`: Family is full (max 2 members) or pending invitation exists
-
-**Role Values**:
-
-- `spouse`: Full access to budgets and transactions (read/write)
-- `viewer`: Read-only access to budgets and transactions
-
-### POST /family/accept-invitation
-
-Accept a family invitation.
+Accept a budget invitation (token from email link).
 
 **Headers**: `Authorization: Bearer <token>`
 
@@ -1199,210 +1175,81 @@ Accept a family invitation.
 
 ```json
 {
-  "familyId": "family_456",
-  "role": "spouse",
-  "family": {
-    "primaryUserId": "user_123",
-    "memberCount": 2,
-    "subscriptionTier": "free"
-  }
+  "budgetId": "budget_456",
+  "role": "partner",
+  "message": "Invitation accepted. You are now a member of this budget."
 }
 ```
 
-**Error Responses**:
+### GET /budgets/members
 
-- `400 Bad Request`: Token is required or invitation has expired
-- `404 Not Found`: Invitation not found or already used
-- `409 Conflict`: Family is full
-
-### GET /family/members
-
-Get all family members.
+Get all members of the active budget.
 
 **Headers**: `Authorization: Bearer <token>`
-
-**Permissions**: All family members
 
 **Response**: `200 OK`
 
 ```json
 {
-  "familyId": "family_456",
+  "budgetId": "budget_456",
   "members": [
     {
       "userId": "user_123",
-      "email": "primary@example.com",
+      "email": "owner@example.com",
       "name": "John Doe",
-      "role": "primary",
+      "role": "owner",
       "joinedAt": "2026-01-01T00:00:00Z"
     },
     {
       "userId": "user_456",
       "email": "partner@example.com",
       "name": "Jane Doe",
-      "role": "spouse",
+      "role": "partner",
       "joinedAt": "2026-01-31T12:00:00Z"
     }
   ]
 }
 ```
 
-### PUT /family/members/{userId}
+### GET /budgets/invitations
 
-Update a family member's role.
-
-**Headers**: `Authorization: Bearer <token>`
-
-**Permissions**: Primary user only
-
-**Request Body**:
-
-```json
-{
-  "role": "viewer"
-}
-```
-
-**Response**: `200 OK`
-
-```json
-{
-  "userId": "user_456",
-  "role": "viewer",
-  "updatedAt": "2026-01-31T14:00:00Z"
-}
-```
-
-**Error Responses**:
-
-- `400 Bad Request`: Invalid role or cannot change own role
-- `403 Forbidden`: Only primary user can change roles
-- `404 Not Found`: Member not found
-
-### DELETE /family/members/{userId}
-
-Remove a family member.
+Get pending invitations for the active budget.
 
 **Headers**: `Authorization: Bearer <token>`
 
-**Permissions**: Primary user only
+**Permissions**: Owner only
 
-**Response**: `200 OK`
+### POST /budgets/resend-invitation
 
-```json
-{
-  "message": "Member removed successfully",
-  "userId": "user_456"
-}
-```
-
-**Error Responses**:
-
-- `400 Bad Request`: Cannot remove yourself
-- `403 Forbidden`: Only primary user can remove members
-- `404 Not Found`: Member not found
-
-### POST /family/leave
-
-Leave the current family and create a new one.
+Resend a pending invitation.
 
 **Headers**: `Authorization: Bearer <token>`
 
-**Permissions**: Spouse and Viewer only (Primary cannot leave)
+**Request Body**: `{ "invitationId": "inv_123" }`
 
-**Response**: `200 OK`
+### DELETE /budgets/invitations/{invitationId}
 
-```json
-{
-  "message": "Left family successfully",
-  "newFamilyId": "family_789"
-}
-```
+Cancel a pending invitation.
 
-**Error Responses**:
+**Headers**: `Authorization: Bearer <token>`
 
-- `403 Forbidden`: Primary user cannot leave family
+**Permissions**: Owner only
 
-### Invitation Flow
+### DELETE /budgets/members/{userId}
 
-1. **Primary sends invitation**: `POST /family/invite` with email and role
-2. **Invitation email sent**: Contains link with secure token (valid 7 days)
-3. **Recipient accepts**: `POST /family/accept-invitation` with token
-4. **User joins family**: Gets assigned role, can access shared budgets
+Remove a member from the budget.
 
-### Family Limits
+**Headers**: `Authorization: Bearer <token>`
 
-- **Maximum members**: 2 (primary + 1 spouse/viewer)
-- **Invitation expiry**: 7 days
-- **Pending invitations**: 1 per email per family
+**Permissions**: Owner only
 
-### Data Sharing
+### POST /budgets/leave
 
-When a user joins a family:
+Leave the current budget.
 
-- They can view all family budgets
-- They can view all family transactions
-- Spouse role can create/edit budgets and transactions
-- Viewer role can only view (read-only)
+**Headers**: `Authorization: Bearer <token>`
 
-### Testing
-
-**Send Invitation**:
-
-```bash
-TOKEN="your_jwt_token_here"
-
-curl -X POST https://api.budgetbuddy.com/v1/family/invite \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "partner@example.com",
-    "role": "spouse"
-  }'
-```
-
-**Accept Invitation**:
-
-```bash
-curl -X POST https://api.budgetbuddy.com/v1/family/accept-invitation \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "token": "invitation_token_here"
-  }'
-```
-
-**Get Family Members**:
-
-```bash
-curl -X GET https://api.budgetbuddy.com/v1/family/members \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-**Update Member Role**:
-
-```bash
-curl -X PUT https://api.budgetbuddy.com/v1/family/members/user_456 \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "role": "viewer"
-  }'
-```
-
-**Remove Member**:
-
-```bash
-curl -X DELETE https://api.budgetbuddy.com/v1/family/members/user_456 \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-**Leave Family**:
-
-```bash
-curl -X POST https://api.budgetbuddy.com/v1/family/leave \
-  -H "Authorization: Bearer $TOKEN"
-```
+**Permissions**: Non-owners only
 
 ---
 
@@ -1866,7 +1713,7 @@ All services expose health check endpoints:
 - `GET /auth/health`
 - `GET /budget/health`
 - `GET /transactions/health`
-- `GET /family/health`
+- `GET /budgets/health`
 - `GET /bills/health`
 - `GET /goals/health`
 - `GET /subscriptions/health`

@@ -171,7 +171,6 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
     // Create complete budget data
     const budgetData: MonthlyBudget = {
       budgetId: existingBudget?.budgetId || `budget_${Date.now()}`,
-      familyId: "family_123",
       month: `${currentYear}-${currentMonth.toString().padStart(2, "0")}`,
       year: currentYear,
       status: "active",

@@ -122,7 +122,6 @@ export const DevHelper: React.FC = () => {
                     User: {mockUser.firstName} {mockUser.lastName}
                   </div>
                   <div>Email: {mockUser.email}</div>
-                  <div>Family: {mockUser.familyId}</div>
                 </div>
               )}
             </div>
