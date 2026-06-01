@@ -33,6 +33,7 @@ export interface SidebarProps {
 export const navItems: NavItem[] = [
   { id: "budget", label: "Budget", icon: "📊", path: "/budget" },
   { id: "accounts", label: "Accounts", icon: "🏦", path: "/accounts" },
+  { id: "members", label: "Members", icon: "👥", path: "/budget/members" },
   { id: "goals", label: "Goals", icon: "🎯", path: "/goals" },
   { id: "investments", label: "Investments", icon: "📈", path: "/investments" },
   { id: "insights", label: "Insights", icon: "💡", path: "/insights" },
@@ -109,7 +110,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("idToken");
     localStorage.removeItem("userId");
-    localStorage.removeItem("familyId");
     navigate("/auth");
   };
 

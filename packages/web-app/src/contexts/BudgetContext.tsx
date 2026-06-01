@@ -54,7 +54,6 @@ interface Category {
 
 interface Budget {
   budgetId: string;
-  familyId: string;
   month: string; // YYYY-MM format
   totalIncome: number;
   totalSavings: number;

@@ -14,7 +14,6 @@ import TokenDiagnostics from "../components/TokenDiagnostics";
 import { CurrencySelector } from "../components/CurrencySelector";
 import { getCurrencyConfig } from "@budget-buddy/shared/src/utils/currency";
 import { NotificationSettings } from "../components/NotificationSettings";
-import { FamilySettings } from "../components/FamilySettings";
 import { TwoFactorSetup } from "../components/TwoFactorSetup";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { DeleteAccountModal } from "../components/DeleteAccountModal";
@@ -983,9 +982,18 @@ export const SettingsPage: React.FC = () => {
           <NotificationSettings userId={localStorage.getItem("userId") || ""} />
         </div>
 
-        {/* Family Settings Section */}
+        {/* Budget Members Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <FamilySettings />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Budget Members</h2>
+          <p className="text-gray-600 text-sm mb-4">
+            Manage who has access to your budget, send invitations, and configure collaboration settings.
+          </p>
+          <a
+            href="/budget/members"
+            className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            Manage Members →
+          </a>
         </div>
 
         {/* Troubleshooting Section */}
