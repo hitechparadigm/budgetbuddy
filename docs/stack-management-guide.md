@@ -1,30 +1,51 @@
 # BudgetBuddy Stack Management Guide
 
-**Last Updated**: 2025-11-21
-**Scope**: Web Application MVP
+**Last Updated**: 2026-06-01
+**Scope**: Web Application — Current Production Architecture
 
 ## 📋 Stack Overview & Dependencies
 
 ### Deployment Order
-1. **Independent Stacks** (can be deployed in parallel):
-   - `budgetbuddy-dev-auth` - Authentication services
-   - `budgetbuddy-dev-database` - Data storage
-   - `budgetbuddy-dev-hosting` - Web hosting infrastructure
 
-2. **Dependent Stacks** (deploy after independent stacks):
-   - `budgetbuddy-dev-api` - Requires: auth, database
-   - `budgetbuddy-dev-monitoring` - Requires: api, database, auth
+```
+Step 1 (independent):
+  budgetbuddy-{env}-database
+  budgetbuddy-{env}-auth
+  budgetbuddy-{env}-hosting
+
+Step 2 (depend on database + auth):
+  budgetbuddy-{env}-auth-onboarding
+  budgetbuddy-{env}-api-features
+  budgetbuddy-{env}-api-features-extended
+  budgetbuddy-{env}-api-budgets
+  budgetbuddy-{env}-notification
+
+Step 3 (depends on auth-onboarding):
+  budgetbuddy-{env}-api
+
+Step 4 (depends on all):
+  budgetbuddy-{env}-monitoring
+
+Deprecated (still deployed, returns 410):
+  budgetbuddy-{env}-api-family
+```
+
+> **CDK Critical Rule**: Lambda Layers are **never exported across stacks**. Each stack creates its own `CommonLayer` and `SharedLayer` from the same source. Cross-stack layer refs cause CloudFormation deployment failures.
 
 ### Stack Responsibilities Matrix
 
-| Feature | Auth | Database | Hosting | API | Monitoring |
-|---------|------|----------|---------|-----|------------|
-| User Registration | ✅ | ✅ | ❌ | ✅ | ✅ |
-| Budget Management | ❌ | ✅ | ❌ | ✅ | ✅ |
-| Web Application | ❌ | ❌ | ✅ | ❌ | ❌ |
-| API Endpoints | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Data Storage | ❌ | ✅ | ❌ | ❌ | ❌ |
-| Monitoring | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Feature | database | auth | auth-onboarding | api | api-features | api-features-extended | api-budgets | notification | hosting | monitoring |
+|---------|----------|------|-----------------|-----|-------------|----------------------|-------------|-------------|---------|------------|
+| DynamoDB table | ✅ | | | | | | | | | |
+| Cognito / OAuth | | ✅ | | | | | | | | |
+| User onboarding | | | ✅ | | | | | | | |
+| Budget / Transactions / AI | | | | ✅ | | | | | | |
+| Plaid / Export / Bills / Goals | | | | | ✅ | | | | | |
+| Insights / Receipt / Planning | | | | | | ✅ | | | | |
+| Budget collaboration / Invitations | | | | | | | ✅ | | | |
+| Push notifications / Reminders | | | | | | | | ✅ | | |
+| Web app hosting (S3 + CloudFront) | | | | | | | | | ✅ | |
+| CloudWatch dashboards + alarms | | | | | | | | | | ✅ |
 
 ## 🔧 Configuration Management
 

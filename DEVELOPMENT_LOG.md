@@ -1,6 +1,36 @@
 # Development Log
 
-## 2026-06-01 - Major codebase cleanup — align with BUDGET# architecture (Session 136)
+## 2026-06-01 - Full codebase alignment with BUDGET# architecture (Session 138)
+
+### Work Completed
+
+1. **ARCHITECTURE_DECISIONS.md** — complete rewrite:
+   - Removed 7 stale ADRs (old family model, premature Lambda consolidation plans)
+   - ADR-001: Budget-Centric Data Model — `BUDGET#` keys, `BudgetAccessResolver`, deprecated items
+   - Summary table for quick reference
+
+2. **Specs cleanup**: Moved `documentation-validation-fix`, `hooks-optimization` to `archive/`
+
+3. **`.kiro/` docs cleanup**: Deleted stale `ACTIVE_HOOKS.md`, `MIGRATION_GUIDE.md`, `CICD_MONITORING_SETUP.md`, `TESTING_RESULTS.md`
+
+4. **`.kiro/README.md`** rewritten with accurate active/archived spec lists
+
+5. **`SYSTEM_GUIDE.md`** updated — now the single source of truth for architecture + workflow
+
+## 2026-06-01 - Docs and specs review — full alignment with BUDGET# architecture (Session 137)
+
+### Work Completed
+
+1. **Rewrote** `docs/aws-stack-architecture.md` — all 10 stacks, correct DynamoDB schema, `BudgetAccessResolver`, RBAC roles
+2. **Rewrote** `docs/api-endpoints.md` — replaced `/family/*` section with `/budgets/*`, fixed `familyId` → `budgetId` in examples
+3. **Created** `docs/user-guide-budget-collaboration.md` — replaces `user-guide-family.md` with correct roles and routes
+4. **Rewrote** `docs/stack-management-guide.md` — full 10-stack dependency matrix
+5. **Updated** `docs/DEVELOPMENT_BEST_PRACTICES.md` — added Architecture Patterns section
+6. **Deleted** `docs/user-guide-family.md`, `docs/api-troubleshooting.md`
+7. **Archived** 13 completed/obsolete specs to `.kiro/specs/archive/`
+8. **Deleted** empty `engagement-features/requirements.md`
+
+
 
 ### Work Completed
 

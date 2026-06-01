@@ -67,6 +67,17 @@ node scripts/check-cicd-status.js
 
 Feature specs live in `.kiro/specs/<feature>/` with `requirements.md`, `design.md`, `tasks.md`.
 
+**Active specs** (in progress or upcoming):
+- `ai-bill-reminders-budget-planning/` — AI-powered bill reminders and budget planning
+- `e2e-testing-infrastructure/` — End-to-end test infrastructure
+- `push-notifications-reminders/` — Push notification system
+- `test-coverage-improvement/` — Increase test coverage across the codebase
+
+**Archived specs** (completed or superseded — in `.kiro/specs/archive/`):
+- `plan-model-redesign/` — Budget-centric data model (COMPLETED — see ADR-001)
+- `onboarding-403-fix/` — Fixed onboarding 403 bug (COMPLETED)
+- `competitive-features/`, `enhanced-accounts-transactions/`, `multi-currency/`, etc.
+
 Create a spec when: feature is complex (>1 week), has 10+ tasks, or can be developed independently.
 
 ## What's Deprecated / Removed

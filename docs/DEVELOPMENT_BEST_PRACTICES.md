@@ -4,6 +4,68 @@
 
 This document consolidates lessons learned and best practices for maintaining code quality in the BudgetBuddy project.
 
+## Architecture Patterns (Critical)
+
+### BudgetAccessResolver — Every Budget Lambda Must Use This
+
+Every Lambda that touches budget data **must** follow this exact sequence:
+
+```javascript
+// 1. Extract userId from JWT (JWT carries ONLY userId — no budgetId, no role)
+const { userId } = getUserFromEvent(event);
+
+// 2. Resolve budget context from DynamoDB
+const { budgetId, role, budgetType, budgetStatus, subscriptionTier } =
+  await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+
+// 3. Enforce permissions
+BudgetAccessResolver.assertPermission(role, action, budgetStatus);
+
+// 4. Check feature entitlements (never check subscriptionTier directly)
+if (!canUseFeature(subscriptionTier, 'featureKey')) throw 403;
+
+// 5. Read/write BUDGET#<budgetId>/... records
+```
+
+**Never**:
+- Read `custom:familyId` or `custom:familyRole` from the JWT
+- Use `FamilyIdResolver` (it's been removed)
+- Call `/family/*` endpoints (they return 410 Gone)
+- Check `subscriptionTier` directly — always use `canUseFeature()`
+
+### CDK Layer Rule — Never Export Lambda Layers Across Stacks
+
+Each CDK stack creates its own `CommonLayer` and `SharedLayer` from the same source directory. **Never** use `CfnOutput` or `Fn.importValue` for Lambda Layer ARNs. Cross-stack layer references cause CloudFormation deployment failures.
+
+```typescript
+// ✅ Correct — each stack creates its own layer
+const commonLayer = new lambda.LayerVersion(this, 'CommonLayer', {
+  code: lambda.Code.fromAsset('../backend/layers/common'),
+  compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+});
+
+// ❌ Wrong — never export/import layer ARNs across stacks
+new CfnOutput(this, 'CommonLayerArn', { value: commonLayer.layerVersionArn });
+```
+
+### DynamoDB Key Pattern
+
+All budget data lives under `BUDGET#<budgetId>` partition keys:
+
+| Entity | PK | SK |
+|--------|----|----|
+| Budget metadata | `BUDGET#<budgetId>` | `METADATA` |
+| Budget member | `BUDGET#<budgetId>` | `MEMBER#<userId>` |
+| Budget period | `BUDGET#<budgetId>` | `PERIOD#<YYYY-MM>` |
+| Account | `BUDGET#<budgetId>` | `ACCOUNT#<accountId>` |
+| Transaction | `BUDGET#<budgetId>` | `TXN#<date>#<txnId>` |
+
+User profiles: `USER#<userId>` / `PROFILE` — contains `defaultBudgetId`.
+
+**Never** use `FAMILY#` partition keys. They are legacy and no longer written.
+
+---
+
 ## Code Quality & Validation
 
 ### 1. JSON File Safety
