@@ -1,6 +1,29 @@
 # Development Log
 
-## 2026-06-01 - Full codebase alignment with BUDGET# architecture (Session 138)
+## 2026-06-01 - Product requirements doc + gap analysis + onboarding fix (Session 139)
+
+### Work Completed
+
+1. **Created `docs/product-requirements.md`** — comprehensive single source of truth:
+   - Budget model (types, roles, multiple budgets per user)
+   - DynamoDB schema with all key patterns
+   - Lambda access pattern
+   - Invitation flow
+   - Feature catalog with `canUseFeature()` keys
+   - Subscription tiers (current + planned)
+   - Full implemented features list
+   - Known gaps with priority
+
+2. **Gap analysis against 76-page Budget Model Redesign document**:
+   - ✅ Core architecture fully aligned (BUDGET# keys, BudgetAccessResolver, viewer expiry, invitations)
+   - ⚠️ `household_member` vs `member` naming — internally consistent, not a bug
+   - ❌ 5 gaps identified: onboarding METADATA fields, family transparency enforcement, subscription entity, entitlement enforcement, invitation token GSI
+
+3. **Fixed gap #1**: `auth-onboarding/index.js` now writes `name` and `ownerUserId` to METADATA record (was missing, causing `undefined` budget names)
+
+4. **Updated `ARCHITECTURE_DECISIONS.md`** with "Known Gaps vs. Vision" section
+
+
 
 ### Work Completed
 

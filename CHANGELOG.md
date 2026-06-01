@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.123] - 2026-06-01
+
+### 📋 Docs: product-requirements.md — full vision vs. implementation gap analysis
+
+- Created `docs/product-requirements.md` — single source of truth for product requirements, data model, feature catalog, implemented features, and known gaps
+- Updated `ARCHITECTURE_DECISIONS.md` — added "Known Gaps vs. Vision" section
+- Fixed gap: onboarding METADATA now writes `name` and `ownerUserId` fields (was missing, causing `undefined` budget names in `GET /budgets`)
+
 ## [1.9.122] - 2026-06-01
 
 ### 🧹 Chore: Full codebase alignment with BUDGET# architecture

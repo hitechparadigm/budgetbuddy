@@ -58,6 +58,16 @@ BudgetAccessResolver.assertPermission(role, action, budgetStatus);
 - `FamilySettings.tsx` — replaced by `BudgetMembersPage` at `/budget/members`
 - `api-family-stack` — still deployed but deprecated; will be destroyed after migration period
 
+### Known Gaps vs. Vision
+
+1. **Onboarding METADATA missing `name` and `ownerUserId`** — budgets created via `auth-onboarding` don't have a display name. `handleCreateBudget` writes both fields; onboarding does not.
+2. **Family budget transparency not enforced at category level** — `budgetType = family` is stored but no Lambda blocks hidden categories on family budgets.
+3. **`canUseFeature()` wired but not called** — Phase 1 intentional; all features are free. Phase 2 will add gating.
+4. **Subscription entity not in DynamoDB** — `subscriptionTier` comes from Cognito JWT claim only. Phase 2 needs a `SUBSCRIPTION#<userId>/METADATA` record.
+5. **Invitation token lookup uses Scan** — works at current scale; needs a GSI on `tokenHash` for production.
+
+See `docs/product-requirements.md` for the full gap analysis.
+
 ### Consequences
 
 - ✅ Onboarding 403 bug eliminated — budget is created during onboarding, not before
