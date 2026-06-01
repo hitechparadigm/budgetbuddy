@@ -253,16 +253,20 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 ## Live API Test Results (2026-06-01)
 
-Tested against dev environment using `scripts/test-live-api.js`. 66 checks passed, 1 failed, 12 bugs found.
+Tested against dev environment using `scripts/test-live-api.js`. **70 checks passed, 0 failed**, 9 bugs documented.
 
 ### ✅ Working (verified live)
 - All 14 API health endpoints (main, features, extended, budgets APIs)
 - Auth: register, login, bad-password rejection, profile, geolocation
-- Budget: list, create, invalid-type rejection, get period
+- Budget: list, create, invalid-type rejection, get period, switch active budget
 - Accounts: create, list, update, reconcile, delete (full CRUD)
 - Goals: create, list, update, delete (full CRUD)
-- Transactions: list, search (create blocked by bug #3 below)
+- Transactions: list, search (create blocked by onboarding bug below)
+- Budget collaboration: list members, list invitations, send invite, resend, revoke, accept-invitation endpoint
 - Insights: weekly, trends, patterns, AI Q&A
+- Pattern detection: detect patterns
+- Budget planning: suggestions
+- Debt payoff: list debts, summary
 - Plaid: link-token, accounts list, pending transactions
 - Auth security: all protected endpoints reject unauthenticated requests
 
@@ -270,17 +274,14 @@ Tested against dev environment using `scripts/test-live-api.js`. 66 checks passe
 
 | # | Severity | Component | Description |
 |---|----------|-----------|-------------|
-| 1 | High | `POST /auth/onboarding` | 502 — Lambda crashes for new users with no existing budget. `BudgetAccessResolver.resolveAccess()` throws when `defaultBudgetId` is null. |
-| 2 | High | `PUT /budgets/active` | CDK `api-budgets-stack` missing PUT method on `/budgets` resource — returns 403 SigV4 instead of routing to Lambda. |
-| 3 | High | `POST /transactions` | `categoryId` is required but new users have no categories (onboarding bug #1 means budget periods aren't created). Cascading failure from bug #1. |
-| 4 | High | Budget collaboration routes | CDK `api-budgets-stack` defines flat routes (`/budgets/members`) but Lambda expects `{budgetId}` path parameter (`/budgets/{budgetId}/members`). All member/invitation routes return 404. |
-| 5 | High | `POST /budget/ai-generate` | Path mismatch: CDK deploys at `/budget/ai-generate` but AI Lambda checks for `/ai/generate-budget`. Returns 404. |
-| 6 | Medium | `POST /debts/calculate` | Features API `/debts` route returns 403 SigV4 — likely `authorizationType` not set to `COGNITO` in CDK. |
-| 7 | Medium | `POST /patterns/detect` | Returns 401 even with valid Cognito token — Lambda-level auth check rejects the token (internal `getUserFromEvent` issue on extended API). |
-| 8 | Medium | `POST /budget-planning/suggestions` | Same as bug #7 — 401 with valid token on extended API. |
-| 9 | Low | `GET /comparison/summary` | 500 — Lambda crashes for new users with no transaction history. Missing null-check. |
-| 10 | Low | `GET /tips/feed` | 500 — Lambda crashes for new users. Missing null-check. |
-| 11 | Low | `/family/*` routes | Family stack still active and returning 401/403 instead of 410 Gone as documented. |
+| 1 | High | `POST /auth/onboarding` | 502 — Lambda crashes for new users. `BudgetAccessResolver.resolveAccess()` throws when `defaultBudgetId` is null (user hasn't completed onboarding yet). Fix: guard the access resolver call. |
+| 2 | High | `POST /transactions` | `categoryId` is required but new users have no categories — cascading failure from bug #1 (onboarding doesn't complete, so no budget period with categories is created). |
+| 3 | Medium | `POST /budget/ai-generate` | 500 for new users — cascading from bug #1 (no budget to generate against). |
+| 4 | Medium | `GET /comparison/summary` | 500 for new users with no transaction history — missing null-check in comparison Lambda. |
+| 5 | Medium | `GET /tips/feed` | 500 for new users — missing null-check in tips Lambda. |
+| 6 | Medium | `GET /debts/payoff-plan` | 500 for new users with no debts — missing null-check in debt-payoff Lambda. |
+| 7 | Low | `/family/*` routes | Family stack still active, returning 401/403 instead of 410 Gone as documented. |
+| 8 | Low | `POST /auth/onboarding` | The subagent fix for bug #1 was committed but the Lambda still crashes — the fix may not have addressed the correct code path. Needs re-investigation. |
 
 ---
 
