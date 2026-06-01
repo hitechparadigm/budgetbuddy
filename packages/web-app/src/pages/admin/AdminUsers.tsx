@@ -19,7 +19,7 @@ interface User {
   accountType: "free" | "premium";
   createdAt: string;
   lastLogin: string | null;
-  familyId: string | null;
+  budgetId: string | null;
 }
 
 export const AdminUsers: React.FC = () => {
@@ -73,7 +73,7 @@ export const AdminUsers: React.FC = () => {
           accountType: "premium",
           createdAt: "2026-01-15T10:00:00Z",
           lastLogin: "2026-02-01T14:30:00Z",
-          familyId: "family-1",
+          budgetId: "budget-1",
         },
         {
           userId: "user-2",
@@ -83,7 +83,7 @@ export const AdminUsers: React.FC = () => {
           accountType: "free",
           createdAt: "2026-01-20T08:00:00Z",
           lastLogin: "2026-02-02T09:15:00Z",
-          familyId: null,
+          budgetId: null,
         },
         {
           userId: "user-3",
@@ -93,7 +93,7 @@ export const AdminUsers: React.FC = () => {
           accountType: "free",
           createdAt: "2026-01-10T12:00:00Z",
           lastLogin: "2026-01-25T16:45:00Z",
-          familyId: "family-2",
+          budgetId: "budget-2",
         },
       ]);
     } finally {
@@ -293,9 +293,9 @@ export const AdminUsers: React.FC = () => {
                 </p>
               </div>
               <div>
-                <label className="text-gray-400 text-sm">Family ID</label>
+                <label className="text-gray-400 text-sm">Budget ID</label>
                 <p className="text-white font-mono text-sm">
-                  {selectedUser.familyId || "None"}
+                  {selectedUser.budgetId || "None"}
                 </p>
               </div>
               <div className="flex gap-4">
@@ -339,3 +339,4 @@ export const AdminUsers: React.FC = () => {
 };
 
 export default AdminUsers;
+

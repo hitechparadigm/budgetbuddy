@@ -154,7 +154,7 @@ export type AccountSubtype = BankingSubtype | CashSubtype | CreditCardSubtype | 
 // Account Interface
 export interface Account {
   accountId: string;
-  familyId: string;
+  budgetId: string;
   accountType: AccountType;
   accountSubtype: AccountSubtype;
   nickname: string;

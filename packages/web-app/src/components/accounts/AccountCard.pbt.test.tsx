@@ -34,7 +34,7 @@ const mockOnViewTransactions = jest.fn();
 // Create a base account for testing
 const createTestAccount = (overrides: Partial<Account> = {}): Account => ({
   accountId: "123e4567-e89b-12d3-a456-426614174000",
-  familyId: "123e4567-e89b-12d3-a456-426614174001",
+  budgetId: "123e4567-e89b-12d3-a456-426614174001",
   accountType: AccountType.BANKING,
   accountSubtype: BankingSubtype.CHECKING,
   nickname: "Test Account",

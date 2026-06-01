@@ -4,9 +4,26 @@
 
 ### Work Completed
 
-1. **CI/CD workflows** (`deploy-dev.yml`, `deploy-prod.yml`):
-   - Added `api-budgets` stack to Step 2 deploy and health checks in both workflows
-   - `api-budgets` was never deployed by CI/CD — critical gap now closed
+**Deleted (legacy/garbage):**
+- `.kiro/specs/family-*` (5 specs) — all deprecated family architecture specs
+- `.kiro/specs/requirements.md`, `design.md`, `tasks.md` — misplaced root-level files
+- `.kiro/FAMILY_STACK_CIRCULAR_DEPENDENCY.md`, `STEERING_OPTIMIZATION_2026-02-05.md`, `STEERING_QUICK_REFERENCE.md`, `AUTONOMOUS_DEVELOPMENT_GUIDE.md`, `AUTONOMOUS_MODE_CONFIGURATION.md`, `AUTONOMOUS_SESSION_HANDOFF.md`, `REQUIREMENTS_TEST_COVERAGE_ANALYSIS.md` — stale/redundant
+- `tests/family-id-resolver.test.js` — tests removed utility
+- `packages/web-app/src/components/FamilySettings.test.tsx` — tests deprecated component
+- `infrastructure/cdk.out` — regenerated on every CDK synth
+
+**Rewritten:**
+- `ARCHITECTURE_DECISIONS.md` — reflects current BUDGET# architecture
+- `.kiro/README.md` — accurate directory structure and active specs
+- `.kiro/SYSTEM_GUIDE.md` — current architecture, Lambda access pattern, deprecated items
+
+**CI/CD:** Added `api-budgets` to both deploy workflows (was never deployed — critical gap)
+
+**Frontend:** Wired `BudgetMembersPage` at `/budget/members`, added to sidebar, replaced `FamilySettings` in Settings, fixed `/family/accept` → `/budgets/accept`
+
+**Removed `familyId` from 15 source files** across contexts, tests, mocks, and components
+
+**Infrastructure comments:** Updated `app.ts`, `auth-onboarding-stack.ts`, `database-stack.ts` to reflect current architecture
 
 2. **Frontend routing** (`App.tsx`, `Sidebar.tsx`):
    - Wired `BudgetMembersPage` into router at `/budget/members` (was orphaned)

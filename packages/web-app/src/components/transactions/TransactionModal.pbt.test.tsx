@@ -39,7 +39,7 @@ Object.defineProperty(window, "localStorage", { value: localStorageMock });
 // Test account type
 interface TestAccount {
   accountId: string;
-  familyId: string;
+  budgetId: string;
   accountType: string;
   accountSubtype: string;
   nickname: string;
@@ -78,7 +78,7 @@ const createTestAccount = (
   overrides: Partial<TestAccount> = {},
 ): TestAccount => ({
   accountId: `acc-${Math.random().toString(36).slice(2, 10)}`,
-  familyId: "family-123",
+  budgetId: "budget-123",
   accountType: "banking",
   accountSubtype: "checking",
   nickname: "Test Account",

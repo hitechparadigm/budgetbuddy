@@ -121,7 +121,6 @@ export const OnboardingPage: React.FC = () => {
           budgetCreated: result.budgetCreated,
           budgetId: result.budgetId,
           month: result.month,
-          familyId: result.debugInfo.familyId,
           partitionKey: result.debugInfo.partitionKey,
           sortKey: result.debugInfo.sortKey,
           budgetVerified: result.debugInfo.budgetVerified,
