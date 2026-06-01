@@ -1,10 +1,19 @@
 # BudgetBuddy User Journeys & Component Mapping
 
-**Last Updated**: 2026-06-01
+**Last Updated**: 2026-06-01 (Session — SES Status Verification)
 **Purpose**: Comprehensive mapping of user journeys to frontend/backend components
 **Status**: Living Document - Update as features are implemented
 
 **Recent Updates**:
+
+- Email Invitation Fix — VERIFIED (2026-06-01)
+  - ✅ **ROOT CAUSE 1 FIXED**: `budgetsApiUrl` in `environment.ts` was pointing to the wrong API gateway (`q0zoob6728` main API instead of `jcl39tq8x0` budgets API). Fixed in commit `fd7c4a3`.
+  - ✅ **ROOT CAUSE 2 FIXED**: `FROM_EMAIL` in `api-budgets-stack.ts` was defaulting to `noreply@budgetbuddy.com` (unverified in SES). Fixed to `info@hitechparadigm.com` (verified ✅). Deployed in commit `e75dd23`.
+  - ✅ **VERIFIED**: Live test confirmed email delivered to `dmalyk@taxprocanada.ca` — SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
+  - ✅ **ONBOARDING FIX**: `OnboardingPage.tsx` now treats HTTP 409 as success and navigates to `/budget` (prevents re-onboarding retry loop). Commit `17b0782`.
+  - ✅ **ONBOARDING DATA FIX**: `auth-onboarding/index.js` now writes `name` and `ownerUserId` to `BUDGET#<id>/METADATA` record. Commit `b71f80c`.
+  - ⚠️ **SES SANDBOX**: SES is still in sandbox mode (`ProductionAccessEnabled: false`) — can only send to verified addresses. **Verified & sending-enabled**: `dmytro.malyk@gmail.com`, `dima.pmp@gmail.com`, `info@hitechparadigm.com`, `t1@taxprocanada.ca`, `dmalyk@taxprocanada.ca`. **Pending/disabled**: `t1@hitechparadigm.com` (PENDING), `noreply@budgetbuddy.com` (PENDING — do not use). Request SES production access to send to any address.
+  - 📋 **Docs**: Created `docs/product-requirements.md` — comprehensive PRD aligned with Budget Model Redesign. Rewrote `docs/aws-stack-architecture.md`, `docs/api-endpoints.md`, `docs/stack-management-guide.md`, `ARCHITECTURE_DECISIONS.md`.
 
 - Budget Model Redesign — COMPLETE (2026-06-01)
   - ✅ **DEPLOYED**: Full migration from `FAMILY#` model to `BUDGET#` model — CI/CD SUCCESS (commit `7a4c389`, run `26728866665`)
@@ -717,7 +726,7 @@ _"As a budget owner, I want to invite my partner, household members, or a financ
 | Restore Budget        | ✅ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/restore`        | ✅ Complete                               | REQ-15 |
 | Delete Budget         | ✅ `BudgetMembersPage.tsx`  | `DELETE /budgets/{budgetId}`             | ✅ Complete                               | REQ-15 |
 | Budget Type Selection | ✅ `OnboardingPage.tsx`     | `PUT /auth/onboarding` (budgetType)      | ✅ Complete                               | REQ-12 |
-| Email Notifications   | Backend                     | `POST /email/send-invitation`            | ✅ Complete (reuse existing)              |       |
+| Email Notifications   | Backend                     | `POST /email/send-invitation`            | ✅ Complete — verified 2026-06-01 (SES sandbox) |       |
 | Email Notifications   | Backend                     | `POST /email/send-removal`               | ✅ Complete (reuse existing)              |       |
 | Email Notifications   | Backend                     | `POST /email/send-acceptance`            | ✅ Complete (reuse existing)              |       |
 
@@ -736,12 +745,15 @@ The following components existed under the old `FAMILY#` model and have been rep
 | Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ✅ Replaced by `/budgets/{id}/leave` |
 | Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ✅ Replaced by `/budgets/{id}/invitations` |
 | Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ✅ Replaced by `/budgets/{id}/invitations/{id}` |
-| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ⚠️ Will be replaced               |
+| Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ✅ Replaced by `/budgets/{id}/invitations/{id}/resend` |
 
 **Infrastructure Status (Current)**:
 
 - ✅ **DEPLOYED**: `budgetbuddy-dev-api-budgets` stack with dedicated API Gateway (replaces `api-family`)
 - ✅ **DEPLOYED**: `BudgetAccessResolver` in common layer — resolves `budgetId`, `role`, `budgetType`, `budgetStatus` from DynamoDB on every request
+- ✅ **VERIFIED**: Email Lambda (`budgetbuddy-email-budgets`) sending from `info@hitechparadigm.com` via SES — confirmed 2026-06-01
+- ✅ **FIXED**: `budgetsApiUrl` in `environment.ts` points to correct API gateway (`jcl39tq8x0`)
+- ⚠️ **SES SANDBOX**: Can only send to verified & sending-enabled addresses (`dmytro.malyk@gmail.com`, `dima.pmp@gmail.com`, `info@hitechparadigm.com`, `t1@taxprocanada.ca`, `dmalyk@taxprocanada.ca`) until SES production access is requested. `t1@hitechparadigm.com` and `noreply@budgetbuddy.com` are PENDING — do not use as recipients.
 
 **Resolved Issues (Historical — Old Model)**:
 
@@ -778,14 +790,14 @@ The following components existed under the old `FAMILY#` model and have been rep
 
 ### Planned Components (Budget Model Redesign)
 
-| Component                   | Priority | Description                                    |
-| --------------------------- | -------- | ---------------------------------------------- |
-| `BudgetMembersPage.tsx`     | HIGH     | Replaces `FamilySettings.tsx` — full member management |
-| `BudgetSwitcher.tsx`        | HIGH     | Header switcher for users with multiple budgets |
-| `BudgetTypeSelector.tsx`    | HIGH     | Onboarding step — personal/family/shared choice |
-| `ViewerExpiryPicker.tsx`    | MEDIUM   | 30/60/90 days / No expiry selector             |
-| `BudgetActivityFeed.tsx`    | LOW      | Show recent member actions                     |
-| `MemberAvatars.tsx`         | LOW      | Show who's viewing budget                      |
+| Component                   | Priority | Description                                    | Status      |
+| --------------------------- | -------- | ---------------------------------------------- | ----------- |
+| `BudgetMembersPage.tsx`     | HIGH     | Replaces `FamilySettings.tsx` — full member management | ✅ Complete |
+| `BudgetSwitcher.tsx`        | HIGH     | Header switcher for users with multiple budgets | ✅ Complete |
+| `BudgetTypeSelector.tsx`    | HIGH     | Onboarding step — personal/family/shared choice | ✅ Complete (in `OnboardingPage.tsx`) |
+| `ViewerExpiryPicker.tsx`    | MEDIUM   | 30/60/90 days / No expiry selector             | ✅ Complete (inline in `BudgetMembersPage.tsx`) |
+| `BudgetActivityFeed.tsx`    | LOW      | Show recent member actions                     | ❌ Not Started |
+| `MemberAvatars.tsx`         | LOW      | Show who's viewing budget                      | ❌ Not Started |
 
 ---
 
@@ -1721,6 +1733,20 @@ _"As an admin, I want to manage users and monitor system health so I can ensure 
 | `POST /transaction-planning/execute`            | Execute planned transaction    | MEDIUM   | 🔄 Backend Only                |
 | `POST /transaction-planning/generate-recurring` | Generate recurring txns        | LOW      | 🔄 Backend Only                |
 
+### Recently Completed Components (2026-06-01 — Email Fix & Onboarding)
+
+| Component / Fix                        | Description                                                                 | Status  |
+| -------------------------------------- | --------------------------------------------------------------------------- | ------- |
+| `environment.ts` — `budgetsApiUrl`     | Fixed to point to correct budgets API gateway (`jcl39tq8x0`)               | ✅ Done |
+| `api-budgets-stack.ts` — `FROM_EMAIL`  | Fixed to `info@hitechparadigm.com` (verified SES identity)                  | ✅ Done |
+| `budgetbuddy-email-budgets` Lambda     | Email delivery verified end-to-end — SES message confirmed in CloudWatch    | ✅ Done |
+| `OnboardingPage.tsx` — 409 handling    | HTTP 409 now treated as success → navigates to `/budget` (no retry loop)    | ✅ Done |
+| `auth-onboarding/index.js` — METADATA | Now writes `name` and `ownerUserId` fields to `BUDGET#<id>/METADATA`        | ✅ Done |
+| `docs/product-requirements.md`         | Created comprehensive PRD aligned with Budget Model Redesign                | ✅ Done |
+| `docs/aws-stack-architecture.md`       | Full rewrite — all 10 CDK stacks documented                                 | ✅ Done |
+| `docs/api-endpoints.md`                | Replaced `/family/*` section with `/budgets/*`                              | ✅ Done |
+| `ARCHITECTURE_DECISIONS.md`            | Rewritten with Known Gaps section                                           | ✅ Done |
+
 ### Recently Completed Components (2026-02-03)
 
 | Component                           | Description                                   | Status  |
@@ -1880,7 +1906,7 @@ xl: 32px  (major sections)
 
 | Req    | Name               | Journey    | Task | Frontend | Backend | UI/UX Status |
 | ------ | ------------------ | ---------- | ---- | -------- | ------- | ------------ |
-| R1     | Authentication     | Onboarding | N/A  | ✅       | ✅      | ✅ Complete  |
+| R1     | Authentication     | Onboarding | N/A  | ✅       | ✅      | ✅ Complete — 409 retry loop fixed 2026-06-01 |
 | R2     | Budget Management  | Daily      | N/A  | ✅       | ✅      | ✅ Complete  |
 | R3     | Transactions       | Daily      | N/A  | ✅       | ✅      | ✅ Complete  |
 | R4     | Month Navigation   | Daily      | N/A  | ✅       | ✅      | ✅ Complete  |

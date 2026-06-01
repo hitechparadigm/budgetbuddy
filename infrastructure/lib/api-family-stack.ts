@@ -203,6 +203,11 @@ export class ApiFamilyStack extends cdk.Stack {
       code: lambda.Code.fromAsset('../backend/functions/email'),
       handler: 'index.handler',
       description: 'BudgetBuddy email handler for family invitations and notifications via SES',
+      environment: {
+        ...commonProps.environment,
+        // info@hitechparadigm.com is verified in SES for sending
+        FROM_EMAIL: this.node.tryGetContext('fromEmail') || 'info@hitechparadigm.com',
+      },
     });
 
     // Grant Email Lambda permission to send emails via SES

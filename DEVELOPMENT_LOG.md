@@ -1,5 +1,40 @@
 # Development Log
 
+## 2026-06-01 - Email invitation fix verified + USER_JOURNEYS.md updated (Session 140)
+
+### Work Completed
+
+1. **Investigated email invitation failure** for `dmalyk@taxprocanada.ca`:
+   - Confirmed both root causes were already fixed in previous session (commits `fd7c4a3`, `e75dd23`)
+   - `budgetsApiUrl` now points to correct API gateway (`jcl39tq8x0`)
+   - `FROM_EMAIL` now uses `info@hitechparadigm.com` (verified SES identity)
+
+2. **Live end-to-end verification**:
+   - Invoked `budgetbuddy-email-budgets` Lambda directly
+   - Email delivered to `dmalyk@taxprocanada.ca` — SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
+   - CloudWatch logs confirmed successful delivery
+
+3. **SES sandbox status**:
+   - Verified identities: `dmytro.malyk@gmail.com`, `dima.pmp@gmail.com`, `info@hitechparadigm.com`, `t1@hitechparadigm.com`, `t1@taxprocanada.ca`, `dmalyk@taxprocanada.ca`, `noreply@budgetbuddy.com`
+   - Still in sandbox — need to request production access to send to arbitrary addresses
+
+4. **Updated `docs/USER_JOURNEYS.md`**:
+   - Added "Email Invitation Fix — VERIFIED" to Recent Updates
+   - Updated Section 4 email notification rows with verified status
+   - Fixed "Old Family Model" table — Resend Invitation now marked ✅ Replaced
+   - Updated Infrastructure Status block with email fix details
+   - Updated Planned Components table with completion status
+   - Added "Recently Completed (2026-06-01)" table to gap analysis
+   - Updated R1 in requirements traceability with onboarding fix note
+
+### Files Changed
+
+- `docs/USER_JOURNEYS.md` — status updates, gap analysis, requirements traceability
+- `CHANGELOG.md` — v1.9.124 entry
+- `DEVELOPMENT_LOG.md` — this entry
+
+---
+
 ## 2026-06-01 - Product requirements doc + gap analysis + onboarding fix (Session 139)
 
 ### Work Completed

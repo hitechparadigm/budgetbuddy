@@ -1,6 +1,16 @@
 # Changelog
 
-## [1.9.123] - 2026-06-01
+## [1.9.124] - 2026-06-01
+
+### 🐛 Fix: Email invitation delivery — verified end-to-end
+
+- **Root cause 1**: `budgetsApiUrl` in `environment.ts` was pointing to the wrong API gateway (`q0zoob6728` main API instead of `jcl39tq8x0` budgets API) — fixed in `fd7c4a3`
+- **Root cause 2**: `FROM_EMAIL` in `api-budgets-stack.ts` defaulted to `noreply@budgetbuddy.com` (unverified in SES) — fixed to `info@hitechparadigm.com` in `e75dd23`
+- **Verified**: Live Lambda invocation confirmed email delivered to `dmalyk@taxprocanada.ca` — SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
+- **Note**: SES still in sandbox mode — can only send to verified addresses until production access is requested
+- Updated `docs/USER_JOURNEYS.md` — Section 4 email status, infrastructure status, gap analysis, requirements traceability
+
+
 
 ### 📋 Docs: product-requirements.md — full vision vs. implementation gap analysis
 
