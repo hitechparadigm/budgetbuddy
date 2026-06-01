@@ -1,5 +1,47 @@
 # Changelog
 
+## [1.9.122] - 2026-06-01
+
+### 🧹 Chore: Full codebase alignment with BUDGET# architecture
+
+**ARCHITECTURE_DECISIONS.md** — complete rewrite:
+- Removed 7 stale ADRs describing the old family-based model and premature consolidation plans
+- Added ADR-001: Budget-Centric Data Model (the actual current architecture)
+- Documents `BudgetAccessResolver` pattern, `BUDGET#` partition keys, deprecated items
+- Added summary table for quick reference
+
+**Specs cleanup**:
+- Moved `documentation-validation-fix` and `hooks-optimization` to `archive/`
+- Deleted orphaned root-level spec files
+- Updated `.kiro/README.md` with accurate active/archived spec lists
+
+**`.kiro/` docs cleanup**:
+- Deleted stale docs: `ACTIVE_HOOKS.md`, `MIGRATION_GUIDE.md`, `CICD_MONITORING_SETUP.md`, `TESTING_RESULTS.md`
+- Updated `SYSTEM_GUIDE.md` with accurate spec inventory
+- `SYSTEM_GUIDE.md` is now the single source of truth for architecture + workflow
+
+## [1.9.122] - 2026-06-01
+
+### 🧹 Chore: Docs and specs review — full alignment with BUDGET# architecture
+
+**Docs rewritten:**
+- `docs/aws-stack-architecture.md` — full rewrite: all 10 stacks, correct DynamoDB schema (`BUDGET#`), correct Lambda list, `BudgetAccessResolver`, RBAC roles
+- `docs/api-endpoints.md` — replaced Family Collaboration section with Budget Collaboration (`/budgets/*`), fixed `familyId` → `budgetId` in response examples, updated to v1.3
+- `docs/user-guide-budget-collaboration.md` — new file replacing `user-guide-family.md`; correct roles (owner/partner/household_member/viewer), correct routes (`/budgets/*`), correct page (`/budget/members`)
+- `docs/stack-management-guide.md` — rewritten stack list and dependency matrix for all 10 stacks
+- `docs/DEVELOPMENT_BEST_PRACTICES.md` — added Architecture Patterns section: `BudgetAccessResolver` pattern, CDK layer rule, DynamoDB key pattern
+
+**Docs deleted:**
+- `docs/user-guide-family.md` — replaced by `user-guide-budget-collaboration.md`
+- `docs/api-troubleshooting.md` — session-specific debugging from Oct 2025, archived
+
+**Specs archived** (completed or obsolete):
+- `family-collaboration`, `family-invitation-fix`, `family-invitation-pending-fix`, `fix-accounts-family-features` — old family model, superseded
+- `plan-model-redesign`, `onboarding-403-fix`, `critical-bug-fixes`, `enhanced-accounts-transactions`, `competitive-features`, `multi-currency`, `mobile-ui-polish`, `ui-polish-enhancements`, `documentation-cleanup` — all tasks complete
+
+**Specs deleted:**
+- `engagement-features/requirements.md` — empty file
+
 ## [1.9.121] - 2026-06-01
 
 ### 🧹 Chore: Major codebase cleanup — align with BUDGET# architecture
