@@ -75,10 +75,11 @@ describe('Onboarding Month Parameter Preservation (Req 42)', () => {
     });
     DynamoDBClient.prototype.send = mockSend;
 
-    // Default: profile returns defaultBudgetId, verification returns the period
+    // Default: profile has NO defaultBudgetId (first-time onboarding — the fixed path)
+    // verification returns the period record
     dynamoHelpers.putItem = jest.fn().mockResolvedValue({});
     dynamoHelpers.getItem = jest.fn()
-      .mockResolvedValueOnce({ defaultBudgetId: 'budget-abc' }) // profile lookup
+      .mockResolvedValueOnce({ userId: 'user123' }) // profile — no defaultBudgetId
       .mockResolvedValueOnce({ PK: 'BUDGET#budget-abc', SK: 'PERIOD#2025-11', budgetId: 'budget-abc' }); // verification
   });
 
@@ -133,10 +134,10 @@ describe('Onboarding Month Parameter Preservation (Req 42)', () => {
   });
 
   test('should create budget period for December when specified, not November', async () => {
-    // Override mocks for December scenario
+    // Override mocks for December scenario — first-time onboarding (no defaultBudgetId)
     dynamoHelpers.getItem = jest.fn()
-      .mockResolvedValueOnce({ defaultBudgetId: 'budget-abc' })
-      .mockResolvedValueOnce({ PK: 'BUDGET#budget-abc', SK: 'PERIOD#2025-12', budgetId: 'budget-abc' });
+      .mockResolvedValueOnce({ userId: 'user123' }) // profile — no defaultBudgetId
+      .mockResolvedValueOnce({ PK: 'BUDGET#budget-abc', SK: 'PERIOD#2025-12', budgetId: 'budget-abc' }); // verification
 
     const event = {
       httpMethod: 'POST',
@@ -165,7 +166,7 @@ describe('Onboarding Month Parameter Preservation (Req 42)', () => {
 
     // Verify verification checked December period with new key pattern
     expect(dynamoHelpers.getItem).toHaveBeenCalledWith(
-      'BUDGET#budget-abc',
+      expect.stringMatching(/^BUDGET#budget_/),
       'PERIOD#2025-12',
     );
   });

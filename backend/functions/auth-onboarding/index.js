@@ -107,12 +107,20 @@ exports.handler = async (event) => {
       throw { statusCode: 403, message: 'User profile not found' };
     }
 
-    const defaultBudgetId = userProfile.defaultBudgetId;
-    if (!defaultBudgetId) {
-      throw { statusCode: 403, message: 'No active budget found. Please complete registration.' };
+    const existingBudgetId = userProfile.defaultBudgetId;
+    if (existingBudgetId) {
+      // Re-onboarding guard: budget already exists, prevent duplicate creation
+      return {
+        statusCode: 409,
+        headers: getCorsHeaders(origin),
+        body: JSON.stringify({
+          error: 'Conflict',
+          message: 'Onboarding already completed. Budget already exists.',
+        }),
+      };
     }
 
-    console.log('Resolved defaultBudgetId from profile:', defaultBudgetId);
+    console.log('No existing budget found, proceeding with first-time onboarding');
 
     const currentTime = new Date().toISOString();
 
@@ -122,7 +130,40 @@ exports.handler = async (event) => {
     // Extract budgetType from request (default to personal)
     const budgetType = requestBody.budgetType || 'personal';
 
-    // Update user profile to mark onboarding as completed and save currency
+    // Create initial budget period for current month
+    const currentMonth = requestBody.currentMonth;
+    const defaultBudgetId = `budget_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+    // Write BUDGET#<budgetId>/METADATA record
+    const budgetMetadata = {
+      PK: `BUDGET#${defaultBudgetId}`,
+      SK: 'METADATA',
+      budgetId: defaultBudgetId,
+      budgetType: budgetType === 'family' || budgetType === 'shared' ? budgetType : 'personal',
+      status: 'active',
+      currency,
+      createdAt: currentTime,
+      updatedAt: currentTime,
+    };
+    await dynamoHelpers.putItem(budgetMetadata);
+    console.log('Budget metadata record created:', { budgetId: defaultBudgetId, budgetType: budgetMetadata.budgetType });
+
+    // Write BUDGET#<budgetId>/MEMBER#<userId> record (required for BudgetAccessResolver.resolveAccess())
+    const memberRecord = {
+      PK: `BUDGET#${defaultBudgetId}`,
+      SK: `MEMBER#${userId}`,
+      budgetId: defaultBudgetId,
+      userId,
+      role: 'owner',
+      status: 'active',
+      joinedAt: currentTime,
+      createdAt: currentTime,
+      updatedAt: currentTime,
+    };
+    await dynamoHelpers.putItem(memberRecord);
+    console.log('Budget member record created:', { budgetId: defaultBudgetId, userId, role: 'owner' });
+
+    // Update user profile to mark onboarding as completed, save currency, and link defaultBudgetId
     const updateCommand = new UpdateItemCommand({
       TableName: TABLE_NAME,
       Key: {
@@ -130,10 +171,12 @@ exports.handler = async (event) => {
         SK: { S: 'PROFILE' },
       },
       UpdateExpression:
-        'SET onboardingCompleted = :completed, currency = :currency, updatedAt = :updatedAt',
+        'SET onboardingCompleted = :completed, currency = :currency, ' +
+        'defaultBudgetId = :budgetId, updatedAt = :updatedAt',
       ExpressionAttributeValues: {
         ':completed': { BOOL: true },
         ':currency': { S: currency },
+        ':budgetId': { S: defaultBudgetId },
         ':updatedAt': { S: currentTime },
       },
       ReturnValues: 'ALL_NEW',
@@ -141,29 +184,6 @@ exports.handler = async (event) => {
 
     await dynamoClient.send(updateCommand);
     console.log('User profile updated - onboarding completed');
-
-    // If user selected family or shared budget type, update the budget metadata
-    if (budgetType === 'family' || budgetType === 'shared') {
-      const budgetMetadataUpdate = new UpdateItemCommand({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: { S: `BUDGET#${defaultBudgetId}` },
-          SK: { S: 'METADATA' },
-        },
-        UpdateExpression: 'SET budgetType = :budgetType, updatedAt = :updatedAt',
-        ExpressionAttributeValues: {
-          ':budgetType': { S: budgetType },
-          ':updatedAt': { S: currentTime },
-        },
-      });
-
-      await dynamoClient.send(budgetMetadataUpdate);
-      console.log(`Budget metadata updated - budgetType set to: ${budgetType}`);
-    }
-
-    // Create initial budget period for current month
-    const currentMonth = requestBody.currentMonth;
-    const budgetId = `budget_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`; // eslint-disable-line no-unused-vars
 
     // Transform selected categories into budget groups
     const expenseCategories = requestBody.selectedCategories.map((cat) => ({
