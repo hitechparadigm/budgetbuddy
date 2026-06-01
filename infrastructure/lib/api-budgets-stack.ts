@@ -205,7 +205,7 @@ export class ApiBudgetsStack extends cdk.Stack {
       handler: 'index.handler',
       description: 'BudgetBuddy email handler for budget invitations and notifications via SES',
       environment: {
-        ...commonEnvironment,
+        ...commonProps.environment,
         // info@hitechparadigm.com is verified in SES for sending
         FROM_EMAIL: this.node.tryGetContext('fromEmail') || 'info@hitechparadigm.com',
       },
