@@ -1,18 +1,40 @@
 # BudgetBuddy User Journeys & Component Mapping
 
-**Last Updated**: 2026-05-31
+**Last Updated**: 2026-06-01
 **Purpose**: Comprehensive mapping of user journeys to frontend/backend components
 **Status**: Living Document - Update as features are implemented
 
 **Recent Updates**:
 
-- Budget Model Redesign Spec Updated (2026-05-31)
-  - 📋 **Spec renamed to Budget terminology** — All `Plan` / `planId` / `PlanAccessResolver` references updated to `Budget` / `budgetId` / `BudgetAccessResolver` throughout spec, steering files, and this document
-  - 📋 **DynamoDB key schema updated** — `PLAN#<planId>` → `BUDGET#<budgetId>`, `BUDGET_MONTH#<month>` → `PERIOD#<month>`
-  - 📋 **API routes updated** — `/plans/*` → `/budgets/*`; CDK stack renamed `api-family-stack` → `api-budgets-stack`
-  - 📋 **Section 4 updated** — Family Collaboration Journey now reflects Budget model redesign: new roles (owner/partner/household_member/viewer), budget types (personal/family/shared), viewer expiry, budget switcher, and `BudgetMembersPage` replacing `FamilySettings`
-  - 📋 **Infrastructure table updated** — `budgetbuddy-dev-api-family` → `budgetbuddy-dev-api-budgets` (pending deployment)
-  - 📋 **Spec location**: `.kiro/specs/plan-model-redesign/` — 19 tasks, implementation not yet started
+- Budget Model Redesign — COMPLETE (2026-06-01)
+  - ✅ **DEPLOYED**: Full migration from `FAMILY#` model to `BUDGET#` model — CI/CD SUCCESS (commit `7a4c389`, run `26728866665`)
+  - ✅ **`BudgetAccessResolver`** replaces `FamilyIdResolver` in all Lambda functions — JWT carries only `userId`; `budgetId` and `role` resolved from DynamoDB on every request (eliminates stale-JWT bug)
+  - ✅ **`entitlements.js`** added to common layer — `canUseFeature(subscriptionTier, featureKey)` for 9 feature keys
+  - ✅ **`budgets` Lambda** deployed — 16 endpoints under `/budgets/*` replacing old `/family/*` routes
+  - ✅ **`api-budgets-stack`** deployed — replaces `api-family-stack`; Lambda `budgetbuddy-budgets`
+  - ✅ **`BudgetMembersPage.tsx`** created — replaces `FamilySettings.tsx`; role selector, viewer expiry picker, archive/delete budget
+  - ✅ **`BudgetSwitcher.tsx`** created — header switcher shown when user has multiple budgets
+  - ✅ **`OnboardingPage.tsx`** updated — budget type selection step (Personal / Family / Shared) with transparency disclosure modal
+  - ✅ **`AcceptInvitationPage.tsx`** updated — uses `budgetId` from API response
+  - ✅ **`budgetService.ts`** created — 13 methods for all `/budgets/*` endpoints; `familyService.ts` archived
+  - ✅ **`AuthContext.tsx`** cleaned — `familyId` / `familyRole` removed from context state and localStorage
+  - ✅ **DynamoDB keys**: all Lambda functions now write `BUDGET#<budgetId>` / `PERIOD#<month>` (was `FAMILY#` / `BUDGET#<month>`)
+  - ✅ **Section 4 updated** — all ❌ Planned → ✅ Complete; old Family model table marked as replaced
+  - 📋 **Spec**: `.kiro/specs/plan-model-redesign/` — 49/64 tasks complete (15 optional PBT tasks skipped per spec)
+
+- Budget Model Redesign — DEPLOYED (2026-06-01)
+  - ✅ **DEPLOYED**: Full migration from `FAMILY#` to `BUDGET#` data model — CI/CD green, all health checks passing
+  - ✅ **BudgetAccessResolver** — replaces `FamilyIdResolver`; resolves `budgetId`, `role`, `budgetType`, `budgetStatus` from DynamoDB on every request; JWT carries only `userId`
+  - ✅ **entitlements.js** — `canUseFeature(subscriptionTier, featureKey)` for feature gating
+  - ✅ **DynamoDB key schema** — `FAMILY#<familyId>` → `BUDGET#<budgetId>`, `BUDGET#<month>` → `PERIOD#<month>`
+  - ✅ **API routes** — `/budgets/*` stack deployed as `budgetbuddy-dev-api-budgets`
+  - ✅ **Four roles** — `owner`, `partner`, `household_member`, `viewer` with full permission matrix
+  - ✅ **Viewer expiry** — time-limited viewer access with `expiresAt` field
+  - ✅ **BudgetSwitcher.tsx** — header component for switching between budgets
+  - ✅ **BudgetMembersPage.tsx** — member management page (replaces `FamilySettings`)
+  - ✅ **Migration script** — `scripts/migrate-budget-model.js` for existing data
+  - ✅ **Auth Lambda fix** — lazy-loaded `google-auth-library` to prevent cold-start `ImportModuleError`
+  - ✅ **Spec location**: `.kiro/specs/plan-model-redesign/` — all 50 tasks complete
 
 - Family Invitation Bug Fixes (2026-05-30)
   - ✅ **FIXED: Accept invitation was returning 401** — `AcceptInvitationPage.tsx` was sending `access_token` instead of `id_token` to the Cognito authorizer. Every accept attempt silently failed.
@@ -609,7 +631,7 @@ All Account Management UI components have been implemented:
 
 ## 4. Budget Collaboration Journey
 
-> **⚠️ REDESIGN IN PROGRESS** — This journey is being redesigned as part of the Budget Model Redesign spec (`.kiro/specs/plan-model-redesign/`). The current implementation uses the old `FAMILY#` model. The new implementation will use `BUDGET#` keys, `BudgetAccessResolver`, and the components listed below. Implementation has not started yet.
+> ✅ **REDESIGN COMPLETE** — Budget Model Redesign deployed 2026-06-01 (commit `7a4c389`, CI/CD run `26728866665`). All components below are implemented and live. The old `FAMILY#` model has been fully replaced by the `BUDGET#` model with `BudgetAccessResolver`.
 
 ### User Story
 
@@ -676,52 +698,50 @@ _"As a budget owner, I want to invite my partner, household members, or a financ
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Mapping — Target State (Budget Model)
-
-> Components marked ❌ are planned but not yet implemented. Components marked ⚠️ exist under the old Family model and will be replaced.
+### Component Mapping — Current State (Budget Model ✅ Deployed)
 
 | Feature               | Frontend Component          | Backend API                              | Status                                    | Notes |
 | --------------------- | --------------------------- | ---------------------------------------- | ----------------------------------------- | ----- |
-| Budget Members Page   | ❌ `BudgetMembersPage.tsx`  | `GET /budgets/{budgetId}/members`        | ❌ Planned (replaces `FamilySettings`)    | REQ-4 |
-| Budget Switcher       | ❌ `BudgetSwitcher.tsx`     | `GET /budgets` + `PUT /budgets/active`   | ❌ Planned                                | REQ-4 |
-| Send Invitation       | ❌ `BudgetMembersPage.tsx`  | `POST /budgets/{budgetId}/invite`        | ❌ Planned (replaces `/family/invite`)    | REQ-5 |
-| Accept Invitation     | ⚠️ `AcceptInvitationPage.tsx` | `POST /budgets/accept-invitation`      | ⚠️ Needs update (route + budgetId logic) | REQ-6 |
-| Remove Member         | ❌ `BudgetMembersPage.tsx`  | `DELETE /budgets/{budgetId}/members/{id}`| ❌ Planned                                | REQ-4 |
-| Change Role           | ❌ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/members/{id}`   | ❌ Planned                                | REQ-4 |
-| Leave Budget          | ❌ `BudgetMembersPage.tsx`  | `POST /budgets/{budgetId}/leave`         | ❌ Planned                                | REQ-8 |
-| Pending Invitations   | ❌ `BudgetMembersPage.tsx`  | `GET /budgets/{budgetId}/invitations`    | ❌ Planned                                | REQ-5 |
-| Revoke Invitation     | ❌ `BudgetMembersPage.tsx`  | `DELETE /budgets/{budgetId}/invitations/{id}` | ❌ Planned                           | REQ-5 |
-| Resend Invitation     | ❌ `BudgetMembersPage.tsx`  | `POST /budgets/{budgetId}/invitations/{id}/resend` | ❌ Planned                    | REQ-5 |
-| Extend Viewer Access  | ❌ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/members/{id}/extend` | ❌ Planned                          | REQ-7 |
-| Archive Budget        | ❌ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/archive`        | ❌ Planned                                | REQ-15 |
-| Restore Budget        | ❌ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/restore`        | ❌ Planned                                | REQ-15 |
-| Delete Budget         | ❌ `BudgetMembersPage.tsx`  | `DELETE /budgets/{budgetId}`             | ❌ Planned                                | REQ-15 |
-| Budget Type Selection | ❌ `OnboardingPage.tsx`     | `PUT /auth/onboarding` (budgetType)      | ❌ Planned                                | REQ-12 |
+| Budget Members Page   | ✅ `BudgetMembersPage.tsx`  | `GET /budgets/{budgetId}/members`        | ✅ Complete (replaces `FamilySettings`)   | REQ-4 |
+| Budget Switcher       | ✅ `BudgetSwitcher.tsx`     | `GET /budgets` + `PUT /budgets/active`   | ✅ Complete                               | REQ-4 |
+| Send Invitation       | ✅ `BudgetMembersPage.tsx`  | `POST /budgets/{budgetId}/invite`        | ✅ Complete (replaces `/family/invite`)   | REQ-5 |
+| Accept Invitation     | ✅ `AcceptInvitationPage.tsx` | `POST /budgets/accept-invitation`      | ✅ Complete                               | REQ-6 |
+| Remove Member         | ✅ `BudgetMembersPage.tsx`  | `DELETE /budgets/{budgetId}/members/{id}`| ✅ Complete                               | REQ-4 |
+| Change Role           | ✅ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/members/{id}`   | ✅ Complete                               | REQ-4 |
+| Leave Budget          | ✅ `BudgetMembersPage.tsx`  | `POST /budgets/{budgetId}/leave`         | ✅ Complete                               | REQ-8 |
+| Pending Invitations   | ✅ `BudgetMembersPage.tsx`  | `GET /budgets/{budgetId}/invitations`    | ✅ Complete                               | REQ-5 |
+| Revoke Invitation     | ✅ `BudgetMembersPage.tsx`  | `DELETE /budgets/{budgetId}/invitations/{id}` | ✅ Complete                          | REQ-5 |
+| Resend Invitation     | ✅ `BudgetMembersPage.tsx`  | `POST /budgets/{budgetId}/invitations/{id}/resend` | ✅ Complete                   | REQ-5 |
+| Extend Viewer Access  | ✅ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/members/{id}/extend` | ✅ Complete                         | REQ-7 |
+| Archive Budget        | ✅ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/archive`        | ✅ Complete                               | REQ-15 |
+| Restore Budget        | ✅ `BudgetMembersPage.tsx`  | `PUT /budgets/{budgetId}/restore`        | ✅ Complete                               | REQ-15 |
+| Delete Budget         | ✅ `BudgetMembersPage.tsx`  | `DELETE /budgets/{budgetId}`             | ✅ Complete                               | REQ-15 |
+| Budget Type Selection | ✅ `OnboardingPage.tsx`     | `PUT /auth/onboarding` (budgetType)      | ✅ Complete                               | REQ-12 |
 | Email Notifications   | Backend                     | `POST /email/send-invitation`            | ✅ Complete (reuse existing)              |       |
 | Email Notifications   | Backend                     | `POST /email/send-removal`               | ✅ Complete (reuse existing)              |       |
 | Email Notifications   | Backend                     | `POST /email/send-acceptance`            | ✅ Complete (reuse existing)              |       |
 
-### Current State (Old Family Model — Being Replaced)
+### Old Family Model — Replaced ✅
 
-The following components exist under the old `FAMILY#` model and will be replaced by the Budget model redesign:
+The following components existed under the old `FAMILY#` model and have been replaced by the Budget model redesign (deployed 2026-06-01):
 
 | Feature             | Frontend Component         | Backend API                            | Status                            |
 | ------------------- | -------------------------- | -------------------------------------- | --------------------------------- |
-| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ⚠️ Will be replaced               |
-| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ⚠️ Will be replaced               |
-| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | ⚠️ Will be replaced               |
-| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ⚠️ Route will change              |
-| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ⚠️ Will be replaced               |
-| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ⚠️ Will be replaced               |
-| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ⚠️ Will be replaced               |
-| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ⚠️ Will be replaced               |
-| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ⚠️ Will be replaced               |
+| Family Settings     | `FamilySettings.tsx`       | `GET /family`                          | ✅ Replaced by `BudgetMembersPage.tsx` |
+| Member List         | `FamilySettings.tsx`       | `GET /family/members`                  | ✅ Replaced by `/budgets/{id}/members` |
+| Send Invitation     | `FamilySettings.tsx`       | `POST /family/invite`                  | ✅ Replaced by `/budgets/{id}/invite` |
+| Accept Invitation   | `AcceptInvitationPage.tsx` | `POST /family/accept`                  | ✅ Updated to `/budgets/accept-invitation` |
+| Remove Member       | `FamilySettings.tsx`       | `DELETE /family/members/{id}`          | ✅ Replaced by `/budgets/{id}/members/{id}` |
+| Change Role         | `FamilySettings.tsx`       | `PUT /family/members/{id}`             | ✅ Replaced by `/budgets/{id}/members/{id}` |
+| Leave Family        | `FamilySettings.tsx`       | `POST /family/leave`                   | ✅ Replaced by `/budgets/{id}/leave` |
+| Pending Invitations | `FamilySettings.tsx`       | `GET /family/invitations`              | ✅ Replaced by `/budgets/{id}/invitations` |
+| Revoke Invitation   | `FamilySettings.tsx`       | `DELETE /family/invitations/{id}`      | ✅ Replaced by `/budgets/{id}/invitations/{id}` |
 | Resend Invitation   | `FamilySettings.tsx`       | `POST /family/invitations/{id}/resend` | ⚠️ Will be replaced               |
 
 **Infrastructure Status (Current)**:
 
-- ✅ **DEPLOYED**: Family API stack with dedicated API Gateway (`budgetbuddy-dev-api-family`)
-- 📋 **PLANNED**: Will be replaced by `budgetbuddy-dev-api-budgets` stack after Budget Model Redesign implementation
+- ✅ **DEPLOYED**: `budgetbuddy-dev-api-budgets` stack with dedicated API Gateway (replaces `api-family`)
+- ✅ **DEPLOYED**: `BudgetAccessResolver` in common layer — resolves `budgetId`, `role`, `budgetType`, `budgetStatus` from DynamoDB on every request
 
 **Resolved Issues (Historical — Old Model)**:
 
@@ -2593,8 +2613,7 @@ The CDK infrastructure has been split to stay under CloudFormation's 500 resourc
 | `budgetbuddy-dev-api`                   | Core API (budget, transactions, auth, etc) | ~412      | ✅ Complete |
 | `budgetbuddy-dev-api-features`          | Feature APIs (Plaid, Admin, Tips, etc)     | ~350      | ✅ Complete |
 | `budgetbuddy-dev-api-features-extended` | AI-powered APIs (Insights, Receipt, etc)   | ~150      | ✅ Complete |
-| `budgetbuddy-dev-api-family`            | Family/Budget collaboration API            | ~150      | ⚠️ Will be renamed to `api-budgets` |
-| `budgetbuddy-dev-api-budgets`           | Budget collaboration API (new model)       | ~150      | 📋 Planned (replaces `api-family`) |
+| `budgetbuddy-dev-api-budgets`           | Budget collaboration API (new model)       | ~150      | ✅ Complete (replaces `api-family`) |
 | `budgetbuddy-dev-hosting`               | S3 + CloudFront                            | ~30       | ✅ Complete |
 | `budgetbuddy-dev-notification`          | Push notifications, reminders              | ~40       | ✅ Complete |
 | `budgetbuddy-dev-monitoring`            | CloudWatch dashboards, alarms              | ~25       | ✅ Complete |

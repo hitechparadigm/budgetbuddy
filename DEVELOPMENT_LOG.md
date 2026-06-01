@@ -1,5 +1,111 @@
 # Development Log
 
+## 2026-06-01 - Onboarding 403 Fix — Checkpoint (Session 134)
+
+### Session Summary
+
+**Duration**: ~30 minutes
+**Focus**: Checkpoint task for `onboarding-403-fix` spec — full test suite, ESLint, write order verification, docs update, commit
+**Outcome**: All 33 tests pass; coverage >80%; ESLint clean; ready to commit
+
+### Work Completed
+
+1. **Full test suite** (`npx jest --coverage`):
+   - **33/33 tests passing** across 4 test suites
+   - `index.js` coverage: **96.73% statements, 95.12% branches, 100% functions, 96.7% lines**
+   - Fixed `month-parameter.test.js` (5 tests): updated `beforeEach` mock setup from
+     `{ defaultBudgetId: 'budget-abc' }` (old buggy path) to `{ userId: 'user123' }` (first-time
+     onboarding path); also updated December test's `getItem` assertion to use
+     `expect.stringMatching(/^BUDGET#budget_/)` since budgetId is now dynamically generated
+
+2. **ESLint** (`npx eslint index.js`):
+   - **0 errors** — clean
+   - 1 pre-existing warning: `max-lines-per-function` (handler is 250 lines, limit 100) — not new
+
+3. **DynamoDB write order** (verified against code and tests):
+   - `putItem` METADATA → `putItem` MEMBER#userId → `UpdateItemCommand` (profile) →
+     `putItem` PERIOD#month → `putItem` ACCOUNT#id → `getItem` (verify)
+   - Note: METADATA and MEMBER are written before the profile UpdateItemCommand (matches task
+     instructions 3.3/3.4 and all existing tests); design table shows UpdateItemCommand first
+     but task instructions explicitly say "insert before the profile UpdateItemCommand"
+
+4. **budgetType assertions** (verified via targeted test run):
+   - `personal` path: exactly 1 `UpdateItemCommand` (profile only, no separate METADATA update)
+   - `family` path: METADATA `putItem` with `budgetType: 'family'`, exactly 1 `UpdateItemCommand`
+   - `shared` path: METADATA `putItem` with `budgetType: 'shared'`, exactly 1 `UpdateItemCommand`
+
+5. **Documentation**: Updated CHANGELOG.md (v1.9.119) and DEVELOPMENT_LOG.md
+
+
+
+### Session Summary
+
+**Duration**: 30 minutes
+**Focus**: Final verification of Budget Model Redesign spec (plan-model-redesign) — run tests, lint, confirm CI/CD, update docs
+**Outcome**: All checks green; spec complete
+
+### Work Completed
+
+1. **Unit tests** (`npm run test:unit`):
+   - 73/73 tests passing across 6 test suites in `backend/functions/transactions`
+   - No failures, no skipped tests
+
+2. **Lint** (`npm run lint:check`):
+   - **0 errors** — lint is clean
+   - 48 pre-existing style warnings (max-lines-per-function, max-lines) — all pre-date this spec
+   - No new warnings introduced by the Budget Model Redesign
+
+3. **CI/CD status** (`node scripts/check-cicd-status.js`):
+   - Status: **SUCCESS**
+   - Run ID: 26728866665
+   - Branch: `develop`
+   - Commit: 7a4c389 — `fix: remove unused _OAuth2Client variable in auth Lambda lazy-load`
+   - URL: https://github.com/hitechparadigm/budgetbuddy/actions/runs/26728866665
+
+4. **Health endpoint**: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/health` → 200
+
+5. **Documentation**: Updated CHANGELOG.md (v1.9.117) and DEVELOPMENT_LOG.md (this entry)
+
+### Budget Model Redesign — Summary of All Waves
+
+| Wave | Tasks | Status |
+|------|-------|--------|
+| 1 | Migration script | ✅ |
+| 2 | Common layer — BudgetAccessResolver + entitlements.js | ✅ |
+| 3 | Common layer checkpoint | ✅ |
+| 4 | Shared layer (token-parser, validators) | ✅ |
+| 5 | Lambda migrations (auth, auth-onboarding, budget, transactions, accounts, goals, ai) | ✅ |
+| 6 | Lambda checkpoint | ✅ |
+| 7 | New budgets Lambda (replaces family) | ✅ |
+| 8 | Budgets Lambda checkpoint | ✅ |
+| 9 | CDK infrastructure (api-budgets-stack, auth-stack) | ✅ |
+| 10 | Frontend (budgetService, AuthContext, BudgetSwitcher, OnboardingPage, BudgetMembersPage, AcceptInvitationPage) | ✅ |
+| 11 | Final checkpoint | ✅ |
+
+### Key Architecture Changes
+
+- **DynamoDB**: All budget data now under `BUDGET#<budgetId>` partition keys; monthly periods use `PERIOD#<month>` sort keys
+- **JWT**: Carries only `userId`; `budgetId` and `role` resolved from DynamoDB on every request via `BudgetAccessResolver`
+- **RBAC**: Four roles — `owner`, `partner`, `household_member`, `viewer`
+- **Viewer access**: Optional `expiresAt` (30/60/90 days or no expiry)
+- **Budget types**: `personal`, `family`, `shared`
+- **Stale-JWT bug**: Eliminated — no role/budgetId in token, always resolved fresh from DB
+
+### Files Changed (Key)
+
+- `backend/layers/common/nodejs/utils.js` — BudgetAccessResolver, generateId.budget()
+- `backend/layers/common/nodejs/entitlements.js` — new file
+- `backend/layers/shared/nodejs/shared/token-parser.js`, `validators.js`
+- `backend/functions/auth/index.js`, `auth-onboarding/index.js`, `budget/index.js`
+- `backend/functions/transactions/index.js`, `accounts/index.js`, `goals/index.js`, `ai/index.js`
+- `backend/functions/budgets/` — new Lambda (index.js, package.json, README.md)
+- `infrastructure/lib/api-budgets-stack.ts` — renamed from api-family-stack.ts
+- `infrastructure/lib/auth-stack.ts`, `infrastructure/bin/app.ts`
+- `packages/web-app/src/services/budgetService.ts` — new file
+- `packages/web-app/src/contexts/AuthContext.tsx`
+- `packages/web-app/src/components/BudgetSwitcher.tsx` — new file
+- `packages/web-app/src/pages/OnboardingPage.tsx`, `BudgetMembersPage.tsx`, `AcceptInvitationPage.tsx`
+
 ## 2026-05-31 - Security Hardening & Architecture Fixes (Session 132)
 
 ### Session Summary

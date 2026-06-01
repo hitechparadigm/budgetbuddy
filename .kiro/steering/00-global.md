@@ -73,6 +73,29 @@ Budgets are first-class entities. All budget period, transaction, account, goal,
 - JWT tokens: 1hr access, 30d refresh
 - PII encrypted, access logged
 
+## Autonomous Execution — Keep Going Until Done
+
+**Default behavior: work continuously until all tasks, bugs, and issues in the current scope are complete.**
+
+- After completing any task, immediately start the next one — no summaries, no check-ins, no "next steps" lists
+- After a successful deployment, immediately start the next task
+- After fixing a CI/CD failure, immediately resume where you left off
+- Only stop when ALL tasks in the current spec/session are marked complete
+
+**TRUE blockers that justify stopping:**
+- Architectural decisions that require user confirmation before proceeding
+- Breaking changes to public APIs where the correct behavior is genuinely ambiguous
+- Validation or tests still failing after 3 attempts with different approaches
+- CI/CD still failing after 2 fix attempts (document in DEVELOPMENT_LOG.md, then continue with remaining tasks)
+- A task explicitly marked as requiring user input before proceeding
+
+**Do NOT stop for:**
+- Routine task completion
+- Successful deployments
+- Test passes
+- Lint/type-check passes
+- Documentation updates
+
 ## When to Ask
 
 - Architectural decisions needing confirmation

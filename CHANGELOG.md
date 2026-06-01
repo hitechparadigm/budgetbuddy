@@ -1,5 +1,107 @@
 # Changelog
 
+## [1.9.119] - 2026-06-01
+
+### 🐛 Fix: Auth Onboarding 403 for New Users Without defaultBudgetId
+
+- **Root cause**: `auth-onboarding/index.js` threw HTTP 403 "No active budget found" for every
+  brand-new user because it read `USER#<userId>/PROFILE`, found no `defaultBudgetId`, and
+  exited before any budget-creation logic ran. `auth-register` intentionally creates the profile
+  without a budget; `auth-onboarding` is the endpoint that is supposed to create it.
+- **Fix**: Replaced the erroneous 403 guard with first-time onboarding logic:
+  - Generates a new `defaultBudgetId` (`budget_<timestamp>_<random>`)
+  - Writes `BUDGET#<budgetId>/METADATA` (budgetType, status, currency)
+  - Writes `BUDGET#<budgetId>/MEMBER#<userId>` (role: owner)
+  - Writes `BUDGET#<budgetId>/PERIOD#<month>` (budget period with selected categories)
+  - Writes `BUDGET#<budgetId>/ACCOUNT#<cashId>` (default Cash account)
+  - Updates `USER#<userId>/PROFILE` with `defaultBudgetId` and `onboardingCompleted: true`
+- **Re-onboarding guard**: Profile already has `defaultBudgetId` → returns HTTP 409 Conflict
+  (prevents duplicate budget creation on retry)
+- **Tests**: 33 tests pass; `index.js` coverage 96.73% statements / 95.12% branches
+  - Bug condition PBT (Property 1): confirms fix — first-time onboarding returns 200
+  - Preservation PBT (Property 2): confirms no regressions — 401/400/403/409/500 paths unchanged
+  - Updated `month-parameter.test.js` to use first-time onboarding mock setup
+
+
+
+### 🐛 Fix: Auth Lambda Cold-Start ImportModuleError
+
+- **Root cause**: `auth/index.js` had a top-level `require('google-auth-library')` that caused
+  `Runtime.ImportModuleError` on every cold start because the package is not bundled in the
+  deployment asset (CDK deploys the raw function directory without running `npm install`).
+- **Fix**: Moved `google-auth-library` import inside a `getGoogleAuthClient()` lazy-loader
+  function. The module is only required when the `/auth/google` endpoint is actually called.
+- **Secondary fix**: Removed unused `_OAuth2Client` variable that caused an ESLint `no-unused-vars`
+  error, which blocked the pre-deployment lint step.
+- **Result**: All three health endpoints now return 200 — `/health`, `/auth/health`, `/budget/health`.
+
+## [1.9.117] - 2026-06-01
+
+### ♻️ Budget Model Redesign — Final Checkpoint (Session 133)
+
+Complete migration from `FAMILY#`-scoped data model to `BUDGET#`-scoped model with four roles
+(`owner`, `partner`, `household_member`, `viewer`), time-limited viewer access, and a
+`BudgetAccessResolver` that eliminates the stale-JWT bug by resolving budget access from
+DynamoDB on every request.
+
+#### Common Layer
+
+- **Removed `FamilyIdResolver`** from `backend/layers/common/nodejs/utils.js`
+  - Deleted `FamilyIdResolver` object and all helper functions
+  - Updated `getUserFromEvent` to remove `familyId` and `role` from returned object
+  - Updated `generateId` to replace `family` with `budget`
+- **Added `BudgetAccessResolver`** to `backend/layers/common/nodejs/utils.js`
+  - `resolveAccess(userId, dynamoHelpers, requestedBudgetId?)`: reads `USER#<userId>/PROFILE`,
+    `BUDGET#<budgetId>/MEMBER#<userId>`, `BUDGET#<budgetId>/METADATA`
+  - `assertPermission(role, action, budgetStatus)`: full 16-action permission matrix
+  - Throws `{ statusCode, message }` for all error conditions
+- **Added `entitlements.js`** to `backend/layers/common/nodejs/`
+  - `FEATURE_CATALOG` with all 9 feature keys
+  - `canUseFeature(subscriptionTier, featureKey)` for feature gating
+
+#### Shared Layer
+
+- **Updated `token-parser.js`**: removed all `custom:familyId` / `custom:familyRole` reads/writes
+- **Updated `validators.js`**: replaced `['spouse', 'viewer']` with `['partner', 'household_member', 'viewer']`
+
+#### Lambda Functions (all migrated to `BudgetAccessResolver`)
+
+- **auth**: Registration transaction now writes `USER#<userId>/PROFILE` (with `defaultBudgetId`),
+  `BUDGET#<budgetId>/METADATA`, `BUDGET#<budgetId>/MEMBER#<userId>`; no Cognito custom attribute writes
+- **auth-onboarding**: Reads `defaultBudgetId` from profile; writes `BUDGET#<budgetId>/PERIOD#<month>`
+- **budget**: All handlers use `BudgetAccessResolver`; `FAMILY#` → `BUDGET#`, `BUDGET#<month>` → `PERIOD#<month>`
+- **transactions**: All handlers use `BudgetAccessResolver`; `FAMILY#` → `BUDGET#`
+- **accounts**: All handlers use `BudgetAccessResolver`; `FAMILY#` → `BUDGET#`
+- **goals**: All handlers use `BudgetAccessResolver`; `FAMILY#` → `BUDGET#`
+- **ai**: All handlers use `BudgetAccessResolver`; AI budget generation writes to `BUDGET#<budgetId>/PERIOD#<month>`
+- **budgets** (new, replaces `family`): Full budget lifecycle — `GET /budgets`, `POST /budgets`,
+  `PUT /budgets/active`, invite/accept/leave/remove, viewer access management, archive/restore/delete
+
+#### Infrastructure (CDK)
+
+- **Renamed** `api-family-stack.ts` → `api-budgets-stack.ts`
+  - Lambda: `budgetbuddy-budgets`, routes: `/budgets/*`, code: `backend/functions/budgets/`
+- **Updated `auth-stack.ts`**: `custom:familyId` and `custom:familyRole` marked optional; only `custom:userId` written
+- **Updated CDK app entry**: `ApiFamilyStack` → `ApiBudgetsStack`
+
+#### Frontend
+
+- **`budgetService.ts`** (new): all 13 budget management methods using `/budgets/*` endpoints
+- **`familyService.ts`** archived; all imports replaced with `budgetService`
+- **`AuthContext.tsx`**: removed `familyId`, `familyRole`, and all related localStorage reads/writes
+- **`BudgetSwitcher.tsx`** (new): header component shown when `budgets.length > 1`
+- **`OnboardingPage.tsx`**: added budget type selection step (Personal / Family / Shared)
+- **`BudgetMembersPage.tsx`** (new, replaces `FamilySettings.tsx`): role selector, viewer expiry picker,
+  archive/delete budget buttons
+- **`AcceptInvitationPage.tsx`**: updated to use `budgetId` from API response
+
+#### Verification
+
+- Unit tests: **73/73 passing** (`npm run test:unit`)
+- Lint: **0 errors** (`npm run lint:check`) — 48 pre-existing style warnings (function/file length)
+- CI/CD: **SUCCESS** (run ID 26728866665, commit 7a4c389, branch `develop`)
+- Health endpoint: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/health` → 200
+
 ## [1.9.116] - 2026-05-31
 
 ### 🐛 Bug Fixes (Round 2 — User Testing Session)
