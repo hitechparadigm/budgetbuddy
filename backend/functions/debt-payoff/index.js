@@ -15,10 +15,9 @@ const {
   generateId,
   dynamoHelpers,
   logger,
-  FamilyIdResolver,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
-const { checkPermission } = require("/opt/nodejs/shared");
 
 /**
  * Main Lambda handler for debt payoff operations
@@ -96,7 +95,14 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
-    if (error.message.includes("No user claims")) {
+    if (error && typeof error === 'object' && error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Forbidden', message: error.message || 'Permission denied' }),
+      };
+    }
+    if (error.message && error.message.includes("No user claims")) {
       return errorResponse.unauthorized("Authentication required");
     }
     return errorResponse.internalError(
@@ -110,18 +116,12 @@ exports.handler = async (event, context) => {
  * GET /debts
  */
 async function getDebts(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  logger.info("Getting debts", { budgetId });
 
-  logger.info("Getting debts", { familyId });
-
-  const debts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const debts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -146,16 +146,10 @@ async function getDebts(event, user) {
  * GET /debts/summary
  */
 async function getDebtsSummary(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  const debts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const debts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -211,14 +205,8 @@ async function getDebtsSummary(event, user) {
  * GET /debts/payoff-plan?strategy=snowball&extraPayment=100
  */
 async function getPayoffPlan(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const queryParams = event.queryStringParameters || {};
   const strategy = queryParams.strategy || "snowball";
@@ -228,7 +216,7 @@ async function getPayoffPlan(event, user) {
     return errorResponse.badRequest("Strategy must be snowball or avalanche");
   }
 
-  const debts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const debts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND status = :active AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -262,9 +250,6 @@ async function getPayoffPlan(event, user) {
  * POST /debts
  */
 async function createDebt(event, user) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
   const body = parseRequestBody(event);
   const {
     name,
@@ -295,21 +280,18 @@ async function createDebt(event, user) {
     return errorResponse.badRequest("Valid minimum payment is required");
   }
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const debtId = generateId("debt");
   const now = new Date().toISOString();
 
   const debt = {
-    PK: `FAMILY#${familyId}`,
+    PK: `BUDGET#${budgetId}`,
     SK: `DEBT#${debtId}`,
     entityType: "DEBT",
     debtId,
-    familyId,
+    budgetId,
     name: name.trim(),
     type: type || "other",
     originalBalance: originalBalance || currentBalance,
@@ -328,7 +310,7 @@ async function createDebt(event, user) {
 
   await dynamoHelpers.putItem(debt);
 
-  logger.info("Debt created", { debtId, familyId });
+  logger.info("Debt created", { debtId, budgetId });
 
   return successResponse(
     { debt: formatDebtResponse(debt) },
@@ -342,17 +324,11 @@ async function createDebt(event, user) {
  * PUT /debts/{debtId}
  */
 async function updateDebt(event, user, debtId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `DEBT#${debtId}`,
   );
 
@@ -387,12 +363,12 @@ async function updateDebt(event, user, debtId) {
   updates.updatedBy = user.userId;
 
   const updated = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `DEBT#${debtId}`,
     updates,
   );
 
-  logger.info("Debt updated", { debtId, familyId });
+  logger.info("Debt updated", { debtId, budgetId });
 
   return successResponse(
     { debt: formatDebtResponse(updated) },
@@ -405,17 +381,11 @@ async function updateDebt(event, user, debtId) {
  * POST /debts/{debtId}/payment
  */
 async function recordPayment(event, user, debtId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `DEBT#${debtId}`,
   );
 
@@ -455,7 +425,7 @@ async function recordPayment(event, user, debtId) {
   }
 
   const updated = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `DEBT#${debtId}`,
     updates,
   );
@@ -479,17 +449,11 @@ async function recordPayment(event, user, debtId) {
  * DELETE /debts/{debtId}
  */
 async function deleteDebt(event, user, debtId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `DEBT#${debtId}`,
   );
 
@@ -497,13 +461,13 @@ async function deleteDebt(event, user, debtId) {
     return errorResponse.notFound("Debt not found");
   }
 
-  await dynamoHelpers.updateItem(`FAMILY#${familyId}`, `DEBT#${debtId}`, {
+  await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, `DEBT#${debtId}`, {
     isDeleted: true,
     deletedAt: new Date().toISOString(),
     deletedBy: user.userId,
   });
 
-  logger.info("Debt deleted", { debtId, familyId });
+  logger.info("Debt deleted", { debtId, budgetId });
 
   return successResponse(null, "Debt deleted successfully");
 }

@@ -15,10 +15,9 @@ const {
   generateId,
   dynamoHelpers,
   logger,
-  FamilyIdResolver,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
-const { checkPermission } = require("/opt/nodejs/shared");
 
 /**
  * Main Lambda handler for subscription operations
@@ -108,7 +107,14 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
-    if (error.message.includes("No user claims")) {
+    if (error && typeof error === 'object' && error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Forbidden', message: error.message || 'Permission denied' }),
+      };
+    }
+    if (error.message && error.message.includes("No user claims")) {
       return errorResponse.unauthorized("Authentication required");
     }
     return errorResponse.internalError(
@@ -122,18 +128,12 @@ exports.handler = async (event, context) => {
  * GET /subscriptions
  */
 async function getSubscriptions(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  logger.info("Getting subscriptions", { budgetId });
 
-  logger.info("Getting subscriptions", { familyId });
-
-  const subscriptions = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const subscriptions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -160,16 +160,10 @@ async function getSubscriptions(event, user) {
  * GET /subscriptions/summary
  */
 async function getSubscriptionsSummary(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  const subscriptions = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const subscriptions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -242,23 +236,17 @@ async function getSubscriptionsSummary(event, user) {
  * GET /subscriptions/detect
  */
 async function detectSubscriptions(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  logger.info("Detecting subscriptions from transactions", { familyId });
+  logger.info("Detecting subscriptions from transactions", { budgetId });
 
   // Get transactions from last 6 months
   const sixMonthsAgo = new Date();
   sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
   const sixMonthsAgoStr = sixMonthsAgo.toISOString().split("T")[0];
 
-  const transactions = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const transactions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND transactionDate >= :startDate",
     ExpressionAttributeValues: {
@@ -293,7 +281,7 @@ async function detectSubscriptions(event, user) {
     if (pattern) {
       // Check if already tracked
       const existingSubscriptions = await dynamoHelpers.queryByPK(
-        `FAMILY#${familyId}`,
+        `BUDGET#${budgetId}`,
         {
           FilterExpression:
             "entityType = :entityType AND merchant = :merchant AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
@@ -336,9 +324,6 @@ async function detectSubscriptions(event, user) {
  * POST /subscriptions
  */
 async function createSubscription(event, user) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
   const body = parseRequestBody(event);
   const {
     name,
@@ -363,21 +348,18 @@ async function createSubscription(event, user) {
     );
   }
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const subscriptionId = generateId("sub");
   const now = new Date().toISOString();
 
   const subscription = {
-    PK: `FAMILY#${familyId}`,
+    PK: `BUDGET#${budgetId}`,
     SK: `SUBSCRIPTION#${subscriptionId}`,
     entityType: "SUBSCRIPTION",
     subscriptionId,
-    familyId,
+    budgetId,
     name: name.trim(),
     merchant: merchant?.trim() || name.trim(),
     amount,
@@ -395,7 +377,7 @@ async function createSubscription(event, user) {
 
   await dynamoHelpers.putItem(subscription);
 
-  logger.info("Subscription created", { subscriptionId, familyId });
+  logger.info("Subscription created", { subscriptionId, budgetId });
 
   return successResponse(
     { subscription: formatSubscriptionResponse(subscription) },
@@ -409,18 +391,12 @@ async function createSubscription(event, user) {
  * PUT /subscriptions/{subscriptionId}
  */
 async function updateSubscription(event, user, subscriptionId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   // Get existing subscription
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `SUBSCRIPTION#${subscriptionId}`,
   );
 
@@ -486,12 +462,12 @@ async function updateSubscription(event, user, subscriptionId) {
   updates.updatedBy = user.userId;
 
   const updated = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `SUBSCRIPTION#${subscriptionId}`,
     updates,
   );
 
-  logger.info("Subscription updated", { subscriptionId, familyId });
+  logger.info("Subscription updated", { subscriptionId, budgetId });
 
   return successResponse(
     { subscription: formatSubscriptionResponse(updated) },
@@ -504,14 +480,8 @@ async function updateSubscription(event, user, subscriptionId) {
  * PUT /subscriptions/{subscriptionId}/status
  */
 async function updateSubscriptionStatus(event, user, subscriptionId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const body = parseRequestBody(event);
   const { status, reviewStatus } = body;
@@ -521,7 +491,7 @@ async function updateSubscriptionStatus(event, user, subscriptionId) {
   }
 
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `SUBSCRIPTION#${subscriptionId}`,
   );
 
@@ -553,7 +523,7 @@ async function updateSubscriptionStatus(event, user, subscriptionId) {
   }
 
   const updated = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `SUBSCRIPTION#${subscriptionId}`,
     updates,
   );
@@ -569,17 +539,11 @@ async function updateSubscriptionStatus(event, user, subscriptionId) {
  * DELETE /subscriptions/{subscriptionId}
  */
 async function deleteSubscription(event, user, subscriptionId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `SUBSCRIPTION#${subscriptionId}`,
   );
 
@@ -588,7 +552,7 @@ async function deleteSubscription(event, user, subscriptionId) {
   }
 
   await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `SUBSCRIPTION#${subscriptionId}`,
     {
       isDeleted: true,
@@ -597,7 +561,7 @@ async function deleteSubscription(event, user, subscriptionId) {
     },
   );
 
-  logger.info("Subscription deleted", { subscriptionId, familyId });
+  logger.info("Subscription deleted", { subscriptionId, budgetId });
 
   return successResponse(null, "Subscription deleted successfully");
 }
@@ -852,10 +816,10 @@ module.exports.guessCategoryFromMerchant = guessCategoryFromMerchant;
 /**
  * Check for upcoming subscription renewals and create notifications
  * This function can be called by a scheduled Lambda (e.g., daily)
- * @param {string} familyId - Family ID to check subscriptions for
+ * @param {string} budgetId - Family ID to check subscriptions for
  * @returns {Object} - Summary of notifications created
  */
-async function checkRenewalNotifications(familyId) {
+async function checkRenewalNotifications(budgetId) {
   try {
     const today = new Date();
     const threeDaysFromNow = new Date(
@@ -864,7 +828,7 @@ async function checkRenewalNotifications(familyId) {
     const currentTime = today.toISOString();
 
     // Get all active subscriptions for the family
-    const subscriptions = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    const subscriptions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       FilterExpression:
         "entityType = :entityType AND #status = :active AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
       ExpressionAttributeNames: { "#status": "status" },
@@ -889,7 +853,7 @@ async function checkRenewalNotifications(familyId) {
     }
 
     // Get family members to notify
-    const familyMembers = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    const familyMembers = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       FilterExpression: "entityType = :type",
       ExpressionAttributeValues: { ":type": "MEMBER" },
     });
@@ -937,7 +901,7 @@ async function checkRenewalNotifications(familyId) {
           entityType: "NOTIFICATION",
           notificationId,
           userId,
-          familyId,
+          budgetId,
           type: "subscription_renewal",
           title: `💳 Subscription Renewal Coming`,
           body: `${subscription.name} ($${subscription.amount}) renews in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`,
@@ -959,7 +923,7 @@ async function checkRenewalNotifications(familyId) {
     await Promise.all(notificationPromises);
 
     logger.info("Subscription renewal notifications created", {
-      familyId,
+      budgetId,
       renewalsFound: upcomingRenewals.length,
       notificationsCreated: notificationPromises.length,
     });
@@ -970,7 +934,7 @@ async function checkRenewalNotifications(familyId) {
       upcomingRenewals: upcomingRenewals.length,
     };
   } catch (error) {
-    logger.error("Error checking renewal notifications", error, { familyId });
+    logger.error("Error checking renewal notifications", error, { budgetId });
     throw error;
   }
 }
@@ -978,7 +942,7 @@ async function checkRenewalNotifications(familyId) {
 /**
  * Check for price increases on subscriptions
  * Compares current amount with historical amounts
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Family ID
  * @param {string} subscriptionId - Subscription ID
  * @param {number} newAmount - New amount to compare
  * @returns {Object|null} - Price increase info or null

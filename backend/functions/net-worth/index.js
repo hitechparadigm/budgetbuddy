@@ -16,10 +16,9 @@ const {
   generateId,
   dynamoHelpers,
   logger,
-  FamilyIdResolver,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
-const { checkPermission } = require("/opt/nodejs/shared");
 
 // Asset categories
 const ASSET_CATEGORIES = [
@@ -135,7 +134,14 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
-    if (error.message.includes("No user claims")) {
+    if (error && typeof error === 'object' && error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Forbidden', message: error.message || 'Permission denied' }),
+      };
+    }
+    if (error.message && error.message.includes("No user claims")) {
       return errorResponse.unauthorized("Authentication required");
     }
     return errorResponse.internalError(
@@ -150,19 +156,13 @@ exports.handler = async (event, context) => {
  * **Validates: Requirement 41.1, 41.3, 45.8** - View net worth with investments
  */
 async function getNetWorth(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  logger.info("Getting net worth", { familyId });
+  logger.info("Getting net worth", { budgetId });
 
   // Get all assets
-  const assets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const assets = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -172,7 +172,7 @@ async function getNetWorth(event, user) {
   });
 
   // Get all liabilities
-  const liabilities = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const liabilities = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -234,17 +234,11 @@ async function getNetWorth(event, user) {
  * **Validates: Requirement 45.8** - Include investments in net worth
  */
 async function getNetWorthSummary(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   // Get all assets
-  const assets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const assets = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -254,7 +248,7 @@ async function getNetWorthSummary(event, user) {
   });
 
   // Get all liabilities
-  const liabilities = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const liabilities = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -278,7 +272,7 @@ async function getNetWorthSummary(event, user) {
   // Get last month's snapshot for comparison
   const lastMonth = getLastMonthKey();
   const lastSnapshot = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `NETWORTH_SNAPSHOT#${lastMonth}`,
   );
 
@@ -315,20 +309,14 @@ async function getNetWorthSummary(event, user) {
  * **Validates: Requirement 41.4, 41.7** - History tracking
  */
 async function getNetWorthHistory(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const queryParams = event.queryStringParameters || {};
   const months = parseInt(queryParams.months, 10) || 12;
 
   // Get snapshots
-  const snapshots = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const snapshots = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType",
     ExpressionAttributeValues: {
       ":entityType": "NETWORTH_SNAPSHOT",
@@ -380,16 +368,10 @@ async function getCategories() {
  * GET /net-worth/assets
  */
 async function getAssets(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  const assets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const assets = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -416,14 +398,8 @@ async function getAssets(event, user) {
  * **Validates: Requirement 41.2** - Add assets
  */
 async function createAsset(event, user) {
-  const permissionError = checkPermission(event, "budget:create");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'transaction.create', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -439,11 +415,11 @@ async function createAsset(event, user) {
   const currentTime = new Date().toISOString();
 
   const asset = {
-    PK: `FAMILY#${familyId}`,
+    PK: `BUDGET#${budgetId}`,
     SK: `ASSET#${assetId}`,
     entityType: "ASSET",
     assetId,
-    familyId,
+    budgetId,
     name: body.name,
     value: body.value,
     category: body.category || "other_assets",
@@ -460,9 +436,9 @@ async function createAsset(event, user) {
   await dynamoHelpers.putItem(asset);
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId, user.userId);
+  await updateNetWorthSnapshot(budgetId, user.userId);
 
-  logger.info("Asset created", { assetId, familyId, name: body.name });
+  logger.info("Asset created", { assetId, budgetId, name: body.name });
 
   return successResponse(
     formatAssetResponse(asset),
@@ -477,19 +453,13 @@ async function createAsset(event, user) {
  * **Validates: Requirement 41.5** - Manual value updates
  */
 async function updateAsset(event, user, assetId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ASSET#${assetId}`,
   );
 
@@ -506,15 +476,15 @@ async function updateAsset(event, user, assetId) {
   if (body.notes !== undefined) updates.notes = body.notes;
 
   const updated = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ASSET#${assetId}`,
     updates,
   );
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId, user.userId);
+  await updateNetWorthSnapshot(budgetId, user.userId);
 
-  logger.info("Asset updated", { assetId, familyId });
+  logger.info("Asset updated", { assetId, budgetId });
 
   return successResponse(
     formatAssetResponse(updated),
@@ -527,17 +497,11 @@ async function updateAsset(event, user, assetId) {
  * DELETE /net-worth/assets/{assetId}
  */
 async function deleteAsset(event, user, assetId) {
-  const permissionError = checkPermission(event, "budget:delete");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ASSET#${assetId}`,
   );
 
@@ -545,16 +509,16 @@ async function deleteAsset(event, user, assetId) {
     return errorResponse.notFound("Asset not found");
   }
 
-  await dynamoHelpers.updateItem(`FAMILY#${familyId}`, `ASSET#${assetId}`, {
+  await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, `ASSET#${assetId}`, {
     isDeleted: true,
     deletedAt: new Date().toISOString(),
     deletedBy: user.userId,
   });
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId, user.userId);
+  await updateNetWorthSnapshot(budgetId, user.userId);
 
-  logger.info("Asset deleted", { assetId, familyId });
+  logger.info("Asset deleted", { assetId, budgetId });
 
   return successResponse(null, "Asset deleted successfully");
 }
@@ -564,16 +528,10 @@ async function deleteAsset(event, user, assetId) {
  * GET /net-worth/liabilities
  */
 async function getLiabilities(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  const liabilities = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const liabilities = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -603,14 +561,8 @@ async function getLiabilities(event, user) {
  * **Validates: Requirement 41.2** - Add liabilities
  */
 async function createLiability(event, user) {
-  const permissionError = checkPermission(event, "budget:create");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'transaction.create', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -626,11 +578,11 @@ async function createLiability(event, user) {
   const currentTime = new Date().toISOString();
 
   const liability = {
-    PK: `FAMILY#${familyId}`,
+    PK: `BUDGET#${budgetId}`,
     SK: `LIABILITY#${liabilityId}`,
     entityType: "LIABILITY",
     liabilityId,
-    familyId,
+    budgetId,
     name: body.name,
     balance: body.balance,
     originalBalance: body.originalBalance || body.balance,
@@ -651,9 +603,9 @@ async function createLiability(event, user) {
   await dynamoHelpers.putItem(liability);
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId, user.userId);
+  await updateNetWorthSnapshot(budgetId, user.userId);
 
-  logger.info("Liability created", { liabilityId, familyId, name: body.name });
+  logger.info("Liability created", { liabilityId, budgetId, name: body.name });
 
   return successResponse(
     formatLiabilityResponse(liability),
@@ -668,19 +620,13 @@ async function createLiability(event, user) {
  * **Validates: Requirement 41.5** - Manual value updates
  */
 async function updateLiability(event, user, liabilityId) {
-  const permissionError = checkPermission(event, "budget:edit");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `LIABILITY#${liabilityId}`,
   );
 
@@ -702,15 +648,15 @@ async function updateLiability(event, user, liabilityId) {
   if (body.notes !== undefined) updates.notes = body.notes;
 
   const updated = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `LIABILITY#${liabilityId}`,
     updates,
   );
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId, user.userId);
+  await updateNetWorthSnapshot(budgetId, user.userId);
 
-  logger.info("Liability updated", { liabilityId, familyId });
+  logger.info("Liability updated", { liabilityId, budgetId });
 
   return successResponse(
     formatLiabilityResponse(updated),
@@ -723,17 +669,11 @@ async function updateLiability(event, user, liabilityId) {
  * DELETE /net-worth/liabilities/{liabilityId}
  */
 async function deleteLiability(event, user, liabilityId) {
-  const permissionError = checkPermission(event, "budget:delete");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `LIABILITY#${liabilityId}`,
   );
 
@@ -742,7 +682,7 @@ async function deleteLiability(event, user, liabilityId) {
   }
 
   await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `LIABILITY#${liabilityId}`,
     {
       isDeleted: true,
@@ -752,9 +692,9 @@ async function deleteLiability(event, user, liabilityId) {
   );
 
   // Update net worth snapshot
-  await updateNetWorthSnapshot(familyId, user.userId);
+  await updateNetWorthSnapshot(budgetId, user.userId);
 
-  logger.info("Liability deleted", { liabilityId, familyId });
+  logger.info("Liability deleted", { liabilityId, budgetId });
 
   return successResponse(null, "Liability deleted successfully");
 }
@@ -796,12 +736,12 @@ async function getInvestmentValue(userId) {
  * Update net worth snapshot for current month
  * **Validates: Requirement 45.8** - Include investments in snapshots
  */
-async function updateNetWorthSnapshot(familyId, userId) {
+async function updateNetWorthSnapshot(budgetId, userId) {
   try {
     const currentMonth = getCurrentMonthKey();
 
     // Get all assets
-    const assets = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    const assets = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       FilterExpression:
         "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
       ExpressionAttributeValues: {
@@ -811,7 +751,7 @@ async function updateNetWorthSnapshot(familyId, userId) {
     });
 
     // Get all liabilities
-    const liabilities = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+    const liabilities = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       FilterExpression:
         "entityType = :entityType AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
       ExpressionAttributeValues: {
@@ -835,10 +775,10 @@ async function updateNetWorthSnapshot(familyId, userId) {
     const netWorth = totalAssets - totalLiabilities;
 
     const snapshot = {
-      PK: `FAMILY#${familyId}`,
+      PK: `BUDGET#${budgetId}`,
       SK: `NETWORTH_SNAPSHOT#${currentMonth}`,
       entityType: "NETWORTH_SNAPSHOT",
-      familyId,
+      budgetId,
       month: currentMonth,
       netWorth: Math.round(netWorth * 100) / 100,
       totalAssets: Math.round(totalAssets * 100) / 100,
@@ -852,13 +792,13 @@ async function updateNetWorthSnapshot(familyId, userId) {
     await dynamoHelpers.putItem(snapshot);
 
     logger.info("Net worth snapshot updated", {
-      familyId,
+      budgetId,
       month: currentMonth,
       netWorth,
       investmentValue,
     });
   } catch (error) {
-    logger.error("Error updating net worth snapshot", error, { familyId });
+    logger.error("Error updating net worth snapshot", error, { budgetId });
   }
 }
 

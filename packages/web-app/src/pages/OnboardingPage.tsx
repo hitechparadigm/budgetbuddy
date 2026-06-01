@@ -134,6 +134,20 @@ export const OnboardingPage: React.FC = () => {
     } catch (error) {
       console.error("OnboardingPage: Error completing onboarding:", error);
 
+      // 409 means onboarding already completed (budget already exists).
+      // Treat this as success — navigate to budget rather than showing an error.
+      if (
+        error instanceof Error &&
+        (error.message.includes("Onboarding already completed") ||
+          error.message.includes("Budget already exists"))
+      ) {
+        console.log(
+          "OnboardingPage: Budget already exists (409) — navigating to budget page",
+        );
+        navigate("/budget");
+        return;
+      }
+
       // Enhanced error handling
       let errorMessage = "Failed to complete onboarding. Please try again.";
 

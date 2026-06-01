@@ -190,7 +190,7 @@ Tasks 1 and 2 are written and run on unfixed code before any implementation begi
     - Note: existing `index.test.js` tests that assert `statusCode: 403` for missing `defaultBudgetId` must be updated to assert `statusCode: 200` (they test the bug, not the fix) — update those tests as part of this sub-task
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
-- [-] 4. Checkpoint — Ensure all tests pass
+- [x] 4. Checkpoint — Ensure all tests pass
   - Run the full test suite: `cd backend/functions/auth-onboarding && npx jest --coverage`
   - Confirm coverage is >80% on `index.js`
   - Confirm no ESLint errors: `cd backend/functions/auth-onboarding && npx eslint index.js`

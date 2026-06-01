@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.9.120] - 2026-06-01
+
+### 🐛 Fix: Onboarding 409 treated as success + family Lambda dead code removed
+
+- **OnboardingPage**: 409 Conflict response (budget already exists) now navigates to `/budget`
+  instead of showing an error — prevents the user getting stuck when the first call succeeded
+  but the UI retried.
+- **family/index.js**: Removed ~1000 lines of unreachable dead code after the 410 early return.
+  File is now a clean 70-line deprecated stub. Fixes `no-unreachable` ESLint error.
+
 ## [1.9.119] - 2026-06-01
 
 ### 🐛 Fix: Auth Onboarding 403 for New Users Without defaultBudgetId

@@ -27,8 +27,7 @@ describe("Budget Rollover Feature", () => {
 
     // Reset shared mock
     const shared = require("/opt/nodejs/shared");
-    shared.checkPermission.mockReturnValue(null);
-  });
+      });
 
   describe("Rollover Fields in Budget Creation", () => {
     /**
@@ -39,16 +38,16 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
       dynamoHelpers.getItem.mockResolvedValue(null); // No existing budget
       dynamoHelpers.putItem.mockResolvedValue({});
 
@@ -131,16 +130,16 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
       dynamoHelpers.getItem.mockResolvedValue(null);
       dynamoHelpers.putItem.mockResolvedValue({});
 
@@ -209,16 +208,16 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
       dynamoHelpers.getItem.mockResolvedValue(null);
       dynamoHelpers.putItem.mockResolvedValue({});
 
@@ -296,21 +295,21 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       // Existing budget without rollover
       const existingBudget = {
         budgetId: "budget_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-02",
         groups: {
           income: [],
@@ -383,7 +382,7 @@ describe("Budget Rollover Feature", () => {
 
       // Verify updateItem was called with rollover fields
       expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
-        "FAMILY#family_123",
+        "BUDGET#family_123",
         "BUDGET#2026-02",
         expect.objectContaining({
           groups: expect.objectContaining({
@@ -413,20 +412,20 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       const mockBudget = {
         budgetId: "budget_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-02",
         totalIncome: 5000,
         totalSavings: 500,
@@ -494,21 +493,21 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       // Legacy budget without totalRollover field
       const mockBudget = {
         budgetId: "budget_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-02",
         totalIncome: 5000,
         totalSavings: 500,
@@ -580,16 +579,16 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
       dynamoHelpers.getItem.mockResolvedValue(null);
       dynamoHelpers.putItem.mockResolvedValue({});
 
@@ -658,16 +657,16 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
       dynamoHelpers.getItem.mockResolvedValue(null);
 
       let savedBudget = null;
@@ -733,16 +732,16 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       // No current month budget
       dynamoHelpers.getItem.mockResolvedValueOnce(null);
@@ -752,7 +751,7 @@ describe("Budget Rollover Feature", () => {
       // = 50 + (500 - 450) = 50 + 50 = 100
       const previousBudget = {
         budgetId: "budget_prev",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-01",
         groups: {
           income: [],
@@ -819,16 +818,16 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       // No current month budget
       dynamoHelpers.getItem.mockResolvedValueOnce(null);
@@ -837,7 +836,7 @@ describe("Budget Rollover Feature", () => {
       // Rollover calculation: newRollover = 0 + (500 - 600) = -100
       const previousBudget = {
         budgetId: "budget_prev",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-01",
         groups: {
           income: [],
@@ -902,16 +901,16 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       // No current month budget
       dynamoHelpers.getItem.mockResolvedValueOnce(null);
@@ -921,7 +920,7 @@ describe("Budget Rollover Feature", () => {
       // But cap is 200, so should be capped at 200
       const previousBudget = {
         budgetId: "budget_prev",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-01",
         groups: {
           income: [],
@@ -988,16 +987,16 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       // No current month budget
       dynamoHelpers.getItem.mockResolvedValueOnce(null);
@@ -1005,7 +1004,7 @@ describe("Budget Rollover Feature", () => {
       // Previous month budget - rollover disabled
       const previousBudget = {
         budgetId: "budget_prev",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-01",
         groups: {
           income: [],
@@ -1068,16 +1067,16 @@ describe("Budget Rollover Feature", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       // No current month budget (January 2027)
       dynamoHelpers.getItem.mockResolvedValueOnce(null);
@@ -1085,7 +1084,7 @@ describe("Budget Rollover Feature", () => {
       // Previous month budget (December 2026)
       const previousBudget = {
         budgetId: "budget_prev",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-12",
         groups: {
           income: [],
@@ -1156,8 +1155,7 @@ describe("Rollover API Endpoints", () => {
 
     // Reset shared mock
     const shared = require("/opt/nodejs/shared");
-    shared.checkPermission.mockReturnValue(null);
-  });
+      });
 
   describe("PUT /budget/categories/{categoryId}/rollover", () => {
     /**
@@ -1167,20 +1165,20 @@ describe("Rollover API Endpoints", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       const existingBudget = {
         budgetId: "budget_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-02",
         groups: {
           income: [],
@@ -1241,7 +1239,7 @@ describe("Rollover API Endpoints", () => {
 
       // Verify updateItem was called with correct data
       expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
-        "FAMILY#family_123",
+        "BUDGET#family_123",
         "BUDGET#2026-02",
         expect.objectContaining({
           groups: expect.objectContaining({
@@ -1268,20 +1266,20 @@ describe("Rollover API Endpoints", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       const existingBudget = {
         budgetId: "budget_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-02",
         groups: {
           income: [],
@@ -1349,16 +1347,16 @@ describe("Rollover API Endpoints", () => {
     test("should return 400 for missing month", async () => {
       const {
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       const event = {
         httpMethod: "PUT",
@@ -1387,16 +1385,16 @@ describe("Rollover API Endpoints", () => {
     test("should return 400 for invalid groupType", async () => {
       const {
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       const event = {
         httpMethod: "PUT",
@@ -1427,20 +1425,20 @@ describe("Rollover API Endpoints", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       const existingBudget = {
         budgetId: "budget_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-02",
         groups: {
           income: [],
@@ -1497,20 +1495,20 @@ describe("Rollover API Endpoints", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       const existingBudget = {
         budgetId: "budget_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         month: "2026-02",
         groups: {
           income: [],
@@ -1580,16 +1578,16 @@ describe("Rollover API Endpoints", () => {
     test("should return 400 for missing groupType", async () => {
       const {
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
 
       const event = {
         httpMethod: "PUT",
@@ -1618,16 +1616,16 @@ describe("Rollover API Endpoints", () => {
       const {
         dynamoHelpers,
         getUserFromEvent,
-        FamilyIdResolver,
+        BudgetAccessResolver,
       } = require("/opt/nodejs/utils");
 
       getUserFromEvent.mockReturnValue({
         userId: "user_123",
-        familyId: "family_123",
+        budgetId: "budget_123",
         familyRole: "primary",
       });
 
-      FamilyIdResolver.resolveFamilyId.mockResolvedValue("family_123");
+      BudgetAccessResolver.resolveAccess.mockResolvedValue({ budgetId: "family_123", role: "owner", budgetType: "personal", budgetStatus: "active", subscriptionTier: "free" });
       dynamoHelpers.getItem.mockResolvedValue(null);
 
       const event = {

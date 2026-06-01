@@ -16,10 +16,9 @@ const {
   generateId,
   dynamoHelpers,
   logger,
-  FamilyIdResolver,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
-const { checkPermission } = require("/opt/nodejs/shared");
 
 const {
   TextractClient,
@@ -111,7 +110,14 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
-    if (error.message.includes("No user claims")) {
+    if (error && typeof error === 'object' && error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Forbidden', message: error.message || 'Permission denied' }),
+      };
+    }
+    if (error.message && error.message.includes("No user claims")) {
       return errorResponse.unauthorized("Authentication required");
     }
     return errorResponse.internalError(
@@ -126,17 +132,11 @@ exports.handler = async (event, context) => {
  * **Validates: Requirement 44.1, 44.2** - Receipt upload endpoint
  */
 async function getUploadUrl(event, user) {
-  const permissionError = checkPermission(event, "transaction:create");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   // Check daily usage limit
-  const usage = await getDailyUsage(familyId, user.userId);
+  const usage = await getDailyUsage(budgetId, user.userId);
   const limit = user.isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
 
   if (usage >= limit) {
@@ -164,7 +164,7 @@ async function getUploadUrl(event, user) {
   }
 
   const receiptId = generateId.custom("rcpt");
-  const s3Key = `receipts/${familyId}/${receiptId}/${fileName}`;
+  const s3Key = `receipts/${budgetId}/${receiptId}/${fileName}`;
 
   try {
     // Generate presigned URL for upload
@@ -173,7 +173,7 @@ async function getUploadUrl(event, user) {
       Key: s3Key,
       ContentType: contentType,
       Metadata: {
-        familyId,
+        budgetId,
         userId: user.userId,
         receiptId,
       },
@@ -185,11 +185,11 @@ async function getUploadUrl(event, user) {
 
     // Store receipt metadata (pending processing)
     const receipt = {
-      PK: `FAMILY#${familyId}`,
+      PK: `BUDGET#${budgetId}`,
       SK: `RECEIPT#${receiptId}`,
       entityType: "RECEIPT",
       receiptId,
-      familyId,
+      budgetId,
       userId: user.userId,
       s3Key,
       fileName,
@@ -200,7 +200,7 @@ async function getUploadUrl(event, user) {
 
     await dynamoHelpers.putItem(receipt);
 
-    logger.info("Upload URL generated", { receiptId, familyId, s3Key });
+    logger.info("Upload URL generated", { receiptId, budgetId, s3Key });
 
     return successResponse(
       {
@@ -213,7 +213,7 @@ async function getUploadUrl(event, user) {
       "Upload URL generated successfully",
     );
   } catch (error) {
-    logger.error("Error generating upload URL", error, { familyId });
+    logger.error("Error generating upload URL", error, { budgetId });
     return errorResponse.internalError("Failed to generate upload URL");
   }
 }
@@ -224,14 +224,8 @@ async function getUploadUrl(event, user) {
  * **Validates: Requirement 44.3** - Extract total, merchant, date
  */
 async function processReceipt(event, user) {
-  const permissionError = checkPermission(event, "transaction:create");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -240,7 +234,7 @@ async function processReceipt(event, user) {
   }
 
   // Check daily usage limit
-  const usage = await getDailyUsage(familyId, user.userId);
+  const usage = await getDailyUsage(budgetId, user.userId);
   const limit = user.isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
 
   if (usage >= limit) {
@@ -251,7 +245,7 @@ async function processReceipt(event, user) {
 
   // Get receipt metadata
   const receipt = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `RECEIPT#${body.receiptId}`,
   );
 
@@ -291,13 +285,13 @@ async function processReceipt(event, user) {
     };
 
     await dynamoHelpers.updateItem(
-      `FAMILY#${familyId}`,
+      `BUDGET#${budgetId}`,
       `RECEIPT#${body.receiptId}`,
       updates,
     );
 
     // Increment daily usage
-    await incrementDailyUsage(familyId, user.userId);
+    await incrementDailyUsage(budgetId, user.userId);
 
     logger.info("Receipt processed successfully", {
       receiptId: body.receiptId,
@@ -320,7 +314,7 @@ async function processReceipt(event, user) {
 
     // Update status to failed
     await dynamoHelpers.updateItem(
-      `FAMILY#${familyId}`,
+      `BUDGET#${budgetId}`,
       `RECEIPT#${body.receiptId}`,
       {
         status: "failed",
@@ -338,17 +332,11 @@ async function processReceipt(event, user) {
  * GET /receipt/{receiptId}
  */
 async function getReceipt(event, user, receiptId) {
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const receipt = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `RECEIPT#${receiptId}`,
   );
 
@@ -367,19 +355,13 @@ async function getReceipt(event, user, receiptId) {
  * GET /receipt/history
  */
 async function getReceiptHistory(event, user) {
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const queryParams = event.queryStringParameters || {};
   const limit = Math.min(parseInt(queryParams.limit, 10) || 20, 50);
 
-  const receipts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const receipts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType",
     ExpressionAttributeValues: { ":entityType": "RECEIPT" },
     Limit: limit,
@@ -400,16 +382,10 @@ async function getReceiptHistory(event, user) {
  * GET /receipt/usage
  */
 async function getUsage(event, user) {
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  const usage = await getDailyUsage(familyId, user.userId);
+  const usage = await getDailyUsage(budgetId, user.userId);
   const limit = user.isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
 
   return successResponse(
@@ -733,31 +709,31 @@ function suggestCategory(merchant) {
 /**
  * Get daily usage count for a user
  */
-async function getDailyUsage(familyId, userId) {
+async function getDailyUsage(budgetId, userId) {
   const today = new Date().toISOString().split("T")[0];
   const usageKey = `USAGE#${today}#${userId}`;
 
-  const usage = await dynamoHelpers.getItem(`FAMILY#${familyId}`, usageKey);
+  const usage = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, usageKey);
   return usage?.count || 0;
 }
 
 /**
  * Increment daily usage count
  */
-async function incrementDailyUsage(familyId, userId) {
+async function incrementDailyUsage(budgetId, userId) {
   const today = new Date().toISOString().split("T")[0];
   const usageKey = `USAGE#${today}#${userId}`;
 
-  const existing = await dynamoHelpers.getItem(`FAMILY#${familyId}`, usageKey);
+  const existing = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, usageKey);
 
   if (existing) {
-    await dynamoHelpers.updateItem(`FAMILY#${familyId}`, usageKey, {
+    await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, usageKey, {
       count: (existing.count || 0) + 1,
       updatedAt: new Date().toISOString(),
     });
   } else {
     await dynamoHelpers.putItem({
-      PK: `FAMILY#${familyId}`,
+      PK: `BUDGET#${budgetId}`,
       SK: usageKey,
       entityType: "USAGE",
       userId,

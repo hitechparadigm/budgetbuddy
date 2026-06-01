@@ -160,45 +160,9 @@ exports.handler = async (event) => {
     await cognitoClient.send(setPasswordCommand);
     console.log("Password set as permanent");
 
-    // Generate family ID for single-person family
-    const familyId = `family_${userId}`;
     const currentTime = new Date().toISOString();
 
-    // Create family metadata record
-    const familyProfile = {
-      PK: {
-        S: `FAMILY#${familyId}`,
-      },
-      SK: {
-        S: "METADATA",
-      },
-      entityType: {
-        S: "FAMILY",
-      },
-      familyId: {
-        S: familyId,
-      },
-      familyName: {
-        S: `${requestBody.firstName}'s Budget`,
-      },
-      primaryUserId: {
-        S: userId,
-      },
-      memberCount: {
-        N: "1",
-      },
-      accountType: {
-        S: "single",
-      },
-      createdAt: {
-        S: currentTime,
-      },
-      updatedAt: {
-        S: currentTime,
-      },
-    };
-
-    // Create user profile in DynamoDB with family assignment
+    // Create user profile in DynamoDB
     const userProfile = {
       PK: {
         S: `USER#${userId}`,
@@ -221,12 +185,6 @@ exports.handler = async (event) => {
       lastName: {
         S: requestBody.lastName,
       },
-      familyId: {
-        S: familyId,
-      },
-      familyRole: {
-        S: "primary",
-      },
       accountType: {
         S: "single",
       },
@@ -244,49 +202,12 @@ exports.handler = async (event) => {
       },
     };
 
-    // Create family member record for the primary user
-    // This is required for the family/members endpoint to work correctly
-    const familyMember = {
-      PK: {
-        S: `FAMILY#${familyId}`,
-      },
-      SK: {
-        S: `MEMBER#${userId}`,
-      },
-      userId: {
-        S: userId,
-      },
-      role: {
-        S: "primary",
-      },
-      joinedAt: {
-        S: currentTime,
-      },
-      addedBy: {
-        S: userId,
-      },
-    };
-
-    // Create user, family, and member records in a transaction
+    // Create user profile in DynamoDB
     const transactItems = [
       {
         Put: {
           TableName: TABLE_NAME,
-          Item: familyProfile,
-          ConditionExpression: "attribute_not_exists(PK)",
-        },
-      },
-      {
-        Put: {
-          TableName: TABLE_NAME,
           Item: userProfile,
-          ConditionExpression: "attribute_not_exists(PK)",
-        },
-      },
-      {
-        Put: {
-          TableName: TABLE_NAME,
-          Item: familyMember,
           ConditionExpression: "attribute_not_exists(PK)",
         },
       },
@@ -297,7 +218,7 @@ exports.handler = async (event) => {
     });
 
     await dynamoClient.send(transactCommand);
-    console.log("User profile, family, and member record created in DynamoDB");
+    console.log("User profile created in DynamoDB");
 
     // Return success response
     return {
@@ -306,7 +227,6 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         message: "User registered successfully",
         userId,
-        familyId,
         email: requestBody.email,
         firstName: requestBody.firstName,
         lastName: requestBody.lastName,

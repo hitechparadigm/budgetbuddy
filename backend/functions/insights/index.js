@@ -14,10 +14,9 @@ const {
   getUserFromEvent,
   dynamoHelpers,
   logger,
-  FamilyIdResolver,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
-const { checkPermission } = require("/opt/nodejs/shared");
 
 // AWS Bedrock client for AI insights
 const {
@@ -97,7 +96,14 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
-    if (error.message.includes("No user claims")) {
+    if (error && typeof error === 'object' && error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Forbidden', message: error.message || 'Permission denied' }),
+      };
+    }
+    if (error.message && error.message.includes("No user claims")) {
       return errorResponse.unauthorized("Authentication required");
     }
     return errorResponse.internalError(
@@ -111,16 +117,10 @@ exports.handler = async (event, context) => {
  * GET /insights/weekly
  */
 async function getWeeklyInsights(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  logger.info("Getting weekly insights", { familyId });
+  logger.info("Getting weekly insights", { budgetId });
 
   // Get current week's transactions
   const today = new Date();
@@ -128,12 +128,12 @@ async function getWeeklyInsights(event, user) {
   const weekEnd = new Date(today);
 
   const transactions = await getTransactionsInRange(
-    familyId,
+    budgetId,
     weekStart,
     weekEnd,
   );
   const previousWeekTransactions = await getTransactionsInRange(
-    familyId,
+    budgetId,
     new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000),
     new Date(weekStart.getTime() - 1),
   );
@@ -190,19 +190,13 @@ async function getWeeklyInsights(event, user) {
  * GET /insights/monthly
  */
 async function getMonthlyInsights(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const queryParams = event.queryStringParameters || {};
   const month = queryParams.month || new Date().toISOString().substring(0, 7);
 
-  logger.info("Getting monthly insights", { familyId, month });
+  logger.info("Getting monthly insights", { budgetId, month });
 
   // Get month's transactions
   const monthStart = new Date(`${month}-01`);
@@ -211,7 +205,7 @@ async function getMonthlyInsights(event, user) {
   monthEnd.setDate(0);
 
   const transactions = await getTransactionsInRange(
-    familyId,
+    budgetId,
     monthStart,
     monthEnd,
   );
@@ -223,7 +217,7 @@ async function getMonthlyInsights(event, user) {
   prevMonthEnd.setDate(0);
 
   const previousTransactions = await getTransactionsInRange(
-    familyId,
+    budgetId,
     prevMonthStart,
     prevMonthEnd,
   );
@@ -238,7 +232,7 @@ async function getMonthlyInsights(event, user) {
 
   // Get budget for comparison
   const budget = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `BUDGET#${month}`,
   );
   const budgetComparison = budget ? compareToBudget(summary, budget) : null;
@@ -279,19 +273,13 @@ async function getMonthlyInsights(event, user) {
  * GET /insights/trends
  */
 async function getSpendingTrends(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const queryParams = event.queryStringParameters || {};
   const months = parseInt(queryParams.months, 10) || 6;
 
-  logger.info("Getting spending trends", { familyId, months });
+  logger.info("Getting spending trends", { budgetId, months });
 
   // Get data for each month
   const trends = [];
@@ -309,7 +297,7 @@ async function getSpendingTrends(event, user) {
     monthEnd.setDate(0);
 
     const transactions = await getTransactionsInRange(
-      familyId,
+      budgetId,
       monthStart,
       monthEnd,
     );
@@ -357,23 +345,17 @@ async function getSpendingTrends(event, user) {
  * GET /insights/patterns
  */
 async function getSpendingPatterns(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  logger.info("Getting spending patterns", { familyId });
+  logger.info("Getting spending patterns", { budgetId });
 
   // Get last 90 days of transactions
   const today = new Date();
   const startDate = new Date(today);
   startDate.setDate(startDate.getDate() - 90);
 
-  const transactions = await getTransactionsInRange(familyId, startDate, today);
+  const transactions = await getTransactionsInRange(budgetId, startDate, today);
 
   // Analyze patterns
   const dayOfWeekPattern = analyzeDayOfWeekPattern(transactions);
@@ -405,14 +387,8 @@ async function getSpendingPatterns(event, user) {
  * POST /insights/ask
  */
 async function askAboutSpending(event, user) {
-  const permissionError = checkPermission(event, "budget:view");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -421,7 +397,7 @@ async function askAboutSpending(event, user) {
   }
 
   logger.info("Processing spending question", {
-    familyId,
+    budgetId,
     question: body.question,
   });
 
@@ -430,7 +406,7 @@ async function askAboutSpending(event, user) {
   const startDate = new Date(today);
   startDate.setDate(startDate.getDate() - 30);
 
-  const transactions = await getTransactionsInRange(familyId, startDate, today);
+  const transactions = await getTransactionsInRange(budgetId, startDate, today);
   const summary = calculateSummary(transactions);
   const categoryBreakdown = calculateCategoryTotals(transactions);
   const patterns = identifyPatterns(transactions);
@@ -470,11 +446,11 @@ async function askAboutSpending(event, user) {
 /**
  * Get transactions in a date range
  */
-async function getTransactionsInRange(familyId, startDate, endDate) {
+async function getTransactionsInRange(budgetId, startDate, endDate) {
   const startStr = startDate.toISOString().split("T")[0];
   const endStr = endDate.toISOString().split("T")[0];
 
-  const transactions = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const transactions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND #date >= :start AND #date <= :end",
     ExpressionAttributeNames: { "#date": "date" },
@@ -1086,22 +1062,22 @@ Return ONLY a JSON array of insight objects, no other text:`;
 
 /**
  * Generate weekly insight summary for notifications
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Family ID
  * @returns {Object} Weekly insight summary
  */
-async function generateWeeklyInsightSummary(familyId) {
+async function generateWeeklyInsightSummary(budgetId) {
   try {
     const today = new Date();
     const weekStart = getWeekStart(today);
     const weekEnd = new Date(today);
 
     const transactions = await getTransactionsInRange(
-      familyId,
+      budgetId,
       weekStart,
       weekEnd,
     );
     const previousWeekTransactions = await getTransactionsInRange(
-      familyId,
+      budgetId,
       new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000),
       new Date(weekStart.getTime() - 1),
     );
@@ -1141,7 +1117,7 @@ async function generateWeeklyInsightSummary(familyId) {
     };
   } catch (error) {
     logger.error("Error generating weekly insight summary", error, {
-      familyId,
+      budgetId,
     });
     throw error;
   }

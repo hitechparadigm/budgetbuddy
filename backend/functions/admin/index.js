@@ -302,18 +302,18 @@ async function getUserDetails(event, adminUser, targetUserId) {
     return errorResponse.notFound("User not found");
   }
 
-  // Get user's family info if they have one
+  // Get user's budget info if they have one
   let familyInfo = null;
-  if (userProfile.familyId) {
-    const family = await dynamoHelpers.getItem(
-      `FAMILY#${userProfile.familyId}`,
-      "METADATA",
-    );
-    if (family) {
+  if (userProfile.defaultBudgetId) {
+    const [budget, member] = await Promise.all([
+      dynamoHelpers.getItem(`BUDGET#${userProfile.defaultBudgetId}`, "METADATA"),
+      dynamoHelpers.getItem(`BUDGET#${userProfile.defaultBudgetId}`, `MEMBER#${targetUserId}`),
+    ]);
+    if (budget) {
       familyInfo = {
-        familyId: family.familyId,
-        memberCount: family.memberCount || 1,
-        role: userProfile.familyRole || "primary",
+        budgetId: userProfile.defaultBudgetId,
+        budgetType: budget.budgetType || "personal",
+        role: member?.role || "owner",
       };
     }
   }
@@ -588,7 +588,7 @@ function formatUserForAdmin(user) {
     lastLoginAt: user.lastLoginAt,
     subscriptionStatus: user.subscriptionStatus || "free",
     isDisabled: user.isDisabled || false,
-    familyId: user.familyId,
+    defaultBudgetId: user.defaultBudgetId,
     location: user.location,
   };
 }

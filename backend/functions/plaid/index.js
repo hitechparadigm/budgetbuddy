@@ -27,10 +27,9 @@ const {
   generateId,
   dynamoHelpers,
   logger,
-  FamilyIdResolver,
+  BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
 
-const { checkPermission } = require("/opt/nodejs/shared");
 
 // Environment configuration
 const PLAID_ENV = process.env.PLAID_ENV || "sandbox";
@@ -182,7 +181,14 @@ exports.handler = async (event, context) => {
       requestId: context.awsRequestId,
     });
 
-    if (error.message.includes("No user claims")) {
+    if (error && typeof error === 'object' && error.statusCode) {
+      return {
+        statusCode: error.statusCode,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ error: 'Forbidden', message: error.message || 'Permission denied' }),
+      };
+    }
+    if (error.message && error.message.includes("No user claims")) {
       return errorResponse.unauthorized("Authentication required");
     }
     return errorResponse.internalError(
@@ -196,23 +202,17 @@ exports.handler = async (event, context) => {
  * POST /plaid/link-token
  */
 async function createLinkToken(event, user) {
-  const permissionError = checkPermission(event, "transaction:create");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  logger.info("Creating link token", { familyId, environment: PLAID_ENV });
+  logger.info("Creating link token", { budgetId, environment: PLAID_ENV });
 
   try {
     const client = await getPlaidClient();
 
     const request = {
       user: {
-        client_user_id: familyId,
+        client_user_id: budgetId,
       },
       client_name: "BudgetBuddy",
       products: [Products.Transactions],
@@ -225,7 +225,7 @@ async function createLinkToken(event, user) {
     const response = await client.linkTokenCreate(request);
 
     logger.info("Link token created successfully", {
-      familyId,
+      budgetId,
       expiration: response.data.expiration,
     });
 
@@ -250,21 +250,15 @@ async function createLinkToken(event, user) {
  * POST /plaid/exchange-token
  */
 async function exchangePublicToken(event, user) {
-  const permissionError = checkPermission(event, "transaction:create");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
   const body = parseRequestBody(event.body);
 
   if (!body.publicToken) {
     return errorResponse.badRequest("publicToken is required");
   }
 
-  logger.info("Exchanging public token", { familyId });
+  logger.info("Exchanging public token", { budgetId });
 
   try {
     const client = await getPlaidClient();
@@ -304,11 +298,11 @@ async function exchangePublicToken(event, user) {
       const accountId = generateId.custom("acct");
 
       const accountRecord = {
-        PK: `FAMILY#${familyId}`,
+        PK: `BUDGET#${budgetId}`,
         SK: `PLAID_ACCOUNT#${accountId}`,
         entityType: "PLAID_ACCOUNT",
         accountId,
-        familyId,
+        budgetId,
         plaidItemId: itemId,
         plaidAccountId: account.account_id,
         accessToken, // In production, store in Secrets Manager
@@ -342,7 +336,7 @@ async function exchangePublicToken(event, user) {
     }
 
     logger.info("Accounts linked successfully", {
-      familyId,
+      budgetId,
       accountCount: linkedAccounts.length,
       itemId,
     });
@@ -375,20 +369,14 @@ async function createSandboxItem(event, user) {
     );
   }
 
-  const permissionError = checkPermission(event, "transaction:create");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
   const body = parseRequestBody(event.body);
 
   // Default to Chase bank in sandbox
   const institutionId = body.institutionId || "ins_3";
 
-  logger.info("Creating sandbox item", { familyId, institutionId });
+  logger.info("Creating sandbox item", { budgetId, institutionId });
 
   try {
     const client = await getPlaidClient();
@@ -434,11 +422,11 @@ async function createSandboxItem(event, user) {
       const accountId = generateId.custom("acct");
 
       const accountRecord = {
-        PK: `FAMILY#${familyId}`,
+        PK: `BUDGET#${budgetId}`,
         SK: `PLAID_ACCOUNT#${accountId}`,
         entityType: "PLAID_ACCOUNT",
         accountId,
-        familyId,
+        budgetId,
         plaidItemId: itemId,
         plaidAccountId: account.account_id,
         accessToken,
@@ -472,7 +460,7 @@ async function createSandboxItem(event, user) {
     }
 
     logger.info("Sandbox item created", {
-      familyId,
+      budgetId,
       accountCount: linkedAccounts.length,
     });
 
@@ -499,16 +487,10 @@ async function createSandboxItem(event, user) {
  * GET /plaid/accounts
  */
 async function getLinkedAccounts(event, user) {
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  const accounts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const accounts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType AND #status = :active",
     ExpressionAttributeNames: { "#status": "status" },
     ExpressionAttributeValues: {
@@ -535,7 +517,7 @@ async function getLinkedAccounts(event, user) {
 
           // Update in DynamoDB
           await dynamoHelpers.updateItem(
-            `FAMILY#${familyId}`,
+            `BUDGET#${budgetId}`,
             `PLAID_ACCOUNT#${account.accountId}`,
             {
               currentBalance: account.currentBalance,
@@ -569,17 +551,11 @@ async function getLinkedAccounts(event, user) {
  * DELETE /plaid/accounts/{accountId}
  */
 async function unlinkAccount(event, user, accountId) {
-  const permissionError = checkPermission(event, "transaction:delete");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const account = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `PLAID_ACCOUNT#${accountId}`,
   );
 
@@ -600,7 +576,7 @@ async function unlinkAccount(event, user, accountId) {
 
   // Soft delete
   await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `PLAID_ACCOUNT#${accountId}`,
     {
       status: "unlinked",
@@ -610,7 +586,7 @@ async function unlinkAccount(event, user, accountId) {
     },
   );
 
-  logger.info("Account unlinked", { accountId, familyId });
+  logger.info("Account unlinked", { accountId, budgetId });
 
   return successResponse(null, "Account unlinked successfully");
 }
@@ -620,16 +596,10 @@ async function unlinkAccount(event, user, accountId) {
  * POST /plaid/sync
  */
 async function syncTransactions(event, user) {
-  const permissionError = checkPermission(event, "transaction:create");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  const accounts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const accounts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType AND #status = :active",
     ExpressionAttributeNames: { "#status": "status" },
     ExpressionAttributeValues: {
@@ -662,7 +632,7 @@ async function syncTransactions(event, user) {
       continue;
     }
 
-    const syncResult = await syncSingleAccount(familyId, account, user.userId);
+    const syncResult = await syncSingleAccount(budgetId, account, user.userId);
     results.push(syncResult);
   }
 
@@ -681,17 +651,11 @@ async function syncTransactions(event, user) {
  * POST /plaid/accounts/{accountId}/sync
  */
 async function syncAccountTransactions(event, user, accountId) {
-  const permissionError = checkPermission(event, "transaction:create");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const account = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `PLAID_ACCOUNT#${accountId}`,
   );
 
@@ -699,7 +663,7 @@ async function syncAccountTransactions(event, user, accountId) {
     return errorResponse.notFound("Account not found");
   }
 
-  const result = await syncSingleAccount(familyId, account, user.userId);
+  const result = await syncSingleAccount(budgetId, account, user.userId);
 
   return successResponse(result, "Account sync completed");
 }
@@ -707,7 +671,7 @@ async function syncAccountTransactions(event, user, accountId) {
 /**
  * Sync a single account using Plaid transactions/sync
  */
-async function syncSingleAccount(familyId, account, _userId) {
+async function syncSingleAccount(budgetId, account, _userId) {
   const currentTime = new Date().toISOString();
 
   if (!account.accessToken) {
@@ -741,11 +705,11 @@ async function syncSingleAccount(familyId, account, _userId) {
       for (const txn of data.added) {
         const pendingId = generateId.custom("pend");
         await dynamoHelpers.putItem({
-          PK: `FAMILY#${familyId}`,
+          PK: `BUDGET#${budgetId}`,
           SK: `PENDING_TRANSACTION#${pendingId}`,
           entityType: "PENDING_TRANSACTION",
           pendingId,
-          familyId,
+          budgetId,
           plaidAccountId: account.accountId,
           plaidTransactionId: txn.transaction_id,
           amount: txn.amount * -1, // Plaid uses positive for debits, we use negative for expenses
@@ -774,12 +738,12 @@ async function syncSingleAccount(familyId, account, _userId) {
       for (const txn of data.modified) {
         // Find and update existing pending transaction
         const existing = await findPendingByPlaidId(
-          familyId,
+          budgetId,
           txn.transaction_id,
         );
         if (existing) {
           await dynamoHelpers.updateItem(
-            `FAMILY#${familyId}`,
+            `BUDGET#${budgetId}`,
             `PENDING_TRANSACTION#${existing.pendingId}`,
             {
               amount: txn.amount * -1,
@@ -797,12 +761,12 @@ async function syncSingleAccount(familyId, account, _userId) {
       // Process removed transactions
       for (const txn of data.removed) {
         const existing = await findPendingByPlaidId(
-          familyId,
+          budgetId,
           txn.transaction_id,
         );
         if (existing && existing.status === "pending") {
           await dynamoHelpers.updateItem(
-            `FAMILY#${familyId}`,
+            `BUDGET#${budgetId}`,
             `PENDING_TRANSACTION#${existing.pendingId}`,
             { status: "removed", removedAt: currentTime },
           );
@@ -823,7 +787,7 @@ async function syncSingleAccount(familyId, account, _userId) {
       lastSyncDate === today ? (account.syncCountToday || 0) + 1 : 1;
 
     await dynamoHelpers.updateItem(
-      `FAMILY#${familyId}`,
+      `BUDGET#${budgetId}`,
       `PLAID_ACCOUNT#${account.accountId}`,
       {
         syncCursor: cursor,
@@ -863,8 +827,8 @@ async function syncSingleAccount(familyId, account, _userId) {
 /**
  * Find pending transaction by Plaid transaction ID
  */
-async function findPendingByPlaidId(familyId, plaidTransactionId) {
-  const results = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+async function findPendingByPlaidId(budgetId, plaidTransactionId) {
+  const results = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND plaidTransactionId = :plaidTxnId",
     ExpressionAttributeValues: {
@@ -880,16 +844,10 @@ async function findPendingByPlaidId(familyId, plaidTransactionId) {
  * GET /plaid/pending
  */
 async function getPendingTransactions(event, user) {
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  const pending = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const pending = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType AND #status = :pending",
     ExpressionAttributeNames: { "#status": "status" },
     ExpressionAttributeValues: {
@@ -912,14 +870,8 @@ async function getPendingTransactions(event, user) {
  * POST /plaid/pending/approve
  */
 async function approvePendingTransactions(event, user) {
-  const permissionError = checkPermission(event, "transaction:create");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
   const body = parseRequestBody(event.body);
 
   if (!body.transactionIds || !Array.isArray(body.transactionIds)) {
@@ -933,7 +885,7 @@ async function approvePendingTransactions(event, user) {
   for (const pendingId of body.transactionIds) {
     try {
       const pending = await dynamoHelpers.getItem(
-        `FAMILY#${familyId}`,
+        `BUDGET#${budgetId}`,
         `PENDING_TRANSACTION#${pendingId}`,
       );
 
@@ -948,13 +900,13 @@ async function approvePendingTransactions(event, user) {
       // Create actual transaction
       const transactionId = generateId.custom("txn");
       const transaction = {
-        PK: `FAMILY#${familyId}`,
+        PK: `BUDGET#${budgetId}`,
         SK: `TRANSACTION#${transactionId}`,
-        GSI1PK: `FAMILY#${familyId}`,
+        GSI1PK: `BUDGET#${budgetId}`,
         GSI1SK: `TRANSACTION#${pending.date}#${transactionId}`,
         entityType: "TRANSACTION",
         transactionId,
-        familyId,
+        budgetId,
         type: pending.amount < 0 ? "expense" : "income",
         amount: Math.abs(pending.amount),
         categoryId: body.categoryMappings?.[pendingId]?.categoryId || null,
@@ -977,7 +929,7 @@ async function approvePendingTransactions(event, user) {
 
       // Mark pending as approved
       await dynamoHelpers.updateItem(
-        `FAMILY#${familyId}`,
+        `BUDGET#${budgetId}`,
         `PENDING_TRANSACTION#${pendingId}`,
         {
           status: "approved",
@@ -1010,14 +962,8 @@ async function approvePendingTransactions(event, user) {
  * POST /plaid/pending/reject
  */
 async function rejectPendingTransactions(event, user) {
-  const permissionError = checkPermission(event, "transaction:delete");
-  if (permissionError) return permissionError;
-
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
   const body = parseRequestBody(event.body);
 
   if (!body.transactionIds || !Array.isArray(body.transactionIds)) {
@@ -1031,7 +977,7 @@ async function rejectPendingTransactions(event, user) {
   for (const pendingId of body.transactionIds) {
     try {
       const pending = await dynamoHelpers.getItem(
-        `FAMILY#${familyId}`,
+        `BUDGET#${budgetId}`,
         `PENDING_TRANSACTION#${pendingId}`,
       );
 
@@ -1044,7 +990,7 @@ async function rejectPendingTransactions(event, user) {
       }
 
       await dynamoHelpers.updateItem(
-        `FAMILY#${familyId}`,
+        `BUDGET#${budgetId}`,
         `PENDING_TRANSACTION#${pendingId}`,
         {
           status: "rejected",
@@ -1077,16 +1023,10 @@ async function rejectPendingTransactions(event, user) {
  * GET /plaid/sync-status
  */
 async function getSyncStatus(event, user) {
-  const permissionError = checkPermission(event, "transaction:view");
-  if (permissionError) return permissionError;
+  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
 
-  const familyId = await FamilyIdResolver.resolveFamilyId(
-    user.userId,
-    user.familyId,
-    dynamoHelpers,
-  );
-
-  const accounts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+  const accounts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType AND #status = :active",
     ExpressionAttributeNames: { "#status": "status" },
     ExpressionAttributeValues: {

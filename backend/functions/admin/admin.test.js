@@ -74,13 +74,6 @@ jest.mock(
   { virtual: true },
 );
 
-jest.mock(
-  "/opt/nodejs/shared",
-  () => ({
-    checkPermission: jest.fn(() => null),
-  }),
-  { virtual: true },
-);
 
 const { handler } = require("./index");
 const { dynamoHelpers, getUserFromEvent } = require("/opt/nodejs/utils");
