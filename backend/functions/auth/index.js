@@ -14,13 +14,11 @@ const {
 // Google ID token verification — lazy-loaded to avoid cold-start failure
 // when google-auth-library is not bundled in the deployment package.
 // The package is only required when the /auth/google endpoint is called.
-let _OAuth2Client = null;
 let _googleAuthClient = null;
 function getGoogleAuthClient() {
   if (!_googleAuthClient) {
     // eslint-disable-next-line global-require
     const { OAuth2Client } = require("google-auth-library");
-    _OAuth2Client = OAuth2Client;
     _googleAuthClient = new OAuth2Client();
   }
   return _googleAuthClient;
