@@ -230,6 +230,7 @@ jobs:
         working-directory: packages/web-app
         env:
           VITE_GOOGLE_WEB_CLIENT_ID: ${{ secrets.VITE_GOOGLE_WEB_CLIENT_ID }}
+          VITE_BUDGETS_API_URL: "https://jcl39tq8x0.execute-api.us-east-1.amazonaws.com/v1"
         run: |
           npm install
           npm run build

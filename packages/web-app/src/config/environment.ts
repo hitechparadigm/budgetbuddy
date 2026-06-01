@@ -16,10 +16,10 @@ export const config = {
   familyApiUrl: import.meta.env.VITE_FAMILY_API_URL || 'https://gp8jspfboa.execute-api.us-east-1.amazonaws.com/v1',
 
   /**
-   * Budgets API Gateway URL — /budgets/* routes live on the main API gateway.
-   * budgetService.ts prefers this over familyApiUrl.
+   * Budgets API Gateway URL — /budgets/* routes live on the dedicated budgets API gateway.
+   * budgetService.ts uses this for all budget collaboration, member, and invitation calls.
    */
-  budgetsApiUrl: import.meta.env.VITE_BUDGETS_API_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1',
+  budgetsApiUrl: import.meta.env.VITE_BUDGETS_API_URL || 'https://jcl39tq8x0.execute-api.us-east-1.amazonaws.com/v1',
 
   /** Google OAuth Web Client ID */
   googleClientId: import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID || '',
