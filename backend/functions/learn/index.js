@@ -305,10 +305,16 @@ exports.handler = async (event, context) => {
       return await getCourse(event, user, pathParameters.courseId);
     }
 
+    // GET /learn/lessons — list all lessons across all courses
+    if (httpMethod === "GET" && path === "/learn/lessons") {
+      return await getLessons(event, user);
+    }
+
     if (
       httpMethod === "GET" &&
       pathParameters?.lessonId &&
-      path.includes("/lessons/")
+      path.includes("/lessons/") &&
+      !path.includes("/complete")
     ) {
       return await getLesson(event, user, pathParameters.lessonId);
     }
@@ -413,6 +419,42 @@ async function getCourse(event, user, courseId) {
       quizScore: courseProgress.quizScore,
     },
     "Course retrieved",
+  );
+}
+
+/**
+ * Get all lessons across all courses
+ * GET /learn/lessons
+ */
+async function getLessons(event, user) {
+  const progress = await getUserProgress(user.userId);
+  const courseFilter = event.queryStringParameters?.courseId;
+
+  const lessons = [];
+  for (const course of Object.values(COURSES)) {
+    if (courseFilter && course.id !== courseFilter) continue;
+    const courseProgress = progress.courses?.[course.id] || {};
+    const completedLessons = new Set(courseProgress.completedLessons || []);
+
+    for (const lesson of course.lessons) {
+      lessons.push({
+        ...lesson,
+        courseId: course.id,
+        courseTitle: course.title,
+        isComplete: completedLessons.has(lesson.id),
+      });
+    }
+  }
+
+  // Sort by course then lesson order
+  lessons.sort((a, b) => {
+    if (a.courseId !== b.courseId) return a.courseId.localeCompare(b.courseId);
+    return (a.order || 0) - (b.order || 0);
+  });
+
+  return successResponse(
+    { lessons, total: lessons.length },
+    "Lessons retrieved",
   );
 }
 

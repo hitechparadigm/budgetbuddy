@@ -570,7 +570,9 @@ async function testCreditScore() {
 
   try {
     const r = await req('POST', APIS.features, '/credit-score/refresh');
-    check('POST /credit-score/refresh', [200, 201, 404, 502].includes(r.status), `HTTP ${r.status}`);
+    // 400 = credit bureau not connected (expected for test users)
+    // 200 = success, 404 = not found
+    check('POST /credit-score/refresh', [200, 201, 400, 404].includes(r.status), `HTTP ${r.status}`);
   } catch (e) { check('POST /credit-score/refresh', false, e.message); }
 }
 
@@ -678,6 +680,36 @@ async function testLearn() {
   } catch (e) { check('GET /learn/progress', false, e.message); }
 }
 
+// ── 20. Notifications ─────────────────────────────────────────────────────────
+async function testNotifications() {
+  section('20. Notifications (Main API)');
+
+  try {
+    const r = await req('GET', APIS.main, '/notifications/preferences');
+    check('GET /notifications/preferences', [200, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /notifications/preferences', false, e.message); }
+
+  try {
+    const r = await req('PUT', APIS.main, '/notifications/preferences', {
+      budgetAlertsEnabled: true, dailyRemindersEnabled: true, reminderTime: '19:00',
+      quietHoursStart: '22:00', quietHoursEnd: '08:00'
+    });
+    check('PUT /notifications/preferences', [200, 201, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('PUT /notifications/preferences', false, e.message); }
+
+  try {
+    const r = await req('GET', APIS.main, '/notifications/history');
+    check('GET /notifications/history', [200, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /notifications/history', false, e.message); }
+
+  try {
+    const r = await req('POST', APIS.main, '/notifications/register-device', {
+      deviceToken: 'ExponentPushToken[test-token-123]', platform: 'ios'
+    });
+    check('POST /notifications/register-device', [200, 201, 400].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('POST /notifications/register-device', false, e.message); }
+}
+
 // ── 18. Auth Security ─────────────────────────────────────────────────────────
 async function testAuthSecurity() {
   section('18. Auth Security — Unauthenticated Access Rejected');
@@ -734,6 +766,7 @@ async function main() {
   await testExport();
   await testReceipt();
   await testLearn();
+  await testNotifications();
   await testAuthSecurity();
   await testDeprecatedRoutes();
 
