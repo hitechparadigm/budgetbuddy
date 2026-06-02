@@ -73,6 +73,20 @@ const authOnboardingStack = new AuthOnboardingStack(app, `${stackPrefix}-auth-on
 });
 
 /**
+ * Notification Stack - Push notifications and daily reminders
+ * Handles device registration, budget alerts, and daily reminders
+ * Creates its own CommonLayer and SharedLayer to avoid cross-stack dependency issues
+ * Must be declared before ApiStack so notificationFunction can be passed as a prop.
+ */
+const notificationStack = new NotificationStack(app, `${stackPrefix}-notification`, {
+  env,
+  description: 'BudgetBuddy notification infrastructure with Lambda functions for push notifications and reminders',
+  table: databaseStack.table,
+  // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
+  expoAccessToken: process.env.EXPO_ACCESS_TOKEN || 'placeholder-token-configure-in-aws',
+});
+
+/**
  * API Stack - API Gateway and Lambda functions
  * Contains core backend business logic and API endpoints
  * Depends on database and auth stacks
@@ -151,19 +165,6 @@ const hostingStack = new HostingStack(app, `${stackPrefix}-hosting`, {
   env,
   description: 'BudgetBuddy hosting infrastructure with S3 static hosting and CloudFront CDN for global performance',
   environment: envName,
-});
-
-/**
- * Notification Stack - Push notifications and daily reminders
- * Handles device registration, budget alerts, and daily reminders
- * Creates its own CommonLayer and SharedLayer to avoid cross-stack dependency issues
- */
-const notificationStack = new NotificationStack(app, `${stackPrefix}-notification`, {
-  env,
-  description: 'BudgetBuddy notification infrastructure with Lambda functions for push notifications and reminders',
-  table: databaseStack.table,
-  // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
-  expoAccessToken: process.env.EXPO_ACCESS_TOKEN || 'placeholder-token-configure-in-aws',
 });
 
 /**
