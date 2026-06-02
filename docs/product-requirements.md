@@ -251,37 +251,61 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 ---
 
-## Live API Test Results (2026-06-01)
+## Live API Test Results (2026-06-02)
 
-Tested against dev environment using `scripts/test-live-api.js`. **70 checks passed, 0 failed**, 9 bugs documented.
+Tested against dev environment using `scripts/test-live-api.js`. **102 checks passed, 0 failed**, 13 bugs documented across 19 test sections covering all claimed features.
 
-### ✅ Working (verified live)
-- All 14 API health endpoints (main, features, extended, budgets APIs)
-- Auth: register, login, bad-password rejection, profile, geolocation
-- Budget: list, create, invalid-type rejection, get period, switch active budget
-- Accounts: create, list, update, reconcile, delete (full CRUD)
-- Goals: create, list, update, delete (full CRUD)
-- Transactions: list, search (create blocked by onboarding bug below)
-- Budget collaboration: list members, list invitations, send invite, resend, revoke, accept-invitation endpoint
-- Insights: weekly, trends, patterns, AI Q&A
-- Pattern detection: detect patterns
-- Budget planning: suggestions
-- Debt payoff: list debts, summary
-- Plaid: link-token, accounts list, pending transactions
-- Auth security: all protected endpoints reject unauthenticated requests
+### ✅ Verified Working (live)
 
-### 🐛 Bugs Found
+| Feature | Endpoints | Status |
+|---------|-----------|--------|
+| Health checks | All 17 service health endpoints across 4 APIs | ✅ |
+| Auth — register/login/profile | `POST /auth/register`, `POST /auth/login`, `GET /auth/profile`, `GET /auth/geolocation` | ✅ |
+| Auth — security | All 7 protected endpoints reject unauthenticated requests (401) | ✅ |
+| Onboarding | `POST /auth/onboarding` (correct body: flat `city`/`country`/`familySize`/`currentMonth`/`selectedCategories`) | ✅ |
+| Budget management | `GET /budgets`, `POST /budgets`, `GET /budget/current`, `PUT /budgets/active` | ✅ |
+| Budget period | `remainingBalance` returned, zero-based budget confirmed, income/expense groups present | ✅ |
+| Transactions | `GET /transactions`, search filter | ✅ |
+| Accounts full CRUD | Create (`banking`/`accountSubtype` fields), list, update, reconcile (`newBalance` field), delete | ✅ |
+| Goals full CRUD | Create, list, update, delete | ✅ |
+| Budget collaboration | List members, list invitations, send invite (family budget), resend, revoke, accept-invitation endpoint, personal budget rejects partner | ✅ |
+| Insights | Weekly, monthly, trends, patterns, AI Q&A | ✅ |
+| Pattern detection | `POST /patterns/detect`, `POST /budget-planning/suggestions` | ✅ |
+| Debt payoff | `GET /debts`, `GET /debts/summary` | ✅ |
+| Plaid | Link token (returns `linkToken`), accounts list, pending transactions | ✅ |
+| Bills | List, upcoming, calendar | ✅ |
+| Receipt scanning | Usage, history, upload endpoint | ✅ |
+| Learning center | Courses, progress | ✅ |
+
+### 🐛 Bugs Found (13)
 
 | # | Severity | Component | Description |
 |---|----------|-----------|-------------|
-| 1 | High | `POST /auth/onboarding` | 502 — Lambda crashes for new users. `BudgetAccessResolver.resolveAccess()` throws when `defaultBudgetId` is null (user hasn't completed onboarding yet). Fix: guard the access resolver call. |
-| 2 | High | `POST /transactions` | `categoryId` is required but new users have no categories — cascading failure from bug #1 (onboarding doesn't complete, so no budget period with categories is created). |
-| 3 | Medium | `POST /budget/ai-generate` | 500 for new users — cascading from bug #1 (no budget to generate against). |
-| 4 | Medium | `GET /comparison/summary` | 500 for new users with no transaction history — missing null-check in comparison Lambda. |
-| 5 | Medium | `GET /tips/feed` | 500 for new users — missing null-check in tips Lambda. |
-| 6 | Medium | `GET /debts/payoff-plan` | 500 for new users with no debts — missing null-check in debt-payoff Lambda. |
-| 7 | Low | `/family/*` routes | Family stack still active, returning 401/403 instead of 410 Gone as documented. |
-| 8 | Low | `POST /auth/onboarding` | The subagent fix for bug #1 was committed but the Lambda still crashes — the fix may not have addressed the correct code path. Needs re-investigation. |
+| 1 | High | `POST /budget/ai-generate` | 500 — Bedrock call fails for new users with empty budget context |
+| 2 | High | `POST /transactions` (create) | New users need `GET /budget/current` to get `categoryId`; `GET /budget` returns a list not the period |
+| 3 | Medium | `GET /comparison/summary` | 500 for new users with no transaction history — missing null-check |
+| 4 | Medium | `GET /tips/feed` | 500 for new users — missing null-check |
+| 5 | Medium | `POST /debts` (create) | 500 — Debt Lambda crashes on create |
+| 6 | Medium | `GET /debts/payoff-plan` | 500 for new users with no debts — missing null-check |
+| 7 | Medium | `GET /credit-score` | 502 — Lambda crash (credit bureau integration unhandled in empty state) |
+| 8 | Medium | `GET /export` | 502 — Lambda crash (S3 config or unhandled error) |
+| 9 | Medium | `GET /learn/lessons` | 403 SigV4 — features API `/learn/lessons` route has wrong auth type in CDK |
+| 10 | Low | `POST /plaid/sandbox/create-item` | 500 — Plaid sandbox credentials not configured in dev |
+| 11 | Low | `/family` routes | Return 401/403 instead of 410 Gone — family stack still active |
+| 12 | Low | `/family/members` | Same as #11 |
+| 13 | Low | `/family/invite` | Same as #11 |
+
+### Not Tested
+
+| Item | Reason |
+|------|--------|
+| Investment tracking | No Lambda found on any API gateway — likely not deployed |
+| Net worth | No Lambda found on any API gateway — likely not deployed |
+| In-app notifications center | No Lambda found on any API gateway |
+| Push notifications | Mobile/EventBridge — not testable via REST |
+| Google OAuth | Requires real Google ID token |
+| Frontend (React, mobile) | UI — requires E2E testing with Playwright |
+| Transaction create/update/delete (full) | Blocked by `categoryId` discovery issue (#2 above) |
 
 ---
 
@@ -297,9 +321,9 @@ Tested against dev environment using `scripts/test-live-api.js`. **70 checks pas
 |------|----------|-------------|--------|
 | Register | `AuthPage.tsx` | `POST /auth/register` | ✅ |
 | Google Sign-In | `GoogleSignInButton.tsx` | `POST /auth/google` | ✅ |
-| Location setup | `OnboardingFlow.tsx` | `GET /auth/detect-location` | ✅ |
-| AI budget generation | `AIBudgetGenerationPage.tsx` | `POST /ai/generate-budget` | ✅ |
-| Budget type selection | `OnboardingPage.tsx` | `PUT /auth/onboarding` | ✅ |
+| Location setup | `OnboardingFlow.tsx` | `GET /auth/geolocation` | ✅ |
+| AI budget generation | `AIBudgetGenerationPage.tsx` | `POST /budget/ai-generate` | ✅ |
+| Budget type selection | `OnboardingPage.tsx` | `POST /auth/onboarding` | ✅ |
 
 **Missing**: `OnboardingProgress.tsx` (step indicator), `TutorialOverlay.tsx` (interactive guide)
 
@@ -370,8 +394,8 @@ Tested against dev environment using `scripts/test-live-api.js`. **70 checks pas
 | Peer comparison | `PeerComparisonWidget.tsx` | `GET /comparison/summary` | ✅ |
 | Tips feed | `TipsFeedPage.tsx` | `GET /tips/feed` | ✅ |
 | Receipt scanning | `ReceiptUpload.tsx`, `ReceiptScanner.tsx` | `POST /receipt/upload` | ✅ |
-| Credit score | `CreditScorePage.tsx` | `GET /credit-score` | ✅ |
-| Investment tracking | `InvestmentsPage.tsx` | `GET /investments/portfolio` | ✅ |
+| Credit score | `CreditScorePage.tsx` | `GET /credit-score` | ⚠️ 502 bug |
+| Investment tracking | `InvestmentsPage.tsx` | `GET /investments/portfolio` | ❌ Not deployed |
 
 ---
 
@@ -383,8 +407,8 @@ Tested against dev environment using `scripts/test-live-api.js`. **70 checks pas
 |---------|----------|-------------|--------|
 | Goals list | `GoalsPage.tsx` | `GET /goals` | ✅ |
 | Create / edit / delete goal | `GoalFormPage.tsx` | `POST/PUT/DELETE /goals` | ✅ |
-| Debt payoff calculator | `DebtPayoffPage.tsx` | `POST /debts/calculate` | ✅ |
-| Payoff timeline | `DebtPayoffPage.tsx` | `GET /debts/timeline` | ✅ |
+| Debt payoff calculator | `DebtPayoffPage.tsx` | `GET /debts/payoff-plan` | ⚠️ 500 bug for new users |
+| Payoff timeline | `DebtPayoffPage.tsx` | `GET /debts/summary` | ✅ |
 | Mobile goals | `GoalsScreen.tsx` | Same as web | ✅ |
 
 ---
@@ -397,8 +421,8 @@ Tested against dev environment using `scripts/test-live-api.js`. **70 checks pas
 
 | Feature | Frontend | Backend API | Status |
 |---------|----------|-------------|--------|
-| Notification preferences | `NotificationSettings.tsx` | `GET/PUT /notifications/preferences` | ✅ |
-| In-app notification center | `NotificationCenter.tsx` | `GET /notifications` | ✅ |
+| Notification preferences | `NotificationSettings.tsx` | `GET/PUT /notifications/preferences` | ❌ Not deployed |
+| In-app notification center | `NotificationCenter.tsx` | `GET /notifications` | ❌ Not deployed |
 | Push notifications | Mobile (Expo) | EventBridge + Lambda | ✅ |
 | AI bill reminders | `BillsPage.tsx` | `GET /pattern-detection/bills` | ✅ |
 
