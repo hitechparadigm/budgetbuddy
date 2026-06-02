@@ -218,7 +218,10 @@ async function getPayoffPlan(event, user) {
 
   const debtsRaw = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
-      "entityType = :entityType AND status = :active AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
+      "entityType = :entityType AND #debtStatus = :active AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
+    ExpressionAttributeNames: {
+      "#debtStatus": "status",
+    },
     ExpressionAttributeValues: {
       ":entityType": "DEBT",
       ":active": "active",
