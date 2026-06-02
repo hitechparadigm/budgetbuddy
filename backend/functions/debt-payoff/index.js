@@ -272,7 +272,7 @@ async function getPayoffPlan(event, user) {
  * POST /debts
  */
 async function createDebt(event, user) {
-  const body = parseRequestBody(event) || {};
+  const body = parseRequestBody(event.body) || {};
   const {
     name,
     type,
