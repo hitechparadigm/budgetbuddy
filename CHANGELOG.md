@@ -1,6 +1,14 @@
 # Changelog
 
-## ## [1.9.127] - 2026-06-03
+## [1.9.128] - 2026-06-03
+
+### 🐛 Fix: Notifications Lambda 502, learn /lessons 404, test script improvements
+
+- **notifications Lambda**: Rewrote to use `getUserFromEvent()` from common layer instead of reading `userId` from request body/query params. Migrated from `aws-sdk` v2 to `@aws-sdk` v3 via `dynamoHelpers`. Fixed 502 crash on all authenticated endpoints (`/notifications/preferences`, `/notifications/history`, `/notifications/register-device`).
+- **learn Lambda**: Added `GET /learn/lessons` route handler and `getLessons()` function that aggregates lessons from all courses with user progress, fixing "Route GET /learn/lessons not found" 404. Also fixed `getLesson` route to not conflict with `/complete` sub-path.
+- **test script**: Fixed `POST /credit-score/refresh` to accept 400 (credit bureau not connected — expected for test users). Added Section 20 `testNotifications()` with tests for preferences, history, register-device, and PUT preferences.
+
+
 
 ### 🐛 Fix: Follow-up fixes from live API verification
 

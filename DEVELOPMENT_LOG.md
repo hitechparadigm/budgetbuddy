@@ -1,6 +1,22 @@
 # Development Log
 
-## 2026-06-03 - Follow-up fixes from live API tests (Session 143)
+## 2026-06-03 - Fix notifications 502, learn /lessons 404, test script (Session 144)
+
+### Work Completed
+
+1. **notifications Lambda — 502 crash on all routes**:
+   - Root cause: Lambda used `require("aws-sdk")` (v2) which is not bundled at runtime on Node 20. The handler also extracted `userId` from the request body/query string instead of using `getUserFromEvent()` from the common layer. This meant auth-protected routes failed with a 502 before any business logic ran.
+   - Fix: Replaced entire Lambda with common layer imports (`getUserFromEvent`, `dynamoHelpers`, `successResponse`, `errorResponse`, `logger`). All authenticated routes now extract `userId` from the Cognito JWT. AWS SDK v3 used via `dynamoHelpers` or `require('@aws-sdk/...')` where needed.
+
+2. **learn Lambda — GET /learn/lessons returns 404**:
+   - Root cause: The CDK defined a `GET /learn/lessons` route in `api-features-stack.ts`, but the Lambda handler had no branch for `path === "/learn/lessons"`. The router fell through to the 404 response.
+   - Fix: Added `if (httpMethod === "GET" && path === "/learn/lessons")` check before the parameterized `/lessons/{lessonId}` check. Implemented `getLessons()` function that aggregates all lessons from all courses with progress data.
+
+3. **test script improvements**:
+   - Fixed `POST /credit-score/refresh` to accept HTTP 400 (credit bureau not connected — expected for test users with no Plaid integration).
+   - Added Section 20 `testNotifications()` with four checks: GET preferences, PUT preferences, GET history, POST register-device. Called before `testAuthSecurity()`.
+
+
 
 ### Work Completed
 

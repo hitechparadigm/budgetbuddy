@@ -3,29 +3,33 @@
  *
  * Handles push notifications via AWS SNS and Expo Push Notifications.
  * Supports budget alerts, reminders, and custom notifications.
+ *
+ * Uses getUserFromEvent() from common layer to extract userId from Cognito JWT.
+ * Does NOT accept userId from request body/query for authenticated endpoints.
  */
 
-const AWS = require("aws-sdk");
+const {
+  getUserFromEvent,
+  dynamoHelpers,
+  logger,
+  successResponse,
+  errorResponse,
+} = require('/opt/nodejs/utils');
 
-const sns = new AWS.SNS();
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-
-const TABLE_NAME = process.env.TABLE_NAME || "budgetbuddy-main";
+const TABLE_NAME = process.env.TABLE_NAME || 'budgetbuddy-main';
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
 
 /**
  * Notification Types for AI Pattern Detection and Budget Planning
  */
 const NOTIFICATION_TYPES = {
-  // Existing types
-  BUDGET_ALERT: "BUDGET_ALERT",
-  DAILY_REMINDER: "DAILY_REMINDER",
-  BILL_DUE: "BILL_DUE",
-  // New AI-related types
-  PATTERN_DETECTED: "PATTERN_DETECTED",
-  PATTERN_AMOUNT_CHANGED: "PATTERN_AMOUNT_CHANGED",
-  PATTERN_MISSING: "PATTERN_MISSING",
-  BUDGET_SUGGESTION_AVAILABLE: "BUDGET_SUGGESTION_AVAILABLE",
+  BUDGET_ALERT: 'BUDGET_ALERT',
+  DAILY_REMINDER: 'DAILY_REMINDER',
+  BILL_DUE: 'BILL_DUE',
+  PATTERN_DETECTED: 'PATTERN_DETECTED',
+  PATTERN_AMOUNT_CHANGED: 'PATTERN_AMOUNT_CHANGED',
+  PATTERN_MISSING: 'PATTERN_MISSING',
+  BUDGET_SUGGESTION_AVAILABLE: 'BUDGET_SUGGESTION_AVAILABLE',
 };
 
 /**
@@ -33,128 +37,87 @@ const NOTIFICATION_TYPES = {
  */
 const NOTIFICATION_TEMPLATES = {
   [NOTIFICATION_TYPES.PATTERN_DETECTED]: {
-    title: "New Recurring Bill Detected",
+    title: 'New Recurring Bill Detected',
     bodyTemplate:
-      "We detected a recurring payment to {merchantName} ({frequency}) for approximately ${amount}. Would you like to add it as a bill reminder?",
-    actionUrl: "/bills/review-patterns",
+      'We detected a recurring payment to {merchantName} ({frequency}) for approximately ${amount}. Would you like to add it as a bill reminder?',
+    actionUrl: '/bills/review-patterns',
   },
   [NOTIFICATION_TYPES.PATTERN_AMOUNT_CHANGED]: {
-    title: "Bill Amount Changed",
+    title: 'Bill Amount Changed',
     bodyTemplate:
-      "Your {billName} payment changed from ${oldAmount} to ${newAmount} ({changePercent}% {direction}). Would you like to update your budget?",
-    actionUrl: "/bills",
+      'Your {billName} payment changed from ${oldAmount} to ${newAmount} ({changePercent}% {direction}). Would you like to update your budget?',
+    actionUrl: '/bills',
   },
   [NOTIFICATION_TYPES.PATTERN_MISSING]: {
-    title: "Expected Payment Not Found",
+    title: 'Expected Payment Not Found',
     bodyTemplate:
-      "We haven't seen your usual {billName} payment that was expected around {expectedDate}. Did you pay it differently?",
-    actionUrl: "/bills",
+      'We haven\'t seen your usual {billName} payment that was expected around {expectedDate}. Did you pay it differently?',
+    actionUrl: '/bills',
   },
   [NOTIFICATION_TYPES.BUDGET_SUGGESTION_AVAILABLE]: {
-    title: "Budget Suggestions Ready",
+    title: 'Budget Suggestions Ready',
     bodyTemplate:
-      "AI-powered budget suggestions for {targetMonth} are ready! We found {suggestionCount} categories to review.",
-    actionUrl: "/budget/suggestions",
+      'AI-powered budget suggestions for {targetMonth} are ready! We found {suggestionCount} categories to review.',
+    actionUrl: '/budget/suggestions',
   },
 };
-
-/**
- * Get CORS headers
- */
-function getCorsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type,Authorization",
-    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-  };
-}
 
 /**
  * Register device token for push notifications
  */
 async function registerDeviceToken(userId, deviceToken, platform) {
-  try {
-    // Store device token in DynamoDB
-    await dynamodb
-      .put({
-        TableName: TABLE_NAME,
-        Item: {
-          PK: `USER#${userId}`,
-          SK: `DEVICE#${deviceToken}`,
-          deviceToken,
-          platform, // 'ios' or 'android'
-          registeredAt: new Date().toISOString(),
-          enabled: true,
-        },
-      })
-      .promise();
+  await dynamoHelpers.putItem({
+    PK: `USER#${userId}`,
+    SK: `DEVICE#${deviceToken}`,
+    deviceToken,
+    platform,
+    registeredAt: new Date().toISOString(),
+    enabled: true,
+  });
 
-    // Subscribe to SNS topic
-    if (SNS_TOPIC_ARN) {
-      await sns
-        .subscribe({
-          Protocol: "application",
-          TopicArn: SNS_TOPIC_ARN,
-          Endpoint: deviceToken,
-        })
-        .promise();
+  // Subscribe to SNS topic if configured
+  if (SNS_TOPIC_ARN) {
+    try {
+      const { SNSClient, SubscribeCommand } = require('@aws-sdk/client-sns');
+      const sns = new SNSClient({ region: process.env.AWS_REGION || 'us-east-1' });
+      await sns.send(new SubscribeCommand({
+        Protocol: 'application',
+        TopicArn: SNS_TOPIC_ARN,
+        Endpoint: deviceToken,
+      }));
+    } catch (err) {
+      logger.warn('SNS subscribe failed (non-fatal)', { error: err.message });
     }
-
-    return { success: true, deviceToken };
-  } catch (error) {
-    console.error("Error registering device token:", error);
-    throw error;
   }
+
+  return { success: true, deviceToken };
 }
 
 /**
  * Unregister device token
  */
 async function unregisterDeviceToken(userId, deviceToken) {
-  try {
-    await dynamodb
-      .delete({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: `USER#${userId}`,
-          SK: `DEVICE#${deviceToken}`,
-        },
-      })
-      .promise();
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error unregister device token:", error);
-    throw error;
-  }
+  const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+  const { DynamoDBDocumentClient, DeleteCommand } = require('@aws-sdk/lib-dynamodb');
+  const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+  await client.send(new DeleteCommand({
+    TableName: TABLE_NAME,
+    Key: { PK: `USER#${userId}`, SK: `DEVICE#${deviceToken}` },
+  }));
+  return { success: true };
 }
 
 /**
  * Get all device tokens for a user
  */
 async function getUserDeviceTokens(userId) {
-  try {
-    const result = await dynamodb
-      .query({
-        TableName: TABLE_NAME,
-        KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
-        ExpressionAttributeValues: {
-          ":pk": `USER#${userId}`,
-          ":sk": "DEVICE#",
-        },
-      })
-      .promise();
-
-    return (result.Items || [])
-      .filter((item) => item.enabled)
-      .map((item) => ({
-        token: item.deviceToken,
-        platform: item.platform,
-      }));
-  } catch (error) {
-    console.error("Error getting device tokens:", error);
-    return [];
-  }
+  const items = await dynamoHelpers.queryByPK(`USER#${userId}`, {
+    FilterExpression: 'begins_with(SK, :prefix)',
+    ExpressionAttributeValues: { ':prefix': 'DEVICE#' },
+  });
+  return items
+    .filter((item) => item.enabled && item.SK && item.SK.startsWith('DEVICE#'))
+    .map((item) => ({ token: item.deviceToken, platform: item.platform }));
 }
 
 /**
@@ -163,209 +126,136 @@ async function getUserDeviceTokens(userId) {
 async function sendExpoPushNotification(tokens, title, body, data = {}) {
   const messages = tokens.map((token) => ({
     to: token,
-    sound: "default",
+    sound: 'default',
     title,
     body,
     data,
   }));
 
-  try {
-    const response = await fetch("https://exp.host/--/api/v2/push/send", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(messages),
-    });
+  const response = await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(messages),
+  });
 
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("Error sending Expo push notification:", error);
-    throw error;
-  }
+  return response.json();
 }
 
 /**
  * Send notification to user
  */
 async function sendNotification(userId, notification) {
-  try {
-    const devices = await getUserDeviceTokens(userId);
+  const devices = await getUserDeviceTokens(userId);
 
-    if (devices.length === 0) {
-      console.log(`No devices registered for user ${userId}`);
-      return { success: false, reason: "No devices registered" };
-    }
-
-    const expoTokens = devices
-      .filter((d) => d.token.startsWith("ExponentPushToken"))
-      .map((d) => d.token);
-
-    if (expoTokens.length > 0) {
-      await sendExpoPushNotification(
-        expoTokens,
-        notification.title,
-        notification.body,
-        notification.data,
-      );
-    }
-
-    // Store notification in database
-    await dynamodb
-      .put({
-        TableName: TABLE_NAME,
-        Item: {
-          PK: `USER#${userId}`,
-          SK: `NOTIFICATION#${Date.now()}`,
-          ...notification,
-          sentAt: new Date().toISOString(),
-          read: false,
-        },
-      })
-      .promise();
-
-    return { success: true, deviceCount: devices.length };
-  } catch (error) {
-    console.error("Error sending notification:", error);
-    throw error;
+  if (devices.length === 0) {
+    logger.info('No devices registered for user', { userId });
+    return { success: false, reason: 'No devices registered' };
   }
+
+  const expoTokens = devices
+    .filter((d) => d.token && d.token.startsWith('ExponentPushToken'))
+    .map((d) => d.token);
+
+  if (expoTokens.length > 0) {
+    await sendExpoPushNotification(expoTokens, notification.title, notification.body, notification.data);
+  }
+
+  // Store notification in database
+  await dynamoHelpers.putItem({
+    PK: `USER#${userId}`,
+    SK: `NOTIFICATION#${Date.now()}`,
+    ...notification,
+    sentAt: new Date().toISOString(),
+    read: false,
+  });
+
+  return { success: true, deviceCount: devices.length };
 }
 
 /**
  * Get notification preferences for user
  */
 async function getNotificationPreferences(userId) {
-  try {
-    const result = await dynamodb
-      .get({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: `USER#${userId}`,
-          SK: "NOTIFICATION_PREFERENCES",
-        },
-      })
-      .promise();
-
-    return (
-      result.Item || {
-        budgetAlerts: true,
-        dailyReminders: true,
-        reminderTime: "19:00", // 7:00 PM
-        quietHoursStart: "22:00", // 10:00 PM
-        quietHoursEnd: "08:00", // 8:00 AM
-      }
-    );
-  } catch (error) {
-    console.error("Error getting notification preferences:", error);
-    return null;
-  }
+  const item = await dynamoHelpers.getItem(`USER#${userId}`, 'NOTIFICATION_PREFERENCES');
+  return item || {
+    budgetAlertsEnabled: true,
+    dailyRemindersEnabled: true,
+    reminderTime: '19:00',
+    quietHoursStart: '22:00',
+    quietHoursEnd: '08:00',
+  };
 }
 
 /**
  * Update notification preferences
  */
 async function updateNotificationPreferences(userId, preferences) {
-  try {
-    await dynamodb
-      .put({
-        TableName: TABLE_NAME,
-        Item: {
-          PK: `USER#${userId}`,
-          SK: "NOTIFICATION_PREFERENCES",
-          ...preferences,
-          updatedAt: new Date().toISOString(),
-        },
-      })
-      .promise();
-
-    return { success: true, preferences };
-  } catch (error) {
-    console.error("Error updating notification preferences:", error);
-    throw error;
-  }
+  await dynamoHelpers.putItem({
+    PK: `USER#${userId}`,
+    SK: 'NOTIFICATION_PREFERENCES',
+    ...preferences,
+    updatedAt: new Date().toISOString(),
+  });
+  return { success: true, preferences };
 }
 
 /**
  * Get notification history for user
  */
-async function getNotificationHistory(
-  userId,
-  limit = 50,
-  lastEvaluatedKey = null,
-) {
-  try {
-    const params = {
-      TableName: TABLE_NAME,
-      KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
-      ExpressionAttributeValues: {
-        ":pk": `USER#${userId}`,
-        ":sk": "NOTIFICATION#",
-      },
-      Limit: limit,
-      ScanIndexForward: false, // Sort by SK descending (newest first)
-    };
+async function getNotificationHistory(userId, limit = 50) {
+  const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+  const { DynamoDBDocumentClient, QueryCommand } = require('@aws-sdk/lib-dynamodb');
+  const client = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
-    if (lastEvaluatedKey) {
-      params.ExclusiveStartKey = lastEvaluatedKey;
-    }
+  const result = await client.send(new QueryCommand({
+    TableName: TABLE_NAME,
+    KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+    ExpressionAttributeValues: {
+      ':pk': `USER#${userId}`,
+      ':sk': 'NOTIFICATION#',
+    },
+    Limit: limit,
+    ScanIndexForward: false,
+  }));
 
-    const result = await dynamodb.query(params).promise();
-
-    return {
-      notifications: result.Items || [],
-      lastEvaluatedKey: result.LastEvaluatedKey,
-    };
-  } catch (error) {
-    console.error("Error getting notification history:", error);
-    throw error;
-  }
+  return {
+    notifications: result.Items || [],
+    lastEvaluatedKey: result.LastEvaluatedKey,
+  };
 }
 
 /**
  * Mark notification as read
  */
 async function markNotificationAsRead(userId, notificationId) {
-  try {
-    await dynamodb
-      .update({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: `USER#${userId}`,
-          SK: `NOTIFICATION#${notificationId}`,
-        },
-        UpdateExpression: "SET #read = :read",
-        ExpressionAttributeNames: {
-          "#read": "read",
-        },
-        ExpressionAttributeValues: {
-          ":read": true,
-        },
-      })
-      .promise();
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error marking notification as read:", error);
-    throw error;
-  }
+  await dynamoHelpers.updateItem(
+    `USER#${userId}`,
+    `NOTIFICATION#${notificationId}`,
+    { read: true },
+  );
+  return { success: true };
 }
 
-/**
- * Create notification for detected pattern
- * @param {string} userId - User ID
- * @param {Object} pattern - Detected pattern
- * @returns {Promise<Object>} Notification result
- */
+// ── Notification helpers for internal use by other Lambdas ─────────────────
+
+function shouldNotifyForPattern(confidenceScore, threshold = 70) {
+  return confidenceScore >= threshold;
+}
+
+function isSignificantAmountChange(oldAmount, newAmount, threshold = 20) {
+  if (oldAmount === 0) return newAmount > 0;
+  const changePercent = Math.abs(((newAmount - oldAmount) / oldAmount) * 100);
+  return changePercent >= threshold;
+}
+
 async function notifyPatternDetected(userId, pattern) {
   const template = NOTIFICATION_TEMPLATES[NOTIFICATION_TYPES.PATTERN_DETECTED];
   const body = template.bodyTemplate
-    .replace("{merchantName}", pattern.merchantName)
-    .replace("{frequency}", pattern.frequency)
-    .replace("{amount}", pattern.averageAmount?.toFixed(2) || "0.00");
+    .replace('{merchantName}', pattern.merchantName)
+    .replace('{frequency}', pattern.frequency)
+    .replace('{amount}', (pattern.averageAmount || 0).toFixed(2));
 
-  const notification = {
+  return sendNotification(userId, {
     type: NOTIFICATION_TYPES.PATTERN_DETECTED,
     title: template.title,
     body,
@@ -376,506 +266,227 @@ async function notifyPatternDetected(userId, pattern) {
       frequency: pattern.frequency,
       confidenceScore: pattern.confidenceScore,
       actionUrl: template.actionUrl,
-      actions: [
-        { label: "Review", action: "review", patternId: pattern.patternId },
-        { label: "Dismiss", action: "dismiss", patternId: pattern.patternId },
-      ],
     },
-  };
-
-  return sendNotification(userId, notification);
+  });
 }
 
-/**
- * Create notification for pattern amount change
- * @param {string} userId - User ID
- * @param {Object} bill - Bill with changed amount
- * @param {number} oldAmount - Previous amount
- * @param {number} newAmount - New amount
- * @returns {Promise<Object>} Notification result
- */
 async function notifyPatternAmountChanged(userId, bill, oldAmount, newAmount) {
-  const template =
-    NOTIFICATION_TEMPLATES[NOTIFICATION_TYPES.PATTERN_AMOUNT_CHANGED];
-  const changePercent = Math.abs(
-    ((newAmount - oldAmount) / oldAmount) * 100,
-  ).toFixed(0);
-  const direction = newAmount > oldAmount ? "increase" : "decrease";
+  const template = NOTIFICATION_TEMPLATES[NOTIFICATION_TYPES.PATTERN_AMOUNT_CHANGED];
+  const changePercent = Math.abs(((newAmount - oldAmount) / oldAmount) * 100).toFixed(0);
+  const direction = newAmount > oldAmount ? 'increase' : 'decrease';
 
   const body = template.bodyTemplate
-    .replace("{billName}", bill.name)
-    .replace("{oldAmount}", oldAmount.toFixed(2))
-    .replace("{newAmount}", newAmount.toFixed(2))
-    .replace("{changePercent}", changePercent)
-    .replace("{direction}", direction);
+    .replace('{billName}', bill.name)
+    .replace('{oldAmount}', oldAmount.toFixed(2))
+    .replace('{newAmount}', newAmount.toFixed(2))
+    .replace('{changePercent}', changePercent)
+    .replace('{direction}', direction);
 
-  const notification = {
+  return sendNotification(userId, {
     type: NOTIFICATION_TYPES.PATTERN_AMOUNT_CHANGED,
     title: template.title,
     body,
-    data: {
-      billId: bill.billId,
-      billName: bill.name,
-      oldAmount,
-      newAmount,
-      changePercent: parseFloat(changePercent),
-      direction,
-      actionUrl: template.actionUrl,
-      actions: [
-        {
-          label: "Update Budget",
-          action: "update_budget",
-          billId: bill.billId,
-        },
-        { label: "Ignore", action: "ignore" },
-      ],
-    },
-  };
-
-  return sendNotification(userId, notification);
+    data: { billId: bill.billId, billName: bill.name, oldAmount, newAmount, direction, actionUrl: template.actionUrl },
+  });
 }
 
-/**
- * Create notification for missing expected pattern
- * @param {string} userId - User ID
- * @param {Object} bill - Bill that was expected
- * @param {string} expectedDate - Expected date
- * @returns {Promise<Object>} Notification result
- */
 async function notifyPatternMissing(userId, bill, expectedDate) {
   const template = NOTIFICATION_TEMPLATES[NOTIFICATION_TYPES.PATTERN_MISSING];
   const body = template.bodyTemplate
-    .replace("{billName}", bill.name)
-    .replace("{expectedDate}", expectedDate);
+    .replace('{billName}', bill.name)
+    .replace('{expectedDate}', expectedDate);
 
-  const notification = {
+  return sendNotification(userId, {
     type: NOTIFICATION_TYPES.PATTERN_MISSING,
     title: template.title,
     body,
-    data: {
-      billId: bill.billId,
-      billName: bill.name,
-      expectedDate,
-      actionUrl: template.actionUrl,
-      actions: [
-        { label: "Mark Paid", action: "mark_paid", billId: bill.billId },
-        { label: "Skip This Month", action: "skip" },
-        { label: "Bill Cancelled", action: "cancel_bill", billId: bill.billId },
-      ],
-    },
-  };
-
-  return sendNotification(userId, notification);
+    data: { billId: bill.billId, billName: bill.name, expectedDate, actionUrl: template.actionUrl },
+  });
 }
 
-/**
- * Create notification for budget suggestions available
- * @param {string} userId - User ID
- * @param {string} targetMonth - Target month (YYYY-MM)
- * @param {number} suggestionCount - Number of suggestions
- * @param {string} suggestionId - Suggestion ID
- * @returns {Promise<Object>} Notification result
- */
-async function notifyBudgetSuggestionsAvailable(
-  userId,
-  targetMonth,
-  suggestionCount,
-  suggestionId,
-) {
-  const template =
-    NOTIFICATION_TEMPLATES[NOTIFICATION_TYPES.BUDGET_SUGGESTION_AVAILABLE];
-
-  // Format month for display
-  const [year, month] = targetMonth.split("-");
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
+async function notifyBudgetSuggestionsAvailable(userId, targetMonth, suggestionCount, suggestionId) {
+  const template = NOTIFICATION_TEMPLATES[NOTIFICATION_TYPES.BUDGET_SUGGESTION_AVAILABLE];
+  const [year, month] = targetMonth.split('-');
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const displayMonth = `${monthNames[parseInt(month) - 1]} ${year}`;
 
   const body = template.bodyTemplate
-    .replace("{targetMonth}", displayMonth)
-    .replace("{suggestionCount}", suggestionCount.toString());
+    .replace('{targetMonth}', displayMonth)
+    .replace('{suggestionCount}', suggestionCount.toString());
 
-  const notification = {
+  return sendNotification(userId, {
     type: NOTIFICATION_TYPES.BUDGET_SUGGESTION_AVAILABLE,
     title: template.title,
     body,
-    data: {
-      suggestionId,
-      targetMonth,
-      suggestionCount,
-      actionUrl: template.actionUrl,
-      actions: [
-        { label: "Review Suggestions", action: "review", suggestionId },
-        { label: "Later", action: "dismiss" },
-      ],
-    },
-  };
-
-  return sendNotification(userId, notification);
-}
-
-/**
- * Check if notification should be sent based on confidence threshold
- * @param {number} confidenceScore - Pattern confidence score
- * @param {number} threshold - Minimum threshold (default 70)
- * @returns {boolean} Whether to send notification
- */
-function shouldNotifyForPattern(confidenceScore, threshold = 70) {
-  return confidenceScore >= threshold;
-}
-
-/**
- * Check if amount change is significant enough to notify
- * @param {number} oldAmount - Previous amount
- * @param {number} newAmount - New amount
- * @param {number} threshold - Percentage threshold (default 20)
- * @returns {boolean} Whether to send notification
- */
-function isSignificantAmountChange(oldAmount, newAmount, threshold = 20) {
-  if (oldAmount === 0) return newAmount > 0;
-  const changePercent = Math.abs(((newAmount - oldAmount) / oldAmount) * 100);
-  return changePercent >= threshold;
+    data: { suggestionId, targetMonth, suggestionCount, actionUrl: template.actionUrl },
+  });
 }
 
 /**
  * Main Lambda handler
+ *
+ * All authenticated routes extract userId from the Cognito JWT via getUserFromEvent().
+ * No endpoint accepts userId from the request body or query string.
  */
-exports.handler = async (event) => {
-  console.log("Notification request:", JSON.stringify(event, null, 2));
+exports.handler = async (event, context) => {
+  logger.info('Notification request received', {
+    httpMethod: event.httpMethod,
+    path: event.path,
+    requestId: context ? context.awsRequestId : undefined,
+  });
 
   try {
     // Handle CORS preflight
-    if (event.httpMethod === "OPTIONS") {
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: "",
-      };
+    if (event.httpMethod === 'OPTIONS') {
+      return successResponse({}, 'OK');
     }
 
-    const path = event.path || event.rawPath || "";
-    const method = event.httpMethod || event.requestContext?.http?.method;
-    const body = event.body ? JSON.parse(event.body) : {};
+    const path = event.path || event.rawPath || '';
+    const method = event.httpMethod || event.requestContext?.http?.method || '';
 
-    // Register device token
-    if (method === "POST" && path.includes("/register")) {
-      const { userId, deviceToken, platform } = body;
+    // Health check — unauthenticated
+    if (method === 'GET' && path === '/notifications/health') {
+      return successResponse({ status: 'healthy', service: 'notifications' }, 'Notifications service is healthy');
+    }
 
-      if (!userId || !deviceToken || !platform) {
-        return {
-          statusCode: 400,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({ error: "Missing required fields" }),
-        };
+    // All other routes require auth
+    let user;
+    try {
+      user = getUserFromEvent(event);
+    } catch (authErr) {
+      return errorResponse.unauthorized('Authentication required');
+    }
+    const userId = user.userId;
+
+    // Parse body safely
+    let body = {};
+    if (event.body) {
+      try {
+        body = JSON.parse(event.body);
+      } catch (_) {
+        return errorResponse.badRequest('Invalid JSON body');
       }
+    }
 
+    // ── POST /notifications/register-device ─────────────────────────────────
+    if (method === 'POST' && path.includes('/register-device')) {
+      const { deviceToken, platform } = body;
+      if (!deviceToken || !platform) {
+        return errorResponse.badRequest('deviceToken and platform are required');
+      }
       const result = await registerDeviceToken(userId, deviceToken, platform);
-
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: JSON.stringify(result),
-      };
+      return successResponse(result, 'Device registered');
     }
 
-    // Unregister device token
-    if (method === "DELETE" && path.includes("/register")) {
-      const { userId, deviceToken } = body;
-
-      if (!userId || !deviceToken) {
-        return {
-          statusCode: 400,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({ error: "Missing required fields" }),
-        };
+    // ── DELETE /notifications/device/{deviceId} ──────────────────────────────
+    if (method === 'DELETE' && path.includes('/device/')) {
+      const { deviceToken } = body;
+      if (!deviceToken) {
+        return errorResponse.badRequest('deviceToken is required');
       }
-
       const result = await unregisterDeviceToken(userId, deviceToken);
-
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: JSON.stringify(result),
-      };
+      return successResponse(result, 'Device unregistered');
     }
 
-    // Send notification
-    if (method === "POST" && path.includes("/send")) {
-      const { userId, notification } = body;
-
-      if (!userId || !notification) {
-        return {
-          statusCode: 400,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({ error: "Missing required fields" }),
-        };
-      }
-
-      const result = await sendNotification(userId, notification);
-
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: JSON.stringify(result),
-      };
-    }
-
-    // Get notification preferences
-    if (method === "GET" && path.includes("/preferences")) {
-      const userId = event.queryStringParameters?.userId;
-
-      if (!userId) {
-        return {
-          statusCode: 400,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({ error: "Missing userId" }),
-        };
-      }
-
+    // ── GET /notifications/preferences ──────────────────────────────────────
+    if (method === 'GET' && path.includes('/preferences')) {
       const preferences = await getNotificationPreferences(userId);
-
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: JSON.stringify(preferences),
-      };
+      return successResponse(preferences, 'Preferences retrieved');
     }
 
-    // Update notification preferences
-    if (method === "PUT" && path.includes("/preferences")) {
-      const { userId, preferences } = body;
-
-      if (!userId || !preferences) {
-        return {
-          statusCode: 400,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({ error: "Missing required fields" }),
-        };
-      }
-
-      const result = await updateNotificationPreferences(userId, preferences);
-
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: JSON.stringify(result),
-      };
+    // ── PUT /notifications/preferences ──────────────────────────────────────
+    if (method === 'PUT' && path.includes('/preferences')) {
+      const result = await updateNotificationPreferences(userId, body);
+      return successResponse(result, 'Preferences updated');
     }
 
-    // Get notification history
-    if (method === "GET" && path.includes("/history")) {
-      const userId = event.queryStringParameters?.userId;
-      const limit = parseInt(event.queryStringParameters?.limit || "50");
-      const lastEvaluatedKey = event.queryStringParameters?.lastEvaluatedKey
-        ? JSON.parse(event.queryStringParameters.lastEvaluatedKey)
-        : null;
-
-      if (!userId) {
-        return {
-          statusCode: 400,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({ error: "Missing userId" }),
-        };
-      }
-
-      const result = await getNotificationHistory(
-        userId,
-        limit,
-        lastEvaluatedKey,
-      );
-
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: JSON.stringify(result),
-      };
+    // ── GET /notifications/history ───────────────────────────────────────────
+    if (method === 'GET' && path.includes('/history')) {
+      const limit = parseInt(event.queryStringParameters?.limit || '50');
+      const result = await getNotificationHistory(userId, limit);
+      return successResponse(result, 'History retrieved');
     }
 
-    // Mark notification as read
-    if (method === "PUT" && path.match(/\/notifications\/[^/]+\/read/)) {
-      const { userId } = body;
-      const notificationId = path.split("/")[2]; // Extract notification ID from path
-
-      if (!userId || !notificationId) {
-        return {
-          statusCode: 400,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({ error: "Missing required fields" }),
-        };
+    // ── PUT /notifications/{notificationId}/read ─────────────────────────────
+    if (method === 'PUT' && path.match(/\/notifications\/[^/]+\/read/)) {
+      const parts = path.split('/');
+      // path: /notifications/{notificationId}/read → parts[2] = notificationId
+      const notificationId = parts[2];
+      if (!notificationId) {
+        return errorResponse.badRequest('notificationId required');
       }
-
       const result = await markNotificationAsRead(userId, notificationId);
-
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: JSON.stringify(result),
-      };
+      return successResponse(result, 'Notification marked as read');
     }
 
-    // Send pattern detected notification
-    if (method === "POST" && path.includes("/pattern-detected")) {
-      const { userId, pattern } = body;
-
-      if (!userId || !pattern) {
-        return {
-          statusCode: 400,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({ error: "Missing required fields" }),
-        };
+    // ── POST /notifications/send (internal use) ──────────────────────────────
+    if (method === 'POST' && path.includes('/send')) {
+      const { notification } = body;
+      if (!notification) {
+        return errorResponse.badRequest('notification is required');
       }
+      const result = await sendNotification(userId, notification);
+      return successResponse(result, 'Notification sent');
+    }
 
-      // Check if pattern confidence is high enough
+    // ── POST /notifications/pattern-detected ────────────────────────────────
+    if (method === 'POST' && path.includes('/pattern-detected')) {
+      const { pattern } = body;
+      if (!pattern) {
+        return errorResponse.badRequest('pattern is required');
+      }
       if (!shouldNotifyForPattern(pattern.confidenceScore)) {
-        return {
-          statusCode: 200,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({
-            success: false,
-            reason: "Confidence score below threshold",
-            confidenceScore: pattern.confidenceScore,
-          }),
-        };
+        return successResponse({ success: false, reason: 'Confidence score below threshold' });
       }
-
       const result = await notifyPatternDetected(userId, pattern);
-
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: JSON.stringify(result),
-      };
+      return successResponse(result, 'Pattern notification sent');
     }
 
-    // Send pattern amount changed notification
-    if (method === "POST" && path.includes("/pattern-amount-changed")) {
-      const { userId, bill, oldAmount, newAmount } = body;
-
-      if (
-        !userId ||
-        !bill ||
-        oldAmount === undefined ||
-        newAmount === undefined
-      ) {
-        return {
-          statusCode: 400,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({ error: "Missing required fields" }),
-        };
+    // ── POST /notifications/pattern-amount-changed ───────────────────────────
+    if (method === 'POST' && path.includes('/pattern-amount-changed')) {
+      const { bill, oldAmount, newAmount } = body;
+      if (!bill || oldAmount === undefined || newAmount === undefined) {
+        return errorResponse.badRequest('bill, oldAmount, and newAmount are required');
       }
-
-      // Check if change is significant
       if (!isSignificantAmountChange(oldAmount, newAmount)) {
-        return {
-          statusCode: 200,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({
-            success: false,
-            reason: "Amount change not significant",
-            changePercent: Math.abs(
-              ((newAmount - oldAmount) / oldAmount) * 100,
-            ),
-          }),
-        };
+        return successResponse({ success: false, reason: 'Amount change not significant' });
       }
-
-      const result = await notifyPatternAmountChanged(
-        userId,
-        bill,
-        oldAmount,
-        newAmount,
-      );
-
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: JSON.stringify(result),
-      };
+      const result = await notifyPatternAmountChanged(userId, bill, oldAmount, newAmount);
+      return successResponse(result, 'Amount change notification sent');
     }
 
-    // Send pattern missing notification
-    if (method === "POST" && path.includes("/pattern-missing")) {
-      const { userId, bill, expectedDate } = body;
-
-      if (!userId || !bill || !expectedDate) {
-        return {
-          statusCode: 400,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({ error: "Missing required fields" }),
-        };
+    // ── POST /notifications/pattern-missing ─────────────────────────────────
+    if (method === 'POST' && path.includes('/pattern-missing')) {
+      const { bill, expectedDate } = body;
+      if (!bill || !expectedDate) {
+        return errorResponse.badRequest('bill and expectedDate are required');
       }
-
       const result = await notifyPatternMissing(userId, bill, expectedDate);
-
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: JSON.stringify(result),
-      };
+      return successResponse(result, 'Pattern missing notification sent');
     }
 
-    // Send budget suggestions available notification
-    if (method === "POST" && path.includes("/budget-suggestions-available")) {
-      const { userId, targetMonth, suggestionCount, suggestionId } = body;
-
-      if (!userId || !targetMonth || !suggestionCount || !suggestionId) {
-        return {
-          statusCode: 400,
-          headers: getCorsHeaders(),
-          body: JSON.stringify({ error: "Missing required fields" }),
-        };
+    // ── POST /notifications/budget-suggestions-available ────────────────────
+    if (method === 'POST' && path.includes('/budget-suggestions-available')) {
+      const { targetMonth, suggestionCount, suggestionId } = body;
+      if (!targetMonth || !suggestionCount || !suggestionId) {
+        return errorResponse.badRequest('targetMonth, suggestionCount, and suggestionId are required');
       }
-
-      const result = await notifyBudgetSuggestionsAvailable(
-        userId,
-        targetMonth,
-        suggestionCount,
-        suggestionId,
-      );
-
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(),
-        body: JSON.stringify(result),
-      };
+      const result = await notifyBudgetSuggestionsAvailable(userId, targetMonth, suggestionCount, suggestionId);
+      return successResponse(result, 'Budget suggestions notification sent');
     }
 
-    return {
-      statusCode: 404,
-      headers: getCorsHeaders(),
-      body: JSON.stringify({ error: "Not found" }),
-    };
+    return errorResponse.notFound(`Route ${method} ${path} not found`);
   } catch (error) {
-    console.error("Notification error:", error);
-    return {
-      statusCode: 500,
-      headers: getCorsHeaders(),
-      body: JSON.stringify({
-        error: "Internal server error",
-        details: error.message,
-      }),
-    };
+    logger.error('Notification handler error', error);
+    return errorResponse.internalError('An error occurred processing your request');
   }
 };
 
-// Export notification types and helper functions for use by other services
+// Export notification helpers for use by other Lambda functions (budget-alerts, etc.)
 module.exports.NOTIFICATION_TYPES = NOTIFICATION_TYPES;
 module.exports.notifyPatternDetected = notifyPatternDetected;
 module.exports.notifyPatternAmountChanged = notifyPatternAmountChanged;
 module.exports.notifyPatternMissing = notifyPatternMissing;
-module.exports.notifyBudgetSuggestionsAvailable =
-  notifyBudgetSuggestionsAvailable;
+module.exports.notifyBudgetSuggestionsAvailable = notifyBudgetSuggestionsAvailable;
 module.exports.shouldNotifyForPattern = shouldNotifyForPattern;
 module.exports.isSignificantAmountChange = isSignificantAmountChange;
