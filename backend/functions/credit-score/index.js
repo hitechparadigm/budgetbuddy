@@ -102,17 +102,14 @@ exports.handler = async (event) => {
 async function getCreditScore(userId, _budgetId) {
   try {
     // Get latest credit score record stored under USER# partition for per-user data
-    const result = await dynamoHelpers.query({
+    const items = await dynamoHelpers.queryByPK(`USER#${userId}`, {
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
       ExpressionAttributeValues: {
-        ':pk': `USER#${userId}`,
         ':sk': 'CREDIT_SCORE#',
       },
       ScanIndexForward: false,
       Limit: 1,
-    });
-
-    const items = result || [];
+    }) || [];
 
     if (items.length === 0) {
       return response(200, {
@@ -145,17 +142,14 @@ async function getCreditScore(userId, _budgetId) {
  */
 async function getCreditScoreHistory(userId, _budgetId) {
   try {
-    const result = await dynamoHelpers.query({
+    const items = await dynamoHelpers.queryByPK(`USER#${userId}`, {
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
       ExpressionAttributeValues: {
-        ':pk': `USER#${userId}`,
         ':sk': 'CREDIT_SCORE#',
       },
       ScanIndexForward: false,
       Limit: 12,
-    });
-
-    const items = result || [];
+    }) || [];
     const history = items.map((item) => ({
       date: item.date,
       score: item.score,
@@ -189,17 +183,14 @@ async function refreshCreditScore(userId, budgetId) {
     const mockScore = await simulateCreditBureauAPI();
 
     // Get previous score for change calculation
-    const previousResult = await dynamoHelpers.query({
+    const previousItems = await dynamoHelpers.queryByPK(`USER#${userId}`, {
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
       ExpressionAttributeValues: {
-        ':pk': `USER#${userId}`,
         ':sk': 'CREDIT_SCORE#',
       },
       ScanIndexForward: false,
       Limit: 1,
-    });
-
-    const previousItems = previousResult || [];
+    }) || [];
     const previousScore = previousItems.length > 0 ? previousItems[0].score : null;
     const change = previousScore ? mockScore.score - previousScore : 0;
     const changeDirection = change > 0 ? 'up' : change < 0 ? 'down' : 'none';

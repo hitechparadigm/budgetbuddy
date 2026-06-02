@@ -28,16 +28,12 @@ function getCorsHeaders() {
  */
 async function getBudgets(budgetId, startDate, endDate) {
   try {
-    const params = {
+    const budgets = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
       ExpressionAttributeValues: {
-        ':pk': `BUDGET#${budgetId}`,
         ':sk': 'PERIOD#',
       },
-    };
-
-    const result = await dynamoHelpers.query(params);
-    const budgets = result || [];
+    }) || [];
 
     // Apply date filtering if provided
     if (startDate && endDate) {
@@ -57,16 +53,12 @@ async function getBudgets(budgetId, startDate, endDate) {
  */
 async function getTransactions(budgetId, startDate, endDate) {
   try {
-    const params = {
+    const transactions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
       ExpressionAttributeValues: {
-        ':pk': `BUDGET#${budgetId}`,
         ':sk': 'TXN#',
       },
-    };
-
-    const result = await dynamoHelpers.query(params);
-    const transactions = result || [];
+    }) || [];
 
     // Apply date filtering if provided
     if (startDate && endDate) {
