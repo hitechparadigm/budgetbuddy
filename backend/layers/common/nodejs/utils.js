@@ -539,4 +539,4 @@ module.exports = {
   BudgetAccessResolver,
 };
 
-// Force rebuild timestamp: 2025-10-28T01:00:00Z
+// Force rebuild timestamp: 2026-06-03T01:00:00Z
