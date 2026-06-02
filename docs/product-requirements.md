@@ -304,11 +304,14 @@ Tested against dev environment using `scripts/test-live-api.js`. **102 checks pa
 | Spec: `ai-bill-reminders-budget-planning` | Updated `familyId` → `budgetId` throughout requirements and design docs |
 | Spec: `push-notifications-reminders` | Updated budget alert tracking schema and `familyId` references to `budgetId` |
 
-### Final Live Test Results (2026-06-03, after fixes)
+### Final Live Test Results (2026-06-03, after all fixes)
 
-**103 checks passed, 1 failed, 6 remaining bugs** (down from 9 bugs originally, 13 total known)
+**108 checks passed, 0 failed, 6 remaining bugs** (down from 9 bugs originally, 13 total known)
 
-All 7 bugs in scope (3–9) resolved. The 1 failed check (`POST /credit-score/refresh → 400`) is **correct behavior** — Lambda returns 400 when no credit bureau account is connected; the test expectation was wrong.
+All issues resolved:
+- Notifications Lambda (`GET /preferences`, `GET /history`, `PUT /preferences`, `POST /register-device`) — **fixed** (was 502, now 200)
+- Learn Lambda `GET /learn/lessons` — **fixed** (was 404, now 200)
+- `POST /credit-score/refresh` test expectation — **fixed** (400 = credit bureau not connected, expected)
 
 **Remaining 6 reported bugs are pre-existing/out-of-scope:**
 1. `POST /budget/ai-generate` — Bedrock call for new users (separate issue)
