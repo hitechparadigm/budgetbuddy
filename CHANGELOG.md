@@ -1,6 +1,20 @@
 # Changelog
 
-## [1.9.126] - 2026-06-03
+## ## [1.9.127] - 2026-06-03
+
+### 🐛 Fix: Follow-up fixes from live API verification
+
+- **debt-payoff Lambda**: Fixed `generateId("debt")` → `generateId.custom("debt")` (TypeError: generateId is not a function)
+- **debt-payoff Lambda**: Fixed `parseRequestBody(event)` → `parseRequestBody(event.body)` in `createDebt`, `updateDebt`, `recordPayment`
+- **debt-payoff Lambda**: Fixed DynamoDB reserved word `status` in `FilterExpression` → used `ExpressionAttributeNames: { "#debtStatus": "status" }` in `getPayoffPlan`
+- **comparison Lambda**: Fixed `dynamoHelpers.scan()` → removed `computeGroupAggregation` (on-the-fly scan replaced with graceful "not enough users" return); fixed `getUserSpendingByCategory` to use `BUDGET#<budgetId>` + `queryByPK` instead of `FAMILY#<familyId>` + `dynamoHelpers.query()`
+- **tips Lambda**: Fixed `dynamoHelpers.query()` → `queryByPK()` in `analyzeUserSpending` and `getSavedTips`; migrated from `FAMILY#<familyId>` to `BUDGET#<budgetId>` transaction queries
+- **credit-score Lambda**: Fixed `dynamoHelpers.query()` → `queryByPK()` in all three query calls
+- **export Lambda**: Fixed `dynamoHelpers.query()` → `queryByPK()` in `getBudgets` and `getTransactions`
+
+**Final live test result**: 103 passed, 1 failed (correct behavior — credit-score/refresh returns 400 when not configured), 6 remaining pre-existing bugs (down from 13 originally)
+
+
 
 ### 🐛 Fix: Lambda 500/502 crashes, BUDGET# model alignment, notifications wiring, CDK auth
 

@@ -1,6 +1,32 @@
 # Development Log
 
-## 2026-06-03 - Lambda crashes, BUDGET# alignment, notifications wiring, CDK auth (Session 142)
+## 2026-06-03 - Follow-up fixes from live API tests (Session 143)
+
+### Work Completed
+
+1. **debt-payoff — TypeError: generateId is not a function**:
+   - Root cause: `generateId` is an object `{ user: fn, budget: fn, ... custom: fn }`, not a function. `generateId("debt")` fails.
+   - Fix: Changed to `generateId.custom("debt")` and `generateId.custom("pay")`
+
+2. **debt-payoff — parseRequestBody(event) instead of event.body**:
+   - Root cause: `parseRequestBody` takes a string body, not the event object. `JSON.parse(event)` fails.
+   - Fix: Changed to `parseRequestBody(event.body)` in `createDebt`, `updateDebt`, `recordPayment`
+
+3. **debt-payoff — DynamoDB reserved word 'status'**:
+   - Root cause: `status = :active` in FilterExpression fails because `status` is a DynamoDB reserved keyword
+   - Fix: Added `ExpressionAttributeNames: { "#debtStatus": "status" }` and updated FilterExpression
+
+4. **comparison/tips/credit-score/export — dynamoHelpers.query() doesn't exist**:
+   - Root cause: The common layer `dynamoHelpers` object only has `getItem`, `putItem`, `queryByPK`, `updateItem`. No `query()` or `scan()` methods.
+   - Fix: Replaced all `dynamoHelpers.query()` with `queryByPK()`. Removed `computeGroupAggregation` (scan-based) from comparison Lambda.
+
+5. **FAMILY# → BUDGET# key migration in comparison/tips**:
+   - Root cause: `getUserSpendingByCategory` and `analyzeUserSpending` still used `FAMILY#${familyId}` (read from `userProfile.familyId`)
+   - Fix: Migrated to `BUDGET#${budgetId}` using `userProfile.defaultBudgetId`
+
+**Final live test result**: 103 passed, 1 failed (expected), 6 remaining pre-existing bugs
+
+
 
 ### Work Completed
 

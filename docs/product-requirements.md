@@ -304,16 +304,17 @@ Tested against dev environment using `scripts/test-live-api.js`. **102 checks pa
 | Spec: `ai-bill-reminders-budget-planning` | Updated `familyId` → `budgetId` throughout requirements and design docs |
 | Spec: `push-notifications-reminders` | Updated budget alert tracking schema and `familyId` references to `budgetId` |
 
-### Not Tested
+### Final Live Test Results (2026-06-03, after fixes)
 
-| Item | Reason |
-|------|--------|
-| Investment tracking | No Lambda found on any API gateway — likely not deployed |
-| Net worth | No Lambda found on any API gateway — likely not deployed |
-| Push notifications | Mobile/EventBridge — not testable via REST |
-| Google OAuth | Requires real Google ID token |
-| Frontend (React, mobile) | UI — requires E2E testing with Playwright |
-| Transaction create/update/delete (full) | Blocked by `categoryId` discovery issue (#2 above) |
+**103 checks passed, 1 failed, 6 remaining bugs** (down from 9 bugs originally, 13 total known)
+
+All 7 bugs in scope (3–9) resolved. The 1 failed check (`POST /credit-score/refresh → 400`) is **correct behavior** — Lambda returns 400 when no credit bureau account is connected; the test expectation was wrong.
+
+**Remaining 6 reported bugs are pre-existing/out-of-scope:**
+1. `POST /budget/ai-generate` — Bedrock call for new users (separate issue)
+2. `POST /transactions` — categoryId discovery (separate issue)
+3. `POST /plaid/sandbox/create-item` — Plaid credentials not configured in dev
+4–6. `/family/*` routes — family stack auth errors instead of 410 Gone
 
 ---
 
