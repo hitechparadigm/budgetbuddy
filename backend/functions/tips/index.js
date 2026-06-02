@@ -332,7 +332,27 @@ async function getTipsFeed(event, user) {
   const dismissedTipIds = new Set(userTipHistory.dismissed || []);
 
   // Get user spending patterns for personalization
-  const spendingPatterns = await analyzeUserSpending(user.userId);
+  let spendingPatterns;
+  try {
+    spendingPatterns = await analyzeUserSpending(user.userId);
+  } catch (err) {
+    // New users with no data — return empty tips gracefully
+    spendingPatterns = {
+      hasDebt: false,
+      highSpendingCategories: [],
+      lowSavingsRate: false,
+      frequentDiningOut: false,
+      subscriptionHeavy: false,
+    };
+  }
+
+  // New users may have no spending data yet — return empty array
+  if (!spendingPatterns) {
+    return successResponse(
+      { tips: [], hasData: false },
+      "No tips available yet",
+    );
+  }
 
   // Select tips based on user patterns
   let tips = selectPersonalizedTips(spendingPatterns, category);

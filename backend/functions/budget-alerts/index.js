@@ -3,76 +3,82 @@
  *
  * Monitors budget spending and sends alerts when thresholds are exceeded.
  * Triggered by DynamoDB Streams or scheduled checks.
+ *
+ * Updated to use BUDGET#<budgetId> partition keys (replaced FAMILY#<familyId>).
  */
 
-const AWS = require("aws-sdk");
+const AWS = require('aws-sdk');
 
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const lambda = new AWS.Lambda();
 
-const TABLE_NAME = process.env.TABLE_NAME || "budgetbuddy-main";
+const TABLE_NAME = process.env.TABLE_NAME || 'budgetbuddy-dev-main';
 const NOTIFICATION_FUNCTION =
-  process.env.NOTIFICATION_FUNCTION || "budgetbuddy-notifications";
+  process.env.NOTIFICATION_FUNCTION_ARN ||
+  process.env.NOTIFICATION_FUNCTION ||
+  'budgetbuddy-dev-notifications';
 
 // Alert thresholds
 const ALERT_THRESHOLDS = [0.8, 0.9, 1.0]; // 80%, 90%, 100%
 
 /**
- * Get budget by ID
+ * Get budget period by budgetId and month
+ * Key: { PK: 'BUDGET#<budgetId>', SK: 'PERIOD#<month>' }
  */
-async function getBudget(familyId, month) {
+async function getBudget(budgetId, month) {
   try {
     const result = await dynamodb
       .get({
         TableName: TABLE_NAME,
         Key: {
-          PK: `FAMILY#${familyId}`,
-          SK: `BUDGET#${month}`,
+          PK: `BUDGET#${budgetId}`,
+          SK: `PERIOD#${month}`,
         },
       })
       .promise();
 
-    return result.Item;
+    return result.Item || null;
   } catch (error) {
-    console.error("Error getting budget:", error);
+    console.error('Error getting budget:', error);
     return null;
   }
 }
 
 /**
- * Get users for a family
+ * Get budget members via BUDGET#<budgetId>/MEMBER#* records
  */
-async function getFamilyUsers(familyId) {
+async function getBudgetMembers(budgetId) {
   try {
     const result = await dynamodb
-      .scan({
+      .query({
         TableName: TABLE_NAME,
-        FilterExpression: "familyId = :familyId AND SK = :sk",
+        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
         ExpressionAttributeValues: {
-          ":familyId": familyId,
-          ":sk": "PROFILE",
+          ':pk': `BUDGET#${budgetId}`,
+          ':sk': 'MEMBER#',
         },
       })
       .promise();
 
     return result.Items || [];
   } catch (error) {
-    console.error("Error getting family users:", error);
+    console.error('Error getting budget members:', error);
     return [];
   }
 }
 
 /**
  * Check if alert was already sent
+ * Key: { PK: 'BUDGET#<budgetId>', SK: 'ALERT#<alertKey>' }
  */
-async function wasAlertSent(familyId, month, categoryName, threshold) {
+async function wasAlertSent(budgetId, month, categoryName, threshold) {
   try {
     const alertKey = `${month}-${categoryName}-${threshold}`;
     const result = await dynamodb
       .get({
         TableName: TABLE_NAME,
         Key: {
-          PK: `FAMILY#${familyId}`,
+          PK: `BUDGET#${budgetId}`,
           SK: `ALERT#${alertKey}`,
         },
       })
@@ -80,23 +86,25 @@ async function wasAlertSent(familyId, month, categoryName, threshold) {
 
     return !!result.Item;
   } catch (error) {
-    console.error("Error checking alert status:", error);
+    console.error('Error checking alert status:', error);
     return false;
   }
 }
 
 /**
  * Mark alert as sent
+ * Key: { PK: 'BUDGET#<budgetId>', SK: 'ALERT#<alertKey>' }
  */
-async function markAlertSent(familyId, month, categoryName, threshold) {
+async function markAlertSent(budgetId, month, categoryName, threshold) {
   try {
     const alertKey = `${month}-${categoryName}-${threshold}`;
     await dynamodb
       .put({
         TableName: TABLE_NAME,
         Item: {
-          PK: `FAMILY#${familyId}`,
+          PK: `BUDGET#${budgetId}`,
           SK: `ALERT#${alertKey}`,
+          budgetId,
           month,
           categoryName,
           threshold,
@@ -106,7 +114,7 @@ async function markAlertSent(familyId, month, categoryName, threshold) {
       })
       .promise();
   } catch (error) {
-    console.error("Error marking alert as sent:", error);
+    console.error('Error marking alert as sent:', error);
   }
 }
 
@@ -118,10 +126,10 @@ async function sendNotification(userId, notification) {
     await lambda
       .invoke({
         FunctionName: NOTIFICATION_FUNCTION,
-        InvocationType: "Event", // Async
+        InvocationType: 'Event', // Async
         Payload: JSON.stringify({
-          httpMethod: "POST",
-          path: "/notifications/send",
+          httpMethod: 'POST',
+          path: '/notifications/send',
           body: JSON.stringify({
             userId,
             notification,
@@ -139,11 +147,11 @@ async function sendNotification(userId, notification) {
 /**
  * Check category for overspending and send alerts
  */
-async function checkCategoryAlerts(familyId, month, category) {
+async function checkCategoryAlerts(budgetId, month, category) {
   const planned = category.plannedAmount || 0;
   const spent = category.spentAmount || 0;
 
-  if (planned === 0) return;
+  if (planned === 0) return [];
 
   const percentSpent = spent / planned;
   const alerts = [];
@@ -151,7 +159,7 @@ async function checkCategoryAlerts(familyId, month, category) {
   for (const threshold of ALERT_THRESHOLDS) {
     if (percentSpent >= threshold) {
       const alreadySent = await wasAlertSent(
-        familyId,
+        budgetId,
         month,
         category.name,
         threshold,
@@ -180,24 +188,24 @@ function generateAlertNotification(category, alert, month) {
   let title, body, severity;
 
   if (alert.threshold === 1.0) {
-    title = "🚨 Budget Exceeded!";
+    title = '🚨 Budget Exceeded!';
     body = `You've spent ${percentDisplay}% of your ${category.name} budget for ${month}`;
-    severity = "high";
+    severity = 'high';
   } else if (alert.threshold === 0.9) {
-    title = "⚠️ Budget Warning";
+    title = '⚠️ Budget Warning';
     body = `You've spent ${percentDisplay}% of your ${category.name} budget for ${month}`;
-    severity = "medium";
+    severity = 'medium';
   } else {
-    title = "💡 Budget Alert";
+    title = '💡 Budget Alert';
     body = `You've spent ${percentDisplay}% of your ${category.name} budget for ${month}`;
-    severity = "low";
+    severity = 'low';
   }
 
   return {
     title,
     body,
     data: {
-      type: "budget_alert",
+      type: 'budget_alert',
       category: category.name,
       month,
       threshold: alert.threshold,
@@ -210,16 +218,20 @@ function generateAlertNotification(category, alert, month) {
 }
 
 /**
- * Process budget for alerts
+ * Process budget period record for alerts
  */
 async function processBudgetAlerts(budget) {
   try {
-    const familyId = budget.familyId;
+    // Extract budgetId from PK: 'BUDGET#<budgetId>'
+    const budgetId = budget.budgetId || (budget.PK ? budget.PK.split('#')[1] : null);
     const month = budget.month;
 
-    console.log(
-      `Checking budget alerts for family ${familyId}, month ${month}`,
-    );
+    if (!budgetId || !month) {
+      console.warn('Budget record missing budgetId or month:', { PK: budget.PK, month });
+      return { success: false, error: 'Missing budgetId or month' };
+    }
+
+    console.log(`Checking budget alerts for budgetId ${budgetId}, month ${month}`);
 
     // Get all categories from all groups
     const categories = [];
@@ -229,73 +241,72 @@ async function processBudgetAlerts(budget) {
           categories.push(...group.categories);
         }
       });
+    } else if (budget.categories) {
+      categories.push(...budget.categories);
+    }
+
+    if (categories.length === 0) {
+      console.log(`No categories found for budget ${budgetId}`);
+      return { success: true, budgetId, month, alertsChecked: 0 };
     }
 
     // Check each category for alerts
     for (const category of categories) {
-      const alerts = await checkCategoryAlerts(familyId, month, category);
+      const alerts = await checkCategoryAlerts(budgetId, month, category);
 
-      if (alerts.length > 0) {
-        console.log(
-          `Found ${alerts.length} alerts for category ${category.name}`,
-        );
+      if (alerts && alerts.length > 0) {
+        console.log(`Found ${alerts.length} alerts for category ${category.name}`);
 
-        // Get family users
-        const users = await getFamilyUsers(familyId);
+        // Get budget members
+        const members = await getBudgetMembers(budgetId);
 
-        // Send alerts to all family members
+        // Send alerts to all budget members
         for (const alert of alerts) {
-          const notification = generateAlertNotification(
-            category,
-            alert,
-            month,
-          );
+          const notification = generateAlertNotification(category, alert, month);
 
-          for (const user of users) {
-            await sendNotification(user.userId, notification);
+          for (const member of members) {
+            if (member.userId) {
+              await sendNotification(member.userId, notification);
+            }
           }
 
           // Mark alert as sent
-          await markAlertSent(familyId, month, category.name, alert.threshold);
+          await markAlertSent(budgetId, month, category.name, alert.threshold);
         }
       }
     }
 
-    return { success: true, familyId, month };
+    return { success: true, budgetId, month };
   } catch (error) {
-    console.error("Error processing budget alerts:", error);
+    console.error('Error processing budget alerts:', error);
     return { success: false, error: error.message };
   }
 }
 
 /**
- * Check all active budgets for alerts
+ * Check all active budgets for alerts (scheduled check)
  */
 async function checkAllBudgets() {
   try {
-    // Get current month
     const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
     console.log(`Checking all budgets for month ${currentMonth}`);
 
-    // Scan for all budgets in current month
+    // Scan for all budget PERIOD records for current month
     const result = await dynamodb
       .scan({
         TableName: TABLE_NAME,
-        FilterExpression: "begins_with(SK, :sk) AND #month = :month",
-        ExpressionAttributeNames: {
-          "#month": "month",
-        },
+        FilterExpression: 'begins_with(PK, :pkPrefix) AND SK = :sk',
         ExpressionAttributeValues: {
-          ":sk": "BUDGET#",
-          ":month": currentMonth,
+          ':pkPrefix': 'BUDGET#',
+          ':sk': `PERIOD#${currentMonth}`,
         },
       })
       .promise();
 
     const budgets = result.Items || [];
-    console.log(`Found ${budgets.length} budgets to check`);
+    console.log(`Found ${budgets.length} budget periods to check`);
 
     const results = [];
     for (const budget of budgets) {
@@ -305,7 +316,7 @@ async function checkAllBudgets() {
 
     return results;
   } catch (error) {
-    console.error("Error checking all budgets:", error);
+    console.error('Error checking all budgets:', error);
     throw error;
   }
 }
@@ -314,29 +325,38 @@ async function checkAllBudgets() {
  * Main Lambda handler
  */
 exports.handler = async (event) => {
-  console.log("Budget alerts event:", JSON.stringify(event, null, 2));
+  console.log('Budget alerts event type:', event.Records ? 'DynamoDB Stream' : (event.source || 'manual'));
 
   try {
     // Handle DynamoDB Stream events (transaction created/updated)
-    if (event.Records && event.Records[0].eventSource === "aws:dynamodb") {
+    if (event.Records && event.Records[0] && event.Records[0].eventSource === 'aws:dynamodb') {
       const results = [];
 
       for (const record of event.Records) {
-        if (record.eventName === "INSERT" || record.eventName === "MODIFY") {
+        if (record.eventName === 'INSERT' || record.eventName === 'MODIFY') {
           const newImage = AWS.DynamoDB.Converter.unmarshall(
             record.dynamodb.NewImage,
           );
 
-          // Check if this is a transaction
-          if (newImage.SK && newImage.SK.startsWith("TRANSACTION#")) {
-            const familyId = newImage.familyId;
-            const month = newImage.budgetMonth;
+          // Only process transaction records: SK starts with TXN#
+          if (newImage.SK && (newImage.SK.startsWith('TXN#') || newImage.SK.startsWith('TRANSACTION#'))) {
+            // Extract budgetId from PK: 'BUDGET#<budgetId>'
+            const pk = newImage.PK || '';
+            const budgetId = pk.startsWith('BUDGET#') ? pk.split('#')[1] : newImage.budgetId;
+            const month = newImage.budgetMonth || newImage.month;
 
-            // Get the budget and check for alerts
-            const budget = await getBudget(familyId, month);
+            if (!budgetId || !month) {
+              console.warn('Transaction missing budgetId or month in stream record');
+              continue;
+            }
+
+            // Get the budget period and check for alerts
+            const budget = await getBudget(budgetId, month);
             if (budget) {
               const result = await processBudgetAlerts(budget);
               results.push(result);
+            } else {
+              console.log(`No budget period found for budgetId=${budgetId}, month=${month}`);
             }
           }
         }
@@ -345,20 +365,20 @@ exports.handler = async (event) => {
       return {
         statusCode: 200,
         body: JSON.stringify({
-          message: "Budget alerts processed",
+          message: 'Budget alerts processed',
           results,
         }),
       };
     }
 
     // Handle scheduled check (EventBridge)
-    if (event.source === "aws.events") {
+    if (event.source === 'aws.events' || event['detail-type']) {
       const results = await checkAllBudgets();
 
       return {
         statusCode: 200,
         body: JSON.stringify({
-          message: "Scheduled budget check completed",
+          message: 'Scheduled budget check completed',
           results,
         }),
       };
@@ -370,16 +390,16 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: "Manual budget check completed",
+        message: 'Manual budget check completed',
         results,
       }),
     };
   } catch (error) {
-    console.error("Budget alerts error:", error);
+    console.error('Budget alerts error:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({
-        error: "Budget alerts failed",
+        error: 'Budget alerts failed',
         details: error.message,
       }),
     };

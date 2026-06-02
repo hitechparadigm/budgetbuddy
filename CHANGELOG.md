@@ -1,6 +1,32 @@
 # Changelog
 
-## [1.9.125] - 2026-06-01
+## [1.9.126] - 2026-06-03
+
+### 🐛 Fix: Lambda 500/502 crashes, BUDGET# model alignment, notifications wiring, CDK auth
+
+**Phase 1 — Lambda Bug Fixes:**
+- **Bug 3 — GET /comparison/summary 500**: Added null/empty-object guard in `getUserSpendingByCategory`. Returns `{ comparison: null, message: 'Not enough data yet', hasData: false }` for new users.
+- **Bug 4 — GET /tips/feed 500**: Added try/catch around `analyzeUserSpending`. Returns `{ tips: [], hasData: false }` when user has no transaction data.
+- **Bug 5 — POST /debts 500**: Added `|| {}` default for `parseRequestBody(event)` to guard against null body.
+- **Bug 6 — GET /debts/payoff-plan 500**: Added early return for empty debts array with structured response `{ plan: { totalMonths: 0, ... }, debts: [], message: 'No active debts found' }`.
+- **Bug 7 — GET /credit-score 502**: Rewrote Lambda to use `BudgetAccessResolver` + common layer. Removed `custom:familyId` JWT dependency. Stores credit scores under `USER#<userId>` partition.
+- **Bug 8 — GET /export 502**: Rewrote Lambda to use `BudgetAccessResolver` + `BUDGET#<budgetId>` keys. Removed manual JWT parsing (`jsonwebtoken`) and `getFamilyId()`. PDF export returns graceful message (native binary issue on Lambda/Linux).
+
+**Phase 2 — CDK Auth Fix:**
+- **Bug 9 — GET /learn/lessons 403 SigV4**: Added missing `GET` method to `/learn/lessons` resource in `api-features-stack.ts` with `authorizer` and `authorizationType: apigateway.AuthorizationType.COGNITO`.
+
+**Phase 3 — BUDGET# Model Migration:**
+- **budget-alerts Lambda**: Migrated from `FAMILY#<familyId>` to `BUDGET#<budgetId>` partition keys throughout. Budget lookup: `PK: BUDGET#<budgetId>, SK: PERIOD#<month>`. Members: query `BUDGET#<budgetId>/MEMBER#*`. Alert tracking: `PK: BUDGET#<budgetId>, SK: ALERT#<key>`. Reads `budgetId` from DynamoDB stream record `PK` field.
+
+**Phase 4 — Notifications API Routes:**
+- Wired `/notifications/*` routes to API Gateway by passing `notificationStack.notificationFunction` to `ApiStack` in `infrastructure/bin/app.ts`. Added `apiStack.addDependency(notificationStack)`.
+
+**Phase 5 — Spec Updates:**
+- `ai-bill-reminders-budget-planning`: Updated `familyId` → `budgetId` in requirements and design docs. Updated data model to use `BUDGET#<budgetId>` PK. Updated service/repository method signatures.
+- `push-notifications-reminders`: Updated budget alert tracking schema (`FAMILY#` → `BUDGET#`). Updated `familyId` references.
+- `docs/product-requirements.md`: Marked bugs 3-9 as fixed. Added additional fixes summary table.
+
+
 
 ### 🐛 Fix: Live API bugs — onboarding 502, budgets routing, AI path mismatch, debts auth
 

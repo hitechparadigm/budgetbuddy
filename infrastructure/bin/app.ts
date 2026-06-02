@@ -85,6 +85,7 @@ const apiStack = new ApiStack(app, `${stackPrefix}-api`, {
   userPool: authStack.userPool,
   userPoolClient: authStack.userPoolClient,
   authOnboardingFunction: authOnboardingStack.onboardingFunction,
+  notificationFunction: notificationStack.notificationFunction,
 });
 
 /**
@@ -186,6 +187,7 @@ authOnboardingStack.addDependency(databaseStack);
 apiStack.addDependency(databaseStack);
 apiStack.addDependency(authStack);
 apiStack.addDependency(authOnboardingStack);
+apiStack.addDependency(notificationStack);
 apiFeaturesStack.addDependency(databaseStack);
 apiFeaturesStack.addDependency(authStack);
 // Temporarily removed dependency on apiStack to allow independent deployment

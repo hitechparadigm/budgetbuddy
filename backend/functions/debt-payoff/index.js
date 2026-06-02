@@ -216,7 +216,7 @@ async function getPayoffPlan(event, user) {
     return errorResponse.badRequest("Strategy must be snowball or avalanche");
   }
 
-  const debts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
+  const debtsRaw = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
       "entityType = :entityType AND status = :active AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
     ExpressionAttributeValues: {
@@ -225,6 +225,28 @@ async function getPayoffPlan(event, user) {
       ":false": false,
     },
   });
+
+  const debts = debtsRaw || [];
+
+  if (debts.length === 0) {
+    return successResponse(
+      {
+        plan: {
+          strategy,
+          extraPayment,
+          totalMonths: 0,
+          payoffDate: null,
+          totalPaid: 0,
+          totalInterest: 0,
+          debtOrder: [],
+          timeline: [],
+        },
+        debts: [],
+        message: 'No active debts found',
+      },
+      "No active debts found",
+    );
+  }
 
   const plan = calculatePayoffPlan(debts, strategy, extraPayment);
 
@@ -250,7 +272,7 @@ async function getPayoffPlan(event, user) {
  * POST /debts
  */
 async function createDebt(event, user) {
-  const body = parseRequestBody(event);
+  const body = parseRequestBody(event) || {};
   const {
     name,
     type,

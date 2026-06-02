@@ -12,7 +12,7 @@ This feature adds AI-powered capabilities to automatically detect recurring bill
 - **Confidence_Score**: A numerical value (0-100) indicating the AI's certainty that a detected pattern is a genuine recurring expense
 - **Future_Budget_Planner**: The AI service that suggests budget allocations for upcoming months based on historical data
 - **Pattern_Frequency**: The interval at which a recurring transaction occurs (weekly, bi-weekly, monthly, quarterly, annual)
-- **Transaction_History**: The collection of past transactions stored in DynamoDB for a user or family
+- **Transaction_History**: The collection of past transactions stored in DynamoDB for a user or budget
 - **Merchant_Name**: The business or entity that receives payment in a transaction
 - **Due_Date**: The date when a bill payment is expected
 - **Budget_Suggestion**: An AI-generated recommendation for budget category allocation based on historical spending
@@ -123,7 +123,7 @@ This feature adds AI-powered capabilities to automatically detect recurring bill
 
 1. WHEN sending transaction data to AWS Bedrock, THE System SHALL encrypt data in transit using TLS 1.2+
 2. WHEN storing AI-detected patterns, THE System SHALL encrypt data at rest in DynamoDB
-3. WHEN processing transactions, THE AI_Pattern_Detector SHALL only access data for the authenticated user's family
+3. WHEN processing transactions, THE AI_Pattern_Detector SHALL only access data for the authenticated user's budget
 4. WHEN AI analysis completes, THE System SHALL not retain transaction data in AWS Bedrock logs
 5. WHEN a user deletes their account, THE System SHALL delete all AI-detected patterns and suggestions
 6. WHEN logging AI operations, THE System SHALL not log sensitive financial details (amounts, merchant names)
