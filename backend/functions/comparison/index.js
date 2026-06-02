@@ -274,19 +274,24 @@ function getIncomeRange(annualIncome) {
  * This data is pre-computed by a scheduled job
  */
 async function getAggregatedComparison(groupCriteria) {
-  const groupKey = `${groupCriteria.region}#${groupCriteria.familySize}#${groupCriteria.incomeRange}`;
+  try {
+    const groupKey = `${groupCriteria.region}#${groupCriteria.familySize}#${groupCriteria.incomeRange}`;
 
-  const aggregatedData = await dynamoHelpers.getItem(
-    "COMPARISON_AGGREGATE",
-    `GROUP#${groupKey}`,
-  );
+    const aggregatedData = await dynamoHelpers.getItem(
+      "COMPARISON_AGGREGATE",
+      `GROUP#${groupKey}`,
+    );
 
-  if (aggregatedData) {
-    return aggregatedData;
+    if (aggregatedData) {
+      return aggregatedData;
+    }
+
+    // If no pre-computed data, return not enough users
+    return { groupSize: 0 };
+  } catch (error) {
+    console.error('Error getting aggregated comparison:', error);
+    return { groupSize: 0 };
   }
-
-  // If no pre-computed data, try to compute on-the-fly (for smaller datasets)
-  return await computeGroupAggregation(groupCriteria);
 }
 
 /**
@@ -364,43 +369,46 @@ async function computeGroupAggregation(groupCriteria) {
  * Get user's spending by category for current month
  */
 async function getUserSpendingByCategory(userId) {
-  const currentDate = new Date();
-  const monthStart = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth(),
-    1,
-  ).toISOString();
-  const monthEnd = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth() + 1,
-    0,
-  ).toISOString();
+  try {
+    // Get user profile for budgetId
+    const userProfile = await dynamoHelpers.getItem(`USER#${userId}`, "PROFILE");
+    const budgetId = userProfile?.defaultBudgetId;
 
-  // Get user's familyId for family transactions
-  const userProfile = await dynamoHelpers.getItem(`USER#${userId}`, "PROFILE");
-  const familyId = userProfile?.familyId || userId;
-
-  // Get transactions for the month
-  const transactions = await dynamoHelpers.query({
-    KeyConditionExpression: "PK = :pk AND SK BETWEEN :start AND :end",
-    ExpressionAttributeValues: {
-      ":pk": `FAMILY#${familyId}`,
-      ":start": `TRANSACTION#${monthStart}`,
-      ":end": `TRANSACTION#${monthEnd}`,
-    },
-  });
-
-  // Aggregate by category — guard against null/undefined result for new users
-  const categorySpending = {};
-  for (const tx of (transactions || [])) {
-    if (tx.type === "expense") {
-      const category = mapToComparisonCategory(tx.category);
-      categorySpending[category] =
-        (categorySpending[category] || 0) + Math.abs(tx.amount);
+    if (!budgetId) {
+      return {};
     }
-  }
 
-  return categorySpending;
+    const currentDate = new Date();
+    const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+
+    // Get transactions for the current month using BUDGET# model
+    const transactions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: {
+        ':sk': `TXN#`,
+      },
+    }) || [];
+
+    // Filter to current month
+    const monthTransactions = transactions.filter(
+      (tx) => tx.budgetMonth === currentMonth || (tx.date && tx.date.startsWith(currentMonth)),
+    );
+
+    // Aggregate by category
+    const categorySpending = {};
+    for (const tx of monthTransactions) {
+      if (tx.type === 'expense') {
+        const category = mapToComparisonCategory(tx.category);
+        categorySpending[category] =
+          (categorySpending[category] || 0) + Math.abs(tx.amount);
+      }
+    }
+
+    return categorySpending;
+  } catch (error) {
+    console.error('Error getting user spending:', error);
+    return {};
+  }
 }
 
 /**

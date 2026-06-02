@@ -450,13 +450,12 @@ async function getDailyTip(event, user) {
  * GET /tips/saved
  */
 async function getSavedTips(event, user) {
-  const savedTips = await dynamoHelpers.query({
-    KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
+  const savedTips = await dynamoHelpers.queryByPK(`USER#${user.userId}`, {
+    KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
     ExpressionAttributeValues: {
-      ":pk": `USER#${user.userId}`,
-      ":sk": "SAVED_TIP#",
+      ':sk': 'SAVED_TIP#',
     },
-  });
+  }) || [];
 
   const tips = savedTips.map((record) => ({
     ...record.tip,
@@ -596,21 +595,9 @@ async function updateRecentDailyTips(userId, tipId) {
  * Analyze user spending patterns for personalization
  */
 async function analyzeUserSpending(userId) {
-  // Get user profile
+  // Get user profile for budgetId
   const userProfile = await dynamoHelpers.getItem(`USER#${userId}`, "PROFILE");
-  const familyId = userProfile?.familyId || userId;
-
-  // Get recent transactions
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  const transactions = await dynamoHelpers.query({
-    KeyConditionExpression: "PK = :pk AND SK >= :sk",
-    ExpressionAttributeValues: {
-      ":pk": `FAMILY#${familyId}`,
-      ":sk": `TRANSACTION#${thirtyDaysAgo.toISOString()}`,
-    },
-  });
+  const budgetId = userProfile?.defaultBudgetId;
 
   // Analyze patterns
   const patterns = {
@@ -620,6 +607,27 @@ async function analyzeUserSpending(userId) {
     frequentDiningOut: false,
     subscriptionHeavy: false,
   };
+
+  if (!budgetId) {
+    return patterns;
+  }
+
+  // Get recent transactions using BUDGET# model
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  const allTransactions = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
+    KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+    ExpressionAttributeValues: {
+      ':sk': 'TXN#',
+    },
+  }) || [];
+
+  // Filter to recent 30 days
+  const transactions = allTransactions.filter(
+    (tx) => tx.date && tx.date >= thirtyDaysAgoStr,
+  );
 
   // New users may have no transactions yet — return default patterns
   if (!transactions || transactions.length === 0) {
@@ -637,7 +645,6 @@ async function analyzeUserSpending(userId) {
         (categoryTotals[category] || 0) + Math.abs(tx.amount);
       totalExpenses += Math.abs(tx.amount);
 
-      // Check for debt payments
       if (
         category.includes("debt") ||
         category.includes("loan") ||
@@ -646,7 +653,6 @@ async function analyzeUserSpending(userId) {
         patterns.hasDebt = true;
       }
 
-      // Check for dining out
       if (
         category.includes("restaurant") ||
         category.includes("dining") ||
@@ -655,7 +661,6 @@ async function analyzeUserSpending(userId) {
         patterns.frequentDiningOut = true;
       }
 
-      // Check for subscriptions
       if (category.includes("subscription") || category.includes("streaming")) {
         patterns.subscriptionHeavy = true;
       }
@@ -664,13 +669,11 @@ async function analyzeUserSpending(userId) {
     }
   }
 
-  // Calculate savings rate
   if (totalIncome > 0) {
     const savingsRate = (totalIncome - totalExpenses) / totalIncome;
-    patterns.lowSavingsRate = savingsRate < 0.1; // Less than 10%
+    patterns.lowSavingsRate = savingsRate < 0.1;
   }
 
-  // Find high spending categories
   const sortedCategories = Object.entries(categoryTotals)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
