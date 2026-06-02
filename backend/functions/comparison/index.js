@@ -498,36 +498,3 @@ function getComparisonStatus(percentile) {
   if (percentile <= 75) return "average";
   return "above-average";
 }
-
-/**
- * Calculate average of an array
- */
-function calculateAverage(values) {
-  if (values.length === 0) return 0;
-  return values.reduce((sum, val) => sum + val, 0) / values.length;
-}
-
-/**
- * Calculate median of an array
- */
-function calculateMedian(values) {
-  if (values.length === 0) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 !== 0
-    ? sorted[mid]
-    : (sorted[mid - 1] + sorted[mid]) / 2;
-}
-
-/**
- * Calculate percentile of an array
- */
-function calculatePercentile(values, percentile) {
-  if (values.length === 0) return 0;
-  const sorted = [...values].sort((a, b) => a - b);
-  const index = (percentile / 100) * (sorted.length - 1);
-  const lower = Math.floor(index);
-  const upper = Math.ceil(index);
-  if (lower === upper) return sorted[lower];
-  return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
-}
