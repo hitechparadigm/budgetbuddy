@@ -305,7 +305,7 @@ async function createDebt(event, user) {
   const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
   BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
-  const debtId = generateId("debt");
+  const debtId = generateId.custom("debt");
   const now = new Date().toISOString();
 
   const debt = {
@@ -423,7 +423,7 @@ async function recordPayment(event, user, debtId) {
   }
 
   const payment = {
-    paymentId: generateId("pay"),
+    paymentId: generateId.custom("pay"),
     amount,
     date: date || new Date().toISOString().split("T")[0],
     notes: notes || null,
