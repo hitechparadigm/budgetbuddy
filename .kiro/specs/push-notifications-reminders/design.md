@@ -131,7 +131,7 @@ This document provides the technical design for implementing push notifications 
 
 ```typescript
 {
-  PK: "FAMILY#<familyId>",
+  PK: "BUDGET#<budgetId>",
   SK: "ALERT#<budgetId>#<categoryId>#<threshold>",
   threshold: 80 | 90 | 100,
   sentAt: string,                // ISO 8601
@@ -349,23 +349,24 @@ async function handleStreamEvent(event) {
 }
 
 async function checkBudgetThresholds(transaction) {
-  // 1. Get budget for transaction
-  // 2. Calculate spending percentage
-  // 3. Check if threshold crossed (80%, 90%, 100%)
-  // 4. Check if alert already sent
-  // 5. Send alert if needed
-  // 6. Mark alert as sent
+  // 1. Extract budgetId from transaction PK: 'BUDGET#<budgetId>'
+  // 2. Get budget period for transaction's month
+  // 3. Calculate spending percentage
+  // 4. Check if threshold crossed (80%, 90%, 100%)
+  // 5. Check if alert already sent (PK: BUDGET#<budgetId>, SK: ALERT#<key>)
+  // 6. Send alert if needed
+  // 7. Mark alert as sent
 }
 ```
 
 **Key Functions:**
 
-1. `handleStreamEvent(event)`: Process DynamoDB stream records
+1. `handleStreamEvent(event)`: Process DynamoDB stream records (transaction SK starts with `TXN#`)
 2. `handleScheduledCheck(event)`: Scan budgets for missed alerts
-3. `checkBudgetThresholds(transaction)`: Calculate and check thresholds
-4. `sendBudgetAlert(familyId, budget, category, threshold)`: Send alert
-5. `hasAlertBeenSent(familyId, budgetId, categoryId, threshold)`: Check alert history
-6. `markAlertAsSent(familyId, budgetId, categoryId, threshold)`: Record alert
+3. `checkBudgetThresholds(transaction)`: Extract `budgetId` from `PK` (`BUDGET#<budgetId>`), calculate thresholds
+4. `sendBudgetAlert(budgetId, budget, category, threshold)`: Send alert to all budget members
+5. `hasAlertBeenSent(budgetId, categoryId, threshold)`: Check `PK: BUDGET#<budgetId>, SK: ALERT#<key>`
+6. `markAlertAsSent(budgetId, categoryId, threshold)`: Write alert record under `BUDGET#<budgetId>`
 
 **Dependencies:**
 

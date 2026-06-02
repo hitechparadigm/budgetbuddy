@@ -1,6 +1,60 @@
 # Development Log
 
-## 2026-06-01 - Live API bug fixes: onboarding 502, budgets routing, AI path, debts auth (Session 141)
+## 2026-06-03 - Lambda crashes, BUDGET# alignment, notifications wiring, CDK auth (Session 142)
+
+### Work Completed
+
+1. **Bug 3 — GET /comparison/summary 500 for new users**:
+   - Root cause: `getUserSpendingByCategory` returned `{}` but caller had no guard before processing
+   - Fix: Added null/empty-object check. Returns `{ comparison: null, message: 'Not enough data yet', hasData: false }`
+   - File: `backend/functions/comparison/index.js`
+
+2. **Bug 4 — GET /tips/feed 500 for new users**:
+   - Root cause: `analyzeUserSpending` was called without guard; DynamoDB `query` could return null for new users
+   - Fix: Wrapped `analyzeUserSpending` in try/catch; returns empty tips array with `{ tips: [], hasData: false }` on error
+   - File: `backend/functions/tips/index.js`
+
+3. **Bug 5 — POST /debts 500**:
+   - Root cause: `parseRequestBody(event)` could return null when body is missing
+   - Fix: Added `|| {}` default. `parseRequestBody(event) || {}`
+   - File: `backend/functions/debt-payoff/index.js`
+
+4. **Bug 6 — GET /debts/payoff-plan 500 for new users**:
+   - Root cause: `dynamoHelpers.queryByPK` returned null/undefined when no debts exist; `calculatePayoffPlan(null)` crashed
+   - Fix: Added `debtsRaw || []` guard plus early return for empty array with structured response
+   - File: `backend/functions/debt-payoff/index.js`
+
+5. **Bug 7 — GET /credit-score 502**:
+   - Root cause: Lambda read `custom:familyId` from JWT claims (removed in BUDGET# migration). Lambda crashed on init because JWT claim was undefined; returned invalid response
+   - Fix: Complete rewrite to use `getUserFromEvent()` + `BudgetAccessResolver.resolveAccess()` from common layer. Credit scores now stored under `USER#<userId>` partition (per-user data)
+   - File: `backend/functions/credit-score/index.js`
+
+6. **Bug 8 — GET /export 502**:
+   - Root cause: Lambda used manual JWT parsing (`jsonwebtoken`) + `getFamilyId()` which read `familyId` from user profile. With BUDGET# model, `familyId` is gone from the profile. Also, `pdfkit` native binaries compiled on Windows crash on Lambda/Amazon Linux
+   - Fix: Complete rewrite using `BudgetAccessResolver` + `BUDGET#<budgetId>` keys. PDF export returns a graceful "use CSV/JSON" message. Removed `jsonwebtoken` dependency from handler
+   - File: `backend/functions/export/index.js`
+
+7. **Bug 9 — GET /learn/lessons 403 SigV4**:
+   - Root cause: `/learn/lessons` resource was defined in CDK but no GET method was added to it (only `{lessonId}` child had a GET). API Gateway was returning 403 because no method = AWS_IAM default
+   - Fix: Added `lessonsResource.addMethod('GET', ...)` with `authorizer` and `authorizationType: apigateway.AuthorizationType.COGNITO`
+   - File: `infrastructure/lib/api-features-stack.ts`
+
+8. **budget-alerts Lambda — BUDGET# model migration**:
+   - Root cause: Lambda used `FAMILY#<familyId>` as PK for all DynamoDB operations
+   - Fix: Rewrote to extract `budgetId` from DynamoDB stream record `PK` field (`BUDGET#<budgetId>`). Budget lookup uses `PERIOD#<month>` SK. Members fetched via `BUDGET#<budgetId>/MEMBER#*` query. Alert tracking uses `BUDGET#<budgetId>/ALERT#<key>`
+   - File: `backend/functions/budget-alerts/index.js`
+
+9. **Notifications API routes wiring**:
+   - Root cause: `notificationStack.notificationFunction` was never passed to `ApiStack`; the `if (this.notificationFunction)` guard silently skipped all notification routes
+   - Fix: Passed `notificationStack.notificationFunction` to `apiStack` props in `app.ts`. Added `apiStack.addDependency(notificationStack)`
+   - File: `infrastructure/bin/app.ts`
+
+10. **Spec updates**:
+    - Updated `familyId` → `budgetId` in `ai-bill-reminders-budget-planning` requirements and design
+    - Updated budget alert tracking schema in `push-notifications-reminders` design to use `BUDGET#<budgetId>` PK
+    - Updated `docs/product-requirements.md` with fix status
+
+
 
 ### Work Completed
 

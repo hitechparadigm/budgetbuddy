@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-01
+**Last Updated**: 2026-06-03
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -277,23 +277,32 @@ Tested against dev environment using `scripts/test-live-api.js`. **102 checks pa
 | Receipt scanning | Usage, history, upload endpoint | ✅ |
 | Learning center | Courses, progress | ✅ |
 
-### 🐛 Bugs Found (13)
+### 🐛 Bugs Found (13) — Fixed in commit `fix: Lambda crashes, BUDGET# model alignment, notifications API routes, CDK auth fix`
 
-| # | Severity | Component | Description |
-|---|----------|-----------|-------------|
-| 1 | High | `POST /budget/ai-generate` | 500 — Bedrock call fails for new users with empty budget context |
-| 2 | High | `POST /transactions` (create) | New users need `GET /budget/current` to get `categoryId`; `GET /budget` returns a list not the period |
-| 3 | Medium | `GET /comparison/summary` | 500 for new users with no transaction history — missing null-check |
-| 4 | Medium | `GET /tips/feed` | 500 for new users — missing null-check |
-| 5 | Medium | `POST /debts` (create) | 500 — Debt Lambda crashes on create |
-| 6 | Medium | `GET /debts/payoff-plan` | 500 for new users with no debts — missing null-check |
-| 7 | Medium | `GET /credit-score` | 502 — Lambda crash (credit bureau integration unhandled in empty state) |
-| 8 | Medium | `GET /export` | 502 — Lambda crash (S3 config or unhandled error) |
-| 9 | Medium | `GET /learn/lessons` | 403 SigV4 — features API `/learn/lessons` route has wrong auth type in CDK |
-| 10 | Low | `POST /plaid/sandbox/create-item` | 500 — Plaid sandbox credentials not configured in dev |
-| 11 | Low | `/family` routes | Return 401/403 instead of 410 Gone — family stack still active |
-| 12 | Low | `/family/members` | Same as #11 |
-| 13 | Low | `/family/invite` | Same as #11 |
+| # | Severity | Component | Description | Status |
+|---|----------|-----------|-------------|--------|
+| 1 | High | `POST /budget/ai-generate` | 500 — Bedrock call fails for new users with empty budget context | Open |
+| 2 | High | `POST /transactions` (create) | New users need `GET /budget/current` to get `categoryId`; `GET /budget` returns a list not the period | Open |
+| 3 | Medium | `GET /comparison/summary` | 500 for new users — missing null-check | ✅ Fixed |
+| 4 | Medium | `GET /tips/feed` | 500 for new users — missing null-check | ✅ Fixed |
+| 5 | Medium | `POST /debts` (create) | 500 — Debt Lambda crashes on create (null body guard) | ✅ Fixed |
+| 6 | Medium | `GET /debts/payoff-plan` | 500 for new users with no debts — missing null-check | ✅ Fixed |
+| 7 | Medium | `GET /credit-score` | 502 — Lambda used `custom:familyId` JWT claim (removed); migrated to `BudgetAccessResolver` | ✅ Fixed |
+| 8 | Medium | `GET /export` | 502 — Lambda used manual JWT + `familyId` from profile; migrated to `BudgetAccessResolver` + `BUDGET#` keys | ✅ Fixed |
+| 9 | Medium | `GET /learn/lessons` | 403 SigV4 — `/learn/lessons` had no GET method in CDK; added with Cognito auth | ✅ Fixed |
+| 10 | Low | `POST /plaid/sandbox/create-item` | 500 — Plaid sandbox credentials not configured in dev | Open |
+| 11 | Low | `/family` routes | Return 401/403 instead of 410 Gone — family stack still active | Open |
+| 12 | Low | `/family/members` | Same as #11 | Open |
+| 13 | Low | `/family/invite` | Same as #11 | Open |
+
+### Additional Fixes (same session)
+
+| Component | Change |
+|-----------|--------|
+| `budget-alerts` Lambda | Migrated from `FAMILY#<familyId>` to `BUDGET#<budgetId>` partition keys; now reads `budgetId` from DynamoDB stream record `PK`; gets members via `BUDGET#<budgetId>/MEMBER#*` query |
+| Notifications API routes | Wired `/notifications/*` routes to API Gateway by passing `notificationFunction` from `NotificationStack` to `ApiStack` in `app.ts` |
+| Spec: `ai-bill-reminders-budget-planning` | Updated `familyId` → `budgetId` throughout requirements and design docs |
+| Spec: `push-notifications-reminders` | Updated budget alert tracking schema and `familyId` references to `budgetId` |
 
 ### Not Tested
 
@@ -301,7 +310,6 @@ Tested against dev environment using `scripts/test-live-api.js`. **102 checks pa
 |------|--------|
 | Investment tracking | No Lambda found on any API gateway — likely not deployed |
 | Net worth | No Lambda found on any API gateway — likely not deployed |
-| In-app notifications center | No Lambda found on any API gateway |
 | Push notifications | Mobile/EventBridge — not testable via REST |
 | Google OAuth | Requires real Google ID token |
 | Frontend (React, mobile) | UI — requires E2E testing with Playwright |

@@ -635,6 +635,11 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Lessons endpoints
     const lessonsResource = learnResource.addResource('lessons');
+    lessonsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.learnHandler), {
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
+      operationName: 'GetLessons',
+    });
     const lessonIdResource = lessonsResource.addResource('{lessonId}');
     lessonIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.learnHandler), {
       authorizer,

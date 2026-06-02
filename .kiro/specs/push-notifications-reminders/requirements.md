@@ -46,13 +46,13 @@ This document specifies the requirements for the Push Notifications and Daily Re
 1. WHEN a transaction causes spending to reach 80% of a category budget, THE Budget_Alerts_Service SHALL send a low-severity alert
 2. WHEN a transaction causes spending to reach 90% of a category budget, THE Budget_Alerts_Service SHALL send a medium-severity alert
 3. WHEN a transaction causes spending to reach 100% of a category budget, THE Budget_Alerts_Service SHALL send a high-severity alert
-4. THE Budget_Alerts_Service SHALL send alerts to all family members associated with the budget
+4. THE Budget_Alerts_Service SHALL send alerts to all budget members associated with the budget
 5. THE Budget_Alerts_Service SHALL prevent duplicate alerts for the same threshold and category
 6. THE Budget_Alerts_Service SHALL include category name, percentage spent, and amount details in alerts
 7. THE Budget_Alerts_Service SHALL be triggered by DynamoDB Streams when transactions are created or modified
 8. THE Budget_Alerts_Service SHALL run scheduled checks every 6 hours to catch any missed alerts
 9. THE Budget_Alerts_Service SHALL respect user notification preferences for budget alerts
-10. THE Budget_Alerts_Service SHALL mark alerts as sent in DynamoDB with 90-day TTL
+10. THE Budget_Alerts_Service SHALL mark alerts as sent in DynamoDB with 90-day TTL using PK: `BUDGET#<budgetId>`
 
 ### Requirement 3: Daily Expense Reminders
 

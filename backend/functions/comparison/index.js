@@ -158,12 +158,25 @@ async function getComparisonSummary(event, user) {
   // Get user's spending for comparison
   const userSpending = await getUserSpendingByCategory(user.userId);
 
+  // New users may have no spending data yet
+  if (!userSpending || Object.keys(userSpending).length === 0) {
+    return successResponse(
+      {
+        comparison: null,
+        message: 'Not enough data yet',
+        hasData: false,
+      },
+      "No comparison data available",
+    );
+  }
+
   // Calculate comparison results
   const comparison = calculateComparison(userSpending, comparisonData);
 
   return successResponse(
     {
       available: true,
+      hasData: true,
       groupCriteria,
       groupSize: comparisonData.groupSize,
       comparison,

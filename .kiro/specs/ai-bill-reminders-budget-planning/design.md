@@ -109,7 +109,7 @@ graph TB
 ```javascript
 {
   userId: string,
-  familyId: string,
+  budgetId: string,
   analysisMonths: number (default: 6, min: 3, max: 12),
   minConfidence: number (default: 50, range: 0-100)
 }
@@ -145,7 +145,7 @@ graph TB
 
 ```javascript
 class PatternDetectionService {
-  async analyzeTransactions(userId, familyId, options) {
+  async analyzeTransactions(userId, budgetId, options) {
     // 1. Retrieve transactions from repository
     // 2. Prepare AI prompt with transaction data
     // 3. Call AWS Bedrock for pattern analysis
@@ -155,7 +155,7 @@ class PatternDetectionService {
     // 7. Return detected patterns
   }
 
-  async getPatterns(userId, familyId, filters) {
+  async getPatterns(userId, budgetId, filters) {
     // Retrieve stored patterns with optional filtering
   }
 
@@ -177,17 +177,17 @@ class PatternDetectionService {
 
 ```javascript
 class PatternDetectionRepository {
-  async getTransactionHistory(familyId, startDate, endDate) {
+  async getTransactionHistory(budgetId, startDate, endDate) {
     // Query DynamoDB for transactions in date range
-    // GSI: familyId-date-index
+    // PK: BUDGET#<budgetId>, SK: TXN#<date>#<id>
   }
 
   async savePattern(pattern) {
     // Store detected pattern in DynamoDB
-    // PK: FAMILY#{familyId}, SK: PATTERN#{patternId}
+    // PK: BUDGET#{budgetId}, SK: PATTERN#{patternId}
   }
 
-  async getPatternsByFamily(familyId, status) {
+  async getPatternsByBudget(budgetId, status) {
     // Retrieve patterns (pending/approved/rejected)
   }
 
@@ -294,7 +294,7 @@ Return JSON with this structure:
 ```javascript
 {
   userId: string,
-  familyId: string,
+  budgetId: string,
   targetMonth: string (YYYY-MM),
   includeRecurringBills: boolean (default: true),
   includeHistoricalAverage: boolean (default: true)
@@ -378,11 +378,11 @@ async createBillFromPattern(pattern, userId, familyId) {
 
 ### DetectedPattern Table Schema
 
-**DynamoDB Table**: `budgetbuddy-{env}-patterns`
+**DynamoDB Table**: `budgetbuddy-{env}-main` (single-table design)
 
 **Primary Key**:
 
-- PK: `FAMILY#{familyId}`
+- PK: `BUDGET#{budgetId}`
 - SK: `PATTERN#{patternId}`
 
 **Attributes**:
@@ -392,7 +392,7 @@ async createBillFromPattern(pattern, userId, familyId) {
   PK: string,
   SK: string,
   patternId: string (UUID),
-  familyId: string,
+  budgetId: string,
   userId: string (who triggered detection),
   merchantName: string,
   suggestedBillName: string,
@@ -423,17 +423,17 @@ async createBillFromPattern(pattern, userId, familyId) {
 
 **GSI**: `status-createdAt-index`
 
-- PK: `familyId#status`
+- PK: `budgetId#status`
 - SK: `createdAt`
-- Purpose: Query patterns by status for a family
+- Purpose: Query patterns by status for a budget
 
 ### BudgetSuggestion Table Schema
 
-**DynamoDB Table**: `budgetbuddy-{env}-budget-suggestions`
+**DynamoDB Table**: `budgetbuddy-{env}-main` (single-table design)
 
 **Primary Key**:
 
-- PK: `FAMILY#{familyId}`
+- PK: `BUDGET#{budgetId}`
 - SK: `SUGGESTION#{targetMonth}#{timestamp}`
 
 **Attributes**:
@@ -443,7 +443,7 @@ async createBillFromPattern(pattern, userId, familyId) {
   PK: string,
   SK: string,
   suggestionId: string (UUID),
-  familyId: string,
+  budgetId: string,
   userId: string,
   targetMonth: string (YYYY-MM),
   suggestions: [
@@ -708,7 +708,7 @@ _For any_ AI-suggested pattern, before creating a Bill_Reminder, the system must
 
 ### Property 20: Authorization Scoping
 
-_For any_ pattern detection or budget planning request, the system must only access and analyze transactions belonging to the authenticated user's familyId, never returning data from other families.
+_For any_ pattern detection or budget planning request, the system must only access and analyze transactions belonging to the authenticated user's budgetId (resolved from DynamoDB via BudgetAccessResolver), never returning data from other budgets.
 
 **Validates: Requirements 8.3**
 
