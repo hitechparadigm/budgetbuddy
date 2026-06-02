@@ -294,8 +294,6 @@ async function getAggregatedComparison(groupCriteria) {
   }
 }
 
-}
-
 /**
  * Get user's spending by category for current month
  */
