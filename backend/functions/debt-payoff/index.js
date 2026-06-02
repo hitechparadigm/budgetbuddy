@@ -358,7 +358,7 @@ async function updateDebt(event, user, debtId) {
     return errorResponse.notFound("Debt not found");
   }
 
-  const body = parseRequestBody(event);
+  const body = parseRequestBody(event.body);
   const allowedFields = [
     "name",
     "type",
@@ -415,7 +415,7 @@ async function recordPayment(event, user, debtId) {
     return errorResponse.notFound("Debt not found");
   }
 
-  const body = parseRequestBody(event);
+  const body = parseRequestBody(event.body);
   const { amount, date, notes } = body;
 
   if (typeof amount !== "number" || amount <= 0) {
