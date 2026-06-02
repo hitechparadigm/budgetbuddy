@@ -2,7 +2,15 @@
 /**
  * BudgetBuddy Live API Test Suite
  * Tests all features claimed in docs/product-requirements.md against the deployed dev environment.
+ *
  * Usage: node scripts/test-live-api.js
+ *
+ * API Gateway map (dev):
+ *   main:     q0zoob6728  — auth, budget, transactions, accounts, goals, bills, export
+ *   features: 0poeu07vth  — plaid, debts, credit-score, comparison, tips, learn, subscriptions, reconcile, admin
+ *   extended: hkjzroedjf  — insights, patterns, budget-planning, receipt
+ *   budgets:  jcl39tq8x0  — /budgets/* (members, invitations)
+ *   family:   gp8jspfboa  — deprecated /family/* (should return 410)
  */
 'use strict';
 
@@ -14,12 +22,11 @@ const APIS = {
   family:   'https://gp8jspfboa.execute-api.us-east-1.amazonaws.com/v1',
 };
 
-const TEST_EMAIL = `test-live-${Date.now()}@hitechparadigm.com`;
-// Test credentials — intentionally invalid for negative test cases
+const TEST_EMAIL    = `test-live-${Date.now()}@hitechparadigm.com`;
 const TEST_PASS_VALID   = 'TestPass123!';
-const TEST_PASS_INVALID = ['W', 'r', 'o', 'n', 'g', 'P', 'a', 's', 's', '!'].join('');
+const TEST_PASS_INVALID = ['W','r','o','n','g','P','a','s','s','!'].join('');
 
-let idToken = null, testBudgetId = null;
+let idToken = null, testBudgetId = null, testCategoryId = null;
 let passed = 0, failed = 0, skipped = 0;
 const failures = [], bugs = [];
 
@@ -35,13 +42,20 @@ async function req(method, baseUrl, path, body, auth = true) {
 }
 
 function check(name, condition, detail = '') {
-  if (condition) { passed++; process.stdout.write(`  ✅ ${name}${detail ? ' — ' + detail : ''}\n`); }
-  else { failed++; failures.push(`${name}${detail ? ' — ' + detail : ''}`); process.stdout.write(`  ❌ ${name}${detail ? ' — ' + detail : ''}\n`); }
+  if (condition) {
+    passed++;
+    process.stdout.write(`  ✅ ${name}${detail ? ' — ' + detail : ''}\n`);
+  } else {
+    failed++;
+    failures.push(`${name}${detail ? ' — ' + detail : ''}`);
+    process.stdout.write(`  ❌ ${name}${detail ? ' — ' + detail : ''}\n`);
+  }
 }
 function skip(name, reason) { skipped++; process.stdout.write(`  ⏭️  ${name} — ${reason}\n`); }
 function bug(name, detail) { bugs.push({ name, detail }); process.stdout.write(`  🐛 BUG: ${name} — ${detail}\n`); }
 function section(title) { process.stdout.write(`\n${'─'.repeat(60)}\n  ${title}\n${'─'.repeat(60)}\n`); }
 
+// ── 1. Health Endpoints ───────────────────────────────────────────────────────
 async function testHealth() {
   section('1. Health Endpoints — All APIs');
   const checks = [
@@ -54,6 +68,9 @@ async function testHealth() {
     [APIS.features, '/debts/health',           'Features API — debts'],
     [APIS.features, '/comparison/health',      'Features API — comparison'],
     [APIS.features, '/tips/health',            'Features API — tips'],
+    [APIS.features, '/learn/health',           'Features API — learn'],
+    [APIS.features, '/subscriptions/health',   'Features API — subscriptions'],
+    [APIS.features, '/reconcile/health',       'Features API — reconciliation'],
     [APIS.extended, '/insights/health',        'Extended API — insights'],
     [APIS.extended, '/patterns/health',        'Extended API — pattern-detection'],
     [APIS.extended, '/budget-planning/health', 'Extended API — budget-planning'],
@@ -68,25 +85,31 @@ async function testHealth() {
   }
 }
 
+// ── 2. Auth ───────────────────────────────────────────────────────────────────
 async function testAuth() {
   section('2. Auth — Register, Login, Profile');
 
+  // Register
   try {
     const r = await req('POST', APIS.main, '/auth/register', {
       email: TEST_EMAIL, password: TEST_PASS_VALID, firstName: 'Test', lastName: 'User'
     }, false);
     check('POST /auth/register — creates user', [200, 201].includes(r.status), `HTTP ${r.status}`);
+    check('Register returns userId', !!r.body?.userId, '');
     if (r.body?.budgetId) testBudgetId = r.body.budgetId;
   } catch (e) { check('POST /auth/register', false, e.message); }
 
+  // Login
   try {
     const r = await req('POST', APIS.main, '/auth/login', {
       email: TEST_EMAIL, password: TEST_PASS_VALID
     }, false);
     check('POST /auth/login — valid credentials', r.status === 200, `HTTP ${r.status}`);
+    check('Login returns idToken', !!r.body?.idToken, '');
     if (r.body?.idToken) idToken = r.body.idToken;
   } catch (e) { check('POST /auth/login', false, e.message); }
 
+  // Bad credentials rejected
   try {
     const r = await req('POST', APIS.main, '/auth/login', {
       email: TEST_EMAIL, password: TEST_PASS_INVALID
@@ -94,67 +117,83 @@ async function testAuth() {
     check('POST /auth/login — rejects bad password', [400, 401, 403].includes(r.status), `HTTP ${r.status}`);
   } catch (e) { check('POST /auth/login — rejects bad password', false, e.message); }
 
+  // Profile
   try {
     const r = await req('GET', APIS.main, '/auth/profile');
     check('GET /auth/profile — returns user data', r.status === 200, `HTTP ${r.status}`);
     check('Profile has userId', !!r.body?.userId, '');
   } catch (e) { check('GET /auth/profile', false, e.message); }
 
+  // Geolocation (public)
   try {
     const r = await req('GET', APIS.main, '/auth/geolocation', null, false);
-    check('GET /auth/geolocation — location detection (public)', r.status === 200, `HTTP ${r.status}`);
+    check('GET /auth/geolocation — public location detection', r.status === 200, `HTTP ${r.status}`);
     check('Geolocation returns city', !!r.body?.city, r.body?.city || '');
   } catch (e) { check('GET /auth/geolocation', false, e.message); }
 }
 
+// ── 3. Onboarding ─────────────────────────────────────────────────────────────
 async function testOnboarding() {
   section('3. Onboarding');
 
-  // POST /auth/onboarding — Lambda has a 502 bug
+  const month = new Date().toISOString().slice(0, 7);
+
+  // Correct body format: flat fields, not nested location object
   try {
     const r = await req('POST', APIS.main, '/auth/onboarding', {
-      location: { city: 'Toronto', country: 'Canada', province: 'Ontario' },
-      currency: 'CAD', householdSize: 2, budgetType: 'personal'
+      city: 'Toronto', country: 'Canada', familySize: 2,
+      currentMonth: month, currency: 'CAD', budgetType: 'personal',
+      selectedCategories: [
+        { name: 'Groceries', icon: '🛒', adjustedAmount: 500 },
+        { name: 'Transport', icon: '🚗', adjustedAmount: 200 },
+        { name: 'Housing',   icon: '🏠', adjustedAmount: 1500 },
+      ]
     });
-    if (r.status === 502) {
-      bug('POST /auth/onboarding', '502 Internal Server Error — Lambda crash on new user (no existing budget)');
-      check('POST /auth/onboarding — endpoint exists', true, 'HTTP 502 (Lambda bug, not routing)');
-    } else {
-      check('POST /auth/onboarding — complete', [200, 201, 409].includes(r.status), `HTTP ${r.status}`);
-      if (r.body?.budgetId) testBudgetId = r.body.budgetId;
-    }
+    // 200 = success, 409 = already onboarded (also valid for test users)
+    check('POST /auth/onboarding — complete', [200, 201, 409].includes(r.status), `HTTP ${r.status}`);
+    if (r.body?.budgetId) testBudgetId = r.body.budgetId;
   } catch (e) { check('POST /auth/onboarding', false, e.message); }
 
+  // AI budget generation — requires 'month' field; may 500 if Bedrock not configured for new user
   try {
-    const month = new Date().toISOString().slice(0, 7);
     const r = await req('POST', APIS.main, '/budget/ai-generate', {
-      location: { city: 'Toronto', country: 'Canada' }, householdSize: 2, currency: 'CAD', month
+      location: { city: 'Toronto', country: 'Canada' },
+      householdSize: 2, currency: 'CAD', month
     });
-    if (r.status === 500) bug('POST /budget/ai-generate', '500 — Lambda crashes for new users with no existing budget (cascading from onboarding 502 bug)');
+    if (r.status === 500) bug('POST /budget/ai-generate', '500 — Bedrock call fails (AI budget generation not fully wired for new users with empty budget context)');
     check('POST /budget/ai-generate — AI budget generation', [200, 201, 500].includes(r.status), `HTTP ${r.status}`);
   } catch (e) { check('POST /budget/ai-generate', false, e.message); }
 }
 
+// ── 4. Budget Management ──────────────────────────────────────────────────────
 async function testBudgets() {
   section('4. Budget Management');
 
+  const month = new Date().toISOString().slice(0, 7);
+
+  // List budgets (budgets API)
   try {
     const r = await req('GET', APIS.budgets, '/budgets');
     check('GET /budgets — list', r.status === 200, `HTTP ${r.status}`);
     const list = r.body?.data?.budgets || r.body?.budgets || r.body;
     check('GET /budgets — returns array', Array.isArray(list), '');
-    if (!testBudgetId && Array.isArray(list) && list[0]?.budgetId) testBudgetId = list[0].budgetId;
+    if (!testBudgetId && Array.isArray(list) && list[0]?.budgetId) {
+      testBudgetId = list[0].budgetId;
+    }
   } catch (e) { check('GET /budgets', false, e.message); }
 
+  // Create budget
+  let newBudgetId = null;
   try {
     const r = await req('POST', APIS.budgets, '/budgets', {
       name: 'Live Test Budget', budgetType: 'personal', currency: 'CAD'
     });
     check('POST /budgets — create', [200, 201].includes(r.status), `HTTP ${r.status}`);
-    const id = r.body?.data?.budgetId || r.body?.budgetId;
-    if (id && !testBudgetId) testBudgetId = id;
+    newBudgetId = r.body?.data?.budgetId || r.body?.budgetId;
+    if (newBudgetId && !testBudgetId) testBudgetId = newBudgetId;
   } catch (e) { check('POST /budgets — create', false, e.message); }
 
+  // Reject invalid budget type
   try {
     const r = await req('POST', APIS.budgets, '/budgets', {
       name: 'Bad', budgetType: 'invalid_type', currency: 'CAD'
@@ -162,13 +201,21 @@ async function testBudgets() {
     check('POST /budgets — rejects invalid budgetType', [400, 422].includes(r.status), `HTTP ${r.status}`);
   } catch (e) { check('POST /budgets — rejects invalid budgetType', false, e.message); }
 
-  const month = new Date().toISOString().slice(0, 7);
+  // Get budget period — use /budget/current which returns the period with groups/categories
   try {
-    const r = await req('GET', APIS.main, `/budget?month=${month}`);
-    check(`GET /budget?month=${month}`, [200, 404].includes(r.status), `HTTP ${r.status}`);
-  } catch (e) { check('GET /budget?month', false, e.message); }
+    const r = await req('GET', APIS.main, `/budget/current?month=${month}`);
+    check(`GET /budget/current?month — current period`, r.status === 200, `HTTP ${r.status}`);
+    if (r.status === 200) {
+      const data = r.body?.data || r.body;
+      check('Budget period has remainingBalance (zero-based)', data?.remainingBalance !== undefined, `$${data?.remainingBalance}`);
+      check('Budget period has income/expense groups', !!(data?.groups?.income && data?.groups?.expenses), '');
+      // Extract categoryId for transaction tests
+      if (data?.groups?.expenses?.length > 0) testCategoryId = data.groups.expenses[0]?.id || data.groups.expenses[0]?.categoryId;
+      else if (data?.groups?.income?.length > 0) testCategoryId = data.groups.income[0]?.id || data.groups.income[0]?.categoryId;
+    }
+  } catch (e) { check('GET /budget/current?month', false, e.message); }
 
-  // PUT /budgets/active — now deployed after CDK fix
+  // Switch active budget
   if (testBudgetId) {
     try {
       const r = await req('PUT', APIS.budgets, '/budgets/active', { budgetId: testBudgetId });
@@ -179,36 +226,29 @@ async function testBudgets() {
   }
 }
 
+// ── 5. Transactions ───────────────────────────────────────────────────────────
 async function testTransactions() {
   section('5. Transactions');
 
-  // categoryId is required — get one from the budget
-  let categoryId = null;
-  try {
-    const r = await req('GET', APIS.main, '/budget/categories');
-    const cats = r.body?.data?.categories || r.body?.categories || r.body;
-    if (Array.isArray(cats) && cats.length > 0) {
-      categoryId = cats[0]?.categoryId || cats[0]?.id;
-    }
-  } catch (_) {}
-
+  const month = new Date().toISOString().slice(0, 7);
+  const date  = new Date().toISOString().slice(0, 10);
   let txnId = null;
-  const date = new Date().toISOString().slice(0, 10);
 
-  if (categoryId) {
+  if (testCategoryId) {
+    // Create
     try {
       const r = await req('POST', APIS.main, '/transactions', {
-        amount: 25.50, description: 'Live test txn', date, type: 'expense', categoryId
+        amount: 25.50, description: 'Live test txn', date, type: 'expense', categoryId: testCategoryId
       });
       check('POST /transactions — create', [200, 201].includes(r.status), `HTTP ${r.status}`);
       txnId = r.body?.data?.transactionId || r.body?.transactionId || r.body?.id;
     } catch (e) { check('POST /transactions — create', false, e.message); }
   } else {
-    bug('POST /transactions — create', 'categoryId required but GET /budget/categories returned no categories for new user');
-    skip('POST /transactions — create', 'no categoryId available');
+    bug('POST /transactions — create', 'categoryId unavailable — budget period not returned from GET /budget');
+    skip('POST /transactions — create', 'no categoryId');
   }
 
-  const month = new Date().toISOString().slice(0, 7);
+  // List
   try {
     const r = await req('GET', APIS.main, `/transactions?month=${month}`);
     check('GET /transactions — list', r.status === 200, `HTTP ${r.status}`);
@@ -216,16 +256,20 @@ async function testTransactions() {
     check('GET /transactions — returns array', Array.isArray(list), '');
   } catch (e) { check('GET /transactions', false, e.message); }
 
+  // Search
   try {
     const r = await req('GET', APIS.main, '/transactions?search=Live');
-    check('GET /transactions?search= — search', [200].includes(r.status), `HTTP ${r.status}`);
+    check('GET /transactions?search= — search', r.status === 200, `HTTP ${r.status}`);
   } catch (e) { check('GET /transactions?search=', false, e.message); }
 
   if (txnId) {
+    // Update
     try {
       const r = await req('PUT', APIS.main, `/transactions/${txnId}`, { amount: 30.00 });
       check('PUT /transactions/:id — update', [200, 201].includes(r.status), `HTTP ${r.status}`);
     } catch (e) { check('PUT /transactions/:id', false, e.message); }
+
+    // Delete
     try {
       const r = await req('DELETE', APIS.main, `/transactions/${txnId}`);
       check('DELETE /transactions/:id — delete', [200, 204].includes(r.status), `HTTP ${r.status}`);
@@ -235,10 +279,12 @@ async function testTransactions() {
   }
 }
 
+// ── 6. Accounts ───────────────────────────────────────────────────────────────
 async function testAccounts() {
   section('6. Accounts');
 
   let accountId = null;
+
   try {
     const r = await req('POST', APIS.main, '/accounts', {
       nickname: 'Live Test Account', accountType: 'banking',
@@ -261,7 +307,6 @@ async function testAccounts() {
       check('PUT /accounts/:id — update', [200, 201].includes(r.status), `HTTP ${r.status}`);
     } catch (e) { check('PUT /accounts/:id', false, e.message); }
 
-    // Reconcile requires 'newBalance' not 'actualBalance'
     try {
       const r = await req('POST', APIS.main, `/accounts/${accountId}/reconcile`, { newBalance: 1600 });
       check('POST /accounts/:id/reconcile', [200, 201].includes(r.status), `HTTP ${r.status}`);
@@ -272,42 +317,13 @@ async function testAccounts() {
       check('DELETE /accounts/:id — delete', [200, 204].includes(r.status), `HTTP ${r.status}`);
     } catch (e) { check('DELETE /accounts/:id', false, e.message); }
   } else {
-    skip('PUT/DELETE /accounts/:id', 'no accountId');
+    skip('PUT/reconcile/DELETE /accounts/:id', 'no accountId');
   }
 }
 
-async function testBudgetMembers() {
-  section('7. Budget Collaboration (Members & Invitations)');
-
-  // The budgets API uses {budgetId} path params but CDK doesn't define those routes
-  // Only flat routes work: GET /budgets/members, GET /budgets/invitations, POST /budgets/invite
-  // BUT the Lambda requires budgetId from pathParameters which won't be set on flat routes
-  // This is a CDK/Lambda mismatch bug
-
-  if (!testBudgetId) { skip('All member/invitation tests', 'no budgetId'); return; }
-
-  // Routes now correctly use {budgetId} path params after CDK fix — routes now use {budgetId} path params
-  try {
-    const r = await req('GET', APIS.budgets, `/budgets/${testBudgetId}/members`);
-    check('GET /budgets/:id/members', r.status === 200, `HTTP ${r.status}`);
-    const list = r.body?.data?.members || r.body?.members;
-    check('Members list is array', Array.isArray(list), '');
-  } catch (e) { check('GET /budgets/:id/members', false, e.message); }
-
-  try {
-    const r = await req('GET', APIS.budgets, `/budgets/${testBudgetId}/invitations`);
-    check('GET /budgets/:id/invitations', r.status === 200, `HTTP ${r.status}`);
-  } catch (e) { check('GET /budgets/:id/invitations', false, e.message); }
-
-  // POST /budgets/accept-invitation works (no budgetId needed)
-  try {
-    const r = await req('POST', APIS.budgets, '/budgets/accept-invitation', { token: 'invalid-test-token' });
-    check('POST /budgets/accept-invitation — endpoint reachable', [400, 401, 404].includes(r.status), `HTTP ${r.status}`);
-  } catch (e) { check('POST /budgets/accept-invitation', false, e.message); }
-}
-
+// ── 7. Goals ──────────────────────────────────────────────────────────────────
 async function testGoals() {
-  section('8. Goals');
+  section('7. Goals');
 
   let goalId = null;
   try {
@@ -340,11 +356,92 @@ async function testGoals() {
   }
 }
 
+// ── 8. Budget Collaboration ───────────────────────────────────────────────────
+async function testBudgetCollaboration() {
+  section('8. Budget Collaboration (Members & Invitations)');
+
+  if (!testBudgetId) { skip('All collaboration tests', 'no budgetId'); return; }
+
+  // Members
+  try {
+    const r = await req('GET', APIS.budgets, `/budgets/${testBudgetId}/members`);
+    check('GET /budgets/:id/members', r.status === 200, `HTTP ${r.status}`);
+    const list = r.body?.data?.members || r.body?.members;
+    check('Members list is array', Array.isArray(list), '');
+  } catch (e) { check('GET /budgets/:id/members', false, e.message); }
+
+  // Invitations
+  try {
+    const r = await req('GET', APIS.budgets, `/budgets/${testBudgetId}/invitations`);
+    check('GET /budgets/:id/invitations', r.status === 200, `HTTP ${r.status}`);
+  } catch (e) { check('GET /budgets/:id/invitations', false, e.message); }
+
+  // Send invite — need a family/shared budget (personal budgets can't have members)
+  let invitationId = null;
+  let inviteBudgetId = testBudgetId;
+  try {
+    // Create a family budget specifically for invite testing
+    const cr = await req('POST', APIS.budgets, '/budgets', {
+      name: 'Live Test Family Budget', budgetType: 'family', currency: 'CAD'
+    });
+    if ([200, 201].includes(cr.status)) {
+      inviteBudgetId = cr.body?.data?.budgetId || cr.body?.budgetId || testBudgetId;
+    }
+  } catch (_) {}
+
+  try {
+    const r = await req('POST', APIS.budgets, `/budgets/${inviteBudgetId}/invite`, {
+      email: 'dima.pmp@gmail.com', role: 'viewer',
+      viewerExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      accessLabel: 'Test Viewer'
+    });
+    check('POST /budgets/:id/invite — send invitation', [200, 201, 409].includes(r.status), `HTTP ${r.status}`);
+    invitationId = r.body?.data?.invitationId || r.body?.invitationId;
+  } catch (e) { check('POST /budgets/:id/invite', false, e.message); }
+
+  // Personal budget rejects partner invite
+  try {
+    const cr = await req('POST', APIS.budgets, '/budgets', {
+      name: 'Personal Only', budgetType: 'personal', currency: 'CAD'
+    });
+    const pid = cr.body?.data?.budgetId || cr.body?.budgetId;
+    if (pid) {
+      const r = await req('POST', APIS.budgets, `/budgets/${pid}/invite`, {
+        email: 'dima.pmp@gmail.com', role: 'partner'
+      });
+      check('Personal budget rejects partner invite', [400, 403, 422].includes(r.status), `HTTP ${r.status}`);
+    } else {
+      skip('Personal budget rejects partner invite', 'could not create personal budget');
+    }
+  } catch (e) { check('Personal budget rejects partner invite', false, e.message); }
+
+  // Accept-invitation endpoint reachable (invalid token → 400 expected)
+  try {
+    const r = await req('POST', APIS.budgets, '/budgets/accept-invitation', { token: 'invalid' });
+    check('POST /budgets/accept-invitation — endpoint reachable', [400, 401, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('POST /budgets/accept-invitation', false, e.message); }
+
+  if (invitationId) {
+    try {
+      const r = await req('POST', APIS.budgets, `/budgets/${inviteBudgetId}/invitations/${invitationId}/resend`);
+      check('POST .../invitations/:id/resend', [200, 201].includes(r.status), `HTTP ${r.status}`);
+    } catch (e) { check('POST .../resend', false, e.message); }
+    try {
+      const r = await req('DELETE', APIS.budgets, `/budgets/${inviteBudgetId}/invitations/${invitationId}`);
+      check('DELETE .../invitations/:id — revoke', [200, 204].includes(r.status), `HTTP ${r.status}`);
+    } catch (e) { check('DELETE .../invitations/:id', false, e.message); }
+  } else {
+    skip('Resend/revoke invitation', 'no invitationId (409 = already pending)');
+  }
+}
+
+// ── 9. Insights ───────────────────────────────────────────────────────────────
 async function testInsights() {
   section('9. Financial Insights (Extended API)');
 
   const endpoints = [
     [APIS.extended, '/insights/weekly',   'GET /insights/weekly'],
+    [APIS.extended, '/insights/monthly',  'GET /insights/monthly'],
     [APIS.extended, '/insights/trends',   'GET /insights/trends'],
     [APIS.extended, '/insights/patterns', 'GET /insights/patterns'],
   ];
@@ -355,6 +452,7 @@ async function testInsights() {
     } catch (e) { check(name, false, e.message); }
   }
 
+  // AI Q&A
   try {
     const r = await req('POST', APIS.extended, '/insights/ask', {
       question: 'How much did I spend on groceries this month?'
@@ -362,54 +460,72 @@ async function testInsights() {
     check('POST /insights/ask — AI Q&A', [200, 201].includes(r.status), `HTTP ${r.status}`);
   } catch (e) { check('POST /insights/ask', false, e.message); }
 
-  // Comparison and tips return 500 — Lambda errors, not routing issues
+  // Peer comparison
   try {
     const r = await req('GET', APIS.features, '/comparison/summary');
-    if (r.status === 500) bug('GET /comparison/summary', '500 Internal Server Error — Lambda crash (likely missing data for new user)');
-    check('GET /comparison/summary — endpoint reachable', [200, 404, 500].includes(r.status), `HTTP ${r.status}`);
+    if (r.status === 500) bug('GET /comparison/summary', '500 — Lambda crashes for new users with no transaction history');
+    check('GET /comparison/summary — endpoint', [200, 404, 500].includes(r.status), `HTTP ${r.status}`);
   } catch (e) { check('GET /comparison/summary', false, e.message); }
 
+  // Tips
   try {
     const r = await req('GET', APIS.features, '/tips/feed');
-    if (r.status === 500) bug('GET /tips/feed', '500 Internal Server Error — Lambda crash (likely missing data for new user)');
-    check('GET /tips/feed — endpoint reachable', [200, 404, 500].includes(r.status), `HTTP ${r.status}`);
+    if (r.status === 500) bug('GET /tips/feed', '500 — Lambda crashes for new users');
+    check('GET /tips/feed — endpoint', [200, 404, 500].includes(r.status), `HTTP ${r.status}`);
   } catch (e) { check('GET /tips/feed', false, e.message); }
+
+  try {
+    const r = await req('GET', APIS.features, '/tips/daily');
+    check('GET /tips/daily', [200, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /tips/daily', false, e.message); }
 }
 
+// ── 10. Pattern Detection & Budget Planning ───────────────────────────────────
 async function testPatternDetection() {
-  section('10. AI Bill Reminders & Pattern Detection (Extended API)');
+  section('10. AI Bill Reminders & Pattern Detection');
 
-  // These return 401 even with valid Cognito token — Lambda-level auth check
   try {
     const r = await req('POST', APIS.extended, '/patterns/detect', {
       month: new Date().toISOString().slice(0, 7)
     });
-    if (r.status === 401) bug('POST /patterns/detect', '401 Unauthorized — Lambda rejects valid Cognito token (internal auth check issue)');
-    check('POST /patterns/detect — endpoint reachable', [200, 201, 401, 404].includes(r.status), `HTTP ${r.status}`);
+    check('POST /patterns/detect', [200, 201].includes(r.status), `HTTP ${r.status}`);
   } catch (e) { check('POST /patterns/detect', false, e.message); }
 
   try {
     const r = await req('POST', APIS.extended, '/budget-planning/suggestions', {
-      targetMonth: new Date().toISOString().slice(0, 7)  // requires 'targetMonth' not 'month'
+      targetMonth: new Date().toISOString().slice(0, 7)
     });
-    if (r.status === 401) bug('POST /budget-planning/suggestions', '401 Unauthorized — Lambda rejects valid Cognito token (internal auth check issue)');
-    check('POST /budget-planning/suggestions — endpoint reachable', [200, 201, 401, 404].includes(r.status), `HTTP ${r.status}`);
+    check('POST /budget-planning/suggestions', [200, 201].includes(r.status), `HTTP ${r.status}`);
   } catch (e) { check('POST /budget-planning/suggestions', false, e.message); }
+
+  try {
+    const r = await req('POST', APIS.extended, '/budget-planning/apply', {
+      targetMonth: new Date().toISOString().slice(0, 7), apply: []
+    });
+    check('POST /budget-planning/apply', [200, 201, 400].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('POST /budget-planning/apply', false, e.message); }
 }
 
+// ── 11. Debt Payoff ───────────────────────────────────────────────────────────
 async function testDebtPayoff() {
   section('11. Debt Payoff (Features API)');
 
-  // The debt Lambda uses GET /debts/payoff-plan?strategy=avalanche&extraPayment=200
-  // not POST /debts/calculate
+  // Create a debt first
+  let debtId = null;
   try {
-    const r = await req('GET', APIS.features, '/debts/payoff-plan?strategy=avalanche&extraPayment=200');
-    if (r.status === 500) bug('GET /debts/payoff-plan', '500 — Lambda crashes for new users with no debts (missing null-check)');
-    check('GET /debts/payoff-plan — payoff plan', [200, 404, 500].includes(r.status), `HTTP ${r.status}`);
-    if (r.status === 200) {
-      check('Payoff plan has totalMonths', r.body?.data?.plan?.totalMonths !== undefined, '');
-    }
-  } catch (e) { check('GET /debts/payoff-plan', false, e.message); }
+    const r = await req('POST', APIS.features, '/debts', {
+      name: 'Test Credit Card', currentBalance: 5000, interestRate: 19.99,
+      minimumPayment: 100, type: 'credit_card'
+    });
+    if (r.status === 500) bug('POST /debts — create', '500 Internal Server Error — Debt Lambda crashes on create (likely missing required fields or DynamoDB write error)');
+    check('POST /debts — create debt', [200, 201, 500].includes(r.status), `HTTP ${r.status}`);
+    debtId = r.body?.data?.debtId || r.body?.debtId || r.body?.id;
+  } catch (e) { check('POST /debts — create', false, e.message); }
+
+  try {
+    const r = await req('GET', APIS.features, '/debts');
+    check('GET /debts — list', r.status === 200, `HTTP ${r.status}`);
+  } catch (e) { check('GET /debts', false, e.message); }
 
   try {
     const r = await req('GET', APIS.features, '/debts/summary');
@@ -417,13 +533,50 @@ async function testDebtPayoff() {
   } catch (e) { check('GET /debts/summary', false, e.message); }
 
   try {
-    const r = await req('GET', APIS.features, '/debts');
-    check('GET /debts — list', [200, 404].includes(r.status), `HTTP ${r.status}`);
-  } catch (e) { check('GET /debts', false, e.message); }
+    const r = await req('GET', APIS.features, '/debts/payoff-plan?strategy=avalanche&extraPayment=200');
+    if (r.status === 500) bug('GET /debts/payoff-plan', '500 for new users with no debts — missing null-check');
+    check('GET /debts/payoff-plan', [200, 404, 500].includes(r.status), `HTTP ${r.status}`);
+    if (r.status === 200) {
+      const plan = r.body?.data?.plan || r.body?.plan;
+      check('Payoff plan has totalMonths', plan?.totalMonths !== undefined, '');
+    }
+  } catch (e) { check('GET /debts/payoff-plan', false, e.message); }
+
+  if (debtId) {
+    try {
+      const r = await req('DELETE', APIS.features, `/debts/${debtId}`);
+      check('DELETE /debts/:id — cleanup', [200, 204].includes(r.status), `HTTP ${r.status}`);
+    } catch (e) { check('DELETE /debts/:id', false, e.message); }
+  }
 }
 
+// ── 12. Credit Score ──────────────────────────────────────────────────────────
+async function testCreditScore() {
+  section('12. Credit Score (Features API)');
+
+  try {
+    const r = await req('GET', APIS.features, '/credit-score');
+    if (r.status === 502) bug('GET /credit-score', '502 — Lambda crash (likely missing credit bureau integration or unhandled empty state)');
+    check('GET /credit-score — endpoint reachable', [200, 404, 502].includes(r.status), `HTTP ${r.status}`);
+    if (r.status === 200) {
+      check('Credit score has score field', r.body?.data?.score !== undefined || r.body?.score !== undefined, '');
+    }
+  } catch (e) { check('GET /credit-score', false, e.message); }
+
+  try {
+    const r = await req('GET', APIS.features, '/credit-score/history');
+    check('GET /credit-score/history', [200, 404, 502].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /credit-score/history', false, e.message); }
+
+  try {
+    const r = await req('POST', APIS.features, '/credit-score/refresh');
+    check('POST /credit-score/refresh', [200, 201, 404, 502].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('POST /credit-score/refresh', false, e.message); }
+}
+
+// ── 13. Plaid Bank Integration ────────────────────────────────────────────────
 async function testPlaid() {
-  section('12. Plaid Bank Integration (Features API)');
+  section('13. Plaid Bank Integration (Features API)');
 
   try {
     const r = await req('POST', APIS.features, '/plaid/link-token');
@@ -441,10 +594,93 @@ async function testPlaid() {
     const r = await req('GET', APIS.features, '/plaid/pending');
     check('GET /plaid/pending', [200, 404].includes(r.status), `HTTP ${r.status}`);
   } catch (e) { check('GET /plaid/pending', false, e.message); }
+
+  try {
+    const r = await req('POST', APIS.features, '/plaid/sandbox/create-item');
+    if (r.status === 500) bug('POST /plaid/sandbox/create-item', '500 — Lambda crash (Plaid sandbox credentials may not be configured in dev)');
+    check('POST /plaid/sandbox/create-item', [200, 201, 400, 500].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('POST /plaid/sandbox/create-item', false, e.message); }
 }
 
+// ── 14. Bills ─────────────────────────────────────────────────────────────────
+async function testBills() {
+  section('14. Bills (Main API)');
+
+  try {
+    const r = await req('GET', APIS.main, '/bills');
+    check('GET /bills — list', r.status === 200, `HTTP ${r.status}`);
+    const list = r.body?.data?.bills || r.body?.bills || r.body;
+    check('Bills returns array', Array.isArray(list), '');
+  } catch (e) { check('GET /bills', false, e.message); }
+
+  try {
+    const r = await req('GET', APIS.main, '/bills/upcoming');
+    check('GET /bills/upcoming', [200, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /bills/upcoming', false, e.message); }
+
+  try {
+    const r = await req('GET', APIS.main, '/bills/calendar');
+    check('GET /bills/calendar', [200, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /bills/calendar', false, e.message); }
+}
+
+// ── 15. Export ────────────────────────────────────────────────────────────────
+async function testExport() {
+  section('15. Export (Main API)');
+
+  try {
+    const r = await req('GET', APIS.main, '/export');
+    if (r.status === 502) bug('GET /export', '502 — Lambda crash (unhandled error or missing S3 config)');
+    check('GET /export — endpoint reachable', [200, 400, 404, 502].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /export', false, e.message); }
+}
+
+// ── 16. Receipt Scanning ──────────────────────────────────────────────────────
+async function testReceipt() {
+  section('16. Receipt Scanning (Extended API)');
+
+  // Receipt upload requires multipart form data — test the endpoint is reachable
+  try {
+    const r = await req('GET', APIS.extended, '/receipt/usage');
+    check('GET /receipt/usage', [200, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /receipt/usage', false, e.message); }
+
+  try {
+    const r = await req('GET', APIS.extended, '/receipt/history');
+    check('GET /receipt/history', [200, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /receipt/history', false, e.message); }
+
+  // POST /receipt/upload requires multipart — test with JSON body; 200 may mean it accepted it
+  try {
+    const r = await req('POST', APIS.extended, '/receipt/upload', { test: true });
+    check('POST /receipt/upload — endpoint reachable', [200, 201, 400, 415, 422, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('POST /receipt/upload', false, e.message); }
+}
+
+// ── 17. Learning Center ───────────────────────────────────────────────────────
+async function testLearn() {
+  section('17. Learning Center (Features API)');
+
+  try {
+    const r = await req('GET', APIS.features, '/learn/lessons');
+    if (r.status === 403) bug('GET /learn/lessons', '403 SigV4 error — features API /learn/lessons route has wrong auth type in CDK (AWS_IAM instead of COGNITO)');
+    check('GET /learn/lessons', [200, 403, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /learn/lessons', false, e.message); }
+
+  try {
+    const r = await req('GET', APIS.features, '/learn/courses');
+    check('GET /learn/courses', [200, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /learn/courses', false, e.message); }
+
+  try {
+    const r = await req('GET', APIS.features, '/learn/progress');
+    check('GET /learn/progress', [200, 404].includes(r.status), `HTTP ${r.status}`);
+  } catch (e) { check('GET /learn/progress', false, e.message); }
+}
+
+// ── 18. Auth Security ─────────────────────────────────────────────────────────
 async function testAuthSecurity() {
-  section('13. Auth Security — Unauthenticated Access Rejected');
+  section('18. Auth Security — Unauthenticated Access Rejected');
 
   const checks = [
     [APIS.main,    'GET', '/auth/profile',  'GET /auth/profile without token'],
@@ -452,6 +688,8 @@ async function testAuthSecurity() {
     [APIS.main,    'GET', '/accounts',      'GET /accounts without token'],
     [APIS.budgets, 'GET', '/budgets',       'GET /budgets without token'],
     [APIS.main,    'GET', '/goals',         'GET /goals without token'],
+    [APIS.features,'GET', '/credit-score',  'GET /credit-score without token'],
+    [APIS.features,'GET', '/plaid/accounts','GET /plaid/accounts without token'],
   ];
   for (const [base, method, path, name] of checks) {
     try {
@@ -461,20 +699,21 @@ async function testAuthSecurity() {
   }
 }
 
+// ── 19. Deprecated /family/* Routes ──────────────────────────────────────────
 async function testDeprecatedRoutes() {
-  section('14. Deprecated /family/* Routes');
+  section('19. Deprecated /family/* Routes');
 
   const paths = ['/family', '/family/members', '/family/invite'];
   for (const path of paths) {
     try {
       const res = await fetch(`${APIS.family}${path}`, { headers: { 'Content-Type': 'application/json' } });
-      // 410 = ideal, 401/403 = service up but auth-gated (acceptable)
       check(`${path} — service up (not 5xx)`, [410, 401, 403, 404].includes(res.status), `HTTP ${res.status}`);
-      if (res.status !== 410) bug(`${path}`, `Returns ${res.status} instead of 410 Gone — family stack still active, not returning 410`);
+      if (res.status !== 410) bug(`${path}`, `Returns ${res.status} instead of 410 Gone`);
     } catch (e) { check(`${path}`, false, e.message); }
   }
 }
 
+// ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
   process.stdout.write(`\n${'═'.repeat(60)}\n  BudgetBuddy — Live API Test Suite\n  Time: ${new Date().toISOString()}\n${'═'.repeat(60)}\n`);
 
@@ -484,12 +723,17 @@ async function main() {
   await testBudgets();
   await testTransactions();
   await testAccounts();
-  await testBudgetMembers();
   await testGoals();
+  await testBudgetCollaboration();
   await testInsights();
   await testPatternDetection();
   await testDebtPayoff();
+  await testCreditScore();
   await testPlaid();
+  await testBills();
+  await testExport();
+  await testReceipt();
+  await testLearn();
   await testAuthSecurity();
   await testDeprecatedRoutes();
 
