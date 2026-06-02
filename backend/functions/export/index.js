@@ -11,8 +11,6 @@ const {
   BudgetAccessResolver,
 } = require('/opt/nodejs/utils');
 
-const TABLE_NAME = process.env.TABLE_NAME || 'budgetbuddy-dev-main';
-
 /**
  * Get CORS headers for API responses
  */

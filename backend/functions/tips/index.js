@@ -335,7 +335,7 @@ async function getTipsFeed(event, user) {
   let spendingPatterns;
   try {
     spendingPatterns = await analyzeUserSpending(user.userId);
-  } catch (err) {
+  } catch (_error) {
     // New users with no data — return empty tips gracefully
     spendingPatterns = {
       hasDebt: false,
