@@ -16,8 +16,6 @@ const {
   generateId,
 } = require('/opt/nodejs/utils');
 
-const TABLE_NAME = process.env.TABLE_NAME || 'budgetbuddy-dev-main';
-
 /**
  * Helper function to create HTTP response
  */
@@ -101,7 +99,7 @@ exports.handler = async (event) => {
 /**
  * Get current credit score
  */
-async function getCreditScore(userId, budgetId) {
+async function getCreditScore(userId, _budgetId) {
   try {
     // Get latest credit score record stored under USER# partition for per-user data
     const result = await dynamoHelpers.query({
@@ -145,7 +143,7 @@ async function getCreditScore(userId, budgetId) {
 /**
  * Get credit score history
  */
-async function getCreditScoreHistory(userId, budgetId) {
+async function getCreditScoreHistory(userId, _budgetId) {
   try {
     const result = await dynamoHelpers.query({
       KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
