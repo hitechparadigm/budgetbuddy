@@ -353,7 +353,7 @@ exports.handler = async (event, context) => {
     let user;
     try {
       user = getUserFromEvent(event);
-    } catch (authErr) {
+    } catch (_error) {
       return errorResponse.unauthorized('Authentication required');
     }
     const userId = user.userId;
@@ -363,7 +363,7 @@ exports.handler = async (event, context) => {
     if (event.body) {
       try {
         body = JSON.parse(event.body);
-      } catch (_) {
+      } catch (error) {
         return errorResponse.badRequest('Invalid JSON body');
       }
     }
