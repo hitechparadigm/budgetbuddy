@@ -1,61 +1,53 @@
 /**
  * Budget Service
  * Separated budget calculation logic for better maintainability
+ *
+ * IMPORTANT: This file was updated as part of the Budget Model Redesign.
+ * All DynamoDB keys now use BUDGET#<budgetId> / PERIOD#<month> (not FAMILY#).
+ * The groups structure is flat: groups.expenses = [{id, name, plannedAmount, spentAmount, ...}]
  */
 
 const { dynamoHelpers, logger } = require("/opt/nodejs/utils");
 
 /**
  * Check if an account is tracked (should be included in budget calculations)
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID (optional)
  * @returns {Promise<boolean>} True if account is tracked or no account specified
  */
-async function isAccountTracked(familyId, accountId) {
-  // If no account specified, include in budget (legacy behavior)
-  if (!accountId) {
-    return true;
-  }
+async function isAccountTracked(budgetId, accountId) {
+  if (!accountId) return true;
 
   try {
     const account = await dynamoHelpers.getItem(
-      `FAMILY#${familyId}`,
+      `BUDGET#${budgetId}`,
       `ACCOUNT#${accountId}`,
     );
-
-    // If account not found, include in budget (defensive)
-    if (!account) {
-      logger.warn("Account not found when checking tracking status", {
-        familyId,
-        accountId,
-      });
-      return true;
-    }
-
-    // Return the isTracked status (default to true if not set)
+    if (!account) return true;
     return account.isTracked !== false;
   } catch (error) {
-    logger.error("Error checking account tracking status", error, {
-      familyId,
-      accountId,
-    });
-    // On error, include in budget (defensive)
+    logger.error("Error checking account tracking status", error, { budgetId, accountId });
     return true;
   }
 }
 
 /**
- * Update budget calculations when transactions are added, updated, or deleted
- * @param {string} familyId - Family ID
- * @param {string} budgetMonth - Budget month (YYYY-MM)
- * @param {string} categoryId - Category ID
- * @param {string} transactionType - 'income' or 'expense'
- * @param {number} amount - Transaction amount
- * @param {string} operation - 'add' or 'remove'
- * @param {string} accountId - Optional account ID (for tracking check)
+ * Update budget calculations when transactions are added, updated, or deleted.
+ *
+ * Uses the new BUDGET# / PERIOD# key schema.
+ * Groups structure: { income: [...], savings: [...], expenses: [...] }
+ * Each element is a category object: { id, categoryId, name, plannedAmount, spentAmount, transactions }
+ *
+ * @param {string} budgetId     - Budget ID (passed as first arg from transactions/index.js)
+ * @param {string} budgetMonth  - Budget month (YYYY-MM)
+ * @param {string} categoryId   - Category ID
+ * @param {string} transactionType - 'income' | 'expense' | 'savings'
+ * @param {number} amount       - Transaction amount
+ * @param {string} operation    - 'add' | 'remove'
+ * @param {string} accountId    - Optional account ID (for tracking check)
  */
 async function updateBudgetCalculations(
-  familyId,
+  budgetId,
   budgetMonth,
   categoryId,
   transactionType,
@@ -64,145 +56,126 @@ async function updateBudgetCalculations(
   accountId = null,
 ) {
   try {
-    // Check if account is tracked - if not, skip budget update
-    const tracked = await isAccountTracked(familyId, accountId);
+    const tracked = await isAccountTracked(budgetId, accountId);
     if (!tracked) {
-      logger.info("Skipping budget update for untracked account", {
-        familyId,
-        budgetMonth,
-        accountId,
-      });
+      logger.info("Skipping budget update for untracked account", { budgetId, budgetMonth, accountId });
       return;
     }
 
-    logger.info("Updating budget calculations", {
-      familyId,
-      budgetMonth,
-      categoryId,
-      transactionType,
-      amount,
-      operation,
-      accountId,
-    });
+    logger.info("Updating budget calculations", { budgetId, budgetMonth, categoryId, transactionType, amount, operation });
 
-    // Get the current budget for this month
-    const budget = await dynamoHelpers.getItem(
-      `FAMILY#${familyId}`,
-      `BUDGET#${budgetMonth}`,
-    );
+    // NEW schema: PK = BUDGET#<budgetId>, SK = PERIOD#<YYYY-MM>
+    const budget = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, `PERIOD#${budgetMonth}`);
 
     if (!budget) {
-      logger.warn("Budget not found for month, skipping calculation update", {
-        familyId,
-        budgetMonth,
-      });
+      logger.warn("Budget period not found, skipping calculation update", { budgetId, budgetMonth });
       return;
     }
 
-    // Calculate the amount change based on operation
     const amountChange = operation === "add" ? amount : -amount;
-
-    // Find and update the specific category in the budget
+    const groups = budget.groups || {};
     let categoryFound = false;
-    const updatedGroups = { ...budget.groups };
 
-    // Determine which group to update based on transaction type
-    const groupKey = transactionType === "income" ? "income" : "expenses";
+    // Determine which group key to search based on transaction type
+    // The new flat structure stores categories directly in the group arrays
+    const groupKeys = transactionType === "income"
+      ? ["income"]
+      : transactionType === "savings"
+        ? ["savings"]
+        : ["expenses", "savings"]; // expenses can also appear in savings for some users
 
-    if (updatedGroups[groupKey]) {
-      for (let group of updatedGroups[groupKey]) {
-        if (group.categories) {
-          for (let category of group.categories) {
-            if (category.categoryId === categoryId) {
-              category.spentAmount = (category.spentAmount || 0) + amountChange;
-              category.remainingAmount =
-                category.plannedAmount - category.spentAmount;
+    for (const groupKey of groupKeys) {
+      const groupArr = groups[groupKey];
+      if (!Array.isArray(groupArr)) continue;
+
+      for (const category of groupArr) {
+        // Match by id or categoryId (both formats are used)
+        const catId = category.id || category.categoryId;
+        if (catId === categoryId) {
+          category.spentAmount = (category.spentAmount || 0) + amountChange;
+          if (category.spentAmount < 0) category.spentAmount = 0;
+          categoryFound = true;
+          break;
+        }
+
+        // Also check nested categories array (legacy format)
+        if (Array.isArray(category.categories)) {
+          for (const nested of category.categories) {
+            const nestedId = nested.id || nested.categoryId;
+            if (nestedId === categoryId) {
+              nested.spentAmount = (nested.spentAmount || 0) + amountChange;
+              if (nested.spentAmount < 0) nested.spentAmount = 0;
               categoryFound = true;
               break;
             }
           }
+          if (categoryFound) break;
         }
-        if (categoryFound) break;
       }
+      if (categoryFound) break;
     }
 
     if (!categoryFound) {
-      logger.warn("Category not found in budget, skipping calculation update", {
-        familyId,
-        budgetMonth,
-        categoryId,
-      });
+      logger.warn("Category not found in budget period, skipping spentAmount update", { budgetId, budgetMonth, categoryId });
       return;
     }
 
-    // Recalculate group and budget totals
-    const totals = calculateBudgetTotals(updatedGroups);
+    // Recalculate totals
+    const totals = calculateBudgetTotals(groups);
 
-    // Update the budget in DynamoDB
+    // Update the budget period in DynamoDB — new key schema
     await dynamoHelpers.updateItem(
-      `FAMILY#${familyId}`,
-      `BUDGET#${budgetMonth}`,
+      `BUDGET#${budgetId}`,
+      `PERIOD#${budgetMonth}`,
       {
-        groups: updatedGroups,
+        groups,
         totalIncome: totals.totalIncome,
         totalSavings: totals.totalSavings,
         totalExpenses: totals.totalExpenses,
         remainingBalance: totals.remainingBalance,
+        updatedAt: new Date().toISOString(),
       },
     );
 
-    logger.info("Budget calculations updated successfully", {
-      familyId,
-      budgetMonth,
-      categoryId,
-    });
+    logger.info("Budget calculations updated successfully", { budgetId, budgetMonth, categoryId, amountChange });
   } catch (error) {
-    logger.error("Error updating budget calculations", error, {
-      familyId,
-      budgetMonth,
-      categoryId,
-    });
-    // Don't throw error - transaction should still succeed even if budget update fails
+    logger.error("Error updating budget calculations", error, { budgetId, budgetMonth, categoryId });
+    // Don't throw — transaction should still succeed even if budget update fails
   }
 }
 
 /**
- * Calculate budget totals from groups
+ * Calculate budget totals from groups (supports both flat and nested category formats).
  */
 function calculateBudgetTotals(groups) {
   let totalIncome = 0;
   let totalSavings = 0;
   let totalExpenses = 0;
 
-  // Calculate income total
-  if (groups.income) {
-    totalIncome = groups.income.reduce((sum, category) => {
-      return sum + (category.plannedAmount || 0);
+  function sumGroup(arr) {
+    if (!Array.isArray(arr)) return 0;
+    return arr.reduce((sum, item) => {
+      // Flat format: item is a category
+      if (typeof item.plannedAmount === "number") {
+        return sum + (item.plannedAmount || 0);
+      }
+      // Nested format: item has categories array
+      if (Array.isArray(item.categories)) {
+        return sum + item.categories.reduce((s, c) => s + (c.plannedAmount || 0), 0);
+      }
+      return sum;
     }, 0);
   }
 
-  // Calculate savings total
-  if (groups.savings) {
-    totalSavings = groups.savings.reduce((sum, category) => {
-      return sum + (category.plannedAmount || 0);
-    }, 0);
-  }
-
-  // Calculate expenses total
-  if (groups.expenses) {
-    totalExpenses = groups.expenses.reduce((sum, category) => {
-      return sum + (category.plannedAmount || 0);
-    }, 0);
-  }
-
-  // Zero-based budgeting: Income - Savings - Expenses = 0 (ideally)
-  const remainingBalance = totalIncome - totalSavings - totalExpenses;
+  totalIncome   = sumGroup(groups.income);
+  totalSavings  = sumGroup(groups.savings);
+  totalExpenses = sumGroup(groups.expenses);
 
   return {
     totalIncome,
     totalSavings,
     totalExpenses,
-    remainingBalance,
+    remainingBalance: totalIncome - totalSavings - totalExpenses,
   };
 }
 
