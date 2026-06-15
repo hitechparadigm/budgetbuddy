@@ -157,9 +157,12 @@ exports.handler = async (event) => {
     console.log('Budget metadata record created:', { budgetId: defaultBudgetId, budgetType: budgetMetadata.budgetType });
 
     // Write BUDGET#<budgetId>/MEMBER#<userId> record (required for BudgetAccessResolver.resolveAccess())
+    // GSI1PK/GSI1SK are required for GET /budgets to find this membership via GSI1 index
     const memberRecord = {
       PK: `BUDGET#${defaultBudgetId}`,
       SK: `MEMBER#${userId}`,
+      GSI1PK: `USER#${userId}`,
+      GSI1SK: `BUDGET#${defaultBudgetId}`,
       budgetId: defaultBudgetId,
       userId,
       role: 'owner',

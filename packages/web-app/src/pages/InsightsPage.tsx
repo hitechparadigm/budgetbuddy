@@ -107,11 +107,12 @@ export const InsightsPage: React.FC = () => {
     }, 100);
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | null | undefined) => {
+    if (amount == null || isNaN(amount as number)) return '$0.00';
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(amount);
+    }).format(amount as number);
   };
 
   const formatPercent = (value: number) => {
@@ -242,7 +243,7 @@ export const InsightsPage: React.FC = () => {
                 <span className="text-2xl">🏦</span>
               </div>
               <div className="text-2xl font-bold text-gray-900">
-                {weeklyInsights.summary.savingsRate.toFixed(1)}%
+                {((weeklyInsights.summary.savingsRate ?? 0) || 0).toFixed(1)}%
               </div>
               <div className="text-sm text-gray-600 mt-1">
                 {weeklyInsights.summary.transactionCount} transactions
