@@ -1,6 +1,21 @@
 # Changelog
 
-## [1.9.129] - 2026-06-15
+## [1.9.130] - 2026-06-15
+
+### ✨ Feat: Smart invitation page — inviter first name, smart auth tab, email pre-fill, invitation preview API
+
+#### Email (Feature 1: Inviter first name)
+- **`invitation.json`**: Updated subject from `"{{inviterName}} invited you..."` to `"{{inviterFirstName}} invited you to join their family budget on BudgetBuddy!"`. Updated HTML and text body to use `{{inviterFirstName}}` for the inviter name references.
+- **`templates.js`** (`getInvitationEmailTemplate`): Now extracts `inviterFirstName` by splitting `inviterName` on space and taking the first part. Falls back to `'Someone'` if name is absent. Passes `inviterFirstName` into template data.
+- **`budgets/index.js`** (`sendInvitationEmail`): Added `inviterFirstName` to `emailPayload` using `inviter.firstName` with fallback to split of full name.
+
+#### Backend (Feature 2: Invitation preview endpoint)
+- **`budgets/index.js`**: New `handleInvitationPreview` function — `GET /budgets/invitation-preview?token=xxx`. Public endpoint (no auth required). Looks up invitation by hashed token, checks expiry, fetches inviter's first name from profile, fetches budget name, checks whether invitee email has an existing account. Returns `{ inviterFirstName, inviteeEmail, budgetName, role, expiresAt, userExists }`.
+- **`api-budgets-stack.ts`**: Added public `GET` method for `/budgets/invitation-preview` resource with `AuthorizationType.NONE`.
+
+#### Frontend (Feature 3: Smart AcceptInvitationPage)
+- **`AcceptInvitationPage.tsx`**: Full rewrite. On load, fetches `/budgets/invitation-preview` (unauthenticated) to get invitation details. Shows spinner during fetch; shows error immediately for invalid/expired invitations. Uses `inviterFirstName` in header: "X invited you to join Y on BudgetBuddy!". Defaults auth tab to "Log In" if user exists, "Create Account" if new. Pre-fills invitee email in both login and register forms (read-only). Imports `config.budgetsApiUrl` for the preview call.
+
 
 ### ✨ Feat: Income frequency support (biweekly/weekly), one-time category flag, onboarding default income placeholder
 

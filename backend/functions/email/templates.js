@@ -33,7 +33,8 @@ function replaceVariables(template, data) {
 /**
  * Family Invitation Email Template
  * @param {Object} data - Template data
- * @param {string} data.inviterName - Name of person sending invitation
+ * @param {string} data.inviterName - Full name of person sending invitation
+ * @param {string} [data.inviterFirstName] - First name of inviter (derived from inviterName if not provided)
  * @param {string} data.inviterEmail - Email of person sending invitation
  * @param {string} data.role - Role being offered (Spouse/Viewer)
  * @param {string} data.acceptUrl - URL to accept invitation
@@ -52,12 +53,17 @@ function getInvitationEmailTemplate(data) {
     },
   );
 
+  // Extract first name for subject line and heading — use provided value or derive from full name
+  const inviterFirstName = data.inviterFirstName ||
+    (data.inviterName || 'Someone').split(' ')[0];
+
   // Get role permissions HTML
   const rolePermissions = invitationTemplate.rolePermissions[data.role] || "";
 
   // Prepare data with formatted values
   const templateData = {
     ...data,
+    inviterFirstName,
     expiresAtFormatted,
     rolePermissions,
   };

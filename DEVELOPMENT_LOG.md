@@ -1,6 +1,29 @@
 # Development Log
 
-## 2026-06-15 - Income frequency support, one-time category flag, onboarding income placeholder (Session 145)
+## 2026-06-15 - Smart invitation page and invitation preview API (Session 146)
+
+### Work Completed
+
+1. **Email — inviter first name only (Feature 1)**:
+   - `invitation.json`: Subject changed to `"{{inviterFirstName}} invited you to join their family budget on BudgetBuddy!"`. HTML and text body `{{inviterName}}` references replaced with `{{inviterFirstName}}`.
+   - `templates.js`: `getInvitationEmailTemplate` now extracts `inviterFirstName = data.inviterFirstName || (data.inviterName || 'Someone').split(' ')[0]` and includes it in `templateData`.
+   - `budgets/index.js` `sendInvitationEmail`: Added `inviterFirstName: inviter.firstName || inviterName.split(' ')[0] || 'Someone'` to the email payload.
+
+2. **Backend — invitation preview endpoint (Feature 2)**:
+   - Added `handleInvitationPreview(event)` to `budgets/index.js`. Public GET endpoint at `/budgets/invitation-preview?token=xxx`. No auth required. Scans for invitation by hashed token (same pattern as `handleAcceptInvitation`), checks expiry, returns `inviterFirstName`, `inviteeEmail`, `budgetName`, `role`, `expiresAt`, `userExists`. The `userExists` flag comes from scanning USER# PROFILE records for the invited email.
+   - Added route in main handler before `getUserFromEvent`: `if (httpMethod === 'GET' && path === '/budgets/invitation-preview')`.
+   - `api-budgets-stack.ts`: Added `invitation-preview` resource under `/budgets` with a public GET method (`AuthorizationType.NONE`).
+
+3. **Frontend — Smart AcceptInvitationPage (Feature 3)**:
+   - Full rewrite of `AcceptInvitationPage.tsx`.
+   - On mount: fetches `GET /budgets/invitation-preview?token=...` (unauthenticated) using `config.budgetsApiUrl`.
+   - Loading state: spinner shown while fetching preview.
+   - Error state: if preview fails (expired/invalid), shows error card immediately — no need to attempt accept.
+   - Header uses `inviterFirstName` and `budgetName` from preview.
+   - Auth tab default: `userExists === true` → defaults to "Log In" tab; `userExists === false` → defaults to "Create Account" tab.
+   - Email pre-fill: invitee email pre-filled in both login and register forms, marked read-only.
+   - Auth info message uses inviter's first name: "Log in to accept {inviterFirstName}'s invitation."
+
 
 ### Work Completed
 
