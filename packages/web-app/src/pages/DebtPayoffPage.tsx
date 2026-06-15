@@ -8,8 +8,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
+import { config } from '../config/environment';
+
+// Debt features are on the features API (0poeu07vth), not the main API
+const API_BASE_URL = config.featuresApiUrl;
 
 interface Debt {
   debtId: string;
