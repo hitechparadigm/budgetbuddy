@@ -1136,6 +1136,7 @@ async function createBudgetWithRecurringItems(budgetId, month) {
       });
 
       // Copy items from each group with rollover calculation
+      // One-time categories (isOneTime === true) are NOT carried over to the new month
       ["income", "savings", "expenses"].forEach((groupType) => {
         if (previousBudget.groups[groupType]) {
           newBudget.groups[groupType] = previousBudget.groups[groupType].map(
@@ -1144,31 +1145,41 @@ async function createBudgetWithRecurringItems(budgetId, month) {
               // Reset spent amounts for new month
               totalSpent: 0,
               categories: group.categories
-                ? group.categories.map((category) => {
-                    // Calculate new rollover amount based on previous month's spending
-                    const newRolloverAmount = calculateRollover(category);
+                ? group.categories
+                    .map((category) => {
+                      // Skip one-time categories — they don't carry over
+                      if (category.isOneTime) return null;
 
-                    const newCategory = {
-                      ...category,
-                      // Keep planned amount but reset spent amount
-                      spentAmount: 0,
-                      remainingAmount: category.plannedAmount || 0,
-                      // Preserve rollover enabled setting
-                      rolloverEnabled: category.rolloverEnabled || false,
-                      // Set calculated rollover amount (0 if rollover disabled)
-                      rolloverAmount: newRolloverAmount,
-                    };
+                      // Calculate new rollover amount based on previous month's spending
+                      const newRolloverAmount = calculateRollover(category);
 
-                    // Only include rolloverCap if it was set in previous month
-                    if (
-                      category.rolloverCap !== undefined &&
-                      category.rolloverCap !== null
-                    ) {
-                      newCategory.rolloverCap = category.rolloverCap;
-                    }
+                      // Recalculate planned amount based on frequency (biweekly/weekly may differ by month)
+                      const newPlannedAmount = calculateMonthlyAmount(category, month);
 
-                    return newCategory;
-                  })
+                      const newCategory = {
+                        ...category,
+                        // Recalculate planned amount for frequency-based categories
+                        plannedAmount: newPlannedAmount,
+                        // Reset spent amount for new month
+                        spentAmount: 0,
+                        remainingAmount: newPlannedAmount,
+                        // Preserve rollover enabled setting
+                        rolloverEnabled: category.rolloverEnabled || false,
+                        // Set calculated rollover amount (0 if rollover disabled)
+                        rolloverAmount: newRolloverAmount,
+                      };
+
+                      // Only include rolloverCap if it was set in previous month
+                      if (
+                        category.rolloverCap !== undefined &&
+                        category.rolloverCap !== null
+                      ) {
+                        newCategory.rolloverCap = category.rolloverCap;
+                      }
+
+                      return newCategory;
+                    })
+                    .filter((c) => c !== null)
                 : [],
             }),
           );
@@ -1215,6 +1226,45 @@ async function createBudgetWithRecurringItems(budgetId, month) {
     });
     throw error;
   }
+}
+
+/**
+ * Calculate the planned monthly amount for a category based on its frequency.
+ * For biweekly/weekly, the count of periods in the target month is used.
+ *
+ * @param {Object} category - The category object (must have frequency, frequencyAmount or plannedAmount)
+ * @param {string} targetMonth - Target month in YYYY-MM format
+ * @returns {number} - Planned monthly amount for the target month
+ */
+function calculateMonthlyAmount(category, targetMonth) {
+  if (!category.frequency || category.frequency === 'monthly') {
+    return category.plannedAmount || 0;
+  }
+
+  const [year, month] = targetMonth.split('-').map(Number);
+
+  if (category.frequency === 'biweekly') {
+    // Count biweekly periods in this month.
+    // Most months have 2 biweekly periods; months with 29+ days can fit 3.
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const periods = daysInMonth >= 29 ? 3 : 2;
+    const amountPerPeriod = category.frequencyAmount || (category.plannedAmount / 2) || 0;
+    return Math.round(amountPerPeriod * periods);
+  }
+
+  if (category.frequency === 'weekly') {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const weeks = Math.ceil(daysInMonth / 7); // 4 or 5
+    const amountPerWeek = category.frequencyAmount || (category.plannedAmount / 4) || 0;
+    return Math.round(amountPerWeek * weeks);
+  }
+
+  if (category.frequency === 'semi-monthly') {
+    const amountPerPeriod = category.frequencyAmount || (category.plannedAmount / 2) || 0;
+    return Math.round(amountPerPeriod * 2);
+  }
+
+  return category.plannedAmount || 0;
 }
 
 /**

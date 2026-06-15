@@ -1,6 +1,22 @@
 # Changelog
 
-## [1.9.128] - 2026-06-03
+## [1.9.129] - 2026-06-15
+
+### ✨ Feat: Income frequency support (biweekly/weekly), one-time category flag, onboarding default income placeholder
+
+#### Onboarding
+- **auth-onboarding Lambda**: Default income placeholder category added to `budgetGroups.income` so new users see an "Income" entry to fill in rather than an empty slate.
+
+#### Budget Lambda
+- **`calculateMonthlyAmount` helper**: New function that computes a category's planned monthly amount based on its `frequency` field (`monthly`, `biweekly`, `weekly`, `semi-monthly`). Biweekly/weekly counts of pay periods are derived from days-in-month for the target month.
+- **`createBudgetWithRecurringItems`**: One-time categories (`isOneTime === true`) are now skipped when carrying items forward to the next month. All other categories have their `plannedAmount` recalculated using `calculateMonthlyAmount` so biweekly/weekly income adjusts correctly for months with differing periods.
+
+#### Frontend (BudgetPage)
+- **`BudgetCategory` interface**: Added `frequency`, `frequencyAmount`, and `isOneTime` optional fields.
+- **Add Item modal — Income group**: New "Pay Frequency" dropdown (Monthly / Semi-monthly / Biweekly / Weekly / One-time). For biweekly/weekly, a "Per paycheck" amount input auto-calculates the monthly total. One-time items show a warning that they won't repeat next month.
+- Category objects now persist `frequency`, `frequencyAmount`, and `isOneTime` to the backend.
+
+
 
 ### 🐛 Fix: Notifications Lambda 502, learn /lessons 404, test script improvements
 

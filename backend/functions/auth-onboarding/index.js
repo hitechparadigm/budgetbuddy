@@ -206,7 +206,18 @@ exports.handler = async (event) => {
     }));
 
     const budgetGroups = {
-      income: [],
+      income: [{
+        id: `cat_${Date.now()}_income`,
+        name: 'Income',
+        icon: '💰',
+        plannedAmount: 0,
+        spentAmount: 0,
+        transactions: [],
+        order: 1,
+        isRecurring: true,
+        frequency: 'monthly',
+        frequencyMonthlyAmount: 0,
+      }],
       savings: [],
       expenses: expenseCategories,
     };

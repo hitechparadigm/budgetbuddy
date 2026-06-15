@@ -17,7 +17,14 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
-### Recent Achievements (2026-05-30)
+### Recent Achievements (2026-06-15)
+
+- 💰 **INCOME FREQUENCY SUPPORT** - Biweekly/weekly income, one-time categories, onboarding placeholder
+  - New onboarding: default Income placeholder added so new users see an entry to fill in
+  - Backend `createBudgetWithRecurringItems` now skips one-time categories and recalculates biweekly/weekly income based on pay periods in the target month
+  - Frontend Add Item modal for income shows a "Pay Frequency" dropdown; biweekly/weekly selections reveal a per-paycheck input that auto-computes the monthly total
+
+### Previous Achievements (2026-05-30)
 
 - ♿ **ACCESSIBILITY & DARK MODE HEURISTIC REVIEW** - Comprehensive UI review using design-system-scaffold power
   - Fixed 5 high-tier accessibility violations (focus trap, ARIA roles, skip link, focus indicators)

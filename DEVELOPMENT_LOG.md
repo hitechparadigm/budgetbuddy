@@ -1,6 +1,24 @@
 # Development Log
 
-## 2026-06-03 - Fix notifications 502, learn /lessons 404, test script (Session 144)
+## 2026-06-15 - Income frequency support, one-time category flag, onboarding income placeholder (Session 145)
+
+### Work Completed
+
+1. **auth-onboarding Lambda — default income placeholder**:
+   - Changed `budgetGroups.income` from `[]` to an array containing a default "Income" category with `plannedAmount: 0`, `isRecurring: true`, `frequency: 'monthly'`. New users now see an income row to fill in rather than an empty section.
+
+2. **budget Lambda — frequency-aware month transition**:
+   - Added `calculateMonthlyAmount(category, targetMonth)` helper that computes planned amount based on `frequency` field (`monthly` / `biweekly` / `weekly` / `semi-monthly`). Biweekly/weekly use days-in-month to determine 2 vs 3 pay periods (months with ≥29 days get 3 biweekly periods).
+   - Updated `createBudgetWithRecurringItems` to skip `isOneTime === true` categories when rolling forward to a new month, and to recalculate all carried-over `plannedAmount` values using `calculateMonthlyAmount`.
+
+3. **BudgetPage.tsx — Pay Frequency selector in Add Item modal**:
+   - Extended `BudgetCategory` interface with `frequency`, `frequencyAmount`, `isOneTime`.
+   - Income group items now show a "Pay Frequency" dropdown (Monthly / Semi-monthly / Biweekly / Weekly / One-time).
+   - Biweekly and Weekly selections reveal a "Amount per paycheck" input; the monthly total auto-calculates and is shown in green.
+   - One-time selection shows an amber warning that the item won't be carried to next month.
+   - All frequency fields are stored on the category object and persisted to the backend.
+
+
 
 ### Work Completed
 

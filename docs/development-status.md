@@ -1,10 +1,20 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-06-01
-**Current Phase**: Security Hardening
+**Last Updated**: 2026-06-15
+**Current Phase**: Feature Enhancement
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (80%)
 
-## ✨ LATEST - Accessibility & Dark Mode Heuristic Review (Session 129)
+## ✨ LATEST - Income Frequency Support (Session 145)
+
+### Income Frequency & One-Time Categories ✅
+
+**Status**: Complete
+
+**Completed Work**:
+
+1. ✅ **Onboarding default income placeholder** — new users see an "Income" row to fill in
+2. ✅ **Backend frequency-aware rollover** — biweekly/weekly pay amounts recalculated per target month; one-time categories skipped on month transition
+3. ✅ **Frontend frequency selector** — Pay Frequency dropdown in Add Item modal for income; per-paycheck input with live monthly total preview
 
 ### Heuristic Review Fixes ✅
 
