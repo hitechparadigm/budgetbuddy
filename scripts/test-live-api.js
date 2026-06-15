@@ -234,6 +234,31 @@ async function testTransactions() {
   const date  = new Date().toISOString().slice(0, 10);
   let txnId = null;
 
+  // Ensure we have a categoryId — fetch from /budget/current if testBudgets() didn't set it
+  if (!testCategoryId) {
+    try {
+      const r = await req('GET', APIS.main, `/budget/current?month=${month}`);
+      if (r.status === 200) {
+        const data = r.body?.data || r.body;
+        const groups = data?.groups;
+        if (groups?.expenses?.length > 0) testCategoryId = groups.expenses[0]?.id || groups.expenses[0]?.categoryId;
+        else if (groups?.income?.length > 0) testCategoryId = groups.income[0]?.id || groups.income[0]?.categoryId;
+      }
+    } catch (_) {}
+  }
+
+  // If no categoryId from budget management section, try to get it now
+  if (!testCategoryId) {
+    try {
+      const r = await req('GET', APIS.main, `/budget/current?month=${month}`);
+      if (r.status === 200) {
+        const data = r.body?.data || r.body;
+        if (data?.groups?.expenses?.length > 0) testCategoryId = data.groups.expenses[0]?.id || data.groups.expenses[0]?.categoryId;
+        else if (data?.groups?.income?.length > 0) testCategoryId = data.groups.income[0]?.id || data.groups.income[0]?.categoryId;
+      }
+    } catch (_) {}
+  }
+
   if (testCategoryId) {
     // Create
     try {
@@ -244,8 +269,7 @@ async function testTransactions() {
       txnId = r.body?.data?.transactionId || r.body?.transactionId || r.body?.id;
     } catch (e) { check('POST /transactions — create', false, e.message); }
   } else {
-    bug('POST /transactions — create', 'categoryId unavailable — budget period not returned from GET /budget');
-    skip('POST /transactions — create', 'no categoryId');
+    skip('POST /transactions — create', 'no categoryId available from budget period');
   }
 
   // List

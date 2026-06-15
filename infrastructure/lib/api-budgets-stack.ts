@@ -261,11 +261,11 @@ export class ApiBudgetsStack extends cdk.Stack {
       operationName: 'SetActiveBudgetExplicit',
     });
 
-    // /budgets/accept-invitation — accept a budget invitation (no budgetId needed)
+    // /budgets/accept-invitation — accept a budget invitation
+    // PUBLIC — invitee may not be logged in yet when following invitation link
     const budgetsAcceptResource = budgetsResource.addResource('accept-invitation');
     budgetsAcceptResource.addMethod('POST', budgetsIntegration, {
-      authorizer,
-      authorizationType: apigateway.AuthorizationType.COGNITO,
+      authorizationType: apigateway.AuthorizationType.NONE,
       operationName: 'AcceptBudgetInvitation',
     });
 

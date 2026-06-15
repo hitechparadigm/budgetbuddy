@@ -1,82 +1,88 @@
-// @ts-check
-const { defineConfig, devices } = require("@playwright/test");
-
 /**
- * Playwright configuration for BudgetBuddy E2E tests
- * @see https://playwright.dev/docs/test-configuration
+ * Playwright E2E Test Configuration
+ *
+ * Tests run against the deployed dev environment by default.
+ * Set BASE_URL env var to override.
  */
-module.exports = defineConfig({
-  testDir: "./tests/e2e",
+// eslint-disable-next-line no-undef
+const { devices } = require('@playwright/test');
 
-  // Test timeouts
-  timeout: 60000, // 60 seconds per test
-  globalTimeout: 1800000, // 30 minutes for entire suite
+const config = {
+  testDir: './tests/e2e',
 
-  // Retry strategy
+  // Per-test timeout: 60 seconds
+  timeout: 60000,
+
+  // Global timeout: 30 minutes
+  globalTimeout: 30 * 60 * 1000,
+
+  // Retries: 2 in CI, 0 locally
   retries: process.env.CI ? 2 : 0,
 
-  // Parallel execution
+  // Workers: 2 in CI (avoid rate limits), 1 locally
   workers: process.env.CI ? 2 : 1,
 
-  // Reporter configuration
+  // Reporters
   reporter: [
-    ["html", { outputFolder: "test-results/html" }],
-    ["json", { outputFile: "test-results/results.json" }],
-    ["junit", { outputFile: "test-results/junit.xml" }],
-    ["list"],
+    ['list'],
+    ['html', { outputFolder: 'test-results/html', open: 'never' }],
+    ['json', { outputFile: 'test-results/results.json' }],
+    ['junit', { outputFile: 'test-results/junit.xml' }],
   ],
 
-  // Shared settings for all projects
+  // Shared settings for all tests
   use: {
-    // Base URL for the application under test
-    baseURL: process.env.BASE_URL || "http://localhost:5173",
+    // Base URL for all page.goto() calls
+    baseURL: process.env.BASE_URL || 'http://localhost:5173',
 
-    // Capture artifacts on failure
-    screenshot: "only-on-failure",
-    video: "retain-on-failure",
-    trace: "retain-on-failure",
+    // Capture screenshot only when a test fails
+    screenshot: 'only-on-failure',
 
-    // Browser context options
+    // Retain video only when a test fails
+    video: 'retain-on-failure',
+
+    // Collect trace on first retry in CI
+    trace: 'retain-on-failure',
+
+    // Standard viewport
     viewport: { width: 1280, height: 720 },
+
+    // Don't fail on self-signed certs in dev
     ignoreHTTPSErrors: true,
 
-    // Timeouts
+    // Action timeout (click, fill, etc.)
     actionTimeout: 10000,
+
+    // Navigation timeout
     navigationTimeout: 30000,
   },
 
-  // Browser projects for cross-browser testing
+  // Output directory for test artifacts
+  outputDir: 'test-results/artifacts',
+
+  // Browser projects
   projects: [
     {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
     },
     {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
     },
     {
-      name: "webkit",
-      use: { ...devices["Desktop Safari"] },
-    },
-    // Mobile viewports for responsive testing
-    {
-      name: "mobile-chrome",
-      use: { ...devices["Pixel 5"] },
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
     },
     {
-      name: "mobile-safari",
-      use: { ...devices["iPhone 12"] },
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 5'] },
+    },
+    {
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 13'] },
     },
   ],
+};
 
-  // Web server configuration (for local development)
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: "npm run dev",
-        url: "http://localhost:5173",
-        reuseExistingServer: !process.env.CI,
-        timeout: 120000,
-      },
-});
+module.exports = config;
