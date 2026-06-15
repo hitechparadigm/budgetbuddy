@@ -1,0 +1,98 @@
+- generic [ref=e4]:
+  - complementary "Main navigation" [ref=e5]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e10]: $
+        - generic [ref=e11]: BudgetBuddy
+      - button "Collapse sidebar" [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+    - navigation [ref=e15]:
+      - menu [ref=e16]:
+        - menuitem "Budget" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: 📊
+          - generic [ref=e19]: Budget
+        - menuitem "Accounts" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]: 🏦
+          - generic [ref=e22]: Accounts
+        - menuitem "Members" [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: 👥
+          - generic [ref=e25]: Members
+        - menuitem "Goals" [ref=e26] [cursor=pointer]:
+          - generic [ref=e27]: 🎯
+          - generic [ref=e28]: Goals
+        - menuitem "Investments" [ref=e29] [cursor=pointer]:
+          - generic [ref=e30]: 📈
+          - generic [ref=e31]: Investments
+        - menuitem "Insights" [ref=e32] [cursor=pointer]:
+          - generic [ref=e33]: 💡
+          - generic [ref=e34]: Insights
+        - menuitem "Tips" [ref=e35] [cursor=pointer]:
+          - generic [ref=e36]: 💬
+          - generic [ref=e37]: Tips
+        - menuitem "Learn" [ref=e38] [cursor=pointer]:
+          - generic [ref=e39]: 📚
+          - generic [ref=e40]: Learn
+        - menuitem "Bills" [ref=e41] [cursor=pointer]:
+          - generic [ref=e42]: 📋
+          - generic [ref=e43]: Bills
+        - menuitem "Subscriptions" [ref=e44] [cursor=pointer]:
+          - generic [ref=e45]: 🔄
+          - generic [ref=e46]: Subscriptions
+        - menuitem "Debt Payoff" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: 💳
+          - generic [ref=e49]: Debt Payoff
+        - menuitem "Credit Score" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]: 🏆
+          - generic [ref=e52]: Credit Score
+        - menuitem "Settings" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: ⚙️
+          - generic [ref=e55]: Settings
+    - generic [ref=e56]:
+      - generic [ref=e58]:
+        - generic [ref=e60]: 👤
+        - generic [ref=e61]:
+          - paragraph [ref=e62]: Test User
+          - paragraph [ref=e63]: pw-test-1781490841927@hitechparadigm.com
+      - button "Logout" [ref=e64] [cursor=pointer]:
+        - generic [ref=e65]: 🚪
+        - generic [ref=e66]: Logout
+  - main [ref=e67]:
+    - generic [ref=e69]:
+      - generic [ref=e70]:
+        - heading "🔄 Subscriptions" [level=1] [ref=e71]
+        - generic [ref=e72]:
+          - button "🔍 Detect Subscriptions" [ref=e73] [cursor=pointer]
+          - button "+ Add Subscription" [ref=e74] [cursor=pointer]
+      - generic [ref=e75]:
+        - generic [ref=e76]:
+          - paragraph [ref=e77]: Monthly Cost
+          - paragraph [ref=e78]: $0.00
+          - paragraph [ref=e79]: 0 active
+        - generic [ref=e80]:
+          - paragraph [ref=e81]: Yearly Cost
+          - paragraph [ref=e82]: $0.00
+        - generic [ref=e83]:
+          - paragraph [ref=e84]: Upcoming Renewals
+          - paragraph [ref=e85]: "0"
+          - paragraph [ref=e86]: Next 7 days
+        - generic [ref=e87]:
+          - paragraph [ref=e88]: Review Status
+          - generic [ref=e89]:
+            - generic [ref=e90]: ✓ 0
+            - generic [ref=e91]: 🔍 0
+            - generic [ref=e92]: ⚠ 0
+      - generic [ref=e93]:
+        - generic [ref=e94]:
+          - button "All" [ref=e95] [cursor=pointer]
+          - button "Active" [ref=e96] [cursor=pointer]
+          - button "Paused" [ref=e97] [cursor=pointer]
+          - button "Cancelled" [ref=e98] [cursor=pointer]
+        - generic [ref=e99]:
+          - button "All Reviews" [ref=e100] [cursor=pointer]
+          - button "Keep" [ref=e101] [cursor=pointer]
+          - button "Review" [ref=e102] [cursor=pointer]
+          - button "Cancel" [ref=e103] [cursor=pointer]
+      - generic [ref=e104]:
+        - paragraph [ref=e105]: 🔄
+        - heading "No subscriptions found" [level=2] [ref=e106]
+        - paragraph [ref=e107]: Add your first subscription or detect from transactions

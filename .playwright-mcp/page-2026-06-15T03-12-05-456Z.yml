@@ -1,0 +1,261 @@
+- generic [ref=e4]:
+  - complementary "Main navigation" [ref=e5]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e10]: $
+        - generic [ref=e11]: BudgetBuddy
+      - button "Collapse sidebar" [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+    - navigation [ref=e15]:
+      - menu [ref=e16]:
+        - menuitem "Budget" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: 📊
+          - generic [ref=e19]: Budget
+        - menuitem "Accounts" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]: 🏦
+          - generic [ref=e22]: Accounts
+        - menuitem "Members" [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: 👥
+          - generic [ref=e25]: Members
+        - menuitem "Goals" [ref=e26] [cursor=pointer]:
+          - generic [ref=e27]: 🎯
+          - generic [ref=e28]: Goals
+        - menuitem "Investments" [ref=e29] [cursor=pointer]:
+          - generic [ref=e30]: 📈
+          - generic [ref=e31]: Investments
+        - menuitem "Insights" [ref=e32] [cursor=pointer]:
+          - generic [ref=e33]: 💡
+          - generic [ref=e34]: Insights
+        - menuitem "Tips" [ref=e35] [cursor=pointer]:
+          - generic [ref=e36]: 💬
+          - generic [ref=e37]: Tips
+        - menuitem "Learn" [ref=e38] [cursor=pointer]:
+          - generic [ref=e39]: 📚
+          - generic [ref=e40]: Learn
+        - menuitem "Bills" [ref=e41] [cursor=pointer]:
+          - generic [ref=e42]: 📋
+          - generic [ref=e43]: Bills
+        - menuitem "Subscriptions" [ref=e44] [cursor=pointer]:
+          - generic [ref=e45]: 🔄
+          - generic [ref=e46]: Subscriptions
+        - menuitem "Debt Payoff" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: 💳
+          - generic [ref=e49]: Debt Payoff
+        - menuitem "Credit Score" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]: 🏆
+          - generic [ref=e52]: Credit Score
+        - menuitem "Settings" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: ⚙️
+          - generic [ref=e55]: Settings
+    - generic [ref=e56]:
+      - generic [ref=e58]:
+        - generic [ref=e60]: 👤
+        - generic [ref=e61]:
+          - paragraph [ref=e62]: Test User
+          - paragraph [ref=e63]: pw-test-1781490841927@hitechparadigm.com
+      - button "Logout" [ref=e64] [cursor=pointer]:
+        - generic [ref=e65]: 🚪
+        - generic [ref=e66]: Logout
+  - main [ref=e67]:
+    - generic [ref=e69]:
+      - generic [ref=e70]:
+        - generic [ref=e71]:
+          - generic [ref=e74]:
+            - generic [ref=e75]:
+              - heading "June 2026" [level=1] [ref=e76]
+              - paragraph [ref=e77]: $2,200.00 left to budget
+            - generic [ref=e78]:
+              - button "Export CSV" [ref=e79] [cursor=pointer]
+              - button "Export PDF" [ref=e80] [cursor=pointer]
+              - button "Reset" [ref=e81] [cursor=pointer]
+              - button "Today" [ref=e82] [cursor=pointer]
+              - button "Previous month" [ref=e83] [cursor=pointer]:
+                - img [ref=e84]
+              - button "Next month" [ref=e86] [cursor=pointer]:
+                - img [ref=e87]
+          - generic [ref=e89]:
+            - generic [ref=e90]:
+              - generic [ref=e91]:
+                - generic [ref=e92]:
+                  - generic [ref=e93]: ●
+                  - heading "Income" [level=2] [ref=e94]
+                  - generic [ref=e95]: for June
+                  - button [ref=e96] [cursor=pointer]:
+                    - img [ref=e97]
+                - generic [ref=e99]:
+                  - generic [ref=e101]: Planned
+                  - generic [ref=e103]: Received
+              - button "+ Add Item" [active] [ref=e105] [cursor=pointer]
+              - generic [ref=e106]:
+                - generic [ref=e107]: Total Income
+                - generic [ref=e108]:
+                  - generic [ref=e110]: $0.00
+                  - generic [ref=e112]: $0.00
+            - generic [ref=e113]:
+              - generic [ref=e114]:
+                - generic [ref=e115]:
+                  - generic [ref=e116]: ●
+                  - heading "Savings" [level=2] [ref=e117]
+                  - generic [ref=e118]: for June
+                  - button [ref=e119] [cursor=pointer]:
+                    - img [ref=e120]
+                - generic [ref=e122]:
+                  - generic [ref=e124]: Planned
+                  - generic [ref=e126]: Spent
+              - button "+ Add Item" [ref=e128] [cursor=pointer]
+              - generic [ref=e129]:
+                - generic [ref=e130]: Total Savings
+                - generic [ref=e131]:
+                  - generic [ref=e133]: $0.00
+                  - generic [ref=e135]: $0.00
+            - generic [ref=e136]:
+              - generic [ref=e137]:
+                - generic [ref=e138]:
+                  - generic [ref=e139]: ●
+                  - heading "Expenses" [level=2] [ref=e140]
+                  - generic [ref=e141]: for June
+                  - button [ref=e142] [cursor=pointer]:
+                    - img [ref=e143]
+                - generic [ref=e145]:
+                  - generic [ref=e147]: Planned
+                  - generic [ref=e149]: Spent
+              - generic [ref=e150]:
+                - generic [ref=e151]:
+                  - generic [ref=e153]:
+                    - generic [ref=e154]: 🛒
+                    - generic [ref=e155]: Groceries
+                  - generic [ref=e156]:
+                    - generic [ref=e158]: $500.00
+                    - generic [ref=e160]: $45.50
+                    - generic [ref=e161]:
+                      - button "Edit" [ref=e162] [cursor=pointer]:
+                        - img [ref=e163]
+                      - button "Delete" [ref=e165] [cursor=pointer]:
+                        - img [ref=e166]
+                - generic [ref=e168]:
+                  - generic [ref=e170]:
+                    - generic [ref=e171]: 🏠
+                    - generic [ref=e172]: Housing
+                  - generic [ref=e173]:
+                    - generic [ref=e175]: $1,500.00
+                    - generic [ref=e177]: $0.00
+                    - generic [ref=e178]:
+                      - button "Edit" [ref=e179] [cursor=pointer]:
+                        - img [ref=e180]
+                      - button "Delete" [ref=e182] [cursor=pointer]:
+                        - img [ref=e183]
+                - generic [ref=e185]:
+                  - generic [ref=e187]:
+                    - generic [ref=e188]: 🚗
+                    - generic [ref=e189]: Transport
+                  - generic [ref=e190]:
+                    - generic [ref=e192]: $200.00
+                    - generic [ref=e194]: $0.00
+                    - generic [ref=e195]:
+                      - button "Edit" [ref=e196] [cursor=pointer]:
+                        - img [ref=e197]
+                      - button "Delete" [ref=e199] [cursor=pointer]:
+                        - img [ref=e200]
+                - button "+ Add Item" [ref=e202] [cursor=pointer]
+              - generic [ref=e203]:
+                - generic [ref=e204]: Total Expenses
+                - generic [ref=e205]:
+                  - generic [ref=e207]: $2,200.00
+                  - generic [ref=e209]: $45.50
+        - generic [ref=e213]:
+          - generic [ref=e214]:
+            - button "Summary" [ref=e215] [cursor=pointer]:
+              - img [ref=e216]
+              - generic [ref=e218]: Summary
+            - button "Transactions" [ref=e219] [cursor=pointer]:
+              - img [ref=e220]
+              - generic [ref=e222]: Transactions
+            - button "Calendar" [ref=e223] [cursor=pointer]:
+              - img [ref=e224]
+              - generic [ref=e226]: Calendar
+          - generic [ref=e404]:
+            - generic [ref=e406]:
+              - img [ref=e407]
+              - generic [ref=e410]:
+                - generic [ref=e411]: Income
+                - generic [ref=e412]: $0.00
+            - generic [ref=e413]:
+              - generic [ref=e414]:
+                - generic [ref=e415]: Planned
+                - generic [ref=e416]: $2,200.00
+              - generic [ref=e417]:
+                - generic [ref=e418]: Spent
+                - generic [ref=e419]: $45.50
+              - generic [ref=e420]:
+                - generic [ref=e421]: Remaining
+                - generic [ref=e422]: "-$2,200.00"
+            - generic [ref=e423]:
+              - generic [ref=e424]:
+                - generic [ref=e427]: Savings
+                - generic [ref=e428]:
+                  - generic [ref=e429]: $0.00
+                  - generic [ref=e430]: (0%)
+              - generic [ref=e431]:
+                - generic [ref=e434]: Expenses
+                - generic [ref=e435]:
+                  - generic [ref=e436]: $2,200.00
+                  - generic [ref=e437]: (100%)
+            - generic [ref=e438]:
+              - heading "Category Details" [level=3] [ref=e439]
+              - generic [ref=e440]:
+                - generic [ref=e442]: Savings
+                - generic [ref=e443]:
+                  - generic [ref=e444]: Expenses
+                  - generic [ref=e445]:
+                    - generic [ref=e446]:
+                      - generic [ref=e447]:
+                        - generic [ref=e448]: 🛒
+                        - generic [ref=e449]: Groceries
+                      - generic [ref=e450]:
+                        - generic [ref=e451]:
+                          - generic [ref=e452]: $45.50
+                          - generic [ref=e453]: of $500.00
+                        - generic [ref=e454]: (9%)
+                    - generic [ref=e455]:
+                      - generic [ref=e456]:
+                        - generic [ref=e457]: 🚗
+                        - generic [ref=e458]: Transport
+                      - generic [ref=e459]:
+                        - generic [ref=e460]:
+                          - generic [ref=e461]: $0.00
+                          - generic [ref=e462]: of $200.00
+                        - generic [ref=e463]: (0%)
+                    - generic [ref=e464]:
+                      - generic [ref=e465]:
+                        - generic [ref=e466]: 🏠
+                        - generic [ref=e467]: Housing
+                      - generic [ref=e468]:
+                        - generic [ref=e469]:
+                          - generic [ref=e470]: $0.00
+                          - generic [ref=e471]: of $1,500.00
+                        - generic [ref=e472]: (0%)
+      - button "Open quick actions" [ref=e274] [cursor=pointer]:
+        - img [ref=e275]
+      - generic [ref=e474]:
+        - generic [ref=e475]:
+          - heading "Plan Income Item" [level=3] [ref=e476]
+          - button [ref=e477] [cursor=pointer]:
+            - img [ref=e478]
+        - generic [ref=e480]:
+          - generic [ref=e481]:
+            - generic [ref=e482]: Name
+            - textbox "e.g., Groceries, Rent, Salary..." [ref=e483]
+          - generic [ref=e484]:
+            - generic [ref=e485]: Icon
+            - textbox "e.g., 💰 🏠 🚗 🍔" [ref=e486]: 💰
+          - generic [ref=e487]:
+            - generic [ref=e488]: Planned Amount
+            - generic [ref=e489]:
+              - generic [ref=e490]: $
+              - spinbutton [ref=e491]
+          - generic [ref=e492]:
+            - checkbox "Recurring" [ref=e493]
+            - generic [ref=e494]: Recurring
+          - generic [ref=e495]:
+            - button "Cancel" [ref=e496] [cursor=pointer]
+            - button "Plan Item" [ref=e497] [cursor=pointer]

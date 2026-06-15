@@ -1,0 +1,107 @@
+- generic [ref=e4]:
+  - complementary "Main navigation" [ref=e5]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e10]: $
+        - generic [ref=e11]: BudgetBuddy
+      - button "Collapse sidebar" [ref=e12] [cursor=pointer]:
+        - img [ref=e13]
+    - navigation [ref=e15]:
+      - menu [ref=e16]:
+        - menuitem "Budget" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: 📊
+          - generic [ref=e19]: Budget
+        - menuitem "Accounts" [ref=e20] [cursor=pointer]:
+          - generic [ref=e21]: 🏦
+          - generic [ref=e22]: Accounts
+        - menuitem "Members" [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: 👥
+          - generic [ref=e25]: Members
+        - menuitem "Goals" [ref=e26] [cursor=pointer]:
+          - generic [ref=e27]: 🎯
+          - generic [ref=e28]: Goals
+        - menuitem "Investments" [ref=e29] [cursor=pointer]:
+          - generic [ref=e30]: 📈
+          - generic [ref=e31]: Investments
+        - menuitem "Insights" [ref=e32] [cursor=pointer]:
+          - generic [ref=e33]: 💡
+          - generic [ref=e34]: Insights
+        - menuitem "Tips" [ref=e35] [cursor=pointer]:
+          - generic [ref=e36]: 💬
+          - generic [ref=e37]: Tips
+        - menuitem "Learn" [ref=e38] [cursor=pointer]:
+          - generic [ref=e39]: 📚
+          - generic [ref=e40]: Learn
+        - menuitem "Bills" [ref=e41] [cursor=pointer]:
+          - generic [ref=e42]: 📋
+          - generic [ref=e43]: Bills
+        - menuitem "Subscriptions" [ref=e44] [cursor=pointer]:
+          - generic [ref=e45]: 🔄
+          - generic [ref=e46]: Subscriptions
+        - menuitem "Debt Payoff" [ref=e47] [cursor=pointer]:
+          - generic [ref=e48]: 💳
+          - generic [ref=e49]: Debt Payoff
+        - menuitem "Credit Score" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]: 🏆
+          - generic [ref=e52]: Credit Score
+        - menuitem "Settings" [ref=e53] [cursor=pointer]:
+          - generic [ref=e54]: ⚙️
+          - generic [ref=e55]: Settings
+    - generic [ref=e56]:
+      - generic [ref=e58]:
+        - generic [ref=e60]: 👤
+        - generic [ref=e61]:
+          - paragraph [ref=e62]: Test User
+          - paragraph [ref=e63]: pw-test-1781490841927@hitechparadigm.com
+      - button "Logout" [ref=e64] [cursor=pointer]:
+        - generic [ref=e65]: 🚪
+        - generic [ref=e66]: Logout
+  - main [ref=e67]:
+    - generic [ref=e69]:
+      - generic [ref=e70]:
+        - button "← Back to Subscriptions" [ref=e71] [cursor=pointer]
+        - heading "➕ Add Subscription" [level=1] [ref=e72]
+      - generic [ref=e103]: Failed to fetch
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - generic [ref=e75]: Subscription Name *
+          - textbox "e.g., Netflix, Spotify, Adobe Creative Cloud" [ref=e76]: Netflix
+        - generic [ref=e77]:
+          - generic [ref=e78]: Merchant Name
+          - textbox "How it appears on your statement" [ref=e79]: NETFLIX.COM
+          - paragraph [ref=e80]: Used for matching with transactions. Leave blank to use subscription name.
+        - generic [ref=e81]:
+          - generic [ref=e82]:
+            - generic [ref=e83]: Amount *
+            - generic [ref=e84]:
+              - generic [ref=e85]: $
+              - spinbutton [ref=e86]: "17.99"
+          - generic [ref=e87]:
+            - generic [ref=e88]: Frequency *
+            - combobox [ref=e89]:
+              - option "Weekly"
+              - option "Monthly" [selected]
+              - option "Quarterly (every 3 months)"
+              - option "Yearly"
+        - generic [ref=e90]:
+          - generic [ref=e91]: Category
+          - combobox [ref=e92]:
+            - option "Streaming"
+            - option "Software"
+            - option "Fitness"
+            - option "News & Media"
+            - option "Gaming"
+            - option "Food & Delivery"
+            - option "Utilities"
+            - option "Insurance"
+            - option "Cloud Storage"
+            - option "Other" [selected]
+        - generic [ref=e93]:
+          - generic [ref=e94]: Next Billing Date
+          - textbox [ref=e95]: 2026-06-15
+        - generic [ref=e96]:
+          - generic [ref=e97]: Notes
+          - textbox "Any additional notes about this subscription..." [ref=e98]
+        - generic [ref=e100]:
+          - button "Cancel" [ref=e101] [cursor=pointer]
+          - button "Add Subscription" [ref=e102] [cursor=pointer]

@@ -1,0 +1,59 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]: 💰
+        - generic [ref=e10]: BudgetBuddy
+      - generic [ref=e11]:
+        - button "Log in" [ref=e12] [cursor=pointer]
+        - button "Get Started Free" [ref=e13] [cursor=pointer]
+  - generic [ref=e15]:
+    - heading "Take control of your family finances" [level=1] [ref=e16]
+    - paragraph [ref=e17]: AI-powered budgeting that adapts to your life. Create a personalized budget in minutes, track spending together, and reach your financial goals faster.
+    - generic [ref=e18]:
+      - button "Start Budgeting Free" [ref=e19] [cursor=pointer]
+      - button "Learn More" [ref=e20] [cursor=pointer]
+    - paragraph [ref=e21]: Free forever. No credit card required.
+  - generic [ref=e23]:
+    - generic [ref=e24]:
+      - heading "Everything you need to budget smarter" [level=2] [ref=e25]
+      - paragraph [ref=e26]: Built for families who want clarity and control over their money.
+    - generic [ref=e27]:
+      - generic [ref=e28]:
+        - generic [ref=e29]: 🤖
+        - heading "AI-Powered Budgets" [level=3] [ref=e30]
+        - paragraph [ref=e31]: Get personalized budget suggestions based on your location, family size, and local cost of living across 348 cities.
+      - generic [ref=e32]:
+        - generic [ref=e33]: 👨‍👩‍👧‍👦
+        - heading "Family Collaboration" [level=3] [ref=e34]
+        - paragraph [ref=e35]: Share budgets with your partner. Role-based permissions keep everyone on the same page.
+      - generic [ref=e36]:
+        - generic [ref=e37]: 📊
+        - heading "Zero-Based Budgeting" [level=3] [ref=e38]
+        - paragraph [ref=e39]: Every dollar gets a job. Track income, expenses, and savings with real-time progress updates.
+      - generic [ref=e40]:
+        - generic [ref=e41]: 🏦
+        - heading "Bank Sync" [level=3] [ref=e42]
+        - paragraph [ref=e43]: Connect your bank accounts to automatically import transactions. No more manual entry.
+      - generic [ref=e44]:
+        - generic [ref=e45]: 📱
+        - heading "Multi-Platform" [level=3] [ref=e46]
+        - paragraph [ref=e47]: Access your budget from web, iOS, or Android. Your data syncs instantly across all devices.
+      - generic [ref=e48]:
+        - generic [ref=e49]: 🔒
+        - heading "Bank-Level Security" [level=3] [ref=e50]
+        - paragraph [ref=e51]: Your data is encrypted at rest and in transit. We never sell your financial information.
+  - generic [ref=e53]:
+    - heading "Ready to take control?" [level=2] [ref=e54]
+    - paragraph [ref=e55]: Join thousands of families who budget smarter with BudgetBuddy.
+    - button "Get Started Free" [ref=e56] [cursor=pointer]
+  - contentinfo [ref=e57]:
+    - generic [ref=e58]:
+      - generic [ref=e59]:
+        - generic [ref=e60]: 💰
+        - generic [ref=e61]: BudgetBuddy
+      - generic [ref=e62]:
+        - button "Privacy" [ref=e63] [cursor=pointer]
+        - button "Terms" [ref=e64] [cursor=pointer]
+        - button "Help" [ref=e65] [cursor=pointer]
+      - paragraph [ref=e66]: © 2026 BudgetBuddy. All rights reserved.

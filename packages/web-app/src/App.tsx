@@ -177,14 +177,8 @@ const App: React.FC = () => {
                       </ProtectedLayout>
                     }
                   />
-                  <Route
-                    path="/subscriptions/new"
-                    element={
-                      <ProtectedLayout>
-                        <SubscriptionFormPage />
-                      </ProtectedLayout>
-                    }
-                  />
+                  {/* /subscriptions/new is removed — detection is the entry point */}
+                  {/* Keep edit route for any deep-linked bookmarks */}
                   <Route
                     path="/subscriptions/:subscriptionId/edit"
                     element={

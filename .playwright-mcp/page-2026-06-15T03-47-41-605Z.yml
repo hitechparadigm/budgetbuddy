@@ -1,0 +1,60 @@
+- generic [ref=e58]:
+  - complementary "Main navigation" [ref=e59]:
+    - generic [ref=e61]:
+      - generic [ref=e62]:
+        - generic [ref=e64]: $
+        - generic [ref=e65]: BudgetBuddy
+      - button "Collapse sidebar" [ref=e66] [cursor=pointer]:
+        - img [ref=e67]
+    - navigation [ref=e69]:
+      - menu [ref=e70]:
+        - menuitem "Budget" [ref=e71] [cursor=pointer]:
+          - generic [ref=e72]: 📊
+          - generic [ref=e73]: Budget
+        - menuitem "Accounts" [ref=e74] [cursor=pointer]:
+          - generic [ref=e75]: 🏦
+          - generic [ref=e76]: Accounts
+        - menuitem "Members" [ref=e77] [cursor=pointer]:
+          - generic [ref=e78]: 👥
+          - generic [ref=e79]: Members
+        - menuitem "Goals" [ref=e80] [cursor=pointer]:
+          - generic [ref=e81]: 🎯
+          - generic [ref=e82]: Goals
+        - menuitem "Investments" [ref=e83] [cursor=pointer]:
+          - generic [ref=e84]: 📈
+          - generic [ref=e85]: Investments
+        - menuitem "Insights" [ref=e86] [cursor=pointer]:
+          - generic [ref=e87]: 💡
+          - generic [ref=e88]: Insights
+        - menuitem "Tips" [ref=e89] [cursor=pointer]:
+          - generic [ref=e90]: 💬
+          - generic [ref=e91]: Tips
+        - menuitem "Learn" [ref=e92] [cursor=pointer]:
+          - generic [ref=e93]: 📚
+          - generic [ref=e94]: Learn
+        - menuitem "Bills" [ref=e95] [cursor=pointer]:
+          - generic [ref=e96]: 📋
+          - generic [ref=e97]: Bills
+        - menuitem "Subscriptions" [ref=e98] [cursor=pointer]:
+          - generic [ref=e99]: 🔄
+          - generic [ref=e100]: Subscriptions
+        - menuitem "Debt Payoff" [ref=e101] [cursor=pointer]:
+          - generic [ref=e102]: 💳
+          - generic [ref=e103]: Debt Payoff
+        - menuitem "Credit Score" [ref=e104] [cursor=pointer]:
+          - generic [ref=e105]: 🏆
+          - generic [ref=e106]: Credit Score
+        - menuitem "Settings" [ref=e107] [cursor=pointer]:
+          - generic [ref=e108]: ⚙️
+          - generic [ref=e109]: Settings
+    - generic [ref=e110]:
+      - generic [ref=e112]:
+        - generic [ref=e114]: 👤
+        - generic [ref=e115]:
+          - paragraph [ref=e116]: Test User
+          - paragraph [ref=e117]: pw-test-1781490841927@hitechparadigm.com
+      - button "Logout" [ref=e118] [cursor=pointer]:
+        - generic [ref=e119]: 🚪
+        - generic [ref=e120]: Logout
+  - main [ref=e121]:
+    - paragraph [ref=e126]: Loading your budget...
