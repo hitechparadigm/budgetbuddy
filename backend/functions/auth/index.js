@@ -809,14 +809,20 @@ exports.handler = async (event, _context) => {
         }
 
         // Convert DynamoDB item to JSON
+        const defaultBudgetId = result.Item.defaultBudgetId?.S || null;
+        // Use BOOL flag if present; fall back to presence of defaultBudgetId as proof of completion.
+        // This handles older accounts written before the onboardingCompleted flag was added,
+        // and accounts where the flag may not have been written correctly.
+        const onboardingCompleted =
+          result.Item.onboardingCompleted?.BOOL === true || !!defaultBudgetId;
         const profile = {
           userId: result.Item.userId.S,
           email: result.Item.email.S,
           firstName: result.Item.firstName?.S || "",
           lastName: result.Item.lastName?.S || "",
-          defaultBudgetId: result.Item.defaultBudgetId?.S || null,
+          defaultBudgetId,
           subscriptionTier: result.Item.subscriptionTier?.S || "free",
-          onboardingCompleted: result.Item.onboardingCompleted?.BOOL || false,
+          onboardingCompleted,
           location: result.Item.location?.S
             ? JSON.parse(result.Item.location.S)
             : null,
