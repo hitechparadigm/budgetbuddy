@@ -226,7 +226,7 @@ async function handleGenerateBudget(event, { userId, budgetId, role, budgetType,
   try {
     generatedGroups = await Promise.race([
       generateBudgetWithBedrock({ month, location, householdSize, currency, budgetType }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Bedrock timeout after 20s')), 20000)),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Bedrock timeout after 20s')), 20000)), // eslint-disable-line no-undef
     ]);
   } catch (err) {
     // Bedrock unavailable, EOL model, timeout, or any other failure — use fallback
@@ -391,7 +391,7 @@ Rules:
  * @param {string|null} params.location
  * @returns {Object} Budget groups: { income: [], savings: [], expenses: [] }
  */
-function buildFallbackBudget({ householdSize = 1, currency = 'USD', location = null }) {
+function buildFallbackBudget({ householdSize = 1, currency: _currency = 'USD', location: _location = null }) {
   const scale = Math.max(1, householdSize);
   // Base amounts for single person; scale for household
   const baseIncome = 5000 * scale;
