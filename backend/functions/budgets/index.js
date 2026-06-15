@@ -98,6 +98,16 @@ exports.handler = async (event) => {
   try {
     const { httpMethod, path, pathParameters } = event;
 
+    // GET /budgets/invitation-preview — public endpoint, no auth required
+    // Returns invitation details (inviter first name, budget name, role) for display
+    // before the invitee authenticates. Does NOT accept the invitation.
+    if (
+      httpMethod === 'GET' &&
+      (path === '/budgets/invitation-preview' || path === '/v1/budgets/invitation-preview')
+    ) {
+      return withCors(event, await handleInvitationPreview(event));
+    }
+
     // POST /budgets/accept-invitation — handle before getUserFromEvent since the
     // endpoint is public (NONE auth) but still requires the user to be logged in.
     // We extract userId from claims if present, or return 401 if not authenticated.
@@ -494,6 +504,93 @@ async function handleInvite(event, userId, budgetId) {
     role: inviteRole,
     expiresAt: invExpiresAt,
     status: 'pending',
+  });
+}
+
+// ---------------------------------------------------------------------------
+// handleInvitationPreview — public endpoint
+// GET /budgets/invitation-preview?token=xxx
+// Returns safe invitation details for display before the invitee authenticates.
+// Does NOT accept the invitation.
+// ---------------------------------------------------------------------------
+
+async function handleInvitationPreview(event) {
+  const token = event.queryStringParameters?.token;
+  if (!token) throwError(400, 'Token is required.');
+
+  const hashedToken = hashToken(token);
+
+  // Find invitation by hashed token
+  let scanResult;
+  try {
+    scanResult = await dynamodb.send(new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: 'begins_with(PK, :invPrefix) AND tokenHash = :token AND #status = :pending',
+      ExpressionAttributeNames: { '#status': 'status' },
+      ExpressionAttributeValues: {
+        ':invPrefix': 'INVITATION#',
+        ':token': hashedToken,
+        ':pending': 'pending',
+      },
+    }));
+  } catch (err) {
+    logger.error('ScanCommand failed in handleInvitationPreview', { error: err.message });
+    throwError(400, 'Invalid invitation token.');
+  }
+
+  if (!scanResult?.Items?.length) {
+    throwError(404, 'Invitation not found or already used.');
+  }
+
+  const invitation = scanResult.Items[0];
+
+  // Check expiry
+  if (new Date() > new Date(invitation.expiresAt)) {
+    throwError(400, 'Invitation has expired.');
+  }
+
+  // Get inviter's profile for first name
+  const inviterResult = await dynamodb.send(new GetCommand({
+    TableName: TABLE_NAME,
+    Key: { PK: `USER#${invitation.invitedBy}`, SK: 'PROFILE' },
+  }));
+  const inviterProfile = inviterResult.Item || {};
+  const inviterFirstName = inviterProfile.firstName || 'Someone';
+
+  // Get budget name
+  const budgetResult = await dynamodb.send(new GetCommand({
+    TableName: TABLE_NAME,
+    Key: { PK: `BUDGET#${invitation.budgetId}`, SK: 'METADATA' },
+  }));
+  const budgetName = budgetResult.Item?.name || 'Family Budget';
+
+  // Check if invitee email has an existing account
+  // Scan USER# PROFILE records for matching email — acceptable for this low-frequency operation
+  const emailCheckResult = await dynamodb.send(new ScanCommand({
+    TableName: TABLE_NAME,
+    FilterExpression: 'SK = :profile AND #email = :email',
+    ExpressionAttributeNames: { '#email': 'email' },
+    ExpressionAttributeValues: {
+      ':profile': 'PROFILE',
+      ':email': invitation.invitedEmail,
+    },
+    Limit: 1,
+  }));
+  const userExists = (emailCheckResult.Items || []).length > 0;
+
+  logger.info('Invitation preview fetched', {
+    budgetId: invitation.budgetId,
+    invitedEmail: invitation.invitedEmail,
+    userExists,
+  });
+
+  return successResponse({
+    inviterFirstName,
+    inviteeEmail: invitation.invitedEmail,
+    budgetName,
+    role: invitation.role,
+    expiresAt: invitation.expiresAt,
+    userExists,
   });
 }
 
@@ -1213,6 +1310,7 @@ async function sendInvitationEmail(event, userId, email, role, token, expiresAt,
 
   const inviter = inviterResult.Item || {};
   const inviterName = `${inviter.firstName || ''} ${inviter.lastName || ''}`.trim() || 'BudgetBuddy User';
+  const inviterFirstName = inviter.firstName || inviterName.split(' ')[0] || 'Someone';
   const inviterEmail = inviter.email || 'noreply@budgetbuddy.com';
 
   const acceptUrl = `${process.env.WEB_APP_URL || 'https://app.budgetbuddy.com'}/budgets/accept?token=${token}`;
@@ -1220,6 +1318,7 @@ async function sendInvitationEmail(event, userId, email, role, token, expiresAt,
   const emailPayload = {
     invitedEmail: email.toLowerCase(),
     inviterName,
+    inviterFirstName,
     inviterEmail,
     role: role.charAt(0).toUpperCase() + role.slice(1),
     acceptUrl,

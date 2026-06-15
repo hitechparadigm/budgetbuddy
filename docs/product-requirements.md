@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-03
+**Last Updated**: 2026-06-15 (Session 146 — smart invitation page, invitation preview API, inviter first name)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -103,8 +103,9 @@ BudgetAccessResolver.assertPermission(role, action, budgetStatus);
 1. Owner/partner calls `POST /budgets/{budgetId}/invite` with `{ email, role, viewerExpiresAt?, accessLabel? }`
 2. Backend generates a 32-byte cryptographically secure token; stores SHA-256 hash in DynamoDB
 3. Email sent to invitee with link: `https://app.budgetbuddy.com/budgets/accept?token=<plaintext>`
-4. Invitee clicks link → `POST /budgets/accept-invitation` with `{ token }`
-5. Backend: validates token hash, checks expiry (7 days), confirms logged-in email matches `invitedEmail`, creates `MEMBER#<userId>` record, marks invitation accepted
+4. Invitee clicks link → `AcceptInvitationPage` fetches `GET /budgets/invitation-preview?token=xxx` (unauthenticated) to show inviter's first name, budget name, and role. Defaults auth tab to "Log In" if email has an existing account, or "Create Account" if new. Pre-fills invitee email.
+5. Invitee authenticates → `POST /budgets/accept-invitation` with `{ token }`
+6. Backend: validates token hash, checks expiry (7 days), confirms logged-in email matches `invitedEmail`, creates `MEMBER#<userId>` record, marks invitation accepted
 
 **Security rules**: Token is single-use. Tied to one email. Tied to one budget. Tied to one role. Cannot be forwarded to a different email.
 
@@ -441,6 +442,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Budget Members page | `BudgetMembersPage.tsx` | `GET /budgets/{id}/members` | ✅ |
 | Send invitation | `BudgetMembersPage.tsx` | `POST /budgets/{id}/invite` | ✅ |
 | Accept invitation | `AcceptInvitationPage.tsx` | `POST /budgets/accept-invitation` | ✅ (public endpoint — no auth required) |
+| Invitation preview | `AcceptInvitationPage.tsx` | `GET /budgets/invitation-preview` | ✅ Smart page: shows inviter name, budget name, smart auth tab, pre-filled email |
 | Pending invitations | `BudgetMembersPage.tsx` | `GET /budgets/{id}/invitations` | ✅ |
 | Resend / revoke | `BudgetMembersPage.tsx` | `POST/DELETE /budgets/{id}/invitations/{id}` | ✅ |
 | Change role / remove | `BudgetMembersPage.tsx` | `PUT/DELETE /budgets/{id}/members/{userId}` | ✅ |

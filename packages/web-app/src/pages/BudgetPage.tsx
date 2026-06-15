@@ -934,31 +934,32 @@ export const BudgetPage: React.FC = () => {
     }
 
     // Calculate planned monthly amount for frequency-based income
+    // Uses the shared utility that counts actual occurrence dates based on start date
     const calcMonthlyFromFrequency = (
       amountPerPeriod: number,
       freq: string,
       monthStr: string,
+      startDateStr: string,
     ): number => {
       if (!freq || freq === "monthly") return amountPerPeriod;
-      const [yr, mo] = monthStr.split("-").map(Number);
-      const daysInMonth = new Date(yr, mo, 0).getDate();
-      if (freq === "biweekly") {
-        const periods = daysInMonth >= 29 ? 3 : 2;
-        return Math.round(amountPerPeriod * periods);
-      }
-      if (freq === "weekly") {
-        const weeks = Math.ceil(daysInMonth / 7);
-        return Math.round(amountPerPeriod * weeks);
-      }
-      if (freq === "semi-monthly") {
-        return Math.round(amountPerPeriod * 2);
+      if (freq === "semi-monthly") return Math.round(amountPerPeriod * 2);
+      // Map BudgetPage frequency strings to RecurringFrequency type
+      const freqMap: Record<string, "weekly" | "bi-weekly" | "monthly"> = {
+        biweekly: "bi-weekly",
+        weekly: "weekly",
+        monthly: "monthly",
+      };
+      const mappedFreq = freqMap[freq];
+      if (mappedFreq) {
+        // Use the shared utility that counts actual occurrence dates based on start date
+        return calculatePlannedMonthlyAmount(amountPerPeriod, mappedFreq, startDateStr, monthStr);
       }
       return amountPerPeriod;
     };
 
     // Calculate planned amount for recurring items
     let plannedAmount = isIncomeFrequencyBased
-      ? calcMonthlyFromFrequency(baseAmount, budgetItemForm.frequency, budget.month)
+      ? calcMonthlyFromFrequency(baseAmount, budgetItemForm.frequency, budget.month, budgetItemForm.startDate || getTodayString())
       : parseFloat(budgetItemForm.plannedAmount) || 0;
     let startDate = budgetItemForm.startDate || getTodayString();
     let occurrenceDates: string[] = [];
@@ -3000,15 +3001,17 @@ export const BudgetPage: React.FC = () => {
                         value={budgetItemForm.frequencyAmount}
                         onChange={(e) => {
                           const perPeriod = parseFloat(e.target.value) || 0;
-                          const [yr, mo] = (budget?.month || currentMonth).split("-").map(Number);
-                          const daysInMonth = new Date(yr, mo, 0).getDate();
-                          let periods: number;
-                          if (budgetItemForm.frequency === "biweekly") {
-                            periods = daysInMonth >= 29 ? 3 : 2;
-                          } else {
-                            periods = Math.ceil(daysInMonth / 7);
-                          }
-                          const monthly = Math.round(perPeriod * periods);
+                          const monthStr = budget?.month || currentMonth;
+                          const startDateStr = budgetItemForm.startDate || getTodayString();
+                          // Map to shared frequency type and use accurate date-based calculation
+                          const freqMap: Record<string, "weekly" | "bi-weekly"> = {
+                            biweekly: "bi-weekly",
+                            weekly: "weekly",
+                          };
+                          const mappedFreq = freqMap[budgetItemForm.frequency];
+                          const monthly = mappedFreq
+                            ? calculatePlannedMonthlyAmount(perPeriod, mappedFreq, startDateStr, monthStr)
+                            : Math.round(perPeriod * Math.ceil(new Date(parseInt(monthStr.split('-')[0]), parseInt(monthStr.split('-')[1]), 0).getDate() / 7));
                           setBudgetItemForm((prev) => ({
                             ...prev,
                             frequencyAmount: e.target.value,

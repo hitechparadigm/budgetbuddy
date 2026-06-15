@@ -269,6 +269,14 @@ export class ApiBudgetsStack extends cdk.Stack {
       operationName: 'AcceptBudgetInvitation',
     });
 
+    // /budgets/invitation-preview — preview invitation details before auth
+    // PUBLIC — invitee fetches this before logging in to show inviter name, budget name, role
+    const budgetsInvitationPreviewResource = budgetsResource.addResource('invitation-preview');
+    budgetsInvitationPreviewResource.addMethod('GET', budgetsIntegration, {
+      authorizationType: apigateway.AuthorizationType.NONE,
+      operationName: 'GetInvitationPreview',
+    });
+
     // /budgets/health — health check (public)
     const budgetsHealthResource = budgetsResource.addResource('health');
     budgetsHealthResource.addMethod('GET', budgetsIntegration, {

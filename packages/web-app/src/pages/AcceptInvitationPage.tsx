@@ -1,7 +1,11 @@
 /**
  * Accept Invitation Page
  *
- * Allows users to accept budget invitations via email link
+ * Smart invitation page that:
+ * 1. Fetches invitation preview (unauthenticated) to get inviter name, budget name, role
+ * 2. Defaults to the correct auth tab (Login if user exists, Create Account if new)
+ * 3. Pre-fills the invitee email in both login and register forms
+ * 4. Shows an error immediately if the invitation is invalid/expired
  */
 
 import React, { useState, useEffect } from "react";
@@ -11,20 +15,31 @@ import { budgetService } from "../services/budgetService";
 
 // Auth endpoints are on the main API Gateway
 const AUTH_API_BASE = config.apiBaseUrl;
+const BUDGETS_API_BASE = config.budgetsApiUrl;
+
+interface InvitationPreview {
+  inviterFirstName: string;
+  inviteeEmail: string;
+  budgetName: string;
+  role: string;
+  expiresAt: string;
+  userExists: boolean;
+}
 
 export const AcceptInvitationPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
 
-  const [loading, setLoading] = useState(true);
+  const [preview, setPreview] = useState<InvitationPreview | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(true);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(
     () => !!localStorage.getItem("budgetbuddy_id_token")
   );
-
-  // Login/Register form state — show immediately for unauthenticated users
   const [showAuthForm, setShowAuthForm] = useState(
     () => !localStorage.getItem("budgetbuddy_id_token")
   );
@@ -36,21 +51,41 @@ export const AcceptInvitationPage: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authenticating, setAuthenticating] = useState(false);
 
+  // Fetch invitation preview on load — unauthenticated call
   useEffect(() => {
-    // Sync auth state from localStorage (in case it changed after initial render)
     const idToken = localStorage.getItem("budgetbuddy_id_token");
     if (idToken) {
       setIsAuthenticated(true);
       setShowAuthForm(false);
     }
 
-    // Validate token exists
     if (!token) {
-      setError("Invalid invitation link. No token provided.");
+      setPreviewError("Invalid invitation link. No token provided.");
+      setLoadingPreview(false);
+      return;
     }
 
-    setLoading(false);
-  }, [token]);
+    fetch(
+      `${BUDGETS_API_BASE}/budgets/invitation-preview?token=${encodeURIComponent(token)}`
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          const previewData = data.data as InvitationPreview;
+          setPreview(previewData);
+          // Pre-fill email from invitation
+          setEmail(previewData.inviteeEmail);
+          // Smart tab default: Login if account exists, Create Account if new
+          if (!idToken) {
+            setAuthMode(previewData.userExists ? "login" : "register");
+          }
+        } else {
+          setPreviewError(data.message || "Invalid or expired invitation.");
+        }
+      })
+      .catch(() => setPreviewError("Could not load invitation details."))
+      .finally(() => setLoadingPreview(false));
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAcceptInvitation = async () => {
     if (!token) {
@@ -58,10 +93,8 @@ export const AcceptInvitationPage: React.FC = () => {
       return;
     }
 
-    // Check if user is authenticated
     if (!isAuthenticated) {
       setShowAuthForm(true);
-      setAuthMode("register");
       return;
     }
 
@@ -69,29 +102,23 @@ export const AcceptInvitationPage: React.FC = () => {
     setError(null);
 
     try {
-      // Use id_token for API Gateway Cognito authorizer (not access_token)
       const idToken = localStorage.getItem("budgetbuddy_id_token");
       if (!idToken) {
-        // Redirect to auth form silently
         setShowAuthForm(true);
-        setAuthMode("register");
         setAccepting(false);
         return;
       }
 
-      // Accept the invitation via the budgets API — returns { budgetId, role, message }
       const data = await budgetService.acceptInvitation(token);
 
-      // Success! Redirect directly to the budget (no token refresh needed —
-      // role is resolved from DynamoDB on every request, not from the JWT).
       navigate(`/budget/${data.budgetId}`, {
         state: {
-          message: `Successfully joined budget! You are now a ${data.role}.`,
+          message: `Successfully joined ${preview?.budgetName || "budget"}! You are now a ${data.role}.`,
         },
       });
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to accept invitation",
+        err instanceof Error ? err.message : "Failed to accept invitation"
       );
     } finally {
       setAccepting(false);
@@ -99,11 +126,7 @@ export const AcceptInvitationPage: React.FC = () => {
   };
 
   const handleDeclineInvitation = () => {
-    if (
-      confirm(
-        "Are you sure you want to decline this invitation? You will need a new invitation to join this family.",
-      )
-    ) {
+    if (confirm("Are you sure you want to decline this invitation?")) {
       navigate("/");
     }
   };
@@ -116,20 +139,16 @@ export const AcceptInvitationPage: React.FC = () => {
     try {
       const response = await fetch(`${AUTH_API_BASE}/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Login failed");
+        const err = await response.json();
+        throw new Error(err.error || "Login failed");
       }
 
       const data = await response.json();
-
-      // Store token
       localStorage.setItem("budgetbuddy_access_token", data.accessToken);
       if (data.refreshToken) {
         localStorage.setItem("budgetbuddy_refresh_token", data.refreshToken);
@@ -138,14 +157,16 @@ export const AcceptInvitationPage: React.FC = () => {
         localStorage.setItem("budgetbuddy_id_token", data.idToken);
       }
       if (data.userId) {
-        const userData = { userId: data.userId, email: email };
-        localStorage.setItem("budgetbuddy_user", JSON.stringify(userData));
+        localStorage.setItem(
+          "budgetbuddy_user",
+          JSON.stringify({ userId: data.userId, email })
+        );
       }
 
       setIsAuthenticated(true);
       setShowAuthForm(false);
 
-      // Now accept the invitation
+      // Accept the invitation now that we're authenticated
       await handleAcceptInvitation();
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Login failed");
@@ -162,24 +183,16 @@ export const AcceptInvitationPage: React.FC = () => {
     try {
       const response = await fetch(`${AUTH_API_BASE}/auth/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          firstName,
-          lastName,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, firstName, lastName }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Registration failed");
+        const err = await response.json();
+        throw new Error(err.error || "Registration failed");
       }
 
       // Registration succeeded — now log in
-      // handleLogin manages its own authenticating state, so clear ours first
       setAuthenticating(false);
       await handleLogin(e);
     } catch (err) {
@@ -188,7 +201,8 @@ export const AcceptInvitationPage: React.FC = () => {
     }
   };
 
-  if (loading) {
+  // Loading preview
+  if (loadingPreview) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -196,7 +210,8 @@ export const AcceptInvitationPage: React.FC = () => {
     );
   }
 
-  if (error && !token) {
+  // Invalid / expired invitation — show error immediately, no need to try accepting
+  if (previewError) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-8 text-center">
@@ -204,7 +219,7 @@ export const AcceptInvitationPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
             Invalid Invitation
           </h1>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <p className="text-gray-600 mb-6">{previewError}</p>
           <button
             onClick={() => navigate("/")}
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
@@ -216,6 +231,9 @@ export const AcceptInvitationPage: React.FC = () => {
     );
   }
 
+  const inviterFirstName = preview?.inviterFirstName || "Someone";
+  const budgetName = preview?.budgetName || "Family Budget";
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-8">
@@ -226,7 +244,12 @@ export const AcceptInvitationPage: React.FC = () => {
             Family Invitation
           </h1>
           <p className="text-gray-600">
-            You've been invited to join a family budget on BudgetBuddy!
+            <span className="font-semibold text-gray-900">
+              {inviterFirstName}
+            </span>{" "}
+            invited you to join{" "}
+            <span className="font-semibold text-gray-900">{budgetName}</span>{" "}
+            on BudgetBuddy!
           </p>
         </div>
 
@@ -237,18 +260,18 @@ export const AcceptInvitationPage: React.FC = () => {
           </div>
         )}
 
-        {/* Auth Form - Show by default for non-authenticated users */}
+        {/* Auth Form */}
         {showAuthForm && !isAuthenticated ? (
           <div className="space-y-6">
-            {/* Info Message */}
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
                 {authMode === "register"
-                  ? "Create your BudgetBuddy account to accept this invitation and start managing your family budget together."
-                  : "Log in to your BudgetBuddy account to accept this invitation."}
+                  ? `Create your BudgetBuddy account to accept ${inviterFirstName}'s invitation.`
+                  : `Log in to accept ${inviterFirstName}'s invitation.`}
               </p>
             </div>
 
+            {/* Tab switcher */}
             <div className="flex space-x-2 mb-4">
               <button
                 onClick={() => {
@@ -274,7 +297,7 @@ export const AcceptInvitationPage: React.FC = () => {
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
-                Login
+                Log In
               </button>
             </div>
 
@@ -303,7 +326,6 @@ export const AcceptInvitationPage: React.FC = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-
                   <div>
                     <label
                       htmlFor="lastName"
@@ -321,7 +343,6 @@ export const AcceptInvitationPage: React.FC = () => {
                     />
                   </div>
                 </div>
-
                 <div>
                   <label
                     htmlFor="registerEmail"
@@ -335,11 +356,15 @@ export const AcceptInvitationPage: React.FC = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="your@email.com"
+                    readOnly={!!preview?.inviteeEmail}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
                   />
+                  {preview?.inviteeEmail && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Invitation sent to this email address
+                    </p>
+                  )}
                 </div>
-
                 <div>
                   <label
                     htmlFor="registerPassword"
@@ -360,15 +385,12 @@ export const AcceptInvitationPage: React.FC = () => {
                     Minimum 8 characters
                   </p>
                 </div>
-
                 <button
                   type="submit"
                   disabled={authenticating}
-                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium"
+                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium"
                 >
-                  {authenticating
-                    ? "Creating account..."
-                    : "Create Account & Join Family"}
+                  {authenticating ? "Creating account..." : "Create Account & Join"}
                 </button>
               </form>
             ) : (
@@ -386,10 +408,15 @@ export const AcceptInvitationPage: React.FC = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    readOnly={!!preview?.inviteeEmail}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
                   />
+                  {preview?.inviteeEmail && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Your account email
+                    </p>
+                  )}
                 </div>
-
                 <div>
                   <label
                     htmlFor="password"
@@ -406,36 +433,26 @@ export const AcceptInvitationPage: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-
                 <button
                   type="submit"
                   disabled={authenticating}
-                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium"
+                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium"
                 >
-                  {authenticating
-                    ? "Logging in..."
-                    : "Login & Accept Invitation"}
+                  {authenticating ? "Logging in..." : "Log In & Accept Invitation"}
                 </button>
               </form>
             )}
-
-            <button
-              onClick={() => setShowAuthForm(false)}
-              className="w-full px-4 py-2 text-gray-600 hover:text-gray-900"
-            >
-              Cancel
-            </button>
           </div>
         ) : (
           <>
-            {/* Invitation Info */}
+            {/* Invitation details for authenticated users */}
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="text-sm text-gray-600 mb-2">You'll join as:</div>
-              <div className="font-medium text-gray-900 text-lg">
-                Family Member
+              <div className="font-medium text-gray-900 text-lg capitalize">
+                {preview?.role || "Family Member"}
               </div>
               <div className="text-sm text-gray-600 mt-1">
-                You'll gain access to the shared family budget
+                You'll gain access to <strong>{budgetName}</strong>
               </div>
             </div>
 
@@ -444,7 +461,7 @@ export const AcceptInvitationPage: React.FC = () => {
               <button
                 onClick={handleAcceptInvitation}
                 disabled={accepting}
-                className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium flex items-center justify-center space-x-2"
+                className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium flex items-center justify-center space-x-2"
               >
                 {accepting ? (
                   <>
@@ -478,7 +495,7 @@ export const AcceptInvitationPage: React.FC = () => {
               <button
                 onClick={handleDeclineInvitation}
                 disabled={accepting}
-                className="w-full px-6 py-3 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium"
+                className="w-full px-6 py-3 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium"
               >
                 Decline
               </button>
@@ -487,9 +504,8 @@ export const AcceptInvitationPage: React.FC = () => {
             {/* Info Note */}
             <div className="mt-6 p-3 bg-gray-50 border border-gray-200 rounded-lg">
               <p className="text-xs text-gray-600">
-                By accepting this invitation, you'll gain access to the shared
-                family budget. You can leave the family at any time from the
-                settings page.
+                By accepting, you'll gain access to the shared family budget.
+                You can leave at any time from settings.
               </p>
             </div>
           </>
