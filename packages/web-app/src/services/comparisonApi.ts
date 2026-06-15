@@ -5,7 +5,8 @@
 
 import { config } from '../config/environment';
 
-const MAIN_API_BASE = config.apiBaseUrl;
+// Comparison lives on the features API (0poeu07vth), not the main API
+const MAIN_API_BASE = config.featuresApiUrl;
 
 // Get token from localStorage
 function getToken(): string | null {

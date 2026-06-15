@@ -5,7 +5,9 @@
 
 import { config } from '../config/environment';
 
-const MAIN_API_BASE = config.apiBaseUrl;
+// Insights live on the extended features API (hkjzroedjf), not the main API
+// The extended API hosts: /insights/*, /patterns/*, /budget-planning/*
+const INSIGHTS_API_BASE = config.extendedFeaturesApiUrl;
 
 // Get token from localStorage
 function getToken(): string | null {
@@ -29,7 +31,7 @@ async function insightsApiCall<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${MAIN_API_BASE}${endpoint}`;
+  const url = `${INSIGHTS_API_BASE}${endpoint}`;
 
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
