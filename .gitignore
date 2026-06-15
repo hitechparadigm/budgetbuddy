@@ -129,6 +129,7 @@ logs/
 debug-*.txt
 
 # Playwright test artifacts
+.playwright-mcp/
 test-results/
 playwright-report/
 playwright/.cache/
