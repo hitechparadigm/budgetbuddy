@@ -8,8 +8,9 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
+import { config } from '../config/environment';
+
+const API_BASE_URL = config.featuresApiUrl;
 
 const CATEGORIES = [
   "Streaming",
