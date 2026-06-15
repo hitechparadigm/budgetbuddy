@@ -98,7 +98,8 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
   const [budget, setBudget] = useState<Budget | null>(budgetProp ?? null);
   const [members, setMembers] = useState<BudgetMember[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Start loading=false if no budgetProp — we'll set it true when we fetch
+  const [loading, setLoading] = useState(budgetProp != null);
 
   // ---- UI state ----
   const [error, setError] = useState<string | null>(null);
@@ -135,6 +136,26 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
       setBudget(budgetProp);
     }
   }, [budgetProp]);
+
+  // When no budget prop is passed, auto-fetch the user's active budget
+  useEffect(() => {
+    if (!budgetProp) {
+      setLoading(true);
+      budgetService.getBudgets()
+        .then((budgets) => {
+          if (budgets.length > 0) {
+            setBudget(budgets[0]);
+          } else {
+            setError('No budget found. Please complete onboarding first.');
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          setError('Could not load your active budget.');
+          setLoading(false);
+        });
+    }
+  }, [budgetProp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (budgetId) {
