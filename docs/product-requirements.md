@@ -170,6 +170,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ Creates `BUDGET#<id>/METADATA`, `MEMBER#<userId>` (owner), `PERIOD#<month>`, `ACCOUNT#cash` on completion
 - ✅ Writes `defaultBudgetId` to user profile
 - ✅ `name` and `ownerUserId` written to METADATA on onboarding completion
+- ✅ Reuses `budgetId` created during registration (fixed 2026-06-15: was returning 409 for all new users because registration pre-sets `defaultBudgetId`; now guards on `onboardingCompleted` flag)
 
 ### Membership & Invitations
 - ✅ Invite members (`POST /budgets/{id}/invite`) — partner, household_member, viewer
