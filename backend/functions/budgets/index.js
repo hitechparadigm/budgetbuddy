@@ -96,9 +96,34 @@ exports.handler = async (event) => {
   }
 
   try {
+    const { httpMethod, path, pathParameters } = event;
+
+    // POST /budgets/accept-invitation — handle before getUserFromEvent since the
+    // endpoint is public (NONE auth) but still requires the user to be logged in.
+    // We extract userId from claims if present, or return 401 if not authenticated.
+    if (
+      httpMethod === 'POST' &&
+      (path === '/budgets/accept-invitation' || path === '/v1/budgets/accept-invitation')
+    ) {
+      let userId;
+      try {
+        userId = getUserFromEvent(event).userId;
+      } catch (_authErr) {
+        return withCors(event, {
+          statusCode: 401,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            success: false,
+            message: 'You must be logged in to accept an invitation.',
+            error: { code: 'UNAUTHORIZED' },
+          }),
+        });
+      }
+      return withCors(event, await handleAcceptInvitation(event, userId));
+    }
+
     const user = getUserFromEvent(event);
     const { userId } = user;
-    const { httpMethod, path, pathParameters } = event;
 
     // GET /budgets
     if (httpMethod === 'GET' && (path === '/budgets' || path === '/v1/budgets')) {
@@ -113,14 +138,6 @@ exports.handler = async (event) => {
     // POST /budgets
     if (httpMethod === 'POST' && (path === '/budgets' || path === '/v1/budgets')) {
       return withCors(event, await handleCreateBudget(event, userId));
-    }
-
-    // POST /budgets/accept-invitation
-    if (
-      httpMethod === 'POST' &&
-      (path === '/budgets/accept-invitation' || path === '/v1/budgets/accept-invitation')
-    ) {
-      return withCors(event, await handleAcceptInvitation(event, userId));
     }
 
     const budgetId = pathParameters?.budgetId;
