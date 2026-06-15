@@ -170,7 +170,9 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ Creates `BUDGET#<id>/METADATA`, `MEMBER#<userId>` (owner), `PERIOD#<month>`, `ACCOUNT#cash` on completion
 - ✅ Writes `defaultBudgetId` to user profile
 - ✅ `name` and `ownerUserId` written to METADATA on onboarding completion
-- ✅ Reuses `budgetId` created during registration (fixed 2026-06-15: was returning 409 for all new users because registration pre-sets `defaultBudgetId`; now guards on `onboardingCompleted` flag)
+- ✅ Reuses `budgetId` created during registration — guards on `onboardingCompleted` flag (fixed 2026-06-15)
+- ✅ Default income placeholder category created during onboarding
+- ✅ Income category frequency support (weekly, biweekly, monthly, annual)
 
 ### Membership & Invitations
 - ✅ Invite members (`POST /budgets/{id}/invite`) — partner, household_member, viewer
@@ -255,6 +257,54 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 ## Live API Test Results (2026-06-15)
 
 Tested against dev environment using `scripts/test-live-api.js`. **111 checks passed, 0 failed** across 20 test sections. All previous skips resolved — transactions now work end-to-end.
+
+## Playwright Frontend Test Results (2026-06-15)
+
+Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` using Playwright MCP.
+
+### ✅ Pages Verified Working
+| Page | Route | Status | Notes |
+|------|-------|--------|-------|
+| Landing page | `/` | ✅ | Loads correctly, CTAs work |
+| Login / Register | `/auth` | ✅ | Email/pass login works, tabs switch correctly |
+| Budget dashboard | `/budget` | ✅ | Categories load, transaction FAB works |
+| Add Expense modal | `/budget` | ✅ | Category select, amount, description, submit all work |
+| Transaction list | `/budget` (right panel) | ✅ | Transaction appears immediately after creation |
+| Goals list | `/goals` | ✅ | Stats cards, empty state, + New Goal button |
+| Create Goal | `/goals/new` | ✅ | Templates, form fields, Create Goal → list updates |
+| Accounts | `/accounts` | ✅ | Manual/Connected tabs, net worth summary |
+| Bills | `/bills` | ✅ | Stats, All/Unpaid/Overdue/Paid tabs, AI Scan button |
+| Credit Score | `/credit-score` | ✅ | Loads with demo disclaimer, Connect Account CTA |
+| Learning Center | `/learn` | ✅ | Loads (after token fix) |
+| Settings | `/settings` | ✅ | Location, Currency sections visible |
+
+### 🐛 Frontend Bugs Found & Fixed
+
+| # | Component | Bug | Fix |
+|---|-----------|-----|-----|
+| 1 | `AuthContext.tsx`, `tokenUtils.ts` | `Buffer.from()` (Node.js only) crashes in browser → auth redirect loop | Replaced with `atob()` |
+| 2 | `insightsApi.ts` | `/insights/*` called main API (`q0zoob6728`) — should be extended API (`hkjzroedjf`) | Changed to `config.extendedFeaturesApiUrl` |
+| 3 | `patternDetectionApi.ts` | Same wrong API | Fixed to `extendedFeaturesApiUrl` |
+| 4 | `budgetPlanningApi.ts` | Same wrong API | Fixed to `extendedFeaturesApiUrl` |
+| 5 | `tipsApi.ts` | `/tips/*` called main API — should be features API (`0poeu07vth`) | Fixed to `config.featuresApiUrl` |
+| 6 | `comparisonApi.ts` | Same wrong API | Fixed to `featuresApiUrl` |
+| 7 | `NotificationSettings.tsx` | `/notifications/preferences` called features API — should be main API | Fixed to `config.apiBaseUrl` |
+| 8 | `SettingsPage.tsx` | Called `GET /auth/mfa/status` which doesn't exist → CORS error on every settings load | Disabled the call |
+| 9 | `learnApi.ts` | Used `access_token` for Authorization header — API Gateway requires `id_token` | Fixed to `budgetbuddy_id_token` |
+| 10 | `BudgetMembersPage.tsx` | Infinite spinner when no `budget` prop passed (route `/budget/members`) | Added `getBudgets()` auto-fetch |
+| 11 | `environment.ts` | Missing `extendedFeaturesApiUrl` constant | Added with `hkjzroedjf` URL |
+| 12 | `subscriptions` pages | Used main API instead of features API | Fixed to `featuresApiUrl` |
+
+### 🔍 Pages Needing Further Investigation
+| Page | Route | Issue |
+|------|-------|-------|
+| Financial Insights | `/insights` | Shows only AI Q&A panel (no charts) — wrong API fixed but needs post-deploy test |
+| Tips Feed | `/tips` | Shows "No tips" — wrong API fixed but needs post-deploy test |
+| Budget Members | `/budget/members` | Was infinite spinner — fixed, needs post-deploy test |
+| Calendar | `/budget` (Calendar tab) | Not yet tested — should show transactions per day |
+| Summary | `/budget` (Summary tab) | Not yet tested — should show period totals |
+| Subscriptions | `/subscriptions` | Not yet tested — AI subscription detection feature |
+| Recurring transactions | `/budget` | Not yet tested — weekly/biweekly/monthly/annual frequency |
 
 ### ✅ Verified Working (live)
 
