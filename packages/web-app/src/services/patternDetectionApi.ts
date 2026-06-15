@@ -5,7 +5,7 @@
 
 import { config } from '../config/environment';
 
-const EXTENDED_API_BASE = config.apiBaseUrl;
+const EXTENDED_API_BASE = config.extendedFeaturesApiUrl;
 
 // Get token from localStorage
 function getToken(): string | null {

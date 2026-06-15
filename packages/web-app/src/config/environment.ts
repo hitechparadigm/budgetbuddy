@@ -9,8 +9,14 @@ export const config = {
   /** Main API Gateway URL (auth, budget, transactions, family) */
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1',
 
-  /** Features API Gateway URL (learn, tips, insights, pattern-detection, budget-planning) */
+  /** Features API Gateway URL (learn, tips, comparison, plaid, debts) */
   featuresApiUrl: import.meta.env.VITE_FEATURES_API_URL || 'https://0poeu07vth.execute-api.us-east-1.amazonaws.com/v1',
+
+  /**
+   * Extended Features API Gateway URL — AI-powered features.
+   * Hosts: /insights/*, /patterns/*, /budget-planning/*, /receipt/*
+   */
+  extendedFeaturesApiUrl: import.meta.env.VITE_EXTENDED_FEATURES_API_URL || 'https://hkjzroedjf.execute-api.us-east-1.amazonaws.com/v1',
 
   /** Family API Gateway URL (separate stack to avoid circular dependencies) */
   familyApiUrl: import.meta.env.VITE_FAMILY_API_URL || 'https://gp8jspfboa.execute-api.us-east-1.amazonaws.com/v1',
