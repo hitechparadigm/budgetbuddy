@@ -17,8 +17,9 @@ export const validateToken = (token: string): { isValid: boolean; error?: string
       return { isValid: false, error: 'Invalid JWT format - token must have 3 parts' };
     }
 
-    // Try to parse the payload
-    const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+    // Try to parse the payload — use atob() (browser-native) not Buffer (Node.js only)
+    const base64 = tokenParts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
 
     // Check for required fields
     const userId = payload['custom:userId'] || payload.sub;
