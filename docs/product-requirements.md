@@ -253,7 +253,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 ## Live API Test Results (2026-06-15)
 
-Tested against dev environment using `scripts/test-live-api.js`. **108 checks passed, 0 failed** across 20 test sections (110 total including 2 skipped).
+Tested against dev environment using `scripts/test-live-api.js`. **111 checks passed, 0 failed** across 20 test sections. All previous skips resolved — transactions now work end-to-end.
 
 ### ✅ Verified Working (live)
 
