@@ -315,8 +315,14 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
 
   if (!budget) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <p className="text-gray-500">No budget selected.</p>
+      <div className="max-w-3xl mx-auto px-4 py-8 text-center">
+        <p className="text-gray-500 mb-2">{error || 'No budget found. Please complete onboarding first.'}</p>
+        <button
+          onClick={() => navigate('/budget')}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Go to Budget
+        </button>
       </div>
     );
   }
