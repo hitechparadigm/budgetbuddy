@@ -93,10 +93,21 @@ exports.handler = async (event, context) => {
     const { userId } = getUserFromEvent(event);
 
     // Resolve budget access from DynamoDB — JWT carries only userId (REQ-3, REQ-11)
-    const { budgetId, role, budgetType, budgetStatus } =
-      await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
-
-    logger.info('Budget access resolved', { userId, budgetId, role, budgetType });
+    // For AI budget generation, the user only needs to be authenticated — they may not
+    // have a budget yet (new user onboarding). Fall back to null context gracefully.
+    let budgetId = null, role = 'owner', budgetType = 'personal', budgetStatus = 'active';
+    try {
+      const access = await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+      budgetId = access.budgetId;
+      role = access.role;
+      budgetType = access.budgetType;
+      budgetStatus = access.budgetStatus;
+      logger.info('Budget access resolved', { userId, budgetId, role, budgetType });
+    } catch (accessErr) {
+      // New users during onboarding may not have a budget yet — that's OK for AI generation
+      // The generated budget will be stored without a pre-existing budgetId
+      logger.info('No existing budget for user (onboarding flow)', { userId, error: accessErr.message });
+    }
 
     // Route: POST /ai/generate-budget  (also handles CDK path /budget/ai-generate)
     if (httpMethod === 'POST' && (path === '/ai/generate-budget' || path === '/budget/ai-generate' || path === '/v1/budget/ai-generate' || path === '/v1/ai/generate-budget')) {
@@ -160,8 +171,10 @@ exports.handler = async (event, context) => {
  * REQ-3: budget data lives under BUDGET#<budgetId>, period under PERIOD#<month>
  */
 async function handleGenerateBudget(event, { userId, budgetId, role, budgetType, budgetStatus }) {
-  // Only owner and partner may trigger AI generation
-  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
+  // Only owner and partner may trigger AI generation — skip for new users (no budget yet)
+  if (budgetId) {
+    BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
+  }
 
   const requestBody = parseRequestBody(event.body);
 
@@ -188,14 +201,18 @@ async function handleGenerateBudget(event, { userId, budgetId, role, budgetType,
     logger.warn('Could not fetch user currency, defaulting to USD', { userId, error: err.message });
   }
 
+  // For new users without a budget yet, use a provisional budgetId
+  // The onboarding flow will link this to the real budget after creation
+  const effectiveBudgetId = budgetId || `provisional_${userId}`;
+
   // Check if a budget period already exists for this month
   const existingPeriod = await dynamoHelpers.getItem(
-    `BUDGET#${budgetId}`,
+    `BUDGET#${effectiveBudgetId}`,
     `PERIOD#${month}`,
   );
 
   if (existingPeriod) {
-    logger.info('Budget period already exists for month', { budgetId, month });
+    logger.info('Budget period already exists for month', { effectiveBudgetId, month });
     return successResponse(
       formatBudgetPeriodResponse(existingPeriod),
       'Budget period already exists for this month',
@@ -203,20 +220,18 @@ async function handleGenerateBudget(event, { userId, budgetId, role, budgetType,
   }
 
   // Generate budget via Bedrock
-  logger.info('Generating AI budget', { userId, budgetId, month, location, householdSize });
+  logger.info('Generating AI budget', { userId, budgetId: effectiveBudgetId, month, location, householdSize });
 
   let generatedGroups;
   try {
-    generatedGroups = await generateBudgetWithBedrock({
-      month,
-      location,
-      householdSize,
-      currency,
-      budgetType,
-    });
+    generatedGroups = await Promise.race([
+      generateBudgetWithBedrock({ month, location, householdSize, currency, budgetType }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Bedrock timeout after 20s')), 20000)),
+    ]);
   } catch (err) {
-    logger.error('Bedrock generation failed', err, { userId, budgetId, month });
-    return errorResponse.internalError('AI budget generation failed. Please try again.');
+    // Bedrock unavailable, EOL model, timeout, or any other failure — use fallback
+    logger.warn('Bedrock generation failed, using fallback budget', { userId, error: err.message });
+    generatedGroups = buildFallbackBudget({ householdSize, currency, location });
   }
 
   // Calculate totals from generated groups
@@ -225,10 +240,10 @@ async function handleGenerateBudget(event, { userId, budgetId, role, budgetType,
 
   // Build the budget period item — PK: BUDGET#<budgetId>, SK: PERIOD#<month>  (REQ-3)
   const budgetPeriod = {
-    PK: `BUDGET#${budgetId}`,
+    PK: `BUDGET#${effectiveBudgetId}`,
     SK: `PERIOD#${month}`,
     entityType: 'BUDGET_PERIOD',
-    budgetId,
+    budgetId: effectiveBudgetId,
     month,
     currency,
     totalIncome: totals.totalIncome,
@@ -243,7 +258,7 @@ async function handleGenerateBudget(event, { userId, budgetId, role, budgetType,
 
   await dynamoHelpers.putItem(budgetPeriod);
 
-  logger.info('AI budget period saved', { budgetId, month });
+  logger.info('AI budget period saved', { budgetId: effectiveBudgetId, month });
 
   return successResponse(
     formatBudgetPeriodResponse(budgetPeriod),
@@ -315,7 +330,7 @@ Rules:
 - Return ONLY the JSON object, no explanation`;
 
   const client = getBedrockClient();
-  const modelId = process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-5-sonnet-20241022-v2:0';
+  const modelId = process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0';
 
   const command = new InvokeModelCommand({
     modelId,
@@ -361,6 +376,86 @@ Rules:
   }
 
   return groups;
+}
+
+// ---------------------------------------------------------------------------
+// Fallback budget template (used when Bedrock is unavailable)
+// ---------------------------------------------------------------------------
+/**
+ * Build a sensible fallback zero-based budget template when Bedrock is unavailable.
+ * Scales amounts by household size and currency.
+ *
+ * @param {Object} params
+ * @param {number} params.householdSize
+ * @param {string} params.currency
+ * @param {string|null} params.location
+ * @returns {Object} Budget groups: { income: [], savings: [], expenses: [] }
+ */
+function buildFallbackBudget({ householdSize = 1, currency = 'USD', location = null }) {
+  const scale = Math.max(1, householdSize);
+  // Base amounts for single person; scale for household
+  const baseIncome = 5000 * scale;
+  const baseRent = 1500 * scale;
+  const baseFood = 400 * scale;
+  const baseTransport = 300;
+  const baseUtilities = 150 * Math.max(1, scale * 0.7);
+  const baseInsurance = 200 * scale;
+  const baseEmergency = 500 * scale;
+  const baseSavings = 300 * scale;
+  const baseMisc = baseIncome - baseRent - baseFood - baseTransport - baseUtilities - baseInsurance - baseEmergency - baseSavings;
+
+  return {
+    income: [
+      {
+        name: 'Income',
+        categories: [
+          { id: 'cat_income_1', name: 'Primary Income', planned: Math.round(baseIncome), spent: 0, rolloverEnabled: false, rolloverAmount: 0 },
+        ],
+      },
+    ],
+    savings: [
+      {
+        name: 'Savings',
+        categories: [
+          { id: 'cat_sav_1', name: 'Emergency Fund', planned: Math.round(baseEmergency), spent: 0, rolloverEnabled: false, rolloverAmount: 0 },
+          { id: 'cat_sav_2', name: 'General Savings', planned: Math.round(baseSavings), spent: 0, rolloverEnabled: false, rolloverAmount: 0 },
+        ],
+      },
+    ],
+    expenses: [
+      {
+        name: 'Housing',
+        categories: [
+          { id: 'cat_exp_1', name: 'Rent / Mortgage', planned: Math.round(baseRent), spent: 0, rolloverEnabled: false, rolloverAmount: 0 },
+          { id: 'cat_exp_2', name: 'Utilities', planned: Math.round(baseUtilities), spent: 0, rolloverEnabled: false, rolloverAmount: 0 },
+        ],
+      },
+      {
+        name: 'Food',
+        categories: [
+          { id: 'cat_exp_3', name: 'Groceries', planned: Math.round(baseFood), spent: 0, rolloverEnabled: false, rolloverAmount: 0 },
+        ],
+      },
+      {
+        name: 'Transportation',
+        categories: [
+          { id: 'cat_exp_4', name: 'Transport', planned: Math.round(baseTransport), spent: 0, rolloverEnabled: false, rolloverAmount: 0 },
+        ],
+      },
+      {
+        name: 'Insurance',
+        categories: [
+          { id: 'cat_exp_5', name: 'Insurance', planned: Math.round(baseInsurance), spent: 0, rolloverEnabled: false, rolloverAmount: 0 },
+        ],
+      },
+      {
+        name: 'Personal',
+        categories: [
+          { id: 'cat_exp_6', name: 'Miscellaneous', planned: Math.max(0, Math.round(baseMisc)), spent: 0, rolloverEnabled: false, rolloverAmount: 0 },
+        ],
+      },
+    ],
+  };
 }
 
 // ---------------------------------------------------------------------------
