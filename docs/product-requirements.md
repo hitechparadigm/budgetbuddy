@@ -173,7 +173,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 ### Membership & Invitations
 - ✅ Invite members (`POST /budgets/{id}/invite`) — partner, household_member, viewer
-- ✅ Accept invitation (`POST /budgets/accept-invitation`) — token-based, email-tied, single-use
+- ✅ Accept invitation (`POST /budgets/accept-invitation`) — public endpoint, no auth required (invitee follows email link)
 - ✅ Resend invitation (`POST /budgets/{id}/invitations/{id}/resend`)
 - ✅ Revoke invitation (`DELETE /budgets/{id}/invitations/{id}`)
 - ✅ View pending invitations (`GET /budgets/{id}/invitations`)
@@ -214,7 +214,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ Credit score monitoring
 - ✅ Investment tracking (holdings, portfolio performance, net worth integration)
 - ✅ AI bill reminders and budget planning (pattern detection, recurring detection)
-- ✅ Push notifications and in-app notification center
+- ✅ Notifications: device registration, preferences (GET/PUT), notification history, push delivery via Expo
 - ✅ Net worth tracking (manual + investment accounts)
 
 ### Frontend
@@ -251,9 +251,9 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 ---
 
-## Live API Test Results (2026-06-02)
+## Live API Test Results (2026-06-15)
 
-Tested against dev environment using `scripts/test-live-api.js`. **102 checks passed, 0 failed**, 13 bugs documented across 19 test sections covering all claimed features.
+Tested against dev environment using `scripts/test-live-api.js`. **108 checks passed, 0 failed** across 20 test sections (110 total including 2 skipped).
 
 ### ✅ Verified Working (live)
 
@@ -262,62 +262,39 @@ Tested against dev environment using `scripts/test-live-api.js`. **102 checks pa
 | Health checks | All 17 service health endpoints across 4 APIs | ✅ |
 | Auth — register/login/profile | `POST /auth/register`, `POST /auth/login`, `GET /auth/profile`, `GET /auth/geolocation` | ✅ |
 | Auth — security | All 7 protected endpoints reject unauthenticated requests (401) | ✅ |
-| Onboarding | `POST /auth/onboarding` (correct body: flat `city`/`country`/`familySize`/`currentMonth`/`selectedCategories`) | ✅ |
+| Onboarding | `POST /auth/onboarding` (flat body: `city`/`country`/`familySize`/`currentMonth`/`selectedCategories`) | ✅ |
+| AI budget generation | `POST /budget/ai-generate` — uses Claude 3 Haiku with fallback template if Bedrock unavailable | ✅ |
 | Budget management | `GET /budgets`, `POST /budgets`, `GET /budget/current`, `PUT /budgets/active` | ✅ |
-| Budget period | `remainingBalance` returned, zero-based budget confirmed, income/expense groups present | ✅ |
+| Budget period | `remainingBalance`, income/expense groups — use `GET /budget/current?month=YYYY-MM` | ✅ |
 | Transactions | `GET /transactions`, search filter | ✅ |
 | Accounts full CRUD | Create (`banking`/`accountSubtype` fields), list, update, reconcile (`newBalance` field), delete | ✅ |
 | Goals full CRUD | Create, list, update, delete | ✅ |
-| Budget collaboration | List members, list invitations, send invite (family budget), resend, revoke, accept-invitation endpoint, personal budget rejects partner | ✅ |
+| Budget collaboration | Members, invitations, send/resend/revoke, personal-budget partner rejection | ✅ |
+| Accept invitation | `POST /budgets/accept-invitation` — **public endpoint** (no auth required, invitee follows link) | ✅ |
 | Insights | Weekly, monthly, trends, patterns, AI Q&A | ✅ |
-| Pattern detection | `POST /patterns/detect`, `POST /budget-planning/suggestions` | ✅ |
-| Debt payoff | `GET /debts`, `GET /debts/summary` | ✅ |
-| Plaid | Link token (returns `linkToken`), accounts list, pending transactions | ✅ |
+| Pattern detection + budget planning | `POST /patterns/detect`, `POST /budget-planning/suggestions` | ✅ |
+| Debt payoff | Create debt, list, summary, payoff plan | ✅ |
+| Credit score | `GET /credit-score`, `/credit-score/history` | ✅ |
+| Plaid | Link token, accounts list, pending transactions | ✅ |
 | Bills | List, upcoming, calendar | ✅ |
-| Receipt scanning | Usage, history, upload endpoint | ✅ |
-| Learning center | Courses, progress | ✅ |
+| Receipt scanning | Usage, history, upload | ✅ |
+| Learning center | Lessons, courses, progress | ✅ |
+| Notifications | `GET/PUT /notifications/preferences`, `GET /notifications/history`, `POST /notifications/register-device` | ✅ |
+| Deprecated /family/* | Returns 410 Gone for all routes | ✅ |
 
-### 🐛 Bugs Found (13) — Fixed in commit `fix: Lambda crashes, BUDGET# model alignment, notifications API routes, CDK auth fix`
+### 🐛 Remaining Known Bugs (2 low priority)
 
-| # | Severity | Component | Description | Status |
-|---|----------|-----------|-------------|--------|
-| 1 | High | `POST /budget/ai-generate` | 500 — Bedrock call fails for new users with empty budget context | Open |
-| 2 | High | `POST /transactions` (create) | New users need `GET /budget/current` to get `categoryId`; `GET /budget` returns a list not the period | Open |
-| 3 | Medium | `GET /comparison/summary` | 500 for new users — missing null-check | ✅ Fixed |
-| 4 | Medium | `GET /tips/feed` | 500 for new users — missing null-check | ✅ Fixed |
-| 5 | Medium | `POST /debts` (create) | 500 — Debt Lambda crashes on create (null body guard) | ✅ Fixed |
-| 6 | Medium | `GET /debts/payoff-plan` | 500 for new users with no debts — missing null-check | ✅ Fixed |
-| 7 | Medium | `GET /credit-score` | 502 — Lambda used `custom:familyId` JWT claim (removed); migrated to `BudgetAccessResolver` | ✅ Fixed |
-| 8 | Medium | `GET /export` | 502 — Lambda used manual JWT + `familyId` from profile; migrated to `BudgetAccessResolver` + `BUDGET#` keys | ✅ Fixed |
-| 9 | Medium | `GET /learn/lessons` | 403 SigV4 — `/learn/lessons` had no GET method in CDK; added with Cognito auth | ✅ Fixed |
-| 10 | Low | `POST /plaid/sandbox/create-item` | 500 — Plaid sandbox credentials not configured in dev | Open |
-| 11 | Low | `/family` routes | Return 401/403 instead of 410 Gone — family stack still active | Open |
-| 12 | Low | `/family/members` | Same as #11 | Open |
-| 13 | Low | `/family/invite` | Same as #11 | Open |
+| # | Severity | Component | Description |
+|---|----------|-----------|-------------|
+| 1 | Low | `POST /plaid/sandbox/create-item` | 500 — Plaid sandbox credentials not configured in dev environment |
+| 2 | Low | `POST /transactions` create | Test skips: `categoryId` must be fetched from `GET /budget/current`, not `GET /budget` (which returns a list) |
 
-### Additional Fixes (same session)
+### Not Deployed (frontend components exist, no backend Lambda)
 
-| Component | Change |
-|-----------|--------|
-| `budget-alerts` Lambda | Migrated from `FAMILY#<familyId>` to `BUDGET#<budgetId>` partition keys; now reads `budgetId` from DynamoDB stream record `PK`; gets members via `BUDGET#<budgetId>/MEMBER#*` query |
-| Notifications API routes | Wired `/notifications/*` routes to API Gateway by passing `notificationFunction` from `NotificationStack` to `ApiStack` in `app.ts` |
-| Spec: `ai-bill-reminders-budget-planning` | Updated `familyId` → `budgetId` throughout requirements and design docs |
-| Spec: `push-notifications-reminders` | Updated budget alert tracking schema and `familyId` references to `budgetId` |
-
-### Final Live Test Results (2026-06-03, after all fixes)
-
-**108 checks passed, 0 failed, 6 remaining bugs** (down from 9 bugs originally, 13 total known)
-
-All issues resolved:
-- Notifications Lambda (`GET /preferences`, `GET /history`, `PUT /preferences`, `POST /register-device`) — **fixed** (was 502, now 200)
-- Learn Lambda `GET /learn/lessons` — **fixed** (was 404, now 200)
-- `POST /credit-score/refresh` test expectation — **fixed** (400 = credit bureau not connected, expected)
-
-**Remaining 6 reported bugs are pre-existing/out-of-scope:**
-1. `POST /budget/ai-generate` — Bedrock call for new users (separate issue)
-2. `POST /transactions` — categoryId discovery (separate issue)
-3. `POST /plaid/sandbox/create-item` — Plaid credentials not configured in dev
-4–6. `/family/*` routes — family stack auth errors instead of 410 Gone
+| Feature | Status |
+|---------|--------|
+| Investment tracking (`/investments/*`) | ❌ No Lambda on any API gateway |
+| Net worth (`/net-worth`) | ❌ No Lambda on any API gateway |
 
 ---
 
@@ -406,7 +383,7 @@ All issues resolved:
 | Peer comparison | `PeerComparisonWidget.tsx` | `GET /comparison/summary` | ✅ |
 | Tips feed | `TipsFeedPage.tsx` | `GET /tips/feed` | ✅ |
 | Receipt scanning | `ReceiptUpload.tsx`, `ReceiptScanner.tsx` | `POST /receipt/upload` | ✅ |
-| Credit score | `CreditScorePage.tsx` | `GET /credit-score` | ⚠️ 502 bug |
+| Credit score | `CreditScorePage.tsx` | `GET /credit-score` | ✅ |
 | Investment tracking | `InvestmentsPage.tsx` | `GET /investments/portfolio` | ❌ Not deployed |
 
 ---
@@ -419,7 +396,7 @@ All issues resolved:
 |---------|----------|-------------|--------|
 | Goals list | `GoalsPage.tsx` | `GET /goals` | ✅ |
 | Create / edit / delete goal | `GoalFormPage.tsx` | `POST/PUT/DELETE /goals` | ✅ |
-| Debt payoff calculator | `DebtPayoffPage.tsx` | `GET /debts/payoff-plan` | ⚠️ 500 bug for new users |
+| Debt payoff calculator | `DebtPayoffPage.tsx` | `GET /debts/payoff-plan` | ✅ |
 | Payoff timeline | `DebtPayoffPage.tsx` | `GET /debts/summary` | ✅ |
 | Mobile goals | `GoalsScreen.tsx` | Same as web | ✅ |
 
@@ -433,8 +410,8 @@ All issues resolved:
 
 | Feature | Frontend | Backend API | Status |
 |---------|----------|-------------|--------|
-| Notification preferences | `NotificationSettings.tsx` | `GET/PUT /notifications/preferences` | ❌ Not deployed |
-| In-app notification center | `NotificationCenter.tsx` | `GET /notifications` | ❌ Not deployed |
+| Notification preferences | `NotificationSettings.tsx` | `GET/PUT /notifications/preferences` | ✅ |
+| In-app notification center | `NotificationCenter.tsx` | `GET /notifications/history` | ✅ |
 | Push notifications | Mobile (Expo) | EventBridge + Lambda | ✅ |
 | AI bill reminders | `BillsPage.tsx` | `GET /pattern-detection/bills` | ✅ |
 
@@ -469,7 +446,7 @@ All issues resolved:
 
 | Item | Replacement |
 |------|-------------|
-| `/family/*` API | `/budgets/*` — returns 410 Gone |
+| `/family/*` API | `/budgets/*` — returns **410 Gone** (verified live) |
 | `FamilyIdResolver` | `BudgetAccessResolver` |
 | `FAMILY#` partition keys | `BUDGET#` partition keys |
 | `custom:familyId` JWT claim | Not used — only `custom:userId` |
