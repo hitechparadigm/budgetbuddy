@@ -1,16 +1,19 @@
 /**
- * Subscriptions Page - Subscription Tracking Dashboard
+ * Subscriptions Page — Know what you're paying for
  *
- * Displays all subscriptions with monthly cost summary, status badges,
- * and automatic detection from transaction patterns.
+ * AI-powered subscription detection with 3-action workflow (Keep / Remind to Cancel / Ignore).
+ * Cancel reminders are created as Bill entries so they show up in the bills calendar.
+ * No manual "Add Subscription" form — detection is the primary entry point.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import { useAuth } from "../contexts/AuthContext";
-
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { config } from '../config/environment';
 
-const API_BASE_URL = config.featuresApiUrl;
+const FEATURES_API = config.featuresApiUrl;
+const MAIN_API = config.apiBaseUrl;
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Subscription {
   subscriptionId: string;
@@ -22,9 +25,9 @@ interface Subscription {
   category: string;
   nextBillingDate: string;
   daysUntilRenewal: number;
-  status: "active" | "paused" | "cancelled";
-  reviewStatus: "keep" | "review" | "cancel";
-  statusIndicator: string;
+  status: 'active' | 'paused' | 'cancelled';
+  reviewStatus: 'keep' | 'review' | 'cancel';
+  cancelReminderDate?: string;
   notes: string | null;
 }
 
@@ -48,8 +51,65 @@ interface Summary {
   upcomingRenewals: number;
 }
 
-type FilterStatus = "all" | "active" | "paused" | "cancelled";
-type ReviewFilter = "all" | "keep" | "review" | "cancel";
+/** Which detected card is showing the inline date picker */
+type CancelPickerState = { merchant: string; date: string } | null;
+
+/** Which tracked subscription is showing the inline cancel reminder form */
+type TrackedCancelState = { subscriptionId: string; date: string } | null;
+
+// ─── Category icons ────────────────────────────────────────────────────────────
+
+const CATEGORY_ICONS: Record<string, string> = {
+  entertainment: '🎬',
+  streaming: '📺',
+  music: '🎵',
+  gaming: '🎮',
+  software: '💻',
+  productivity: '📋',
+  health: '💊',
+  fitness: '🏋️',
+  news: '📰',
+  food: '🍔',
+  shopping: '🛍️',
+  cloud: '☁️',
+  security: '🔒',
+  finance: '💳',
+  subscription: '🔄',
+  other: '📦',
+};
+
+function getCategoryIcon(category: string): string {
+  const key = (category || '').toLowerCase();
+  return CATEGORY_ICONS[key] ?? '🔄';
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function confidenceLabel(confidence: number): string {
+  if (confidence >= 0.8) return 'High confidence';
+  if (confidence >= 0.5) return 'Medium confidence';
+  return 'Low confidence';
+}
+
+function confidenceColor(confidence: number): string {
+  if (confidence >= 0.8) return 'bg-green-500';
+  if (confidence >= 0.5) return 'bg-yellow-500';
+  return 'bg-red-400';
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function SubscriptionsPage() {
   const { tokens } = useAuth();
@@ -58,475 +118,729 @@ export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [detected, setDetected] = useState<DetectedSubscription[]>([]);
+  const [ignoredMerchants, setIgnoredMerchants] = useState<Set<string>>(new Set());
+
   const [loading, setLoading] = useState(true);
   const [detecting, setDetecting] = useState(false);
+  const [savingReminder, setSavingReminder] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
-  const [reviewFilter, setReviewFilter] = useState<ReviewFilter>("all");
-  const [showDetected, setShowDetected] = useState(false);
-  const currency = "USD";
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const [showDetectionBanner, setShowDetectionBanner] = useState(false);
+
+  // Inline cancel picker states
+  const [detectedCancelPicker, setDetectedCancelPicker] = useState<CancelPickerState>(null);
+  const [trackedCancelPicker, setTrackedCancelPicker] = useState<TrackedCancelState>(null);
+
+  // Prevent double auto-scan
+  const autoScanFired = useRef(false);
+
+  // ── Data loading ─────────────────────────────────────────────────────────────
 
   const loadSubscriptions = useCallback(async () => {
+    if (!token) { setError('Not authenticated'); setLoading(false); return; }
     try {
       setError(null);
-      if (!token) {
-        setError("Not authenticated");
-        return;
-      }
-
-      const [subsResponse, summaryResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/subscriptions`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+      const [subsRes, summaryRes] = await Promise.all([
+        fetch(`${FEATURES_API}/subscriptions`, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         }),
-        fetch(`${API_BASE_URL}/subscriptions/summary`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+        fetch(`${FEATURES_API}/subscriptions/summary`, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         }),
       ]);
 
-      if (!subsResponse.ok || !summaryResponse.ok) {
-        throw new Error("Failed to load subscriptions");
-      }
+      if (!subsRes.ok || !summaryRes.ok) throw new Error('Failed to load subscriptions');
 
-      const subsData = await subsResponse.json();
-      const summaryData = await summaryResponse.json();
+      const subsData = await subsRes.json();
+      const summaryData = await summaryRes.json();
 
       setSubscriptions(subsData.data?.subscriptions || []);
       setSummary(summaryData.data?.summary || null);
     } catch (err) {
-      console.error("Error loading subscriptions:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load subscriptions",
-      );
+      console.error('Error loading subscriptions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load subscriptions');
     } finally {
       setLoading(false);
     }
   }, [token]);
 
-  const detectSubscriptions = async () => {
+  const detectSubscriptions = useCallback(async () => {
+    if (!token) return;
     try {
       setDetecting(true);
-      const response = await fetch(`${API_BASE_URL}/subscriptions/detect`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+      setError(null);
+      const res = await fetch(`${FEATURES_API}/subscriptions/detect`, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
-
-      if (!response.ok) throw new Error("Failed to detect subscriptions");
-
-      const data = await response.json();
-      setDetected(data.data?.detected || []);
-      setShowDetected(true);
+      if (!res.ok) throw new Error('Failed to detect subscriptions');
+      const data = await res.json();
+      const found: DetectedSubscription[] = (data.data?.detected || []).filter(
+        (d: DetectedSubscription) => !ignoredMerchants.has(d.merchant),
+      );
+      setDetected(found);
+      setShowDetectionBanner(true);
     } catch (err) {
-      console.error("Error detecting subscriptions:", err);
-      setError("Failed to detect subscriptions");
+      console.error('Error detecting subscriptions:', err);
+      setError('Failed to scan transactions. Try again shortly.');
     } finally {
       setDetecting(false);
     }
-  };
+  }, [token, ignoredMerchants]);
 
-  const updateStatus = async (
-    subscriptionId: string,
-    status?: string,
-    reviewStatus?: string,
-  ) => {
-    try {
-      const response = await fetch(
-        `${API_BASE_URL}/subscriptions/${subscriptionId}/status`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ status, reviewStatus }),
-        },
-      );
-
-      if (!response.ok) throw new Error("Failed to update status");
-      await loadSubscriptions();
-    } catch (err) {
-      console.error("Error updating status:", err);
-      setError("Failed to update subscription status");
-    }
-  };
-
-  const addDetectedSubscription = async (detected: DetectedSubscription) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/subscriptions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: detected.merchant,
-          merchant: detected.merchant,
-          amount: detected.amount,
-          frequency: detected.frequency,
-          category: detected.suggestedCategory,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to add subscription");
-
-      setDetected((prev) =>
-        prev.filter((d) => d.merchant !== detected.merchant),
-      );
-      await loadSubscriptions();
-    } catch (err) {
-      console.error("Error adding subscription:", err);
-      setError("Failed to add subscription");
-    }
-  };
-
+  // Auto-scan on first load if no subscriptions
   useEffect(() => {
     loadSubscriptions();
   }, [loadSubscriptions]);
 
-  const filteredSubscriptions = subscriptions.filter((sub) => {
-    if (filterStatus !== "all" && sub.status !== filterStatus) return false;
-    if (reviewFilter !== "all" && sub.reviewStatus !== reviewFilter)
-      return false;
-    return true;
-  });
+  useEffect(() => {
+    if (!loading && subscriptions.length === 0 && !autoScanFired.current) {
+      autoScanFired.current = true;
+      detectSubscriptions();
+    }
+  }, [loading, subscriptions.length, detectSubscriptions]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-    }).format(amount);
-  };
+  // Auto-dismiss success message
+  useEffect(() => {
+    if (!successMsg) return;
+    const t = setTimeout(() => setSuccessMsg(null), 4000);
+    return () => clearTimeout(t);
+  }, [successMsg]);
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
+  // ── Detection actions ─────────────────────────────────────────────────────────
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800";
-      case "paused":
-        return "bg-yellow-100 text-yellow-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const handleKeep = async (d: DetectedSubscription) => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${FEATURES_API}/subscriptions`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: d.merchant,
+          merchant: d.merchant,
+          amount: d.amount,
+          frequency: d.frequency,
+          category: d.suggestedCategory,
+          reviewStatus: 'keep',
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to add subscription');
+      setDetected(prev => prev.filter(x => x.merchant !== d.merchant));
+      setSuccessMsg(`✅ ${d.merchant} added to your tracked subscriptions.`);
+      await loadSubscriptions();
+    } catch (err) {
+      console.error(err);
+      setError('Failed to add subscription. Try again.');
     }
   };
 
-  const getReviewColor = (reviewStatus: string) => {
-    switch (reviewStatus) {
-      case "keep":
-        return "bg-green-100 text-green-800";
-      case "review":
-        return "bg-yellow-100 text-yellow-800";
-      case "cancel":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const handleIgnore = (d: DetectedSubscription) => {
+    setIgnoredMerchants(prev => new Set([...prev, d.merchant]));
+    setDetected(prev => prev.filter(x => x.merchant !== d.merchant));
+  };
+
+  // Cancel reminder for detected subscription
+  const handleDetectedCancelReminder = async (d: DetectedSubscription, cancelDate: string) => {
+    if (!token || savingReminder) return;
+    try {
+      setSavingReminder(true);
+      // 1. Add to tracked subscriptions with status 'cancel'
+      const subRes = await fetch(`${FEATURES_API}/subscriptions`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: d.merchant,
+          merchant: d.merchant,
+          amount: d.amount,
+          frequency: d.frequency,
+          category: d.suggestedCategory,
+          reviewStatus: 'cancel',
+        }),
+      });
+      if (!subRes.ok) throw new Error('Failed to add subscription');
+
+      // 2. Create a Bill reminder
+      await createCancelBill(d.merchant, d.amount, cancelDate, token);
+
+      setDetected(prev => prev.filter(x => x.merchant !== d.merchant));
+      setDetectedCancelPicker(null);
+      setSuccessMsg(`⏰ Reminder set! We'll remind you to cancel ${d.merchant} on ${formatDate(cancelDate)}.`);
+      await loadSubscriptions();
+    } catch (err) {
+      console.error(err);
+      setError('Failed to set cancel reminder. Try again.');
+    } finally {
+      setSavingReminder(false);
     }
   };
+
+  // Cancel reminder for tracked subscription
+  const handleTrackedCancelReminder = async (sub: Subscription, cancelDate: string) => {
+    if (!token || savingReminder) return;
+    try {
+      setSavingReminder(true);
+      // Update review status to 'cancel'
+      await fetch(`${FEATURES_API}/subscriptions/${sub.subscriptionId}/status`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reviewStatus: 'cancel' }),
+      });
+      // Create bill reminder
+      await createCancelBill(sub.merchant || sub.name, sub.amount, cancelDate, token);
+
+      setTrackedCancelPicker(null);
+      setSuccessMsg(`⏰ Reminder set! We'll remind you to cancel ${sub.merchant || sub.name} on ${formatDate(cancelDate)}.`);
+      await loadSubscriptions();
+    } catch (err) {
+      console.error(err);
+      setError('Failed to set cancel reminder. Try again.');
+    } finally {
+      setSavingReminder(false);
+    }
+  };
+
+  const updateSubscriptionStatus = async (
+    subscriptionId: string,
+    status?: string,
+    reviewStatus?: string,
+  ) => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${FEATURES_API}/subscriptions/${subscriptionId}/status`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, reviewStatus }),
+      });
+      if (!res.ok) throw new Error('Failed to update status');
+      await loadSubscriptions();
+    } catch (err) {
+      console.error(err);
+      setError('Failed to update subscription status.');
+    }
+  };
+
+  const removeSubscription = async (subscriptionId: string, name: string) => {
+    if (!token) return;
+    if (!window.confirm(`Remove ${name} from tracked subscriptions?`)) return;
+    try {
+      const res = await fetch(`${FEATURES_API}/subscriptions/${subscriptionId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) throw new Error('Failed to remove');
+      await loadSubscriptions();
+    } catch (err) {
+      console.error(err);
+      setError('Failed to remove subscription.');
+    }
+  };
+
+  // ── Computed stats ────────────────────────────────────────────────────────────
+
+  const potentialSavings = subscriptions
+    .filter(s => s.reviewStatus === 'cancel')
+    .reduce((sum, s) => sum + (s.monthlyAmount || s.amount), 0);
+
+  const reviewNeeded = subscriptions.filter(s => s.reviewStatus === 'review').length;
+
+  const visibleDetected = detected.filter(d => !ignoredMerchants.has(d.merchant));
+
+  // ── Loading state ─────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading your subscriptions…</p>
+        </div>
       </div>
     );
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────────
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">🔄 Subscriptions</h1>
-        <div className="flex gap-3">
-          <button
-            onClick={detectSubscriptions}
-            disabled={detecting}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-          >
-            {detecting ? "Detecting..." : "🔍 Detect Subscriptions"}
-          </button>
-          <button
-            onClick={() => (window.location.href = "/subscriptions/new")}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            + Add Subscription
-          </button>
+
+      {/* ── Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">🔄 Subscriptions</h1>
+          <p className="text-gray-500 mt-1">Know what you're paying for</p>
         </div>
+        <button
+          onClick={detectSubscriptions}
+          disabled={detecting}
+          className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-60 transition-colors font-medium shadow-sm"
+        >
+          {detecting ? (
+            <>
+              <span className="animate-spin inline-block">⟳</span>
+              Scanning…
+            </>
+          ) : (
+            <>🔍 Scan Transactions</>
+          )}
+        </button>
       </div>
 
+      {/* ── Alerts ── */}
       {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          {error}
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 ml-4">✕</button>
+        </div>
+      )}
+      {successMsg && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 flex justify-between">
+          <span>{successMsg}</span>
+          <button onClick={() => setSuccessMsg(null)} className="text-green-400 hover:text-green-600 ml-4">✕</button>
         </div>
       )}
 
-      {/* Summary Cards */}
-      {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow p-6">
-            <p className="text-sm text-gray-500">Monthly Cost</p>
-            <p className="text-2xl font-bold text-red-600">
-              {formatCurrency(summary.monthlyTotal)}
-            </p>
-            <p className="text-xs text-gray-400">
-              {summary.activeSubscriptions} active
-            </p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-6">
-            <p className="text-sm text-gray-500">Yearly Cost</p>
-            <p className="text-2xl font-bold text-orange-600">
-              {formatCurrency(summary.yearlyTotal)}
-            </p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-6">
-            <p className="text-sm text-gray-500">Upcoming Renewals</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {summary.upcomingRenewals}
-            </p>
-            <p className="text-xs text-gray-400">Next 7 days</p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-6">
-            <p className="text-sm text-gray-500">Review Status</p>
-            <div className="flex gap-2 mt-2">
-              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                ✓ {summary.byStatus.keep}
-              </span>
-              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
-                🔍 {summary.byStatus.review}
-              </span>
-              <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">
-                ⚠ {summary.byStatus.cancel}
-              </span>
-            </div>
-          </div>
-        </div>
+      {/* ── Stats Row ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard
+          label="Total Monthly"
+          value={formatCurrency(summary?.monthlyTotal ?? 0)}
+          valueColor={(summary?.monthlyTotal ?? 0) > 200 ? 'text-red-600' : 'text-gray-900'}
+          sub={`${summary?.activeSubscriptions ?? 0} active`}
+        />
+        <StatCard
+          label="Potential Savings"
+          value={formatCurrency(potentialSavings)}
+          valueColor={potentialSavings > 0 ? 'text-orange-600' : 'text-gray-900'}
+          sub="marked for cancel"
+        />
+        <StatCard
+          label="Upcoming Renewals"
+          value={String(summary?.upcomingRenewals ?? 0)}
+          valueColor="text-blue-600"
+          sub="in 7 days"
+        />
+        <StatCard
+          label="Review Needed"
+          value={String(reviewNeeded)}
+          valueColor={reviewNeeded > 0 ? 'text-yellow-600' : 'text-gray-900'}
+          sub="subscriptions"
+        />
+      </div>
+
+      {/* ── Detection Banner ── */}
+      {showDetectionBanner && (
+        <DetectionBanner
+          detected={visibleDetected}
+          detecting={detecting}
+          savingReminder={savingReminder}
+          detectedCancelPicker={detectedCancelPicker}
+          onKeep={handleKeep}
+          onIgnore={handleIgnore}
+          onStartCancelPicker={(merchant) =>
+            setDetectedCancelPicker({ merchant, date: defaultCancelDate() })
+          }
+          onCancelPickerChange={(merchant, date) =>
+            setDetectedCancelPicker({ merchant, date })
+          }
+          onSaveCancelReminder={(d, date) => handleDetectedCancelReminder(d, date)}
+          onClosePicker={() => setDetectedCancelPicker(null)}
+          onClose={() => setShowDetectionBanner(false)}
+        />
       )}
 
-      {/* Detected Subscriptions Modal */}
-      {showDetected && detected.length > 0 && (
-        <div className="mb-8 bg-purple-50 border border-purple-200 rounded-xl p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-purple-900">
-              🔍 Detected Subscriptions ({detected.length})
-            </h2>
-            <button
-              onClick={() => setShowDetected(false)}
-              className="text-purple-600 hover:text-purple-800"
-            >
-              ✕ Close
-            </button>
-          </div>
-          <div className="space-y-3">
-            {detected.map((d, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between bg-white rounded-lg p-4"
-              >
-                <div>
-                  <p className="font-medium">{d.merchant}</p>
-                  <p className="text-sm text-gray-500">
-                    {formatCurrency(d.amount)} / {d.frequency} •{" "}
-                    {d.suggestedCategory}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    Confidence: {Math.round(d.confidence * 100)}% •{" "}
-                    {d.transactionCount} transactions
-                  </p>
-                </div>
-                <button
-                  onClick={() => addDetectedSubscription(d)}
-                  className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
-                >
-                  + Add
-                </button>
-              </div>
+      {/* ── Tracked Subscriptions ── */}
+      <div className="bg-white rounded-xl shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">
+            Tracked Subscriptions
+            {subscriptions.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-gray-400">({subscriptions.length})</span>
+            )}
+          </h2>
+        </div>
+
+        {subscriptions.length === 0 ? (
+          <EmptyState onScan={detectSubscriptions} detecting={detecting} />
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {subscriptions.map(sub => (
+              <TrackedSubscriptionRow
+                key={sub.subscriptionId}
+                sub={sub}
+                trackedCancelPicker={trackedCancelPicker}
+                savingReminder={savingReminder}
+                onUpdateStatus={updateSubscriptionStatus}
+                onRemove={removeSubscription}
+                onStartCancelPicker={(id) =>
+                  setTrackedCancelPicker({ subscriptionId: id, date: defaultCancelDate() })
+                }
+                onCancelPickerChange={(id, date) =>
+                  setTrackedCancelPicker({ subscriptionId: id, date })
+                }
+                onSaveCancelReminder={(cancelDate) =>
+                  handleTrackedCancelReminder(sub, cancelDate)
+                }
+                onClosePicker={() => setTrackedCancelPicker(null)}
+              />
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+    </div>
+  );
+}
 
-      {/* Filters */}
-      <div className="flex gap-4 mb-6">
-        <div className="flex gap-2">
-          {(["all", "active", "paused", "cancelled"] as FilterStatus[]).map(
-            (status) => (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  filterStatus === status
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </button>
-            ),
-          )}
+// ─── createCancelBill helper ──────────────────────────────────────────────────
+
+async function createCancelBill(
+  merchantName: string,
+  amount: number,
+  cancelDate: string,
+  token: string,
+): Promise<void> {
+  const body = {
+    name: `Cancel ${merchantName}`,
+    amount,
+    dueDate: cancelDate,
+    isRecurring: false,
+    frequency: null,
+    notes: `Remember to cancel ${merchantName} by this date to avoid being charged again.`,
+    categoryName: 'Subscription',
+    isActive: true,
+  };
+  const res = await fetch(`${MAIN_API}/bills`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Failed to create cancel reminder bill');
+  }
+}
+
+function defaultCancelDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  return d.toISOString().split('T')[0];
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+interface StatCardProps {
+  label: string;
+  value: string;
+  valueColor: string;
+  sub: string;
+}
+function StatCard({ label, value, valueColor, sub }: StatCardProps) {
+  return (
+    <div className="bg-white rounded-xl shadow p-5">
+      <p className="text-sm text-gray-500 mb-1">{label}</p>
+      <p className={`text-2xl font-bold ${valueColor}`}>{value}</p>
+      <p className="text-xs text-gray-400 mt-1">{sub}</p>
+    </div>
+  );
+}
+
+// ── Detection Banner ──────────────────────────────────────────────────────────
+
+interface DetectionBannerProps {
+  detected: DetectedSubscription[];
+  detecting: boolean;
+  savingReminder: boolean;
+  detectedCancelPicker: CancelPickerState;
+  onKeep: (d: DetectedSubscription) => void;
+  onIgnore: (d: DetectedSubscription) => void;
+  onStartCancelPicker: (merchant: string) => void;
+  onCancelPickerChange: (merchant: string, date: string) => void;
+  onSaveCancelReminder: (d: DetectedSubscription, date: string) => void;
+  onClosePicker: () => void;
+  onClose: () => void;
+}
+
+function DetectionBanner({
+  detected,
+  detecting,
+  savingReminder,
+  detectedCancelPicker,
+  onKeep,
+  onIgnore,
+  onStartCancelPicker,
+  onCancelPickerChange,
+  onSaveCancelReminder,
+  onClosePicker,
+  onClose,
+}: DetectionBannerProps) {
+  const count = detected.length;
+
+  return (
+    <div className="mb-8 bg-amber-50 border border-amber-200 rounded-xl overflow-hidden">
+      {/* Banner header */}
+      <div className="flex items-center justify-between px-6 py-4 bg-amber-100 border-b border-amber-200">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">🤖</span>
+          <div>
+            <h2 className="font-semibold text-amber-900">
+              {detecting
+                ? 'Scanning your transactions…'
+                : count === 0
+                ? 'AI Scan Complete — No new subscriptions found'
+                : `AI Scan Complete — Found ${count} potential subscription${count !== 1 ? 's' : ''}`}
+            </h2>
+            {!detecting && count > 0 && (
+              <p className="text-sm text-amber-700">
+                Review each one: keep it, set a cancel reminder, or ignore
+              </p>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2">
-          {(["all", "keep", "review", "cancel"] as ReviewFilter[]).map(
-            (review) => (
-              <button
-                key={review}
-                onClick={() => setReviewFilter(review)}
-                className={`px-3 py-1 rounded-full text-sm ${
-                  reviewFilter === review
-                    ? "bg-purple-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {review === "all"
-                  ? "All Reviews"
-                  : review.charAt(0).toUpperCase() + review.slice(1)}
-              </button>
-            ),
-          )}
-        </div>
+        <button
+          onClick={onClose}
+          className="text-amber-600 hover:text-amber-800 text-lg leading-none"
+          aria-label="Close detection banner"
+        >
+          ✕
+        </button>
       </div>
 
-      {/* Subscriptions List */}
-      {filteredSubscriptions.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl shadow">
-          <p className="text-6xl mb-4">🔄</p>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            No subscriptions found
-          </h2>
-          <p className="text-gray-500">
-            {filterStatus === "all" && reviewFilter === "all"
-              ? "Add your first subscription or detect from transactions"
-              : "No subscriptions match your filters"}
-          </p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Subscription
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Next Billing
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Review
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredSubscriptions.map((sub) => (
-                <tr key={sub.subscriptionId} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-gray-900">{sub.name}</p>
-                      <p className="text-sm text-gray-500">{sub.category}</p>
+      {/* Detected cards */}
+      {!detecting && count > 0 && (
+        <div className="p-6 space-y-4">
+          {detected.map((d, idx) => {
+            const isPickerOpen = detectedCancelPicker?.merchant === d.merchant;
+            return (
+              <div key={idx} className="bg-white rounded-lg border border-amber-100 p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-2xl flex-shrink-0">{getCategoryIcon(d.suggestedCategory)}</span>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{d.merchant}</p>
+                      <p className="text-sm text-gray-600">
+                        {formatCurrency(d.amount)} / {d.frequency} · {d.suggestedCategory}
+                      </p>
+                      {/* Confidence bar */}
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${confidenceColor(d.confidence)}`}
+                            style={{ width: `${Math.round(d.confidence * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {confidenceLabel(d.confidence)} — charged {d.transactionCount} month{d.transactionCount !== 1 ? 's' : ''} in a row
+                        </span>
+                      </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-medium">{formatCurrency(sub.amount)}</p>
-                    <p className="text-xs text-gray-500">
-                      {sub.frequency} ({formatCurrency(sub.monthlyAmount)}/mo)
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p>{formatDate(sub.nextBillingDate)}</p>
-                    <p
-                      className={`text-xs ${sub.daysUntilRenewal <= 3 ? "text-red-600" : "text-gray-500"}`}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => onKeep(d)}
+                      className="px-3 py-1.5 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 text-sm font-medium transition-colors"
+                      title="Track this subscription as 'keep'"
                     >
-                      {sub.daysUntilRenewal <= 0
-                        ? "Due today"
-                        : `In ${sub.daysUntilRenewal} days`}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <select
-                      value={sub.status}
-                      onChange={(e) =>
-                        updateStatus(sub.subscriptionId, e.target.value)
-                      }
-                      className={`px-2 py-1 rounded text-sm ${getStatusColor(sub.status)}`}
-                    >
-                      <option value="active">Active</option>
-                      <option value="paused">Paused</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4">
-                    <select
-                      value={sub.reviewStatus}
-                      onChange={(e) =>
-                        updateStatus(
-                          sub.subscriptionId,
-                          undefined,
-                          e.target.value,
-                        )
-                      }
-                      className={`px-2 py-1 rounded text-sm ${getReviewColor(sub.reviewStatus)}`}
-                    >
-                      <option value="keep">✓ Keep</option>
-                      <option value="review">🔍 Review</option>
-                      <option value="cancel">⚠ Cancel</option>
-                    </select>
-                  </td>
-                  <td className="px-6 py-4 text-right">
+                      ✅ Keep
+                    </button>
                     <button
                       onClick={() =>
-                        (window.location.href = `/subscriptions/${sub.subscriptionId}/edit`)
+                        isPickerOpen ? onClosePicker() : onStartCancelPicker(d.merchant)
                       }
-                      className="text-blue-600 hover:text-blue-800 text-sm"
+                      className="px-3 py-1.5 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 text-sm font-medium transition-colors"
+                      title="Set a reminder to cancel this subscription"
                     >
-                      Edit
+                      ⏰ Remind to Cancel
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                    <button
+                      onClick={() => onIgnore(d)}
+                      className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm font-medium transition-colors"
+                      title="Dismiss — won't show for 30 days"
+                    >
+                      👻 Ignore
+                    </button>
+                  </div>
+                </div>
 
-      {/* Category Breakdown */}
-      {summary && Object.keys(summary.byCategory).length > 0 && (
-        <div className="mt-8 bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">📊 By Category</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.entries(summary.byCategory).map(([category, data]) => (
-              <div key={category} className="p-4 bg-gray-50 rounded-lg">
-                <p className="font-medium">{category}</p>
-                <p className="text-lg font-bold text-blue-600">
-                  {formatCurrency(data.monthlyTotal)}/mo
-                </p>
-                <p className="text-xs text-gray-500">
-                  {data.count} subscriptions
-                </p>
+                {/* Inline cancel date picker */}
+                {isPickerOpen && detectedCancelPicker && (
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-3 flex-wrap">
+                    <span className="text-sm text-gray-600 font-medium">Cancel by:</span>
+                    <input
+                      type="date"
+                      value={detectedCancelPicker.date}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => onCancelPickerChange(d.merchant, e.target.value)}
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400"
+                    />
+                    <button
+                      onClick={() => onSaveCancelReminder(d, detectedCancelPicker.date)}
+                      disabled={savingReminder || !detectedCancelPicker.date}
+                      className="px-4 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+                    >
+                      {savingReminder ? 'Saving…' : 'Save Reminder'}
+                    </button>
+                    <button
+                      onClick={onClosePicker}
+                      className="text-gray-400 hover:text-gray-600 text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Tracked Subscription Row ──────────────────────────────────────────────────
+
+interface TrackedRowProps {
+  sub: Subscription;
+  trackedCancelPicker: TrackedCancelState;
+  savingReminder: boolean;
+  onUpdateStatus: (id: string, status?: string, reviewStatus?: string) => void;
+  onRemove: (id: string, name: string) => void;
+  onStartCancelPicker: (id: string) => void;
+  onCancelPickerChange: (id: string, date: string) => void;
+  onSaveCancelReminder: (cancelDate: string) => void;
+  onClosePicker: () => void;
+}
+
+function TrackedSubscriptionRow({
+  sub,
+  trackedCancelPicker,
+  savingReminder,
+  onUpdateStatus,
+  onRemove,
+  onStartCancelPicker,
+  onCancelPickerChange,
+  onSaveCancelReminder,
+  onClosePicker,
+}: TrackedRowProps) {
+  const isPickerOpen = trackedCancelPicker?.subscriptionId === sub.subscriptionId;
+  const displayName = sub.name || sub.merchant;
+
+  const reviewBadge = (() => {
+    switch (sub.reviewStatus) {
+      case 'keep':
+        return <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">✓ Keep</span>;
+      case 'cancel':
+        return (
+          <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-xs font-medium">
+            ⏰ Cancel Reminder{sub.cancelReminderDate ? ` · ${formatDate(sub.cancelReminderDate)}` : ''}
+          </span>
+        );
+      default:
+        return <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">🔍 Under Review</span>;
+    }
+  })();
+
+  return (
+    <div className="px-6 py-4 hover:bg-gray-50 transition-colors">
+      <div className="flex items-center gap-4">
+        {/* Icon + name */}
+        <span className="text-xl flex-shrink-0">{getCategoryIcon(sub.category)}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-medium text-gray-900 truncate">{displayName}</p>
+            {reviewBadge}
+          </div>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {formatCurrency(sub.amount)} / {sub.frequency}
+            {sub.monthlyAmount && sub.frequency !== 'monthly' ? ` (${formatCurrency(sub.monthlyAmount)}/mo)` : ''}
+          </p>
+        </div>
+
+        {/* Next billing */}
+        <div className="text-right flex-shrink-0 hidden sm:block">
+          <p className="text-sm text-gray-700">{sub.nextBillingDate ? formatDate(sub.nextBillingDate) : '—'}</p>
+          {sub.daysUntilRenewal !== undefined && (
+            <p className={`text-xs ${sub.daysUntilRenewal <= 3 ? 'text-red-600 font-medium' : 'text-gray-400'}`}>
+              {sub.daysUntilRenewal <= 0 ? 'Due today' : `In ${sub.daysUntilRenewal}d`}
+            </p>
+          )}
+        </div>
+
+        {/* Quick actions */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {sub.reviewStatus !== 'keep' && (
+            <button
+              onClick={() => onUpdateStatus(sub.subscriptionId, undefined, 'keep')}
+              className="text-xs px-2 py-1 text-green-700 bg-green-50 rounded hover:bg-green-100 transition-colors"
+              title="Mark as keep"
+            >
+              ✅ Keep
+            </button>
+          )}
+          {sub.reviewStatus !== 'cancel' && (
+            <button
+              onClick={() => isPickerOpen ? onClosePicker() : onStartCancelPicker(sub.subscriptionId)}
+              className="text-xs px-2 py-1 text-red-700 bg-red-50 rounded hover:bg-red-100 transition-colors"
+              title="Set cancel reminder"
+            >
+              ⏰ Remind
+            </button>
+          )}
+          <button
+            onClick={() => onRemove(sub.subscriptionId, displayName)}
+            className="text-xs px-2 py-1 text-gray-500 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+            title="Remove from tracked list"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+
+      {/* Inline cancel date picker for tracked sub */}
+      {isPickerOpen && trackedCancelPicker && (
+        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-gray-600 font-medium">Cancel by:</span>
+          <input
+            type="date"
+            value={trackedCancelPicker.date}
+            min={new Date().toISOString().split('T')[0]}
+            onChange={(e) => onCancelPickerChange(sub.subscriptionId, e.target.value)}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400"
+          />
+          <button
+            onClick={() => onSaveCancelReminder(trackedCancelPicker.date)}
+            disabled={savingReminder || !trackedCancelPicker.date}
+            className="px-4 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+          >
+            {savingReminder ? 'Saving…' : 'Save Reminder'}
+          </button>
+          <button onClick={onClosePicker} className="text-gray-400 hover:text-gray-600 text-sm">
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Empty State ───────────────────────────────────────────────────────────────
+
+function EmptyState({ onScan, detecting }: { onScan: () => void; detecting: boolean }) {
+  return (
+    <div className="text-center py-16 px-4">
+      <p className="text-5xl mb-4">🔄</p>
+      <h3 className="text-xl font-semibold text-gray-900 mb-2">No subscriptions tracked yet</h3>
+      <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+        Scan your transactions and we'll find recurring charges automatically.
+        Then decide what to keep and what to cancel.
+      </p>
+      <button
+        onClick={onScan}
+        disabled={detecting}
+        className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-60 font-medium transition-colors"
+      >
+        {detecting ? '🔍 Scanning…' : '🔍 Scan Transactions'}
+      </button>
     </div>
   );
 }
