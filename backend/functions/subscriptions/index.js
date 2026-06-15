@@ -324,7 +324,7 @@ async function detectSubscriptions(event, user) {
  * POST /subscriptions
  */
 async function createSubscription(event, user) {
-  const body = parseRequestBody(event);
+  const body = parseRequestBody(event.body);
   const {
     name,
     merchant,
@@ -404,7 +404,7 @@ async function updateSubscription(event, user, subscriptionId) {
     return errorResponse.notFound("Subscription not found");
   }
 
-  const body = parseRequestBody(event);
+  const body = parseRequestBody(event.body);
   const allowedFields = [
     "name",
     "merchant",
@@ -483,7 +483,7 @@ async function updateSubscriptionStatus(event, user, subscriptionId) {
   const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
   BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
-  const body = parseRequestBody(event);
+  const body = parseRequestBody(event.body);
   const { status, reviewStatus } = body;
 
   if (!status && !reviewStatus) {
