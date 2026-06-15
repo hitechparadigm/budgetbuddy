@@ -121,8 +121,10 @@ export const SettingsPage: React.FC = () => {
       }
     };
 
+    // MFA is not yet implemented — skip the status check to avoid CORS errors
+    // checkMfaStatus();
+
     loadProfile();
-    checkMfaStatus();
   }, []);
 
   const getCurrentLocalTime = () => {
