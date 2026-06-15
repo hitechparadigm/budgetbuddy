@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-15 (Session 146 — smart invitation page, invitation preview API, inviter first name)
+**Last Updated**: 2026-06-15 (Session 146 — smart invitation page, invitation preview API, inviter first name; biweekly income calculation fix)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -174,6 +174,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ Reuses `budgetId` created during registration — guards on `onboardingCompleted` flag (fixed 2026-06-15)
 - ✅ Default income placeholder category created during onboarding
 - ✅ Income category frequency support (weekly, biweekly, monthly, annual)
+- ✅ Biweekly income calculation uses actual occurrence dates (fixed 2026-06-15: was counting 3 occurrences for any month ≥29 days regardless of start date; now uses `calculateOccurrencesInMonth()` from shared utils)
 
 ### Membership & Invitations
 - ✅ Invite members (`POST /budgets/{id}/invite`) — partner, household_member, viewer
@@ -443,6 +444,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Send invitation | `BudgetMembersPage.tsx` | `POST /budgets/{id}/invite` | ✅ |
 | Accept invitation | `AcceptInvitationPage.tsx` | `POST /budgets/accept-invitation` | ✅ (public endpoint — no auth required) |
 | Invitation preview | `AcceptInvitationPage.tsx` | `GET /budgets/invitation-preview` | ✅ Smart page: shows inviter name, budget name, smart auth tab, pre-filled email |
+| Smart auth tab on accept | `AcceptInvitationPage.tsx` | `GET /auth/check-email` (or preview API) | ✅ Shows "Create Account" for new users, "Log In" for existing users |
 | Pending invitations | `BudgetMembersPage.tsx` | `GET /budgets/{id}/invitations` | ✅ |
 | Resend / revoke | `BudgetMembersPage.tsx` | `POST/DELETE /budgets/{id}/invitations/{id}` | ✅ |
 | Change role / remove | `BudgetMembersPage.tsx` | `PUT/DELETE /budgets/{id}/members/{userId}` | ✅ |
