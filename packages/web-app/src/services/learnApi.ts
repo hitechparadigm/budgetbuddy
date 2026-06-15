@@ -9,7 +9,8 @@ import { config } from '../config/environment';
 const API_BASE = config.featuresApiUrl;
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('budgetbuddy_access_token');
+  // API Gateway Cognito authorizer requires id_token, not access_token
+  const token = localStorage.getItem('budgetbuddy_id_token');
   return {
     'Content-Type': 'application/json',
     'Authorization': token ? `Bearer ${token}` : '',
