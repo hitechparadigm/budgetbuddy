@@ -362,7 +362,7 @@ export const InsightsPage: React.FC = () => {
                         const maxAmount = Math.max(
                           ...patterns.patterns.dayOfWeek.map((d) => d.amount),
                         );
-                        const percentage = (day.amount / maxAmount) * 100;
+                        const percentage = maxAmount > 0 ? (day.amount / maxAmount) * 100 : 0;
                         return (
                           <div key={i} className="flex items-center gap-2">
                             <span className="w-12 text-xs text-gray-600">
@@ -396,7 +396,7 @@ export const InsightsPage: React.FC = () => {
                         const maxAmount = Math.max(
                           ...patterns.patterns.timeOfMonth.map((p) => p.amount),
                         );
-                        const percentage = (period.amount / maxAmount) * 100;
+                        const percentage = maxAmount > 0 ? (period.amount / maxAmount) * 100 : 0;
                         return (
                           <div key={i} className="flex items-center gap-2">
                             <span className="w-20 text-xs text-gray-600">
