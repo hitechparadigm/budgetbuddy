@@ -108,7 +108,11 @@ exports.handler = async (event) => {
     const userProfile = await dynamoHelpers.getItem(`USER#${userId}`, 'PROFILE');
 
     const existingBudgetId = userProfile?.defaultBudgetId;
-    if (existingBudgetId) {
+    // Guard: only block re-onboarding if the user explicitly completed onboarding before.
+    // Registration may pre-set defaultBudgetId on the profile — that alone should NOT block
+    // the user from completing the onboarding wizard and creating their first budget period.
+    const alreadyOnboarded = userProfile?.onboardingCompleted === true;
+    if (existingBudgetId && alreadyOnboarded) {
       // Re-onboarding guard: budget already exists, prevent duplicate creation
       return {
         statusCode: 409,
@@ -132,7 +136,9 @@ exports.handler = async (event) => {
 
     // Create initial budget period for current month
     const currentMonth = requestBody.currentMonth;
-    const defaultBudgetId = `budget_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    // Reuse the budgetId from registration if it exists (registration pre-creates the budget shell),
+    // otherwise generate a new one. This prevents orphaned budgets.
+    const defaultBudgetId = existingBudgetId || `budget_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     // Write BUDGET#<budgetId>/METADATA record
     const budgetMetadata = {
