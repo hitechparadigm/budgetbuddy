@@ -50,7 +50,10 @@ const parseUserFromIdToken = (idToken: string): User | null => {
       return null;
     }
 
-    const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
+    // Decode JWT payload — use atob() (browser-native) not Buffer (Node.js only)
+    // JWT uses base64url encoding (- and _ instead of + and /)
+    const base64 = tokenParts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
 
     // Extract user information from token payload
     const userId = payload["custom:userId"] || payload.sub;
