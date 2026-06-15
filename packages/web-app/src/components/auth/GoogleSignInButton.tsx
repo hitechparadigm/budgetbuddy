@@ -24,7 +24,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   onSuccess,
   onError
 }) => {
-  const { loading } = useAuth();
+  const { loading, loginWithGoogle } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
 
   // ============================================================================
@@ -40,7 +40,6 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       }
 
       // Send credential to backend for verification and user creation/linking
-      const { loginWithGoogle } = useAuth();
       await loginWithGoogle(credentialResponse.credential);
 
       onSuccess?.();
