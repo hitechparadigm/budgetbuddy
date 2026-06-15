@@ -351,7 +351,7 @@ async function createSubscription(event, user) {
   const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
   BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
-  const subscriptionId = generateId("sub");
+  const subscriptionId = generateId.custom("sub");
   const now = new Date().toISOString();
 
   const subscription = {
