@@ -216,7 +216,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ Receipt scanning (OCR via AWS Textract, web upload + mobile camera)
 - ✅ Credit score monitoring
 - ✅ Investment tracking (holdings, portfolio performance, net worth integration)
-- ✅ AI bill reminders and budget planning (pattern detection, recurring detection)
+- ✅ Subscriptions: list, AI detection from transactions (`POST /subscriptions/detect`), add/edit/delete, monthly/yearly cost tracking, renewal reminders, review status (Keep/Review/Cancel)
 - ✅ Notifications: device registration, preferences (GET/PUT), notification history, push delivery via Expo
 - ✅ Net worth tracking (manual + investment accounts)
 
@@ -256,7 +256,9 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 ## Live API Test Results (2026-06-15)
 
-Tested against dev environment using `scripts/test-live-api.js`. **111 checks passed, 0 failed** across 20 test sections. All previous skips resolved — transactions now work end-to-end.
+Tested against dev environment using `scripts/test-live-api.js`. **111 checks passed, 0 failed** across 20 test sections. All previous skips resolved — transactions work end-to-end.
+
+**Playwright browser test results** — see "Playwright Frontend Test Results" section below.
 
 ## Playwright Frontend Test Results (2026-06-15)
 
@@ -295,16 +297,42 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | 11 | `environment.ts` | Missing `extendedFeaturesApiUrl` constant | Added with `hkjzroedjf` URL |
 | 12 | `subscriptions` pages | Used main API instead of features API | Fixed to `featuresApiUrl` |
 
-### 🔍 Pages Needing Further Investigation
-| Page | Route | Issue |
-|------|-------|-------|
-| Financial Insights | `/insights` | Shows only AI Q&A panel (no charts) — wrong API fixed but needs post-deploy test |
-| Tips Feed | `/tips` | Shows "No tips" — wrong API fixed but needs post-deploy test |
-| Budget Members | `/budget/members` | Was infinite spinner — fixed, needs post-deploy test |
-| Calendar | `/budget` (Calendar tab) | Not yet tested — should show transactions per day |
-| Summary | `/budget` (Summary tab) | Not yet tested — should show period totals |
-| Subscriptions | `/subscriptions` | Not yet tested — AI subscription detection feature |
-| Recurring transactions | `/budget` | Not yet tested — weekly/biweekly/monthly/annual frequency |
+### 🔍 Pages Tested (Playwright 2026-06-15 — Post-Fix)
+| Page | Route | Status | Notes |
+|------|-------|--------|-------|
+| Financial Insights | `/insights` | ✅ | Charts load, Spending Patterns/Trends sections render |
+| Insights — $NaN bug | `/insights` | ✅ Fixed | `formatCurrency(null)` now returns `$0.00` instead of `$NaN` |
+| Tips Feed | `/tips` | ✅ | Loads with correct API (features gateway) |
+| Budget Members | `/budget/members` | ✅ Fixed | Auto-fetches active budget, no longer infinite spinner |
+| Summary tab | `/budget` | ✅ | Donut chart, category breakdown, planned/spent/remaining |
+| Calendar tab | `/budget` | ✅ | Monthly calendar with transaction dots, click day shows transactions |
+| Recurring budget items | `/budget` | ✅ | Weekly/Bi-weekly/Monthly/Annually frequency — "Amount per occurrence" |
+| Subscriptions page | `/subscriptions` | ✅ | Stats, filter tabs, Detect Subscriptions + Add Subscription buttons |
+| Subscriptions — AI detection | `/subscriptions` | ✅ | "Detect Subscriptions" calls backend, returns empty (not enough data) |
+| Subscriptions — Add | `/subscriptions/new` | ✅ Fixed | Was 500 (`generateId("sub")` → `generateId.custom("sub")`) |
+| Subscriptions — Merchant matching | `/subscriptions/new` | ✅ | Merchant name field used for transaction matching |
+| Debt Payoff | `/debt-payoff` | ✅ Fixed | Now uses featuresApiUrl correctly |
+
+### 🐛 Additional Bugs Found & Fixed (2026-06-15 continued)
+
+| # | Component | Bug | Fix |
+|---|-----------|-----|-----|
+| 13 | `backend/functions/subscriptions/index.js` | `generateId("sub")` — not a function, it's an object | Changed to `generateId.custom("sub")` |
+| 14 | `InsightsPage.tsx` | `formatCurrency(null/undefined)` → `$NaN` displayed in charts | Added null/NaN guard: returns `$0.00` |
+| 15 | `InsightsPage.tsx` | `savingsRate.toFixed(1)` crashes on null | Added `?? 0` guard |
+| 16 | `InsightsPage.tsx` | Divide-by-zero in pattern bars when `maxAmount = 0` | Already guarded: `maxAmount > 0 ? ... : 0` |
+| 17 | `DebtFormPage.tsx` + `DebtPayoffPage.tsx` | Used main API, should use features API | Fixed to `config.featuresApiUrl` |
+| 18 | `auth-onboarding/index.js` | MEMBER record missing `GSI1PK`/`GSI1SK` → `GET /budgets` returned empty list | Added GSI keys to member record |
+| 19 | `budget-service.js` | Used old `FAMILY#`/`BUDGET#<month>` keys instead of `BUDGET#`/`PERIOD#<month>` | Updated to new schema |
+
+### 🔍 Still Untested / Outstanding
+| Feature | Status |
+|---------|--------|
+| Insights AI Q&A | Not fully tested — `Ask About Your Spending` panel expand |
+| Investments page | Frontend exists, no backend Lambda deployed |
+| Budget Members — full invite flow | Invite → email → accept via link — not end-to-end tested |
+| Mobile app (React Native) | Zero E2E coverage |
+| Currency display in Calendar | Shows `CA$46` instead of `$46` for CAD users — minor formatting bug |
 
 ### ✅ Verified Working (live)
 
