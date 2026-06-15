@@ -384,7 +384,7 @@ All issues resolved:
 |---------|----------|-------------|--------|
 | Budget Members page | `BudgetMembersPage.tsx` | `GET /budgets/{id}/members` | ✅ |
 | Send invitation | `BudgetMembersPage.tsx` | `POST /budgets/{id}/invite` | ✅ |
-| Accept invitation | `AcceptInvitationPage.tsx` | `POST /budgets/accept-invitation` | ✅ |
+| Accept invitation | `AcceptInvitationPage.tsx` | `POST /budgets/accept-invitation` | ✅ (public endpoint — no auth required) |
 | Pending invitations | `BudgetMembersPage.tsx` | `GET /budgets/{id}/invitations` | ✅ |
 | Resend / revoke | `BudgetMembersPage.tsx` | `POST/DELETE /budgets/{id}/invitations/{id}` | ✅ |
 | Change role / remove | `BudgetMembersPage.tsx` | `PUT/DELETE /budgets/{id}/members/{userId}` | ✅ |
