@@ -1,0 +1,28 @@
+- generic [ref=e4]:
+  - generic [ref=e6]:
+    - heading "BudgetBuddy" [level=1] [ref=e7]
+    - paragraph [ref=e8]: AI-powered family budgeting made simple
+  - tablist "Authentication" [ref=e11]:
+    - tab "Sign In" [selected] [ref=e12] [cursor=pointer]
+    - tab "Sign Up" [ref=e13] [cursor=pointer]
+  - tabpanel [ref=e14]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - heading "Welcome Back" [level=2] [ref=e18]
+        - paragraph [ref=e19]: Sign in to your BudgetBuddy account
+      - generic [ref=e27]: Or continue with email
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]: Email Address
+          - textbox "Email Address" [ref=e31]:
+            - /placeholder: Enter your email
+        - generic [ref=e32]:
+          - generic [ref=e33]: Password
+          - textbox "Password" [ref=e34]:
+            - /placeholder: Enter your password
+        - button "Sign In" [ref=e36] [cursor=pointer]
+      - paragraph [ref=e38]:
+        - text: Don't have an account?
+        - button "Sign up here" [ref=e39] [cursor=pointer]
+      - button "Forgot your password?" [ref=e41] [cursor=pointer]
+  - paragraph [ref=e43]: © 2025 BudgetBuddy. All rights reserved.

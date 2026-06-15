@@ -1,0 +1,156 @@
+- main [ref=e5]:
+  - generic [ref=e7]:
+    - button "Open navigation menu" [ref=e8] [cursor=pointer]:
+      - img [ref=e9]
+    - generic [ref=e11]:
+      - generic [ref=e13]: $
+      - generic [ref=e14]: BudgetBuddy
+  - generic [ref=e16]:
+    - generic [ref=e19]:
+      - button [ref=e20] [cursor=pointer]:
+        - img [ref=e21]
+      - heading "Settings" [level=1] [ref=e23]
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - heading "Location & Timezone" [level=2] [ref=e26]
+        - generic [ref=e28]:
+          - generic [ref=e29]: 🌍
+          - generic [ref=e30]:
+            - generic [ref=e31]: Current Timezone
+            - generic [ref=e32]: "Local Time:"
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e35]: Country
+            - combobox "Country" [ref=e36]:
+              - option "Select a country" [selected]
+              - option "United States"
+              - option "Canada"
+              - option "United Kingdom"
+              - option "Australia"
+          - generic [ref=e37]:
+            - generic [ref=e38]: City
+            - textbox "City" [ref=e39]:
+              - /placeholder: Enter your city
+          - generic [ref=e40]:
+            - generic [ref=e41]: Zip / Postal Code
+            - textbox "Zip / Postal Code" [ref=e42]:
+              - /placeholder: Enter your zip or postal code
+          - button "Update Location" [disabled] [ref=e44]
+        - paragraph [ref=e46]:
+          - strong [ref=e47]: "Note:"
+          - text: Your timezone is automatically detected from your location. Updating your location will adjust your timezone accordingly, ensuring all dates and times in the app are displayed correctly for your region.
+      - generic [ref=e48]:
+        - heading "Currency Settings" [level=2] [ref=e49]
+        - generic [ref=e51]:
+          - generic [ref=e52]: 💱
+          - generic [ref=e53]:
+            - generic [ref=e54]: Current Currency
+            - generic [ref=e55]: $ USD - US Dollar
+        - generic [ref=e57]:
+          - generic [ref=e58]: Change Currency
+          - combobox "Change Currency" [ref=e59] [cursor=pointer]:
+            - option "Select a currency" [disabled]
+            - option "$ USD - US Dollar" [selected]
+            - option "€ EUR - Euro"
+            - option "£ GBP - British Pound"
+            - option "C$ CAD - Canadian Dollar"
+            - option "A$ AUD - Australian Dollar"
+            - option "¥ JPY - Japanese Yen"
+        - generic [ref=e61]:
+          - img [ref=e62]
+          - generic [ref=e64]:
+            - paragraph [ref=e65]: Important
+            - paragraph [ref=e66]: Changing your currency will not convert existing budget amounts or transactions. Only new budgets and transactions will use the new currency. Existing data will remain in their original currency.
+      - generic [ref=e67]:
+        - heading "🏦 Connected Bank Accounts" [level=2] [ref=e68]
+        - paragraph [ref=e69]: Link your bank accounts to automatically import transactions and track your spending.
+        - button "Manage Bank Accounts" [ref=e70] [cursor=pointer]:
+          - generic [ref=e71]: Manage Bank Accounts
+          - img [ref=e72]
+      - generic [ref=e74]:
+        - heading "Profile" [level=2] [ref=e75]
+        - paragraph [ref=e76]: Profile settings coming soon...
+      - generic [ref=e77]:
+        - heading "Account" [level=2] [ref=e78]
+        - paragraph [ref=e79]: Account settings coming soon...
+      - generic [ref=e80]:
+        - heading "🔐 Two-Factor Authentication" [level=2] [ref=e81]
+        - generic [ref=e82]:
+          - img [ref=e83]
+          - generic [ref=e86]: Checking 2FA status...
+      - generic [ref=e87]:
+        - heading "🎨 Appearance" [level=2] [ref=e88]
+        - paragraph [ref=e89]: Choose how BudgetBuddy looks to you. Select a theme or let it follow your system settings.
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - generic [ref=e92]: Theme
+            - generic [ref=e93]: "Currently: ☀️ Light"
+          - generic [ref=e94]:
+            - button "Set theme to Light" [ref=e95] [cursor=pointer]:
+              - generic [ref=e96]: ☀️
+              - generic [ref=e97]: Light
+            - button "Set theme to Dark" [ref=e98] [cursor=pointer]:
+              - generic [ref=e99]: 🌙
+              - generic [ref=e100]: Dark
+            - button "Set theme to System" [pressed] [ref=e101] [cursor=pointer]:
+              - generic [ref=e102]: 💻
+              - generic [ref=e103]: System
+      - generic [ref=e104]:
+        - heading "Data Backup & Restore" [level=2] [ref=e105]
+        - generic [ref=e106]:
+          - generic [ref=e107]:
+            - heading "Backup Your Data" [level=3] [ref=e108]
+            - paragraph [ref=e109]: Download a complete backup of all your budgets, transactions, and settings in JSON format. Keep this file safe - you can use it to restore your data if needed.
+            - button "Download Backup" [ref=e110] [cursor=pointer]:
+              - img [ref=e111]
+              - generic [ref=e113]: Download Backup
+          - generic [ref=e115]:
+            - heading "Restore from Backup" [level=3] [ref=e116]
+            - paragraph [ref=e117]: Upload a backup file to restore your data. This will add the budgets and transactions from the backup to your account. Existing data will not be deleted.
+            - generic [ref=e119] [cursor=pointer]:
+              - img [ref=e120]
+              - generic [ref=e122]: Choose Backup File
+            - paragraph [ref=e123]: Only JSON backup files are supported
+          - generic [ref=e125]:
+            - img [ref=e126]
+            - generic [ref=e128]:
+              - paragraph [ref=e129]: Important
+              - paragraph [ref=e130]: Always keep your backup files in a safe place. We recommend storing them in multiple locations (cloud storage, external drive, etc.) to prevent data loss.
+      - generic [ref=e134]: Loading notification preferences...
+      - generic [ref=e135]:
+        - heading "Budget Members" [level=2] [ref=e136]
+        - paragraph [ref=e137]: Manage who has access to your budget, send invitations, and configure collaboration settings.
+        - link "Manage Members →" [ref=e138] [cursor=pointer]:
+          - /url: /budget/members
+      - generic [ref=e139]:
+        - heading "Troubleshooting" [level=2] [ref=e140]
+        - generic [ref=e142]:
+          - heading "Authentication Issues" [level=3] [ref=e143]
+          - paragraph [ref=e144]: If you're experiencing "User profile not found" errors or login issues, use the token diagnostics tool to identify and fix authentication problems.
+          - button "Run Token Diagnostics" [ref=e145] [cursor=pointer]
+      - generic [ref=e146]:
+        - heading "⚠️ Danger Zone" [level=2] [ref=e147]
+        - generic [ref=e149]:
+          - heading "Delete Account" [level=3] [ref=e150]
+          - paragraph [ref=e151]: Permanently delete your account and all associated data. This action cannot be undone.
+          - button "Delete My Account" [ref=e152] [cursor=pointer]:
+            - img [ref=e153]
+            - generic [ref=e155]: Delete My Account
+      - generic [ref=e156]:
+        - heading "📚 Help & Tutorial" [level=2] [ref=e157]
+        - generic [ref=e158]:
+          - generic [ref=e159]:
+            - heading "App Tutorial" [level=3] [ref=e160]
+            - paragraph [ref=e161]: Need a refresher on how to use BudgetBuddy? Replay the tutorial to learn about key features.
+            - button "Replay Tutorial" [ref=e162] [cursor=pointer]:
+              - img [ref=e163]
+              - generic [ref=e165]: Replay Tutorial
+          - generic [ref=e166]:
+            - heading "Keyboard Shortcuts" [level=3] [ref=e167]
+            - paragraph [ref=e168]: Use keyboard shortcuts to navigate faster. Press Ctrl + / to see all shortcuts.
+          - generic [ref=e169]:
+            - heading "About BudgetBuddy" [level=3] [ref=e170]
+            - paragraph [ref=e171]: View app version, legal information, and contact support.
+            - button "About" [ref=e172] [cursor=pointer]:
+              - img [ref=e173]
+              - generic [ref=e175]: About

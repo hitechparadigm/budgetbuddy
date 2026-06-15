@@ -1,0 +1,46 @@
+- main [ref=e5]:
+  - generic [ref=e7]:
+    - button "Open navigation menu" [ref=e8] [cursor=pointer]:
+      - img [ref=e9]
+    - generic [ref=e11]:
+      - generic [ref=e13]: $
+      - generic [ref=e14]: BudgetBuddy
+  - generic [ref=e113]:
+    - generic [ref=e116]:
+      - generic [ref=e117]:
+        - button "← Back" [ref=e118] [cursor=pointer]
+        - heading "🎯 Savings Goals" [level=1] [ref=e119]
+      - button "+ New Goal" [ref=e120] [cursor=pointer]
+    - generic [ref=e122]:
+      - generic [ref=e123]:
+        - generic [ref=e124]: Active Goals
+        - generic [ref=e125]: "1"
+      - generic [ref=e126]:
+        - generic [ref=e127]: Total Target
+        - generic [ref=e128]: $5,000.00
+      - generic [ref=e129]:
+        - generic [ref=e130]: Total Saved
+        - generic [ref=e131]: $0.00
+      - generic [ref=e132]:
+        - generic [ref=e133]: Overall Progress
+        - generic [ref=e134]: 0%
+    - generic [ref=e138]:
+      - generic [ref=e139]:
+        - generic [ref=e140]:
+          - generic "Drag to reorder" [ref=e141]: ⋮⋮
+          - generic [ref=e142]: ✈️
+          - heading "Summer Vacation 2027 🎯" [level=3] [ref=e144]:
+            - text: Summer Vacation 2027
+            - generic [ref=e145]: 🎯
+        - generic [ref=e146]:
+          - button "✏️" [ref=e147] [cursor=pointer]
+          - button "🗑️" [ref=e148] [cursor=pointer]
+          - button "+ Add Funds" [ref=e149] [cursor=pointer]
+      - generic [ref=e151]:
+        - generic [ref=e152]: $0.00 of $5,000.00
+        - generic [ref=e153]: 0%
+      - generic [ref=e155]:
+        - generic [ref=e156]: 25%
+        - generic [ref=e157]: 50%
+        - generic [ref=e158]: 75%
+        - generic [ref=e159]: 100%

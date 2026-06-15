@@ -59,6 +59,10 @@ interface BudgetCategory {
   recurringFrequency?: "weekly" | "bi-weekly" | "monthly" | "annually";
   startDate?: string; // First occurrence date for recurring items
   nextDueDate?: string;
+  // Frequency-based income/expense support
+  frequency?: "monthly" | "biweekly" | "weekly" | "semi-monthly" | "one-time";
+  frequencyAmount?: number; // Per-period amount for biweekly/weekly
+  isOneTime?: boolean; // true when frequency === 'one-time'
 }
 
 interface BudgetGroup {
@@ -155,6 +159,9 @@ export const BudgetPage: React.FC = () => {
       | "monthly"
       | "annually",
     startDate: getTodayString(), // First occurrence date
+    // Frequency-based income support
+    frequency: "monthly" as "monthly" | "biweekly" | "weekly" | "semi-monthly" | "one-time",
+    frequencyAmount: "", // Per-period amount for biweekly/weekly
   });
 
   // Right sidebar tab state
@@ -839,6 +846,8 @@ export const BudgetPage: React.FC = () => {
         isRecurring: category.isRecurring,
         recurringFrequency: category.recurringFrequency || "monthly",
         startDate: category.startDate || getTodayString(),
+        frequency: category.frequency || "monthly",
+        frequencyAmount: category.frequencyAmount?.toString() || "",
       });
     } else {
       setEditingCategory(null);
@@ -850,6 +859,8 @@ export const BudgetPage: React.FC = () => {
         isRecurring: false,
         recurringFrequency: "monthly",
         startDate: getTodayString(),
+        frequency: "monthly",
+        frequencyAmount: "",
       });
     }
     setShowBudgetItemModal(true);
@@ -866,6 +877,8 @@ export const BudgetPage: React.FC = () => {
       isRecurring: false,
       recurringFrequency: "monthly",
       startDate: getTodayString(),
+      frequency: "monthly",
+      frequencyAmount: "",
     });
   };
 
@@ -883,7 +896,11 @@ export const BudgetPage: React.FC = () => {
       !budget ||
       !selectedGroupType ||
       !budgetItemForm.name ||
-      !budgetItemForm.plannedAmount
+      // For income with biweekly/weekly frequency, frequencyAmount is required; otherwise plannedAmount
+      (!budgetItemForm.plannedAmount &&
+        !(selectedGroupType === "income" &&
+          (budgetItemForm.frequency === "biweekly" || budgetItemForm.frequency === "weekly") &&
+          budgetItemForm.frequencyAmount))
     ) {
       console.log("[handleBudgetItemSubmit] Validation failed:", {
         budget: !!budget,
@@ -894,8 +911,21 @@ export const BudgetPage: React.FC = () => {
       return;
     }
 
-    const baseAmount = parseFloat(budgetItemForm.plannedAmount);
-    if (isNaN(baseAmount)) {
+    // For income items with biweekly/weekly frequency, use frequencyAmount as the per-period value
+    // and derive plannedAmount from it. For all other cases, use the entered plannedAmount.
+    const isIncomeFrequencyBased =
+      selectedGroupType === "income" &&
+      budgetItemForm.frequency !== "monthly" &&
+      budgetItemForm.frequency !== "one-time" &&
+      budgetItemForm.frequencyAmount !== "";
+
+    const rawEnteredAmount = isIncomeFrequencyBased
+      ? parseFloat(budgetItemForm.frequencyAmount)
+      : parseFloat(budgetItemForm.plannedAmount);
+
+    const baseAmount = isNaN(rawEnteredAmount) ? 0 : rawEnteredAmount;
+
+    if (baseAmount === 0 && !isIncomeFrequencyBased && isNaN(parseFloat(budgetItemForm.plannedAmount))) {
       console.log(
         "[handleBudgetItemSubmit] Invalid amount:",
         budgetItemForm.plannedAmount,
@@ -903,8 +933,33 @@ export const BudgetPage: React.FC = () => {
       return;
     }
 
+    // Calculate planned monthly amount for frequency-based income
+    const calcMonthlyFromFrequency = (
+      amountPerPeriod: number,
+      freq: string,
+      monthStr: string,
+    ): number => {
+      if (!freq || freq === "monthly") return amountPerPeriod;
+      const [yr, mo] = monthStr.split("-").map(Number);
+      const daysInMonth = new Date(yr, mo, 0).getDate();
+      if (freq === "biweekly") {
+        const periods = daysInMonth >= 29 ? 3 : 2;
+        return Math.round(amountPerPeriod * periods);
+      }
+      if (freq === "weekly") {
+        const weeks = Math.ceil(daysInMonth / 7);
+        return Math.round(amountPerPeriod * weeks);
+      }
+      if (freq === "semi-monthly") {
+        return Math.round(amountPerPeriod * 2);
+      }
+      return amountPerPeriod;
+    };
+
     // Calculate planned amount for recurring items
-    let plannedAmount = baseAmount;
+    let plannedAmount = isIncomeFrequencyBased
+      ? calcMonthlyFromFrequency(baseAmount, budgetItemForm.frequency, budget.month)
+      : parseFloat(budgetItemForm.plannedAmount) || 0;
     let startDate = budgetItemForm.startDate || getTodayString();
     let occurrenceDates: string[] = [];
 
@@ -937,6 +992,14 @@ export const BudgetPage: React.FC = () => {
     );
     const updatedBudget = { ...budget };
 
+    // Determine frequency-related values for income items
+    const isIncomeGroup = selectedGroupType === "income";
+    const selectedFrequency = isIncomeGroup ? budgetItemForm.frequency : undefined;
+    const isOneTime = selectedFrequency === "one-time";
+    const frequencyAmount = isIncomeGroup && budgetItemForm.frequencyAmount
+      ? parseFloat(budgetItemForm.frequencyAmount)
+      : undefined;
+
     if (editingCategory) {
       console.log(
         "[handleBudgetItemSubmit] Editing existing category:",
@@ -958,6 +1021,11 @@ export const BudgetPage: React.FC = () => {
               recurringFrequency: budgetItemForm.isRecurring
                 ? budgetItemForm.recurringFrequency
                 : undefined,
+              ...(isIncomeGroup && {
+                frequency: selectedFrequency,
+                frequencyAmount: frequencyAmount,
+                isOneTime,
+              }),
             };
           }
           return cat;
@@ -983,6 +1051,11 @@ export const BudgetPage: React.FC = () => {
         recurringFrequency: budgetItemForm.isRecurring
           ? budgetItemForm.recurringFrequency
           : undefined,
+        ...(isIncomeGroup && {
+          frequency: selectedFrequency,
+          frequencyAmount: frequencyAmount,
+          isOneTime,
+        }),
       };
 
       console.log(
@@ -2835,6 +2908,9 @@ export const BudgetPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {budgetItemForm.isRecurring
                     ? "Amount per Occurrence"
+                    : selectedGroupType === "income" &&
+                      (budgetItemForm.frequency === "biweekly" || budgetItemForm.frequency === "weekly")
+                    ? "Monthly Total (auto-calculated)"
                     : "Planned Amount"}
                 </label>
                 <div className="relative">
@@ -2853,7 +2929,16 @@ export const BudgetPage: React.FC = () => {
                     }
                     className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0.00"
-                    required
+                    required={
+                      !(selectedGroupType === "income" &&
+                        (budgetItemForm.frequency === "biweekly" || budgetItemForm.frequency === "weekly") &&
+                        budgetItemForm.frequencyAmount !== "")
+                    }
+                    readOnly={
+                      selectedGroupType === "income" &&
+                      (budgetItemForm.frequency === "biweekly" || budgetItemForm.frequency === "weekly") &&
+                      budgetItemForm.frequencyAmount !== ""
+                    }
                   />
                 </div>
                 {budgetItemForm.isRecurring && budgetItemForm.plannedAmount && (
@@ -2862,6 +2947,88 @@ export const BudgetPage: React.FC = () => {
                   </p>
                 )}
               </div>
+
+              {/* Income frequency selector */}
+              {selectedGroupType === "income" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pay Frequency
+                  </label>
+                  <select
+                    value={budgetItemForm.frequency}
+                    onChange={(e) => {
+                      const freq = e.target.value as typeof budgetItemForm.frequency;
+                      setBudgetItemForm((prev) => ({
+                        ...prev,
+                        frequency: freq,
+                        // Clear frequencyAmount when switching away from biweekly/weekly
+                        frequencyAmount:
+                          freq === "biweekly" || freq === "weekly"
+                            ? prev.frequencyAmount
+                            : "",
+                      }));
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="semi-monthly">Semi-monthly (twice a month)</option>
+                    <option value="biweekly">Biweekly (every 2 weeks)</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="one-time">One-time (won&apos;t repeat next month)</option>
+                  </select>
+                  {budgetItemForm.frequency === "one-time" && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      ⚠️ This item won&apos;t be carried over to next month.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Per-period amount input for biweekly/weekly income */}
+              {selectedGroupType === "income" &&
+                (budgetItemForm.frequency === "biweekly" || budgetItemForm.frequency === "weekly") && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Amount per{" "}
+                      {budgetItemForm.frequency === "biweekly" ? "Paycheck (every 2 weeks)" : "Week"}
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={budgetItemForm.frequencyAmount}
+                        onChange={(e) => {
+                          const perPeriod = parseFloat(e.target.value) || 0;
+                          const [yr, mo] = (budget?.month || currentMonth).split("-").map(Number);
+                          const daysInMonth = new Date(yr, mo, 0).getDate();
+                          let periods: number;
+                          if (budgetItemForm.frequency === "biweekly") {
+                            periods = daysInMonth >= 29 ? 3 : 2;
+                          } else {
+                            periods = Math.ceil(daysInMonth / 7);
+                          }
+                          const monthly = Math.round(perPeriod * periods);
+                          setBudgetItemForm((prev) => ({
+                            ...prev,
+                            frequencyAmount: e.target.value,
+                            plannedAmount: monthly > 0 ? monthly.toString() : "",
+                          }));
+                        }}
+                        className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                    {budgetItemForm.frequencyAmount && parseFloat(budgetItemForm.frequencyAmount) > 0 && (
+                      <p className="text-xs text-green-600 mt-1">
+                        Monthly total for{" "}
+                        {budget?.month || currentMonth}:{" "}
+                        <strong>${budgetItemForm.plannedAmount}</strong>
+                      </p>
+                    )}
+                  </div>
+                )}
 
               <div className="flex items-center space-x-2">
                 <input

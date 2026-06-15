@@ -1,0 +1,7 @@
+- generic [ref=e5]:
+  - generic [ref=e6]: "404"
+  - heading "Page not found" [level=1] [ref=e7]
+  - paragraph [ref=e8]: The page you're looking for doesn't exist or has been moved.
+  - generic [ref=e9]:
+    - button "Go to Budget" [ref=e10] [cursor=pointer]
+    - button "Go Back" [ref=e11] [cursor=pointer]

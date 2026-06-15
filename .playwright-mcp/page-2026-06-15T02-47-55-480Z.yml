@@ -1,0 +1,7 @@
+- main [ref=e5]:
+  - generic [ref=e7]:
+    - button "Open navigation menu" [ref=e8] [cursor=pointer]:
+      - img [ref=e9]
+    - generic [ref=e11]:
+      - generic [ref=e13]: $
+      - generic [ref=e14]: BudgetBuddy
