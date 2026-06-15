@@ -20,10 +20,14 @@ export const AcceptInvitationPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => !!localStorage.getItem("budgetbuddy_id_token")
+  );
 
-  // Login/Register form state
-  const [showAuthForm, setShowAuthForm] = useState(false);
+  // Login/Register form state — show immediately for unauthenticated users
+  const [showAuthForm, setShowAuthForm] = useState(
+    () => !localStorage.getItem("budgetbuddy_id_token")
+  );
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,23 +37,16 @@ export const AcceptInvitationPage: React.FC = () => {
   const [authenticating, setAuthenticating] = useState(false);
 
   useEffect(() => {
-    // Check if user is already authenticated (use id_token — required by API Gateway Cognito authorizer)
+    // Sync auth state from localStorage (in case it changed after initial render)
     const idToken = localStorage.getItem("budgetbuddy_id_token");
     if (idToken) {
       setIsAuthenticated(true);
       setShowAuthForm(false);
-    } else {
-      // Not authenticated — always show auth form for invited users
-      setIsAuthenticated(false);
-      setShowAuthForm(true);
-      setAuthMode("register"); // Default to register for new invited users
     }
 
     // Validate token exists
     if (!token) {
       setError("Invalid invitation link. No token provided.");
-      setLoading(false);
-      return;
     }
 
     setLoading(false);

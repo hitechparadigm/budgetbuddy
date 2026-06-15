@@ -224,10 +224,7 @@ async function handleGenerateBudget(event, { userId, budgetId, role, budgetType,
 
   let generatedGroups;
   try {
-    generatedGroups = await Promise.race([
-      generateBudgetWithBedrock({ month, location, householdSize, currency, budgetType }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Bedrock timeout after 20s')), 20000)), // eslint-disable-line no-undef
-    ]);
+    generatedGroups = await generateBudgetWithBedrock({ month, location, householdSize, currency, budgetType });
   } catch (err) {
     // Bedrock unavailable, EOL model, timeout, or any other failure — use fallback
     logger.warn('Bedrock generation failed, using fallback budget', { userId, error: err.message });
