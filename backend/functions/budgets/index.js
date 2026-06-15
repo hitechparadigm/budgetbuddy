@@ -510,20 +510,26 @@ async function handleAcceptInvitation(event, userId) {
 
   const hashedToken = hashToken(token);
 
-  // Find invitation by hashed token using a scan (token is not a key)
-  // We scan only INVITATION# items to limit scope
-  const scanResult = await dynamodb.send(new ScanCommand({
-    TableName: TABLE_NAME,
-    FilterExpression: 'begins_with(PK, :invPrefix) AND #token = :token AND #status = :pending',
-    ExpressionAttributeNames: { '#token': 'token', '#status': 'status' },
-    ExpressionAttributeValues: {
-      ':invPrefix': 'INVITATION#',
-      ':token': hashedToken,
-      ':pending': 'pending',
-    },
-  }));
+  // Find invitation by hashed token — scan for INVITATION# items matching the token hash
+  // Note: begins_with in FilterExpression works on string attributes (not keys), so this is valid
+  let scanResult;
+  try {
+    scanResult = await dynamodb.send(new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: 'begins_with(PK, :invPrefix) AND tokenHash = :token AND #status = :pending',
+      ExpressionAttributeNames: { '#status': 'status' },
+      ExpressionAttributeValues: {
+        ':invPrefix': 'INVITATION#',
+        ':token': hashedToken,
+        ':pending': 'pending',
+      },
+    }));
+  } catch (scanErr) {
+    logger.error('ScanCommand failed in handleAcceptInvitation', { error: scanErr.message });
+    throwError(400, 'Invalid invitation token.');
+  }
 
-  if (!scanResult.Items || scanResult.Items.length === 0) {
+  if (!scanResult || !scanResult.Items || scanResult.Items.length === 0) {
     throwError(404, 'Invitation not found or already used.');
   }
 

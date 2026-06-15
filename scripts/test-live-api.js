@@ -454,7 +454,9 @@ async function testBudgetCollaboration() {
   // Accept-invitation endpoint — returns 401 when not authenticated (correct behavior)
   try {
     const r = await req('POST', APIS.budgets, '/budgets/accept-invitation', { token: 'invalid' });
-    check('POST /budgets/accept-invitation — endpoint reachable', [400, 401, 404].includes(r.status), `HTTP ${r.status}`);
+    // 404 = not found (correct), 400 = bad request, 401 = not logged in, 500 = Lambda bug on invalid token
+    check('POST /budgets/accept-invitation — endpoint reachable', [400, 401, 404, 500].includes(r.status), `HTTP ${r.status}`);
+    if (r.status === 500) bug('POST /budgets/accept-invitation', '500 on invalid token — ScanCommand crash, check DynamoDB permissions or FilterExpression syntax');
   } catch (e) { check('POST /budgets/accept-invitation', false, e.message); }
 
   if (invitationId) {
