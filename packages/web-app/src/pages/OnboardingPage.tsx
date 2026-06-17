@@ -184,9 +184,23 @@ export const OnboardingPage: React.FC = () => {
   return (
     <>
       {error && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50 max-w-md">
-          <p className="font-bold">Error</p>
-          <p className="text-sm">{error}</p>
+        <div
+          role="alert"
+          className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50 max-w-md"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-bold">Error</p>
+              <p className="text-sm">{error}</p>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-500 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded"
+              aria-label="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
@@ -239,26 +253,32 @@ export const OnboardingPage: React.FC = () => {
             </div>
 
             <div className="p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 id="budget-type-label" className="text-xl font-semibold text-gray-900 mb-2">
                 What kind of budget are you creating?
               </h3>
               <p className="text-gray-600 text-sm mb-6">
                 Choose the option that best fits your household.
               </p>
 
-              <div className="space-y-3">
+              <div
+                role="radiogroup"
+                aria-labelledby="budget-type-label"
+                className="space-y-3"
+              >
                 {BUDGET_TYPE_OPTIONS.map((option) => (
                   <button
                     key={option.value}
+                    role="radio"
+                    aria-checked={selectedBudgetType === option.value}
                     onClick={() => setSelectedBudgetType(option.value)}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                    className={`w-full text-left p-4 rounded-lg border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 ${
                       selectedBudgetType === option.value
                         ? "border-green-500 bg-green-50"
                         : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl">{option.icon}</span>
+                      <span className="text-2xl" aria-hidden="true">{option.icon}</span>
                       <div>
                         <div className="font-semibold text-gray-900">
                           {option.label}
@@ -268,7 +288,7 @@ export const OnboardingPage: React.FC = () => {
                         </div>
                       </div>
                       {selectedBudgetType === option.value && (
-                        <span className="ml-auto text-green-500 text-xl">✓</span>
+                        <span className="ml-auto text-green-500 text-xl" aria-hidden="true">✓</span>
                       )}
                     </div>
                   </button>

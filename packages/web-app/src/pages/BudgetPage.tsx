@@ -1659,6 +1659,8 @@ export const BudgetPage: React.FC = () => {
                         totals.remaining < 0 ? "text-red-600" : "text-green-600"
                       }`}
                     >
+                      {/* Prefix sign so value is not conveyed by color alone (8.6) */}
+                      {totals.remaining < 0 ? "−" : ""}
                       {formatCurrency(Math.abs(totals.remaining), currency)}
                     </span>{" "}
                     left to budget

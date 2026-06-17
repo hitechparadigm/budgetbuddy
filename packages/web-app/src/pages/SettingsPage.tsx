@@ -48,6 +48,7 @@ export const SettingsPage: React.FC = () => {
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [mfaLoading, setMfaLoading] = useState(true);
   const [disabling2FA, setDisabling2FA] = useState(false);
+  const [showDisable2FAConfirm, setShowDisable2FAConfirm] = useState(false);
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
 
   useEffect(() => {
@@ -227,7 +228,7 @@ export const SettingsPage: React.FC = () => {
     setMessage(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("budgetbuddy_id_token");
       if (!token) {
         throw new Error("Not authenticated");
       }
@@ -282,7 +283,7 @@ export const SettingsPage: React.FC = () => {
     setMessage(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("budgetbuddy_id_token");
       if (!token) {
         throw new Error("Not authenticated");
       }
@@ -333,14 +334,12 @@ export const SettingsPage: React.FC = () => {
   };
 
   const handleDisable2FA = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to disable two-factor authentication? This will make your account less secure.",
-      )
-    ) {
-      return;
-    }
+    // Use state-based confirmation instead of window.confirm
+    setShowDisable2FAConfirm(true);
+  };
 
+  const handleDisable2FAConfirmed = async () => {
+    setShowDisable2FAConfirm(false);
     setDisabling2FA(true);
     setMessage(null);
 
@@ -397,13 +396,15 @@ export const SettingsPage: React.FC = () => {
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate("/budget")}
-              className="text-gray-600 hover:text-gray-900"
+              aria-label="Back to Budget"
+              className="text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
             >
               <svg
                 className="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -646,16 +647,34 @@ export const SettingsPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Profile Section (Placeholder) */}
+        {/* Profile Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile</h2>
-          <p className="text-gray-600">Profile settings coming soon...</p>
+          <p className="text-gray-600 text-sm mb-4">
+            Update your name, profile picture, and personal information.
+          </p>
+          <button
+            onClick={() => navigate("/settings/profile")}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors"
+          >
+            Edit Profile →
+          </button>
         </div>
 
-        {/* Account Section (Placeholder) */}
+        {/* Account Section */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Account</h2>
-          <p className="text-gray-600">Account settings coming soon...</p>
+          <p className="text-gray-600 text-sm mb-4">
+            Manage your email address, password, and account security settings.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShow2FASetup(true)}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors"
+            >
+              Change Password
+            </button>
+          </div>
         </div>
 
         {/* Two-Factor Authentication Section */}
@@ -1148,6 +1167,40 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Disable 2FA Confirmation Modal */}
+      {showDisable2FAConfirm && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="disable-2fa-title"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 id="disable-2fa-title" className="text-xl font-semibold text-gray-900 mb-3">
+              Disable Two-Factor Authentication?
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Removing 2FA will make your account less secure. Anyone with your password
+              will be able to sign in without an additional verification step.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowDisable2FAConfirm(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+              >
+                Keep 2FA Enabled
+              </button>
+              <button
+                onClick={handleDisable2FAConfirmed}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              >
+                Yes, Disable 2FA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Currency Change Confirmation Dialog */}
       {showCurrencyConfirm && (

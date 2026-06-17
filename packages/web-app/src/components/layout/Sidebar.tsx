@@ -12,7 +12,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-
 export interface NavItem {
   id: string;
   label: string;
@@ -29,7 +28,7 @@ export interface SidebarProps {
   userEmail?: string;
 }
 
-// Navigation items configuration
+// Navigation items configuration — split into two groups for visual hierarchy
 export const navItems: NavItem[] = [
   { id: "budget", label: "Budget", icon: "📊", path: "/budget" },
   { id: "accounts", label: "Accounts", icon: "🏦", path: "/accounts" },
@@ -37,8 +36,6 @@ export const navItems: NavItem[] = [
   { id: "goals", label: "Goals", icon: "🎯", path: "/goals" },
   { id: "investments", label: "Investments", icon: "📈", path: "/investments" },
   { id: "insights", label: "Insights", icon: "💡", path: "/insights" },
-  { id: "tips", label: "Tips", icon: "💬", path: "/tips" },
-  { id: "learn", label: "Learn", icon: "📚", path: "/learn" },
   { id: "bills", label: "Bills", icon: "📋", path: "/bills" },
   {
     id: "subscriptions",
@@ -53,6 +50,12 @@ export const navItems: NavItem[] = [
     icon: "🏆",
     path: "/credit-score",
   },
+];
+
+// Secondary nav items (tools & learning) — shown below a divider
+export const secondaryNavItems: NavItem[] = [
+  { id: "tips", label: "Tips", icon: "💬", path: "/tips" },
+  { id: "learn", label: "Learn", icon: "📚", path: "/learn" },
   { id: "settings", label: "Settings", icon: "⚙️", path: "/settings" },
 ];
 
@@ -168,10 +171,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
             <button
-              onClick={onToggleCollapse}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded"
-              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
+            onClick={onToggleCollapse}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -199,13 +202,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex-1 p-4 overflow-y-auto">
-          <ul className="space-y-1" role="menu">
+        <nav className="flex-1 p-4 overflow-y-auto" aria-label="Main navigation">
+          {/* Primary items */}
+          <ul className="space-y-1" role="list">
             {navItems.map((item) => (
-              <li key={item.id} role="none">
+              <li key={item.id}>
                 <button
                   onClick={() => handleNavClick(item.path)}
-                  role="menuitem"
+                  aria-label={collapsed && !isMobile ? item.label : undefined}
                   aria-current={isActive(item.path) ? "page" : undefined}
                   className={`
                     w-full flex items-center py-2 rounded-lg transition-colors
@@ -215,8 +219,46 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         ? "bg-green-50 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-300 font-medium border-l-3 border-green-700 dark:border-emerald-400"
                         : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
                     }
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1
                   `}
-                  title={collapsed ? item.label : undefined}
+                >
+                  <span className="text-lg" aria-hidden="true">
+                    {item.icon}
+                  </span>
+                  {(!collapsed || isMobile) && (
+                    <span className="flex-1 text-left">{item.label}</span>
+                  )}
+                  {item.badge && item.badge > 0 && (!collapsed || isMobile) && (
+                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {/* Divider */}
+          <div className={`my-3 border-t border-gray-200 dark:border-gray-700 ${collapsed && !isMobile ? "mx-1" : "mx-0"}`} />
+
+          {/* Secondary items — tools & learning */}
+          <ul className="space-y-1" role="list" aria-label="Tools and learning">
+            {secondaryNavItems.map((item) => (
+              <li key={item.id}>
+                <button
+                  onClick={() => handleNavClick(item.path)}
+                  aria-label={collapsed && !isMobile ? item.label : undefined}
+                  aria-current={isActive(item.path) ? "page" : undefined}
+                  className={`
+                    w-full flex items-center py-2 rounded-lg transition-colors
+                    ${collapsed && !isMobile ? "justify-center px-2" : "space-x-3 px-3"}
+                    ${
+                      isActive(item.path)
+                        ? "bg-green-50 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-300 font-medium border-l-3 border-green-700 dark:border-emerald-400"
+                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
+                    }
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1
+                  `}
                 >
                   <span className="text-lg" aria-hidden="true">
                     {item.icon}
@@ -258,9 +300,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={handleLogout}
             className={`
               w-full flex items-center py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1
               ${collapsed && !isMobile ? "justify-center px-2" : "space-x-3 px-3"}
             `}
-            title={collapsed ? "Logout" : undefined}
+            aria-label={collapsed && !isMobile ? "Logout" : undefined}
           >
             <span className="text-lg" aria-hidden="true">
               🚪
