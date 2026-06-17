@@ -66,8 +66,11 @@ export const GoalsPage: React.FC = () => {
   const [dragOverGoalId, setDragOverGoalId] = useState<string | null>(null);
   const [reordering, setReordering] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [milestoneMessage, setMilestoneMessage] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [archiving, setArchiving] = useState<string | null>(null);
+  // Controlled delete confirmation state (replaces window.confirm)
+  const [goalToDelete, setGoalToDelete] = useState<Goal | null>(null);
   const dragCounter = useRef(0);
   const currency = "USD";
 
@@ -158,10 +161,7 @@ export const GoalsPage: React.FC = () => {
       // Show celebration for new milestones with confetti
       if (data.data?.newMilestones?.length > 0) {
         setShowConfetti(true);
-        // Show message after a brief delay for confetti effect
-        setTimeout(() => {
-          alert(`🎉 ${data.data.newMilestones[0].message}`);
-        }, 500);
+        setMilestoneMessage(`🎉 ${data.data.newMilestones[0].message}`);
       }
 
       // Reload goals
@@ -185,10 +185,15 @@ export const GoalsPage: React.FC = () => {
     setShowContributeModal(true);
   };
 
-  // Delete goal permanently
-  const handleDeleteGoal = async (goal: Goal) => {
-    if (!window.confirm(`Delete "${goal.name}"? This cannot be undone.`))
-      return;
+  // Delete goal permanently — opens controlled confirmation modal
+  const handleDeleteGoal = (goal: Goal) => {
+    setGoalToDelete(goal);
+  };
+
+  const confirmDeleteGoal = async () => {
+    if (!goalToDelete) return;
+    const goal = goalToDelete;
+    setGoalToDelete(null);
 
     try {
       setError(null);
@@ -370,6 +375,15 @@ export const GoalsPage: React.FC = () => {
     return "bg-gray-400";
   };
 
+  /** Text label for progress tier — supplements color so it's not the only signal */
+  const getProgressLabel = (percent: number) => {
+    if (percent >= 100) return "Complete";
+    if (percent >= 75) return "Almost there";
+    if (percent >= 50) return "Halfway";
+    if (percent >= 25) return "Getting started";
+    return "Just begun";
+  };
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", {
@@ -398,6 +412,25 @@ export const GoalsPage: React.FC = () => {
         onComplete={() => setShowConfetti(false)}
       />
 
+      {/* Milestone celebration notification (replaces window.alert) */}
+      {milestoneMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-white border border-green-300 rounded-xl shadow-lg px-6 py-4 flex items-center gap-3 max-w-sm"
+        >
+          <span className="text-2xl" aria-hidden="true">🎉</span>
+          <p className="text-green-800 font-medium text-sm flex-1">{milestoneMessage}</p>
+          <button
+            onClick={() => setMilestoneMessage(null)}
+            className="text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 rounded"
+            aria-label="Dismiss milestone notification"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -405,7 +438,8 @@ export const GoalsPage: React.FC = () => {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate("/budget")}
-                className="text-gray-500 hover:text-gray-700"
+                aria-label="Back to Budget"
+                className="text-gray-500 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded"
               >
                 ← Back
               </button>
@@ -498,8 +532,8 @@ export const GoalsPage: React.FC = () => {
           <>
             {activeGoals.length > 1 && (
               <p className="text-sm text-gray-500 mb-4 flex items-center gap-2">
-                <span className="text-lg">↕️</span>
-                Drag and drop goals to reorder by priority
+                <span className="text-lg" aria-hidden="true">↕️</span>
+                Drag and drop goals to reorder by priority, or use the ↑↓ buttons on each goal.
                 {reordering && (
                   <span className="ml-2 text-blue-600">Saving...</span>
                 )}
@@ -535,6 +569,7 @@ export const GoalsPage: React.FC = () => {
                       {goal.status === "active" && (
                         <span
                           className="text-gray-400 cursor-grab"
+                          aria-hidden="true"
                           title="Drag to reorder"
                         >
                           ⋮⋮
@@ -571,21 +606,21 @@ export const GoalsPage: React.FC = () => {
                             onClick={() =>
                               navigate(`/goals/${goal.goalId}/edit`)
                             }
-                            className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Edit goal"
+                            className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                            aria-label={`Edit goal: ${goal.name}`}
                           >
-                            ✏️
+                            <span aria-hidden="true">✏️</span>
                           </button>
                           <button
                             onClick={() => handleDeleteGoal(goal)}
-                            className="px-3 py-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete goal"
+                            className="px-3 py-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                            aria-label={`Delete goal: ${goal.name}`}
                           >
-                            🗑️
+                            <span aria-hidden="true">🗑️</span>
                           </button>
                           <button
                             onClick={() => openContributeModal(goal)}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
                           >
                             + Add Funds
                           </button>
@@ -617,10 +652,17 @@ export const GoalsPage: React.FC = () => {
                         {formatCurrency(goal.targetAmount, currency)}
                       </span>
                       <span className="font-semibold text-gray-900">
-                        {goal.progressPercent}%
+                        {goal.progressPercent}% — {getProgressLabel(goal.progressPercent)}
                       </span>
                     </div>
-                    <div className="h-4 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-4 bg-gray-200 rounded-full overflow-hidden"
+                      role="progressbar"
+                      aria-valuenow={goal.progressPercent}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${goal.name} progress: ${goal.progressPercent}%`}
+                    >
                       <div
                         className={`h-full ${getProgressColor(goal.progressPercent)} transition-all duration-500`}
                         style={{ width: `${goal.progressPercent}%` }}
@@ -753,18 +795,24 @@ export const GoalsPage: React.FC = () => {
 
       {/* Contribute Modal */}
       {showContributeModal && selectedGoal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="contribute-modal-title"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        >
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 id="contribute-modal-title" className="text-lg font-semibold text-gray-900 mb-4">
               Add Funds to "{selectedGoal.name}"
             </h3>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="contribution-amount" className="block text-sm font-medium text-gray-700 mb-2">
                 Amount
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-2 text-gray-500">$</span>
+                <span className="absolute left-4 top-2 text-gray-500" aria-hidden="true">$</span>
                 <input
+                  id="contribution-amount"
                   type="number"
                   step="0.01"
                   min="0.01"
@@ -786,20 +834,54 @@ export const GoalsPage: React.FC = () => {
                   setShowContributeModal(false);
                   setSelectedGoal(null);
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
               >
                 Cancel
               </button>
               <button
                 onClick={handleContribute}
                 disabled={contributing || !contributionAmount}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium ${
+                className={`flex-1 px-4 py-2 rounded-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 ${
                   contributing || !contributionAmount
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-green-600 text-white hover:bg-green-700"
                 }`}
               >
                 {contributing ? "Adding..." : "Add Funds"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal — replaces window.confirm */}
+      {goalToDelete && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-goal-title"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        >
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 id="delete-goal-title" className="text-lg font-semibold text-gray-900 mb-2">
+              Delete "{goalToDelete.name}"?
+            </h3>
+            <p className="text-gray-600 mb-6 text-sm">
+              This will permanently delete the goal and all its contribution history. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setGoalToDelete(null)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                autoFocus
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteGoal}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+              >
+                Delete Goal
               </button>
             </div>
           </div>

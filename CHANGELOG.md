@@ -1,6 +1,46 @@
 # Changelog
 
-## [1.9.130] - 2026-06-15
+## [1.9.131] - 2026-06-17
+
+### ♿ fix: accessibility and UX heuristic fixes across web app (24 findings)
+
+#### Navigation / Layout
+- **`Sidebar.tsx`**: Split 13-item nav list into two groups — core finances (Budget, Accounts, Members, Goals, etc.) and secondary tools (Tips, Learn, Settings) — separated by a visual divider. Collapsed icon-only buttons now have explicit `aria-label` so screen readers announce the destination. Added `focus-visible:ring` to all nav buttons and logout button.
+- **`Navigation.tsx`**: Already had correct `<nav>` + `<ul>/<li>/<a>` structure (no menu role misuse); removed stale "Test" nav item.
+
+#### GoalsPage
+- Replaced `window.alert()` milestone celebration with an accessible `role="status"` toast notification with dismiss button.
+- Replaced `window.confirm()` delete with a controlled modal (`role="dialog" aria-modal`).
+- Added `role="progressbar"` with `aria-valuenow/min/max/label` to all progress bars.
+- Added `getProgressLabel()` text alongside progress percentage — color is no longer the sole signal (8.6).
+- Contribute modal: added `id`/`htmlFor` label association, `role="dialog"`, `aria-labelledby`.
+- Back button: added `aria-label="Back to Budget"` and `focus-visible:ring`.
+
+#### SettingsPage
+- Fixed `localStorage.getItem("token")` → `budgetbuddy_id_token` in backup and restore handlers (was silently failing auth).
+- Replaced `window.confirm()` for 2FA disable with a controlled confirmation modal.
+- Added `aria-label="Back to Budget"` and `focus-visible:ring` to header back button.
+- Replaced placeholder "Profile settings coming soon" and "Account settings coming soon" sections with real content.
+
+#### AccountsPage
+- Net worth figure now prefixes `+` / `−` sign so positive/negative is not conveyed by color alone (8.6).
+- Back link: added `aria-label="Back to Budget"` and `aria-hidden` on decorative SVG.
+
+#### BudgetPage
+- "Left to budget" figure now prefixes `−` when negative — color is no longer the sole signal (8.6).
+
+#### OnboardingPage
+- Error banner is now dismissible (close button) and uses `role="alert" aria-live="assertive"`.
+- Budget type selection cards now use `role="radiogroup"` + `role="radio"` + `aria-checked` — screen readers correctly announce mutually exclusive selection.
+
+#### AuthPage
+- Tab active indicator uses consistent emerald color for both Sign In and Sign Up (was blue/green split).
+- Tab buttons use `focus-visible:ring-2 focus-visible:ring-emerald-500` — outline not removed without replacement.
+
+#### LandingPage
+- Footer nav buttons have `underline underline-offset-2` at rest — visually distinct from static text without requiring hover.
+
+
 
 ### ✨ Feat: Smart invitation page — inviter first name, smart auth tab, email pre-fill, invitation preview API
 

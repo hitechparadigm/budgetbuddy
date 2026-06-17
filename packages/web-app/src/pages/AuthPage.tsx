@@ -85,9 +85,9 @@ export const AuthPage: React.FC = () => {
               role="tab"
               aria-selected={authMode === "login"}
               aria-controls="auth-tabpanel"
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 ${
                 authMode === "login"
-                  ? "border-blue-500 text-blue-600"
+                  ? "border-emerald-500 text-emerald-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
@@ -98,9 +98,9 @@ export const AuthPage: React.FC = () => {
               role="tab"
               aria-selected={authMode === "register"}
               aria-controls="auth-tabpanel"
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 ${
                 authMode === "register"
-                  ? "border-green-500 text-green-600"
+                  ? "border-emerald-500 text-emerald-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >

@@ -171,19 +171,19 @@ export const LandingPage: React.FC = () => {
           <div className="flex gap-6 text-sm text-gray-500 dark:text-gray-500">
             <button
               onClick={() => navigate("/privacy")}
-              className="hover:text-gray-700 dark:hover:text-gray-300"
+              className="hover:text-gray-700 dark:hover:text-gray-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
             >
               Privacy
             </button>
             <button
               onClick={() => navigate("/terms")}
-              className="hover:text-gray-700 dark:hover:text-gray-300"
+              className="hover:text-gray-700 dark:hover:text-gray-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
             >
               Terms
             </button>
             <button
               onClick={() => navigate("/help")}
-              className="hover:text-gray-700 dark:hover:text-gray-300"
+              className="hover:text-gray-700 dark:hover:text-gray-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
             >
               Help
             </button>

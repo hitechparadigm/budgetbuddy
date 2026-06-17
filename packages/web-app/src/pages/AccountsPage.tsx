@@ -175,6 +175,7 @@ export const AccountsPage: React.FC = () => {
             <div className="flex items-center space-x-4">
               <Link
                 to="/budget"
+                aria-label="Back to Budget"
                 className="text-gray-600 hover:text-gray-900 flex items-center"
               >
                 <svg
@@ -182,6 +183,7 @@ export const AccountsPage: React.FC = () => {
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -262,7 +264,9 @@ export const AccountsPage: React.FC = () => {
               <p
                 className={`text-2xl font-bold ${summary.netWorth >= 0 ? "text-green-600" : "text-red-600"}`}
               >
-                {formatCurrency(summary.netWorth, "USD")}
+                {/* Prefix + / − so sign is not conveyed by color alone (8.6) */}
+                {summary.netWorth >= 0 ? "+" : "−"}
+                {formatCurrency(Math.abs(summary.netWorth), "USD")}
               </p>
             </div>
           </div>

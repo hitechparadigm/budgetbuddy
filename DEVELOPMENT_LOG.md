@@ -1,5 +1,26 @@
 # Development Log
 
+## 2026-06-17 - Accessibility and UX heuristic fixes (Session 147)
+
+### Work Completed
+
+Full heuristic review of the web app UI (31 pages, 37+ components) using the design-system-scaffold power. 24 findings across 5 phases — all fixed.
+
+**High-priority accessibility fixes:**
+1. `GoalsPage`: replaced `window.alert()` milestone toast → accessible `role="status"` dismissible notification; replaced `window.confirm()` delete → controlled modal with `role="dialog"`; added `role="progressbar"` + `aria-label` to all progress bars; added text label alongside progress color (color no longer sole signal); fixed `htmlFor`/`id` label association on contribute modal input.
+2. `SettingsPage`: fixed `localStorage.getItem("token")` bug in backup/restore (was using wrong key, silently failing auth); replaced `window.confirm()` 2FA disable → controlled modal; removed two "coming soon" placeholder sections.
+3. `OnboardingPage`: error banner now dismissible with close button + `role="alert"`; budget type cards now use correct `role="radiogroup"` / `role="radio"` / `aria-checked` ARIA pattern.
+4. `Sidebar`: split 13-item undifferentiated nav into two grouped sections (finances vs tools); all icon-only collapsed buttons now have `aria-label`; `focus-visible:ring` added throughout.
+5. `AccountsPage`: net worth prefixes `+`/`−` sign — not color-only; back link has `aria-label="Back to Budget"`.
+6. `BudgetPage`: "left to budget" prefixes `−` when negative — not color-only.
+7. `AuthPage`: tab active indicator unified to emerald (was blue/green split); `focus-visible:ring` on tabs.
+8. `LandingPage`: footer nav buttons have underline at rest — visually distinct from static text.
+9. `GoalsPage` back button: `aria-label="Back to Budget"` + `focus-visible:ring`.
+10. `SettingsPage` back button: `aria-label="Back to Budget"` + `focus-visible:ring`.
+11. `.vscode/settings.json`: `editor.codeActionsOnSaveTimeout: 200` to reduce Amazon Q code action popup duration.
+
+---
+
 ## 2026-06-15 - Smart invitation page and invitation preview API (Session 146)
 
 ### Work Completed

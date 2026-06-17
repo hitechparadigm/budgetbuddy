@@ -9,7 +9,6 @@ export const Navigation: React.FC = () => {
     { path: "/dashboard", label: "Dashboard", icon: "📊" },
     { path: "/transactions", label: "Transactions", icon: "💳" },
     { path: "/budget", label: "Budget", icon: "💰" },
-    { path: "/test/transactions", label: "Test", icon: "🧪" },
   ];
 
   const handleLogout = () => {
@@ -26,29 +25,31 @@ export const Navigation: React.FC = () => {
   };
 
   return (
-    <nav className="navigation">
+    <nav className="navigation" aria-label="Main navigation">
       <div className="nav-brand">
         <h2>BudgetBuddy</h2>
       </div>
 
-      <div className="nav-links">
+      <ul className="nav-links" role="list">
         {navItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`nav-link ${location.pathname === item.path ? "active" : ""}`}
-          >
-            <span className="nav-icon" aria-hidden="true">
-              {item.icon}
-            </span>
-            <span className="nav-label">{item.label}</span>
-          </Link>
+          <li key={item.path}>
+            <Link
+              to={item.path}
+              aria-current={location.pathname === item.path ? "page" : undefined}
+              className={`nav-link ${location.pathname === item.path ? "active" : ""}`}
+            >
+              <span className="nav-icon" aria-hidden="true">
+                {item.icon}
+              </span>
+              <span className="nav-label">{item.label}</span>
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
 
       <div className="nav-user">
         <button className="user-menu">
-          <span>👤</span>
+          <span aria-hidden="true">👤</span>
           <span>Profile</span>
         </button>
         <button
@@ -56,7 +57,7 @@ export const Navigation: React.FC = () => {
           onClick={handleLogout}
           aria-label="Logout"
         >
-          <span>🚪</span>
+          <span aria-hidden="true">🚪</span>
           <span>Logout</span>
         </button>
       </div>
