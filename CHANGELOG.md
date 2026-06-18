@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.9.147] - 2026-06-18
+
+### ✨ feat: Phase 4 P4-T3/T4 — AI conversation context persistence; Phase 6 P6-T3 mobile banner
+
+#### AI Conversation Context (P4-T3, P4-T4)
+- `backend/functions/insights/index.js`: `askAboutSpending` now loads last 5 exchanges from `USER#<userId> / AI_CONVERSATION#insights` in DynamoDB before each Bedrock call
+- Conversation history injected into the Bedrock prompt as "Previous conversation context"
+- New exchange saved to DynamoDB after each call (TTL: 90 days, max 30 stored)
+- Non-fatal: conversation history failures are logged + skipped
+- `generateAIResponseWithBedrock` updated with `conversationHistory` parameter
+
+#### Mobile Banner (P6-T3)
+- `AppLayout.tsx`: Added sticky bottom banner below 768px (`block sm:hidden`)
+- "Get the BudgetBuddy app for the best mobile experience" with Learn More link
+
 ## [1.9.146] - 2026-06-18
 
 ### ✨ feat: Phase 3 P3-T4 — Inline category amount editing on Budget page

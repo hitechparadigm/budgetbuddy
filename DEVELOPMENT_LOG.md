@@ -1,5 +1,13 @@
 # Development Log
 
+## 2026-06-18 - Phase 4 P4-T3/T4 AI context, Phase 6 P6-T3 mobile banner (Session 149 cont.)
+
+### Work Completed
+- Insights Lambda: DynamoDB conversation history (30 exchanges, 90d TTL); last 5 injected as Bedrock context
+- AppLayout: mobile app banner at <768px
+
+---
+
 ## 2026-06-18 - Phase 3 P3-T4 — Inline category amount editing (Session 149 cont.)
 
 ### Work Completed

@@ -89,8 +89,8 @@
 
 - [x] **P4-T1** — Wire real Bedrock call in AI budget generation Lambda (replace setTimeout mock)
 - [x] **P4-T2** — Multi-step progress animation on `AIBudgetGenerationPage`: 4 steps with status text
-- [ ] **P4-T3** — DynamoDB: `AI_CONVERSATION#<userId>` entity schema (last 30 interactions)
-- [ ] **P4-T4** — Backend: inject last 5 exchanges + user goals + budget status as context in every Bedrock Insights call
+- [x] **P4-T3** — DynamoDB: `AI_CONVERSATION#<userId>` entity schema (last 30 interactions)
+- [x] **P4-T4** — Backend: inject last 5 exchanges + user goals + budget status as context in every Bedrock Insights call
 - [ ] **P4-T5** — Frontend: rename "Ask about spending" → "Ask your AI coach"; chat bubble UI polish
 - [ ] **P4-T6** — Backend: transaction rules engine Lambda + `RULE#<budgetId>#<ruleId>` DynamoDB entity
 - [ ] **P4-T7** — Backend: apply rules engine on Plaid import pipeline
@@ -122,7 +122,7 @@
 
 - [ ] **P6-T1** — Responsive audit at 1280px, 1024px, 768px
 - [ ] **P6-T2** — Fix 3-column budget layout at 1024px: transaction sidebar → slide-over panel
-- [ ] **P6-T3** — Add `<768px` "Get the mobile app" banner
+- [x] **P6-T3** — Add `<768px` "Get the mobile app" banner
 - [ ] **P6-T4** — Accessibility: `aria-label` on all icon-only buttons post-Lucide migration
 - [ ] **P6-T5** — Accessibility: screen reader test of budget page row read-out
 - [ ] **P6-T6** — Lighthouse audit; reach ≥85 Performance score
