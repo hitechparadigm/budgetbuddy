@@ -6,9 +6,20 @@
  * Includes hero, 3-step proof section, feature grid, pricing, and footer.
  */
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui";
+
+// Redirect authenticated users away from landing page
+function useAuthRedirect() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const token = localStorage.getItem('budgetbuddy_id_token');
+    if (token) {
+      navigate('/overview', { replace: true });
+    }
+  }, [navigate]);
+}
 
 const features = [
   {
@@ -57,6 +68,7 @@ const PROOF_STEPS = [
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  useAuthRedirect(); // Redirect to /overview if already authenticated
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">

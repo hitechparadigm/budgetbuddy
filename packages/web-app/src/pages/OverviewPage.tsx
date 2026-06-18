@@ -31,20 +31,18 @@ import {
 import { PageHeader, StatCard, Badge, Skeleton, SkeletonCard, PremiumGate } from '../components/ui';
 import { Button } from '../components/ui';
 import { apiClient } from '../utils/apiClient';
+import { config } from '../config/environment';
 import { getCurrentMonthString } from '../utils/monthHelpers';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface BudgetPeriod {
-  totalIncome: { planned: number; actual: number; remaining: number };
-  totalSavings: { planned: number; actual: number; remaining: number };
-  totalExpenses: { planned: number; actual: number; remaining: number };
+  totalIncome: number;
+  totalSavings: number;
+  totalExpenses: number;
   remainingBalance: number;
-  groups?: {
-    income?: { categories?: CategoryData[] };
-    savings?: { categories?: CategoryData[] };
-    expenses?: { categories?: CategoryData[] };
-  };
+  currency?: string;
+  groups?: any;
 }
 
 interface CategoryData {
@@ -145,9 +143,8 @@ const FinancialHealthBar: React.FC<{
   if (loading) return <Skeleton className="h-20 w-full rounded-xl" />;
   if (!period) return null;
 
-  const income = period.totalIncome.actual;
-  const assigned = income - Math.max(period.remainingBalance, 0);
-  const spent = period.totalExpenses.actual + period.totalSavings.actual;
+  const income = period.totalIncome;
+  const spent = period.totalExpenses + period.totalSavings;
   const remaining = period.remainingBalance;
   const pct = income > 0 ? Math.min((spent / income) * 100, 100) : 0;
   const isOver = remaining < 0;
@@ -208,7 +205,6 @@ const FinancialHealthBar: React.FC<{
       </div>
       <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
         {Math.round(pct)}% of income spent
-        {assigned !== spent && ` · ${formatCurrency(assigned, currency)} assigned`}
       </p>
     </div>
   );
@@ -442,9 +438,27 @@ export const OverviewPage: React.FC = () => {
 
   const loadBudget = useCallback(async () => {
     try {
-      const data = await apiClient.get(`/budget/current?month=${currentMonth}`);
-      setPeriod(data);
-      if (data?.currency) setCurrency(data.currency);
+      const raw = await apiClient.get(`/budget/current?month=${currentMonth}`);
+      // API returns { success, data: { totalIncome, totalSavings, totalExpenses, remainingBalance, groups, currency }, message }
+      const data = raw?.data ?? raw;
+
+      if (!data) {
+        setLoadingBudget(false);
+        return;
+      }
+
+      // totalIncome/totalSavings/totalExpenses are plain numbers from calculateBudgetTotals
+      const period: BudgetPeriod = {
+        totalIncome: Number(data.totalIncome) || 0,
+        totalSavings: Number(data.totalSavings) || 0,
+        totalExpenses: Number(data.totalExpenses) || 0,
+        remainingBalance: Number(data.remainingBalance) || 0,
+        currency: data.currency,
+        groups: data.groups,
+      };
+
+      setPeriod(period);
+      if (data.currency) setCurrency(data.currency);
     } catch {
       // silent — section shows empty state
     } finally {
@@ -454,8 +468,9 @@ export const OverviewPage: React.FC = () => {
 
   const loadGoals = useCallback(async () => {
     try {
-      const data = await apiClient.get('/goals');
-      setGoals(data?.goals || data || []);
+      const raw = await apiClient.get('/goals');
+      const data = raw?.data ?? raw;
+      setGoals(data?.goals || (Array.isArray(data) ? data : []));
     } catch {
       // silent
     } finally {
@@ -465,8 +480,9 @@ export const OverviewPage: React.FC = () => {
 
   const loadBills = useCallback(async () => {
     try {
-      const data = await apiClient.get('/bills?upcoming=true');
-      setBills(data?.bills || data || []);
+      const raw = await apiClient.get('/bills');
+      const data = raw?.data ?? raw;
+      setBills(data?.bills || (Array.isArray(data) ? data : []));
     } catch {
       // silent
     } finally {
@@ -476,8 +492,16 @@ export const OverviewPage: React.FC = () => {
 
   const loadNetWorth = useCallback(async () => {
     try {
-      const data = await apiClient.get('/net-worth/history?months=6');
-      const history: NetWorthPoint[] = data?.history || data || [];
+      // Net-worth Lambda is on the features API (0poeu07vth)
+      const token = localStorage.getItem('budgetbuddy_id_token');
+      if (!token) { setLoadingNetWorth(false); return; }
+      const res = await fetch(`${config.featuresApiUrl}/net-worth/history?months=6`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) { setLoadingNetWorth(false); return; }
+      const raw = await res.json();
+      const data = raw?.data ?? raw;
+      const history: NetWorthPoint[] = data?.history || (Array.isArray(data) ? data : []);
       setNetWorthHistory(history.map((p) => p.netWorth));
     } catch {
       // silent
@@ -488,23 +512,21 @@ export const OverviewPage: React.FC = () => {
 
   const loadInsight = useCallback(async () => {
     try {
-      const data = await apiClient.get('/insights/summary');
-      const insight: WeeklyInsight = data;
-      setAiInsight(
-        insight?.summary ||
-        (insight?.highlights && insight.highlights[0]) ||
-        null
-      );
-
-      // Also try to load today's spending nudge
-      try {
-        const today = new Date().toISOString().split('T')[0];
-        const nudgeData = await apiClient.get(`/nudges/${today}`);
-        if (nudgeData?.nudges?.[0]?.message && !insight?.summary) {
-          setAiInsight(nudgeData.nudges[0].message);
-        }
-      } catch {
-        // nudges endpoint not available yet — use summary only
+      // Insights summary is on the extended features API (hkjzroedjf)
+      const token = localStorage.getItem('budgetbuddy_id_token');
+      if (!token) { setLoadingInsight(false); return; }
+      const res = await fetch(`${config.extendedFeaturesApiUrl}/insights/summary`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const raw = await res.json();
+        const data = raw?.data ?? raw;
+        const insight: WeeklyInsight = data;
+        setAiInsight(
+          insight?.summary ||
+          (insight?.highlights && insight.highlights[0]) ||
+          null
+        );
       }
     } catch {
       // silent
@@ -527,8 +549,24 @@ export const OverviewPage: React.FC = () => {
     if (!period?.groups) return [];
     const cats: CategoryData[] = [];
     const groups = period.groups;
-    if (groups.expenses?.categories) cats.push(...groups.expenses.categories);
-    if (groups.savings?.categories) cats.push(...groups.savings.categories);
+
+    // Handle both array format (from API) and object format
+    if (Array.isArray(groups)) {
+      for (const group of groups as any[]) {
+        if (group.type === 'expense' || group.type === 'savings') {
+          for (const cat of (group.categories || [])) {
+            cats.push({
+              name: cat.name,
+              plannedAmount: Number(cat.plannedAmount) || 0,
+              spentAmount: Number(cat.spentAmount) || 0,
+            });
+          }
+        }
+      }
+    } else {
+      if ((groups as any).expenses?.categories) cats.push(...(groups as any).expenses.categories);
+      if ((groups as any).savings?.categories) cats.push(...(groups as any).savings.categories);
+    }
     return cats;
   }, [period]);
 
@@ -571,7 +609,7 @@ export const OverviewPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Monthly Income"
-          value={loadingBudget ? '—' : formatCurrency(period?.totalIncome.planned || 0, currency)}
+          value={loadingBudget ? '—' : formatCurrency(period?.totalIncome || 0, currency)}
           icon={DollarSign}
           iconColor="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
           loading={loadingBudget}
@@ -579,7 +617,7 @@ export const OverviewPage: React.FC = () => {
         />
         <StatCard
           label="Total Spent"
-          value={loadingBudget ? '—' : formatCurrency(period?.totalExpenses.actual || 0, currency)}
+          value={loadingBudget ? '—' : formatCurrency(period?.totalExpenses || 0, currency)}
           icon={ArrowUpRight}
           iconColor="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
           loading={loadingBudget}
@@ -587,7 +625,7 @@ export const OverviewPage: React.FC = () => {
         />
         <StatCard
           label="Total Saved"
-          value={loadingBudget ? '—' : formatCurrency(period?.totalSavings.actual || 0, currency)}
+          value={loadingBudget ? '—' : formatCurrency(period?.totalSavings || 0, currency)}
           icon={ArrowDownRight}
           iconColor="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
           loading={loadingBudget}
