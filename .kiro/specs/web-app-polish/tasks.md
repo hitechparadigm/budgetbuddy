@@ -92,10 +92,10 @@
 - [x] **P4-T3** — DynamoDB: `AI_CONVERSATION#<userId>` entity schema (last 30 interactions)
 - [x] **P4-T4** — Backend: inject last 5 exchanges + user goals + budget status as context in every Bedrock Insights call
 - [ ] **P4-T5** — Frontend: rename "Ask about spending" → "Ask your AI coach"; chat bubble UI polish
-- [ ] **P4-T6** — Backend: transaction rules engine Lambda + `RULE#<budgetId>#<ruleId>` DynamoDB entity
-- [ ] **P4-T7** — Backend: apply rules engine on Plaid import pipeline
+- [x] **P4-T6** — Backend: transaction rules engine Lambda + `RULE#<budgetId>#<ruleId>` DynamoDB entity
+- [x] **P4-T7** — Backend: apply rules engine on Plaid import pipeline
 - [ ] **P4-T8** — Frontend: "Create a rule?" prompt on transaction recategorization
-- [ ] **P4-T9** — Frontend: rules management in Settings > Budget tab
+- [x] **P4-T9** — Frontend: rules management in Settings > Budget tab
 - [ ] **P4-T10** — Backend: EventBridge daily spending analysis Lambda (pace check, unusual txns, goal tracking)
 - [ ] **P4-T11** — Frontend: AI Alert card on Overview page (surfaces nudge notifications)
 - [ ] **P4-T12** — Backend: Budget Health Score calculation Lambda `(savings_rate×0.4 + adherence×0.4 + goal_progress×0.2)`

@@ -4,7 +4,7 @@
  * Allows users to manage their profile, location, and timezone settings
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   detectUserTimezone,
@@ -18,6 +18,102 @@ import { TwoFactorSetup } from "../components/TwoFactorSetup";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { DeleteAccountModal } from "../components/DeleteAccountModal";
 import { profileApi } from "../services/api";
+import { config } from "../config/environment";
+
+// ---------------------------------------------------------------------------
+// TransactionRulesSection — inline component for Settings > Budget tab (P4-T9)
+// ---------------------------------------------------------------------------
+
+interface Rule {
+  ruleId: string;
+  merchantPattern: string;
+  categoryName: string;
+  appliedCount: number;
+  createdAt: string;
+}
+
+const TransactionRulesSection: React.FC = () => {
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const loadRules = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('budgetbuddy_id_token');
+      if (!token) return;
+      const res = await fetch(`${config.featuresApiUrl}/rules`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setRules(data.data?.rules || data.rules || []);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadRules(); }, [loadRules]);
+
+  const handleDelete = async (ruleId: string) => {
+    setDeleting(ruleId);
+    try {
+      const token = localStorage.getItem('budgetbuddy_id_token');
+      if (!token) return;
+      await fetch(`${config.featuresApiUrl}/rules/${ruleId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRules(prev => prev.filter(r => r.ruleId !== ruleId));
+    } catch {
+      // silent
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  return (
+    <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
+      <h2 className="text-xl font-semibold text-foreground mb-1">Auto-Categorization Rules</h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        When you recategorize a transaction, you can save a rule — transactions from that merchant will always go to the selected category.
+      </p>
+      {loading ? (
+        <div className="space-y-2">
+          {[1,2].map(i => <div key={i} className="h-10 rounded animate-pulse bg-muted" />)}
+        </div>
+      ) : rules.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No rules yet. Recategorize a transaction and choose "Always categorize [Merchant] as [Category]" to create one.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {rules.map(rule => (
+            <div key={rule.ruleId} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  <span className="text-muted-foreground">If merchant contains</span> "{rule.merchantPattern}"
+                  <span className="text-muted-foreground"> → </span>{rule.categoryName || 'Unknown category'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Applied {rule.appliedCount} time{rule.appliedCount !== 1 ? 's' : ''} · Created {new Date(rule.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+              <button
+                onClick={() => handleDelete(rule.ruleId)}
+                disabled={deleting === rule.ruleId}
+                className="ml-4 shrink-0 px-3 py-1 text-xs text-red-600 hover:bg-red-50 rounded border border-red-200 transition-colors disabled:opacity-50"
+              >
+                {deleting === rule.ruleId ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface LocationForm {
   country: string;
@@ -616,6 +712,9 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Transaction Rules Section — Budget tab */}
+        <TransactionRulesSection />
         </> } {/* end Budget tab */}
 
         {/* Bank Accounts Section — Banks tab */}

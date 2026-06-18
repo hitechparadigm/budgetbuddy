@@ -271,6 +271,15 @@ export class ApiFeaturesStack extends cdk.Stack {
       description: 'BudgetBuddy subscriptions handler for subscription tracking, detection, and renewal management',
     });
 
+    // Transaction Categorization Rules Lambda
+    this.functions.rulesHandler = new lambda.Function(this, 'RulesHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-rules',
+      code: lambda.Code.fromAsset('../backend/functions/rules'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy rules engine for automatic transaction categorization',
+    });
+
     // Debt Payoff Lambda
     this.functions.debtPayoffHandler = new lambda.Function(this, 'DebtPayoffHandler', {
       ...commonProps,
@@ -337,6 +346,9 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Subscriptions routes
     this.setupSubscriptionsRoutes(authorizer);
+
+    // Transaction Categorization Rules routes
+    this.setupRulesRoutes(authorizer);
 
     // Debt Payoff routes
     this.setupDebtPayoffRoutes(authorizer);
@@ -735,6 +747,41 @@ export class ApiFeaturesStack extends cdk.Stack {
     subscriptionStatusResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.subscriptionsHandler), {
       authorizer,
       operationName: 'UpdateSubscriptionStatus',
+    });
+  }
+
+  private setupRulesRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const rulesResource = this.api.root.addResource('rules');
+
+    rulesResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.rulesHandler), {
+      authorizer,
+      operationName: 'GetRules',
+    });
+    rulesResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.rulesHandler), {
+      authorizer,
+      operationName: 'CreateRule',
+    });
+
+    const rulesApplyResource = rulesResource.addResource('apply');
+    rulesApplyResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.rulesHandler), {
+      authorizer,
+      operationName: 'ApplyRules',
+    });
+
+    const rulesHealthResource = rulesResource.addResource('health');
+    rulesHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.rulesHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'RulesHealthCheck',
+    });
+
+    const ruleIdResource = rulesResource.addResource('{ruleId}');
+    ruleIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.rulesHandler), {
+      authorizer,
+      operationName: 'UpdateRule',
+    });
+    ruleIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.rulesHandler), {
+      authorizer,
+      operationName: 'DeleteRule',
     });
   }
 
