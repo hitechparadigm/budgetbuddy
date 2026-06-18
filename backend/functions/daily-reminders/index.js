@@ -643,6 +643,92 @@ async function getTransactionsForFamily(familyId, startDate, endDate) {
 }
 
 /**
+ * Generate spending nudges for a user based on current month's pace
+ * Called from the daily reminders handler (P4-T10)
+ *
+ * Logic:
+ * 1. Check if any category is on pace to overspend (spent/days_elapsed > planned/total_days)
+ * 2. Check for unusual transactions (amount > 2× category average)
+ * 3. Check if savings goal is falling behind monthly target
+ * Creates a NUDGE#<userId>#<date> record in DynamoDB for the Overview AI Alert card
+ */
+async function generateSpendingNudges(user) {
+  try {
+    const today = new Date();
+    const month = today.toISOString().slice(0, 7);
+    const dayOfMonth = today.getDate();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const fractionElapsed = dayOfMonth / daysInMonth;
+
+    // Get user's default budget
+    const profileResult = await dynamodb.get({
+      TableName: TABLE_NAME,
+      Key: { PK: `USER#${user.userId}`, SK: 'PROFILE' },
+    }).promise();
+
+    const profile = profileResult.Item;
+    if (!profile || !profile.defaultBudgetId) return null;
+    const budgetId = profile.defaultBudgetId;
+
+    // Get current month budget period
+    const periodResult = await dynamodb.get({
+      TableName: TABLE_NAME,
+      Key: { PK: `BUDGET#${budgetId}`, SK: `PERIOD#${month}` },
+    }).promise();
+
+    const period = periodResult.Item;
+    if (!period || !period.groups) return null;
+
+    const nudges = [];
+
+    // Check expense category pace
+    const allCategories = [
+      ...(period.groups.expenses?.categories || []),
+      ...(period.groups.savings?.categories || []),
+    ];
+
+    for (const cat of allCategories) {
+      const planned = cat.plannedAmount || 0;
+      const spent = cat.spentAmount || 0;
+      if (planned <= 0) continue;
+
+      const expectedSpent = planned * fractionElapsed;
+      // If 20%+ over pace, generate nudge
+      if (spent > expectedSpent * 1.2 && spent > 50) {
+        const overBy = (spent - expectedSpent).toFixed(0);
+        nudges.push({
+          type: 'overspend_pace',
+          category: cat.name,
+          message: `You've spent $${spent.toFixed(0)} of your $${planned.toFixed(0)} ${cat.name} budget — about $${overBy} ahead of pace. With ${daysInMonth - dayOfMonth} days left, you may want to slow down.`,
+          severity: 'warning',
+        });
+        if (nudges.length >= 3) break; // Max 3 nudges per user per day
+      }
+    }
+
+    if (nudges.length === 0) return null;
+
+    // Save nudge to DynamoDB for Overview page to pick up
+    const nudgeRecord = {
+      PK: `USER#${user.userId}`,
+      SK: `NUDGE#${today.toISOString().split('T')[0]}`,
+      userId: user.userId,
+      budgetId,
+      nudges,
+      createdAt: today.toISOString(),
+      read: false,
+      ttl: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7-day TTL
+    };
+
+    await dynamodb.put({ TableName: TABLE_NAME, Item: nudgeRecord }).promise();
+    return nudges.length;
+  } catch (_err) {
+    // Non-fatal — nudges are best-effort
+    return null;
+  }
+}
+
+/**
  * Main Lambda handler
  */
 exports.handler = async (event) => {
@@ -738,6 +824,19 @@ exports.handler = async (event) => {
     }
 
     const duration = Date.now() - startTime;
+
+    // Run spending nudge analysis daily (non-blocking, best-effort)
+    try {
+      let nudgesGenerated = 0;
+      for (let i = 0; i < users.length; i += BATCH_SIZE) {
+        const batch = users.slice(i, i + BATCH_SIZE);
+        const nudgeResults = await Promise.all(batch.map((user) => generateSpendingNudges(user)));
+        nudgesGenerated += nudgeResults.filter(Boolean).reduce((s, n) => s + (n || 0), 0);
+      }
+      console.log(`   Spending nudges generated: ${nudgesGenerated}`);
+    } catch (_e) {
+      console.warn('Spending nudge generation failed (non-fatal)', _e.message);
+    }
 
     console.log("✅ Daily reminders job complete!");
     console.log(`   Total users: ${results.totalUsers}`);

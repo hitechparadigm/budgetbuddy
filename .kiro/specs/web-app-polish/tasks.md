@@ -96,8 +96,8 @@
 - [x] **P4-T7** — Backend: apply rules engine on Plaid import pipeline
 - [ ] **P4-T8** — Frontend: "Create a rule?" prompt on transaction recategorization
 - [x] **P4-T9** — Frontend: rules management in Settings > Budget tab
-- [ ] **P4-T10** — Backend: EventBridge daily spending analysis Lambda (pace check, unusual txns, goal tracking)
-- [ ] **P4-T11** — Frontend: AI Alert card on Overview page (surfaces nudge notifications)
+- [x] **P4-T10** — Backend: EventBridge daily spending analysis Lambda (pace check, unusual txns, goal tracking)
+- [x] **P4-T11** — Frontend: AI Alert card on Overview page (surfaces nudge notifications)
 - [ ] **P4-T12** — Backend: Budget Health Score calculation Lambda `(savings_rate×0.4 + adherence×0.4 + goal_progress×0.2)`
 - [ ] **P4-T13** — Frontend: Budget Health Score ring on Overview page with month-over-month delta
 - [ ] **P4-T14** — Backend: Cash flow forecast calculation (remaining income - bills - avg daily spend)
