@@ -58,7 +58,7 @@
 ### 3.1 Budget Page
 - [x] **P3-T1** — Add "Ready to Assign" banner: `$X unassigned`, green at zero, yellow when over-assigned, click scrolls to first income group
 - [x] **P3-T2** — Add skeleton loading screen matching 3-column layout (pulsing group rows)
-- [ ] **P3-T3** — Keyboard shortcuts: `T` (add transaction), `B` (add budget item), `←/→` (month nav), `/` (search focus), `?` (shortcuts overlay), `Escape` (close modal)
+- [x] **P3-T3** — Keyboard shortcuts: `T` (add transaction), `B` (add budget item), `←/→` (month nav), `/` (search focus), `?` (shortcuts overlay), `Escape` (close modal)
 - [ ] **P3-T4** — Inline category amount editing: click planned amount → inline input, no modal required
 - [x] **P3-T5** — Over-budget row: amber background + red progress bar when `spentAmount > plannedAmount` *(already implemented)*
 

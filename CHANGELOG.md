@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.9.139] - 2026-06-18
+
+### ✨ feat: Phase 3 — Budget page keyboard shortcuts, product-requirements.md Polish Plan update
+
+#### Budget Page Keyboard Shortcuts (P3-T3)
+- Added `useKeyboardShortcuts` hook to `BudgetPage.tsx`
+- `T` — open Add Transaction modal (expense)
+- `B` — open Add Budget Item modal
+- `←` / `→` — previous/next month
+- `?` — toggle shortcuts overlay (also shows a `?` button in the header)
+- `Escape` — close modal/overlay
+- Shortcuts disabled when a modal is open
+- Keyboard shortcut overlay renders in-page (no external dependency)
+
+#### Product Requirements Update
+- `docs/product-requirements.md` — added Web App Polish sections: Phase 1 ✅, Phase 2 ✅, Phase 3 in-progress, all 18 REQ-NEW-* requirements tracked, OverviewPage added to User Journeys
+- AI budget generation corrected to 🔄 mocked (REQ-NEW-04)
+
 ## [1.9.138] - 2026-06-18
 
 ### ✨ feat: Phase 3 continued — skeleton screens on 4 pages, Insights chat bubbles, session persistence

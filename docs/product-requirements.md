@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-18 (Session 148 — dark mode on BudgetPage/SettingsPage/GoalsPage; CalendarView currency locale fix; family budget transparency enforcement; goal contributions linked to budget savings categories)
+**Last Updated**: 2026-06-18 (Session 149 — Phase 1/2/3 web app polish: design tokens, Inter font, Lucide icons, UI primitives, Overview dashboard, skeleton loading, chat bubbles, PageHeader)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -231,6 +231,28 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ Extend / Revoke buttons for viewer members
 - ✅ Settings page links to `/budget/members`
 
+### Web App Polish (Phase 1 — Design Foundation)
+- ✅ **Green brand color** — `--color-primary: #059669` (emerald-600, 4.68:1 WCAG AA), dark mode `#34d399`; blue primary removed
+- ✅ **Inter font** — `@fontsource/inter@5.1.1` with tabular numerals (`font-feature-settings`) for financial figures
+- ✅ **Lucide React icons** — `lucide-react@0.469.0`; emoji icons replaced in Sidebar, OnboardingPage
+- ✅ **UI Primitives** — `Button`, `Card`, `Badge`, `Skeleton` (+ Text/Card/Row variants), `PageHeader`, `StatCard`, `EmptyState` at `components/ui/`
+- ✅ **LandingPage Button migration** — all raw Tailwind CTAs replaced with `Button` component
+- ✅ **Frontend TypeScript cleanup** — 72 pre-existing TS errors fixed; `type-check:web` now blocking in validate gate
+- ✅ **Sidebar IA** — 5 primary items (Overview, Budget, Accounts, Goals, Insights) + collapsible Manage group (Bills, Subscriptions, Debt Payoff, Credit Score, Investments, Net Worth, Members)
+
+### Web App Polish (Phase 2 — Information Architecture)
+- ✅ **`OverviewPage`** at `/overview` — Financial Health Bar, Net Worth sparkline, Top 5 Categories, Upcoming Bills, Active Goals, AI Insight of Day, Quick Add; all sections independent + skeleton loading
+- ✅ **`/overview` route** — default authenticated page
+- ✅ **`/net-worth` route** — `NetWorthPage` now accessible from Sidebar Manage group
+- ✅ **`PageHeader`** — applied to all 9 pages (Goals, Accounts, Insights, Bills, Subscriptions, DebtPayoff, CreditScore, Tips, BudgetMembers)
+
+### Web App Polish (Phase 3 — Core Feature Polish, in progress)
+- ✅ **Budget page Ready to Assign badge** — green/amber/red pill showing unassigned balance
+- ✅ **Budget page skeleton loading** — 3-column layout skeleton replaces full-page spinner
+- ✅ **Over-budget row highlighting** — amber bg + red border on category rows (pre-existing, confirmed)
+- ✅ **Skeleton screens** — GoalsPage, InsightsPage, DebtPayoffPage, AccountsPage
+- ✅ **Insights AI chat bubbles** — chat thread UI (user right, AI left), 3-dot typing indicator, `sessionStorage` persistence (last 5 Q&A)
+
 ---
 
 ## Known Gaps (⚠️ Planned)
@@ -253,6 +275,34 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 7. ~~**Dark mode missing on BudgetPage, SettingsPage, GoalsPage**~~ ✅ **Fixed (Session 148)** — all three pages migrated to CSS design token classes.
 8. ~~**Goals not reflected in budget**~~ ✅ **Fixed (Session 148)** — `contributeToGoal` now updates the linked savings category's `spentAmount` in the budget period.
 9. **Planned transactions frontend** — backend Lambda exists (`transaction-planning`), no frontend UI yet.
+
+---
+
+## Web App Polish Plan — New Requirements (docs/web-app-polish-plan.md)
+
+### In Progress (Phase 3)
+- 🔄 **REQ-NEW-02** — "Ready to Assign" counter on Budget page ✅ Done (badge variant)
+- 🔄 **REQ-NEW-03** — Skeleton loading screens on all data-fetching pages ✅ Done (Budget, Goals, Insights, Accounts, Debt)
+
+### Planned — High Priority
+- ⚠️ **REQ-NEW-01** — Overview/Dashboard page ✅ Built (Session 149)
+- ⚠️ **REQ-NEW-10** — Inline category amount editing on Budget page
+- ⚠️ **REQ-NEW-11** — Keyboard shortcuts on Budget page (`T`, `B`, `←/→`, `?`)
+- ⚠️ **REQ-NEW-04** — Real Bedrock integration for AI budget generation (currently mocked with setTimeout)
+
+### Planned — Medium Priority
+- ⚠️ **REQ-NEW-05** — Persistent AI conversation context (30-message window, DynamoDB entity)
+- ⚠️ **REQ-NEW-06** — Transaction categorization rules engine (Plaid import + `/rules` CRUD)
+- ⚠️ **REQ-NEW-07** — Proactive spending nudges via EventBridge + notifications
+- ⚠️ **REQ-NEW-08** — Budget Health Score (composite metric on Overview)
+- ⚠️ **REQ-NEW-09** — Cash flow forecast (end-of-month balance projection)
+- ⚠️ **REQ-NEW-12** — Contextual premium upgrade gates (3 minimum: Insights memory, export, health score history)
+- ⚠️ **REQ-NEW-13** — `/pricing` page
+- ⚠️ **REQ-NEW-14** — Daily AI insight rotation (30+ templates)
+- ⚠️ **REQ-NEW-15** — Monthly budget kickoff SES email (EventBridge, 1st of month)
+- ⚠️ **REQ-NEW-16** — Transaction rules CRUD in Settings > Budget tab
+- ⚠️ **REQ-NEW-17** — Paycheck planning / cash flow timeline on Accounts page
+- ⚠️ **REQ-NEW-18** — Budget Health Score history (Premium feature)
 
 ---
 
@@ -392,10 +442,26 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Register | `AuthPage.tsx` | `POST /auth/register` | ✅ |
 | Google Sign-In | `GoogleSignInButton.tsx` | `POST /auth/google` | ✅ |
 | Location setup | `OnboardingFlow.tsx` | `GET /auth/geolocation` | ✅ |
-| AI budget generation | `AIBudgetGenerationPage.tsx` | `POST /budget/ai-generate` | ✅ |
+| AI budget generation | `AIBudgetGenerationPage.tsx` | `POST /budget/ai-generate` | ✅ (mocked — REQ-NEW-04) |
 | Budget type selection | `OnboardingPage.tsx` | `POST /auth/onboarding` | ✅ |
 
 **Missing**: `OnboardingProgress.tsx` (step indicator), `TutorialOverlay.tsx` (interactive guide)
+
+---
+
+### 0. Overview Dashboard (New — Session 149)
+
+**Goal**: Answer "How am I doing right now?" without navigating to individual sections.
+
+| Section | Frontend | Backend API | Status |
+|---------|----------|-------------|--------|
+| Financial Health Bar | `OverviewPage.tsx` | `GET /budget/current` | ✅ |
+| Net Worth Trend sparkline | `OverviewPage.tsx` | `GET /net-worth/history` | ✅ |
+| Top Spending Categories | `OverviewPage.tsx` | `GET /budget/current` | ✅ |
+| Upcoming Bills | `OverviewPage.tsx` | `GET /bills?upcoming=true` | ✅ |
+| Active Goals | `OverviewPage.tsx` | `GET /goals` | ✅ |
+| AI Insight of the Day | `OverviewPage.tsx` | `GET /insights/summary` | ✅ |
+| Quick Add Transaction | `OverviewPage.tsx` | — (navigates to `/budget`) | ✅ |
 
 ---
 
