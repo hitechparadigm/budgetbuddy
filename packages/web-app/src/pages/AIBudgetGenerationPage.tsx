@@ -5,9 +5,10 @@
  * and allows users to accept, customize, or regenerate
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
+import { config } from "../config/environment";
 
 interface BudgetCategory {
   id: string;
@@ -35,58 +36,148 @@ export const AIBudgetGenerationPage: React.FC = () => {
   const navigate = useNavigate();
   const [budget, setBudget] = useState<GeneratedBudget | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  // Multi-step progress animation state
+  const [currentStep, setCurrentStep] = useState(0);
+  const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const PROGRESS_STEPS = [
+    { label: 'Analyzing your location and household...', icon: '📍' },
+    { label: 'Building your budget categories...', icon: '🏗️' },
+    { label: 'Reviewing for your household size...', icon: '👥' },
+    { label: 'Applying local cost-of-living data...', icon: '💡' },
+    { label: 'Finalizing recommendations...', icon: '✨' },
+  ];
 
   const onboardingData = location.state?.onboardingData;
 
   useEffect(() => {
     generateAIBudget();
+    return () => {
+      if (stepTimerRef.current) clearTimeout(stepTimerRef.current);
+    };
   }, []);
+
+  // Advance the step label every ~1.8s while loading
+  useEffect(() => {
+    if (!loading) return;
+    const advanceStep = () => {
+      setCurrentStep(prev => {
+        if (prev < PROGRESS_STEPS.length - 1) {
+          stepTimerRef.current = setTimeout(advanceStep, 1800);
+          return prev + 1;
+        }
+        return prev;
+      });
+    };
+    stepTimerRef.current = setTimeout(advanceStep, 1800);
+    return () => { if (stepTimerRef.current) clearTimeout(stepTimerRef.current); };
+  }, [loading]);
 
   const generateAIBudget = async () => {
     setLoading(true);
+    setCurrentStep(0);
+    setError(null);
 
-    // Simulate AI budget generation based on onboarding data
-    // In production, this would call AWS Bedrock API
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    try {
+      const token = localStorage.getItem('budgetbuddy_id_token');
+      if (!token) {
+        navigate('/auth');
+        return;
+      }
 
-    // Mock AI-generated budget based on user responses
-    const mockBudget: GeneratedBudget = {
-      monthlyIncome: getIncomeEstimate(onboardingData?.monthlyIncome),
-      totalAllocated: 0, // Will be calculated
-      remaining: 0, // Will be calculated
-      location: "Toronto, ON", // Would come from user registration
-      householdSize: onboardingData?.householdSize || 2,
-
-      income: [
-        {
-          id: "salary",
-          name: "Salary",
-          icon: "💰",
-          plannedAmount: getIncomeEstimate(onboardingData?.monthlyIncome),
-          description: "Primary employment income",
+      // Call real Bedrock AI endpoint
+      const response = await fetch(`${config.apiBaseUrl}/budget/ai-generate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          city: onboardingData?.city,
+          country: onboardingData?.country,
+          familySize: onboardingData?.familySize || onboardingData?.householdSize || 2,
+          currentMonth: onboardingData?.currentMonth,
+          selectedCategories: onboardingData?.selectedCategories,
+          budgetType: onboardingData?.budgetType || 'personal',
+          currency: onboardingData?.currency || 'USD',
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || `API error ${response.status}`);
+      }
+
+      const data = await response.json();
+      const budgetData = data.data || data;
+
+      // Transform backend response into frontend GeneratedBudget shape
+      const groups = budgetData.groups || {};
+      const incomeArr = Array.isArray(groups) ? groups.find((g: any) => g.type === 'income')?.categories || [] : groups.income || [];
+      const savingsArr = Array.isArray(groups) ? groups.find((g: any) => g.type === 'savings')?.categories || [] : groups.savings || [];
+      const expensesArr = Array.isArray(groups) ? groups.find((g: any) => g.type === 'expense' || g.type === 'expenses')?.categories || [] : groups.expenses || [];
+
+      const totalIncome = incomeArr.reduce((s: number, c: any) => s + (Number(c.plannedAmount) || 0), 0);
+      const totalSavings = savingsArr.reduce((s: number, c: any) => s + (Number(c.plannedAmount) || 0), 0);
+      const totalExpenses = expensesArr.reduce((s: number, c: any) => s + (Number(c.plannedAmount) || 0), 0);
+
+      const transformedBudget: GeneratedBudget = {
+        monthlyIncome: totalIncome,
+        totalAllocated: totalSavings + totalExpenses,
+        remaining: totalIncome - totalSavings - totalExpenses,
+        currency: budgetData.currency || onboardingData?.currency || 'USD',
+        location: onboardingData?.city ? `${onboardingData.city}, ${onboardingData.country || ''}` : 'Your location',
+        householdSize: onboardingData?.familySize || onboardingData?.householdSize || 2,
+        income: incomeArr.map((c: any) => ({ id: c.id || c.name, name: c.name, icon: c.icon || '💰', plannedAmount: Number(c.plannedAmount) || 0, description: c.description || '' })),
+        savings: savingsArr.map((c: any) => ({ id: c.id || c.name, name: c.name, icon: c.icon || '💾', plannedAmount: Number(c.plannedAmount) || 0, description: c.description || '' })),
+        expenses: expensesArr.map((c: any) => ({ id: c.id || c.name, name: c.name, icon: c.icon || '💸', plannedAmount: Number(c.plannedAmount) || 0, description: c.description || '' })),
+        aiInsights: budgetData.aiInsights || ['Budget generated with local cost-of-living data.'],
+      };
+
+      // Store for BudgetPage to pick up
+      localStorage.setItem('ai-generated-budget', JSON.stringify({
+        income: incomeArr,
+        savings: savingsArr,
+        expenses: expensesArr,
+      }));
+
+      setBudget(transformedBudget);
+    } catch (err) {
+      console.error('[AIBudgetGenerationPage] Error calling AI endpoint:', err);
+      // Fall back to mock budget so the user isn't stuck
+      setError(err instanceof Error ? err.message : 'AI generation failed');
+      setBudget(buildFallbackBudget(onboardingData));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /** Fallback budget when Bedrock is unavailable */
+  const buildFallbackBudget = (data: any): GeneratedBudget => {
+    const income = getIncomeEstimate(data?.monthlyIncome);
+    return {
+      monthlyIncome: income,
+      totalAllocated: Math.round(income * 0.9),
+      remaining: Math.round(income * 0.1),
+      currency: data?.currency || 'USD',
+      location: data?.city || 'Your location',
+      householdSize: data?.familySize || data?.householdSize || 2,
+      income: [{ id: 'salary', name: 'Salary', icon: '💰', plannedAmount: income, description: 'Primary income' }],
+      savings: [
+        { id: 'emergency', name: 'Emergency Fund', icon: '🛡️', plannedAmount: Math.round(income * 0.1), description: '3–6 months of expenses' },
+        { id: 'retirement', name: 'Retirement', icon: '🏦', plannedAmount: Math.round(income * 0.05), description: 'Long-term savings' },
       ],
-
-      savings: generateSavingsCategories(onboardingData),
-      expenses: generateExpenseCategories(onboardingData),
-
-      aiInsights: generateAIInsights(onboardingData),
+      expenses: [
+        { id: 'housing', name: 'Housing', icon: '🏠', plannedAmount: Math.round(income * 0.3), description: 'Rent/mortgage' },
+        { id: 'food', name: 'Groceries', icon: '🛒', plannedAmount: Math.round(income * 0.1), description: 'Food & household' },
+        { id: 'transport', name: 'Transportation', icon: '🚗', plannedAmount: Math.round(income * 0.1), description: 'Car/transit' },
+        { id: 'utilities', name: 'Utilities', icon: '💡', plannedAmount: Math.round(income * 0.05), description: 'Electricity, water, internet' },
+        { id: 'healthcare', name: 'Healthcare', icon: '🏥', plannedAmount: Math.round(income * 0.05), description: 'Insurance & medical' },
+        { id: 'personal', name: 'Personal', icon: '🎯', plannedAmount: Math.round(income * 0.15), description: 'Clothing, entertainment, misc' },
+      ],
+      aiInsights: ['This is a template budget. For personalized recommendations, set up your location in Settings.'],
     };
-
-    // Calculate totals
-    const totalSavings = mockBudget.savings.reduce(
-      (sum, cat) => sum + cat.plannedAmount,
-      0,
-    );
-    const totalExpenses = mockBudget.expenses.reduce(
-      (sum, cat) => sum + cat.plannedAmount,
-      0,
-    );
-    mockBudget.totalAllocated = totalSavings + totalExpenses;
-    mockBudget.remaining = mockBudget.monthlyIncome - mockBudget.totalAllocated;
-
-    setBudget(mockBudget);
-    setLoading(false);
   };
 
   const getIncomeEstimate = (incomeRange: string | undefined): number => {
@@ -106,263 +197,6 @@ export const AIBudgetGenerationPage: React.FC = () => {
     }
   };
 
-  const generateSavingsCategories = (data: any): BudgetCategory[] => {
-    const categories: BudgetCategory[] = [];
-    const income = getIncomeEstimate(data?.monthlyIncome);
-
-    // Emergency fund (always recommended)
-    categories.push({
-      id: "emergency-fund",
-      name: "Emergency Fund",
-      icon: "🛡️",
-      plannedAmount: Math.round(income * 0.1), // 10% of income
-      description: "Build 3-6 months of expenses",
-    });
-
-    // Goal-based savings
-    if (data?.mainGoal === "retirement") {
-      categories.push({
-        id: "retirement",
-        name: "RRSP/401k",
-        icon: "🏖️",
-        plannedAmount: Math.round(income * 0.15), // 15% for retirement focus
-        description: "Long-term retirement savings",
-      });
-    } else if (data?.mainGoal === "save-house") {
-      categories.push({
-        id: "house-fund",
-        name: "House Fund",
-        icon: "🏠",
-        plannedAmount: Math.round(income * 0.2), // 20% for house savings
-        description: "Down payment and closing costs",
-      });
-    } else {
-      categories.push({
-        id: "retirement",
-        name: "RRSP/401k",
-        icon: "🏖️",
-        plannedAmount: Math.round(income * 0.1), // 10% baseline
-        description: "Retirement savings",
-      });
-    }
-
-    return categories;
-  };
-
-  const generateExpenseCategories = (data: any): BudgetCategory[] => {
-    const income = getIncomeEstimate(data?.monthlyIncome);
-    const householdSize = data?.householdSize || 2;
-
-    const categories: BudgetCategory[] = [];
-
-    // Realistic Toronto Housing Costs
-    let housingAmount: number;
-    if (data?.housingStatus === "live-with-family") {
-      housingAmount = Math.min(income * 0.15, 800); // Contribution to family
-    } else if (data?.housingStatus === "rent") {
-      // Toronto rental costs based on household size
-      if (householdSize <= 2) {
-        housingAmount = Math.max(1800, income * 0.35); // 1BR/2BR minimum $1800
-      } else if (householdSize <= 4) {
-        housingAmount = Math.max(2500, income * 0.4); // 3BR minimum $2500
-      } else {
-        housingAmount = Math.max(3200, income * 0.45); // 4BR+ minimum $3200
-      }
-    } else {
-      // Mortgage/ownership costs
-      if (householdSize <= 2) {
-        housingAmount = Math.max(2200, income * 0.35);
-      } else if (householdSize <= 4) {
-        housingAmount = Math.max(2800, income * 0.4);
-      } else {
-        housingAmount = Math.max(3500, income * 0.45);
-      }
-    }
-
-    categories.push({
-      id: "housing",
-      name: data?.housingStatus === "rent" ? "Rent" : "Housing",
-      icon: "🏠",
-      plannedAmount: Math.round(housingAmount),
-      description:
-        data?.housingStatus === "rent"
-          ? "Monthly rent payment (Toronto rates)"
-          : "Mortgage/housing costs",
-    });
-
-    // Realistic Toronto Grocery Costs
-    let groceryAmount: number;
-    if (householdSize === 1) {
-      groceryAmount = 400; // Single person
-    } else if (householdSize === 2) {
-      groceryAmount = 650; // Couple
-    } else if (householdSize === 3) {
-      groceryAmount = 900; // Small family
-    } else if (householdSize === 4) {
-      groceryAmount = 1200; // Family of 4
-    } else {
-      groceryAmount = 1200 + (householdSize - 4) * 250; // Large family
-    }
-
-    categories.push({
-      id: "groceries",
-      name: "Groceries",
-      icon: "🛒",
-      plannedAmount: groceryAmount,
-      description: `Food for ${householdSize} ${householdSize === 1 ? "person" : "people"} (Toronto prices)`,
-    });
-
-    // Transportation (handles multiple methods)
-    const transportationMethods = data?.transportation || [];
-    let totalTransportAmount = 0;
-    const transportCategories: string[] = [];
-
-    // Calculate costs for each transportation method
-    transportationMethods.forEach((method: string) => {
-      switch (method) {
-        case "car-owned":
-          totalTransportAmount += 250; // Gas, insurance, maintenance
-          transportCategories.push("owned car");
-          break;
-        case "car-payment":
-          totalTransportAmount += 400; // Payment + gas + insurance
-          transportCategories.push("car payment");
-          break;
-        case "public-transit":
-          totalTransportAmount += 120; // Monthly passes
-          transportCategories.push("public transit");
-          break;
-        case "rideshare":
-          totalTransportAmount += 200; // Uber/Lyft usage
-          transportCategories.push("rideshare");
-          break;
-        case "walk-bike":
-          totalTransportAmount += 30; // Minimal costs
-          transportCategories.push("walk/bike");
-          break;
-      }
-    });
-
-    // Default if no transportation selected
-    if (totalTransportAmount === 0) {
-      totalTransportAmount = 200;
-      transportCategories.push("general transportation");
-    }
-
-    categories.push({
-      id: "transportation",
-      name: "Transportation",
-      icon: "🚗",
-      plannedAmount: Math.round(totalTransportAmount),
-      description: `${transportCategories.join(", ")} costs`,
-    });
-
-    // Realistic Toronto Utilities
-    let utilitiesAmount: number;
-    if (householdSize <= 2) {
-      utilitiesAmount = 180; // Couple/single
-    } else if (householdSize <= 4) {
-      utilitiesAmount = 250; // Family of 3-4
-    } else {
-      utilitiesAmount = 300; // Large family
-    }
-
-    categories.push({
-      id: "utilities",
-      name: "Utilities",
-      icon: "⚡",
-      plannedAmount: utilitiesAmount,
-      description: "Electricity, water, internet, phone (Toronto rates)",
-    });
-
-    // Entertainment/Personal
-    categories.push({
-      id: "entertainment",
-      name: "Entertainment",
-      icon: "🎬",
-      plannedAmount: Math.round(income * 0.05), // 5% of income
-      description: "Movies, dining out, hobbies",
-    });
-
-    // Debt payments (if applicable)
-    if (data?.debtSituation && data.debtSituation !== "no-debt") {
-      categories.push({
-        id: "debt-payment",
-        name: "Debt Payment",
-        icon: "💳",
-        plannedAmount: Math.round(income * 0.15), // 15% for debt payoff
-        description: getDebtDescription(data.debtSituation),
-      });
-    }
-
-    return categories;
-  };
-
-  const getDebtDescription = (debtSituation: string): string => {
-    switch (debtSituation) {
-      case "credit-cards":
-        return "Credit card minimum payments";
-      case "student-loans":
-        return "Student loan payments";
-      case "mortgage-only":
-        return "Mortgage payment";
-      case "multiple-debts":
-        return "Various debt payments";
-      default:
-        return "Debt payments";
-    }
-  };
-
-  const generateAIInsights = (data: any): string[] => {
-    const insights: string[] = [];
-
-    insights.push(
-      `Based on your ${data?.familySituation || "family"} situation in Toronto, this budget uses realistic GTA cost-of-living data and prioritizes ${data?.mainGoal?.replace("-", " ") || "financial stability"}.`,
-    );
-
-    // Toronto-specific insights
-    if (data?.householdSize >= 4) {
-      insights.push(
-        "Toronto housing costs are high for families. We've allocated realistic amounts based on current rental/ownership rates in the GTA.",
-      );
-    }
-
-    insights.push(
-      "Grocery costs reflect Toronto's higher food prices, especially for families with children.",
-    );
-
-    if (data?.householdSize > 2) {
-      insights.push(
-        `With ${data.householdSize} people in your household, we've scaled grocery and utility costs accordingly.`,
-      );
-    }
-
-    if (data?.mainGoal === "emergency-fund") {
-      insights.push(
-        "We've prioritized building your emergency fund - aim for 3-6 months of expenses.",
-      );
-    }
-
-    if (data?.debtSituation !== "no-debt") {
-      insights.push(
-        "We've allocated funds for debt payment. Consider the debt snowball method to pay off debts faster.",
-      );
-    }
-
-    // Transportation insights
-    if (data?.transportation && data.transportation.length > 1) {
-      insights.push(
-        `We've accounted for your ${data.transportation.length} transportation methods to give you a realistic budget.`,
-      );
-    }
-
-    insights.push(
-      "This budget follows the zero-based budgeting principle - every dollar has a purpose.",
-    );
-
-    return insights;
-  };
-
   const handleAcceptBudget = () => {
     // Save the AI-generated budget and navigate to main budget page
     localStorage.setItem("ai-generated-budget", JSON.stringify(budget));
@@ -379,18 +213,45 @@ export const AIBudgetGenerationPage: React.FC = () => {
   };
 
   if (loading) {
+    const step = PROGRESS_STEPS[currentStep];
+    const progressPct = Math.round(((currentStep + 1) / PROGRESS_STEPS.length) * 100);
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Creating your personalized budget... 🤖
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md w-full">
+          {/* Animated icon */}
+          <div className="relative w-20 h-20 mx-auto mb-6">
+            <div className="w-20 h-20 rounded-full border-4 border-emerald-100 absolute inset-0" />
+            <div className="w-20 h-20 rounded-full border-4 border-t-emerald-600 border-r-emerald-600 border-b-transparent border-l-transparent animate-spin absolute inset-0" />
+            <div className="absolute inset-0 flex items-center justify-center text-2xl">
+              {step.icon}
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Building your budget...
           </h2>
-          <div className="space-y-2 text-gray-600">
-            <p>✨ Analyzing your responses...</p>
-            <p>📍 Checking local cost-of-living data...</p>
-            <p>🎯 Optimizing for your financial goals...</p>
-            <p>💡 Generating smart recommendations...</p>
+          <p className="text-gray-600 mb-6 min-h-[1.5rem] transition-all">
+            {step.label}
+          </p>
+
+          {/* Progress bar */}
+          <div className="h-2 bg-emerald-100 rounded-full overflow-hidden mb-4">
+            <div
+              className="h-full bg-emerald-600 rounded-full transition-all duration-700"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+
+          {/* Step dots */}
+          <div className="flex justify-center gap-2">
+            {PROGRESS_STEPS.map((_, i) => (
+              <div
+                key={i}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  i <= currentStep ? 'bg-emerald-600' : 'bg-emerald-100'
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -418,6 +279,12 @@ export const AIBudgetGenerationPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
+        {/* Fallback notice when AI was unavailable */}
+        {error && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+            <strong>Note:</strong> AI generation encountered an issue ({error}). Showing a template budget — you can customize it.
+          </div>
+        )}
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center bg-blue-50 border border-blue-200 rounded-full px-4 py-2 mb-4">

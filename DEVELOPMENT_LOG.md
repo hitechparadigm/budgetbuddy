@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-18 - Phase 4 P4-T1/T2 — Real Bedrock AI budget generation (Session 149 cont.)
+
+### Work Completed
+`AIBudgetGenerationPage.tsx`: replaced setTimeout mock with real `/budget/ai-generate` API call + 5-step progress animation + fallback budget.
+
+---
+
 ## 2026-06-18 - Phase 3 P3-T16 — Settings tab layout (Session 149 cont.)
 
 ### Work Completed

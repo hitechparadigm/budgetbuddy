@@ -87,8 +87,8 @@
 
 ## Phase 4 — AI Strategy (3 weeks)
 
-- [ ] **P4-T1** — Wire real Bedrock call in AI budget generation Lambda (replace setTimeout mock)
-- [ ] **P4-T2** — Multi-step progress animation on `AIBudgetGenerationPage`: 4 steps with status text
+- [x] **P4-T1** — Wire real Bedrock call in AI budget generation Lambda (replace setTimeout mock)
+- [x] **P4-T2** — Multi-step progress animation on `AIBudgetGenerationPage`: 4 steps with status text
 - [ ] **P4-T3** — DynamoDB: `AI_CONVERSATION#<userId>` entity schema (last 30 interactions)
 - [ ] **P4-T4** — Backend: inject last 5 exchanges + user goals + budget status as context in every Bedrock Insights call
 - [ ] **P4-T5** — Frontend: rename "Ask about spending" → "Ask your AI coach"; chat bubble UI polish

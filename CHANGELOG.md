@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.9.142] - 2026-06-18
+
+### ✨ feat: Phase 4 — Real Bedrock AI budget generation wired up (P4-T1, P4-T2)
+
+**`AIBudgetGenerationPage.tsx`**:
+- Replaced `setTimeout` mock with real `POST /budget/ai-generate` API call
+- Backend already had Bedrock integration (`backend/functions/ai/index.js`) — this wires the frontend to it
+- Multi-step progress animation: 5 steps with rotating icons, progress bar, and dot indicators
+- Fallback budget when Bedrock unavailable (avoids blocking the user)
+- Transforms backend group arrays into `GeneratedBudget` shape
+- Shows amber banner when fallback is used
+- Removed dead helper functions (`generateSavingsCategories`, `generateExpenseCategories`, `generateAIInsights`)
+
 ## [1.9.141] - 2026-06-18
 
 ### ✨ feat: Phase 3 — Settings tab-based layout (P3-T16)
