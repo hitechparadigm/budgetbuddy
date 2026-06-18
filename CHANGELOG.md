@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.140] - 2026-06-18
+
+### ✨ feat: Phase 3 — Empty states on Goals, Bills, Debts, Budget transactions (P3-T14)
+
+- **GoalsPage**: replaced inline div with `<EmptyState icon="🎯" title="No goals yet" ... />`
+- **BillsPage**: dynamic empty state — shows description+CTA when "All", contextual title-only when filtered
+- **DebtPayoffPage**: replaced inline div with `<EmptyState icon="💸" title="No debts tracked" ... />`
+- **BudgetPage**: replaced both transaction empty states (filtered + empty) with `EmptyState` component
+
 ## [1.9.139] - 2026-06-18
 
 ### ✨ feat: Phase 3 — Budget page keyboard shortcuts, product-requirements.md Polish Plan update

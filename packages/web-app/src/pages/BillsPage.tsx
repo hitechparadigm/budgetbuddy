@@ -9,7 +9,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 import PatternReviewModal from "../components/PatternReviewModal";
-import { PageHeader } from "../components/ui";
+import { PageHeader, EmptyState } from "../components/ui";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
@@ -324,25 +324,15 @@ export const BillsPage: React.FC = () => {
 
         {/* Bills List */}
         {filteredBills.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <div className="text-6xl mb-4">📋</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No bills found
-            </h3>
-            <p className="text-gray-500 mb-4">
-              {filterStatus === "all"
-                ? "Add your first bill to start tracking payments"
-                : `No ${filterStatus} bills`}
-            </p>
-            {filterStatus === "all" && (
-              <button
-                onClick={() => navigate("/bills/new")}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                + Add Your First Bill
-              </button>
-            )}
-          </div>
+          <EmptyState
+            icon="📋"
+            title={filterStatus === "all" ? "No bills tracked" : `No ${filterStatus} bills`}
+            description={filterStatus === "all"
+              ? "Add your first bill to get payment reminders before due dates."
+              : undefined}
+            actionLabel={filterStatus === "all" ? "Add Your First Bill" : undefined}
+            onAction={filterStatus === "all" ? () => navigate('/bills/new') : undefined}
+          />
         ) : (
           <div className="space-y-3">
             {filteredBills.map((bill) => (

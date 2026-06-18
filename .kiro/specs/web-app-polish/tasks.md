@@ -77,7 +77,7 @@
 
 ### 3.5 Global States
 - [x] **P3-T13** — Skeleton screens on Goals, Insights, Accounts, Debt pages
-- [ ] **P3-T14** — Empty states on all list pages (Goals, Bills, Transactions, Debts — copy in plan)
+- [x] **P3-T14** — Empty states on all list pages (Goals, Bills, Transactions, Debts — copy in plan)
 - [ ] **P3-T15** — Error states: network error with retry button, auth error redirects with `?returnTo=`, partial failure inline
 
 ### 3.6 Settings Page

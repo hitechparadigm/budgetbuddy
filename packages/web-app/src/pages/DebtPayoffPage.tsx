@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
 import { config } from '../config/environment';
-import { PageHeader } from "../components/ui";
+import { PageHeader, EmptyState } from "../components/ui";
 
 // Debt features are on the features API (0poeu07vth), not the main API
 const API_BASE_URL = config.featuresApiUrl;
@@ -376,15 +376,13 @@ export default function DebtPayoffPage() {
 
       {/* Debts List */}
       {debts.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl shadow">
-          <p className="text-6xl mb-4">💸</p>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            No debts tracked
-          </h2>
-          <p className="text-gray-500">
-            Add your first debt to start your payoff journey
-          </p>
-        </div>
+        <EmptyState
+          icon="💸"
+          title="No debts tracked"
+          description="Add your first debt to start your payoff journey. Every dollar paid down counts."
+          actionLabel="Add Your First Debt"
+          onAction={() => (window.location.href = '/debts/new')}
+        />
       ) : (
         <div className="space-y-4">
           {debts.map((debt) => (
