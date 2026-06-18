@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-18 - Phase 3 P3-T16 — Settings tab layout (Session 149 cont.)
+
+### Work Completed
+SettingsPage: tab-based layout with Budget/Profile/Notifications/Banks/Privacy/Help tabs.
+
+---
+
 ## 2026-06-18 - Phase 3 P3-T14 — Empty states on Goals, Bills, Debts, Budget (Session 149 cont.)
 
 ### Work Completed

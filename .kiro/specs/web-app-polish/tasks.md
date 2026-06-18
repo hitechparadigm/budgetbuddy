@@ -81,7 +81,7 @@
 - [ ] **P3-T15** — Error states: network error with retry button, auth error redirects with `?returnTo=`, partial failure inline
 
 ### 3.6 Settings Page
-- [ ] **P3-T16** — Tab-based Settings: Profile, Budget, Notifications, Banks, Privacy, Help tabs
+- [x] **P3-T16** — Tab-based Settings: Profile, Budget, Notifications, Banks, Privacy, Help tabs
 
 ---
 
