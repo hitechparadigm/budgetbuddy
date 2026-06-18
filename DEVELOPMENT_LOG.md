@@ -1,5 +1,14 @@
 # Development Log
 
+## 2026-06-18 - Fix OverviewPage crash, CORS errors, wrong default route (Session 149 cont.)
+
+### Bugs Fixed
+1. OverviewPage crash: `totalIncome` is a number not an object — fixed type + loadBudget mapping
+2. CORS: insights/summary → extendedFeaturesApiUrl, net-worth/history → featuresApiUrl
+3. Default route: AuthPage + LandingPage now redirect to /overview
+
+---
+
 ## 2026-06-18 - product-requirements.md final update (Session 149 cont.)
 
 ### Work Completed

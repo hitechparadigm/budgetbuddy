@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.9.151] - 2026-06-18
+
+### 🐛 fix: OverviewPage crash + CORS errors + wrong default route
+
+#### OverviewPage crash (TypeError: Cannot read properties of undefined (reading 'planned'))
+- `/budget/current` returns `totalIncome` as a **number**, not `{ planned, actual, remaining }`
+- Updated `BudgetPeriod` interface to use flat numbers
+- Updated `loadBudget` to unwrap `raw?.data ?? raw` and map to correct shape
+- Updated `FinancialHealthBar` to use `period.totalIncome` (number) directly
+- Fixed all stat card value references (`period?.totalIncome` not `.planned`)
+
+#### CORS errors — wrong API base URLs
+- `/insights/summary` now fetches from `config.extendedFeaturesApiUrl` (was main API)
+- `/net-worth/history` now fetches from `config.featuresApiUrl` (was main API)
+- `/bills` kept on `apiClient` (correct — bills are on main API)
+
+#### Wrong default route — landing on `/budget` after login
+- `AuthPage.tsx`: post-login redirect changed from `/budget` → `/overview`
+- `LandingPage.tsx`: added `useAuthRedirect()` hook — redirects authenticated users to `/overview`
+
 ## [1.9.150] - 2026-06-18
 
 ### 📄 docs: product-requirements.md updated — Session 149 Polish Plan completion status
