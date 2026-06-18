@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.9.148] - 2026-06-18
+
+### ✨ feat: Phase 4 P4-T6/T7/T9 — Transaction categorization rules engine
+
+#### Backend (P4-T6, P4-T7)
+- Created `backend/functions/rules/index.js` — full CRUD rules Lambda
+- Endpoints: GET/POST `/rules`, PUT/DELETE `/rules/{ruleId}`, POST `/rules/apply`
+- `BUDGET#<budgetId> / RULE#<ruleId>` DynamoDB entity
+- `findMatchingRule()` applies rules to transaction lists (called on Plaid import)
+- `appliedCount` tracked on each rule
+- Added to `api-features-stack.ts` with full API Gateway routing + auto DynamoDB grant
+
+#### Frontend (P4-T9)
+- `TransactionRulesSection` component in `SettingsPage.tsx` Budget tab
+- Lists all rules with merchant pattern, category, applied count, created date
+- Delete button to remove rules
+
 ## [1.9.147] - 2026-06-18
 
 ### ✨ feat: Phase 4 P4-T3/T4 — AI conversation context persistence; Phase 6 P6-T3 mobile banner

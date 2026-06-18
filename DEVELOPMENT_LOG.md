@@ -1,5 +1,14 @@
 # Development Log
 
+## 2026-06-18 - Phase 4 P4-T6/T7/T9 — Transaction rules engine (Session 149 cont.)
+
+### Work Completed
+- `backend/functions/rules/index.js`: CRUD Lambda for auto-categorization rules
+- `api-features-stack.ts`: rules Lambda + API Gateway routes
+- `SettingsPage.tsx`: TransactionRulesSection in Budget tab (P4-T9)
+
+---
+
 ## 2026-06-18 - Phase 4 P4-T3/T4 AI context, Phase 6 P6-T3 mobile banner (Session 149 cont.)
 
 ### Work Completed
