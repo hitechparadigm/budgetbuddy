@@ -389,15 +389,15 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-surface border-b border-border">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate("/budget")}
               aria-label="Back to Budget"
-              className="text-gray-600 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
+              className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
             >
               <svg
                 className="w-6 h-6"
@@ -414,7 +414,7 @@ export const SettingsPage: React.FC = () => {
                 />
               </svg>
             </button>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+            <h1 className="text-2xl font-bold text-foreground">Settings</h1>
           </div>
         </div>
       </div>
@@ -435,8 +435,8 @@ export const SettingsPage: React.FC = () => {
         )}
 
         {/* Location & Timezone Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             Location & Timezone
           </h2>
 
@@ -445,13 +445,13 @@ export const SettingsPage: React.FC = () => {
             <div className="flex items-start space-x-3">
               <div className="text-blue-600 text-2xl">🌍</div>
               <div className="flex-1">
-                <div className="font-medium text-gray-900 mb-1">
+                <div className="font-medium text-foreground mb-1">
                   Current Timezone
                 </div>
-                <div className="text-sm text-gray-600 mb-2">
+                <div className="text-sm text-muted-foreground mb-2">
                   {getTimezoneDisplayName()}
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground">
                   Local Time: {getCurrentLocalTime()}
                 </div>
               </div>
@@ -463,7 +463,7 @@ export const SettingsPage: React.FC = () => {
             <div>
               <label
                 htmlFor="country"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-foreground mb-1"
               >
                 Country
               </label>
@@ -476,7 +476,7 @@ export const SettingsPage: React.FC = () => {
                     country: e.target.value,
                   }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border bg-surface text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select a country</option>
                 <option value="US">United States</option>
@@ -490,7 +490,7 @@ export const SettingsPage: React.FC = () => {
             <div>
               <label
                 htmlFor="city"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-foreground mb-1"
               >
                 City
               </label>
@@ -501,7 +501,7 @@ export const SettingsPage: React.FC = () => {
                 onChange={(e) =>
                   setLocationForm((prev) => ({ ...prev, city: e.target.value }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border bg-surface text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your city"
               />
             </div>
@@ -509,7 +509,7 @@ export const SettingsPage: React.FC = () => {
             <div>
               <label
                 htmlFor="zipCode"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-foreground mb-1"
               >
                 Zip / Postal Code
               </label>
@@ -523,7 +523,7 @@ export const SettingsPage: React.FC = () => {
                     zipCode: e.target.value,
                   }))
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border bg-surface text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your zip or postal code"
               />
             </div>
@@ -545,8 +545,8 @@ export const SettingsPage: React.FC = () => {
           </form>
 
           {/* Info Note */}
-          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-600">
+          <div className="mt-4 p-3 bg-muted border border-border rounded-lg">
+            <p className="text-sm text-muted-foreground">
               <strong>Note:</strong> Your timezone is automatically detected
               from your location. Updating your location will adjust your
               timezone accordingly, ensuring all dates and times in the app are
@@ -556,8 +556,8 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Currency Settings Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             Currency Settings
           </h2>
 
@@ -566,10 +566,10 @@ export const SettingsPage: React.FC = () => {
             <div className="flex items-start space-x-3">
               <div className="text-green-600 text-2xl">💱</div>
               <div className="flex-1">
-                <div className="font-medium text-gray-900 mb-1">
+                <div className="font-medium text-foreground mb-1">
                   Current Currency
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   {getCurrencyConfig(currency).symbol} {currency} -{" "}
                   {getCurrencyConfig(currency).name}
                 </div>
@@ -618,8 +618,8 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Bank Accounts Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             🏦 Connected Bank Accounts
           </h2>
           <p className="text-gray-600 mb-4">
@@ -648,8 +648,8 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Profile Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile</h2>
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">Profile</h2>
           <p className="text-gray-600 text-sm mb-4">
             Update your name, profile picture, and personal information.
           </p>
@@ -662,8 +662,8 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Account Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Account</h2>
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">Account</h2>
           <p className="text-gray-600 text-sm mb-4">
             Manage your email address, password, and account security settings.
           </p>
@@ -678,8 +678,8 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Two-Factor Authentication Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             🔐 Two-Factor Authentication
           </h2>
 
@@ -812,8 +812,8 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Appearance Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             🎨 Appearance
           </h2>
           <p className="text-gray-600 mb-4">
@@ -824,15 +824,15 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Data Backup & Restore Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             Data Backup & Restore
           </h2>
 
           <div className="space-y-6">
             {/* Backup Section */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
+              <h3 className="text-sm font-medium text-foreground mb-2">
                 Backup Your Data
               </h3>
               <p className="text-sm text-gray-600 mb-3">
@@ -891,11 +891,11 @@ export const SettingsPage: React.FC = () => {
             </div>
 
             {/* Divider */}
-            <div className="border-t border-gray-200"></div>
+            <div className="border-t border-border"></div>
 
             {/* Restore Section */}
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
+              <h3 className="text-sm font-medium text-foreground mb-2">
                 Restore from Backup
               </h3>
               <p className="text-sm text-gray-600 mb-3">
@@ -999,12 +999,12 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Notification Settings Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <NotificationSettings userId={localStorage.getItem("userId") || ""} />
         </div>
 
         {/* Budget Members Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Budget Members</h2>
           <p className="text-gray-600 text-sm mb-4">
             Manage who has access to your budget, send invitations, and configure collaboration settings.
@@ -1018,13 +1018,13 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Troubleshooting Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             Troubleshooting
           </h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
+              <h3 className="text-sm font-medium text-foreground mb-2">
                 Authentication Issues
               </h3>
               <p className="text-sm text-gray-600 mb-3">
@@ -1080,13 +1080,13 @@ export const SettingsPage: React.FC = () => {
         </div>
 
         {/* Help & Tutorial Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4">
             📚 Help & Tutorial
           </h2>
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
+              <h3 className="text-sm font-medium text-foreground mb-2">
                 App Tutorial
               </h3>
               <p className="text-sm text-gray-600 mb-3">
@@ -1121,8 +1121,8 @@ export const SettingsPage: React.FC = () => {
                 <span>Replay Tutorial</span>
               </button>
             </div>
-            <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
+            <div className="border-t border-border pt-4">
+              <h3 className="text-sm font-medium text-foreground mb-2">
                 Keyboard Shortcuts
               </h3>
               <p className="text-sm text-gray-600 mb-3">
@@ -1137,8 +1137,8 @@ export const SettingsPage: React.FC = () => {
                 to see all shortcuts.
               </p>
             </div>
-            <div className="border-t border-gray-200 pt-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
+            <div className="border-t border-border pt-4">
+              <h3 className="text-sm font-medium text-foreground mb-2">
                 About BudgetBuddy
               </h3>
               <p className="text-sm text-gray-600 mb-3">
@@ -1206,7 +1206,7 @@ export const SettingsPage: React.FC = () => {
       {showCurrencyConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+            <h3 className="text-xl font-semibold text-foreground mb-4">
               Confirm Currency Change
             </h3>
             <p className="text-gray-600 mb-4">

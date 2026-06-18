@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.9.132] - 2026-06-18
+
+### 🐛 Fix: Dark mode, currency locale, family budget enforcement, goals-budget link
+
+#### Dark mode — BudgetPage, SettingsPage, GoalsPage
+- **`BudgetPage.tsx`**: Replaced all hardcoded light-mode Tailwind classes (`bg-white`, `bg-gray-50`, `text-gray-900`, `text-gray-600`, `border-gray-200`, etc.) with design token utility classes (`bg-background`, `bg-surface`, `text-foreground`, `text-muted-foreground`, `border-border`). Applied to loading state, no-budget empty state, main layout container, center column, header bar, category rows (hover states), group total bars, and right sidebar. Semantic color boxes (future/past month warnings) updated with `dark:` variants.
+- **`SettingsPage.tsx`**: Same systematic token-class migration across page wrapper, header, all section cards, form inputs (now use `bg-surface text-foreground border-border`), info/note boxes, labels, and timezone/currency display blocks.
+- **`GoalsPage.tsx`**: Same migration plus: loading state, header, summary stat cards, goal cards (active + archived), progress bar tracks (`bg-muted`), milestone chips (`bg-muted`/`bg-green-900/40` dark), modals (contribute + delete confirmation), drag-over state (`dark:bg-blue-950/20`), milestone toast notification.
+
+#### Currency locale bug — Calendar tab
+- **`CalendarView.tsx`**: Replaced local `formatCurrency` function (hardcoded `"en-US"` locale) with `getCurrencyConfig` from `@budget-buddy/shared`. Now uses the currency-specific locale (`en-CA` for CAD, `en-GB` for GBP, etc.) so CAD displays `$46` instead of `CA$46`.
+
+#### GoalsPage currency
+- **`GoalsPage.tsx`**: Removed hardcoded `const currency = "USD"`. Currency now loaded dynamically from user profile via `profileApi.getProfile()` on mount, consistent with SettingsPage.
+
+#### Family budget transparency enforcement
+- **`backend/functions/budget/index.js`** (`createBudget`, `updateBudget`): Added check after `resolveAccess` — when `budgetType === 'family'`, any request body containing categories with `hidden: true`, `isPrivate: true`, or `visibility: 'private'` is rejected with HTTP 400 `"Family budgets cannot have hidden or private categories."` Captures `budgetType` from `resolveAccess` return value in both handlers.
+
+#### Goals contributions reflected in budget
+- **`backend/functions/goals/index.js`** (`contributeToGoal`): After updating the goal's `currentAmount`, if `existingGoal.linkedCategoryId` is set, fetches the budget period for the target month (`body.month` or current month), locates the linked category in `groups.savings` or `groups.expenses`, increments its `spentAmount` by the contribution amount, recalculates `totalSavings`/`totalExpenses`, and writes the update back. Non-fatal — logs a warning and returns success if the budget period update fails.
+
 ## [1.9.131] - 2026-06-17
 
 ### ♿ fix: accessibility and UX heuristic fixes across web app (24 findings)

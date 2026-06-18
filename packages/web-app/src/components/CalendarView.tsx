@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useMemo } from "react";
+import { formatCurrency as formatCurrencyShared, getCurrencyConfig } from "@budget-buddy/shared/src/utils/currency";
 
 interface Transaction {
   id: string;
@@ -71,12 +72,23 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   }, [transactionsByDate]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+    // Use the currency config locale so CAD shows "$46" (en-CA) instead of "CA$46" (en-US)
+    try {
+      const config = getCurrencyConfig(currency);
+      return new Intl.NumberFormat(config.locale, {
+        style: 'currency',
+        currency: config.code,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    } catch {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    }
   };
 
   const handleDateClick = (day: number) => {

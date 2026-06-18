@@ -1,12 +1,18 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-06-17
+**Last Updated**: 2026-06-18
 **Current Phase**: Feature Enhancement
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (80%)
 
-## ✨ LATEST - Income Frequency Support (Session 145)
+## ✨ LATEST - Bug Fixes & Dark Mode (Session 148)
 
-### Income Frequency & One-Time Categories ✅
+### Fixed (Session 148)
+- ✅ **Dark mode** — BudgetPage, SettingsPage, GoalsPage now use CSS design token classes (`bg-background`, `bg-surface`, `text-foreground`, etc.)
+- ✅ **Calendar currency bug** — CAD now shows `$46` instead of `CA$46` (locale fix in CalendarView)
+- ✅ **Family budget transparency** — `createBudget`/`updateBudget` reject hidden/private categories on family budgets
+- ✅ **Goals linked to budget** — `contributeToGoal` now updates linked savings category `spentAmount`
+- ✅ **Security check script** — `security-check-win.ps1` fixed to not traverse Lambda `node_modules` (was timing out)
+
 
 **Status**: Complete
 

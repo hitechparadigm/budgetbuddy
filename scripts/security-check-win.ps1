@@ -24,7 +24,36 @@ Write-Host "1. Checking for exposed secrets..." -ForegroundColor White
 
 # Check for JWT tokens (exclude source maps)
 $jwtPattern = "eyJ[A-Za-z0-9+/=]{100,}"
-$sourceFiles = Get-ChildItem -Path "." -Recurse -Include "*.js","*.ts","*.json" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch "node_modules|\.git|coverage|\.github|mockAuth\.ts|\.test\.|cdk\.out" }
+$sourceFiles = @()
+# Enumerate files manually to skip node_modules directories during traversal
+function Get-SourceFiles {
+  param([string]$RootPath)
+  $results = @()
+  if (-not (Test-Path $RootPath)) { return $results }
+  $queue = [System.Collections.Generic.Queue[string]]::new()
+  $queue.Enqueue((Resolve-Path $RootPath).Path)
+  while ($queue.Count -gt 0) {
+    $current = $queue.Dequeue()
+    # Skip node_modules, .git, cdk.out, coverage directories
+    $dirName = Split-Path $current -Leaf
+    if ($dirName -match "^(node_modules|\.git|cdk\.out|coverage|__pycache__|\.playwright-mcp)$") { continue }
+    try {
+      # Add matching files in current directory
+      $results += Get-ChildItem -Path $current -Include "*.js","*.ts","*.json" -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -notmatch "mockAuth\.ts|\.test\.|package-lock\.json" }
+      # Queue subdirectories
+      Get-ChildItem -Path $current -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        $queue.Enqueue($_.FullName)
+      }
+    } catch { }
+  }
+  return $results
+}
+
+$scanRoots = @("backend", "packages/web-app/src", "packages/mobile/src", "packages/shared/src", "infrastructure/bin", "infrastructure/lib", "scripts")
+foreach ($root in $scanRoots) {
+  $sourceFiles += Get-SourceFiles $root
+}
 
 $foundJWT = $false
 foreach ($file in $sourceFiles) {
