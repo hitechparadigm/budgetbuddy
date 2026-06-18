@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-18 - Phase 5 P5-T1 — Landing page rewrite (Session 149 cont.)
+
+### Work Completed
+LandingPage: new headline "Your budget, built in 60 seconds", 3-step proof, pricing section, inclusive framing.
+
+---
+
 ## 2026-06-18 - Phase 4 P4-T1/T2 — Real Bedrock AI budget generation (Session 149 cont.)
 
 ### Work Completed
