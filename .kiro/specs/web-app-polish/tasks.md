@@ -63,10 +63,10 @@
 - [x] **P3-T5** — Over-budget row: amber background + red progress bar when `spentAmount > plannedAmount` *(already implemented)*
 
 ### 3.2 Insights Page
-- [ ] **P3-T6** — Chat bubble UI for AI Q&A: user bubble right, AI bubble left, typing indicator (3-dot)
-- [ ] **P3-T7** — Session persistence: last 5 Q&A pairs in `sessionStorage`, survives page refresh
-- [ ] **P3-T8** — Replace existing chart with `recharts` (lazy loaded), proper axes + tooltips + responsive
-- [ ] **P3-T9** — Category filter for trend chart
+- [x] **P3-T6** — Insights page: Chat bubble UI for AI Q&A: user bubble right, AI bubble left, typing indicator (3-dot)
+- [x] **P3-T7** — Insights page: Session persistence: last 5 Q&A pairs in `sessionStorage`, survives page refresh
+- [ ] **P3-T8** — Insights page: Replace existing chart with `recharts` (lazy loaded), proper axes + tooltips + responsive
+- [ ] **P3-T9** — Insights page: Category filter for trend chart
 
 ### 3.3 Goals Page
 - [ ] **P3-T10** — Card grid layout with SVG progress rings, `$X of $Y`, days remaining, inline "Add funds" button
@@ -76,7 +76,7 @@
 - [ ] **P3-T12** — Extra payment slider + input combo with real-time recalculation
 
 ### 3.5 Global States
-- [ ] **P3-T13** — Skeleton screens on Goals, Insights, Accounts, Debt pages
+- [x] **P3-T13** — Skeleton screens on Goals, Insights, Accounts, Debt pages
 - [ ] **P3-T14** — Empty states on all list pages (Goals, Bills, Transactions, Debts — copy in plan)
 - [ ] **P3-T15** — Error states: network error with retry button, auth error redirects with `?returnTo=`, partial failure inline
 

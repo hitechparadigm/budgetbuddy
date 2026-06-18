@@ -1,5 +1,13 @@
 # Development Log
 
+## 2026-06-18 - Phase 3 cont. — Skeleton screens (4 pages), Insights chat bubbles (Session 149 cont.)
+
+### Work Completed
+- GoalsPage/InsightsPage/DebtPayoffPage/AccountsPage: full skeleton loading screens
+- InsightsPage: chat bubble AI Q&A with 3-dot typing, sessionStorage persistence, clear button
+
+---
+
 ## 2026-06-18 - Phase 3 polish — Budget skeleton, Ready to Assign, EmptyState (Session 149 cont.)
 
 ### Work Completed
