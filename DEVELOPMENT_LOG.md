@@ -1,5 +1,13 @@
 # Development Log
 
+## 2026-06-18 - Phase 3 polish — Budget skeleton, Ready to Assign, EmptyState (Session 149 cont.)
+
+### Work Completed
+- BudgetPage: skeleton loading replaces spinner; Ready to Assign badge with green/amber/red states; over-budget highlighting confirmed present
+- EmptyState: upgraded to design tokens + Lucide icons + Button CTA; added to UI barrel
+
+---
+
 ## 2026-06-18 - Phase 2 P2-T10 — PageHeader on all pages (Session 149 cont.)
 
 ### Work Completed

@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.9.137] - 2026-06-18
+
+### ✨ feat: Phase 3 core polish — Budget skeleton, Ready to Assign banner, EmptyState upgrade
+
+#### Budget Page (P3-T1, P3-T2, P3-T5)
+- `BudgetPage.tsx`: Replaced full-page spinner with skeleton layout matching 3-column structure (pulsing group rows + right sidebar skeleton)
+- `BudgetPage.tsx`: Enhanced "Ready to Assign" badge — green pill when fully budgeted, amber when unassigned balance remains, red when over-assigned
+- Over-budget row highlighting (`bg-red-50 border-l-4 border-red-500`) was already present (P3-T5 confirmed done)
+
+#### EmptyState Component (P3-T14 prep)
+- Upgraded `EmptyState.tsx` to use CSS design tokens, accept Lucide icons or emoji, use `Button` component for CTA
+- Added secondary action slot
+- Re-exported from `components/ui` barrel for consistent import path
+
 ## [1.9.136] - 2026-06-18
 
 ### ✨ feat: Phase 2 complete — P2-T10 PageHeader applied to all pages

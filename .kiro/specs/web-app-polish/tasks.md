@@ -56,11 +56,11 @@
 ## Phase 3 — Core Feature Polish (3 weeks)
 
 ### 3.1 Budget Page
-- [ ] **P3-T1** — Add "Ready to Assign" banner: `$X unassigned`, green at zero, yellow when over-assigned, click scrolls to first income group
-- [ ] **P3-T2** — Add skeleton loading screen matching 3-column layout (pulsing group rows)
+- [x] **P3-T1** — Add "Ready to Assign" banner: `$X unassigned`, green at zero, yellow when over-assigned, click scrolls to first income group
+- [x] **P3-T2** — Add skeleton loading screen matching 3-column layout (pulsing group rows)
 - [ ] **P3-T3** — Keyboard shortcuts: `T` (add transaction), `B` (add budget item), `←/→` (month nav), `/` (search focus), `?` (shortcuts overlay), `Escape` (close modal)
 - [ ] **P3-T4** — Inline category amount editing: click planned amount → inline input, no modal required
-- [ ] **P3-T5** — Over-budget row: amber background + red progress bar when `spentAmount > plannedAmount`
+- [x] **P3-T5** — Over-budget row: amber background + red progress bar when `spentAmount > plannedAmount` *(already implemented)*
 
 ### 3.2 Insights Page
 - [ ] **P3-T6** — Chat bubble UI for AI Q&A: user bubble right, AI bubble left, typing indicator (3-dot)

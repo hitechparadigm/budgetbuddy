@@ -3,48 +3,76 @@
  *
  * Consistent empty state UI used when a page has no data to display.
  * Includes an icon, title, description, and optional CTA button.
+ * Uses CSS design tokens for consistent theming.
  */
 
+import React from 'react';
+import { Button } from './ui';
+import type { LucideIcon } from 'lucide-react';
+
 interface EmptyStateProps {
-  /** Emoji or icon to display */
-  icon?: string;
+  /** Lucide icon component (preferred) or emoji string */
+  icon?: LucideIcon | string;
   /** Main heading */
   title: string;
   /** Supporting description */
   description?: string;
-  /** CTA button label */
+  /** Primary CTA button label */
   actionLabel?: string;
-  /** CTA button handler */
+  /** Primary CTA button handler */
   onAction?: () => void;
+  /** Secondary link/action */
+  secondaryLabel?: string;
+  onSecondaryAction?: () => void;
+  className?: string;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  icon = "📭",
+  icon,
   title,
   description,
   actionLabel,
   onAction,
+  secondaryLabel,
+  onSecondaryAction,
+  className = '',
 }) => {
+  const isLucideIcon = icon && typeof icon !== 'string';
+
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="text-5xl mb-4" aria-hidden="true">
-        {icon}
-      </div>
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+    <div className={`flex flex-col items-center justify-center py-16 px-4 text-center ${className}`}>
+      {icon && (
+        <div className="mb-4" aria-hidden="true">
+          {isLucideIcon ? (
+            <div className="w-12 h-12 rounded-full bg-[var(--color-muted)] flex items-center justify-center mx-auto">
+              {React.createElement(icon as LucideIcon, {
+                className: 'w-6 h-6 text-[var(--color-muted-foreground)]',
+              })}
+            </div>
+          ) : (
+            <span className="text-5xl">{icon as string}</span>
+          )}
+        </div>
+      )}
+      <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2">
         {title}
       </h3>
       {description && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-6">
+        <p className="text-sm text-[var(--color-muted-foreground)] max-w-sm mb-6">
           {description}
         </p>
       )}
       {actionLabel && onAction && (
-        <button
-          onClick={onAction}
-          className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-        >
-          {actionLabel}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <Button variant="primary" size="sm" onClick={onAction}>
+            {actionLabel}
+          </Button>
+          {secondaryLabel && onSecondaryAction && (
+            <Button variant="ghost" size="sm" onClick={onSecondaryAction}>
+              {secondaryLabel}
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );

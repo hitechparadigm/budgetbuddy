@@ -1455,10 +1455,54 @@ export const BudgetPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your budget...</p>
+      <div className="h-full bg-background flex">
+        <div className="flex-1 flex">
+          {/* Skeleton: Center column */}
+          <div className="flex-1 bg-surface overflow-auto">
+            {/* Skeleton header */}
+            <div className="p-6 border-b border-border bg-background">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="h-8 w-36 rounded animate-pulse bg-muted" />
+                  <div className="h-5 w-24 rounded animate-pulse bg-muted" />
+                </div>
+                <div className="flex gap-2">
+                  <div className="h-9 w-24 rounded animate-pulse bg-muted" />
+                  <div className="h-9 w-24 rounded animate-pulse bg-muted" />
+                </div>
+              </div>
+            </div>
+            {/* Skeleton budget groups */}
+            <div className="p-6 space-y-6">
+              {[1, 2, 3].map((g) => (
+                <div key={g} className="space-y-2">
+                  <div className="h-5 w-32 rounded animate-pulse bg-muted" />
+                  {[1, 2, 3].map((c) => (
+                    <div key={c} className="flex items-center justify-between py-3 px-4 rounded-lg bg-muted/50">
+                      <div className="flex items-center gap-2">
+                        <div className="h-5 w-5 rounded animate-pulse bg-muted" />
+                        <div className="h-4 w-28 rounded animate-pulse bg-muted" />
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="h-4 w-16 rounded animate-pulse bg-muted" />
+                        <div className="h-4 w-16 rounded animate-pulse bg-muted" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Skeleton: Right sidebar */}
+          <div className="w-96 border-l border-border bg-background p-6 space-y-4">
+            <div className="h-5 w-32 rounded animate-pulse bg-muted" />
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-center justify-between py-2">
+                <div className="h-4 w-32 rounded animate-pulse bg-muted" />
+                <div className="h-4 w-16 rounded animate-pulse bg-muted" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -1639,18 +1683,24 @@ export const BudgetPage: React.FC = () => {
                   {getMonthName(currentMonth)}
                 </h1>
                 {budget && (
-                  <p className="text-lg text-muted-foreground">
+                  <div className="flex items-center gap-2 mt-1">
                     <span
-                      className={`font-semibold ${
-                        totals.remaining < 0 ? "text-red-600" : "text-green-600"
+                      className={`text-sm font-semibold px-2.5 py-1 rounded-full ${
+                        totals.remaining === 0
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+                          : totals.remaining < 0
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                          : 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
                       }`}
+                      title="Money left to assign to budget categories"
                     >
-                      {/* Prefix sign so value is not conveyed by color alone (8.6) */}
-                      {totals.remaining < 0 ? "−" : ""}
-                      {formatCurrency(Math.abs(totals.remaining), currency)}
-                    </span>{" "}
-                    left to budget
-                  </p>
+                      {totals.remaining === 0
+                        ? '✓ Fully budgeted'
+                        : totals.remaining < 0
+                        ? `${formatCurrency(Math.abs(totals.remaining), currency)} over-assigned`
+                        : `${formatCurrency(totals.remaining, currency)} left to assign`}
+                    </span>
+                  </div>
                 )}
               </div>
 
