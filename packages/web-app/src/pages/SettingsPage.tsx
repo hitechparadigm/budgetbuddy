@@ -27,6 +27,9 @@ interface LocationForm {
 
 export const SettingsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [activeSettingsTab, setActiveSettingsTab] = useState<
+    'profile' | 'budget' | 'notifications' | 'banks' | 'privacy' | 'help'
+  >('budget');
   const [timezone, setTimezone] = useState<string>("");
   const [currency, setCurrency] = useState<string>("USD");
   const [showCurrencyConfirm, setShowCurrencyConfirm] = useState(false);
@@ -391,6 +394,32 @@ export const SettingsPage: React.FC = () => {
 
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
+
+        {/* Tab Navigation */}
+        <div className="flex gap-1 mb-8 border-b border-[var(--color-border)] overflow-x-auto">
+          {([
+            { id: 'budget', label: 'Budget' },
+            { id: 'profile', label: 'Profile' },
+            { id: 'notifications', label: 'Notifications' },
+            { id: 'banks', label: 'Banks' },
+            { id: 'privacy', label: 'Privacy' },
+            { id: 'help', label: 'Help' },
+          ] as const).map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveSettingsTab(tab.id)}
+              className={[
+                'px-4 py-2 text-sm font-medium whitespace-nowrap -mb-px border-b-2 transition-colors',
+                activeSettingsTab === tab.id
+                  ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                  : 'border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]',
+              ].join(' ')}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {/* Success/Error Message */}
         {message && (
           <div
@@ -404,10 +433,11 @@ export const SettingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Location & Timezone Section */}
+        {/* Location & Timezone Section — Budget tab */}
+        {activeSettingsTab === 'budget' && <>
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">
-            Location & Timezone
+            Location &amp; Timezone
           </h2>
 
           {/* Current Timezone Info */}
@@ -586,8 +616,10 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        </> } {/* end Budget tab */}
 
-        {/* Bank Accounts Section */}
+        {/* Bank Accounts Section — Banks tab */}
+        {activeSettingsTab === 'banks' && <>
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">
             🏦 Connected Bank Accounts
@@ -616,8 +648,10 @@ export const SettingsPage: React.FC = () => {
             </svg>
           </button>
         </div>
+        </> } {/* end Banks tab */}
 
-        {/* Profile Section */}
+        {/* Profile Section — Profile tab */}
+        {activeSettingsTab === 'profile' && <>
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">Profile</h2>
           <p className="text-gray-600 text-sm mb-4">
@@ -780,8 +814,10 @@ export const SettingsPage: React.FC = () => {
             </div>
           )}
         </div>
+        </> } {/* end Profile tab */}
 
-        {/* Appearance Section */}
+        {/* Appearance Section — Profile tab (Appearance goes with Profile) */}
+        {activeSettingsTab === 'profile' && <>
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">
             🎨 Appearance
@@ -792,8 +828,10 @@ export const SettingsPage: React.FC = () => {
           </p>
           <ThemeToggle />
         </div>
+        </> } {/* end Profile tab (Appearance) */}
 
-        {/* Data Backup & Restore Section */}
+        {/* Data Backup & Restore Section — Privacy tab */}
+        {activeSettingsTab === 'privacy' && <>
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">
             Data Backup & Restore
@@ -967,13 +1005,17 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        </> } {/* end Privacy tab */}
 
-        {/* Notification Settings Section */}
+        {/* Notification Settings Section — Notifications tab */}
+        {activeSettingsTab === 'notifications' && <>
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <NotificationSettings userId={localStorage.getItem("userId") || ""} />
         </div>
+        </> } {/* end Notifications tab */}
 
-        {/* Budget Members Section */}
+        {/* Budget Members Section — Profile tab */}
+        {activeSettingsTab === 'profile' && <>
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Budget Members</h2>
           <p className="text-gray-600 text-sm mb-4">
@@ -986,8 +1028,10 @@ export const SettingsPage: React.FC = () => {
             Manage Members →
           </a>
         </div>
+        </> } {/* end Profile tab (Members) */}
 
-        {/* Troubleshooting Section */}
+        {/* Troubleshooting Section — Help tab */}
+        {activeSettingsTab === 'help' && <>
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">
             Troubleshooting
@@ -1011,8 +1055,10 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        </> } {/* end Help tab (Troubleshooting) */}
 
-        {/* Danger Zone Section */}
+        {/* Danger Zone — Privacy tab */}
+        {activeSettingsTab === 'privacy' && <>
         <div className="bg-white rounded-lg shadow-sm border border-red-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-red-600 mb-4">
             ⚠️ Danger Zone
@@ -1048,8 +1094,10 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        </> } {/* end Privacy tab (Danger Zone) */}
 
-        {/* Help & Tutorial Section */}
+        {/* Help & Tutorial Section — Help tab */}
+        {activeSettingsTab === 'help' && <>
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">
             📚 Help & Tutorial
@@ -1136,6 +1184,7 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
         </div>
+        </> } {/* end Help tab (Tutorial) */}
       </div>
 
       {/* Disable 2FA Confirmation Modal */}

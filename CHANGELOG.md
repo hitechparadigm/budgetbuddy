@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.141] - 2026-06-18
+
+### ✨ feat: Phase 3 — Settings tab-based layout (P3-T16)
+
+**SettingsPage.tsx** — Added tab navigation (Budget | Profile | Notifications | Banks | Privacy | Help):
+- **Budget tab**: Location & Timezone, Currency Settings
+- **Profile tab**: Profile, Account, Two-Factor Auth, Appearance, Budget Members
+- **Notifications tab**: Notification preferences
+- **Banks tab**: Connected Bank Accounts
+- **Privacy tab**: Data Backup & Restore, Danger Zone / Delete Account
+- **Help tab**: Help & Tutorial, Troubleshooting, Token Diagnostics
+
 ## [1.9.140] - 2026-06-18
 
 ### ✨ feat: Phase 3 — Empty states on Goals, Bills, Debts, Budget transactions (P3-T14)
