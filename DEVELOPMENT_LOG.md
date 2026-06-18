@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-18 - Phase 3 P3-T4 — Inline category amount editing (Session 149 cont.)
+
+### Work Completed
+BudgetPage: click planned amount → inline number input; Enter/blur saves, Escape cancels; saves to backend.
+
+---
+
 ## 2026-06-18 - Phase 5 P5-T6 — Premium gates (3 gates), P6-T4 confirmed (Session 149 cont.)
 
 ### Work Completed
