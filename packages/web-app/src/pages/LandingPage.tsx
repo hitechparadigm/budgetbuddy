@@ -5,7 +5,9 @@
  * Shows value proposition, features, and sign-up CTA.
  */
 
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "../components/ui";
 
 const features = [
   {
@@ -62,18 +64,20 @@ export const LandingPage: React.FC = () => {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => navigate("/auth")}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 Log in
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={() => navigate("/auth")}
-                className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
               >
                 Get Started Free
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -92,18 +96,21 @@ export const LandingPage: React.FC = () => {
             goals faster.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-            <button
+            <Button
+              variant="primary"
+              size="lg"
               onClick={() => navigate("/auth")}
-              className="px-8 py-3 text-lg font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shadow-lg shadow-emerald-500/25"
+              className="shadow-lg shadow-emerald-500/25"
             >
               Start Budgeting Free
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
               onClick={() => navigate("/about")}
-              className="px-8 py-3 text-lg font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
             >
               Learn More
-            </button>
+            </Button>
           </div>
           <p className="mt-4 text-sm text-gray-500 dark:text-gray-500">
             Free forever. No credit card required.
@@ -150,12 +157,14 @@ export const LandingPage: React.FC = () => {
           <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
             Join thousands of families who budget smarter with BudgetBuddy.
           </p>
-          <button
+          <Button
+            variant="primary"
+            size="lg"
             onClick={() => navigate("/auth")}
-            className="mt-8 px-8 py-3 text-lg font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shadow-lg shadow-emerald-500/25"
+            className="mt-8 shadow-lg shadow-emerald-500/25"
           >
             Get Started Free
-          </button>
+          </Button>
         </div>
       </section>
 

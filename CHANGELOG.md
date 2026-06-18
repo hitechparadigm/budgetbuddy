@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.9.135] - 2026-06-18
+
+### ✨ feat: Phase 2 information architecture — Overview page, /overview route, /net-worth route
+
+#### Overview/Dashboard Page (P2-T2–T9, P1-T14)
+- Created `src/pages/OverviewPage.tsx` — full dashboard with 7 sections:
+  - AI Insight of the Day (pulls from /insights/summary)
+  - Financial Health Bar — income/spent/remaining with progress bar
+  - 4 stat cards (Income, Spent, Saved, Net Worth)
+  - Net Worth sparkline (6-month SVG trend, no external chart library)
+  - Top 5 Spending Categories vs budget bar chart
+  - Upcoming Bills next 7 days with due-day badges
+  - Active Goals top 3 with progress bars
+  - Quick Add Transaction button
+- All sections load independently and fail silently (no full-page crash on API error)
+- Loading skeletons for every section
+
+#### Routes (P2-T3, P2-T11)
+- Added `/overview` route in `App.tsx` — the primary authenticated home
+- Added `/net-worth` route in `App.tsx` — `NetWorthPage` now accessible
+- Sidebar's Overview item now points to `/overview`
+
+#### LandingPage (P1-T14)
+- Migrated all 4 CTA buttons to `Button` component — no raw Tailwind CTAs remain
+
 ## [1.9.134] - 2026-06-18
 
 ### ✨ feat: Phase 1 design foundation — Inter font, green primary, Lucide icons, UI primitives

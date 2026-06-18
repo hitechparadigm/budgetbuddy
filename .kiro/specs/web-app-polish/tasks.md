@@ -40,16 +40,16 @@
 - [x] **P2-T1** — Redesign `Sidebar.tsx`: 6 primary items + collapsible `Manage` group (Bills, Subscriptions, Debt Payoff, Credit Score, Investments, Net Worth, Members) *(done in P1-T6)*
 
 ### 2.2 Overview / Dashboard Page
-- [ ] **P2-T2** — Create `packages/web-app/src/pages/OverviewPage.tsx` shell with data service connections
-- [ ] **P2-T3** — Add `/overview` route to `App.tsx`; change default authenticated redirect from `/budget` to `/overview`
-- [ ] **P2-T4** — Overview: Financial Health Bar (income assigned / spent / remaining for current month)
-- [ ] **P2-T5** — Overview: Net Worth Trend sparkline (6-month, pulls from NetWorth data)
-- [ ] **P2-T6** — Overview: Top 5 Spending Categories with bar chart vs. budget
-- [ ] **P2-T7** — Overview: Upcoming Bills next 7 days
-- [ ] **P2-T8** — Overview: Active Goals top 3 compact progress bars
-- [ ] **P2-T9** — Overview: AI Insight of the Day + Quick Add Transaction inline form
+- [x] **P2-T2** — Create `packages/web-app/src/pages/OverviewPage.tsx` shell with data service connections
+- [x] **P2-T3** — Add `/overview` route to `App.tsx`; change default authenticated redirect from `/budget` to `/overview`
+- [x] **P2-T4** — Overview: Financial Health Bar (income assigned / spent / remaining for current month)
+- [x] **P2-T5** — Overview: Net Worth Trend sparkline (6-month, pulls from NetWorth data)
+- [x] **P2-T6** — Overview: Top 5 Spending Categories with bar chart vs. budget
+- [x] **P2-T7** — Overview: Upcoming Bills next 7 days
+- [x] **P2-T8** — Overview: Active Goals top 3 compact progress bars
+- [x] **P2-T9** — Overview: AI Insight of the Day + Quick Add Transaction inline form
 - [ ] **P2-T10** — Apply `PageHeader` component to all existing pages (BudgetPage, GoalsPage, AccountsPage, InsightsPage, SettingsPage, BillsPage, SubscriptionsPage, DebtPayoffPage, CreditScorePage)
-- [ ] **P2-T11** — Add `/net-worth` route to `App.tsx`; add NetWorthPage to Manage group nav
+- [x] **P2-T11** — Add `/net-worth` route to `App.tsx`; add NetWorthPage to Manage group nav
 
 ---
 
