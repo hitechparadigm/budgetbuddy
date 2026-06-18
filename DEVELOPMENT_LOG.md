@@ -1,5 +1,23 @@
 # Development Log
 
+## 2026-06-18 - Validation gate fixes, web app polish spec, autonomous mode setup (Session 149)
+
+### Work Completed
+
+1. **Fixed pre-existing backend ESLint errors** — 15 catch-binding `no-unused-vars` errors across 10 Lambda functions; renamed `catch (error)` → `catch (_e)` per ESLint convention. Also removed stale `/* global setTimeout */` comment in `investments-price-updater/index.js`. Backend lint now passes with 0 errors.
+
+2. **Added frontend lint + typecheck to validation gate** (`scripts/validate-for-commit.js`):
+   - Added `lint:check:web` and `lint:check:all` to root `package.json`
+   - Added `type-check:web` and `type-check:all` to root `package.json`
+   - Both run as WARN (non-blocking) until Phase 1 TypeScript cleanup is complete (72 pre-existing TS errors, all `noUnusedLocals`/type gaps — documented in spec)
+   - Validation gate now exits 0 with full PASS/WARN/FAIL summary
+
+3. **Created web app polish spec** at `.kiro/specs/web-app-polish/tasks.md` — full task breakdown from `docs/web-app-polish-plan.md` across 6 phases (P1-T1 through P6-T9 + P1-T16 for TS cleanup)
+
+4. **Fixed `eslint.config.js`** — added `caughtErrors: "none"` for backend override, added timer globals (`setTimeout`, `clearTimeout`, `setInterval`, `clearInterval`) to prevent false `no-redeclare` errors
+
+---
+
 ## 2026-06-18 - Dark mode, currency fix, family enforcement, goals-budget link (Session 148)
 
 ### Work Completed

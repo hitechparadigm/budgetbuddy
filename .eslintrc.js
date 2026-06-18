@@ -40,6 +40,7 @@
           "error",
           {
             argsIgnorePattern: "^_",
+            caughtErrorsIgnorePattern: "^_",
           },
         ],
         // Prevent import ordering bugs - variables must be defined before use

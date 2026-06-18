@@ -31,7 +31,7 @@ let accountsService = null;
 try {
   // Try to load accounts service - may not exist in all environments
   accountsService = require("../accounts/service");
-} catch (_error) {
+} catch (_e) {
   // Accounts service not available - balance updates will be skipped
 }
 

@@ -83,7 +83,7 @@ exports.handler = async (event) => {
     let requestBody;
     try {
       requestBody = JSON.parse(event.body);
-    } catch (error) {
+    } catch (_e) {
       throw new ValidationError(['Invalid JSON format']);
     }
 

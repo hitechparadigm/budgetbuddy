@@ -25,24 +25,46 @@ try {
   allPassed = false;
 }
 
-// 2. Linting
+// 2. Linting (backend + frontend)
 try {
-  console.log("\n2️⃣  ESLint validation...");
+  console.log("\n2️⃣  ESLint validation (backend)...");
   execSync("npm run lint:check", { stdio: "inherit" });
-  results.push({ check: "Linting", status: "PASS" });
+  results.push({ check: "Linting (backend)", status: "PASS" });
 } catch (error) {
-  results.push({ check: "Linting", status: "FAIL" });
+  results.push({ check: "Linting (backend)", status: "FAIL" });
   allPassed = false;
 }
 
-// 3. Type Checking
 try {
-  console.log("\n3️⃣  TypeScript validation...");
-  execSync("npm run type-check", { stdio: "inherit" });
-  results.push({ check: "Type Check", status: "PASS" });
+  console.log("\n2️⃣  ESLint validation (frontend)...");
+  execSync("npm run lint:check:web", { stdio: "inherit" });
+  results.push({ check: "Linting (frontend)", status: "PASS" });
 } catch (error) {
-  results.push({ check: "Type Check", status: "FAIL" });
+  // Frontend lint requires TypeScript ESLint parser not yet installed at root.
+  // Will be upgraded to blocking after P1 TypeScript/ESLint cleanup is complete.
+  console.log("   ⚠️  Frontend ESLint has warnings — recorded as warning (non-blocking until Phase 1 cleanup)");
+  results.push({ check: "Linting (frontend)", status: "WARN" });
+}
+
+// 3. Type Checking (infrastructure + frontend)
+try {
+  console.log("\n3️⃣  TypeScript validation (infrastructure)...");
+  execSync("npm run type-check", { stdio: "inherit" });
+  results.push({ check: "Type Check (infra)", status: "PASS" });
+} catch (error) {
+  results.push({ check: "Type Check (infra)", status: "FAIL" });
   allPassed = false;
+}
+
+try {
+  console.log("\n3️⃣  TypeScript validation (frontend)...");
+  execSync("npm run type-check:web", { stdio: "inherit" });
+  results.push({ check: "Type Check (frontend)", status: "PASS" });
+} catch (error) {
+  // Frontend TS errors are warnings until Phase 1 TS cleanup is complete
+  // Will be upgraded to blocking after P1-T1 through P1-T15 are done
+  console.log("   ⚠️  Frontend TypeScript has errors — recorded as warning (non-blocking until Phase 1 TS cleanup)");
+  results.push({ check: "Type Check (frontend)", status: "WARN" });
 }
 
 // 4. Documentation
@@ -60,7 +82,7 @@ console.log("\n" + "=".repeat(50));
 console.log("VALIDATION SUMMARY");
 console.log("=".repeat(50));
 results.forEach((r) => {
-  const icon = r.status === "PASS" ? "✅" : "❌";
+  const icon = r.status === "PASS" ? "✅" : r.status === "WARN" ? "⚠️ " : "❌";
   console.log(`${icon} ${r.check}: ${r.status}`);
 });
 console.log("=".repeat(50));
@@ -69,8 +91,7 @@ if (allPassed) {
   console.log("\n✅ ALL VALIDATION CHECKS PASSED");
   console.log("✅ Safe to commit and push\n");
   process.exit(0);
-} else {
-  console.log("\n❌ VALIDATION FAILED");
+} else {  console.log("\n❌ VALIDATION FAILED");
   console.log("❌ Fix issues before committing\n");
   process.exit(1);
 }

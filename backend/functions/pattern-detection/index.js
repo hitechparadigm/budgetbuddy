@@ -122,7 +122,7 @@ function parseBody(event) {
   }
   try {
     return JSON.parse(event.body);
-  } catch (error) {
+  } catch (_e) {
     return {};
   }
 }

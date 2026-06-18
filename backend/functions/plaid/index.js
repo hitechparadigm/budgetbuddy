@@ -286,7 +286,7 @@ async function exchangePublicToken(event, user) {
         country_codes: [CountryCode.Us, CountryCode.Ca],
       });
       institutionName = instResponse.data.institution.name;
-    } catch (_error) {
+    } catch (_e) {
       logger.warn("Could not fetch institution name", { institution });
     }
 
@@ -411,7 +411,7 @@ async function createSandboxItem(event, user) {
         country_codes: [CountryCode.Us, CountryCode.Ca],
       });
       institutionName = instResponse.data.institution.name;
-    } catch (_error) {
+    } catch (_e) {
       logger.warn("Could not fetch institution name", { institutionId });
     }
 

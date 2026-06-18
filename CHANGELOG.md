@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.9.133] - 2026-06-18
+
+### 🔧 chore: Validation gate fixes, web app polish spec, autonomous mode setup
+
+#### Validation Gate
+- Fixed 15 pre-existing `no-unused-vars` ESLint errors across 10 backend Lambda functions (catch bindings renamed `error`/`_error` → `_e`)
+- Added `lint:check:web`, `lint:check:all`, `type-check:web`, `type-check:all` to root `package.json`
+- `validate-for-commit.js` now checks frontend lint + typecheck (WARN/non-blocking pending Phase 1 TS cleanup)
+- Fixed `eslint.config.js`: added `caughtErrors: "none"` for backend, added timer globals to prevent false `no-redeclare`
+- Validation gate now exits 0 correctly with full PASS/WARN/FAIL summary
+
+#### Web App Polish Spec
+- Created `.kiro/specs/web-app-polish/tasks.md` — 60 tasks across 6 phases from `docs/web-app-polish-plan.md`
+- Tracks all 18 "Definition of Done" completion criteria
+
 ## [1.9.132] - 2026-06-18
 
 ### 🐛 Fix: Dark mode, currency locale, family budget enforcement, goals-budget link

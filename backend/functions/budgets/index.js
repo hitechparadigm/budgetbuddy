@@ -118,7 +118,7 @@ exports.handler = async (event) => {
       let userId;
       try {
         userId = getUserFromEvent(event).userId;
-      } catch (_error) {
+      } catch (_e) {
         return withCors(event, {
           statusCode: 401,
           headers: { 'Content-Type': 'application/json' },
