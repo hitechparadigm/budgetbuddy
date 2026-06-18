@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-18 - Phase 6 P6-T9 — Transaction filter session persistence (Session 149 cont.)
+
+### Work Completed
+`TransactionFilters.tsx`: filter state now persisted to sessionStorage via `useTransactionFilters` hook.
+
+---
+
 ## 2026-06-18 - Phase 5 P5-T1 — Landing page rewrite (Session 149 cont.)
 
 ### Work Completed

@@ -127,8 +127,8 @@
 - [ ] **P6-T5** — Accessibility: screen reader test of budget page row read-out
 - [ ] **P6-T6** — Lighthouse audit; reach ≥85 Performance score
 - [ ] **P6-T7** — Lazy-load `recharts` bundle (only on Insights/Debt pages)
-- [ ] **P6-T8** — Transaction filter: real-time search input + "clear all filters" button
-- [ ] **P6-T9** — Transaction filter: persist state to `sessionStorage`
+- [x] **P6-T8** — Transaction filter: real-time search input + "clear all filters" button
+- [x] **P6-T9** — Transaction filter: persist state to `sessionStorage`
 
 ---
 
