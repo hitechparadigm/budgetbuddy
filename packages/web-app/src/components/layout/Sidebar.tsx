@@ -3,6 +3,8 @@
  *
  * Persistent sidebar navigation for BudgetBuddy web app.
  * Features:
+ * - 6 primary nav items + collapsible "Manage" group (Phase 2 IA)
+ * - Lucide React icons — consistent stroke weight, fully themeable (Phase 1)
  * - Collapsible sidebar with icon-only mode
  * - Active state highlighting based on current route
  * - Mobile responsive with overlay mode
@@ -10,12 +12,35 @@
  * - Collapse state persistence in localStorage
  */
 
-import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Landmark,
+  Target,
+  Sparkles,
+  Settings2,
+  LogOut,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  LayoutGrid,
+  FileText,
+  RefreshCw,
+  CreditCard,
+  Award,
+  TrendingUp,
+  Wallet,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
+
 export interface NavItem {
   id: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   path: string;
   badge?: number;
 }
@@ -28,74 +53,103 @@ export interface SidebarProps {
   userEmail?: string;
 }
 
-// Navigation items configuration — split into two groups for visual hierarchy
+/** Primary navigation — 6 items max */
 export const navItems: NavItem[] = [
-  { id: "budget", label: "Budget", icon: "📊", path: "/budget" },
-  { id: "accounts", label: "Accounts", icon: "🏦", path: "/accounts" },
-  { id: "members", label: "Members", icon: "👥", path: "/budget/members" },
-  { id: "goals", label: "Goals", icon: "🎯", path: "/goals" },
-  { id: "investments", label: "Investments", icon: "📈", path: "/investments" },
-  { id: "insights", label: "Insights", icon: "💡", path: "/insights" },
-  { id: "bills", label: "Bills", icon: "📋", path: "/bills" },
-  {
-    id: "subscriptions",
-    label: "Subscriptions",
-    icon: "🔄",
-    path: "/subscriptions",
-  },
-  { id: "debts", label: "Debt Payoff", icon: "💳", path: "/debts" },
-  {
-    id: "credit-score",
-    label: "Credit Score",
-    icon: "🏆",
-    path: "/credit-score",
-  },
+  { id: 'overview',  label: 'Overview',  icon: LayoutDashboard, path: '/overview' },
+  { id: 'budget',    label: 'Budget',    icon: LayoutDashboard, path: '/budget' },
+  { id: 'accounts',  label: 'Accounts',  icon: Landmark,        path: '/accounts' },
+  { id: 'goals',     label: 'Goals',     icon: Target,          path: '/goals' },
+  { id: 'insights',  label: 'Insights',  icon: Sparkles,        path: '/insights' },
 ];
 
-// Secondary nav items (tools & learning) — shown below a divider
+/** Manage group — collapses behind a chevron toggle */
+export const manageItems: NavItem[] = [
+  { id: 'bills',         label: 'Bills',         icon: FileText,   path: '/bills' },
+  { id: 'subscriptions', label: 'Subscriptions', icon: RefreshCw,  path: '/subscriptions' },
+  { id: 'debts',         label: 'Debt Payoff',   icon: CreditCard, path: '/debts' },
+  { id: 'credit-score',  label: 'Credit Score',  icon: Award,      path: '/credit-score' },
+  { id: 'investments',   label: 'Investments',   icon: TrendingUp, path: '/investments' },
+  { id: 'net-worth',     label: 'Net Worth',     icon: Wallet,     path: '/net-worth' },
+  { id: 'members',       label: 'Members',       icon: Users,      path: '/budget/members' },
+];
+
+/** Bottom secondary nav */
 export const secondaryNavItems: NavItem[] = [
-  { id: "tips", label: "Tips", icon: "💬", path: "/tips" },
-  { id: "learn", label: "Learn", icon: "📚", path: "/learn" },
-  { id: "settings", label: "Settings", icon: "⚙️", path: "/settings" },
+  { id: 'settings', label: 'Settings', icon: Settings2, path: '/settings' },
 ];
 
-// Storage key for collapse state persistence
-const SIDEBAR_COLLAPSED_KEY = "budgetbuddy_sidebar_collapsed";
+const SIDEBAR_COLLAPSED_KEY = 'budgetbuddy_sidebar_collapsed';
+const MANAGE_EXPANDED_KEY   = 'budgetbuddy_manage_expanded';
 
-/**
- * Hook to manage sidebar collapse state with localStorage persistence
- */
 export function useSidebarCollapse(isMobile: boolean): [boolean, () => void] {
   const [collapsed, setCollapsed] = useState(() => {
-    // On mobile, start collapsed
-    if (typeof window !== "undefined" && window.innerWidth < 1024) {
-      return true;
-    }
-    // On desktop, restore from localStorage
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) return true;
     const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
-    return stored === "true";
+    return stored === 'true';
   });
 
   const toggleCollapse = () => {
     setCollapsed((prev) => {
-      const newValue = !prev;
-      // Only persist on desktop
-      if (!isMobile) {
-        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(newValue));
-      }
-      return newValue;
+      const next = !prev;
+      if (!isMobile) localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
+      return next;
     });
   };
 
-  // Reset to collapsed on mobile
   useEffect(() => {
-    if (isMobile) {
-      setCollapsed(true);
-    }
+    if (isMobile) setCollapsed(true);
   }, [isMobile]);
 
   return [collapsed, toggleCollapse];
 }
+
+interface NavButtonProps {
+  item: NavItem;
+  collapsed: boolean;
+  isMobile: boolean;
+  active: boolean;
+  onClick: (path: string) => void;
+}
+
+const NavButton: React.FC<NavButtonProps> = ({
+  item,
+  collapsed,
+  isMobile,
+  active,
+  onClick,
+}) => {
+  const Icon = item.icon;
+  const iconOnly = collapsed && !isMobile;
+
+  return (
+    <li>
+      <button
+        onClick={() => onClick(item.path)}
+        aria-label={iconOnly ? item.label : undefined}
+        aria-current={active ? 'page' : undefined}
+        title={iconOnly ? item.label : undefined}
+        className={[
+          'w-full flex items-center py-2 rounded-lg transition-colors',
+          iconOnly ? 'justify-center px-2' : 'space-x-3 px-3',
+          active
+            ? 'bg-[var(--color-accent)] text-[var(--color-sidebar-active-text)] font-medium border-l-[3px] border-[var(--color-sidebar-active-border)]'
+            : 'text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)] focus-visible:ring-offset-1',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        <Icon className="w-5 h-5 shrink-0" aria-hidden="true" />
+        {!iconOnly && <span className="flex-1 text-left">{item.label}</span>}
+        {!iconOnly && item.badge && item.badge > 0 && (
+          <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full leading-none">
+            {item.badge}
+          </span>
+        )}
+      </button>
+    </li>
+  );
+};
 
 export const Sidebar: React.FC<SidebarProps> = ({
   collapsed,
@@ -107,208 +161,231 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [manageExpanded, setManageExpanded] = useState(() => {
+    const stored = localStorage.getItem(MANAGE_EXPANDED_KEY);
+    return stored !== 'false'; // default open
+  });
+
+  const toggleManage = () => {
+    setManageExpanded((prev) => {
+      const next = !prev;
+      localStorage.setItem(MANAGE_EXPANDED_KEY, String(next));
+      return next;
+    });
+  };
+
   const handleLogout = () => {
-    // Clear all authentication tokens
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("idToken");
-    localStorage.removeItem("userId");
-    navigate("/auth");
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('idToken');
+    localStorage.removeItem('userId');
+    navigate('/auth');
   };
 
   const handleNavClick = (path: string) => {
     navigate(path);
-    // Close sidebar on mobile after navigation
-    if (isMobile && !collapsed) {
-      onToggleCollapse();
-    }
+    if (isMobile && !collapsed) onToggleCollapse();
   };
 
-  /**
-   * Check if a nav item is active based on current path
-   * Matches exact path or path prefix for nested routes
-   */
   const isActive = (path: string): boolean => {
-    if (path === "/budget") {
-      return location.pathname === "/budget" || location.pathname === "/";
+    if (path === '/overview') {
+      return location.pathname === '/overview' || location.pathname === '/';
+    }
+    if (path === '/budget') {
+      return location.pathname === '/budget';
     }
     return location.pathname.startsWith(path);
   };
 
+  const isManageActive = manageItems.some((item) => isActive(item.path));
+  const iconOnly = collapsed && !isMobile;
+
   return (
     <>
-      {/* Mobile overlay backdrop */}
+      {/* Mobile overlay */}
       {!collapsed && isMobile && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="fixed inset-0 bg-black/50 z-40"
           onClick={onToggleCollapse}
           aria-hidden="true"
         />
       )}
 
-      {/* Sidebar container */}
       <aside
-        className={`
-          ${isMobile && collapsed ? "hidden" : ""}
-          ${isMobile && !collapsed ? "fixed inset-y-0 left-0 z-50 w-64" : ""}
-          ${!isMobile && collapsed ? "w-16" : ""}
-          ${!isMobile && !collapsed ? "w-64" : ""}
-          bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300
-        `}
+        className={[
+          isMobile && collapsed ? 'hidden' : '',
+          isMobile && !collapsed ? 'fixed inset-y-0 left-0 z-50 w-64' : '',
+          !isMobile && collapsed ? 'w-16' : '',
+          !isMobile && !collapsed ? 'w-64' : '',
+          'bg-[var(--color-sidebar)] border-r border-[var(--color-sidebar-border)]',
+          'flex flex-col transition-all duration-300',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         aria-label="Main navigation"
       >
-        {/* Header with logo and collapse toggle */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        {/* Header */}
+        <div className="p-4 border-b border-[var(--color-sidebar-border)]">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">$</span>
+              <div className="w-8 h-8 bg-[var(--color-primary)] rounded-lg flex items-center justify-center shrink-0">
+                <span className="text-white font-bold text-sm" aria-hidden="true">$</span>
               </div>
-              {!collapsed && (
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
+              {!iconOnly && (
+                <span className="font-semibold text-[var(--color-sidebar-foreground)]">
                   BudgetBuddy
                 </span>
               )}
             </div>
             <button
-            onClick={onToggleCollapse}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                {collapsed ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                  />
-                )}
-              </svg>
+              onClick={onToggleCollapse}
+              className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] p-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]"
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed ? (
+                <ChevronRight className="w-5 h-5" aria-hidden="true" />
+              ) : (
+                <ChevronLeft className="w-5 h-5" aria-hidden="true" />
+              )}
             </button>
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <nav className="flex-1 p-4 overflow-y-auto" aria-label="Main navigation">
+        {/* Navigation */}
+        <nav className="flex-1 p-3 overflow-y-auto space-y-0.5" aria-label="Main navigation">
+
           {/* Primary items */}
-          <ul className="space-y-1" role="list">
+          <ul className="space-y-0.5" role="list">
             {navItems.map((item) => (
-              <li key={item.id}>
-                <button
-                  onClick={() => handleNavClick(item.path)}
-                  aria-label={collapsed && !isMobile ? item.label : undefined}
-                  aria-current={isActive(item.path) ? "page" : undefined}
-                  className={`
-                    w-full flex items-center py-2 rounded-lg transition-colors
-                    ${collapsed && !isMobile ? "justify-center px-2" : "space-x-3 px-3"}
-                    ${
-                      isActive(item.path)
-                        ? "bg-green-50 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-300 font-medium border-l-3 border-green-700 dark:border-emerald-400"
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
-                    }
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1
-                  `}
-                >
-                  <span className="text-lg" aria-hidden="true">
-                    {item.icon}
-                  </span>
-                  {(!collapsed || isMobile) && (
-                    <span className="flex-1 text-left">{item.label}</span>
-                  )}
-                  {item.badge && item.badge > 0 && (!collapsed || isMobile) && (
-                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              </li>
+              <NavButton
+                key={item.id}
+                item={item}
+                collapsed={collapsed}
+                isMobile={isMobile}
+                active={isActive(item.path)}
+                onClick={handleNavClick}
+              />
             ))}
           </ul>
 
-          {/* Divider */}
-          <div className={`my-3 border-t border-gray-200 dark:border-gray-700 ${collapsed && !isMobile ? "mx-1" : "mx-0"}`} />
+          {/* Manage group */}
+          <div className="pt-1">
+            {/* Manage toggle button */}
+            <button
+              onClick={toggleManage}
+              aria-label={iconOnly ? 'Manage' : undefined}
+              title={iconOnly ? 'Manage' : undefined}
+              aria-expanded={!iconOnly ? manageExpanded : undefined}
+              className={[
+                'w-full flex items-center py-2 rounded-lg transition-colors',
+                iconOnly ? 'justify-center px-2' : 'space-x-3 px-3',
+                isManageActive
+                  ? 'text-[var(--color-sidebar-active-text)] bg-[var(--color-accent)]'
+                  : 'text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              <LayoutGrid className="w-5 h-5 shrink-0" aria-hidden="true" />
+              {!iconOnly && (
+                <>
+                  <span className="flex-1 text-left text-sm">Manage</span>
+                  {manageExpanded ? (
+                    <ChevronUp className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  )}
+                </>
+              )}
+            </button>
 
-          {/* Secondary items — tools & learning */}
-          <ul className="space-y-1" role="list" aria-label="Tools and learning">
+            {/* Manage sub-items */}
+            {(!iconOnly && manageExpanded) && (
+              <ul className="mt-0.5 ml-4 space-y-0.5 border-l border-[var(--color-border)] pl-3" role="list">
+                {manageItems.map((item) => (
+                  <NavButton
+                    key={item.id}
+                    item={item}
+                    collapsed={false}
+                    isMobile={isMobile}
+                    active={isActive(item.path)}
+                    onClick={handleNavClick}
+                  />
+                ))}
+              </ul>
+            )}
+
+            {/* Collapsed icon-only manage items */}
+            {iconOnly && (
+              <ul className="mt-0.5 space-y-0.5" role="list">
+                {manageItems.map((item) => (
+                  <NavButton
+                    key={item.id}
+                    item={item}
+                    collapsed={true}
+                    isMobile={false}
+                    active={isActive(item.path)}
+                    onClick={handleNavClick}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Divider */}
+          <div className="my-2 border-t border-[var(--color-sidebar-border)]" />
+
+          {/* Secondary items */}
+          <ul className="space-y-0.5" role="list">
             {secondaryNavItems.map((item) => (
-              <li key={item.id}>
-                <button
-                  onClick={() => handleNavClick(item.path)}
-                  aria-label={collapsed && !isMobile ? item.label : undefined}
-                  aria-current={isActive(item.path) ? "page" : undefined}
-                  className={`
-                    w-full flex items-center py-2 rounded-lg transition-colors
-                    ${collapsed && !isMobile ? "justify-center px-2" : "space-x-3 px-3"}
-                    ${
-                      isActive(item.path)
-                        ? "bg-green-50 dark:bg-emerald-900/30 text-green-700 dark:text-emerald-300 font-medium border-l-3 border-green-700 dark:border-emerald-400"
-                        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100"
-                    }
-                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1
-                  `}
-                >
-                  <span className="text-lg" aria-hidden="true">
-                    {item.icon}
-                  </span>
-                  {(!collapsed || isMobile) && (
-                    <span className="flex-1 text-left">{item.label}</span>
-                  )}
-                  {item.badge && item.badge > 0 && (!collapsed || isMobile) && (
-                    <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              </li>
+              <NavButton
+                key={item.id}
+                item={item}
+                collapsed={collapsed}
+                isMobile={isMobile}
+                active={isActive(item.path)}
+                onClick={handleNavClick}
+              />
             ))}
           </ul>
         </nav>
 
-        {/* User Profile Section */}
-        <div className="mt-auto border-t border-gray-200 dark:border-gray-700 p-4">
-          {!collapsed && (
-            <div className="mb-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                  <span className="text-gray-600 dark:text-gray-300">👤</span>
+        {/* User Profile */}
+        <div className="border-t border-[var(--color-sidebar-border)] p-3">
+          {!iconOnly && (
+            <div className="mb-2">
+              <div className="flex items-center space-x-3 px-3 py-2">
+                <div className="w-8 h-8 bg-[var(--color-muted)] rounded-full flex items-center justify-center shrink-0">
+                  <User className="w-4 h-4 text-[var(--color-muted-foreground)]" aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                    {userName || "User"}
+                  <p className="text-sm font-medium text-[var(--color-sidebar-foreground)] truncate">
+                    {userName || 'User'}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {userEmail || ""}
-                  </p>
+                  {userEmail && (
+                    <p className="text-xs text-[var(--color-muted-foreground)] truncate">
+                      {userEmail}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
           )}
           <button
             onClick={handleLogout}
-            className={`
-              w-full flex items-center py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-1
-              ${collapsed && !isMobile ? "justify-center px-2" : "space-x-3 px-3"}
-            `}
-            aria-label={collapsed && !isMobile ? "Logout" : undefined}
+            className={[
+              'w-full flex items-center py-2 rounded-lg transition-colors',
+              iconOnly ? 'justify-center px-2' : 'space-x-3 px-3',
+              'text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] hover:text-[var(--color-destructive)]',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-ring)]',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            aria-label={iconOnly ? 'Log out' : undefined}
           >
-            <span className="text-lg" aria-hidden="true">
-              🚪
-            </span>
-            {(!collapsed || isMobile) && <span>Logout</span>}
+            <LogOut className="w-5 h-5 shrink-0" aria-hidden="true" />
+            {!iconOnly && <span>Log out</span>}
           </button>
         </div>
       </aside>

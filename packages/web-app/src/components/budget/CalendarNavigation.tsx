@@ -19,7 +19,6 @@ export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
   ];
 
   const today = new Date();
-  const currentMonthKey = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`;
 
   // Generate months to display (current month ± 6 months)
   const generateMonthsToShow = () => {

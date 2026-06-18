@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { CategorySelector } from './CategorySelector';
 import { RecurringOptions } from './RecurringOptions';
-import { useTheme } from '../../contexts/ThemeContext';
 
 interface TransactionPlanData {
   type: 'income' | 'expense';
@@ -34,7 +33,6 @@ export const TransactionPlanningModal: React.FC<TransactionPlanningModalProps> =
   onSubmit,
   loading = false
 }) => {
-  const { theme } = useTheme();
   const [formData, setFormData] = useState<TransactionPlanData>({
     type,
     amount: 0,

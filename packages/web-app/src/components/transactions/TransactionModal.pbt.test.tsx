@@ -7,13 +7,10 @@
  * **Validates: Requirements 1.1-1.9, 4.1-4.8**
  */
 
-import React from "react";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
-import * as fc from "fast-check";
 import {
   TransactionModal,
   Category,
-  TransactionFormData,
 } from "./TransactionModal";
 import "@testing-library/jest-dom";
 
@@ -64,14 +61,14 @@ const testCategories: Category[] = [
   { id: "cat-3", name: "Entertainment", icon: "🎬" },
 ];
 
-// Account type order
-const ACCOUNT_TYPE_ORDER = [
-  "banking",
-  "cash",
-  "credit_card",
-  "investment",
-  "loan",
-];
+// Account type order - kept for documentation purposes
+// const ACCOUNT_TYPE_ORDER = [
+//   "banking",
+//   "cash",
+//   "credit_card",
+//   "investment",
+//   "loan",
+// ];
 
 // Create test account
 const createTestAccount = (

@@ -1,5 +1,49 @@
 # Development Log
 
+## 2026-06-18 - Phase 1 design foundation — Inter font, green primary, Lucide icons, UI primitives, TS cleanup (Session 149 cont.)
+
+### Work Completed
+
+1. **P1-T1/T2 — Green primary brand color**: Updated `--color-primary` from `#2563eb` (blue) to `#059669` (emerald-600, 4.68:1 AA contrast). Dark mode primary set to `#34d399` (emerald-400). Updated `--color-ring`, sidebar active colors, and `.currency-selector-dropdown:focus` shadow. Removed hardcoded `#eff6ff`/`#1d4ed8` blue hex values from `tailwind.config.js` primary scale.
+
+2. **P1-T3/T4 — Inter font**: Added `@fontsource/inter@5.1.1` (pinned). Imported 400/500/600/700 weights in `index.css`. Set `font-family: 'Inter', -apple-system, ...` on `body` inside `@layer base`. Added `font-feature-settings: 'cv02','cv03','cv04','cv11'` for tabular numerals (critical for financial column alignment).
+
+3. **P1-T5 — Icon mapping constant**: Created `src/utils/icons.ts` with `NAV_ICONS`, `BUDGET_TYPE_ICONS`, `GOAL_ICONS` maps referencing Lucide React components. `lucide-react@0.469.0` installed (pinned).
+
+4. **P1-T6 — Sidebar Lucide icons**: Full rewrite of `Sidebar.tsx` — replaced all emoji with Lucide icons. Implemented Phase 2 IA simultaneously: 5 primary items (Overview, Budget, Accounts, Goals, Insights) + collapsible Manage group (Bills, Subscriptions, Debt Payoff, Credit Score, Investments, Net Worth, Members) + Settings at bottom. All CSS tokens used — no hardcoded colors.
+
+5. **P1-T7 — OnboardingPage Lucide icons**: Replaced emoji in budget type cards (`👤`→`User`, `👫`→`Users`, `🏠`→`Home`) with typed Lucide components.
+
+6. **P1-T8 through P1-T13 — UI primitives created**:
+   - `Button.tsx` — variants: primary/secondary/ghost/destructive/outline; sizes: sm/md/lg; loading spinner; left/right icon slots
+   - `Card.tsx` — wraps `.card` CSS utility; optional header/footer slots; `SimpleCard` variant
+   - `Badge.tsx` — variants: success/warning/danger/neutral/primary/outline; dot mode
+   - `Skeleton.tsx` — animated placeholder; `SkeletonText`, `SkeletonCard`, `SkeletonRow` variants
+   - `PageHeader.tsx` — title + subtitle + right-slot action + breadcrumb
+   - `StatCard.tsx` — labeled number with trend indicator, Lucide icon slot, click handler
+   - `index.ts` barrel export
+
+7. **P1-T16 — Frontend TypeScript cleanup**: Fixed all 72 pre-existing TS errors across 34 files. Frontend `type-check:web` now blocking in `validate-for-commit.js` (upgraded from WARN to FAIL).
+
+### Files Changed
+- `packages/web-app/src/index.css` — font, primary color tokens
+- `packages/web-app/tailwind.config.js` — removed hardcoded blue hex
+- `packages/web-app/src/utils/icons.ts` — NEW
+- `packages/web-app/src/components/layout/Sidebar.tsx` — full rewrite
+- `packages/web-app/src/pages/OnboardingPage.tsx` — Lucide icon types
+- `packages/web-app/src/components/ui/Button.tsx` — NEW
+- `packages/web-app/src/components/ui/Card.tsx` — NEW
+- `packages/web-app/src/components/ui/Badge.tsx` — NEW
+- `packages/web-app/src/components/ui/Skeleton.tsx` — NEW
+- `packages/web-app/src/components/ui/PageHeader.tsx` — NEW
+- `packages/web-app/src/components/ui/StatCard.tsx` — NEW
+- `packages/web-app/src/components/ui/index.ts` — NEW
+- `packages/web-app/package.json` — lucide-react@0.469.0, @fontsource/inter@5.1.1
+- `scripts/validate-for-commit.js` — type-check:web now blocking
+- 34 frontend TS files — pre-existing error cleanup
+
+---
+
 ## 2026-06-18 - Validation gate fixes, web app polish spec, autonomous mode setup (Session 149)
 
 ### Work Completed

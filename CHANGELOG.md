@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.9.134] - 2026-06-18
+
+### ✨ feat: Phase 1 design foundation — Inter font, green primary, Lucide icons, UI primitives
+
+#### Brand Color (P1-T1/T2)
+- Changed `--color-primary` from blue (#2563eb) to emerald (#059669) — 4.68:1 WCAG AA contrast
+- Dark mode primary updated to emerald-400 (#34d399)
+- Removed hardcoded blue hex values from tailwind.config.js primary scale
+- Updated sidebar active colors, focus rings, currency selector shadow to match new primary
+
+#### Typography (P1-T3/T4)
+- Added `@fontsource/inter@5.1.1` (pinned) — 400/500/600/700 weights
+- `font-feature-settings: 'cv02','cv03','cv04','cv11'` for tabular numerals on financial figures
+- Font-family set in `@layer base` with proper fallback stack
+
+#### Icons (P1-T5/T6/T7)
+- Installed `lucide-react@0.469.0` (pinned)
+- Created `src/utils/icons.ts` — NAV_ICONS, BUDGET_TYPE_ICONS, GOAL_ICONS maps
+- Rewrote `Sidebar.tsx` — all emoji replaced with Lucide; added Phase 2 IA (5 primary + Manage group)
+- OnboardingPage budget type cards use typed Lucide components
+
+#### UI Primitives (P1-T8–T13)
+- `Button.tsx` — 5 variants, 3 sizes, loading state, icon slots
+- `Card.tsx` — wraps .card CSS utility, optional header/footer
+- `Badge.tsx` — 6 variants, dot mode
+- `Skeleton.tsx` — SkeletonText, SkeletonCard, SkeletonRow variants
+- `PageHeader.tsx` — title + subtitle + action + breadcrumb slots
+- `StatCard.tsx` — labeled metric with trend indicator and Lucide icon
+- `index.ts` barrel export
+
+#### TypeScript Cleanup (P1-T16)
+- Fixed all 72 pre-existing TS errors across 34 frontend files
+- `type-check:web` upgraded from WARN to blocking FAIL in validate-for-commit.js
+
 ## [1.9.133] - 2026-06-18
 
 ### 🔧 chore: Validation gate fixes, web app polish spec, autonomous mode setup

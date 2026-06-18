@@ -7,7 +7,6 @@
  * **Validates: Requirements 8.2**
  */
 
-import React from "react";
 import { render, screen, cleanup } from "@testing-library/react";
 import * as fc from "fast-check";
 import { AccountCard } from "./AccountCard";
@@ -34,7 +33,7 @@ const mockOnViewTransactions = jest.fn();
 // Create a base account for testing
 const createTestAccount = (overrides: Partial<Account> = {}): Account => ({
   accountId: "123e4567-e89b-12d3-a456-426614174000",
-  budgetId: "123e4567-e89b-12d3-a456-426614174001",
+  familyId: "123e4567-e89b-12d3-a456-426614174001",
   accountType: AccountType.BANKING,
   accountSubtype: BankingSubtype.CHECKING,
   nickname: "Test Account",
@@ -157,10 +156,9 @@ describe("AccountCard Property-Based Tests", () => {
 
     it("should not display institution section when null", () => {
       const account = createTestAccount({ institutionName: null });
-      const { container } = renderAccountCard(account);
+      renderAccountCard(account);
 
       // Should not have the bullet separator for institution
-      const textContent = container.textContent || "";
       // The account should still render without errors
       expect(screen.getByText("Test Account")).toBeInTheDocument();
     });

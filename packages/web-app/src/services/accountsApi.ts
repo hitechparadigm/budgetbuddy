@@ -272,7 +272,7 @@ export const accountsApi = {
     });
     // Handle both { data: { account } } and { account }
     const data = extractData(response, 'account' as keyof typeof response);
-    return (data as { account: Account }).account || (response.account as Account) || data as Account;
+    return (data as { account: Account }).account || (response.account as Account) || (data as unknown) as Account;
   },
 
   // Update account
@@ -283,7 +283,7 @@ export const accountsApi = {
     });
     // Handle both { data: { account } } and { account }
     const data = extractData(response, 'account' as keyof typeof response);
-    return (data as { account: Account }).account || (response.account as Account) || data as Account;
+    return (data as { account: Account }).account || (response.account as Account) || (data as unknown) as Account;
   },
 
   // Delete account
@@ -309,7 +309,7 @@ export const accountsApi = {
       body: JSON.stringify({ isTracked }),
     });
     const data = extractData(response, 'account' as keyof typeof response);
-    return (data as { account: Account }).account || (response.account as Account) || data as Account;
+    return (data as { account: Account }).account || (response.account as Account) || (data as unknown) as Account;
   },
 
   // Get accounts summary

@@ -61,10 +61,8 @@ try {
   execSync("npm run type-check:web", { stdio: "inherit" });
   results.push({ check: "Type Check (frontend)", status: "PASS" });
 } catch (error) {
-  // Frontend TS errors are warnings until Phase 1 TS cleanup is complete
-  // Will be upgraded to blocking after P1-T1 through P1-T15 are done
-  console.log("   ⚠️  Frontend TypeScript has errors — recorded as warning (non-blocking until Phase 1 TS cleanup)");
-  results.push({ check: "Type Check (frontend)", status: "WARN" });
+  results.push({ check: "Type Check (frontend)", status: "FAIL" });
+  allPassed = false;
 }
 
 // 4. Documentation

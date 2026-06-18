@@ -181,10 +181,6 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
             <div className="space-y-4">
               {accounts.map((account, index) => {
                 const mapping = mappings[index];
-                const discoveredType = mapPlaidType(
-                  account.type,
-                  account.subtype,
-                );
 
                 return (
                   <div

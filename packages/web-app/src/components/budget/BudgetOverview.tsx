@@ -122,7 +122,7 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
             <div>
               <p className="text-sm font-medium text-green-600">Income</p>
               <p className="text-2xl font-bold text-green-900">
-                {formatCurrency(budget.totalIncome, budget.currency || "USD")}
+                {formatCurrency(budget.totalIncome, "USD")}
               </p>
             </div>
             <div className="text-green-400 text-2xl">💰</div>
@@ -143,7 +143,7 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
             <div>
               <p className="text-sm font-medium text-blue-600">Savings</p>
               <p className="text-2xl font-bold text-blue-900">
-                {formatCurrency(budget.totalSavings, budget.currency || "USD")}
+                {formatCurrency(budget.totalSavings, "USD")}
               </p>
             </div>
             <div className="text-blue-400 text-2xl">🏦</div>
@@ -167,7 +167,7 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
             <div>
               <p className="text-sm font-medium text-orange-600">Expenses</p>
               <p className="text-2xl font-bold text-orange-900">
-                {formatCurrency(budget.totalExpenses, budget.currency || "USD")}
+                {formatCurrency(budget.totalExpenses, "USD")}
               </p>
             </div>
             <div className="text-orange-400 text-2xl">🛒</div>
@@ -199,7 +199,7 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
               <p className={`text-2xl font-bold ${remainingBalanceColor}`}>
                 {formatCurrency(
                   Math.abs(budget.remainingBalance),
-                  budget.currency || "USD",
+                  "USD",
                 )}
               </p>
             </div>
@@ -246,7 +246,7 @@ export const BudgetOverview: React.FC<BudgetOverviewProps> = ({
             >
               {budget.remainingBalance === 0
                 ? "Every dollar has been allocated. Great job!"
-                : `You need to ${budget.remainingBalance > 0 ? "allocate" : "reduce"} ${formatCurrency(Math.abs(budget.remainingBalance), budget.currency || "USD", { showSymbol: false })} to achieve zero-based budgeting.`}
+                : `You need to ${budget.remainingBalance > 0 ? "allocate" : "reduce"} ${formatCurrency(Math.abs(budget.remainingBalance), "USD", { showSymbol: false })} to achieve zero-based budgeting.`}
             </p>
           </div>
         </div>

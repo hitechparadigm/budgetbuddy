@@ -7,24 +7,22 @@
 
 import React, { useState, useEffect } from 'react';
 import { MonthlyBudget } from '../../../../shared/src/types/budget';
-import { DEFAULT_CATEGORIES, getCategoryById } from '../../../../shared/src/types/categories';
 import BudgetPlanningModal from './BudgetPlanningModal';
 import { saveBudgetToStorage, getBudgetFromStorage } from '../../utils/budgetStorage';
 
 interface BudgetDashboardProps {
   currentMonth: number;
   currentYear: number;
-  onMonthChange: (month: number, year: number) => void;
+  onMonthChange?: (month: number, year: number) => void;
 }
 
 export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
   currentMonth,
   currentYear,
-  onMonthChange
 }) => {
   const [budget, setBudget] = useState<MonthlyBudget | null>(null);
   const [showPlanningModal, setShowPlanningModal] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   // Load budget from storage on mount or month change
   useEffect(() => {
@@ -39,6 +37,8 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
   // Create default budget structure
   const getDefaultBudget = (): MonthlyBudget => ({
     budgetId: 'budget_001',
+    familyId: '',
+    currency: 'USD',
     month: `${currentYear}-${currentMonth.toString().padStart(2, '0')}`,
     year: currentYear,
     status: 'active',
@@ -256,11 +256,6 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
 
   const handleCreateBudget = () => {
     setShowPlanningModal(true);
-  };
-
-  const handleBudgetCreated = (newBudget: MonthlyBudget) => {
-    handleBudgetUpdate(newBudget);
-    setShowPlanningModal(false);
   };
 
   if (loading) {

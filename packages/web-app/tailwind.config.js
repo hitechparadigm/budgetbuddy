@@ -19,10 +19,8 @@ module.exports = {
         "destructive-foreground": "var(--color-destructive-foreground)",
         // Semantic colors (still available for gradual migration)
         primary: {
-          50: "#eff6ff",
-          500: "var(--color-primary)",
-          600: "var(--color-primary-hover)",
-          700: "#1d4ed8",
+          DEFAULT: "var(--color-primary)",
+          hover: "var(--color-primary-hover)",
           foreground: "var(--color-primary-foreground)",
         },
         success: {

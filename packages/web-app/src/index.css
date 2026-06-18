@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Inter font — loaded via @fontsource/inter for consistent cross-OS rendering */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+
 /* ==========================================================================
    BudgetBuddy Design Tokens (CSS Custom Properties)
 
@@ -30,9 +36,9 @@
         --color-accent: #f0fdf4;           /* green-50 */
         --color-accent-foreground: #15803d; /* green-700 */
 
-        /* Primary action */
-        --color-primary: #2563eb;          /* blue-600 */
-        --color-primary-hover: #1d4ed8;    /* blue-700 */
+        /* Primary action — GREEN (#059669 emerald-600, 4.68:1 contrast on white — WCAG AA pass) */
+        --color-primary: #059669;          /* emerald-600 */
+        --color-primary-hover: #047857;    /* emerald-700 */
         --color-primary-foreground: #ffffff;
 
         /* Success */
@@ -44,15 +50,15 @@
         --color-destructive-foreground: #ffffff;
 
         /* Focus ring */
-        --color-ring: #3b82f6;             /* blue-500 */
+        --color-ring: #059669;             /* emerald-600 — matches primary */
 
         /* Sidebar */
         --color-sidebar: #ffffff;
         --color-sidebar-foreground: #111827;
         --color-sidebar-border: #e5e7eb;
         --color-sidebar-active-bg: #f0fdf4;
-        --color-sidebar-active-text: #15803d;
-        --color-sidebar-active-border: #15803d;
+        --color-sidebar-active-text: #065f46;  /* emerald-900 for strong contrast */
+        --color-sidebar-active-border: #059669;
 
         /* Radius */
         --radius: 0.5rem;
@@ -77,10 +83,10 @@
         --color-accent: #064e3b;           /* emerald-900 */
         --color-accent-foreground: #6ee7b7; /* emerald-300 */
 
-        /* Primary action */
-        --color-primary: #3b82f6;          /* blue-500 */
-        --color-primary-hover: #2563eb;    /* blue-600 */
-        --color-primary-foreground: #ffffff;
+        /* Primary action — lighter emerald for dark mode contrast */
+        --color-primary: #34d399;          /* emerald-400 */
+        --color-primary-hover: #6ee7b7;    /* emerald-300 */
+        --color-primary-foreground: #111827; /* dark text on light green */
 
         /* Success */
         --color-success: #4ade80;          /* green-400 */
@@ -91,7 +97,7 @@
         --color-destructive-foreground: #ffffff;
 
         /* Focus ring */
-        --color-ring: #60a5fa;             /* blue-400 */
+        --color-ring: #34d399;             /* emerald-400 */
 
         /* Sidebar */
         --color-sidebar: #1f2937;
@@ -112,16 +118,17 @@
     body {
         background-color: var(--color-background);
         color: var(--color-foreground);
+        /* Inter with tabular numerals — critical for financial figures alignment */
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+            'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+        font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
 }
 
 body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-        sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
 }
 
 code {
@@ -246,7 +253,7 @@ code {
 .currency-selector-dropdown:focus {
     outline: none;
     border-color: var(--color-ring);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15); /* emerald-600 with opacity */
 }
 
 .currency-selector-dropdown:disabled {

@@ -38,7 +38,6 @@ describe('AI Budget Persistence (Requirement 16)', () => {
     mockApiClient.post.mockResolvedValueOnce({
       data: {
         budgetId: 'budget-123',
-        budgetId: 'budget-123',
         ...aiBudget,
       },
     });
@@ -46,14 +45,12 @@ describe('AI Budget Persistence (Requirement 16)', () => {
     // Save AI budget
     const saveResponse = await mockApiClient.post('/budget', aiBudget);
     expect(saveResponse.data.budgetId).toBe('budget-123');
-    expect(saveResponse.data.budgetId).toBe('family-456');
 
-    // Mock successful budget retrieval with same familyId
+    // Mock successful budget retrieval with same budgetId
     mockApiClient.get.mockResolvedValueOnce({
       data: {
         budgets: [
           {
-            budgetId: 'budget-123',
             budgetId: 'budget-123',
             month: '2025-11',
             ...aiBudget.groups,
@@ -67,7 +64,7 @@ describe('AI Budget Persistence (Requirement 16)', () => {
     const getResponse = await mockApiClient.get('/budget');
     expect(getResponse.data.budgets).toHaveLength(1);
     expect(getResponse.data.budgets[0].month).toBe('2025-11');
-    expect(getResponse.data.budgets[0].budgetId).toBe('family-456');
+    expect(getResponse.data.budgets[0].budgetId).toBe('budget-123');
   });
 
   it('should handle budget update when budget already exists (409 → update)', async () => {
@@ -85,7 +82,6 @@ describe('AI Budget Persistence (Requirement 16)', () => {
     mockApiClient.post.mockResolvedValueOnce({
       data: {
         budgetId: 'budget-123',
-        budgetId: 'budget-123',
         ...aiBudget,
         updatedAt: new Date().toISOString(),
       },
@@ -100,7 +96,6 @@ describe('AI Budget Persistence (Requirement 16)', () => {
       data: {
         budgets: [
           {
-            budgetId: 'budget-123',
             budgetId: 'budget-123',
             month: '2025-11',
           },
@@ -120,7 +115,6 @@ describe('AI Budget Persistence (Requirement 16)', () => {
         budgets: [
           {
             budgetId: 'budget-123',
-            budgetId: 'budget-123',
             month: '2025-11',
           },
         ],
@@ -138,4 +132,3 @@ describe('AI Budget Persistence (Requirement 16)', () => {
     // (In actual app, this would check navigation state)
   });
 });
-

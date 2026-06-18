@@ -9,35 +9,35 @@
 ## Phase 1 — Design Foundation (2 weeks)
 
 ### 1.1 Brand Color — Green as Primary
-- [ ] **P1-T1** — Update `--color-primary` to `#059669`, `--color-primary-hover` to `#047857` in `packages/web-app/src/index.css`; update dark mode primary to `#34d399`
-- [ ] **P1-T2** — Audit all files for hardcoded `bg-emerald-*` / `text-blue-*` / `border-blue-*` semantic uses; route through CSS tokens
+- [x] **P1-T1** — Update `--color-primary` to `#059669`, `--color-primary-hover` to `#047857` in `packages/web-app/src/index.css`; update dark mode primary to `#34d399`
+- [x] **P1-T2** — Audit all files for hardcoded `bg-emerald-*` / `text-blue-*` / `border-blue-*` semantic uses; route through CSS tokens
 
 ### 1.2 Typography — Inter Font
-- [ ] **P1-T3** — Add `@fontsource/inter` (exact pinned version) to `packages/web-app/package.json`; update `index.css` font-family
-- [ ] **P1-T4** — Add `font-feature-settings: 'cv02','cv03','cv04','cv11'` for tabular numerals in `index.css`
+- [x] **P1-T3** — Add `@fontsource/inter` (exact pinned version) to `packages/web-app/package.json`; update `index.css` font-family
+- [x] **P1-T4** — Add `font-feature-settings: 'cv02','cv03','cv04','cv11'` for tabular numerals in `index.css`
 
 ### 1.3 Icons — Replace Emoji with Lucide React
-- [ ] **P1-T5** — Install `lucide-react` (pinned version) in `packages/web-app/package.json`; create `src/utils/icons.ts` icon mapping constant
-- [ ] **P1-T6** — Update `Sidebar.tsx` to use Lucide icons instead of emoji strings
-- [ ] **P1-T7** — Update `OnboardingPage.tsx` budget type cards to use Lucide icons
+- [x] **P1-T5** — Install `lucide-react` (pinned version) in `packages/web-app/package.json`; create `src/utils/icons.ts` icon mapping constant
+- [x] **P1-T6** — Update `Sidebar.tsx` to use Lucide icons instead of emoji strings
+- [x] **P1-T7** — Update `OnboardingPage.tsx` budget type cards to use Lucide icons
 
 ### 1.4 UI Primitives
-- [ ] **P1-T8** — Create `packages/web-app/src/components/ui/Button.tsx` — variants: primary, secondary, ghost, destructive; sizes: sm, md, lg
-- [ ] **P1-T9** — Create `packages/web-app/src/components/ui/Card.tsx` — wraps `.card` CSS utility, optional header/footer slots
-- [ ] **P1-T10** — Create `packages/web-app/src/components/ui/Badge.tsx` — variants: success, warning, danger, neutral
-- [ ] **P1-T11** — Create `packages/web-app/src/components/ui/Skeleton.tsx` — animated placeholder for loading states
-- [ ] **P1-T12** — Create `packages/web-app/src/components/ui/PageHeader.tsx` — title + subtitle + right-slot
-- [ ] **P1-T13** — Create `packages/web-app/src/components/ui/StatCard.tsx` — labeled number with trend indicator
-- [ ] **P1-T14** — Migrate `LandingPage.tsx` CTAs to use `Button` component; verify no raw Tailwind CTAs remain
-- [ ] **P1-T15** — Verify color contrast: `#059669` on white passes WCAG AA (4.68:1 ratio — expected pass)
-- [ ] **P1-T16** — Fix all pre-existing frontend TypeScript errors (~50 `noUnusedLocals`/`noUnusedParameters` + real type errors listed in validate output); upgrade `type-check:web` and `lint:check:web` in `validate-for-commit.js` from WARN to FAIL after cleanup
+- [x] **P1-T8** — Create `packages/web-app/src/components/ui/Button.tsx` — variants: primary, secondary, ghost, destructive; sizes: sm, md, lg
+- [x] **P1-T9** — Create `packages/web-app/src/components/ui/Card.tsx` — wraps `.card` CSS utility, optional header/footer slots
+- [x] **P1-T10** — Create `packages/web-app/src/components/ui/Badge.tsx` — variants: success, warning, danger, neutral
+- [x] **P1-T11** — Create `packages/web-app/src/components/ui/Skeleton.tsx` — animated placeholder for loading states
+- [x] **P1-T12** — Create `packages/web-app/src/components/ui/PageHeader.tsx` — title + subtitle + right-slot
+- [x] **P1-T13** — Create `packages/web-app/src/components/ui/StatCard.tsx` — labeled number with trend indicator
+- [x] **P1-T14** — Migrate `LandingPage.tsx` CTAs to use `Button` component; verify no raw Tailwind CTAs remain
+- [x] **P1-T15** — Verify color contrast: `#059669` on white passes WCAG AA (4.68:1 ratio — expected pass)
+- [x] **P1-T16** — Fix all pre-existing frontend TypeScript errors (~50 `noUnusedLocals`/`noUnusedParameters` + real type errors listed in validate output); upgrade `type-check:web` and `lint:check:web` in `validate-for-commit.js` from WARN to FAIL after cleanup
 
 ---
 
 ## Phase 2 — Information Architecture (1 week)
 
 ### 2.1 Sidebar Restructure
-- [ ] **P2-T1** — Redesign `Sidebar.tsx`: 6 primary items + collapsible `Manage` group (Bills, Subscriptions, Debt Payoff, Credit Score, Investments, Net Worth, Members)
+- [x] **P2-T1** — Redesign `Sidebar.tsx`: 6 primary items + collapsible `Manage` group (Bills, Subscriptions, Debt Payoff, Credit Score, Investments, Net Worth, Members) *(done in P1-T6)*
 
 ### 2.2 Overview / Dashboard Page
 - [ ] **P2-T2** — Create `packages/web-app/src/pages/OverviewPage.tsx` shell with data service connections

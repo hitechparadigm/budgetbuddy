@@ -7,7 +7,6 @@
  * **Validates: Requirements 5.1, 5.2, 5.3**
  */
 
-import React from "react";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import * as fc from "fast-check";
 import {

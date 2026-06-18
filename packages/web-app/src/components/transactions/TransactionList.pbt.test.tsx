@@ -7,7 +7,6 @@
  * **Validates: Requirements 9.1, 9.2**
  */
 
-import React from "react";
 import { render, screen, cleanup } from "@testing-library/react";
 import * as fc from "fast-check";
 import { TransactionList, Transaction } from "./TransactionList";

@@ -5,7 +5,7 @@
  * timeline visualization, and extra payment calculator.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
 import { config } from '../config/environment';
@@ -377,7 +377,7 @@ export default function DebtPayoffPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {debts.map((debt, idx) => (
+          {debts.map((debt) => (
             <div key={debt.debtId} className="bg-white rounded-xl shadow p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
