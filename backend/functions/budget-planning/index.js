@@ -100,7 +100,7 @@ function parseBody(event) {
   if (!event.body) return {};
   try {
     return JSON.parse(event.body);
-  } catch (error) {
+  } catch (_e) {
     return {};
   }
 }

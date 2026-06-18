@@ -25,6 +25,10 @@ module.exports = [
         Buffer: "readonly",
         global: "readonly",
         fetch: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly",
       },
     },
     rules: {
@@ -53,10 +57,9 @@ module.exports = [
         "error",
         {
           argsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_?error$",
+          caughtErrors: "none",
         },
       ],
-      // Prevent import ordering bugs - variables must be defined before use
       "no-use-before-define": [
         "error",
         {

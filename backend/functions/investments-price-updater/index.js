@@ -231,7 +231,6 @@ exports.handler = async (_event) => {
 
         // Add delay between requests (except for last one)
         if (i < symbols.length - 1) {
-          /* global setTimeout */
           await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
         }
       } catch (error) {

@@ -32,7 +32,7 @@ function parseToken(authHeader) {
   const token = authHeader.substring(7);
   try {
     return jwt.decode(token);
-  } catch (error) {
+  } catch (_e) {
     throw new Error("Invalid JWT token");
   }
 }
@@ -262,7 +262,7 @@ exports.handler = async (event) => {
     let backupData;
     try {
       backupData = JSON.parse(event.body);
-    } catch (error) {
+    } catch (_e) {
       return {
         statusCode: 400,
         headers: getCorsHeaders(),

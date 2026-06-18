@@ -1062,7 +1062,7 @@ exports.handler = async (event, _context) => {
               }),
             };
           }
-        } catch (error) {
+        } catch (_e) {
           return {
             statusCode: 400,
             headers: getCorsHeaders(origin),
