@@ -25,6 +25,7 @@ import {
   Account,
   CreateAccountInput,
 } from "../hooks/useAccounts";
+import { PageHeader } from "../components/ui";
 
 // Account type labels and icons (local definitions to avoid type conflicts)
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -171,33 +172,31 @@ export const AccountsPage: React.FC = () => {
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link
-                to="/budget"
-                aria-label="Back to Budget"
-                className="text-gray-600 hover:text-gray-900 flex items-center"
-              >
-                <svg
-                  className="w-5 h-5 mr-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
-                </svg>
-                Back
-              </Link>
-              <h1 className="text-xl font-semibold text-gray-900">Accounts</h1>
-            </div>
-            <div className="flex items-center space-x-3">
-              {activeTab === "manual" && (
+          <Link
+            to="/budget"
+            aria-label="Back to Budget"
+            className="text-gray-600 hover:text-gray-900 flex items-center mb-2 w-fit"
+          >
+            <svg
+              className="w-5 h-5 mr-1"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
+          </Link>
+          <PageHeader
+            title="Accounts"
+            action={
+              activeTab === "manual" ? (
                 <button
                   onClick={() => setShowAddModal(true)}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
@@ -205,9 +204,9 @@ export const AccountsPage: React.FC = () => {
                   <span>+</span>
                   <span>Add Manual Account</span>
                 </button>
-              )}
-            </div>
-          </div>
+              ) : undefined
+            }
+          />
 
           {/* Tab switcher */}
           <div className="flex space-x-1 mt-4 border-b border-gray-200">

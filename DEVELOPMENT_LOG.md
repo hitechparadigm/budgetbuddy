@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-18 - Phase 2 P2-T10 — PageHeader on all pages (Session 149 cont.)
+
+### Work Completed
+PageHeader applied to GoalsPage, AccountsPage, InsightsPage, BillsPage, SubscriptionsPage, DebtPayoffPage, CreditScorePage, TipsFeedPage. All pages now use the standard title/subtitle/action header pattern.
+
+---
+
 ## 2026-06-18 - Phase 2 IA — Overview page, routes (Session 149 cont.)
 
 ### Work Completed

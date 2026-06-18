@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.9.136] - 2026-06-18
+
+### ✨ feat: Phase 2 complete — P2-T10 PageHeader applied to all pages
+
+#### PageHeader Migration (P2-T10)
+Applied `PageHeader` component to all 8 remaining pages for visual consistency:
+- GoalsPage, AccountsPage, InsightsPage, BillsPage, SubscriptionsPage, DebtPayoffPage, CreditScorePage, TipsFeedPage
+- Each gets title, optional subtitle, and action slot (Add/Scan/Refresh buttons moved to PageHeader)
+- Back navigation preserved above the header
+
 ## [1.9.135] - 2026-06-18
 
 ### ✨ feat: Phase 2 information architecture — Overview page, /overview route, /net-worth route

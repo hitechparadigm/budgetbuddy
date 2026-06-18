@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
 import { config } from '../config/environment';
+import { PageHeader } from "../components/ui";
 
 // Debt features are on the features API (0poeu07vth), not the main API
 const API_BASE_URL = config.featuresApiUrl;
@@ -202,15 +203,17 @@ export default function DebtPayoffPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">💸 Debt Payoff</h1>
-        <button
-          onClick={() => (window.location.href = "/debts/new")}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          + Add Debt
-        </button>
-      </div>
+      <PageHeader
+        title="💸 Debt Payoff"
+        action={
+          <button
+            onClick={() => (window.location.href = "/debts/new")}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            + Add Debt
+          </button>
+        }
+      />
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
