@@ -37,7 +37,6 @@ export const DEFAULT_SHORTCUTS: Omit<ShortcutConfig, 'action'>[] = [
  */
 export function useKeyboardShortcuts(options: UseKeyboardShortcutsOptions = {}) {
   const { enabled = true, shortcuts = [] } = options;
-  const navigate = useNavigate();
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (!enabled) return;

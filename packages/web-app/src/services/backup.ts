@@ -1,4 +1,25 @@
-import { Budget, Transaction } from '../types';
+// Budget and Transaction types for backup purposes
+interface Budget {
+  category: string;
+  createdAt: string;
+  [key: string]: unknown;
+}
+
+// Transaction type for backup purposes
+interface Transaction {
+  id: string;
+  date: string;
+  category: string;
+  amount: number;
+  description: string;
+  merchant?: string;
+  notes?: string;
+  accountId?: string;
+  tags?: string[];
+  syncStatus?: string;
+  location?: string;
+  createdAt: string;
+}
 
 export interface BackupData {
   version: string;
@@ -276,7 +297,7 @@ class WebBackupService {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = (e) => reject(new Error('Failed to read file'));
+      reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsText(file);
     });
   }

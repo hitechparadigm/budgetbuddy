@@ -7,7 +7,6 @@
  * **Validates: Requirements 6.3, 6.9**
  */
 
-import React from "react";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import * as fc from "fast-check";

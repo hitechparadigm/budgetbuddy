@@ -10,7 +10,6 @@
  * 3. Clicking logout redirects to login page
  */
 
-import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { Navigation } from "./Navigation";

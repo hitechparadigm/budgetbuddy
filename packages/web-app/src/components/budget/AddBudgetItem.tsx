@@ -37,7 +37,6 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
   onClose,
   onAdd,
   groupType,
-  month
 }) => {
   const [formData, setFormData] = useState({
     categoryName: '',

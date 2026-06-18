@@ -68,7 +68,7 @@ export interface AcceptInvitationResult {
  */
 function getBaseUrl(): string {
   // config may gain budgetsApiUrl in a future env update; fall back gracefully
-  const cfg = config as Record<string, string>;
+  const cfg = config as unknown as Record<string, string>;
   return cfg['budgetsApiUrl'] ?? config.familyApiUrl;
 }
 

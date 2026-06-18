@@ -49,7 +49,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dateValidation, setDateValidation] = useState<DateValidationResult>({ isValid: true });
   const [showDateWarning, setShowDateWarning] = useState(false);
-  const [userDateChoice, setUserDateChoice] = useState<'continue' | 'switch' | null>(null);
+  const [, setUserDateChoice] = useState<'continue' | 'switch' | 'cancel' | null>(null);
 
   // Categories - in production this would come from an API
   const categories = {

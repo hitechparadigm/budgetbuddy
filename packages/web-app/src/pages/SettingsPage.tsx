@@ -46,7 +46,7 @@ export const SettingsPage: React.FC = () => {
   const [restoreInProgress, setRestoreInProgress] = useState(false);
   const [show2FASetup, setShow2FASetup] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState(false);
-  const [mfaLoading, setMfaLoading] = useState(true);
+  const [mfaLoading] = useState(false);
   const [disabling2FA, setDisabling2FA] = useState(false);
   const [showDisable2FAConfirm, setShowDisable2FAConfirm] = useState(false);
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
@@ -89,36 +89,6 @@ export const SettingsPage: React.FC = () => {
         // Fallback to detected timezone
         const detectedTimezone = detectUserTimezone();
         setTimezone(detectedTimezone);
-      }
-    };
-
-    // Check MFA status
-    const checkMfaStatus = async () => {
-      try {
-        setMfaLoading(true);
-        const token = localStorage.getItem("budgetbuddy_id_token");
-        if (!token) {
-          setMfaLoading(false);
-          return;
-        }
-
-        const apiUrl =
-          import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
-        const response = await fetch(`${apiUrl}/auth/mfa/status`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setMfaEnabled(data.data?.enabled || data.enabled || false);
-        }
-      } catch (error) {
-        console.error("Failed to check MFA status:", error);
-      } finally {
-        setMfaLoading(false);
       }
     };
 

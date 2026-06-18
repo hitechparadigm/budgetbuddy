@@ -5,7 +5,6 @@
  * and provide budget vs actual tracking.
  */
 
-import { Category } from './categories';
 
 export interface BudgetCategory {
   categoryId: string;

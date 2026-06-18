@@ -13,7 +13,6 @@ import {
   validateTransactionDate,
   getCurrentMonth,
   formatMonthName,
-  DateValidationResult
 } from './dateValidation';
 
 describe('dateValidation - Regression Tests for Requirements 11 & 14', () => {

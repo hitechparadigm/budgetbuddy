@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { formatCurrency as formatCurrencyShared, getCurrencyConfig } from "@budget-buddy/shared/src/utils/currency";
+import { getCurrencyConfig } from "@budget-buddy/shared/src/utils/currency";
 
 interface Transaction {
   id: string;

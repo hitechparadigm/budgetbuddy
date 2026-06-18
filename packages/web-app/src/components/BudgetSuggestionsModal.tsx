@@ -8,7 +8,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   budgetPlanningApi,
-  BudgetSuggestion,
   GenerateSuggestionsResponse,
 } from "../services/budgetPlanningApi";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";

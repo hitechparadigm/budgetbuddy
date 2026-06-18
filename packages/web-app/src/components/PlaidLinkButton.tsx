@@ -67,7 +67,7 @@ export const PlaidLinkButton: React.FC<PlaidLinkButtonProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [linkToken, setLinkToken] = useState<string | null>(null);
-  const [plaidHandler, setPlaidHandler] = useState<PlaidLinkHandler | null>(
+  const [, setPlaidHandler] = useState<PlaidLinkHandler | null>(
     null,
   );
   const [sdkLoaded, setSdkLoaded] = useState(false);

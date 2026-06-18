@@ -220,7 +220,7 @@ describe("Property 6: Error Response Includes Suggestions", () => {
 
   test("suggestions are always valid strings", () => {
     fc.assert(
-      fc.property(fc.nat(10), (index) => {
+      fc.property(fc.nat(10), () => {
         // Property: all suggestions must be non-empty strings
         return defaultSuggestions.every(
           (s) => typeof s === "string" && s.length > 0

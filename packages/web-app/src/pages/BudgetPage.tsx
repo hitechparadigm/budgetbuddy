@@ -19,13 +19,10 @@ import {
 import {
   TransactionFilters,
   useTransactionFilters,
-  type TransactionFiltersState,
 } from "../components/TransactionFilters";
 import {
   TransactionTemplateModal,
-  getStoredTemplates,
   addRecentCategory,
-  getRecentCategories,
   type TransactionTemplate,
 } from "../components/TransactionTemplateModal";
 import MarkRecurringModal from "../components/MarkRecurringModal";
@@ -98,7 +95,7 @@ export const BudgetPage: React.FC = () => {
   const navigate = useNavigate();
   const [budget, setBudget] = useState<Budget | null>(null);
   const [loading, setLoading] = useState(true);
-  const currency = budget?.currency || "USD"; // Get currency from budget or default to USD
+  const currency = "USD"; // Default currency
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -179,7 +176,7 @@ export const BudgetPage: React.FC = () => {
     return today;
   }); // Format: YYYY-MM
   const [isResizing, setIsResizing] = useState(false);
-  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [, setIsExportingPDF] = useState(false);
 
   // Handle sidebar resize
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -240,11 +237,6 @@ export const BudgetPage: React.FC = () => {
   const handleTutorialSkip = useCallback(() => {
     localStorage.setItem("budgetbuddy_tutorial_completed", "true");
     setShowTutorial(false);
-  }, []);
-
-  // Function to replay tutorial (can be called from settings)
-  const replayTutorial = useCallback(() => {
-    setShowTutorial(true);
   }, []);
 
   useEffect(() => {
@@ -740,8 +732,8 @@ export const BudgetPage: React.FC = () => {
   };
 
   const handleSelectTemplate = (template: TransactionTemplate) => {
-    // Find the category in current budget
-    const category = budget?.groups
+    // Find the category in current budget (used for tracking recent categories)
+    budget?.groups
       .flatMap((g) => g.categories)
       .find((c) => c.id === template.categoryId);
 
@@ -1129,12 +1121,6 @@ export const BudgetPage: React.FC = () => {
     return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   };
 
-  const selectMonth = (offset: number) => {
-    const [year, month] = currentMonth.split("-").map(Number);
-    const date = new Date(year, month - 1 + offset, 1);
-    setCurrentMonth(date.toISOString().slice(0, 7));
-  };
-
   // Navigate to current month - FIXED: Now uses user's local timezone
   const goToToday = () => {
     const today = getCurrentMonthString();
@@ -1326,7 +1312,7 @@ export const BudgetPage: React.FC = () => {
       }
 
       // Show loading state
-      const originalText = document.querySelector(
+      document.querySelector(
         '[onclick="handleExportCSV"]',
       )?.textContent;
       const exportButton = document.querySelector(

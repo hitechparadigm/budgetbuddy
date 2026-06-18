@@ -6,7 +6,7 @@
  * No manual "Add Subscription" form — detection is the primary entry point.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { config } from '../config/environment';
 

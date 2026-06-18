@@ -7,6 +7,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { User, Users, Home } from "lucide-react";
 import { OnboardingFlow } from "../components/OnboardingFlow";
 import {
   OnboardingSuggestions,
@@ -14,6 +15,8 @@ import {
 } from "@budget-buddy/shared/src/services/categorySuggestionService";
 import { apiClient } from "../utils/apiClient";
 import { getCurrentMonthString } from "../utils/monthHelpers";
+
+import type { LucideIcon } from "lucide-react";
 
 type BudgetType = "personal" | "family" | "shared";
 
@@ -23,25 +26,25 @@ const BUDGET_TYPE_OPTIONS: {
   value: BudgetType;
   label: string;
   description: string;
-  icon: string;
+  icon: LucideIcon;
 }[] = [
   {
     value: "personal",
     label: "Personal Budget",
     description: "just for me",
-    icon: "👤",
+    icon: User,
   },
   {
     value: "family",
     label: "Family Budget",
     description: "for me and my spouse/partner",
-    icon: "👫",
+    icon: Users,
   },
   {
     value: "shared",
     label: "Shared Budget",
     description: "for roommates or shared expenses",
-    icon: "🏠",
+    icon: Home,
   },
 ];
 
@@ -278,7 +281,7 @@ export const OnboardingPage: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl" aria-hidden="true">{option.icon}</span>
+                      <option.icon className="w-6 h-6 text-[var(--color-primary)] shrink-0" aria-hidden="true" />
                       <div>
                         <div className="font-semibold text-gray-900">
                           {option.label}

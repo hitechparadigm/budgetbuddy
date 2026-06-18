@@ -14,7 +14,6 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
   selectedCategoryId,
   onCategorySelect,
   error,
-  theme = 'dark'
 }) => {
   const [showCategories, setShowCategories] = useState(false);
 

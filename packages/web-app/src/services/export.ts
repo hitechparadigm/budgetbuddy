@@ -1,4 +1,31 @@
-import { Budget, Transaction } from '../types';
+// Budget line item type for export purposes
+interface Budget {
+  id: string;
+  name: string;
+  category: string;
+  plannedAmount: number;
+  actualAmount: number;
+  type: string;
+  recurringConfig?: { frequency?: string };
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Transaction type for export purposes
+interface Transaction {
+  id: string;
+  date: string;
+  category: string;
+  amount: number;
+  description: string;
+  merchant?: string;
+  notes?: string;
+  accountId?: string;
+  tags?: string[];
+  syncStatus?: string;
+  location?: string;
+  createdAt: string;
+}
 
 // Account lookup type for export
 export interface AccountLookup {
@@ -375,7 +402,7 @@ class WebExportService {
 
     ${Object.entries(transactionsByCategory).map(([category, categoryTransactions]) => `
         <div class="category-section">
-            <h3 class="category-title">${category} Transactions (${categoryTransactions.length})</h3>
+            <h3 class="category-title">${category} Transactions (${(categoryTransactions as Transaction[]).length})</h3>
             <table>
                 <thead>
                     <tr>
@@ -386,7 +413,7 @@ class WebExportService {
                     </tr>
                 </thead>
                 <tbody>
-                    ${categoryTransactions.map(transaction => `
+                    ${(categoryTransactions as Transaction[]).map(transaction => `
                         <tr>
                             <td>${new Date(transaction.date).toLocaleDateString()}</td>
                             <td>${transaction.description}</td>

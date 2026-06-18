@@ -9,8 +9,6 @@
 import React, { useState, useEffect } from "react";
 import {
   DEFAULT_CATEGORIES,
-  Category,
-  CategoryGroup,
 } from "../../../../shared/src/types/categories";
 import {
   MonthlyBudget,
@@ -171,6 +169,8 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
     // Create complete budget data
     const budgetData: MonthlyBudget = {
       budgetId: existingBudget?.budgetId || `budget_${Date.now()}`,
+      familyId: existingBudget?.familyId || '',
+      currency: existingBudget?.currency || 'USD',
       month: `${currentYear}-${currentMonth.toString().padStart(2, "0")}`,
       year: currentYear,
       status: "active",
