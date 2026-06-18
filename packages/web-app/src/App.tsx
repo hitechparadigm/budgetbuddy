@@ -40,7 +40,9 @@ import { TermsOfServicePage } from "./pages/TermsOfServicePage";
 import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { LandingPage } from "./pages/LandingPage";
+import { NetWorthPage } from "./pages/NetWorthPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { OverviewPage } from "./pages/OverviewPage";
 
 const App: React.FC = () => {
   return (
@@ -63,6 +65,14 @@ const App: React.FC = () => {
                     element={<AcceptInvitationPage />}
                   />
                   {/* Main Budget App - With Sidebar Layout */}
+                  <Route
+                    path="/overview"
+                    element={
+                      <ProtectedLayout>
+                        <OverviewPage />
+                      </ProtectedLayout>
+                    }
+                  />
                   <Route
                     path="/budget"
                     element={
@@ -226,6 +236,15 @@ const App: React.FC = () => {
                     element={
                       <ProtectedLayout>
                         <InvestmentsPage />
+                      </ProtectedLayout>
+                    }
+                  />
+                  {/* Net Worth Page */}
+                  <Route
+                    path="/net-worth"
+                    element={
+                      <ProtectedLayout>
+                        <NetWorthPage />
                       </ProtectedLayout>
                     }
                   />

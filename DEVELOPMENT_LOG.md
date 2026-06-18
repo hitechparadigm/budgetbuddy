@@ -1,6 +1,18 @@
 # Development Log
 
-## 2026-06-18 - Phase 1 design foundation — Inter font, green primary, Lucide icons, UI primitives, TS cleanup (Session 149 cont.)
+## 2026-06-18 - Phase 2 IA — Overview page, routes (Session 149 cont.)
+
+### Work Completed
+
+1. **Phase 2 Overview page** (`OverviewPage.tsx`): All 7 sections — AI Insight, Financial Health Bar, 4 stat cards, Net Worth sparkline (custom SVG, no recharts), Top 5 Spending categories with progress bars, Upcoming Bills with day badges, Active Goals with progress bars, Quick Add button. Sections load in parallel and fail silently. Skeletons for all sections.
+
+2. **Routes added**: `/overview` (OverviewPage) and `/net-worth` (existing NetWorthPage) added to `App.tsx`. Sidebar Overview item already points to `/overview`.
+
+3. **LandingPage Button migration** (P1-T14): All 4 raw Tailwind CTA buttons replaced with `Button` component.
+
+---
+
+## 2026-06-18 - Phase 1 design foundation (Session 149 cont.)
 
 ### Work Completed
 
