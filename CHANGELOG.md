@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.9.138] - 2026-06-18
+
+### ✨ feat: Phase 3 continued — skeleton screens on 4 pages, Insights chat bubbles, session persistence
+
+#### Skeleton Screens (P3-T13)
+- **GoalsPage.tsx**: header + 4 summary stat cards + 3 goal card skeletons
+- **InsightsPage.tsx**: header + gradient banner + 3 stat cards + chart block skeletons
+- **DebtPayoffPage.tsx**: title + 4 stat cards + strategy panel + 2 debt card skeletons
+- **AccountsPage.tsx**: 3 account group skeletons with account rows
+
+#### Insights AI Chat (P3-T6, P3-T7)
+- **InsightsPage.tsx**: Replaced text Q&A box with chat bubble UI
+  - User messages appear as right-aligned blue bubbles
+  - AI responses appear as left-aligned gray bubbles
+  - 3-dot typing indicator while loading
+  - Last 5 Q&A pairs persisted to `sessionStorage` — survives page refresh
+  - Clear conversation button
+  - Suggestion chips shown when chat is empty
+
 ## [1.9.137] - 2026-06-18
 
 ### ✨ feat: Phase 3 core polish — Budget skeleton, Ready to Assign banner, EmptyState upgrade

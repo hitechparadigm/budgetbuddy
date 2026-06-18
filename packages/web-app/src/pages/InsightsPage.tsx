@@ -20,7 +20,6 @@ import {
   WeeklyInsightsResponse,
   TrendsResponse,
   PatternsResponse,
-  AskResponse,
 } from "../services/insightsApi";
 import { PageHeader } from "../components/ui";
 
@@ -33,9 +32,17 @@ export const InsightsPage: React.FC = () => {
   const [patterns, setPatterns] = useState<PatternsResponse | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<"6" | "12">("6");
 
-  // AI Ask feature state
+  // AI Ask feature state — chat thread UI
   const [askQuestion, setAskQuestion] = useState("");
-  const [askResponse, setAskResponse] = useState<AskResponse | null>(null);
+  const [chatHistory, setChatHistory] = useState<Array<{question: string; answer: string; suggestions?: string[]}>>(() => {
+    // Restore last 5 Q&A pairs from sessionStorage on mount
+    try {
+      const stored = sessionStorage.getItem('budgetbuddy_insights_chat');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const [askLoading, setAskLoading] = useState(false);
   const [showAskSection, setShowAskSection] = useState(false);
 
@@ -70,17 +77,33 @@ export const InsightsPage: React.FC = () => {
 
   const handleAskQuestion = async () => {
     if (!askQuestion.trim()) return;
+    const question = askQuestion.trim();
 
     try {
       setAskLoading(true);
-      const response = await insightsApi.askAboutSpending(askQuestion);
-      setAskResponse(response);
+      setAskQuestion("");
+      const response = await insightsApi.askAboutSpending(question);
+
+      const newEntry = {
+        question,
+        answer: response.answer,
+        suggestions: response.suggestions,
+      };
+
+      setChatHistory(prev => {
+        const updated = [...prev, newEntry].slice(-5); // Keep last 5
+        try {
+          sessionStorage.setItem('budgetbuddy_insights_chat', JSON.stringify(updated));
+        } catch {
+          // sessionStorage not available
+        }
+        return updated;
+      });
       setAskLoading(false);
     } catch (error) {
       console.error("Error asking question:", error);
       setAskLoading(false);
 
-      // Detect network errors specifically
       let errorMessage =
         "Sorry, I couldn't process your question. Please try again later.";
       if (error instanceof TypeError && error.message === "Failed to fetch") {
@@ -88,24 +111,49 @@ export const InsightsPage: React.FC = () => {
           "Network error: Unable to connect to the server. Please check your internet connection and try again.";
       }
 
-      setAskResponse({
-        question: askQuestion,
+      const errorEntry = {
+        question,
         answer: errorMessage,
         suggestions: [
           "How much did I spend on groceries?",
           "What's my biggest expense category?",
           "Am I spending more than last month?",
         ],
+      };
+
+      setChatHistory(prev => {
+        const updated = [...prev, errorEntry].slice(-5);
+        try {
+          sessionStorage.setItem('budgetbuddy_insights_chat', JSON.stringify(updated));
+        } catch {
+          // sessionStorage not available
+        }
+        return updated;
       });
     }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     setAskQuestion(suggestion);
-    // Auto-submit after setting the question
+    // Auto-submit after a tick so state is set
     setTimeout(() => {
-      handleAskQuestion();
-    }, 100);
+      // Trigger via direct call since handleAskQuestion reads from state
+      if (!suggestion.trim()) return;
+      const question = suggestion.trim();
+      setAskLoading(true);
+      setAskQuestion("");
+      insightsApi.askAboutSpending(question).then(response => {
+        const newEntry = { question, answer: response.answer, suggestions: response.suggestions };
+        setChatHistory(prev => {
+          const updated = [...prev, newEntry].slice(-5);
+          try { sessionStorage.setItem('budgetbuddy_insights_chat', JSON.stringify(updated)); } catch { /* ok */ }
+          return updated;
+        });
+        setAskLoading(false);
+      }).catch(() => {
+        setAskLoading(false);
+      });
+    }, 0);
   };
 
   const formatCurrency = (amount: number | null | undefined) => {
@@ -140,10 +188,20 @@ export const InsightsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading insights...</p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <div className="h-8 w-48 rounded animate-pulse bg-gray-200 mb-2" />
+            <div className="h-4 w-64 rounded animate-pulse bg-gray-100" />
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+          <div className="h-32 w-full rounded-lg animate-pulse bg-gray-200" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[1,2,3].map(i => <div key={i} className="h-28 rounded-lg animate-pulse bg-white border border-gray-200" />)}
+          </div>
+          <div className="h-48 w-full rounded-lg animate-pulse bg-white border border-gray-200" />
+          <div className="h-72 w-full rounded-lg animate-pulse bg-white border border-gray-200" />
         </div>
       </div>
     );
@@ -247,7 +305,7 @@ export const InsightsPage: React.FC = () => {
           </div>
         )}
 
-        {/* AI Ask About Spending Section */}
+        {/* AI Ask About Spending Section — chat bubble UI */}
         <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
@@ -266,74 +324,103 @@ export const InsightsPage: React.FC = () => {
 
           {showAskSection && (
             <div className="space-y-4">
+              {/* Chat history */}
+              {chatHistory.length > 0 && (
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                  {chatHistory.map((entry, i) => (
+                    <div key={i} className="space-y-2">
+                      {/* User bubble — right */}
+                      <div className="flex justify-end">
+                        <div className="bg-blue-600 text-white px-4 py-2 rounded-2xl rounded-tr-sm max-w-xs lg:max-w-md text-sm">
+                          {entry.question}
+                        </div>
+                      </div>
+                      {/* AI bubble — left */}
+                      <div className="flex justify-start">
+                        <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-2xl rounded-tl-sm max-w-xs lg:max-w-md text-sm">
+                          {entry.answer}
+                          {entry.suggestions && entry.suggestions.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {entry.suggestions.map((s, si) => (
+                                <button
+                                  key={si}
+                                  onClick={() => handleSuggestionClick(s)}
+                                  className="px-2 py-0.5 text-xs bg-white text-blue-600 rounded border border-blue-200 hover:bg-blue-50"
+                                >
+                                  {s}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Typing indicator */}
+                  {askLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm">
+                        <div className="flex gap-1">
+                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}} />
+                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}} />
+                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Suggestion chips — show when no history */}
+              {chatHistory.length === 0 && !askLoading && (
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "How much did I spend on groceries?",
+                    "What's my biggest expense?",
+                    "Am I on track this month?",
+                  ].map((suggestion, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Input row */}
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={askQuestion}
                   onChange={(e) => setAskQuestion(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleAskQuestion()}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAskQuestion()}
                   placeholder="Ask anything about your spending..."
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={askLoading}
                 />
                 <button
                   onClick={handleAskQuestion}
                   disabled={askLoading || !askQuestion.trim()}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {askLoading ? "..." : "Ask"}
+                  Ask
                 </button>
-              </div>
-
-              {/* Suggestion chips */}
-              <div className="flex flex-wrap gap-2">
-                {[
-                  "How much did I spend on groceries?",
-                  "What's my biggest expense?",
-                  "Am I on track this month?",
-                ].map((suggestion, i) => (
+                {chatHistory.length > 0 && (
                   <button
-                    key={i}
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200"
+                    onClick={() => {
+                      setChatHistory([]);
+                      try { sessionStorage.removeItem('budgetbuddy_insights_chat'); } catch { /* ok */ }
+                    }}
+                    className="px-3 py-2 text-gray-400 hover:text-gray-600 text-sm"
+                    title="Clear conversation"
                   >
-                    {suggestion}
+                    Clear
                   </button>
-                ))}
+                )}
               </div>
-
-              {/* AI Response */}
-              {askResponse && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <span className="text-xl">💬</span>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-600 mb-1">
-                        "{askResponse.question}"
-                      </p>
-                      <p className="text-gray-900">{askResponse.answer}</p>
-                      {askResponse.suggestions &&
-                        askResponse.suggestions.length > 0 && (
-                          <div className="mt-3">
-                            <p className="text-xs text-gray-500 mb-2">
-                              Try asking:
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {askResponse.suggestions.map((s, i) => (
-                                <button
-                                  key={i}
-                                  onClick={() => handleSuggestionClick(s)}
-                                  className="px-2 py-1 text-xs bg-white text-blue-600 rounded border border-blue-200 hover:bg-blue-50"
-                                >
-                                  {s}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>

@@ -195,8 +195,15 @@ export default function DebtPayoffPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="h-8 w-48 rounded animate-pulse bg-gray-200 mb-8" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          {[1,2,3,4].map(i => <div key={i} className="h-24 rounded-xl animate-pulse bg-white shadow" />)}
+        </div>
+        <div className="h-48 rounded-xl animate-pulse bg-white shadow mb-8" />
+        <div className="space-y-4">
+          {[1,2].map(i => <div key={i} className="h-40 rounded-xl animate-pulse bg-white shadow" />)}
+        </div>
       </div>
     );
   }

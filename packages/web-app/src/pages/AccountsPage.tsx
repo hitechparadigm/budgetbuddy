@@ -273,9 +273,31 @@ export const AccountsPage: React.FC = () => {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-            <span className="ml-3 text-gray-600">Loading accounts...</span>
+          <div className="space-y-6">
+            {[1,2,3].map(g => (
+              <div key={g}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-5 w-5 rounded animate-pulse bg-gray-200" />
+                  <div className="h-5 w-24 rounded animate-pulse bg-gray-200" />
+                </div>
+                <div className="space-y-3">
+                  {[1,2].map(c => (
+                    <div key={c} className="bg-white rounded-lg border border-gray-200 p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full animate-pulse bg-gray-200" />
+                          <div className="space-y-1">
+                            <div className="h-4 w-32 rounded animate-pulse bg-gray-200" />
+                            <div className="h-3 w-20 rounded animate-pulse bg-gray-100" />
+                          </div>
+                        </div>
+                        <div className="h-5 w-20 rounded animate-pulse bg-gray-200" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

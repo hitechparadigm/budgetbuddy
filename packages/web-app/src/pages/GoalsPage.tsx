@@ -401,10 +401,34 @@ export const GoalsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading goals...</p>
+      <div className="min-h-screen bg-background">
+        <header className="bg-surface shadow-sm border-b border-border">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="h-8 w-48 rounded animate-pulse bg-muted" />
+          </div>
+        </header>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {[1,2,3,4].map(i => <div key={i} className="h-20 rounded-lg animate-pulse bg-muted" />)}
+          </div>
+          <div className="space-y-4">
+            {[1,2,3].map(i => (
+              <div key={i} className="bg-surface rounded-lg border border-border p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full animate-pulse bg-muted" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-5 w-40 rounded animate-pulse bg-muted" />
+                    <div className="h-3 w-24 rounded animate-pulse bg-muted" />
+                  </div>
+                </div>
+                <div className="h-4 w-full rounded-full animate-pulse bg-muted mb-2" />
+                <div className="flex justify-between">
+                  <div className="h-3 w-20 rounded animate-pulse bg-muted" />
+                  <div className="h-3 w-20 rounded animate-pulse bg-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
