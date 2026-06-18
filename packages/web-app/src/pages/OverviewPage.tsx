@@ -28,7 +28,7 @@ import {
   ArrowDownRight,
   DollarSign,
 } from 'lucide-react';
-import { PageHeader, StatCard, Badge, Skeleton, SkeletonCard } from '../components/ui';
+import { PageHeader, StatCard, Badge, Skeleton, SkeletonCard, PremiumGate } from '../components/ui';
 import { Button } from '../components/ui';
 import { apiClient } from '../utils/apiClient';
 import { getCurrentMonthString } from '../utils/monthHelpers';
@@ -643,6 +643,13 @@ export const OverviewPage: React.FC = () => {
           onViewAll={() => navigate('/goals')}
         />
       </div>
+
+      {/* Budget Health Score — Premium gate */}
+      <PremiumGate
+        feature="Budget Health Score"
+        description="A single score (0–100) showing your savings rate, budget adherence, and goal progress. See month-over-month history."
+        blurChildren={false}
+      />
 
       {/* Quick Add */}
       <QuickAddTransaction />

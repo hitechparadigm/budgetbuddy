@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.9.145] - 2026-06-18
+
+### ✨ feat: Phase 5 — contextual premium gates (P5-T6, criterion 15)
+
+- Created `PremiumGate` component (`components/ui/PremiumGate.tsx`) — soft non-blocking gate with blurred preview and "Upgrade to Premium" CTA
+- Created `PremiumBadge` — inline amber badge for subtle feature hints
+- Exported from `components/ui` barrel
+
+**3 gates added (meets completion criterion 15):**
+1. **InsightsPage** — `PremiumBadge` next to "Ask About Your Spending" + session memory note with upgrade link
+2. **BudgetPage** — Export CSV / Export PDF buttons show "✨ Pro" badge
+3. **OverviewPage** — Budget Health Score section gated with `PremiumGate` (feature preview shown)
+
+Also: `aria-labels` on Lucide icon buttons confirmed present in Sidebar (P6-T4 ✅)
+
 ## [1.9.144] - 2026-06-18
 
 ### ✨ feat: Phase 6 — Transaction filter sessionStorage persistence (P6-T9)
