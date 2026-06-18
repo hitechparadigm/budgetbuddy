@@ -1,5 +1,13 @@
 # Development Log
 
+## 2026-06-18 - Phase 4 P4-T10/T11 — Spending nudges EventBridge, Overview AI Alert (Session 149 cont.)
+
+### Work Completed
+- `daily-reminders/index.js`: `generateSpendingNudges()` runs daily, saves nudges to DynamoDB
+- `OverviewPage.tsx`: AI Insight card tries to surface today's spending nudge
+
+---
+
 ## 2026-06-18 - Phase 4 P4-T6/T7/T9 — Transaction rules engine (Session 149 cont.)
 
 ### Work Completed

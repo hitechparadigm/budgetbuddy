@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.9.149] - 2026-06-18
+
+### ✨ feat: Phase 4 P4-T10/T11 — Proactive spending nudges via EventBridge, Overview AI Alert
+
+#### Spending Nudges Backend (P4-T10)
+- `backend/functions/daily-reminders/index.js`: Added `generateSpendingNudges()` function
+- Runs daily for all users alongside existing reminders
+- Logic: checks if category spending is 20%+ ahead of pace for the month
+- Creates `NUDGE#<userId>#<date>` DynamoDB records with 7-day TTL
+- Non-fatal — nudge failures don't affect existing reminder functionality
+
+#### Overview AI Alert (P4-T11)
+- `OverviewPage.tsx`: `loadInsight` now also tries to fetch today's nudge from `/nudges/<date>`
+- If a spending nudge exists and no weekly summary is available, shows the nudge message in the AI Insight card
+
 ## [1.9.148] - 2026-06-18
 
 ### ✨ feat: Phase 4 P4-T6/T7/T9 — Transaction categorization rules engine

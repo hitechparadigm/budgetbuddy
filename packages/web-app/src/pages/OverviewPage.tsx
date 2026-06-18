@@ -495,6 +495,17 @@ export const OverviewPage: React.FC = () => {
         (insight?.highlights && insight.highlights[0]) ||
         null
       );
+
+      // Also try to load today's spending nudge
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const nudgeData = await apiClient.get(`/nudges/${today}`);
+        if (nudgeData?.nudges?.[0]?.message && !insight?.summary) {
+          setAiInsight(nudgeData.nudges[0].message);
+        }
+      } catch {
+        // nudges endpoint not available yet — use summary only
+      }
     } catch {
       // silent
     } finally {
