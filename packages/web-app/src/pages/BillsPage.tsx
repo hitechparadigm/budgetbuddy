@@ -9,6 +9,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 import PatternReviewModal from "../components/PatternReviewModal";
+import { PageHeader } from "../components/ui";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
@@ -213,30 +214,32 @@ export const BillsPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate("/budget")}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ← Back
-              </button>
-              <h1 className="text-2xl font-bold text-gray-900">📋 Bills</h1>
-            </div>
-            <button
-              onClick={() => navigate("/bills/new")}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              + Add Bill
-            </button>
-            <button
-              onClick={() => setShowPatternModal(true)}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
-            >
-              🤖 AI Scan
-            </button>
-          </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <button
+            onClick={() => navigate("/budget")}
+            className="text-gray-500 hover:text-gray-700 mb-2"
+          >
+            ← Back
+          </button>
+          <PageHeader
+            title="📋 Bills"
+            action={
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate("/bills/new")}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  + Add Bill
+                </button>
+                <button
+                  onClick={() => setShowPatternModal(true)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                >
+                  🤖 AI Scan
+                </button>
+              </div>
+            }
+          />
         </div>
       </header>
 

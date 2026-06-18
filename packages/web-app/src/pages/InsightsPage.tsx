@@ -22,6 +22,7 @@ import {
   PatternsResponse,
   AskResponse,
 } from "../services/insightsApi";
+import { PageHeader } from "../components/ui";
 
 export const InsightsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -153,22 +154,16 @@ export const InsightsPage: React.FC = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Financial Insights
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Understand your spending patterns and trends
-              </p>
-            </div>
-            <button
-              onClick={() => navigate("/budget")}
-              className="px-4 py-2 text-gray-600 hover:text-gray-900"
-            >
-              ← Back to Budget
-            </button>
-          </div>
+          <button
+            onClick={() => navigate("/budget")}
+            className="px-4 py-2 text-gray-600 hover:text-gray-900 mb-2"
+          >
+            ← Back to Budget
+          </button>
+          <PageHeader
+            title="Financial Insights"
+            subtitle="Understand your spending patterns and trends"
+          />
         </div>
       </div>
 

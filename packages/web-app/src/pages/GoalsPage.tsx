@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 import { Confetti } from "../components/Confetti";
 import { profileApi } from "../services/api";
+import { PageHeader } from "../components/ui";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
@@ -438,27 +439,25 @@ export const GoalsPage: React.FC = () => {
 
       {/* Header */}
       <header className="bg-surface shadow-sm border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <button
+            onClick={() => navigate("/budget")}
+            aria-label="Back to Budget"
+            className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded mb-2"
+          >
+            ← Back
+          </button>
+          <PageHeader
+            title="🎯 Savings Goals"
+            action={
               <button
-                onClick={() => navigate("/budget")}
-                aria-label="Back to Budget"
-                className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded"
+                onClick={() => navigate("/goals/new")}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                ← Back
+                + New Goal
               </button>
-              <h1 className="text-2xl font-bold text-foreground">
-                🎯 Savings Goals
-              </h1>
-            </div>
-            <button
-              onClick={() => navigate("/goals/new")}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              + New Goal
-            </button>
-          </div>
+            }
+          />
         </div>
       </header>
 

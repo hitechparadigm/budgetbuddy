@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { config } from '../config/environment';
+import { PageHeader } from '../components/ui';
 
 const FEATURES_API = config.featuresApiUrl;
 const MAIN_API = config.apiBaseUrl;
@@ -364,26 +365,26 @@ export default function SubscriptionsPage() {
     <div className="max-w-7xl mx-auto px-4 py-8">
 
       {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">🔄 Subscriptions</h1>
-          <p className="text-gray-500 mt-1">Know what you're paying for</p>
-        </div>
-        <button
-          onClick={detectSubscriptions}
-          disabled={detecting}
-          className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-60 transition-colors font-medium shadow-sm"
-        >
-          {detecting ? (
-            <>
-              <span className="animate-spin inline-block">⟳</span>
-              Scanning…
-            </>
-          ) : (
-            <>🔍 Scan Transactions</>
-          )}
-        </button>
-      </div>
+      <PageHeader
+        title="🔄 Subscriptions"
+        subtitle="Know what you're paying for"
+        action={
+          <button
+            onClick={detectSubscriptions}
+            disabled={detecting}
+            className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-60 transition-colors font-medium shadow-sm"
+          >
+            {detecting ? (
+              <>
+                <span className="animate-spin inline-block">⟳</span>
+                Scanning…
+              </>
+            ) : (
+              <>🔍 Scan Transactions</>
+            )}
+          </button>
+        }
+      />
 
       {/* ── Alerts ── */}
       {error && (

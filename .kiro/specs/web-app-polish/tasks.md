@@ -48,7 +48,7 @@
 - [x] **P2-T7** — Overview: Upcoming Bills next 7 days
 - [x] **P2-T8** — Overview: Active Goals top 3 compact progress bars
 - [x] **P2-T9** — Overview: AI Insight of the Day + Quick Add Transaction inline form
-- [ ] **P2-T10** — Apply `PageHeader` component to all existing pages (BudgetPage, GoalsPage, AccountsPage, InsightsPage, SettingsPage, BillsPage, SubscriptionsPage, DebtPayoffPage, CreditScorePage)
+- [x] **P2-T10** — Apply `PageHeader` component to all existing pages (BudgetPage, GoalsPage, AccountsPage, InsightsPage, SettingsPage, BillsPage, SubscriptionsPage, DebtPayoffPage, CreditScorePage)
 - [x] **P2-T11** — Add `/net-worth` route to `App.tsx`; add NetWorthPage to Manage group nav
 
 ---
