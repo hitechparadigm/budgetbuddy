@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.144] - 2026-06-18
+
+### ✨ feat: Phase 6 — Transaction filter sessionStorage persistence (P6-T9)
+
+- `TransactionFilters.tsx`: `useTransactionFilters` hook now persists filter state to `sessionStorage`
+- Filters survive page navigation and refresh within the same browser session
+- `clearFilters()` also clears sessionStorage
+- Filters are restored on mount from sessionStorage
+
 ## [1.9.143] - 2026-06-18
 
 ### ✨ feat: Phase 5 — Landing page rewrite with new headline, 3-step proof, pricing section (P5-T1)

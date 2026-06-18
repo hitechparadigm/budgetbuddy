@@ -501,16 +501,42 @@ const FilterPill: React.FC<FilterPillProps> = ({ label, onRemove }) => (
   </span>
 );
 
-// Hook for managing filter state
+// Hook for managing filter state — with sessionStorage persistence (P6-T9)
+const FILTER_STORAGE_KEY = 'budgetbuddy_transaction_filters';
+
 export function useTransactionFilters(
   initialState?: Partial<TransactionFiltersState>,
 ) {
-  const [filters, setFilters] = useState<TransactionFiltersState>({
-    ...initialFilters,
-    ...initialState,
+  const [filters, setFiltersInternal] = useState<TransactionFiltersState>(() => {
+    // Restore from sessionStorage on mount
+    try {
+      const stored = sessionStorage.getItem(FILTER_STORAGE_KEY);
+      if (stored) {
+        return { ...initialFilters, ...JSON.parse(stored), ...initialState };
+      }
+    } catch {
+      // ignore
+    }
+    return { ...initialFilters, ...initialState };
   });
 
-  const clearFilters = () => setFilters(initialFilters);
+  const setFilters = (newFilters: TransactionFiltersState) => {
+    setFiltersInternal(newFilters);
+    try {
+      sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(newFilters));
+    } catch {
+      // ignore
+    }
+  };
+
+  const clearFilters = () => {
+    setFiltersInternal(initialFilters);
+    try {
+      sessionStorage.removeItem(FILTER_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  };
 
   const hasActiveFilters =
     filters.search !== "" ||
