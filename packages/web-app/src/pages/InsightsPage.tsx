@@ -21,7 +21,7 @@ import {
   TrendsResponse,
   PatternsResponse,
 } from "../services/insightsApi";
-import { PageHeader } from "../components/ui";
+import { PageHeader, PremiumBadge } from "../components/ui";
 
 export const InsightsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -313,7 +313,7 @@ export const InsightsPage: React.FC = () => {
               <h2 className="text-lg font-semibold text-gray-900">
                 Ask About Your Spending
               </h2>
-            </div>
+              <PremiumBadge feature="AI Coach with memory" /></div>
             <button
               onClick={() => setShowAskSection(!showAskSection)}
               className="text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -368,6 +368,17 @@ export const InsightsPage: React.FC = () => {
                       </div>
                     </div>
                   )}
+                  {/* Premium memory note */}
+                  <p className="text-xs text-gray-400 text-center mt-2">
+                    Conversation history persists for this session only.
+                    <button
+                      onClick={() => { window.location.href = '/auth?upgrade=1'; }}
+                      className="ml-1 text-amber-600 hover:underline"
+                    >
+                      Upgrade to Premium
+                    </button>
+                    {' '}to keep your history across sessions.
+                  </p>
                 </div>
               )}
 

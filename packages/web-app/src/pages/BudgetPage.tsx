@@ -1761,16 +1761,22 @@ export const BudgetPage: React.FC = () => {
                   <>
                     <button
                       onClick={handleExportCSV}
-                      className="px-4 py-2 text-sm font-medium text-green-600 border border-green-600 rounded-md hover:bg-green-50 transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-green-600 border border-green-600 rounded-md hover:bg-green-50 transition-colors flex items-center gap-1.5"
                     >
                       Export CSV
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+                        ✨ Pro
+                      </span>
                     </button>
                     <button
                       onClick={handleExportPDF}
                       data-export="pdf"
-                      className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                      className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors flex items-center gap-1.5"
                     >
                       Export PDF
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
+                        ✨ Pro
+                      </span>
                     </button>
                   </>
                 )}

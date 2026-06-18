@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-18 - Phase 5 P5-T6 — Premium gates (3 gates), P6-T4 confirmed (Session 149 cont.)
+
+### Work Completed
+`PremiumGate` + `PremiumBadge` components created. 3 gates deployed: Insights AI memory, Export buttons, Budget Health Score on Overview.
+
+---
+
 ## 2026-06-18 - Phase 6 P6-T9 — Transaction filter session persistence (Session 149 cont.)
 
 ### Work Completed

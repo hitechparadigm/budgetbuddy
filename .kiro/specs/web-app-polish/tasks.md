@@ -112,7 +112,7 @@
 - [ ] **P5-T3** — Redesign onboarding to 4 steps: Location+size → Budget type → AI generation → Review+customize
 - [ ] **P5-T4** — AI generation multi-step progress animation (4 step labels during Bedrock call)
 - [ ] **P5-T5** — Welcome tooltip chain on Overview page (first-login only, highlight 3 key features)
-- [ ] **P5-T6** — Contextual premium gates: Insights AI memory, data export, health score history
+- [x] **P5-T6** — Contextual premium gates: Insights AI memory, data export, health score history
 - [ ] **P5-T7** — Backend: SES monthly budget kickoff email via EventBridge (1st of month trigger)
 - [ ] **P5-T8** — Frontend: daily rotating AI insight pool (30+ templates) on Overview page
 
