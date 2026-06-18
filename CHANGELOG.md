@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.9.146] - 2026-06-18
+
+### ✨ feat: Phase 3 P3-T4 — Inline category amount editing on Budget page
+
+**`BudgetPage.tsx`**:
+- Clicking a category's planned amount turns it into an inline number input
+- Press Enter or blur to save; Escape to cancel
+- Saves to backend immediately on commit
+- Styled with primary color border + focus ring
+- Accessibility: `aria-label` on the input, `title` hint on the click target
+
 ## [1.9.145] - 2026-06-18
 
 ### ✨ feat: Phase 5 — contextual premium gates (P5-T6, criterion 15)

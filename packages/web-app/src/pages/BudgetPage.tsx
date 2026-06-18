@@ -163,6 +163,35 @@ export const BudgetPage: React.FC = () => {
     frequencyAmount: "", // Per-period amount for biweekly/weekly
   });
 
+  // Inline category amount editing state (P3-T4)
+  const [inlineEditId, setInlineEditId] = useState<string | null>(null);
+  const [inlineEditValue, setInlineEditValue] = useState<string>('');
+
+  const startInlineEdit = (categoryId: string, currentAmount: number) => {
+    setInlineEditId(categoryId);
+    setInlineEditValue(currentAmount.toString());
+  };
+
+  const commitInlineEdit = async (categoryId: string, groupType: 'income' | 'savings' | 'expense') => {
+    const newAmount = parseFloat(inlineEditValue);
+    if (isNaN(newAmount) || newAmount < 0 || !budget) {
+      setInlineEditId(null);
+      return;
+    }
+    const updatedBudget = { ...budget };
+    updatedBudget.groups = updatedBudget.groups.map(g =>
+      g.type !== groupType ? g : {
+        ...g,
+        categories: g.categories.map(c =>
+          c.id !== categoryId ? c : { ...c, plannedAmount: newAmount }
+        ),
+      }
+    );
+    setBudget(updatedBudget);
+    setInlineEditId(null);
+    await saveBudgetToBackend(updatedBudget);
+  };
+
   // Right sidebar tab state
   const [activeTab, setActiveTab] = useState<
     "summary" | "transactions" | "calendar"
@@ -2047,9 +2076,31 @@ export const BudgetPage: React.FC = () => {
                             <div className="text-xs md:hidden text-gray-500">
                               Planned
                             </div>
-                            <div className="font-medium">
-                              {formatCurrency(category.plannedAmount, currency)}
-                            </div>
+                            {inlineEditId === category.id ? (
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={inlineEditValue}
+                                onChange={e => setInlineEditValue(e.target.value)}
+                                onBlur={() => commitInlineEdit(category.id, group.type)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') commitInlineEdit(category.id, group.type);
+                                  if (e.key === 'Escape') setInlineEditId(null);
+                                }}
+                                autoFocus
+                                className="w-full text-right font-medium px-1 py-0.5 border border-[var(--color-primary)] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                                aria-label={`Edit planned amount for ${category.name}`}
+                              />
+                            ) : (
+                              <button
+                                onClick={() => startInlineEdit(category.id, category.plannedAmount)}
+                                className="font-medium hover:text-[var(--color-primary)] hover:underline cursor-pointer"
+                                title="Click to edit planned amount"
+                              >
+                                {formatCurrency(category.plannedAmount, currency)}
+                              </button>
+                            )}
                           </div>
                           <div className="text-right md:w-24 flex-shrink-0">
                             <div className="text-xs md:hidden text-gray-500">
