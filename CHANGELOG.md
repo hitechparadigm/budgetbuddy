@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.9.143] - 2026-06-18
+
+### ✨ feat: Phase 5 — Landing page rewrite with new headline, 3-step proof, pricing section (P5-T1)
+
+**`LandingPage.tsx`** full rewrite:
+- New headline: "Your budget, built in 60 seconds."
+- Inclusive framing: "For individuals, couples, families, and roommates" (not just "family finances")
+- Social proof pill: "Used across 348 cities worldwide"
+- 3-step proof section: Pick city → AI builds budget → Ready
+- Primary CTA: "Build my budget — it's free"
+- Replaced "Bank-Level Security" (table stakes) with "Goals & Debt Payoff"
+- Added Pricing section: Free ($0) vs Premium ($9.99/mo) with feature comparison
+- CTA section with emerald green background
+- Logo updated to CSS-styled `$` icon (consistent with app sidebar)
+- Added About link to footer
+
 ## [1.9.142] - 2026-06-18
 
 ### ✨ feat: Phase 4 — Real Bedrock AI budget generation wired up (P4-T1, P4-T2)

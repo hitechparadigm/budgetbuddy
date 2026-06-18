@@ -107,7 +107,7 @@
 
 ## Phase 5 — Onboarding & Conversion (2 weeks)
 
-- [ ] **P5-T1** — Rewrite `LandingPage.tsx`: new headline "Your budget, built in 60 seconds", proof animation section, clean pricing section
+- [x] **P5-T1** — Rewrite `LandingPage.tsx`: new headline "Your budget, built in 60 seconds", proof animation section, clean pricing section
 - [ ] **P5-T2** — Create `/pricing` page (`PricingPage.tsx`) with Free vs Premium comparison table
 - [ ] **P5-T3** — Redesign onboarding to 4 steps: Location+size → Budget type → AI generation → Review+customize
 - [ ] **P5-T4** — AI generation multi-step progress animation (4 step labels during Bedrock call)
