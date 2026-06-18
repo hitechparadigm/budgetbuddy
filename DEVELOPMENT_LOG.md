@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-18 - product-requirements.md final update (Session 149 cont.)
+
+### Work Completed
+Updated product-requirements.md: all 12 completed REQ-NEW-* requirements marked ✅, 6 remaining planned items listed clearly.
+
+---
+
 ## 2026-06-18 - Phase 4 P4-T10/T11 — Spending nudges EventBridge, Overview AI Alert (Session 149 cont.)
 
 ### Work Completed
