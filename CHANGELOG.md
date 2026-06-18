@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.150] - 2026-06-18
+
+### 📄 docs: product-requirements.md updated — Session 149 Polish Plan completion status
+
+Updated Known Gaps section:
+- All completed REQ-NEW-* requirements marked ✅
+- Remaining planned items clearly listed
+- Phase 3/4/5/6 polish sections added
+
 ## [1.9.149] - 2026-06-18
 
 ### ✨ feat: Phase 4 P4-T10/T11 — Proactive spending nudges via EventBridge, Overview AI Alert

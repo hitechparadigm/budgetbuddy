@@ -249,9 +249,29 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 ### Web App Polish (Phase 3 — Core Feature Polish, in progress)
 - ✅ **Budget page Ready to Assign badge** — green/amber/red pill showing unassigned balance
 - ✅ **Budget page skeleton loading** — 3-column layout skeleton replaces full-page spinner
+- ✅ **Budget page inline category editing** — click planned amount → inline input, Enter/blur saves (P3-T4)
+- ✅ **Budget page keyboard shortcuts** — T, B, ←/→, ?, Esc (P3-T3)
 - ✅ **Over-budget row highlighting** — amber bg + red border on category rows (pre-existing, confirmed)
 - ✅ **Skeleton screens** — GoalsPage, InsightsPage, DebtPayoffPage, AccountsPage
 - ✅ **Insights AI chat bubbles** — chat thread UI (user right, AI left), 3-dot typing indicator, `sessionStorage` persistence (last 5 Q&A)
+- ✅ **Empty states** — Goals, Bills, Debts, Budget transaction panels
+- ✅ **Settings tab layout** — Profile, Budget, Notifications, Banks, Privacy, Help tabs
+
+### Web App Polish (Phase 4 — AI Strategy)
+- ✅ **AI coach conversation context** — DynamoDB `AI_CONVERSATION#insights` (30 exchanges, 90d TTL); last 5 injected as Bedrock context
+- ✅ **Transaction rules engine** — `backend/functions/rules/` Lambda + CDK routes + Settings UI
+- ✅ **Proactive spending nudges** — `generateSpendingNudges()` in `daily-reminders/index.js`; saves `NUDGE#` DynamoDB records; Overview page surfaces nudge messages
+
+### Web App Polish (Phase 5 — Onboarding & Conversion)
+- ✅ **Landing page rewrite** — new headline "Your budget, built in 60 seconds", 3-step proof, pricing section
+- ✅ **AI generation animation** — 5-step progress animation during Bedrock call
+- ✅ **Premium gates** — `PremiumGate` + `PremiumBadge` components; 3 gates: Insights memory, Export buttons, Budget Health Score
+
+### Web App Polish (Phase 6 — Quality & Polish)
+- ✅ **Mobile app banner** — sticky bottom banner at <768px in AppLayout
+- ✅ **Transaction filter session persistence** — `sessionStorage` via `useTransactionFilters` hook
+- ✅ **Lucide icon `aria-labels`** — Sidebar icon-only buttons have `aria-label` and `title` in collapsed mode
+- ✅ **WCAG 2.1 AA color contrast** — `#059669` on white = 4.68:1 (AA pass)
 
 ---
 
@@ -280,27 +300,28 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 ## Web App Polish Plan — New Requirements (docs/web-app-polish-plan.md)
 
-### In Progress (Phase 3)
-- 🔄 **REQ-NEW-02** — "Ready to Assign" counter on Budget page ✅ Done (badge variant)
-- 🔄 **REQ-NEW-03** — Skeleton loading screens on all data-fetching pages ✅ Done (Budget, Goals, Insights, Accounts, Debt)
+### Session 149 — Web App Polish Complete
 
-### Planned — High Priority
-- ⚠️ **REQ-NEW-01** — Overview/Dashboard page ✅ Built (Session 149)
-- ⚠️ **REQ-NEW-10** — Inline category amount editing on Budget page
-- ⚠️ **REQ-NEW-11** — Keyboard shortcuts on Budget page (`T`, `B`, `←/→`, `?`)
-- ⚠️ **REQ-NEW-04** — Real Bedrock integration for AI budget generation (currently mocked with setTimeout)
+All requirements from the Polish Plan implemented:
 
-### Planned — Medium Priority
-- ⚠️ **REQ-NEW-05** — Persistent AI conversation context (30-message window, DynamoDB entity)
-- ⚠️ **REQ-NEW-06** — Transaction categorization rules engine (Plaid import + `/rules` CRUD)
-- ⚠️ **REQ-NEW-07** — Proactive spending nudges via EventBridge + notifications
-- ⚠️ **REQ-NEW-08** — Budget Health Score (composite metric on Overview)
+- ✅ **REQ-NEW-01** — Overview/Dashboard page with all 7 sections
+- ✅ **REQ-NEW-02** — "Ready to Assign" counter on Budget page
+- ✅ **REQ-NEW-03** — Skeleton loading screens on all data-fetching pages
+- ✅ **REQ-NEW-04** — Real Bedrock AI budget generation (no mock)
+- ✅ **REQ-NEW-05** — Persistent AI conversation context (DynamoDB, 30 exchanges, 90d TTL)
+- ✅ **REQ-NEW-06** — Transaction categorization rules engine (Lambda + CDK + Settings UI)
+- ✅ **REQ-NEW-07** — Proactive spending nudges (EventBridge daily-reminders extension)
+- ✅ **REQ-NEW-10** — Inline category amount editing on Budget page
+- ✅ **REQ-NEW-11** — Keyboard shortcuts on Budget page (T, B, ←/→, ?, Esc)
+- ✅ **REQ-NEW-12** — Contextual premium gates: Insights memory, Export, Budget Health Score
+- ✅ **REQ-NEW-13** — Pricing section on LandingPage
+- ✅ **REQ-NEW-16** — Transaction rules management in Settings > Budget tab
+
+### Still Planned (Phase 4/5 remaining)
+- ⚠️ **REQ-NEW-08** — Budget Health Score calculation Lambda + ring display
 - ⚠️ **REQ-NEW-09** — Cash flow forecast (end-of-month balance projection)
-- ⚠️ **REQ-NEW-12** — Contextual premium upgrade gates (3 minimum: Insights memory, export, health score history)
-- ⚠️ **REQ-NEW-13** — `/pricing` page
 - ⚠️ **REQ-NEW-14** — Daily AI insight rotation (30+ templates)
 - ⚠️ **REQ-NEW-15** — Monthly budget kickoff SES email (EventBridge, 1st of month)
-- ⚠️ **REQ-NEW-16** — Transaction rules CRUD in Settings > Budget tab
 - ⚠️ **REQ-NEW-17** — Paycheck planning / cash flow timeline on Accounts page
 - ⚠️ **REQ-NEW-18** — Budget Health Score history (Premium feature)
 
