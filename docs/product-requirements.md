@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-15 (Session 146 — smart invitation page, invitation preview API, inviter first name; biweekly income calculation fix)
+**Last Updated**: 2026-06-18 (Session 148 — dark mode on BudgetPage/SettingsPage/GoalsPage; CalendarView currency locale fix; family budget transparency enforcement; goal contributions linked to budget savings categories)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -236,7 +236,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 ## Known Gaps (⚠️ Planned)
 
 ### High Priority
-1. **Family budget transparency not enforced at category level** — `budgetType` is stored but not used to block per-user category visibility. Fix: add a check in budget/transaction Lambdas that rejects attempts to create private/hidden categories on a `family` budget.
+1. ~~**Family budget transparency not enforced at category level**~~ ✅ **Fixed (Session 148)** — `createBudget` and `updateBudget` now reject any request containing categories with `hidden: true`, `isPrivate: true`, or `visibility: 'private'` when `budgetType === 'family'`. Returns HTTP 400.
 
 2. **`canUseFeature()` not called in Lambda handlers** — the entitlement pattern is wired but Phase 1 intentionally leaves all features open. Phase 2 will add actual gating for `reports.advanced` and `budget.export`.
 
@@ -250,8 +250,8 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 6. **SES still in sandbox mode** — can only send to verified addresses. Verified: `dmytro.malyk@gmail.com`, `dima.pmp@gmail.com`, `info@hitechparadigm.com`, `t1@taxprocanada.ca`, `dmalyk@taxprocanada.ca`. Request SES production access to send to any address.
 
 ### Low Priority
-7. **Dark mode missing on BudgetPage, SettingsPage, GoalsPage** — core pages have no `dark:` Tailwind classes.
-8. **Goals not reflected in budget** — goal contributions don't adjust budget savings categories.
+7. ~~**Dark mode missing on BudgetPage, SettingsPage, GoalsPage**~~ ✅ **Fixed (Session 148)** — all three pages migrated to CSS design token classes.
+8. ~~**Goals not reflected in budget**~~ ✅ **Fixed (Session 148)** — `contributeToGoal` now updates the linked savings category's `spentAmount` in the budget period.
 9. **Planned transactions frontend** — backend Lambda exists (`transaction-planning`), no frontend UI yet.
 
 ---
@@ -334,7 +334,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Investments page | Frontend exists, no backend Lambda deployed |
 | Budget Members — full invite flow | Invite → email → accept via link — not end-to-end tested |
 | Mobile app (React Native) | Zero E2E coverage |
-| Currency display in Calendar | Shows `CA$46` instead of `$46` for CAD users — minor formatting bug |
+| Currency display in Calendar | Fixed (Session 148) — `CalendarView` now uses currency-specific locale (`en-CA` for CAD) |
 
 ### ✅ Verified Working (live)
 

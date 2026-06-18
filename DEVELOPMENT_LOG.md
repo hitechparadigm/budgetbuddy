@@ -1,5 +1,40 @@
 # Development Log
 
+## 2026-06-18 - Dark mode, currency fix, family enforcement, goals-budget link (Session 148)
+
+### Work Completed
+
+1. **Dark mode — BudgetPage, SettingsPage, GoalsPage**:
+   - All three pages had zero `dark:` Tailwind variants — fully light-mode only despite `ThemeContext` being wired
+   - Replaced all hardcoded `bg-white`, `bg-gray-50`, `text-gray-900`, `text-gray-600`, `border-gray-200` etc. with the project's CSS design token utility classes: `bg-background`, `bg-surface`, `text-foreground`, `text-muted-foreground`, `border-border`
+   - Token classes automatically switch via `.dark` class on `<html>` — no `dark:` prefixes needed for base surfaces
+   - Semantic colors (error banners, milestone toasts, drag-over states) use explicit `dark:` variants
+   - Files: `packages/web-app/src/pages/BudgetPage.tsx`, `packages/web-app/src/pages/SettingsPage.tsx`, `packages/web-app/src/pages/GoalsPage.tsx`
+
+2. **Currency locale bug in CalendarView**:
+   - Root cause: Local `formatCurrency` in `CalendarView.tsx` used `Intl.NumberFormat("en-US", {currency})` — `"en-US"` locale with `currency: "CAD"` produces `"CA$46"` because the US locale disambiguates CAD from USD. The Canadian locale (`"en-CA"`) with `currency: "CAD"` produces `"$46"` (home currency).
+   - Fix: Import `getCurrencyConfig` from `@budget-buddy/shared/src/utils/currency`, use `config.locale` for the `Intl.NumberFormat` call instead of hardcoded `"en-US"`
+   - File: `packages/web-app/src/components/CalendarView.tsx`
+
+3. **GoalsPage hardcoded USD**:
+   - `const currency = "USD"` was hardcoded — all goal amounts always showed in USD regardless of user settings
+   - Replaced with `const [currency, setCurrency] = useState<string>("USD")` + `useEffect` that calls `profileApi.getProfile()` and sets currency from the returned profile
+   - File: `packages/web-app/src/pages/GoalsPage.tsx`
+
+4. **Family budget transparency enforcement at category level**:
+   - ADR-001 Known Gap #1: `budgetType = family` was stored but never enforced — hidden/private categories could theoretically be created
+   - Added check in `createBudget` and `updateBudget` in `backend/functions/budget/index.js`: after `resolveAccess` (which now returns `budgetType`), if `budgetType === 'family'` and any submitted category has `hidden: true`, `isPrivate: true`, or `visibility: 'private'` → returns HTTP 400
+   - Future-proofed: category schema doesn't have these fields yet but the enforcement is in place for when they're added
+   - File: `backend/functions/budget/index.js`
+
+5. **Goals contributions now reflected in linked savings category**:
+   - ADR-001 Known Gap: goal contributions didn't update the linked budget savings category's `spentAmount`
+   - In `contributeToGoal` (`backend/functions/goals/index.js`): after saving the goal update, if `existingGoal.linkedCategoryId` is set, fetches the budget period, finds the linked category in `groups`, increments its `spentAmount`, recalculates `totalSavings`/`totalExpenses`, and writes back
+   - Non-fatal implementation: budget period update failure logs a warning but doesn't fail the contribution response
+   - File: `backend/functions/goals/index.js`
+
+---
+
 ## 2026-06-17 - Accessibility and UX heuristic fixes (Session 147)
 
 ### Work Completed

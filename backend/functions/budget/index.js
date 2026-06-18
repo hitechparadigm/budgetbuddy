@@ -180,13 +180,30 @@ async function createBudget(event, user) {
   }
 
   // Resolve budget access from DynamoDB
-  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(
+  const { budgetId, role, budgetStatus, budgetType } = await BudgetAccessResolver.resolveAccess(
     user.userId,
     dynamoHelpers,
   );
 
   // Enforce write permission
   BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
+
+  // Enforce family budget transparency: family budgets cannot have hidden/private categories
+  if (budgetType === 'family' && requestBody.groups) {
+    const allCategories = [
+      ...(Array.isArray(requestBody.groups.income) ? requestBody.groups.income : []),
+      ...(Array.isArray(requestBody.groups.savings) ? requestBody.groups.savings : []),
+      ...(Array.isArray(requestBody.groups.expenses) ? requestBody.groups.expenses : []),
+    ];
+    const hasHiddenCategory = allCategories.some(
+      (cat) => cat.hidden === true || cat.isPrivate === true || cat.visibility === 'private',
+    );
+    if (hasHiddenCategory) {
+      return errorResponse.badRequest(
+        'Family budgets cannot have hidden or private categories. All members must have full visibility.',
+      );
+    }
+  }
 
   // Get user's currency from profile (default to USD if not found)
   let userCurrency = "USD";
@@ -535,13 +552,30 @@ async function updateBudget(event, user, budgetId) {
   const requestBody = parseRequestBody(event.body);
 
   // Resolve budget access from DynamoDB
-  const { budgetId: resolvedBudgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(
+  const { budgetId: resolvedBudgetId, role, budgetStatus, budgetType } = await BudgetAccessResolver.resolveAccess(
     user.userId,
     dynamoHelpers,
   );
 
   // Enforce write permission
   BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
+
+  // Enforce family budget transparency: family budgets cannot have hidden/private categories
+  if (budgetType === 'family' && requestBody.groups) {
+    const allCategories = [
+      ...(Array.isArray(requestBody.groups.income) ? requestBody.groups.income : []),
+      ...(Array.isArray(requestBody.groups.savings) ? requestBody.groups.savings : []),
+      ...(Array.isArray(requestBody.groups.expenses) ? requestBody.groups.expenses : []),
+    ];
+    const hasHiddenCategory = allCategories.some(
+      (cat) => cat.hidden === true || cat.isPrivate === true || cat.visibility === 'private',
+    );
+    if (hasHiddenCategory) {
+      return errorResponse.badRequest(
+        'Family budgets cannot have hidden or private categories. All members must have full visibility.',
+      );
+    }
+  }
 
   // Extract month from request body or query parameter
   let month =

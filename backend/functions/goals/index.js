@@ -447,6 +447,65 @@ async function contributeToGoal(event, user, goalId) {
     updates,
   );
 
+  // If goal is linked to a savings category, reflect the contribution in that budget category
+  if (existingGoal.linkedCategoryId) {
+    try {
+      // Use the month from the request body or default to current month
+      const targetMonth = body.month || currentTime.slice(0, 7);
+      const budgetPeriod = await dynamoHelpers.getItem(
+        `BUDGET#${budgetId}`,
+        `PERIOD#${targetMonth}`,
+      );
+
+      if (budgetPeriod && budgetPeriod.groups) {
+        const groups = budgetPeriod.groups;
+        let categoryUpdated = false;
+
+        // Search savings (and expenses) groups for the linked category
+        for (const groupKey of Object.keys(groups)) {
+          if (!Array.isArray(groups[groupKey])) continue;
+          const catIndex = groups[groupKey].findIndex(
+            (cat) => cat.id === existingGoal.linkedCategoryId,
+          );
+          if (catIndex !== -1) {
+            groups[groupKey][catIndex].spentAmount =
+              (groups[groupKey][catIndex].spentAmount || 0) + body.amount;
+            categoryUpdated = true;
+            break;
+          }
+        }
+
+        if (categoryUpdated) {
+          // Recalculate totals
+          const totalSavings = (groups.savings || []).reduce(
+            (sum, cat) => sum + (cat.spentAmount || 0), 0,
+          );
+          const totalExpenses = (groups.expenses || []).reduce(
+            (sum, cat) => sum + (cat.spentAmount || 0), 0,
+          );
+          await dynamoHelpers.updateItem(
+            `BUDGET#${budgetId}`,
+            `PERIOD#${targetMonth}`,
+            { groups, totalSavings, totalExpenses, updatedAt: currentTime },
+          );
+          logger.info('Linked budget category updated with goal contribution', {
+            goalId,
+            linkedCategoryId: existingGoal.linkedCategoryId,
+            amount: body.amount,
+            month: targetMonth,
+          });
+        }
+      }
+    } catch (linkErr) {
+      // Non-fatal: log but don't fail the contribution if budget update fails
+      logger.warn('Failed to update linked budget category for goal contribution', {
+        goalId,
+        linkedCategoryId: existingGoal.linkedCategoryId,
+        error: linkErr.message,
+      });
+    }
+  }
+
   logger.info("Contribution added to goal", {
     goalId,
     budgetId,

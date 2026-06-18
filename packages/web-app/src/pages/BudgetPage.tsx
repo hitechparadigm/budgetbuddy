@@ -1469,10 +1469,10 @@ export const BudgetPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your budget...</p>
+          <p className="text-muted-foreground">Loading your budget...</p>
         </div>
       </div>
     );
@@ -1483,11 +1483,11 @@ export const BudgetPage: React.FC = () => {
   if (!budget && !isFutureMonthCheck()) {
     // Past or current month without budget - show "No Budget Found" state with choice
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col">
         {/* Navigation Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-surface border-b border-border px-6 py-4">
           <div className="flex items-center justify-between max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-foreground">
               {getMonthName(currentMonth)}
             </h1>
             <div className="flex items-center space-x-2">
@@ -1499,7 +1499,7 @@ export const BudgetPage: React.FC = () => {
               </button>
               <button
                 onClick={() => changeMonth("prev")}
-                className="p-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                className="p-2 text-muted-foreground border border-border rounded-md hover:bg-muted transition-colors"
                 aria-label="Previous month"
               >
                 <svg
@@ -1518,7 +1518,7 @@ export const BudgetPage: React.FC = () => {
               </button>
               <button
                 onClick={() => changeMonth("next")}
-                className="p-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                className="p-2 text-muted-foreground border border-border rounded-md hover:bg-muted transition-colors"
                 aria-label="Next month"
               >
                 <svg
@@ -1542,10 +1542,10 @@ export const BudgetPage: React.FC = () => {
         {/* Empty State Content */}
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center max-w-lg px-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl font-bold text-foreground mb-4">
               No budget found for {getMonthName(currentMonth)}
             </h2>
-            <p className="text-gray-600 mb-8">
+            <p className="text-muted-foreground mb-8">
               Choose how you'd like to create your budget:
             </p>
 
@@ -1612,15 +1612,15 @@ export const BudgetPage: React.FC = () => {
                   setBudget(emptyBudget);
                   saveBudgetToBackend(emptyBudget);
                 }}
-                className="p-6 bg-white border-2 border-gray-300 rounded-lg hover:border-blue-600 hover:bg-blue-50 transition-colors text-left"
+                className="p-6 bg-surface border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors text-left"
               >
-                <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-lg mb-4 mx-auto">
+                <div className="flex items-center justify-center w-12 h-12 bg-muted rounded-lg mb-4 mx-auto">
                   <span className="text-2xl">✏️</span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                <h3 className="text-lg font-semibold text-foreground mb-2 text-center">
                   Start from Scratch
                 </h3>
-                <p className="text-sm text-gray-600 text-center">
+                <p className="text-sm text-muted-foreground text-center">
                   Create your budget manually by adding categories yourself
                 </p>
               </button>
@@ -1638,22 +1638,22 @@ export const BudgetPage: React.FC = () => {
     : { income: 0, planned: 0, spent: 0, remaining: 0 };
 
   return (
-    <div className="h-full bg-gray-50 flex">
+    <div className="h-full bg-background flex">
       {/* Main Content Area */}
       <div className="flex-1 flex">
         {/* Center Column - Budget Categories */}
-        <div className="flex-1 bg-white overflow-auto">
+        <div className="flex-1 bg-surface overflow-auto">
           {/* Desktop/Tablet Header */}
-          <div className="p-6 border-b border-gray-200 bg-gray-50">
+          <div className="p-6 border-b border-border bg-background">
             {/* New Header Design */}
             <div className="flex items-center justify-between">
               {/* Left: Month Title and Budget Remaining */}
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-1">
+                <h1 className="text-3xl font-bold text-foreground mb-1">
                   {getMonthName(currentMonth)}
                 </h1>
                 {budget && (
-                  <p className="text-lg text-gray-600">
+                  <p className="text-lg text-muted-foreground">
                     <span
                       className={`font-semibold ${
                         totals.remaining < 0 ? "text-red-600" : "text-green-600"
@@ -1693,7 +1693,7 @@ export const BudgetPage: React.FC = () => {
                 {budget && (
                   <button
                     onClick={() => setShowResetModal(true)}
-                    className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-md hover:bg-muted transition-colors"
                   >
                     Reset
                   </button>
@@ -1915,14 +1915,14 @@ export const BudgetPage: React.FC = () => {
                         key={category.id}
                         className={`group/item flex flex-col md:flex-row md:items-center justify-between py-3 px-4 rounded-lg space-y-2 md:space-y-0 ${
                           category.spentAmount > category.plannedAmount
-                            ? "bg-red-50 border-l-4 border-red-500 hover:bg-red-100"
-                            : "hover:bg-gray-50"
+                            ? "bg-red-50 dark:bg-red-950/20 border-l-4 border-red-500 hover:bg-red-100 dark:hover:bg-red-950/30"
+                            : "hover:bg-muted"
                         }`}
                       >
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
                             <span>{category.icon}</span>
-                            <div className="font-medium text-gray-900">
+                            <div className="font-medium text-foreground">
                               {category.name}
                             </div>
                           </div>
@@ -2020,8 +2020,8 @@ export const BudgetPage: React.FC = () => {
                   </div>
 
                   {/* Group Total */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between py-3 px-4 bg-gray-50 rounded-lg font-semibold space-y-2 md:space-y-0">
-                    <div className="text-gray-900">Total {group.name}</div>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between py-3 px-4 bg-muted rounded-lg font-semibold space-y-2 md:space-y-0">
+                    <div className="text-foreground">Total {group.name}</div>
                     <div className="flex items-center md:space-x-4">
                       <div className="text-left md:text-right md:w-24 flex-shrink-0">
                         <div className="text-xs md:hidden text-gray-500 font-normal">
@@ -2062,7 +2062,7 @@ export const BudgetPage: React.FC = () => {
 
         {/* Right Sidebar - Summary/Transactions */}
         <div
-          className="hidden md:block bg-white border-l border-gray-200 relative"
+          className="hidden md:block bg-surface border-l border-border relative"
           style={{ width: `${sidebarWidth}px` }}
         >
           {/* Resize Handle */}
@@ -2071,7 +2071,7 @@ export const BudgetPage: React.FC = () => {
             onMouseDown={handleMouseDown}
             style={{ marginLeft: "-2px" }}
           >
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-12 bg-gray-300 rounded-full group-hover:bg-blue-500 transition-colors"></div>
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-12 bg-border rounded-full group-hover:bg-blue-500 transition-colors"></div>
           </div>
           <div className="p-6">
             {/* Main Tabs - Summary / Transactions */}
@@ -2097,7 +2097,7 @@ export const BudgetPage: React.FC = () => {
                 </svg>
                 <span
                   className={`text-sm font-medium ${
-                    activeTab === "summary" ? "text-blue-600" : "text-gray-500"
+                    activeTab === "summary" ? "text-blue-600" : "text-muted-foreground"
                   }`}
                 >
                   Summary
@@ -2128,7 +2128,7 @@ export const BudgetPage: React.FC = () => {
                   className={`text-sm font-medium ${
                     activeTab === "transactions"
                       ? "text-blue-600"
-                      : "text-gray-500"
+                      : "text-muted-foreground"
                   }`}
                 >
                   Transactions
@@ -2155,7 +2155,7 @@ export const BudgetPage: React.FC = () => {
                 </svg>
                 <span
                   className={`text-sm font-medium ${
-                    activeTab === "calendar" ? "text-blue-600" : "text-gray-500"
+                    activeTab === "calendar" ? "text-blue-600" : "text-muted-foreground"
                   }`}
                 >
                   Calendar
@@ -2193,10 +2193,10 @@ export const BudgetPage: React.FC = () => {
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className="text-xs text-gray-500 uppercase">
+                      <div className="text-xs text-muted-foreground uppercase">
                         Income
                       </div>
-                      <div className="text-2xl font-bold text-gray-900">
+                      <div className="text-2xl font-bold text-foreground">
                         {formatCurrency(totals.income, currency)}
                       </div>
                     </div>

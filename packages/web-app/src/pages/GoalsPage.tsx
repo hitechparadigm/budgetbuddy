@@ -9,6 +9,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 import { Confetti } from "../components/Confetti";
+import { profileApi } from "../services/api";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
@@ -71,8 +72,8 @@ export const GoalsPage: React.FC = () => {
   const [archiving, setArchiving] = useState<string | null>(null);
   // Controlled delete confirmation state (replaces window.confirm)
   const [goalToDelete, setGoalToDelete] = useState<Goal | null>(null);
+  const [currency, setCurrency] = useState<string>("USD");
   const dragCounter = useRef(0);
-  const currency = "USD";
 
   // Separate active and archived goals
   const activeGoals = goals.filter((g) => g.status !== "archived");
@@ -119,6 +120,10 @@ export const GoalsPage: React.FC = () => {
 
   useEffect(() => {
     loadGoals();
+    // Load user's currency preference from profile
+    profileApi.getProfile().then((profile) => {
+      if (profile?.currency) setCurrency(profile.currency);
+    }).catch(() => { /* keep default USD */ });
   }, [loadGoals]);
 
   const handleContribute = async () => {
@@ -395,17 +400,17 @@ export const GoalsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading goals...</p>
+          <p className="mt-4 text-muted-foreground">Loading goals...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Confetti Animation */}
       <Confetti
         active={showConfetti}
@@ -417,13 +422,13 @@ export const GoalsPage: React.FC = () => {
         <div
           role="status"
           aria-live="polite"
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-white border border-green-300 rounded-xl shadow-lg px-6 py-4 flex items-center gap-3 max-w-sm"
+          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-surface border border-green-300 dark:border-green-700 rounded-xl shadow-lg px-6 py-4 flex items-center gap-3 max-w-sm"
         >
           <span className="text-2xl" aria-hidden="true">🎉</span>
-          <p className="text-green-800 font-medium text-sm flex-1">{milestoneMessage}</p>
+          <p className="text-green-800 dark:text-green-300 font-medium text-sm flex-1">{milestoneMessage}</p>
           <button
             onClick={() => setMilestoneMessage(null)}
-            className="text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 rounded"
+            className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 rounded"
             aria-label="Dismiss milestone notification"
           >
             ✕
@@ -432,18 +437,18 @@ export const GoalsPage: React.FC = () => {
       )}
 
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-surface shadow-sm border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate("/budget")}
                 aria-label="Back to Budget"
-                className="text-gray-500 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded"
+                className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 rounded"
               >
                 ← Back
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-foreground">
                 🎯 Savings Goals
               </h1>
             </div>
@@ -461,30 +466,30 @@ export const GoalsPage: React.FC = () => {
       {summary && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="text-sm text-gray-500">Active Goals</div>
-              <div className="text-2xl font-bold text-gray-900">
+            <div className="bg-surface rounded-lg shadow border border-border p-4">
+              <div className="text-sm text-muted-foreground">Active Goals</div>
+              <div className="text-2xl font-bold text-foreground">
                 {summary.activeGoals}
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="text-sm text-gray-500">Total Target</div>
-              <div className="text-2xl font-bold text-gray-900">
+            <div className="bg-surface rounded-lg shadow border border-border p-4">
+              <div className="text-sm text-muted-foreground">Total Target</div>
+              <div className="text-2xl font-bold text-foreground">
                 {formatCurrency(summary.totalTarget, currency)}
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="text-sm text-gray-500">Total Saved</div>
+            <div className="bg-surface rounded-lg shadow border border-border p-4">
+              <div className="text-sm text-muted-foreground">Total Saved</div>
               <div className="text-2xl font-bold text-green-600">
                 {formatCurrency(summary.totalSaved, currency)}
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="text-sm text-gray-500">Overall Progress</div>
+            <div className="bg-surface rounded-lg shadow border border-border p-4">
+              <div className="text-sm text-muted-foreground">Overall Progress</div>
               <div className="text-2xl font-bold text-blue-600">
                 {summary.overallProgress}%
               </div>
-              <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
                 <div
                   className={`h-full ${getProgressColor(summary.overallProgress)} transition-all`}
                   style={{ width: `${summary.overallProgress}%` }}
@@ -498,11 +503,11 @@ export const GoalsPage: React.FC = () => {
       {/* Error Message */}
       {error && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
             {error}
             <button
               onClick={() => setError(null)}
-              className="ml-4 text-red-500 hover:text-red-700"
+              className="ml-4 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-200"
             >
               ✕
             </button>
@@ -513,12 +518,12 @@ export const GoalsPage: React.FC = () => {
       {/* Goals List */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         {activeGoals.length === 0 && archivedGoals.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
+          <div className="bg-surface rounded-lg shadow border border-border p-8 text-center">
             <div className="text-6xl mb-4">🎯</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <h3 className="text-xl font-semibold text-foreground mb-2">
               No goals yet
             </h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-muted-foreground mb-4">
               Create your first savings goal to start tracking your progress
             </p>
             <button
@@ -531,7 +536,7 @@ export const GoalsPage: React.FC = () => {
         ) : (
           <>
             {activeGoals.length > 1 && (
-              <p className="text-sm text-gray-500 mb-4 flex items-center gap-2">
+              <p className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
                 <span className="text-lg" aria-hidden="true">↕️</span>
                 Drag and drop goals to reorder by priority, or use the ↑↓ buttons on each goal.
                 {reordering && (
@@ -550,17 +555,17 @@ export const GoalsPage: React.FC = () => {
                   onDragLeave={handleDragLeave}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, goal)}
-                  className={`bg-white rounded-lg shadow p-6 transition-all duration-200 ${
+                  className={`bg-surface rounded-lg shadow border transition-all duration-200 p-6 ${
                     goal.status === "completed"
-                      ? "border-2 border-green-500"
-                      : ""
+                      ? "border-green-500"
+                      : "border-border"
                   } ${
                     goal.status === "active"
                       ? "cursor-grab active:cursor-grabbing"
                       : ""
                   } ${
                     dragOverGoalId === goal.goalId
-                      ? "border-2 border-blue-500 border-dashed bg-blue-50"
+                      ? "border-blue-500 border-dashed bg-blue-50 dark:bg-blue-950/20"
                       : ""
                   } ${draggedGoal?.goalId === goal.goalId ? "opacity-50" : ""}`}
                 >
@@ -568,7 +573,7 @@ export const GoalsPage: React.FC = () => {
                     <div className="flex items-center gap-3">
                       {goal.status === "active" && (
                         <span
-                          className="text-gray-400 cursor-grab"
+                          className="text-muted-foreground cursor-grab"
                           aria-hidden="true"
                           title="Drag to reorder"
                         >
@@ -577,14 +582,14 @@ export const GoalsPage: React.FC = () => {
                       )}
                       <span className="text-3xl">{goal.icon}</span>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                           {goal.name}
                           <span className="text-xl">
                             {goal.statusIndicator}
                           </span>
                         </h3>
                         {goal.targetDate && (
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-muted-foreground">
                             Target: {formatDate(goal.targetDate)}
                             {goal.daysRemaining !== null && (
                               <span className="ml-2">
@@ -606,7 +611,7 @@ export const GoalsPage: React.FC = () => {
                             onClick={() =>
                               navigate(`/goals/${goal.goalId}/edit`)
                             }
-                            className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                            className="px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
                             aria-label={`Edit goal: ${goal.name}`}
                           >
                             <span aria-hidden="true">✏️</span>
@@ -631,7 +636,7 @@ export const GoalsPage: React.FC = () => {
                         <button
                           onClick={() => handleArchiveGoal(goal, true)}
                           disabled={archiving === goal.goalId}
-                          className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                          className="px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
                           title="Archive goal"
                         >
                           {archiving === goal.goalId ? (
@@ -647,16 +652,16 @@ export const GoalsPage: React.FC = () => {
                   {/* Progress Bar */}
                   <div className="mb-4">
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-600">
+                      <span className="text-muted-foreground">
                         {formatCurrency(goal.currentAmount, currency)} of{" "}
                         {formatCurrency(goal.targetAmount, currency)}
                       </span>
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-semibold text-foreground">
                         {goal.progressPercent}% — {getProgressLabel(goal.progressPercent)}
                       </span>
                     </div>
                     <div
-                      className="h-4 bg-gray-200 rounded-full overflow-hidden"
+                      className="h-4 bg-muted rounded-full overflow-hidden"
                       role="progressbar"
                       aria-valuenow={goal.progressPercent}
                       aria-valuemin={0}
@@ -680,8 +685,8 @@ export const GoalsPage: React.FC = () => {
                           key={milestone}
                           className={`flex-1 text-center py-1 rounded text-xs font-medium ${
                             reached
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-500"
+                              ? "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300"
+                              : "bg-muted text-muted-foreground"
                           }`}
                         >
                           {reached ? "✓" : ""} {milestone}%
@@ -713,7 +718,7 @@ export const GoalsPage: React.FC = () => {
               <div className="mt-8">
                 <button
                   onClick={() => setShowArchived(!showArchived)}
-                  className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4"
                 >
                   <span
                     className={`transition-transform ${showArchived ? "rotate-90" : ""}`}
@@ -730,7 +735,7 @@ export const GoalsPage: React.FC = () => {
                     {archivedGoals.map((goal) => (
                       <div
                         key={goal.goalId}
-                        className="bg-gray-100 rounded-lg shadow p-6 opacity-75"
+                        className="bg-muted rounded-lg shadow border border-border p-6 opacity-75"
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
@@ -738,14 +743,14 @@ export const GoalsPage: React.FC = () => {
                               {goal.icon}
                             </span>
                             <div>
-                              <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                              <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                                 {goal.name}
-                                <span className="text-sm text-gray-500">
+                                <span className="text-sm text-muted-foreground">
                                   📦 Archived
                                 </span>
                               </h3>
                               {goal.completedAt && (
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-muted-foreground">
                                   Completed: {formatDate(goal.completedAt)}
                                 </p>
                               )}
@@ -768,15 +773,15 @@ export const GoalsPage: React.FC = () => {
                         {/* Progress Bar */}
                         <div className="mb-2">
                           <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-500">
+                            <span className="text-sm text-muted-foreground">
                               {formatCurrency(goal.currentAmount, currency)} of{" "}
                               {formatCurrency(goal.targetAmount, currency)}
                             </span>
-                            <span className="font-semibold text-gray-600">
+                            <span className="font-semibold text-muted-foreground">
                               {goal.progressPercent}%
                             </span>
                           </div>
-                          <div className="h-3 bg-gray-300 rounded-full overflow-hidden">
+                          <div className="h-3 bg-border rounded-full overflow-hidden">
                             <div
                               className="h-full bg-gray-500 transition-all duration-500"
                               style={{ width: `${goal.progressPercent}%` }}
@@ -801,16 +806,16 @@ export const GoalsPage: React.FC = () => {
           aria-labelledby="contribute-modal-title"
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
         >
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 id="contribute-modal-title" className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-surface rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 id="contribute-modal-title" className="text-lg font-semibold text-foreground mb-4">
               Add Funds to "{selectedGoal.name}"
             </h3>
             <div className="mb-4">
-              <label htmlFor="contribution-amount" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="contribution-amount" className="block text-sm font-medium text-foreground mb-2">
                 Amount
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-2 text-gray-500" aria-hidden="true">$</span>
+                <span className="absolute left-4 top-2 text-muted-foreground" aria-hidden="true">$</span>
                 <input
                   id="contribution-amount"
                   type="number"
@@ -819,11 +824,11 @@ export const GoalsPage: React.FC = () => {
                   value={contributionAmount}
                   onChange={(e) => setContributionAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-8 pr-4 py-2 border border-border bg-surface text-foreground rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   autoFocus
                 />
               </div>
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-muted-foreground">
                 Current: {formatCurrency(selectedGoal.currentAmount, currency)}{" "}
                 / Target: {formatCurrency(selectedGoal.targetAmount, currency)}
               </p>
@@ -834,7 +839,7 @@ export const GoalsPage: React.FC = () => {
                   setShowContributeModal(false);
                   setSelectedGoal(null);
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
               >
                 Cancel
               </button>
@@ -862,17 +867,17 @@ export const GoalsPage: React.FC = () => {
           aria-labelledby="delete-goal-title"
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
         >
-          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 id="delete-goal-title" className="text-lg font-semibold text-gray-900 mb-2">
+          <div className="bg-surface rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 id="delete-goal-title" className="text-lg font-semibold text-foreground mb-2">
               Delete "{goalToDelete.name}"?
             </h3>
-            <p className="text-gray-600 mb-6 text-sm">
+            <p className="text-muted-foreground mb-6 text-sm">
               This will permanently delete the goal and all its contribution history. This cannot be undone.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setGoalToDelete(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
                 autoFocus
               >
                 Cancel
