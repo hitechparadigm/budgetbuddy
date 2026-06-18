@@ -1,5 +1,13 @@
 # Development Log
 
+## 2026-06-18 - Phase 3 cont. — Budget keyboard shortcuts, product-requirements update (Session 149 cont.)
+
+### Work Completed
+- BudgetPage: keyboard shortcuts T/B/←/→/?/Esc + overlay + ? header button
+- product-requirements.md: Phase 1/2/3 polish sections, 18 new requirements, OverviewPage User Journey
+
+---
+
 ## 2026-06-18 - Phase 3 cont. — Skeleton screens (4 pages), Insights chat bubbles (Session 149 cont.)
 
 ### Work Completed

@@ -33,6 +33,7 @@ import {
   isPastMonth,
 } from "../utils/monthHelpers";
 import { getMockUser } from "../utils/mockAuth";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import {
   calculatePlannedMonthlyAmount,
   getOccurrenceDatesInMonth,
@@ -165,6 +166,54 @@ export const BudgetPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     "summary" | "transactions" | "calendar"
   >("transactions");
+
+  // Keyboard shortcuts help overlay
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+
+  // Budget keyboard shortcuts
+  useKeyboardShortcuts({
+    enabled: !showTransactionModal && !showBudgetItemModal && !showResetModal,
+    shortcuts: [
+      {
+        key: 't',
+        description: 'Add transaction',
+        action: () => {
+          setTransactionType('expense');
+          setTransactionForm({ amount: '', description: '', date: getTodayString(), categoryId: '' });
+          setShowTransactionModal(true);
+        },
+      },
+      {
+        key: 'b',
+        description: 'Add budget item',
+        action: () => openBudgetItemModal('expense', undefined),
+      },
+      {
+        key: 'ArrowLeft',
+        description: 'Previous month',
+        action: () => changeMonth('prev'),
+      },
+      {
+        key: 'ArrowRight',
+        description: 'Next month',
+        action: () => changeMonth('next'),
+      },
+      {
+        key: '?',
+        description: 'Show keyboard shortcuts',
+        action: () => setShowShortcutsHelp(prev => !prev),
+      },
+      {
+        key: 'Escape',
+        description: 'Close modal',
+        action: () => {
+          setShowShortcutsHelp(false);
+          setShowTransactionModal(false);
+          setShowBudgetItemModal(false);
+        },
+      },
+    ],
+  });
 
   // Right sidebar width state
   const [sidebarWidth, setSidebarWidth] = useState(400); // Default 400px (larger than w-80 which is 320px)
@@ -1725,6 +1774,18 @@ export const BudgetPage: React.FC = () => {
                   </>
                 )}
 
+                {/* Keyboard shortcuts help button */}
+                <button
+                  onClick={() => setShowShortcutsHelp(prev => !prev)}
+                  className="p-2 text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
+                  aria-label="Show keyboard shortcuts"
+                  title="Keyboard shortcuts (?)"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+
                 {/* Reset Button - Only show if budget exists */}
                 {budget && (
                   <button
@@ -2656,6 +2717,50 @@ export const BudgetPage: React.FC = () => {
           onScanReceipt={() => setShowReceiptModal(true)}
         />
       </div>
+
+      {/* Keyboard Shortcuts Help Overlay */}
+      {showShortcutsHelp && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setShowShortcutsHelp(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Keyboard shortcuts"
+        >
+          <div
+            className="bg-surface rounded-xl shadow-xl p-6 max-w-sm w-full mx-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-foreground">Keyboard Shortcuts</h3>
+              <button
+                onClick={() => setShowShortcutsHelp(false)}
+                className="text-muted-foreground hover:text-foreground"
+                aria-label="Close shortcuts"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="space-y-2 text-sm">
+              {[
+                { key: 'T', desc: 'Add transaction' },
+                { key: 'B', desc: 'Add budget item' },
+                { key: '←', desc: 'Previous month' },
+                { key: '→', desc: 'Next month' },
+                { key: '?', desc: 'Show/hide shortcuts' },
+                { key: 'Esc', desc: 'Close modal' },
+              ].map(s => (
+                <div key={s.key} className="flex items-center justify-between">
+                  <span className="text-muted-foreground">{s.desc}</span>
+                  <kbd className="px-2 py-0.5 bg-muted text-foreground rounded text-xs font-mono border border-border">
+                    {s.key}
+                  </kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Receipt Scan Modal */}
       {showReceiptModal && (
