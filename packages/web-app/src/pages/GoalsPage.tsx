@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 import { Confetti } from "../components/Confetti";
 import { profileApi } from "../services/api";
-import { PageHeader } from "../components/ui";
+import { PageHeader, EmptyState } from "../components/ui";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
@@ -541,21 +541,13 @@ export const GoalsPage: React.FC = () => {
       {/* Goals List */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         {activeGoals.length === 0 && archivedGoals.length === 0 ? (
-          <div className="bg-surface rounded-lg shadow border border-border p-8 text-center">
-            <div className="text-6xl mb-4">🎯</div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">
-              No goals yet
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first savings goal to start tracking your progress
-            </p>
-            <button
-              onClick={() => navigate("/goals/new")}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              + Create Your First Goal
-            </button>
-          </div>
+          <EmptyState
+            icon="🎯"
+            title="No goals yet"
+            description="Create your first savings goal to start tracking your progress"
+            actionLabel="Create Your First Goal"
+            onAction={() => navigate('/goals/new')}
+          />
         ) : (
           <>
             {activeGoals.length > 1 && (

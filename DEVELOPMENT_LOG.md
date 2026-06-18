@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-18 - Phase 3 P3-T14 — Empty states on Goals, Bills, Debts, Budget (Session 149 cont.)
+
+### Work Completed
+EmptyState component applied to Goals, Bills, Debts, and Budget transaction panels.
+
+---
+
 ## 2026-06-18 - Phase 3 cont. — Budget keyboard shortcuts, product-requirements update (Session 149 cont.)
 
 ### Work Completed

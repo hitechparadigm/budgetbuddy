@@ -39,6 +39,7 @@ import {
   getOccurrenceDatesInMonth,
 } from "@budget-buddy/shared";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
+import { EmptyState } from "../components/ui";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
@@ -2641,23 +2642,18 @@ export const BudgetPage: React.FC = () => {
                       <div className="text-center py-8 text-gray-400">
                         {hasActiveFilters ? (
                           <>
-                            <p className="text-sm">
-                              No transactions match your filters
-                            </p>
-                            <button
-                              onClick={clearFilters}
-                              className="text-xs mt-2 text-blue-600 hover:text-blue-700"
-                            >
-                              Clear all filters
-                            </button>
+                            <EmptyState
+                              title="No transactions match your filters"
+                              description={undefined}
+                              actionLabel="Clear all filters"
+                              onAction={clearFilters}
+                            />
                           </>
                         ) : (
-                          <>
-                            <p className="text-sm">No transactions yet</p>
-                            <p className="text-xs mt-1">
-                              Use the + button to add your first transaction
-                            </p>
-                          </>
+                          <EmptyState
+                            title="No transactions yet"
+                            description="Use the + button to add your first transaction"
+                          />
                         )}
                       </div>
                     )}
