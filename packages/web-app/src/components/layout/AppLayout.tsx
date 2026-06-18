@@ -106,6 +106,22 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
         {/* Page Content */}
         <div className="h-full">{children}</div>
+
+        {/* Mobile app suggestion banner — shown below 768px */}
+        <div className="block sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-[var(--color-primary)] text-white px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-lg shrink-0">📱</span>
+            <p className="text-sm font-medium truncate">
+              Get the BudgetBuddy app for the best mobile experience.
+            </p>
+          </div>
+          <a
+            href="/about"
+            className="shrink-0 text-xs font-semibold bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap"
+          >
+            Learn more
+          </a>
+        </div>
       </main>
     </div>
   );

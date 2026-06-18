@@ -401,6 +401,20 @@ async function askAboutSpending(event, user) {
     question: body.question,
   });
 
+  // Load conversation history for context (last 5 exchanges)
+  let conversationHistory = [];
+  try {
+    const historyResult = await dynamoHelpers.getItem(
+      `USER#${user.userId}`,
+      'AI_CONVERSATION#insights'
+    );
+    if (historyResult && historyResult.exchanges) {
+      conversationHistory = historyResult.exchanges.slice(-5);
+    }
+  } catch (_e) {
+    // Conversation history not available — proceed without it
+  }
+
   // Get recent transactions for context
   const today = new Date();
   const startDate = new Date(today);
@@ -421,9 +435,32 @@ async function askAboutSpending(event, user) {
       summary,
       categoryBreakdown,
       patterns,
+      conversationHistory,
     );
   } else {
     response = generateAIResponse(body.question, summary, categoryBreakdown);
+  }
+
+  // Persist conversation exchange to DynamoDB (non-fatal)
+  try {
+    const newExchange = {
+      question: body.question,
+      answer: response,
+      timestamp: new Date().toISOString(),
+    };
+    const updatedHistory = [...conversationHistory, newExchange].slice(-30); // Keep last 30
+
+    await dynamoHelpers.putItem({
+      PK: `USER#${user.userId}`,
+      SK: 'AI_CONVERSATION#insights',
+      exchanges: updatedHistory,
+      userId: user.userId,
+      updatedAt: new Date().toISOString(),
+      // TTL: 90 days
+      ttl: Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60),
+    });
+  } catch (_e) {
+    logger.warn('Failed to persist conversation history', { userId: user.userId });
   }
 
   return successResponse(
@@ -431,6 +468,7 @@ async function askAboutSpending(event, user) {
       question: body.question,
       answer: response,
       aiPowered: useAI,
+      conversationLength: conversationHistory.length + 1,
       context: {
         period: "30 days",
         transactionCount: transactions.length,
@@ -906,14 +944,22 @@ async function generateAIResponseWithBedrock(
   summary,
   categoryBreakdown,
   patterns = null,
+  conversationHistory = [],
 ) {
   try {
     // Build context for AI
     const context = buildAIContext(summary, categoryBreakdown, patterns);
 
+    // Build conversation history context (last 5 exchanges)
+    const historyContext = conversationHistory.length > 0
+      ? '\n\nPrevious conversation context:\n' + conversationHistory.slice(-5).map(
+          (e) => `User: ${e.question}\nAssistant: ${e.answer}`
+        ).join('\n\n') + '\n'
+      : '';
+
     const prompt = `You are a helpful financial advisor assistant for BudgetBuddy, a personal budgeting app.
 Based on the user's spending data below, answer their question concisely and helpfully.
-Keep your response under 150 words and focus on actionable advice.
+Keep your response under 150 words and focus on actionable advice.${historyContext}
 
 User's Financial Data:
 ${context}
