@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-18 - Fix OverviewPage insights endpoint (Session 149 cont.)
+
+### Bug Fixed
+OverviewPage was calling `/insights/summary` (doesn't exist) — fixed to `/insights/weekly` with correct data extraction.
+
+---
+
 ## 2026-06-18 - Fix OverviewPage crash, CORS errors, wrong default route (Session 149 cont.)
 
 ### Bugs Fixed

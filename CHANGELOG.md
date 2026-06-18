@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.152] - 2026-06-18
+
+### 🐛 fix: OverviewPage — correct insights endpoint (/insights/weekly not /insights/summary)
+
+- `OverviewPage.tsx`: `/insights/summary` endpoint doesn't exist — changed to `/insights/weekly`
+- Extracts the first insight message from weekly insights response
+- Falls back to generated text from `summary.totalSpent` / `summary.savingsRate`
+- Removed unused `WeeklyInsight` interface
+
 ## [1.9.151] - 2026-06-18
 
 ### 🐛 fix: OverviewPage crash + CORS errors + wrong default route

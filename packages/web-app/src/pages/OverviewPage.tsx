@@ -72,11 +72,6 @@ interface NetWorthPoint {
   netWorth: number;
 }
 
-interface WeeklyInsight {
-  summary?: string;
-  highlights?: string[];
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatCurrency(amount: number, currency = 'USD'): string {
@@ -512,21 +507,21 @@ export const OverviewPage: React.FC = () => {
 
   const loadInsight = useCallback(async () => {
     try {
-      // Insights summary is on the extended features API (hkjzroedjf)
+      // Insights weekly is on the extended features API (hkjzroedjf)
       const token = localStorage.getItem('budgetbuddy_id_token');
       if (!token) { setLoadingInsight(false); return; }
-      const res = await fetch(`${config.extendedFeaturesApiUrl}/insights/summary`, {
+      const res = await fetch(`${config.extendedFeaturesApiUrl}/insights/weekly`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const raw = await res.json();
         const data = raw?.data ?? raw;
-        const insight: WeeklyInsight = data;
-        setAiInsight(
-          insight?.summary ||
-          (insight?.highlights && insight.highlights[0]) ||
-          null
-        );
+        // Extract the first highlight from weekly insights
+        const insightText = data?.insights?.[0]?.message ||
+          (data?.summary?.totalSpent != null
+            ? `This week you spent $${(data.summary.totalSpent ?? 0).toFixed(0)}. Savings rate: ${((data.summary.savingsRate ?? 0)).toFixed(1)}%.`
+            : null);
+        setAiInsight(insightText);
       }
     } catch {
       // silent
