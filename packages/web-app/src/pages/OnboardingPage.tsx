@@ -62,11 +62,8 @@ export const OnboardingPage: React.FC = () => {
 
   /** Called when the user clicks Continue on the budget-type step. */
   const handleBudgetTypeNext = () => {
-    if (selectedBudgetType === "family") {
-      setShowFamilyDisclosure(true);
-    } else {
-      setPageStep("budget-setup");
-    }
+    // No separate disclosure modal — family budget info is shown inline
+    setPageStep("budget-setup");
   };
 
   /** Called when the user confirms the Family Budget disclosure. */
@@ -131,8 +128,8 @@ export const OnboardingPage: React.FC = () => {
         });
       }
 
-      // Navigate to budget page
-      navigate("/budget");
+      // Navigate to overview page (the default dashboard)
+      navigate("/overview");
     } catch (error) {
       console.error("OnboardingPage: Error completing onboarding:", error);
 
@@ -233,39 +230,47 @@ export const OnboardingPage: React.FC = () => {
         </div>
       )}
 
-      {/* Step 1: Budget type selection */}
+      {/* Step 1: Budget type selection — inline descriptions, no extra modal */}
       {pageStep === "budget-type" && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
-            {/* Header */}
-            <div className="p-6 border-b">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Welcome to BudgetBuddy! 🎉
-                </h2>
-                <button
-                  onClick={handleSkip}
-                  className="text-gray-500 hover:text-gray-700 text-sm"
-                >
-                  Skip for now
-                </button>
+        <div className="min-h-screen bg-gradient-to-br from-[var(--color-primary)]/5 to-transparent flex items-center justify-center px-4 py-12">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4 overflow-hidden">
+            {/* Step progress indicator */}
+            <div className="bg-[var(--color-primary)]/8 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4].map((s) => (
+                  <div key={s} className="flex items-center gap-1">
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                        s === 1
+                          ? 'bg-[var(--color-primary)] text-white'
+                          : 'bg-gray-200 text-gray-500'
+                      }`}
+                    >
+                      {s}
+                    </div>
+                    {s < 4 && <div className="w-6 h-0.5 bg-gray-200" aria-hidden="true" />}
+                  </div>
+                ))}
               </div>
-              <p className="text-gray-600 mt-2">
-                Let's set up your budget with personalized suggestions
-              </p>
+              <button
+                onClick={handleSkip}
+                className="text-gray-500 hover:text-gray-700 text-sm"
+              >
+                Skip
+              </button>
             </div>
 
-            <div className="p-6">
-              <h3 id="budget-type-label" className="text-xl font-semibold text-gray-900 mb-2">
-                What kind of budget are you creating?
-              </h3>
-              <p className="text-gray-600 text-sm mb-6">
-                Choose the option that best fits your household.
+            <div className="p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                Who are you budgeting for?
+              </h2>
+              <p className="text-gray-500 text-sm mb-6">
+                Choose the option that best fits your household. You can change this later.
               </p>
 
               <div
                 role="radiogroup"
-                aria-labelledby="budget-type-label"
+                aria-label="Budget type"
                 className="space-y-3"
               >
                 {BUDGET_TYPE_OPTIONS.map((option) => (
@@ -274,38 +279,50 @@ export const OnboardingPage: React.FC = () => {
                     role="radio"
                     aria-checked={selectedBudgetType === option.value}
                     onClick={() => setSelectedBudgetType(option.value)}
-                    className={`w-full text-left p-4 rounded-lg border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 ${
+                    className={`w-full text-left p-4 rounded-xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
                       selectedBudgetType === option.value
-                        ? "border-green-500 bg-green-50"
-                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <option.icon className="w-6 h-6 text-[var(--color-primary)] shrink-0" aria-hidden="true" />
-                      <div>
-                        <div className="font-semibold text-gray-900">
-                          {option.label}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          — {option.description}
-                        </div>
+                    <div className="flex items-start gap-3">
+                      <option.icon
+                        className={`w-6 h-6 shrink-0 mt-0.5 ${
+                          selectedBudgetType === option.value
+                            ? 'text-[var(--color-primary)]'
+                            : 'text-gray-400'
+                        }`}
+                        aria-hidden="true"
+                      />
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-900">{option.label}</div>
+                        <div className="text-sm text-gray-500 mt-0.5">{option.description}</div>
+                        {/* Show transparency note inline — no extra modal needed */}
+                        {option.value === 'family' && (
+                          <p className="text-xs text-[var(--color-primary)] mt-1.5 leading-relaxed">
+                            Both partners will see all income, expenses, accounts, and goals. Fully shared.
+                          </p>
+                        )}
+                        {option.value === 'shared' && (
+                          <p className="text-xs text-blue-600 mt-1.5">
+                            Great for roommates splitting household expenses.
+                          </p>
+                        )}
                       </div>
                       {selectedBudgetType === option.value && (
-                        <span className="ml-auto text-green-500 text-xl" aria-hidden="true">✓</span>
+                        <span className="text-[var(--color-primary)] text-xl shrink-0" aria-hidden="true">✓</span>
                       )}
                     </div>
                   </button>
                 ))}
               </div>
 
-              <div className="mt-8 flex justify-end">
-                <button
-                  onClick={handleBudgetTypeNext}
-                  className="bg-green-500 text-white px-8 py-2 rounded-lg hover:bg-green-600 font-medium"
-                >
-                  Continue
-                </button>
-              </div>
+              <button
+                onClick={handleBudgetTypeNext}
+                className="mt-8 w-full bg-[var(--color-primary)] text-white py-3 rounded-xl hover:bg-[var(--color-primary-hover)] font-semibold text-sm transition-colors"
+              >
+                Continue — Step 2 of 4
+              </button>
             </div>
           </div>
         </div>

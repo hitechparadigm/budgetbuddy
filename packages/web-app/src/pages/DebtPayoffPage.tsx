@@ -66,6 +66,8 @@ export default function DebtPayoffPage() {
   const [error, setError] = useState<string | null>(null);
   const [strategy, setStrategy] = useState<Strategy>("snowball");
   const [extraPayment, setExtraPayment] = useState(0);
+  const [paymentDebt, setPaymentDebt] = useState<Debt | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
   const currency = "USD";
 
   const loadDebts = useCallback(async () => {
@@ -354,19 +356,39 @@ export default function DebtPayoffPage() {
               </div>
               {payoffPlan.debtOrder.length > 0 && (
                 <div className="mt-4 pt-4 border-t">
-                  <p className="text-sm font-medium mb-2">Payoff Order:</p>
-                  <ol className="text-sm space-y-1">
-                    {payoffPlan.debtOrder.map((debt, idx) => (
-                      <li key={debt.debtId} className="flex justify-between">
-                        <span>
-                          {idx + 1}. {debt.name}
-                        </span>
-                        <span className="text-gray-500">
-                          Month {debt.paidOffMonth}
-                        </span>
-                      </li>
-                    ))}
-                  </ol>
+                  <p className="text-sm font-medium mb-3">Payoff Order — Horizontal Timeline</p>
+                  {/* Visual horizontal timeline */}
+                  <div className="relative">
+                    <div className="absolute top-3.5 left-0 right-0 h-0.5 bg-gray-200" aria-hidden="true" />
+                    <div className="flex justify-between relative">
+                      {payoffPlan.debtOrder.map((debt) => {
+                        const debtType = debts.find(d => d.debtId === debt.debtId)?.type ?? '';
+                        const dotColor = debtType === 'mortgage'
+                          ? 'bg-blue-600'
+                          : debtType === 'credit_card'
+                          ? 'bg-red-500'
+                          : debtType === 'auto_loan'
+                          ? 'bg-gray-500'
+                          : 'bg-purple-500';
+                        return (
+                          <div key={debt.debtId} className="flex flex-col items-center" style={{ width: `${(1 / payoffPlan.debtOrder.length) * 100}%` }}>
+                            <div className={`w-4 h-4 rounded-full ${dotColor} border-2 border-white shadow z-10 relative`} title={`${debt.name} — Month ${debt.paidOffMonth}`} />
+                            <p className="text-xs text-gray-600 mt-1 text-center leading-tight max-w-[60px]">
+                              {debt.name.length > 10 ? `${debt.name.slice(0, 8)}…` : debt.name}
+                            </p>
+                            <p className="text-xs text-gray-400">Mo. {debt.paidOffMonth}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-gray-500">
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" /> Mortgage</span>
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> Credit Card</span>
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-gray-500 inline-block" /> Auto</span>
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block" /> Other</span>
+                  </div>
                 </div>
               )}
             </div>
@@ -443,10 +465,8 @@ export default function DebtPayoffPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      const amount = prompt("Enter payment amount:");
-                      if (amount && !isNaN(parseFloat(amount))) {
-                        recordPayment(debt.debtId, parseFloat(amount));
-                      }
+                      setPaymentDebt(debt);
+                      setPaymentAmount(String(debt.minimumPayment));
                     }}
                     className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
                   >
@@ -464,6 +484,59 @@ export default function DebtPayoffPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Payment modal — replaces window.prompt */}
+      {paymentDebt && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="payment-modal-title"
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        >
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm mx-4 w-full">
+            <h3 id="payment-modal-title" className="font-semibold text-gray-900 mb-1">
+              Record Payment
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {paymentDebt.name} — current balance {formatCurrency(paymentDebt.currentBalance)}
+            </p>
+            <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="payment-amount">
+              Amount
+            </label>
+            <input
+              id="payment-amount"
+              type="number"
+              min="1"
+              step="0.01"
+              value={paymentAmount}
+              onChange={e => setPaymentAmount(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={async () => {
+                  const amount = parseFloat(paymentAmount);
+                  if (!isNaN(amount) && amount > 0) {
+                    await recordPayment(paymentDebt.debtId, amount);
+                  }
+                  setPaymentDebt(null);
+                  setPaymentAmount('');
+                }}
+                className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+              >
+                Record Payment
+              </button>
+              <button
+                onClick={() => { setPaymentDebt(null); setPaymentAmount(''); }}
+                className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

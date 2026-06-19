@@ -595,6 +595,13 @@ export class ApiStack extends cdk.Stack {
       operationName: 'GetCurrentBudget',
     });
 
+    // Budget Health Score endpoint (P4-T12)
+    const budgetHealthScoreResource = budgetResource.addResource('health-score');
+    budgetHealthScoreResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
+      authorizer,
+      operationName: 'GetBudgetHealthScore',
+    });
+
     // Budget by ID endpoint
     const budgetIdResource = budgetResource.addResource('{budgetId}');
     budgetIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetHandler), {

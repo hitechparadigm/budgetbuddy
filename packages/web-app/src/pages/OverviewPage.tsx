@@ -28,7 +28,7 @@ import {
   ArrowDownRight,
   DollarSign,
 } from 'lucide-react';
-import { PageHeader, StatCard, Badge, Skeleton, SkeletonCard, PremiumGate } from '../components/ui';
+import { PageHeader, StatCard, Badge, Skeleton, SkeletonCard } from '../components/ui';
 import { Button } from '../components/ui';
 import { apiClient } from '../utils/apiClient';
 import { config } from '../config/environment';
@@ -455,7 +455,80 @@ const QuickAddTransaction: React.FC<{
   );
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+/** Budget Health Score ring with components breakdown */
+const BudgetHealthScore: React.FC<{ month: string }> = ({ month }) => {
+  const [data, setData] = React.useState<{
+    score: number;
+    delta: number | null;
+    interpretation: string;
+    components: { savingsRate: number; adherence: number; goalProgress: number };
+  } | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const load = async () => {
+      try {
+        const raw = await apiClient.get(`/budget/health-score?month=${month}`);
+        const d = raw?.data ?? raw;
+        if (d?.score != null) setData(d);
+      } catch {
+        // silent — section is optional
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [month]);
+
+  if (loading) return <Skeleton className="h-24 w-full rounded-xl" />;
+  if (!data) return null;
+
+  const size = 80;
+  const stroke = 8;
+  const radius = (size - stroke) / 2;
+  const circ = 2 * Math.PI * radius;
+  const offset = circ - (data.score / 100) * circ;
+  const color = data.score >= 80 ? '#22c55e' : data.score >= 60 ? '#3b82f6' : data.score >= 40 ? '#f59e0b' : '#ef4444';
+
+  return (
+    <div className="card p-5 flex items-center gap-6">
+      {/* SVG ring */}
+      <div className="shrink-0 relative" aria-hidden="true">
+        <svg width={size} height={size} className="rotate-[-90deg]">
+          <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-[var(--color-muted)]" />
+          <circle cx={size/2} cy={size/2} r={radius} fill="none" stroke={color} strokeWidth={stroke} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xl font-bold tabular-nums" style={{ color }}>{data.score}</span>
+        </div>
+      </div>
+      {/* Details */}
+      <div className="flex-1">
+        <div className="flex items-baseline gap-2 mb-1 flex-wrap">
+          <h2 className="text-sm font-medium text-[var(--color-muted-foreground)]">Budget Health Score</h2>
+          <span className="text-xs font-semibold" style={{ color }}>{data.interpretation}</span>
+          {data.delta != null && (
+            <Badge variant={data.delta >= 0 ? 'success' : 'danger'}>
+              {data.delta >= 0 ? '+' : ''}{data.delta} from last month
+            </Badge>
+          )}
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Savings rate', value: data.components.savingsRate },
+            { label: 'Adherence', value: data.components.adherence },
+            { label: 'Goal progress', value: data.components.goalProgress },
+          ].map((c) => (
+            <div key={c.label}>
+              <p className="text-xs text-[var(--color-muted-foreground)]">{c.label}</p>
+              <p className="text-sm font-semibold tabular-nums">{c.value}%</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate();
@@ -739,12 +812,9 @@ export const OverviewPage: React.FC = () => {
         />
       </div>
 
-      {/* Budget Health Score — Premium gate */}
-      <PremiumGate
-        feature="Budget Health Score"
-        description="A single score (0–100) showing your savings rate, budget adherence, and goal progress. See month-over-month history."
-        blurChildren={false}
-      />
+      {/* Budget Health Score — real data with premium gate for history */}
+      <BudgetHealthScore month={currentMonth} />
+
 
       {/* Quick Add */}
       <QuickAddTransaction />

@@ -97,6 +97,10 @@ exports.handler = async (event, context) => {
       return await getCurrentBudget(event, user);
     }
 
+    if (httpMethod === "GET" && path === "/budget/health-score") {
+      return await getBudgetHealthScore(event, user);
+    }
+
     if (httpMethod === "GET" && pathParameters && pathParameters.budgetId) {
       return await getBudget(event, user, pathParameters.budgetId);
     }
@@ -1308,4 +1312,122 @@ function getPreviousMonth(month) {
   const date = new Date(month + "-01");
   date.setMonth(date.getMonth() - 1);
   return date.toISOString().substring(0, 7);
+}
+
+/**
+ * Budget Health Score — composite wellness metric
+ *
+ * Formula: (savings_rate × 0.4) + (budget_adherence × 0.4) + (goal_progress × 0.2)
+ * All inputs normalised 0–100; output rounded to nearest integer.
+ *
+ * GET /budget/health-score
+ */
+async function getBudgetHealthScore(event, user) {
+  const { userId } = user;
+
+  const { budgetId } = await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+
+  const month = event.queryStringParameters?.month ||
+    new Date().toISOString().substring(0, 7);
+
+  const budget = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, `PERIOD#${month}`);
+
+  if (!budget) {
+    return successResponse({ score: null, components: null }, 'No budget for this month');
+  }
+
+  const groups = budget.groups || {};
+  const totals = calculateBudgetTotals(groups);
+
+  // ── savings rate (0–100) ─────────────────────────────────────────
+  // savings_rate = totalSavings / totalIncome (capped at 100%)
+  const savingsRateRaw = totals.totalIncome > 0
+    ? (totals.totalSavings / totals.totalIncome) * 100
+    : 0;
+  const savingsRate = Math.min(savingsRateRaw, 100);
+
+  // ── budget adherence (0–100) ──────────────────────────────────────
+  // Perfect adherence = all expense categories spent ≤ planned
+  let totalPlannedExpenses = 0;
+  let totalOverspend = 0;
+  if (groups.expenses) {
+    groups.expenses.forEach(group => {
+      (group.categories || []).forEach(cat => {
+        const planned = cat.plannedAmount || 0;
+        const spent = cat.spentAmount || 0;
+        totalPlannedExpenses += planned;
+        if (spent > planned) totalOverspend += (spent - planned);
+      });
+    });
+  }
+  const adherenceRaw = totalPlannedExpenses > 0
+    ? Math.max(0, (1 - totalOverspend / totalPlannedExpenses) * 100)
+    : 100; // no expenses = perfect by default
+  const adherence = Math.min(adherenceRaw, 100);
+
+  // ── goal progress (0–100) ────────────────────────────────────────
+  // Average progress across active goals
+  let goalScore = 50; // default if no goals
+  try {
+    const goalItems = await dynamoHelpers.queryByPrefix(`BUDGET#${budgetId}`, 'GOAL#');
+    const activeGoals = (goalItems || []).filter(g =>
+      g.status === 'active' && g.targetAmount > 0
+    );
+    if (activeGoals.length > 0) {
+      const avgProgress = activeGoals.reduce((sum, g) => {
+        return sum + Math.min((g.currentAmount / g.targetAmount) * 100, 100);
+      }, 0) / activeGoals.length;
+      goalScore = avgProgress;
+    }
+  } catch (_e) {
+    // Goals unavailable — use default
+  }
+
+  // ── composite score ──────────────────────────────────────────────
+  const score = Math.round(
+    (savingsRate * 0.4) + (adherence * 0.4) + (goalScore * 0.2)
+  );
+
+  // ── previous month for delta ──────────────────────────────────────
+  const prevMonth = getPreviousMonth(month);
+  let previousScore = null;
+  try {
+    const prevBudget = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, `PERIOD#${prevMonth}`);
+    if (prevBudget) {
+      const prevTotals = calculateBudgetTotals(prevBudget.groups || {});
+      const prevSavings = prevTotals.totalIncome > 0
+        ? Math.min((prevTotals.totalSavings / prevTotals.totalIncome) * 100, 100)
+        : 0;
+      let prevTotalPlanned = 0, prevTotalOver = 0;
+      if (prevBudget.groups?.expenses) {
+        prevBudget.groups.expenses.forEach(g => {
+          (g.categories || []).forEach(c => {
+            prevTotalPlanned += c.plannedAmount || 0;
+            if ((c.spentAmount || 0) > (c.plannedAmount || 0)) {
+              prevTotalOver += (c.spentAmount - c.plannedAmount);
+            }
+          });
+        });
+      }
+      const prevAdherence = prevTotalPlanned > 0
+        ? Math.max(0, (1 - prevTotalOver / prevTotalPlanned) * 100)
+        : 100;
+      previousScore = Math.round((prevSavings * 0.4) + (prevAdherence * 0.4) + (50 * 0.2));
+    }
+  } catch (_e) {
+    // Previous month unavailable
+  }
+
+  return successResponse({
+    score,
+    previousScore,
+    delta: previousScore !== null ? score - previousScore : null,
+    month,
+    components: {
+      savingsRate: Math.round(savingsRate),
+      adherence: Math.round(adherence),
+      goalProgress: Math.round(goalScore),
+    },
+    interpretation: score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : score >= 40 ? 'Fair' : 'Needs work',
+  }, 'Budget health score calculated');
 }
