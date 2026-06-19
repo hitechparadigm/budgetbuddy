@@ -1,5 +1,14 @@
 # Development Log
 
+## 2026-06-19 - Deploy net-worth Lambda to features API, fix CORS (Session 150)
+
+### Bugs Fixed
+- Net-worth Lambda was never in any CDK stack — added to `api-features-stack.ts` with all routes
+- `netWorthApi.ts` now uses `featuresApiUrl` (where it's deployed)
+- `OverviewPage.tsx` net-worth history uses `featuresApiUrl`
+
+---
+
 ## 2026-06-18 - Fix OverviewPage insights endpoint (Session 149 cont.)
 
 ### Bug Fixed

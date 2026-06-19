@@ -298,6 +298,15 @@ export class ApiFeaturesStack extends cdk.Stack {
       description: 'BudgetBuddy credit score handler for credit monitoring, score tracking, and improvement tips',
     });
 
+    // Net Worth Lambda
+    this.functions.netWorthHandler = new lambda.Function(this, 'NetWorthHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-net-worth',
+      code: lambda.Code.fromAsset('../backend/functions/net-worth'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy net worth handler for assets, liabilities, and history tracking',
+    });
+
     // Email Lambda
     this.functions.emailHandler = new lambda.Function(this, 'EmailHandler', {
       ...commonProps,
@@ -349,6 +358,9 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Transaction Categorization Rules routes
     this.setupRulesRoutes(authorizer);
+
+    // Net Worth routes
+    this.setupNetWorthRoutes(authorizer);
 
     // Debt Payoff routes
     this.setupDebtPayoffRoutes(authorizer);
@@ -782,6 +794,77 @@ export class ApiFeaturesStack extends cdk.Stack {
     ruleIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.rulesHandler), {
       authorizer,
       operationName: 'DeleteRule',
+    });
+  }
+
+  private setupNetWorthRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const netWorthResource = this.api.root.addResource('net-worth');
+
+    netWorthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer,
+      operationName: 'GetNetWorth',
+    });
+
+    const netWorthHealthResource = netWorthResource.addResource('health');
+    netWorthHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'NetWorthHealthCheck',
+    });
+
+    const netWorthSummaryResource = netWorthResource.addResource('summary');
+    netWorthSummaryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer,
+      operationName: 'GetNetWorthSummary',
+    });
+
+    const netWorthHistoryResource = netWorthResource.addResource('history');
+    netWorthHistoryResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer,
+      operationName: 'GetNetWorthHistory',
+    });
+
+    const netWorthAssetsResource = netWorthResource.addResource('assets');
+    netWorthAssetsResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer, operationName: 'GetAssets',
+    });
+    netWorthAssetsResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer, operationName: 'CreateAsset',
+    });
+
+    const netWorthAssetIdResource = netWorthAssetsResource.addResource('{assetId}');
+    netWorthAssetIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer, operationName: 'UpdateAsset',
+    });
+    netWorthAssetIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer, operationName: 'DeleteAsset',
+    });
+
+    const netWorthLiabilitiesResource = netWorthResource.addResource('liabilities');
+    netWorthLiabilitiesResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer, operationName: 'GetLiabilities',
+    });
+    netWorthLiabilitiesResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer, operationName: 'CreateLiability',
+    });
+
+    const netWorthLiabilityIdResource = netWorthLiabilitiesResource.addResource('{liabilityId}');
+    netWorthLiabilityIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer, operationName: 'UpdateLiability',
+    });
+    netWorthLiabilityIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer, operationName: 'DeleteLiability',
+    });
+
+    const netWorthCategoriesResource = netWorthResource.addResource('categories');
+    netWorthCategoriesResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'GetNetWorthCategories',
+    });
+
+    const netWorthAllocationResource = netWorthResource.addResource('allocation');
+    netWorthAllocationResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), {
+      authorizer,
+      operationName: 'GetNetWorthAllocation',
     });
   }
 

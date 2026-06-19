@@ -1,6 +1,19 @@
 # Changelog
 
-## [1.9.152] - 2026-06-18
+## [1.9.153] - 2026-06-19
+
+### 🐛 fix: Net-worth Lambda deployed to features API, OverviewPage net-worth CORS fixed
+
+#### Net-Worth CDK Deployment (was missing from all stacks)
+- Added `NetWorthHandler` Lambda to `api-features-stack.ts` with full route setup
+- Routes: GET `/net-worth`, `/net-worth/summary`, `/net-worth/history`, `/net-worth/assets`, `/net-worth/liabilities`, `/net-worth/categories`, `/net-worth/allocation` + CRUD sub-resources
+- DynamoDB access granted automatically via `Object.values(this.functions)` grant loop
+
+#### API URL Corrections
+- `netWorthApi.ts`: changed from `config.apiBaseUrl` → `config.featuresApiUrl` (now deployed there)
+- `OverviewPage.tsx`: net-worth history now calls `config.featuresApiUrl` consistently
+
+## [1.9.152] - 2026-06-19
 
 ### 🐛 fix: OverviewPage — correct insights endpoint (/insights/weekly not /insights/summary)
 

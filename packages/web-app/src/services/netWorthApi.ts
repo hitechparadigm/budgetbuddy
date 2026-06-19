@@ -7,7 +7,7 @@
 
 import { config } from '../config/environment';
 
-const MAIN_API_BASE = config.apiBaseUrl;
+const MAIN_API_BASE = config.featuresApiUrl;
 
 // Get token from localStorage
 function getToken(): string | null {

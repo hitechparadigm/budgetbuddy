@@ -487,7 +487,7 @@ export const OverviewPage: React.FC = () => {
 
   const loadNetWorth = useCallback(async () => {
     try {
-      // Net-worth Lambda is on the features API (0poeu07vth)
+      // Net-worth is now on the features API (0poeu07vth)
       const token = localStorage.getItem('budgetbuddy_id_token');
       if (!token) { setLoadingNetWorth(false); return; }
       const res = await fetch(`${config.featuresApiUrl}/net-worth/history?months=6`, {
