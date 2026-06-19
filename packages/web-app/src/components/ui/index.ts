@@ -26,5 +26,7 @@ export type { StatCardProps, TrendDirection } from './StatCard';
 export { PremiumGate, PremiumBadge } from './PremiumGate';
 export type { PremiumGateProps } from './PremiumGate';
 
+export { ErrorState } from './ErrorState';
+
 // Also export EmptyState from components root via this barrel
 export { EmptyState } from '../EmptyState';

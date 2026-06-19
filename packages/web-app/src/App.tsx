@@ -43,6 +43,7 @@ import { LandingPage } from "./pages/LandingPage";
 import { NetWorthPage } from "./pages/NetWorthPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { OverviewPage } from "./pages/OverviewPage";
+import PricingPage from "./pages/PricingPage";
 
 const App: React.FC = () => {
   return (
@@ -279,6 +280,8 @@ const App: React.FC = () => {
                   <Route path="/terms" element={<TermsOfServicePage />} />
                   {/* Privacy Policy Page */}
                   <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                  {/* Pricing Page */}
+                  <Route path="/pricing" element={<PricingPage />} />
                   {/* Landing page for unauthenticated users, redirect to budget for authenticated */}
                   <Route path="/" element={<LandingPage />} />
                   {/* Catch all - show 404 page */}

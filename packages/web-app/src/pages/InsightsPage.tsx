@@ -4,16 +4,16 @@
  * Displays financial insights, spending trends, and analytics.
  * Features:
  * - Weekly insight card with AI-generated insights
- * - AI-powered "Ask about spending" feature
+ * - AI financial coach ("Ask your AI coach") with chat bubble UI
  * - Spending pattern analysis (day of week, time of month)
- * - Spending trend chart (6-month view)
+ * - Spending trend chart (recharts, lazy-loaded, 6 or 12-month view with category filter)
  * - Category breakdown with comparisons
  * - Month-over-month analysis
  *
  * **Validates: Requirement 39.1, 39.3, 39.4, 39.8, 39.9**
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   insightsApi,
@@ -21,7 +21,10 @@ import {
   TrendsResponse,
   PatternsResponse,
 } from "../services/insightsApi";
-import { PageHeader, PremiumBadge } from "../components/ui";
+import { PageHeader, PremiumBadge, Skeleton } from "../components/ui";
+
+// Lazy-load recharts — only needed on this page
+const LazyTrendChart = lazy(() => import("../components/InsightsTrendChart"));
 
 export const InsightsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -311,7 +314,7 @@ export const InsightsPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="text-2xl">🤖</span>
               <h2 className="text-lg font-semibold text-gray-900">
-                Ask About Your Spending
+                Ask Your AI Coach
               </h2>
               <PremiumBadge feature="AI Coach with memory" /></div>
             <button
@@ -541,14 +544,14 @@ export const InsightsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Spending Trends Chart */}
+        {/* Spending Trends Chart — recharts (lazy loaded) */}
         {trends && (
           <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <h2 className="text-lg font-semibold text-gray-900">
                 Spending Trends
               </h2>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setSelectedPeriod("6")}
                   className={`px-3 py-1 rounded-lg text-sm ${
@@ -572,116 +575,14 @@ export const InsightsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Simple Line Chart */}
-            <div className="relative h-64">
-              <svg
-                className="w-full h-full"
-                viewBox="0 0 800 250"
-                preserveAspectRatio="none"
-              >
-                {/* Grid lines */}
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <line
-                    key={i}
-                    x1="0"
-                    y1={i * 50}
-                    x2="800"
-                    y2={i * 50}
-                    stroke="#e5e7eb"
-                    strokeWidth="1"
-                  />
-                ))}
-
-                {/* Spending line */}
-                {trends.spending.length > 1 && (
-                  <polyline
-                    points={trends.spending
-                      .map((value, i) => {
-                        const x = (i / (trends.spending.length - 1)) * 800;
-                        const maxValue = Math.max(...trends.spending);
-                        const y = 250 - (value / maxValue) * 200;
-                        return `${x},${y}`;
-                      })
-                      .join(" ")}
-                    fill="none"
-                    stroke="#3b82f6"
-                    strokeWidth="3"
-                  />
-                )}
-
-                {/* Income line */}
-                {trends.income.length > 1 && (
-                  <polyline
-                    points={trends.income
-                      .map((value, i) => {
-                        const x = (i / (trends.income.length - 1)) * 800;
-                        const maxValue = Math.max(...trends.income);
-                        const y = 250 - (value / maxValue) * 200;
-                        return `${x},${y}`;
-                      })
-                      .join(" ")}
-                    fill="none"
-                    stroke="#10b981"
-                    strokeWidth="3"
-                    strokeDasharray="5,5"
-                  />
-                )}
-              </svg>
-
-              {/* Month labels */}
-              <div className="flex justify-between mt-2 text-xs text-gray-600">
-                {trends.months.map((month, i) => (
-                  <span key={i}>{month}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* Legend */}
-            <div className="flex gap-6 mt-4 justify-center">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-1 bg-blue-600"></div>
-                <span className="text-sm text-gray-600">Spending</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-4 h-1 bg-green-600"
-                  style={{ borderTop: "1px dashed" }}
-                ></div>
-                <span className="text-sm text-gray-600">Income</span>
-              </div>
-            </div>
-
-            {/* Trend Analysis */}
-            {trends.analysis && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Spending Trend:</span>
-                    <span
-                      className={`ml-2 font-medium ${
-                        trends.analysis.spendingTrend === "increasing"
-                          ? "text-red-600"
-                          : trends.analysis.spendingTrend === "decreasing"
-                            ? "text-green-600"
-                            : "text-gray-600"
-                      }`}
-                    >
-                      {trends.analysis.spendingTrend === "increasing"
-                        ? "📈 Increasing"
-                        : trends.analysis.spendingTrend === "decreasing"
-                          ? "📉 Decreasing"
-                          : "➡️ Stable"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Average Spending:</span>
-                    <span className="ml-2 font-medium text-gray-900">
-                      {formatCurrency(trends.analysis.averageSpending)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
+            <Suspense fallback={<Skeleton className="h-64 w-full rounded-lg" />}>
+              <LazyTrendChart
+                months={trends.months}
+                spending={trends.spending}
+                income={trends.income}
+                analysis={trends.analysis}
+              />
+            </Suspense>
           </div>
         )}
 

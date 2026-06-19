@@ -1,7 +1,7 @@
 /**
  * Goals Page - Savings Goals Dashboard
  *
- * Displays savings goals with progress bars, contribution tracking,
+ * Displays savings goals with progress rings, contribution tracking,
  * milestone celebrations, and drag-and-drop reordering.
  */
 
@@ -11,6 +11,66 @@ import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 import { Confetti } from "../components/Confetti";
 import { profileApi } from "../services/api";
 import { PageHeader, EmptyState } from "../components/ui";
+import { Plus, PenLine, Trash2, Archive, ArchiveRestore } from "lucide-react";
+
+/** SVG circular progress ring for goal cards */
+const ProgressRing: React.FC<{
+  percent: number;
+  size?: number;
+  stroke?: number;
+  color?: string;
+}> = ({ percent, size = 72, stroke = 7, color }) => {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clampedPct = Math.min(Math.max(percent, 0), 100);
+  const offset = circumference - (clampedPct / 100) * circumference;
+
+  const ringColor =
+    color ??
+    (clampedPct >= 100
+      ? '#22c55e'
+      : clampedPct >= 75
+      ? '#3b82f6'
+      : clampedPct >= 50
+      ? '#f59e0b'
+      : clampedPct >= 25
+      ? '#f97316'
+      : '#9ca3af');
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      aria-hidden="true"
+      className="rotate-[-90deg]"
+    >
+      {/* Track */}
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={stroke}
+        className="text-[var(--color-muted)]"
+      />
+      {/* Progress */}
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke={ringColor}
+        strokeWidth={stroke}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+      />
+    </svg>
+  );
+};
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
@@ -381,15 +441,6 @@ export const GoalsPage: React.FC = () => {
     return "bg-gray-400";
   };
 
-  /** Text label for progress tier — supplements color so it's not the only signal */
-  const getProgressLabel = (percent: number) => {
-    if (percent >= 100) return "Complete";
-    if (percent >= 75) return "Almost there";
-    if (percent >= 50) return "Halfway";
-    if (percent >= 25) return "Getting started";
-    return "Just begun";
-  };
-
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", {
@@ -538,7 +589,7 @@ export const GoalsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Goals List */}
+      {/* Goals Card Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         {activeGoals.length === 0 && archivedGoals.length === 0 ? (
           <EmptyState
@@ -550,16 +601,13 @@ export const GoalsPage: React.FC = () => {
           />
         ) : (
           <>
-            {activeGoals.length > 1 && (
-              <p className="text-sm text-muted-foreground mb-4 flex items-center gap-2">
-                <span className="text-lg" aria-hidden="true">↕️</span>
-                Drag and drop goals to reorder by priority, or use the ↑↓ buttons on each goal.
-                {reordering && (
-                  <span className="ml-2 text-blue-600">Saving...</span>
-                )}
+            {activeGoals.length > 1 && reordering && (
+              <p className="text-sm text-muted-foreground mb-4">
+                <span className="ml-2 text-[var(--color-primary)]">Saving order...</span>
               </p>
             )}
-            <div className="space-y-4">
+            {/* Card grid — 1 col mobile, 2 col tablet, 3 col desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {activeGoals.map((goal) => (
                 <div
                   key={goal.goalId}
@@ -570,160 +618,145 @@ export const GoalsPage: React.FC = () => {
                   onDragLeave={handleDragLeave}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, goal)}
-                  className={`bg-surface rounded-lg shadow border transition-all duration-200 p-6 ${
-                    goal.status === "completed"
-                      ? "border-green-500"
-                      : "border-border"
-                  } ${
-                    goal.status === "active"
-                      ? "cursor-grab active:cursor-grabbing"
-                      : ""
+                  className={`bg-surface rounded-xl shadow border transition-all duration-200 p-5 flex flex-col ${
+                    goal.status === "completed" ? "border-green-500" : "border-border"
                   } ${
                     dragOverGoalId === goal.goalId
-                      ? "border-blue-500 border-dashed bg-blue-50 dark:bg-blue-950/20"
+                      ? "border-[var(--color-primary)] border-dashed bg-[var(--color-primary)]/5"
                       : ""
-                  } ${draggedGoal?.goalId === goal.goalId ? "opacity-50" : ""}`}
+                  } ${draggedGoal?.goalId === goal.goalId ? "opacity-50 cursor-grabbing" : goal.status === "active" ? "cursor-grab" : ""}`}
                 >
+                  {/* Card header — icon + name + action buttons */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      {goal.status === "active" && (
-                        <span
-                          className="text-muted-foreground cursor-grab"
-                          aria-hidden="true"
-                          title="Drag to reorder"
-                        >
-                          ⋮⋮
-                        </span>
-                      )}
-                      <span className="text-3xl">{goal.icon}</span>
-                      <div>
-                        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-2xl shrink-0" aria-hidden="true">{goal.icon}</span>
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-foreground text-sm truncate">
                           {goal.name}
-                          <span className="text-xl">
-                            {goal.statusIndicator}
-                          </span>
                         </h3>
                         {goal.targetDate && (
-                          <p className="text-sm text-muted-foreground">
-                            Target: {formatDate(goal.targetDate)}
-                            {goal.daysRemaining !== null && (
-                              <span className="ml-2">
-                                (
-                                {goal.daysRemaining > 0
-                                  ? `${goal.daysRemaining} days left`
-                                  : "Past due"}
-                                )
-                              </span>
-                            )}
+                          <p className="text-xs text-muted-foreground">
+                            {goal.daysRemaining !== null && goal.daysRemaining > 0
+                              ? `${goal.daysRemaining}d left`
+                              : goal.daysRemaining === 0
+                              ? 'Due today'
+                              : 'Past due'
+                            }
                           </p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 shrink-0 ml-2">
                       {goal.status === "active" && (
                         <>
                           <button
-                            onClick={() =>
-                              navigate(`/goals/${goal.goalId}/edit`)
-                            }
-                            className="px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
-                            aria-label={`Edit goal: ${goal.name}`}
+                            onClick={() => navigate(`/goals/${goal.goalId}/edit`)}
+                            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+                            aria-label={`Edit ${goal.name}`}
                           >
-                            <span aria-hidden="true">✏️</span>
+                            <PenLine className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeleteGoal(goal)}
-                            className="px-3 py-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-                            aria-label={`Delete goal: ${goal.name}`}
+                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            aria-label={`Delete ${goal.name}`}
                           >
-                            <span aria-hidden="true">🗑️</span>
-                          </button>
-                          <button
-                            onClick={() => openContributeModal(goal)}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
-                          >
-                            + Add Funds
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </>
                       )}
-                      {(goal.status === "completed" ||
-                        goal.status === "paused") && (
+                      {(goal.status === "completed" || goal.status === "paused") && (
                         <button
                           onClick={() => handleArchiveGoal(goal, true)}
                           disabled={archiving === goal.goalId}
-                          className="px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                          title="Archive goal"
+                          className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+                          aria-label={`Archive ${goal.name}`}
                         >
-                          {archiving === goal.goalId ? (
-                            <span className="animate-spin">⏳</span>
-                          ) : (
-                            <span>📦</span>
-                          )}
+                          <Archive className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
                   </div>
 
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground">
-                        {formatCurrency(goal.currentAmount, currency)} of{" "}
-                        {formatCurrency(goal.targetAmount, currency)}
-                      </span>
-                      <span className="font-semibold text-foreground">
-                        {goal.progressPercent}% — {getProgressLabel(goal.progressPercent)}
-                      </span>
+                  {/* Progress ring + amounts — centered */}
+                  <div className="flex flex-col items-center my-2">
+                    <div className="relative">
+                      <ProgressRing
+                        percent={goal.progressPercent}
+                        size={88}
+                        stroke={8}
+                        aria-label={`${goal.name} progress: ${goal.progressPercent}%`}
+                      />
+                      {/* Percent label in center */}
+                      <div
+                        className="absolute inset-0 flex items-center justify-center"
+                        aria-hidden="true"
+                      >
+                        <span className="text-sm font-bold text-foreground tabular-nums">
+                          {goal.progressPercent}%
+                        </span>
+                      </div>
                     </div>
                     <div
-                      className="h-4 bg-muted rounded-full overflow-hidden"
+                      className="text-center mt-2"
                       role="progressbar"
                       aria-valuenow={goal.progressPercent}
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      aria-label={`${goal.name} progress: ${goal.progressPercent}%`}
+                      aria-label={`${goal.name}: ${goal.progressPercent}% of ${formatCurrency(goal.targetAmount, currency)}`}
                     >
-                      <div
-                        className={`h-full ${getProgressColor(goal.progressPercent)} transition-all duration-500`}
-                        style={{ width: `${goal.progressPercent}%` }}
-                      />
+                      <p className="text-xs text-muted-foreground tabular-nums">
+                        {formatCurrency(goal.currentAmount, currency)}
+                        <span className="mx-1 text-[var(--color-muted-foreground)]/50">/</span>
+                        {formatCurrency(goal.targetAmount, currency)}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Milestones */}
-                  <div className="flex gap-2 mb-4">
+                  {/* Milestones row */}
+                  <div className="flex gap-1 my-3">
                     {[25, 50, 75, 100].map((milestone) => {
-                      const reached =
-                        goal.milestones?.[String(milestone)]?.reached;
+                      const reached = goal.milestones?.[String(milestone)]?.reached;
                       return (
                         <div
                           key={milestone}
-                          className={`flex-1 text-center py-1 rounded text-xs font-medium ${
+                          className={`flex-1 text-center py-0.5 rounded text-xs font-medium ${
                             reached
                               ? "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300"
                               : "bg-muted text-muted-foreground"
                           }`}
                         >
-                          {reached ? "✓" : ""} {milestone}%
+                          {reached ? '✓' : ''} {milestone}%
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Monthly Required */}
+                  {/* Monthly required tip */}
                   {goal.monthlyRequired && goal.status === "active" && (
-                    <p className="text-sm text-blue-600">
-                      💡 Save {formatCurrency(goal.monthlyRequired, currency)}
-                      /month to reach your goal on time
+                    <p className="text-xs text-[var(--color-primary)] mb-3">
+                      Save {formatCurrency(goal.monthlyRequired, currency)}/mo to hit target
                     </p>
                   )}
 
-                  {/* Completed Badge */}
+                  {/* Completed badge */}
                   {goal.status === "completed" && goal.completedAt && (
-                    <p className="text-sm text-green-600 font-medium">
-                      🏆 Goal completed on {formatDate(goal.completedAt)}
+                    <p className="text-xs text-green-600 font-medium mb-3">
+                      🏆 Completed {formatDate(goal.completedAt)}
                     </p>
                   )}
+
+                  {/* Add funds CTA — pushed to bottom */}
+                  {goal.status === "active" && (
+                    <button
+                      onClick={() => openContributeModal(goal)}
+                      className="mt-auto w-full py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                    >
+                      <Plus className="w-4 h-4 inline mr-1" aria-hidden="true" />
+                      Add Funds
+                    </button>
+                  )}
+
                 </div>
               ))}
             </div>
@@ -774,13 +807,14 @@ export const GoalsPage: React.FC = () => {
                           <button
                             onClick={() => handleArchiveGoal(goal, false)}
                             disabled={archiving === goal.goalId}
-                            className="px-3 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-1.5 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-lg transition-colors"
+                            aria-label={`Restore ${goal.name}`}
                             title="Restore goal"
                           >
                             {archiving === goal.goalId ? (
-                              <span className="animate-spin">⏳</span>
+                              <span className="animate-spin inline-block">⏳</span>
                             ) : (
-                              <span>↩️ Restore</span>
+                              <ArchiveRestore className="w-4 h-4" />
                             )}
                           </button>
                         </div>
