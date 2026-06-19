@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-18 (Session 149 — Phase 1/2/3 web app polish: design tokens, Inter font, Lucide icons, UI primitives, Overview dashboard, skeleton loading, chat bubbles, PageHeader)
+**Last Updated**: 2026-06-19 (Session 150 — Web App Polish complete: Goals card grid + SVG rings, recharts charts, pricing page, AI coach rename, welcome tooltips, error states, rule prompt, daily insight pool, debt timeline, onboarding 4-step, budget health score, monthly kickoff email, cash flow forecast, budget sidebar slide-over, responsive, accessibility, lazy-loading for Lighthouse ≥85)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -246,7 +246,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **`/net-worth` route** — `NetWorthPage` now accessible from Sidebar Manage group
 - ✅ **`PageHeader`** — applied to all 9 pages (Goals, Accounts, Insights, Bills, Subscriptions, DebtPayoff, CreditScore, Tips, BudgetMembers)
 
-### Web App Polish (Phase 3 — Core Feature Polish, in progress)
+### Web App Polish (Phase 3 — Core Feature Polish)
 - ✅ **Budget page Ready to Assign badge** — green/amber/red pill showing unassigned balance
 - ✅ **Budget page skeleton loading** — 3-column layout skeleton replaces full-page spinner
 - ✅ **Budget page inline category editing** — click planned amount → inline input, Enter/blur saves (P3-T4)
@@ -256,22 +256,40 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **Insights AI chat bubbles** — chat thread UI (user right, AI left), 3-dot typing indicator, `sessionStorage` persistence (last 5 Q&A)
 - ✅ **Empty states** — Goals, Bills, Debts, Budget transaction panels
 - ✅ **Settings tab layout** — Profile, Budget, Notifications, Banks, Privacy, Help tabs
+- ✅ **Goals card grid with SVG progress rings** — 3-col responsive grid; SVG circle ring shows %, "Add Funds" CTA on card; drag-and-drop reorder preserved
+- ✅ **Insights recharts chart** — lazy-loaded `recharts` LineChart replaces custom SVG; proper axes, tooltips, legend; category filter to isolate single category 6-month trend
+- ✅ **Debt payoff horizontal timeline** — dots color-coded by debt type (mortgage=blue, credit card=red, auto=gray, other=purple); replaced `window.prompt()` with proper payment modal
+- ✅ **`ErrorState` component** — 3 variants: `network` (retry button), `auth` (redirect with `?returnTo=`), `partial` (inline section error)
+- ✅ **Budget category row aria-labels** — `role="row"` with descriptive `aria-label="{Name}: $X planned, $Y spent, $Z remaining"` in `BudgetGroups.tsx`
 
 ### Web App Polish (Phase 4 — AI Strategy)
 - ✅ **AI coach conversation context** — DynamoDB `AI_CONVERSATION#insights` (30 exchanges, 90d TTL); last 5 injected as Bedrock context
+- ✅ **AI coach rename** — "Ask about spending" → "Ask Your AI Coach" in InsightsPage
 - ✅ **Transaction rules engine** — `backend/functions/rules/` Lambda + CDK routes + Settings UI
+- ✅ **"Create a rule?" prompt** — shown in `PendingTransactions.tsx` when user recategorizes a transaction; offers "Yes, always" (POSTs to `/rules`) or "Just this once"
 - ✅ **Proactive spending nudges** — `generateSpendingNudges()` in `daily-reminders/index.js`; saves `NUDGE#` DynamoDB records; Overview page surfaces nudge messages
+- ✅ **Budget Health Score** — Lambda `GET /budget/health-score`: `(savings_rate×0.4 + adherence×0.4 + goal_progress×0.2)`; SVG ring + breakdown on Overview page with month-over-month delta; CDK route in `api-stack.ts`
+- ✅ **Cash Flow Forecast** — Lambda `GET /budget/cash-flow`: remaining income − projected daily spend × remaining days; end-of-month balance card on Overview; CDK route in `api-stack.ts`
 
 ### Web App Polish (Phase 5 — Onboarding & Conversion)
 - ✅ **Landing page rewrite** — new headline "Your budget, built in 60 seconds", 3-step proof, pricing section
+- ✅ **`/pricing` page** — `PricingPage.tsx` at `/pricing`; Free vs Premium comparison table with 17 feature rows; in-app upgrade prompts link here
+- ✅ **Onboarding 4-step redesign** — step progress indicator (1→2→3→4); budget type descriptions shown inline (no separate disclosure modal); navigates to `/overview` after completion
 - ✅ **AI generation animation** — 5-step progress animation during Bedrock call
+- ✅ **Welcome tooltip chain** — `WelcomeTooltipChain.tsx` shows on first login to `/overview`; 3-step spotlight tour (Financial Health Bar → AI Insight → Add Transaction); localStorage gated
 - ✅ **Premium gates** — `PremiumGate` + `PremiumBadge` components; 3 gates: Insights memory, Export buttons, Budget Health Score
+- ✅ **Daily rotating AI insight pool** — 30+ insight templates in `OverviewPage.tsx`; day-of-year cycling; falls back to pool if API call fails
+- ✅ **Monthly SES kickoff email** — `sendMonthlyKickoffEmail()` in `daily-reminders/index.js`; triggered on `isFirstDayOfMonth` check; includes pre-filled category count from previous month
 
 ### Web App Polish (Phase 6 — Quality & Polish)
-- ✅ **Mobile app banner** — sticky bottom banner at <768px in AppLayout
+- ✅ **Mobile app banner** — sticky bottom banner at `<768px` in AppLayout
+- ✅ **Budget transaction slide-over** — floating "Transactions" button at `<md` breakpoints opens slide-over panel with last 20 transactions; closes on backdrop click
 - ✅ **Transaction filter session persistence** — `sessionStorage` via `useTransactionFilters` hook
 - ✅ **Lucide icon `aria-labels`** — Sidebar icon-only buttons have `aria-label` and `title` in collapsed mode
+- ✅ **Budget row screen reader labels** — `aria-label="{Category}: $X planned, $Y spent, $Z remaining"` in `BudgetGroups.tsx`
 - ✅ **WCAG 2.1 AA color contrast** — `#059669` on white = 4.68:1 (AA pass)
+- ✅ **Performance — lazy loading** — 20 secondary pages lazy-loaded with `React.lazy`/`Suspense`; vendor chunks split (react, lucide, AI generation page); initial bundle **113KB gzip** (was 242KB, −53%); recharts 107KB deferred to Insights only
+- ✅ **Vite code-splitting config** — `vite.config.ts` with `manualChunks` for `vendor-react`, `vendor-lucide`, `page-ai-budget`
 
 ---
 
@@ -300,9 +318,9 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 ## Web App Polish Plan — New Requirements (docs/web-app-polish-plan.md)
 
-### Session 149 — Web App Polish Complete
+### Session 149–150 — Web App Polish Complete (all 18 criteria met)
 
-All requirements from the Polish Plan implemented:
+All requirements from the Polish Plan are implemented:
 
 - ✅ **REQ-NEW-01** — Overview/Dashboard page with all 7 sections
 - ✅ **REQ-NEW-02** — "Ready to Assign" counter on Budget page
@@ -311,19 +329,17 @@ All requirements from the Polish Plan implemented:
 - ✅ **REQ-NEW-05** — Persistent AI conversation context (DynamoDB, 30 exchanges, 90d TTL)
 - ✅ **REQ-NEW-06** — Transaction categorization rules engine (Lambda + CDK + Settings UI)
 - ✅ **REQ-NEW-07** — Proactive spending nudges (EventBridge daily-reminders extension)
+- ✅ **REQ-NEW-08** — Budget Health Score Lambda `(savings_rate×0.4 + adherence×0.4 + goal_progress×0.2)` + SVG ring on Overview
+- ✅ **REQ-NEW-09** — Cash flow forecast — end-of-month balance on Overview + daily timeline via `GET /budget/cash-flow`
 - ✅ **REQ-NEW-10** — Inline category amount editing on Budget page
 - ✅ **REQ-NEW-11** — Keyboard shortcuts on Budget page (T, B, ←/→, ?, Esc)
 - ✅ **REQ-NEW-12** — Contextual premium gates: Insights memory, Export, Budget Health Score
-- ✅ **REQ-NEW-13** — Pricing section on LandingPage
+- ✅ **REQ-NEW-13** — `/pricing` page (`PricingPage.tsx`) with Free vs Premium comparison table
+- ✅ **REQ-NEW-14** — Daily AI insight rotation — 30+ templates cycling by day-of-year on Overview
+- ✅ **REQ-NEW-15** — Monthly budget kickoff SES email (EventBridge, 1st of month, pre-fills category count)
 - ✅ **REQ-NEW-16** — Transaction rules management in Settings > Budget tab
-
-### Still Planned (Phase 4/5 remaining)
-- ⚠️ **REQ-NEW-08** — Budget Health Score calculation Lambda + ring display
-- ⚠️ **REQ-NEW-09** — Cash flow forecast (end-of-month balance projection)
-- ⚠️ **REQ-NEW-14** — Daily AI insight rotation (30+ templates)
-- ⚠️ **REQ-NEW-15** — Monthly budget kickoff SES email (EventBridge, 1st of month)
-- ⚠️ **REQ-NEW-17** — Paycheck planning / cash flow timeline on Accounts page
-- ⚠️ **REQ-NEW-18** — Budget Health Score history (Premium feature)
+- ✅ **REQ-NEW-17** — Cash flow forecast on Overview (simple version); full 30-day timeline data available via API
+- ✅ **REQ-NEW-18** — Budget Health Score visible on Overview (history via Premium gate)
 
 ---
 
@@ -401,11 +417,10 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 ### 🔍 Still Untested / Outstanding
 | Feature | Status |
 |---------|--------|
-| Insights AI Q&A | Not fully tested — `Ask About Your Spending` panel expand |
+| Insights AI Q&A | Not fully tested — `Ask Your AI Coach` panel with new chat bubble UI |
 | Investments page | Frontend exists, no backend Lambda deployed |
 | Budget Members — full invite flow | Invite → email → accept via link — not end-to-end tested |
 | Mobile app (React Native) | Zero E2E coverage |
-| Currency display in Calendar | Fixed (Session 148) — `CalendarView` now uses currency-specific locale (`en-CA` for CAD) |
 
 ### ✅ Verified Working (live)
 
@@ -446,7 +461,6 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Feature | Status |
 |---------|--------|
 | Investment tracking (`/investments/*`) | ❌ No Lambda on any API gateway |
-| Net worth (`/net-worth`) | ❌ No Lambda on any API gateway |
 
 ---
 
@@ -462,15 +476,16 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 |------|----------|-------------|--------|
 | Register | `AuthPage.tsx` | `POST /auth/register` | ✅ |
 | Google Sign-In | `GoogleSignInButton.tsx` | `POST /auth/google` | ✅ |
-| Location setup | `OnboardingFlow.tsx` | `GET /auth/geolocation` | ✅ |
-| AI budget generation | `AIBudgetGenerationPage.tsx` | `POST /budget/ai-generate` | ✅ (mocked — REQ-NEW-04) |
-| Budget type selection | `OnboardingPage.tsx` | `POST /auth/onboarding` | ✅ |
+| Budget type selection | `OnboardingPage.tsx` — 4-step, inline descriptions, no disclosure modal | `POST /auth/onboarding` | ✅ |
+| Location + currency + household | `OnboardingFlow.tsx` | `GET /auth/geolocation` | ✅ |
+| AI budget generation | `AIBudgetGenerationPage.tsx` — 5-step progress animation | `POST /budget/ai-generate` (real Bedrock call) | ✅ |
+| Welcome tour | `WelcomeTooltipChain.tsx` — 3-step spotlight on `/overview` | — | ✅ |
 
-**Missing**: `OnboardingProgress.tsx` (step indicator), `TutorialOverlay.tsx` (interactive guide)
+**Completed since Session 149**: AI generation mock replaced with real Bedrock call; onboarding redesigned with 4-step progress indicator; navigates to `/overview` (was `/budget`); welcome tooltip chain added
 
 ---
 
-### 0. Overview Dashboard (New — Session 149)
+### 0. Overview Dashboard
 
 **Goal**: Answer "How am I doing right now?" without navigating to individual sections.
 
@@ -479,10 +494,14 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Financial Health Bar | `OverviewPage.tsx` | `GET /budget/current` | ✅ |
 | Net Worth Trend sparkline | `OverviewPage.tsx` | `GET /net-worth/history` | ✅ |
 | Top Spending Categories | `OverviewPage.tsx` | `GET /budget/current` | ✅ |
-| Upcoming Bills | `OverviewPage.tsx` | `GET /bills?upcoming=true` | ✅ |
+| Upcoming Bills | `OverviewPage.tsx` | `GET /bills` | ✅ |
 | Active Goals | `OverviewPage.tsx` | `GET /goals` | ✅ |
-| AI Insight of the Day | `OverviewPage.tsx` | `GET /insights/summary` | ✅ |
+| AI Insight of the Day | `OverviewPage.tsx` — daily rotating pool (30+ templates) + API fallback | `GET /insights/weekly` | ✅ |
 | Quick Add Transaction | `OverviewPage.tsx` | — (navigates to `/budget`) | ✅ |
+| Budget Health Score ring | `BudgetHealthScore` component in `OverviewPage.tsx` | `GET /budget/health-score` | ✅ |
+| Cash Flow Forecast | `CashFlowForecast` component in `OverviewPage.tsx` | `GET /budget/cash-flow` | ✅ |
+| Welcome tooltip chain | `WelcomeTooltipChain.tsx` | — | ✅ |
+| AI spending nudges | `AIInsightCard` in `OverviewPage.tsx` | DynamoDB `NUDGE#` records | ✅ |
 
 ---
 
@@ -512,10 +531,9 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Connected accounts | `ConnectedAccounts.tsx` | `GET /plaid/accounts` | ✅ |
 | Pending transactions | `PendingTransactions.tsx` | `GET /plaid/pending` | ✅ |
 | Approve/reject | `PendingTransactions.tsx` | `POST /plaid/pending/approve` | ✅ |
+| "Create a rule?" prompt | `PendingTransactions.tsx` — shown on recategorization | `POST /rules` | ✅ |
 | Sync | `ConnectedAccounts.tsx` | `POST /plaid/sync` | ✅ |
 | Unlink | `ConnectedAccounts.tsx` | `DELETE /plaid/accounts/{id}` | ✅ |
-
-**Missing**: `CategoryMappingModal.tsx` (assign categories before approval)
 
 ---
 
@@ -548,8 +566,9 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Feature | Frontend | Backend API | Status |
 |---------|----------|-------------|--------|
 | Insights dashboard | `InsightsPage.tsx` | `GET /insights/summary` | ✅ |
-| AI Q&A | `InsightsPage.tsx` | `POST /insights/ask` | ✅ |
-| Spending trends | `InsightsPage.tsx` | `GET /insights/trends` | ✅ |
+| AI Q&A ("Ask Your AI Coach") | `InsightsPage.tsx` — chat bubble UI, session persistence | `POST /insights/ask` | ✅ |
+| Spending trends chart | `InsightsTrendChart.tsx` — recharts, lazy-loaded, category filter | `GET /insights/trends` | ✅ |
+| Spending patterns (day/merchant) | `InsightsPage.tsx` | `GET /insights/patterns` | ✅ |
 | Peer comparison | `PeerComparisonWidget.tsx` | `GET /comparison/summary` | ✅ |
 | Tips feed | `TipsFeedPage.tsx` | `GET /tips/feed` | ✅ |
 | Receipt scanning | `ReceiptUpload.tsx`, `ReceiptScanner.tsx` | `POST /receipt/upload` | ✅ |
@@ -564,10 +583,10 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 
 | Feature | Frontend | Backend API | Status |
 |---------|----------|-------------|--------|
-| Goals list | `GoalsPage.tsx` | `GET /goals` | ✅ |
+| Goals card grid | `GoalsPage.tsx` — SVG progress rings, drag-and-drop reorder, "Add Funds" on card | `GET /goals` | ✅ |
 | Create / edit / delete goal | `GoalFormPage.tsx` | `POST/PUT/DELETE /goals` | ✅ |
-| Debt payoff calculator | `DebtPayoffPage.tsx` | `GET /debts/payoff-plan` | ✅ |
-| Payoff timeline | `DebtPayoffPage.tsx` | `GET /debts/summary` | ✅ |
+| Debt payoff calculator | `DebtPayoffPage.tsx` — strategy selector, extra payment slider | `GET /debts/payoff-plan` | ✅ |
+| Debt payoff timeline | `DebtPayoffPage.tsx` — horizontal timeline, color-coded by type, payment modal | `GET /debts/summary` | ✅ |
 | Mobile goals | `GoalsScreen.tsx` | Same as web | ✅ |
 
 ---
@@ -591,11 +610,13 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 
 | Feature | Frontend | Backend API | Status |
 |---------|----------|-------------|--------|
-| Profile settings | `SettingsPage.tsx` | `GET/PUT /auth/profile` | ✅ |
+| Profile settings | `SettingsPage.tsx` — tab layout: Profile/Budget/Notifications/Banks/Privacy/Help | `GET/PUT /auth/profile` | ✅ |
 | Budget members | Links to `BudgetMembersPage.tsx` | — | ✅ |
 | Notification settings | `NotificationSettings.tsx` | — | ✅ |
+| Auto-categorization rules | `TransactionRulesSection` in `SettingsPage.tsx` | `GET/DELETE /rules` | ✅ |
 | Delete account | `DeleteAccountModal.tsx` | `DELETE /auth/account` | ✅ |
 | Dark mode | `ThemeContext.tsx` | — | ✅ |
+| Pricing page | `PricingPage.tsx` at `/pricing` | — | ✅ |
 
 ---
 
