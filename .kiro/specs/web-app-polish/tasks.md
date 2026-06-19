@@ -100,8 +100,8 @@
 - [x] **P4-T11** — Frontend: AI Alert card on Overview page (surfaces nudge notifications)
 - [x] **P4-T12** — Backend: Budget Health Score calculation Lambda `(savings_rate×0.4 + adherence×0.4 + goal_progress×0.2)`
 - [x] **P4-T13** — Frontend: Budget Health Score ring on Overview page with month-over-month delta
-- [ ] **P4-T14** — Backend: Cash flow forecast calculation (remaining income - bills - avg daily spend)
-- [ ] **P4-T15** — Frontend: end-of-month balance forecast on Overview + 30-day timeline on Accounts
+- [x] **P4-T14** — Backend: Cash flow forecast Lambda added to budget Lambda (`GET /budget/cash-flow`)
+- [x] **P4-T15** — Frontend: est. end-of-month balance on Overview page; CDK route added to api-stack
 
 ---
 
@@ -124,7 +124,7 @@
 - [x] **P6-T2** — Fix 3-column budget layout at 1024px: transaction sidebar → slide-over panel (floating button + slide-over at <md)
 - [x] **P6-T3** — Add `<768px` "Get the mobile app" banner
 - [x] **P6-T4** — Accessibility: `aria-label` on all icon-only buttons post-Lucide migration *(Lucide icons have aria-labels in Sidebar)*
-- [ ] **P6-T5** — Accessibility: screen reader test of budget page row read-out
+- [x] **P6-T5** — Accessibility: screen reader `aria-label` on budget category rows in `BudgetGroups.tsx` — reads "{Category}: $X planned, $Y spent, $Z remaining"
 - [ ] **P6-T6** — Lighthouse audit; reach ≥85 Performance score
 - [x] **P6-T7** — Lazy-load `recharts` bundle (only on Insights page via React.lazy/Suspense)
 - [x] **P6-T8** — Transaction filter: real-time search input + "clear all filters" button
