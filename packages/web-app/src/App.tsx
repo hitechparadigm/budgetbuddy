@@ -1,9 +1,4 @@
-/**
- * BudgetBuddy Web Application
- * Main application component with routing and authentication
- */
-
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -13,37 +8,52 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { BudgetProvider } from "./contexts/BudgetContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ProtectedLayout } from "./components/layout/ProtectedLayout";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Skeleton } from "./components/ui";
+
+// ─── Critical-path pages — eagerly loaded ────────────────────────────────────
 import { AuthPage } from "./pages/AuthPage";
 import { BudgetPage } from "./pages/BudgetPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { OnboardingPage } from "./pages/OnboardingPage";
-import { AIBudgetGenerationPage } from "./pages/AIBudgetGenerationPage";
-import { AcceptInvitationPage } from "./pages/AcceptInvitationPage";
-import { AccountsPage } from "./pages/AccountsPage";
-import { BudgetMembersPage } from "./pages/BudgetMembersPage";
-import { TipsFeedPage } from "./pages/TipsFeedPage";
-import { InsightsPage } from "./pages/InsightsPage";
-import { BillsPage } from "./pages/BillsPage";
-import { BillFormPage } from "./pages/BillFormPage";
-import { GoalsPage } from "./pages/GoalsPage";
-import { GoalFormPage } from "./pages/GoalFormPage";
-import SubscriptionsPage from "./pages/SubscriptionsPage";
-import SubscriptionFormPage from "./pages/SubscriptionFormPage";
-import DebtPayoffPage from "./pages/DebtPayoffPage";
-import DebtFormPage from "./pages/DebtFormPage";
-import CreditScorePage from "./pages/CreditScorePage";
-import InvestmentsPage from "./pages/InvestmentsPage";
-import { LearnPage } from "./pages/LearnPage";
-import { AboutPage } from "./pages/AboutPage";
-import { HelpCenterPage } from "./pages/HelpCenterPage";
-import { TermsOfServicePage } from "./pages/TermsOfServicePage";
-import { PrivacyPolicyPage } from "./pages/PrivacyPolicyPage";
-import { NotFoundPage } from "./pages/NotFoundPage";
-import { LandingPage } from "./pages/LandingPage";
-import { NetWorthPage } from "./pages/NetWorthPage";
-import { ErrorBoundary } from "./components/ErrorBoundary";
 import { OverviewPage } from "./pages/OverviewPage";
-import PricingPage from "./pages/PricingPage";
+import { LandingPage } from "./pages/LandingPage";
+import { OnboardingPage } from "./pages/OnboardingPage";
+
+// ─── Secondary pages — lazy loaded for better initial bundle ──────────────────
+const SettingsPage = lazy(() => import("./pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
+const AIBudgetGenerationPage = lazy(() => import("./pages/AIBudgetGenerationPage").then(m => ({ default: m.AIBudgetGenerationPage })));
+const AcceptInvitationPage = lazy(() => import("./pages/AcceptInvitationPage").then(m => ({ default: m.AcceptInvitationPage })));
+const AccountsPage = lazy(() => import("./pages/AccountsPage").then(m => ({ default: m.AccountsPage })));
+const BudgetMembersPage = lazy(() => import("./pages/BudgetMembersPage").then(m => ({ default: m.BudgetMembersPage })));
+const TipsFeedPage = lazy(() => import("./pages/TipsFeedPage").then(m => ({ default: m.TipsFeedPage })));
+const InsightsPage = lazy(() => import("./pages/InsightsPage").then(m => ({ default: m.InsightsPage })));
+const BillsPage = lazy(() => import("./pages/BillsPage").then(m => ({ default: m.BillsPage })));
+const BillFormPage = lazy(() => import("./pages/BillFormPage").then(m => ({ default: m.BillFormPage })));
+const GoalsPage = lazy(() => import("./pages/GoalsPage").then(m => ({ default: m.GoalsPage })));
+const GoalFormPage = lazy(() => import("./pages/GoalFormPage").then(m => ({ default: m.GoalFormPage })));
+const SubscriptionsPage = lazy(() => import("./pages/SubscriptionsPage"));
+const SubscriptionFormPage = lazy(() => import("./pages/SubscriptionFormPage"));
+const DebtPayoffPage = lazy(() => import("./pages/DebtPayoffPage"));
+const DebtFormPage = lazy(() => import("./pages/DebtFormPage"));
+const CreditScorePage = lazy(() => import("./pages/CreditScorePage"));
+const InvestmentsPage = lazy(() => import("./pages/InvestmentsPage"));
+const LearnPage = lazy(() => import("./pages/LearnPage").then(m => ({ default: m.LearnPage })));
+const AboutPage = lazy(() => import("./pages/AboutPage").then(m => ({ default: m.AboutPage })));
+const HelpCenterPage = lazy(() => import("./pages/HelpCenterPage").then(m => ({ default: m.HelpCenterPage })));
+const TermsOfServicePage = lazy(() => import("./pages/TermsOfServicePage").then(m => ({ default: m.TermsOfServicePage })));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage").then(m => ({ default: m.PrivacyPolicyPage })));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage").then(m => ({ default: m.NotFoundPage })));
+const NetWorthPage = lazy(() => import("./pages/NetWorthPage").then(m => ({ default: m.NetWorthPage })));
+const PricingPage = lazy(() => import("./pages/PricingPage"));
+
+/** Suspense fallback — full-page skeleton while lazy chunks load */
+const PageSkeleton: React.FC = () => (
+  <div className="p-8 max-w-4xl mx-auto space-y-4">
+    <Skeleton className="h-8 w-48 rounded" />
+    <Skeleton className="h-64 w-full rounded-xl" />
+    <Skeleton className="h-32 w-full rounded-xl" />
+  </div>
+);
+
 
 const App: React.FC = () => {
   return (
@@ -53,6 +63,7 @@ const App: React.FC = () => {
           <BudgetProvider>
             <Router>
               <div className="App">
+                <Suspense fallback={<PageSkeleton />}>
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/auth" element={<AuthPage />} />
@@ -287,6 +298,7 @@ const App: React.FC = () => {
                   {/* Catch all - show 404 page */}
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
+                </Suspense>
               </div>
             </Router>
           </BudgetProvider>
