@@ -767,6 +767,7 @@ exports.handler = async (event) => {
     // Check if today is Sunday (weekly insight day)
     const today = new Date();
     const isSunday = today.getDay() === 0;
+    const isFirstDayOfMonth = today.getDate() === 1;
 
     // Send reminders (in batches)
     const BATCH_SIZE = 10;
@@ -816,6 +817,11 @@ exports.handler = async (event) => {
             results.weeklyInsights.skipped++;
           }
         });
+      }
+
+      // Monthly budget kickoff email — sent on the 1st of each month (P5-T7)
+      if (isFirstDayOfMonth) {
+        await Promise.allSettled(batch.map((user) => sendMonthlyKickoffEmail(user)));
       }
 
       console.log(
@@ -872,3 +878,62 @@ exports.handler = async (event) => {
     };
   }
 };
+
+/**
+ * Monthly budget kickoff email (P5-T7)
+ *
+ * Sent on the 1st of each month via SES.
+ * Tells the user their new budget is ready and what was pre-filled from last month.
+ */
+async function sendMonthlyKickoffEmail(user) {
+  const SES_REGION = process.env.AWS_REGION || 'us-east-1';
+  const SES_FROM = process.env.SES_FROM_EMAIL || 'noreply@budgetbuddy.app';
+  const ses = new AWS.SES({ region: SES_REGION });
+
+  try {
+    const { userId, email, firstName } = user;
+    if (!email) return;
+
+    const now = new Date();
+    const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    // Fetch last month's budget summary for pre-fill context
+    let prefillSummary = 'your recurring categories from last month';
+    try {
+      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        .toISOString().substring(0, 7);
+      const prevBudget = await dynamodb.get({
+        TableName: TABLE_NAME,
+        Key: { PK: `BUDGET#${userId}`, SK: `PERIOD#${prevMonth}` },
+      }).promise();
+      if (prevBudget.Item) {
+        const groups = prevBudget.Item.groups || {};
+        let catCount = 0;
+        ['income','savings','expenses'].forEach(g => {
+          if (groups[g]) groups[g].forEach(grp => { catCount += (grp.categories || []).length; });
+        });
+        if (catCount > 0) prefillSummary = `${catCount} categories from ${prevMonth}`;
+      }
+    } catch (_e) { /* use default */ }
+
+    const subject = `Your ${monthName} budget is ready 🎉`;
+    const bodyText = `Hi ${firstName || 'there'},\n\nYour ${monthName} budget has been set up automatically using ${prefillSummary}. Log in to review and adjust your plan for the month.\n\nhttps://d1ueeugn9zcx7n.cloudfront.net/budget\n\nHappy budgeting,\nThe BudgetBuddy Team`;
+    const bodyHtml = `<p>Hi ${firstName || 'there'},</p><p>Your <strong>${monthName}</strong> budget has been set up automatically using <strong>${prefillSummary}</strong>. Log in to review and adjust your plan.</p><p><a href="https://d1ueeugn9zcx7n.cloudfront.net/budget" style="background:#059669;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Open my budget →</a></p><p>Happy budgeting,<br/>The BudgetBuddy Team</p>`;
+
+    await ses.sendEmail({
+      Source: SES_FROM,
+      Destination: { ToAddresses: [email] },
+      Message: {
+        Subject: { Data: subject, Charset: 'UTF-8' },
+        Body: {
+          Text: { Data: bodyText, Charset: 'UTF-8' },
+          Html: { Data: bodyHtml, Charset: 'UTF-8' },
+        },
+      },
+    }).promise();
+
+    console.log(`Monthly kickoff email sent to ${email}`);
+  } catch (err) {
+    console.warn(`Monthly kickoff email failed for ${user.userId}: ${err.message}`);
+  }
+}
