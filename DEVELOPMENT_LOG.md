@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-19 - Move rules+net-worth to extended stack (was over 500 resource limit) (Session 150)
+
+### Bug Fixed
+CDK validation error: api-features stack had 530/500 resources. Moved RulesHandler + NetWorthHandler to api-features-extended-stack which has capacity.
+
+---
+
 ## 2026-06-19 - Deploy net-worth Lambda to features API, fix CORS (Session 150)
 
 ### Bugs Fixed

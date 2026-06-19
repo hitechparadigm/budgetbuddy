@@ -353,6 +353,24 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       actions: ['bedrock:InvokeModel'],
       resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
     }));
+
+    // Transaction Categorization Rules Lambda
+    this.functions.rulesHandler = new lambda.Function(this, 'RulesHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-rules',
+      code: lambda.Code.fromAsset('../backend/functions/rules'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy rules engine for automatic transaction categorization',
+    });
+
+    // Net Worth Lambda
+    this.functions.netWorthHandler = new lambda.Function(this, 'NetWorthHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-net-worth',
+      code: lambda.Code.fromAsset('../backend/functions/net-worth'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy net worth handler for assets, liabilities, and history tracking',
+    });
   }
 
 
@@ -361,6 +379,8 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
     this.setupReceiptRoutes(authorizer);
     this.setupPatternDetectionRoutes(authorizer);
     this.setupBudgetPlanningRoutes(authorizer);
+    this.setupRulesRoutes(authorizer);
+    this.setupNetWorthRoutes(authorizer);
   }
 
   private setupInsightsRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
@@ -509,6 +529,41 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'BudgetPlanningHealthCheck',
     });
+  }
+
+  private setupRulesRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const rulesResource = this.api.root.addResource('rules');
+    rulesResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.rulesHandler), { authorizer, operationName: 'GetRules' });
+    rulesResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.rulesHandler), { authorizer, operationName: 'CreateRule' });
+    const rulesApplyResource = rulesResource.addResource('apply');
+    rulesApplyResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.rulesHandler), { authorizer, operationName: 'ApplyRules' });
+    const rulesHealthResource = rulesResource.addResource('health');
+    rulesHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.rulesHandler), { methodResponses: [{ statusCode: '200' }], operationName: 'RulesHealthCheck' });
+    const ruleIdResource = rulesResource.addResource('{ruleId}');
+    ruleIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.rulesHandler), { authorizer, operationName: 'UpdateRule' });
+    ruleIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.rulesHandler), { authorizer, operationName: 'DeleteRule' });
+  }
+
+  private setupNetWorthRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const nw = this.api.root.addResource('net-worth');
+    nw.addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'GetNetWorth' });
+    nw.addResource('health').addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { methodResponses: [{ statusCode: '200' }], operationName: 'NetWorthHealth' });
+    nw.addResource('summary').addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'GetNetWorthSummary' });
+    nw.addResource('history').addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'GetNetWorthHistory' });
+    nw.addResource('categories').addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { methodResponses: [{ statusCode: '200' }], operationName: 'GetNetWorthCategories' });
+    nw.addResource('allocation').addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'GetNetWorthAllocation' });
+    const assets = nw.addResource('assets');
+    assets.addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'GetAssets' });
+    assets.addMethod('POST', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'CreateAsset' });
+    const assetId = assets.addResource('{assetId}');
+    assetId.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'UpdateAsset' });
+    assetId.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'DeleteAsset' });
+    const liabilities = nw.addResource('liabilities');
+    liabilities.addMethod('GET', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'GetLiabilities' });
+    liabilities.addMethod('POST', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'CreateLiability' });
+    const liabilityId = liabilities.addResource('{liabilityId}');
+    liabilityId.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'UpdateLiability' });
+    liabilityId.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.netWorthHandler), { authorizer, operationName: 'DeleteLiability' });
   }
 
   private createOutputs(): void {

@@ -41,7 +41,7 @@ const TransactionRulesSection: React.FC = () => {
     try {
       const token = localStorage.getItem('budgetbuddy_id_token');
       if (!token) return;
-      const res = await fetch(`${config.featuresApiUrl}/rules`, {
+      const res = await fetch(`${config.extendedFeaturesApiUrl}/rules`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;
@@ -61,7 +61,7 @@ const TransactionRulesSection: React.FC = () => {
     try {
       const token = localStorage.getItem('budgetbuddy_id_token');
       if (!token) return;
-      await fetch(`${config.featuresApiUrl}/rules/${ruleId}`, {
+      await fetch(`${config.extendedFeaturesApiUrl}/rules/${ruleId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
