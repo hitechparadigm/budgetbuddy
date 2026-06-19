@@ -455,9 +455,61 @@ const QuickAddTransaction: React.FC<{
   );
 };
 
-/** Budget Health Score ring with components breakdown */
-const BudgetHealthScore: React.FC<{ month: string }> = ({ month }) => {
+/** Cash flow forecast — estimated end-of-month balance */
+const CashFlowForecast: React.FC<{ month: string }> = ({ month }) => {
+  const navigate = useNavigate();
   const [data, setData] = React.useState<{
+    estimatedEndBalance: number;
+    remainingIncome: number;
+    projectedRemainingSpend: number;
+    avgDailySpend: number;
+    daysRemaining: number;
+  } | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [currency] = React.useState('USD');
+
+  React.useEffect(() => {
+    const load = async () => {
+      try {
+        const raw = await apiClient.get(`/budget/cash-flow?month=${month}`);
+        const d = raw?.data ?? raw;
+        if (d?.estimatedEndBalance != null) setData(d);
+      } catch {
+        // silent
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [month]);
+
+  if (loading) return <Skeleton className="h-16 w-full rounded-xl" />;
+  if (!data) return null;
+
+  const isPositive = data.estimatedEndBalance >= 0;
+
+  return (
+    <div className="card p-5 flex items-center gap-4">
+      <div className="flex-1">
+        <p className="text-sm text-[var(--color-muted-foreground)] mb-1">
+          Est. end-of-month balance
+        </p>
+        <p className={`text-2xl font-bold tabular-nums ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+          {isPositive ? '+' : ''}{formatCurrency(data.estimatedEndBalance, currency)}
+        </p>
+        <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
+          {data.daysRemaining}d remaining · avg {formatCurrency(data.avgDailySpend, currency)}/day · {formatCurrency(data.remainingIncome, currency)} income pending
+        </p>
+      </div>
+      <Button variant="ghost" size="sm" onClick={() => navigate('/accounts')} rightIcon={<ChevronRight className="w-4 h-4" />}>
+        Accounts
+      </Button>
+    </div>
+  );
+};
+
+/** Budget Health Score ring with components breakdown */
+const BudgetHealthScore: React.FC<{ month: string }> = ({ month }) => {  const [data, setData] = React.useState<{
     score: number;
     delta: number | null;
     interpretation: string;
@@ -814,6 +866,9 @@ export const OverviewPage: React.FC = () => {
 
       {/* Budget Health Score — real data with premium gate for history */}
       <BudgetHealthScore month={currentMonth} />
+
+      {/* Cash flow forecast — estimated end-of-month balance */}
+      <CashFlowForecast month={currentMonth} />
 
 
       {/* Quick Add */}
