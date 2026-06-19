@@ -120,8 +120,8 @@
 
 ## Phase 6 — Quality & Polish (2 weeks, overlaps Phase 5)
 
-- [x] **P6-T1** — Responsive audit at 1280px, 1024px, 768px *(mobile banner at <768px already in place; settings accordion at mobile TBD)*
-- [ ] **P6-T2** — Fix 3-column budget layout at 1024px: transaction sidebar → slide-over panel
+- [x] **P6-T1** — Responsive audit at 1280px, 1024px, 768px *(mobile banner at <768px; settings tabs have horizontal scroll on mobile)*
+- [x] **P6-T2** — Fix 3-column budget layout at 1024px: transaction sidebar → slide-over panel (floating button + slide-over at <md)
 - [x] **P6-T3** — Add `<768px` "Get the mobile app" banner
 - [x] **P6-T4** — Accessibility: `aria-label` on all icon-only buttons post-Lucide migration *(Lucide icons have aria-labels in Sidebar)*
 - [ ] **P6-T5** — Accessibility: screen reader test of budget page row read-out
@@ -151,4 +151,4 @@
 - [x] At least 3 contextual premium gates in place
 - [ ] Lighthouse Performance ≥85
 - [x] WCAG 2.1 AA color contrast passes
-- [ ] Responsive at 1024px and 768px (banner done, budget slide-over pending)
+- [x] Responsive at 1024px and 768px (slide-over for budget sidebar, mobile banner)

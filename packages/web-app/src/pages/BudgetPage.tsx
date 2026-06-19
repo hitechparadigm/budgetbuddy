@@ -99,6 +99,8 @@ export const BudgetPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const currency = "USD"; // Default currency
   const [showTransactionModal, setShowTransactionModal] = useState(false);
+  // P6-T2: Slide-over state for the right sidebar at <md breakpoints
+  const [showSidebarSlideOver, setShowSidebarSlideOver] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showRecurringModal, setShowRecurringModal] = useState(false);
@@ -2216,6 +2218,54 @@ export const BudgetPage: React.FC = () => {
         </div>
 
         {/* Right Sidebar - Summary/Transactions */}
+        {/* P6-T2: Slide-over for narrow screens (hidden md:) */}
+        {showSidebarSlideOver && (
+          <div className="md:hidden fixed inset-0 z-40 flex">
+            <div className="absolute inset-0 bg-black/40" onClick={() => setShowSidebarSlideOver(false)} aria-hidden="true" />
+            <div className="relative ml-auto w-80 max-w-full bg-surface border-l border-border overflow-y-auto shadow-2xl z-50 p-4">
+              <button
+                onClick={() => setShowSidebarSlideOver(false)}
+                className="absolute top-3 right-3 p-1.5 rounded text-muted-foreground hover:text-foreground"
+                aria-label="Close transactions panel"
+              >
+                ✕
+              </button>
+              <p className="font-semibold text-foreground mb-4 mt-1">Transactions</p>
+              {/* Transactions list - same content as the sidebar */}
+              <div className="space-y-2">
+                {sortedTransactions.slice(0, 20).map((txn) => (
+                  <div key={txn.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{txn.description}</p>
+                      <p className="text-xs text-muted-foreground">{txn.categoryName} · {txn.date}</p>
+                    </div>
+                    <span className={`text-sm tabular-nums ml-3 shrink-0 ${txn.groupType === 'income' ? 'text-green-600' : 'text-foreground'}`}>
+                      {txn.groupType === 'income' ? '+' : '-'}{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(txn.amount)}
+                    </span>
+                  </div>
+                ))}
+                {sortedTransactions.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-8">No transactions this month.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Floating Transactions button — visible at <md */}
+        <button
+          onClick={() => setShowSidebarSlideOver(true)}
+          className="md:hidden fixed bottom-20 right-4 z-30 bg-[var(--color-primary)] text-white rounded-full px-4 py-2.5 shadow-lg flex items-center gap-2 text-sm font-medium"
+          aria-label="Show transactions"
+        >
+          <span aria-hidden="true">📋</span>
+          Transactions
+          {sortedTransactions.length > 0 && (
+            <span className="bg-white/25 text-white text-xs rounded-full px-1.5">{sortedTransactions.length}</span>
+          )}
+        </button>
+
+        {/* Right Sidebar - Summary/Transactions — desktop only */}
         <div
           className="hidden md:block bg-surface border-l border-border relative"
           style={{ width: `${sidebarWidth}px` }}

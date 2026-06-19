@@ -602,6 +602,13 @@ export class ApiStack extends cdk.Stack {
       operationName: 'GetBudgetHealthScore',
     });
 
+    // Cash Flow Forecast endpoint (P4-T14)
+    const cashFlowResource = budgetResource.addResource('cash-flow');
+    cashFlowResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetHandler), {
+      authorizer,
+      operationName: 'GetCashFlowForecast',
+    });
+
     // Budget by ID endpoint
     const budgetIdResource = budgetResource.addResource('{budgetId}');
     budgetIdResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetHandler), {

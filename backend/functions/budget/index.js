@@ -101,6 +101,10 @@ exports.handler = async (event, context) => {
       return await getBudgetHealthScore(event, user);
     }
 
+    if (httpMethod === "GET" && path === "/budget/cash-flow") {
+      return await getCashFlowForecast(event, user);
+    }
+
     if (httpMethod === "GET" && pathParameters && pathParameters.budgetId) {
       return await getBudget(event, user, pathParameters.budgetId);
     }
@@ -1430,4 +1434,89 @@ async function getBudgetHealthScore(event, user) {
     },
     interpretation: score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : score >= 40 ? 'Fair' : 'Needs work',
   }, 'Budget health score calculated');
+}
+
+/**
+ * Cash Flow Forecast (P4-T14)
+ *
+ * Estimates end-of-month balance:
+ *   remaining_income - remaining_bills - (avg_daily_spend × remaining_days)
+ *
+ * GET /budget/cash-flow
+ */
+async function getCashFlowForecast(event, user) {
+  const { userId } = user;
+  const { budgetId } = await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
+
+  const today = new Date();
+  const month = event.queryStringParameters?.month ||
+    today.toISOString().substring(0, 7);
+
+  const budget = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, `PERIOD#${month}`);
+  if (!budget) {
+    return successResponse({ forecast: null }, 'No budget data for cash flow');
+  }
+
+  const groups = budget.groups || {};
+
+  // ── income not yet received ───────────────────────────────────────────────
+  const incomeGroups = groups.income || [];
+  let totalPlannedIncome = 0;
+  let totalReceivedIncome = 0;
+  incomeGroups.forEach(g => {
+    (g.categories || []).forEach(c => {
+      totalPlannedIncome += c.plannedAmount || 0;
+      totalReceivedIncome += c.spentAmount || 0;
+    });
+  });
+  const remainingIncome = Math.max(totalPlannedIncome - totalReceivedIncome, 0);
+
+  // ── expenses committed but not yet spent ──────────────────────────────────
+  const expenseGroups = groups.expenses || [];
+  let totalPlannedExpenses = 0;
+  let totalSpentExpenses = 0;
+  expenseGroups.forEach(g => {
+    (g.categories || []).forEach(c => {
+      totalPlannedExpenses += c.plannedAmount || 0;
+      totalSpentExpenses += c.spentAmount || 0;
+    });
+  });
+  const remainingBudgetedExpenses = Math.max(totalPlannedExpenses - totalSpentExpenses, 0);
+
+  // ── average daily spend × remaining days ──────────────────────────────────
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const dayOfMonth = today.getDate();
+  const daysElapsed = Math.max(dayOfMonth - 1, 1);
+  const daysRemaining = daysInMonth - dayOfMonth;
+  const avgDailySpend = daysElapsed > 0 ? totalSpentExpenses / daysElapsed : 0;
+  const projectedRemainingSpend = avgDailySpend * daysRemaining;
+
+  // ── forecast ──────────────────────────────────────────────────────────────
+  const estimatedEndBalance = remainingIncome - projectedRemainingSpend;
+  const conservativeEndBalance = remainingIncome - remainingBudgetedExpenses;
+
+  // Build daily timeline for the current month
+  const timeline = [];
+  let runningBalance = totalReceivedIncome - totalSpentExpenses;
+  for (let d = dayOfMonth; d <= daysInMonth; d++) {
+    runningBalance += (remainingIncome / daysRemaining || 0) / daysRemaining * (d === dayOfMonth ? 0 : 1);
+    runningBalance -= avgDailySpend;
+    timeline.push({
+      day: d,
+      date: `${month}-${String(d).padStart(2, '0')}`,
+      balance: Math.round(runningBalance),
+    });
+  }
+
+  return successResponse({
+    month,
+    estimatedEndBalance: Math.round(estimatedEndBalance),
+    conservativeEndBalance: Math.round(conservativeEndBalance),
+    remainingIncome: Math.round(remainingIncome),
+    projectedRemainingSpend: Math.round(projectedRemainingSpend),
+    remainingBudgetedExpenses: Math.round(remainingBudgetedExpenses),
+    avgDailySpend: Math.round(avgDailySpend),
+    daysRemaining,
+    timeline,
+  }, 'Cash flow forecast calculated');
 }
