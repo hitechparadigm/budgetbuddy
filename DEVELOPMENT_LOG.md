@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-19 - Fix creditScoreApi wrong API URL (Session 150)
+
+### Bug Fixed
+`creditScoreApi.ts` used `apiClient` (main API) but credit score Lambda is on features API. Rewrote with direct fetch using `featuresApiUrl`.
+
+---
+
 ## 2026-06-19 - Move rules+net-worth to extended stack (was over 500 resource limit) (Session 150)
 
 ### Bug Fixed

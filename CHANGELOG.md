@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.9.155] - 2026-06-19
+
+### 🐛 fix: CreditScoreApi calling wrong API (main API instead of features API)
+
+- `creditScoreApi.ts` was using `apiClient` (main API = `q0zoob6728`) but `CreditScoreHandler` is deployed on features API (`0poeu07vth`)
+- Rewrote credit score functions to use direct `fetch` with `config.featuresApiUrl`
+- Added shared `creditScoreApiCall()` helper with token auth
+- Removed stale `return response.data` line in `refreshCreditScore`
+
 ## [1.9.154] - 2026-06-19
 
 ### 🐛 fix: Move rules+net-worth Lambdas to extended stack (features stack was over 500 resource limit)

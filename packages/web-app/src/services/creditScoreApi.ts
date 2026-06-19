@@ -5,7 +5,29 @@
  * Requirements: 43.1, 43.2, 43.3, 43.5, 43.6, 43.7, 43.8
  */
 
-import { apiClient } from '../utils/apiClient';
+import { config } from '../config/environment';
+
+// Credit score is on the features API (0poeu07vth)
+const CREDIT_SCORE_BASE = config.featuresApiUrl;
+
+function getToken(): string | null {
+  return localStorage.getItem('budgetbuddy_id_token');
+}
+
+async function creditScoreApiCall<T = any>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${CREDIT_SCORE_BASE}${endpoint}`;
+  const headers = new Headers(options.headers);
+  headers.set('Content-Type', 'application/json');
+  const token = getToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const response = await fetch(url, { ...options, headers });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${response.status}`);
+  }
+  const raw = await response.json();
+  return raw?.data ?? raw;
+}
 
 export interface CreditScore {
   score: number | null;
@@ -38,30 +60,26 @@ export interface CreditScoreSettings {
  * Get current credit score
  */
 export async function getCreditScore(): Promise<CreditScore> {
-  const response = await apiClient.get('/credit-score');
-  return response.data;
+  return await creditScoreApiCall('/credit-score');
 }
 
 /**
  * Get credit score history (last 12 months)
  */
 export async function getCreditScoreHistory(): Promise<{ history: CreditScoreHistory[] }> {
-  const response = await apiClient.get('/credit-score/history');
-  return response.data;
+  return await creditScoreApiCall('/credit-score/history');
 }
 
 /**
  * Refresh credit score from credit bureau
  */
 export async function refreshCreditScore(): Promise<CreditScore> {
-  const response = await apiClient.post('/credit-score/refresh', {});
-  return response.data;
+  return await creditScoreApiCall('/credit-score/refresh', { method: 'POST', body: JSON.stringify({}) });
 }
 
 /**
  * Update credit score monitoring settings
  */
 export async function updateCreditScoreSettings(settings: Partial<CreditScoreSettings>): Promise<{ message: string; settings: CreditScoreSettings }> {
-  const response = await apiClient.put('/credit-score/settings', settings);
-  return response.data;
+  return await creditScoreApiCall('/credit-score/settings', { method: 'PUT', body: JSON.stringify(settings) });
 }
