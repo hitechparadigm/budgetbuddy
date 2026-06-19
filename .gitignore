@@ -121,9 +121,12 @@ dist/
 # Turborepo
 .turbo/
 
-#
- Kiro CI/CD status files
+# Kiro CI/CD status files
 .kiro/cicd-status/*.json
+
+# Lighthouse audit results
+.lighthouse-*.json
+lighthouse-*.json
 
 # Security - Prevent exposure of sensitive logs
 auth-logs.txt
