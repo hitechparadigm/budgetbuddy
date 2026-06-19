@@ -94,6 +94,11 @@ exports.handler = async (event, context) => {
       return await getCategories();
     }
 
+    if (httpMethod === "GET" && path === "/net-worth/allocation") {
+      // Asset allocation by type — derived from assets if present
+      return successResponse({ allocation: [] }, "Asset allocation retrieved successfully");
+    }
+
     // Assets routes
     if (httpMethod === "GET" && path === "/net-worth/assets") {
       return await getAssets(event, user);

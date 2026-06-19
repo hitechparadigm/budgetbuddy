@@ -1,5 +1,12 @@
 # Development Log
 
+## 2026-06-19 - Fix net-worth /allocation 404 (Session 150)
+
+### Bug Fixed
+`/net-worth/allocation` returned 404 — added stub handler returning empty array. NetWorthPage no longer crashes.
+
+---
+
 ## 2026-06-19 - Fix creditScoreApi wrong API URL (Session 150)
 
 ### Bug Fixed

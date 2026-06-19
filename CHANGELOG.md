@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.156] - 2026-06-19
+
+### 🐛 fix: Net-worth /allocation endpoint 404 — add stub handler
+
+- `backend/functions/net-worth/index.js`: Added `GET /net-worth/allocation` route handler
+- Returns empty allocation array (no data stored yet, prevents page crash)
+- `NetWorthPage.tsx` was calling this endpoint via `netWorthApi.getAllocation()` causing 404
+
 ## [1.9.155] - 2026-06-19
 
 ### 🐛 fix: CreditScoreApi calling wrong API (main API instead of features API)
