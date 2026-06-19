@@ -33,6 +33,51 @@ import { Button } from '../components/ui';
 import { apiClient } from '../utils/apiClient';
 import { config } from '../config/environment';
 import { getCurrentMonthString } from '../utils/monthHelpers';
+import { WelcomeTooltipChain } from '../components/WelcomeTooltipChain';
+
+// ─── Daily insight pool (P5-T8) ──────────────────────────────────────────────
+// 30+ rotating insight templates — shown in round-robin by day-of-year
+
+const DAILY_INSIGHT_TEMPLATES = [
+  'Set up a "no-spend day" once a week to boost your savings rate by up to 15%.',
+  'Subscriptions you don\'t track cost the average household $273/year. Check yours.',
+  'Automating savings transfers on payday removes the temptation to spend first.',
+  'The avalanche method saves more interest than snowball — but snowball wins psychologically.',
+  'Dining out 3 fewer times per month typically saves $80–$120 for a family of two.',
+  'A $5/day coffee habit costs $1,825/year. Swapping half to home brew saves $912.',
+  'Emergency fund goal: 3–6 months of essential expenses in a high-yield savings account.',
+  'Grocery shopping with a list reduces impulse purchases by an average of 23%.',
+  'Negotiating one bill per month (insurance, phone, internet) can save $200–$600/year.',
+  'The 24-hour rule: wait a day before any non-essential purchase over $50.',
+  'Consolidating high-interest debt can cut your interest paid by 30–50%.',
+  'Increasing your savings rate by just 1% per year compounds into significant wealth.',
+  'Review your budget at the end of every month — it takes less than 5 minutes.',
+  'Pre-committing grocery money in cash or a debit envelope reduces overspend by 18%.',
+  'Tracking net worth monthly motivates better financial decisions than tracking income alone.',
+  'The break-even on a gym membership is using it at least 12 times/month vs. a day pass.',
+  'Meal prepping on Sundays saves the average person $120–$200 per month.',
+  'Refinancing a $200k mortgage from 7% to 5.5% saves over $200/month.',
+  'Zero-based budgeting users report feeling more in control of their money than 70% of savers.',
+  'A "fun money" budget category reduces financial stress and increases overall adherence.',
+  'Buying generic vs. name-brand groceries saves 20–25% on your grocery bill.',
+  'Putting windfalls (tax refunds, bonuses) directly into savings before they hit checking wins.',
+  'The best time to buy big-ticket items: holiday weekends and end of model-year.',
+  'Checking your credit report every 4 months (rotate 3 bureaus) is free and catches errors early.',
+  'Automated round-up savings apps save an average of $600/year with zero behavior change.',
+  'The "pay yourself first" principle: treat savings like a bill you can\'t miss.',
+  'Carpooling just twice a week can cut commuting costs by 40%.',
+  'Your bank may waive annual fees on credit cards — it never hurts to ask.',
+  'Shopping insurance annually (auto, home, life) takes 30 minutes and can save hundreds.',
+  'Keeping a 1-month buffer in your checking account eliminates most overdraft fees.',
+];
+
+/** Get today's insight by cycling through the pool based on day-of-year */
+function getDailyInsight(): string {
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000,
+  );
+  return DAILY_INSIGHT_TEMPLATES[dayOfYear % DAILY_INSIGHT_TEMPLATES.length];
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -521,10 +566,14 @@ export const OverviewPage: React.FC = () => {
           (data?.summary?.totalSpent != null
             ? `This week you spent $${(data.summary.totalSpent ?? 0).toFixed(0)}. Savings rate: ${((data.summary.savingsRate ?? 0)).toFixed(1)}%.`
             : null);
-        setAiInsight(insightText);
+        setAiInsight(insightText ?? getDailyInsight());
+      } else {
+        // Fall back to daily rotating pool
+        setAiInsight(getDailyInsight());
       }
     } catch {
-      // silent
+      // Fall back to daily rotating pool on any network error
+      setAiInsight(getDailyInsight());
     } finally {
       setLoadingInsight(false);
     }
@@ -579,6 +628,8 @@ export const OverviewPage: React.FC = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
+      {/* Welcome tooltip chain — shows on first visit */}
+      <WelcomeTooltipChain />
       <PageHeader
         title="Overview"
         subtitle={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}

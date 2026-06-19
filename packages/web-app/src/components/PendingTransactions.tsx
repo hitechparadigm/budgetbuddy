@@ -94,7 +94,21 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
     }
   };
 
+  const [pendingRulePrompt, setPendingRulePrompt] = useState<{
+    merchant: string;
+    category: string;
+  } | null>(null);
+
   const handleCategoryChange = (pendingId: string, category: string) => {
+    // Track category change — find the original merchant name
+    const txn = transactions.find(t => t.pendingId === pendingId);
+    const originalCategory = txn?.suggestedCategory;
+    if (txn && category !== originalCategory) {
+      setPendingRulePrompt({
+        merchant: txn.merchantName || txn.description || 'This merchant',
+        category,
+      });
+    }
     setCategoryOverrides((prev) => ({
       ...prev,
       [pendingId]: category,
@@ -173,6 +187,61 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow">
+      {/* "Create a rule?" prompt — appears after recategorizing a transaction */}
+      {pendingRulePrompt && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rule-prompt-title"
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+        >
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm mx-4 w-full">
+            <h3 id="rule-prompt-title" className="font-semibold text-gray-900 mb-2">
+              Create an automatic rule?
+            </h3>
+            <p className="text-sm text-gray-600 mb-5">
+              Always categorize <strong>{pendingRulePrompt.merchant}</strong> as{' '}
+              <strong>{pendingRulePrompt.category}</strong>? This rule will apply
+              to future transactions automatically.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={async () => {
+                  // POST to rules endpoint (best-effort — don't block UX on failure)
+                  try {
+                    const token = localStorage.getItem('budgetbuddy_id_token');
+                    if (token) {
+                      await fetch(
+                        `${import.meta.env.VITE_EXTENDED_FEATURES_API_URL || 'https://hkjzroedjf.execute-api.us-east-1.amazonaws.com/v1'}/rules`,
+                        {
+                          method: 'POST',
+                          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            merchantPattern: pendingRulePrompt.merchant,
+                            categoryName: pendingRulePrompt.category,
+                          }),
+                        },
+                      );
+                    }
+                  } catch {
+                    // Silent — rule creation is best-effort
+                  }
+                  setPendingRulePrompt(null);
+                }}
+                className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+              >
+                Yes, always
+              </button>
+              <button
+                onClick={() => setPendingRulePrompt(null)}
+                className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+              >
+                Just this once
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="p-4 border-b">
         <div className="flex justify-between items-center">
