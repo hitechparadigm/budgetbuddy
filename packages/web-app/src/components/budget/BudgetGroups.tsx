@@ -395,6 +395,8 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
               {group.categories.map((category) => (
                 <div
                   key={category.categoryId}
+                  role="row"
+                  aria-label={`${category.categoryName}: ${formatCurrency(category.plannedAmount, currency)} planned, ${formatCurrency(category.spentAmount ?? 0, currency)} spent, ${formatCurrency(category.remainingAmount, currency)} remaining`}
                   className="flex items-center justify-between px-4 py-3 hover:bg-gray-50"
                 >
                   <div className="flex-1">
