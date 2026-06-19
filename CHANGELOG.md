@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.9.154] - 2026-06-19
+
+### 🐛 fix: Move rules+net-worth Lambdas to extended stack (features stack was over 500 resource limit)
+
+- Removed `RulesHandler` and `NetWorthHandler` from `api-features-stack.ts` (was 530/500 resources)
+- Added both to `api-features-extended-stack.ts` instead (has capacity)
+- Updated `netWorthApi.ts` to use `extendedFeaturesApiUrl` (was `featuresApiUrl`)
+- Updated `OverviewPage.tsx` net-worth fetch to use `extendedFeaturesApiUrl`
+- Updated `SettingsPage.tsx` rules fetch to use `extendedFeaturesApiUrl`
+
 ## [1.9.153] - 2026-06-19
 
 ### 🐛 fix: Net-worth Lambda deployed to features API, OverviewPage net-worth CORS fixed

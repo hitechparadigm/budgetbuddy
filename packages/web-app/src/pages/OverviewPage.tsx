@@ -487,10 +487,10 @@ export const OverviewPage: React.FC = () => {
 
   const loadNetWorth = useCallback(async () => {
     try {
-      // Net-worth is now on the features API (0poeu07vth)
+      // Net-worth is on the extended features API (hkjzroedjf)
       const token = localStorage.getItem('budgetbuddy_id_token');
       if (!token) { setLoadingNetWorth(false); return; }
-      const res = await fetch(`${config.featuresApiUrl}/net-worth/history?months=6`, {
+      const res = await fetch(`${config.extendedFeaturesApiUrl}/net-worth/history?months=6`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) { setLoadingNetWorth(false); return; }
