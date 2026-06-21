@@ -312,6 +312,27 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Note: Family Lambda moved to ApiFamilyStack (standalone stack) to avoid circular dependency
 
+    // Investments Lambda — portfolio tracking + Alpha Vantage market news/signals
+    this.functions.investmentsHandler = new lambda.Function(this, 'InvestmentsHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-investments',
+      code: lambda.Code.fromAsset('../backend/functions/investments'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy investments handler for portfolio tracking, market news, and trending signals via Alpha Vantage',
+      timeout: cdk.Duration.seconds(30),
+      environment: {
+        ...commonProps.environment,
+        ALPHAVANTAGE_SECRET_NAME: 'budgetbuddy/alphavantage/api-key',
+      },
+    });
+
+    // Grant Investments Lambda permission to read Alpha Vantage secret
+    this.functions.investmentsHandler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['secretsmanager:GetSecretValue'],
+      resources: [`arn:aws:secretsmanager:${this.region}:${this.account}:secret:budgetbuddy/alphavantage/*`],
+    }));
+
     // Note: Insights, Receipt, Pattern Detection, and Budget Planning Lambdas
     // have been moved to ApiFeaturesExtendedStack to stay under CloudFormation's 500 resource limit
   }
@@ -347,10 +368,30 @@ export class ApiFeaturesStack extends cdk.Stack {
     // Email routes
     this.setupEmailRoutes(authorizer);
 
+    // Investments routes
+    this.setupInvestmentsRoutes(authorizer);
+
     // Note: Family routes moved to ApiFamilyStack (standalone stack) to avoid circular dependency
 
     // Note: Insights, Receipt, Pattern Detection, and Budget Planning routes
     // have been moved to ApiFeaturesExtendedStack
+  }
+
+  private setupInvestmentsRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const inv = this.api.root.addResource('investments');
+    inv.addMethod('GET', new apigateway.LambdaIntegration(this.functions.investmentsHandler), { authorizer, operationName: 'GetPortfolio' });
+    inv.addResource('health').addMethod('GET', new apigateway.LambdaIntegration(this.functions.investmentsHandler), { methodResponses: [{ statusCode: '200' }], operationName: 'InvestmentsHealth' });
+    const holdings = inv.addResource('holdings');
+    holdings.addMethod('GET', new apigateway.LambdaIntegration(this.functions.investmentsHandler), { authorizer, operationName: 'GetHoldings' });
+    holdings.addMethod('POST', new apigateway.LambdaIntegration(this.functions.investmentsHandler), { authorizer, operationName: 'CreateHolding' });
+    const holdingId = holdings.addResource('{holdingId}');
+    holdingId.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.investmentsHandler), { authorizer, operationName: 'UpdateHolding' });
+    holdingId.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.investmentsHandler), { authorizer, operationName: 'DeleteHolding' });
+    inv.addResource('performance').addMethod('GET', new apigateway.LambdaIntegration(this.functions.investmentsHandler), { authorizer, operationName: 'GetPerformance' });
+    inv.addResource('snapshot').addMethod('POST', new apigateway.LambdaIntegration(this.functions.investmentsHandler), { authorizer, operationName: 'SaveSnapshot' });
+    // News & trending signals via Alpha Vantage
+    inv.addResource('news').addMethod('GET', new apigateway.LambdaIntegration(this.functions.investmentsHandler), { authorizer, operationName: 'GetMarketNews' });
+    inv.addResource('signals').addMethod('GET', new apigateway.LambdaIntegration(this.functions.investmentsHandler), { authorizer, operationName: 'GetTrendingSignals' });
   }
 
   private setupPlaidRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {

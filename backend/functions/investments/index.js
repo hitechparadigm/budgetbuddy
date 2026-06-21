@@ -296,6 +296,26 @@ exports.handler = async (event) => {
       return response(201, snapshot);
     }
 
+    // GET /investments/health
+    if (method === "GET" && pathParts[pathParts.length - 1] === "health") {
+      return response(200, { status: "healthy", service: "investments" });
+    }
+
+    // GET /investments/news?symbols=AAPL,MSFT&topics=finance,economy
+    if (method === "GET" && pathParts[pathParts.length - 1] === "news") {
+      const symbols = event.queryStringParameters?.symbols || null;
+      const topics = event.queryStringParameters?.topics || "finance,economy,earnings";
+      const news = await getMarketNews(symbols, topics);
+      return response(200, news);
+    }
+
+    // GET /investments/signals?symbols=AAPL,MSFT
+    if (method === "GET" && pathParts[pathParts.length - 1] === "signals") {
+      const symbols = event.queryStringParameters?.symbols || null;
+      const signals = await getTrendingSignals(userId, symbols);
+      return response(200, signals);
+    }
+
     return response(404, { error: "Not found" });
   } catch (error) {
     console.error("Error:", error);
@@ -406,4 +426,161 @@ async function savePortfolioSnapshot(userId) {
     .promise();
 
   return snapshot;
+}
+
+// ─── Alpha Vantage helpers ────────────────────────────────────────────────────
+
+/** Fetch the Alpha Vantage API key from Secrets Manager (cached per Lambda warm start) */
+let _avApiKey = null;
+async function getAlphaVantageKey() {
+  if (_avApiKey) return _avApiKey;
+  const secretName = process.env.ALPHAVANTAGE_SECRET_NAME || 'budgetbuddy/alphavantage/api-key';
+  const sm = new AWS.SecretsManager({ region: process.env.AWS_REGION || 'us-east-1' });
+  try {
+    const data = await sm.getSecretValue({ SecretId: secretName }).promise();
+    _avApiKey = data.SecretString;
+    return _avApiKey;
+  } catch (err) {
+    console.error('Failed to fetch Alpha Vantage key:', err.message);
+    return null;
+  }
+}
+
+/**
+ * GET /investments/news
+ * Returns market news articles for the user's portfolio symbols or general finance topics.
+ *
+ * Alpha Vantage endpoint: NEWS_SENTIMENT
+ * Docs: https://www.alphavantage.co/documentation/#news-sentiment
+ */
+async function getMarketNews(symbols, topics) {
+  const apiKey = await getAlphaVantageKey();
+  if (!apiKey) {
+    return { news: [], message: 'Market news unavailable — API key not configured', cached: false };
+  }
+
+  try {
+    // Build query params
+    const queryParts = [`function=NEWS_SENTIMENT`, `apikey=${apiKey}`, `limit=15`, `sort=LATEST`];
+    if (symbols) queryParts.push(`tickers=${encodeURIComponent(symbols)}`); // e.g., "AAPL,MSFT,TSLA"
+    if (topics) queryParts.push(`topics=${encodeURIComponent(topics)}`); // e.g., "finance,economy,earnings"
+
+    const url = `https://www.alphavantage.co/query?${queryParts.join('&')}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Alpha Vantage HTTP ${res.status}`);
+
+    const data = await res.json();
+    if (data.Information) {
+      // Rate limit hit
+      console.warn('Alpha Vantage rate limit:', data.Information);
+      return { news: [], message: 'Market news rate limit reached. Try again in a minute.', cached: false };
+    }
+
+    const feed = data.feed || [];
+    const articles = feed.map(item => ({
+      id: item.url,
+      title: item.title,
+      summary: item.summary?.substring(0, 200) + (item.summary?.length > 200 ? '…' : ''),
+      url: item.url,
+      source: item.source,
+      publishedAt: item.time_published ? formatAvTimestamp(item.time_published) : null,
+      sentiment: item.overall_sentiment_label || 'Neutral', // Bearish / Neutral / Bullish
+      sentimentScore: item.overall_sentiment_score ? parseFloat(item.overall_sentiment_score) : 0,
+      relatedTickers: (item.ticker_sentiment || []).map(t => ({
+        ticker: t.ticker,
+        relevance: parseFloat(t.relevance_score || '0'),
+        sentiment: t.ticker_sentiment_label,
+      })).slice(0, 4),
+      bannerImage: item.banner_image || null,
+      categoryWithinSource: item.category_within_source,
+    }));
+
+    return {
+      news: articles,
+      count: articles.length,
+      fetchedAt: new Date().toISOString(),
+      cached: false,
+    };
+  } catch (err) {
+    console.error('Error fetching market news:', err.message);
+    return { news: [], message: 'Unable to fetch market news right now.', error: err.message, cached: false };
+  }
+}
+
+/**
+ * GET /investments/signals
+ * Returns trending/gainers/losers market signals.
+ * Uses TOP_GAINERS_LOSERS endpoint + optional quote lookups for user's holdings.
+ *
+ * Alpha Vantage endpoint: TOP_GAINERS_LOSERS
+ * Docs: https://www.alphavantage.co/documentation/#top-gainer-loser
+ */
+async function getTrendingSignals(userId, symbols) {
+  const apiKey = await getAlphaVantageKey();
+  if (!apiKey) {
+    return { signals: [], message: 'Market signals unavailable — API key not configured' };
+  }
+
+  try {
+    // Fetch top gainers/losers/most active
+    const url = `https://www.alphavantage.co/query?function=TOP_GAINERS_LOSERS&apikey=${apiKey}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Alpha Vantage HTTP ${res.status}`);
+
+    const data = await res.json();
+    if (data.Information) {
+      return { signals: [], message: 'Rate limit reached. Try again in a minute.' };
+    }
+
+    const formatSignal = (item, category) => ({
+      ticker: item.ticker,
+      price: item.price,
+      changeAmount: item.change_amount,
+      changePercent: item.change_percentage,
+      volume: item.volume,
+      category, // 'gainer' | 'loser' | 'active'
+    });
+
+    const gainers = (data.top_gainers || []).slice(0, 5).map(s => formatSignal(s, 'gainer'));
+    const losers = (data.top_losers || []).slice(0, 5).map(s => formatSignal(s, 'loser'));
+    const active = (data.most_actively_traded || []).slice(0, 5).map(s => formatSignal(s, 'active'));
+
+    // If user has holdings, also add signals for those specific tickers
+    let portfolioSignals = [];
+    if (symbols) {
+      const tickerList = symbols.split(',').slice(0, 5); // max 5 to stay under rate limits
+      portfolioSignals = tickerList.map(ticker => {
+        const allSignals = [...gainers, ...losers, ...active];
+        return allSignals.find(s => s.ticker === ticker.trim().toUpperCase());
+      }).filter(Boolean);
+    }
+
+    return {
+      topGainers: gainers,
+      topLosers: losers,
+      mostActive: active,
+      portfolioSignals,
+      fetchedAt: new Date().toISOString(),
+      marketStatus: data.metadata || null,
+    };
+  } catch (err) {
+    console.error('Error fetching market signals:', err.message);
+    return { signals: [], message: 'Unable to fetch market signals right now.', error: err.message };
+  }
+}
+
+/** Convert Alpha Vantage timestamp "20240115T143000" → ISO string */
+function formatAvTimestamp(ts) {
+  if (!ts || ts.length < 8) return null;
+  try {
+    // Format: YYYYMMDDTHHMMSS
+    const y = ts.substring(0, 4);
+    const mo = ts.substring(4, 6);
+    const d = ts.substring(6, 8);
+    const h = ts.substring(9, 11) || '00';
+    const mi = ts.substring(11, 13) || '00';
+    return new Date(`${y}-${mo}-${d}T${h}:${mi}:00Z`).toISOString();
+  } catch {
+    return null;
+  }
 }

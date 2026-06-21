@@ -7,7 +7,8 @@
 
 import { config } from '../config/environment';
 
-const MAIN_API_BASE = config.apiBaseUrl;
+// Investments is on the features API (0poeu07vth), not the main API
+const MAIN_API_BASE = config.featuresApiUrl;
 
 // Get token from localStorage
 function getToken(): string | null {
@@ -122,6 +123,44 @@ export interface UpdateHoldingRequest {
   accountType?: Holding['accountType'];
 }
 
+export interface NewsArticle {
+  id: string;
+  title: string;
+  summary: string;
+  url: string;
+  source: string;
+  publishedAt: string | null;
+  sentiment: 'Bearish' | 'Somewhat-Bearish' | 'Neutral' | 'Somewhat-Bullish' | 'Bullish';
+  sentimentScore: number;
+  relatedTickers: Array<{ ticker: string; relevance: number; sentiment: string }>;
+  bannerImage: string | null;
+}
+
+export interface MarketNewsResponse {
+  news: NewsArticle[];
+  count: number;
+  fetchedAt: string;
+  message?: string;
+}
+
+export interface MarketSignal {
+  ticker: string;
+  price: string;
+  changeAmount: string;
+  changePercent: string;
+  volume: string;
+  category: 'gainer' | 'loser' | 'active';
+}
+
+export interface MarketSignalsResponse {
+  topGainers: MarketSignal[];
+  topLosers: MarketSignal[];
+  mostActive: MarketSignal[];
+  portfolioSignals: MarketSignal[];
+  fetchedAt: string;
+  message?: string;
+}
+
 // API Methods
 export const investmentsApi = {
   /**
@@ -183,5 +222,27 @@ export const investmentsApi = {
     return investmentsApiCall('/investments/snapshot', {
       method: 'POST',
     });
+  },
+
+  /**
+   * Get market news articles via Alpha Vantage.
+   * @param symbols - Optional comma-separated tickers e.g. "AAPL,MSFT"
+   * @param topics  - Optional topics e.g. "finance,economy,earnings"
+   */
+  async getNews(symbols?: string, topics?: string): Promise<MarketNewsResponse> {
+    const params = new URLSearchParams();
+    if (symbols) params.set('symbols', symbols);
+    if (topics) params.set('topics', topics);
+    const qs = params.toString();
+    return investmentsApiCall<MarketNewsResponse>(`/investments/news${qs ? '?' + qs : ''}`);
+  },
+
+  /**
+   * Get market trending signals (top gainers, losers, most active) via Alpha Vantage.
+   * @param symbols - Optional comma-separated portfolio tickers to highlight
+   */
+  async getSignals(symbols?: string): Promise<MarketSignalsResponse> {
+    const qs = symbols ? `?symbols=${encodeURIComponent(symbols)}` : '';
+    return investmentsApiCall<MarketSignalsResponse>(`/investments/signals${qs}`);
   },
 };

@@ -416,7 +416,7 @@ async function createAsset(event, user) {
     return errorResponse.badRequest("Valid asset value is required");
   }
 
-  const assetId = generateId("asset");
+  const assetId = generateId.custom("asset");
   const currentTime = new Date().toISOString();
 
   const asset = {
@@ -579,7 +579,7 @@ async function createLiability(event, user) {
     return errorResponse.badRequest("Valid balance is required");
   }
 
-  const liabilityId = generateId("liab");
+  const liabilityId = generateId.custom("liab");
   const currentTime = new Date().toISOString();
 
   const liability = {
