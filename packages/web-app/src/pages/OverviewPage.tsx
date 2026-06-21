@@ -34,6 +34,7 @@ import { apiClient } from '../utils/apiClient';
 import { config } from '../config/environment';
 import { getCurrentMonthString } from '../utils/monthHelpers';
 import { WelcomeTooltipChain } from '../components/WelcomeTooltipChain';
+import { QuickAddTransactionModal } from '../components/QuickAddTransactionModal';
 
 // ─── Daily insight pool (P5-T8) ──────────────────────────────────────────────
 // 30+ rotating insight templates — shown in round-robin by day-of-year
@@ -434,10 +435,8 @@ const AIInsightCard: React.FC<{
 };
 
 const QuickAddTransaction: React.FC<{
-  onSuccess?: () => void;
-}> = () => {
-  const navigate = useNavigate();
-
+  onAddTransaction: () => void;
+}> = ({ onAddTransaction }) => {
   return (
     <div className="card p-5">
       <h2 className="text-sm font-medium text-[var(--color-muted-foreground)] mb-3">
@@ -447,7 +446,7 @@ const QuickAddTransaction: React.FC<{
         variant="primary"
         fullWidth
         leftIcon={<Plus className="w-4 h-4" />}
-        onClick={() => navigate('/budget')}
+        onClick={onAddTransaction}
       >
         Add Transaction
       </Button>
@@ -585,6 +584,9 @@ const BudgetHealthScore: React.FC<{ month: string }> = ({ month }) => {  const [
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate();
   const currentMonth = getCurrentMonthString();
+
+  // Quick add transaction modal
+  const [showAddTxn, setShowAddTxn] = useState(false);
 
   // Data state
   const [period, setPeriod] = useState<BudgetPeriod | null>(null);
@@ -755,6 +757,17 @@ export const OverviewPage: React.FC = () => {
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Welcome tooltip chain — shows on first visit */}
       <WelcomeTooltipChain />
+
+      {/* Quick Add Transaction modal — opens from any Add Transaction button on this page */}
+      <QuickAddTransactionModal
+        open={showAddTxn}
+        onClose={() => setShowAddTxn(false)}
+        onSuccess={() => {
+          // Reload budget data so the health bar + categories update immediately
+          loadBudget();
+        }}
+      />
+
       <PageHeader
         title="Overview"
         subtitle={new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -763,7 +776,7 @@ export const OverviewPage: React.FC = () => {
             variant="primary"
             size="sm"
             leftIcon={<Plus className="w-4 h-4" />}
-            onClick={() => navigate('/budget')}
+            onClick={() => setShowAddTxn(true)}
           >
             Add Transaction
           </Button>
