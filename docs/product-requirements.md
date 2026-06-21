@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-21 (Session 152 — Comprehensive responsive UI/UX audit + fixes: invitation resend bug, budget mobile header, touch targets 44px, design tokens, AWS Config disabled saving 30-40% cloud cost)
+**Last Updated**: 2026-06-21 (Session 153 — Auth session expiry UX, add-transaction modal redesign with per-category quick-add, dark mode systematic fix across 81 files, bill category fallback, month timezone bug)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -284,7 +284,6 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **Monthly SES kickoff email** — `sendMonthlyKickoffEmail()` in `daily-reminders/index.js`; triggered on `isFirstDayOfMonth` check; includes pre-filled category count from previous month
 
 ### Session 152 — Comprehensive Responsive UI/UX Audit + Fixes (2026-06-21)
-
 **Invitation Resend Bug (Critical):**
 - ✅ **`handleResendInvitation` fixed** — was blocking resend if original invitation expired; removed expired check on resend since resend's purpose is to refresh an expired invite
 - ✅ **`expiresAt` now reset to 7 days from now on resend** — old code kept the original expiry, causing "Invalid Invitation" on click
@@ -309,7 +308,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 **Bug Fixes:**
 - ✅ **Budget right sidebar UX** — replaced cramped category details panel (text-only) with progress bars, over-budget `+X%` pill badges, design-token colors throughout; `+ Add Item` uses brand green; transaction tabs use `var(--color-primary)`
 - ✅ **Bills category dropdown empty** — `GET /budget/current` requires `?month=YYYY-MM`; BillFormPage was calling it without the param → 400 → silent fail → empty dropdown. Fixed + added `categoriesLoading` state + disabled select while loading
-- ✅ **Budget 401 silent fail** — when JWT expired mid-session, `loadBudget()` (raw `fetch`, not `apiClient`) would get 401 and silently show empty budget. Now: attempt silent token refresh via `apiClient.tryRefreshTokens()` → retry; if refresh fails → redirect to `/auth?returnTo=/budget?month=YYYY-MM`
+- ✅ **Budget 401 silent fail** — when JWT expired mid-session, `loadBudget()` (raw `fetch`, not `apiClient`) would get 401 and silently show empty budget. Now: attempt silent token refresh via `apiClient.tryRefreshTokens()` → retry; if refresh fails → **Session expired banner** with "Sign in again" button preserving `returnTo` URL (Session 153 improved from redirect to graceful banner)
 - ✅ **Net Worth assets save 500** — `createAsset` and `createLiability` called `generateId("asset")` but `generateId` is an object; fixed to `generateId.custom("asset")` / `generateId.custom("liab")`
 - ✅ **Net Worth liabilities save 500** — same fix
 
@@ -334,6 +333,39 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **Performance — lazy loading** — 20 secondary pages lazy-loaded with `React.lazy`/`Suspense`; vendor chunks split (react, lucide, AI generation page); initial bundle **113KB gzip** (was 242KB, −53%); recharts 107KB deferred to Insights only
 - ✅ **Vite code-splitting config** — `vite.config.ts` with `manualChunks` for `vendor-react`, `vendor-lucide`, `page-ai-budget`
 
+### Session 153 — Auth UX, Add-Transaction Redesign, Dark Mode Systematic Fix (2026-06-21)
+
+**Auth Session Expiry (Critical UX Fix):**
+- ✅ **Session-expired banner** — when JWT expires mid-session and token refresh fails, `BudgetPage` now shows a full-screen "Session expired" banner with a "Sign in again" button that preserves the current month in `returnTo`; no more silent blank budget or hard-redirect that lost navigation state
+- ✅ **`saveBudgetToBackend` 401 handling** — adds the same token refresh + retry + expired banner pattern to the save path, so an expired token mid-edit doesn't silently discard changes
+- ✅ **Month timezone bug fixed** — `changeMonth()` was using `new Date().toISOString().slice(0,7)` (UTC) for the new month string; now uses local timezone formatting (`${date.getFullYear()}-${padded month}`) which was causing wrong month to load for users in UTC− timezones
+
+**Add Transaction Modal Redesign:**
+- ✅ **Sheet-style modal on mobile** — slides up from bottom on `<sm`, centered card on desktop (was full-center on all sizes)
+- ✅ **Income / Expense type toggle inside modal** — was only settable from the FAB, now a toggle at the top of the modal so users can switch type without closing and reopening; switching to expense clears any income-specific category
+- ✅ **Amount field first and large** — amount input now uses `text-xl font-semibold` and appears first (most critical entry for a transaction)
+- ✅ **Description + Date side-by-side** — reduces vertical height of the modal by ~1 field height on mobile
+- ✅ **Button color reflects type** — green submit button for income, emerald (`var(--color-primary)`) for expense
+- ✅ **All modal fields use CSS design tokens** — `border-[var(--color-border)]`, `bg-[var(--color-background)]`, `text-[var(--color-foreground)]` throughout; no hardcoded `bg-white` / `text-gray-*`
+
+**Per-Category Quick-Add Transaction:**
+- ✅ **`+` button on every category row** — hovering a category row now shows three icons: green `+` (add transaction to this category), pencil (edit planned amount), trash (delete); clicking `+` opens the add transaction modal pre-populated with that category and the correct income/expense type
+- ✅ **Always visible on mobile** — action icons use `md:opacity-0 group-hover/item:opacity-100` so they're always shown on touch devices (can't hover on mobile)
+
+**Budget Item Modal Redesign:**
+- ✅ **Sheet-style on mobile** — same pattern as transaction modal (`rounded-t-2xl sm:rounded-xl`, slides from bottom)
+- ✅ **`max-h-[90vh] overflow-y-auto`** — long income-frequency forms no longer overflow the screen on small viewports
+- ✅ **All fields use CSS design tokens** — no more `bg-white`, `text-gray-*`, `border-gray-300`, `focus:ring-blue-500`
+
+**Bill Category Selection Fix:**
+- ✅ **Fallback option for saved category** — when editing a bill whose `categoryId` is not in the current month's budget categories (category deleted, or different month), a `(saved)` option is appended so the saved link isn't silently lost; user can keep it or reassign
+
+**Dark Mode — Systematic Fix (81 files):**
+- ✅ **27 page files** — `InsightsPage`, `NetWorthPage`, `InvestmentsPage`, `LearnPage`, `BudgetMembersPage`, `LandingPage`, `PrivacyPolicyPage`, `CreditScorePage`, `HelpCenterPage`, `AboutPage`, and 17 more — hardcoded `bg-white`, `bg-gray-50`, `bg-gray-100`, `text-gray-900/800/700/600/500/400`, `border-gray-200/300` replaced with CSS token vars
+- ✅ **54 component files** — same systematic replacement across `components/` subtree
+- ✅ **Reset modal, Budget item modal, Transaction modal** — all three modals in `BudgetPage.tsx` updated; `bg-white` → `bg-[var(--color-surface)]`, cancel buttons → `bg-[var(--color-muted)]`, text → `text-[var(--color-foreground)]`
+- ✅ **Group headers and category rows** — `text-gray-900` → `text-[var(--color-foreground)]`, `text-gray-500` → `text-[var(--color-muted-foreground)]`; group total row `bg-muted` Tailwind alias → explicit `bg-[var(--color-muted)]`
+
 ---
 
 ## Known Gaps (⚠️ Planned)
@@ -353,7 +385,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 6. **SES still in sandbox mode** — can only send to verified addresses. Verified: `dmytro.malyk@gmail.com`, `dima.pmp@gmail.com`, `info@hitechparadigm.com`, `t1@taxprocanada.ca`, `dmalyk@taxprocanada.ca`. Request SES production access to send to any address.
 
 ### Low Priority
-7. ~~**Dark mode missing on BudgetPage, SettingsPage, GoalsPage**~~ ✅ **Fixed (Session 148)** — all three pages migrated to CSS design token classes.
+7. ~~**Dark mode missing on BudgetPage, SettingsPage, GoalsPage**~~ ✅ **Fixed (Session 148)** — all three pages migrated to CSS design token classes. ~~**Dark mode remaining hardcoded colors across 81 files**~~ ✅ **Fixed (Session 153)** — systematic replacement of all hardcoded `bg-white/gray-*`, `text-gray-*`, `border-gray-*` with CSS token vars across all 27 page files and 54 component files.
 8. ~~**Goals not reflected in budget**~~ ✅ **Fixed (Session 148)** — `contributeToGoal` now updates the linked savings category's `spentAmount` in the budget period.
 9. **Planned transactions frontend** — backend Lambda exists (`transaction-planning`), no frontend UI yet.
 
@@ -623,9 +655,11 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Feature | Frontend | Backend API | Status |
 |---------|----------|-------------|--------|
 | Budget dashboard | `BudgetPage.tsx` | `GET /budget?month=YYYY-MM` | ✅ |
-| Add/edit/delete transaction | `TransactionModal.tsx` | `POST/PUT/DELETE /transactions` | ✅ |
+| Add/edit/delete transaction | Transaction modal in `BudgetPage.tsx` — sheet-style on mobile, income/expense toggle, amount-first layout | `POST/PUT/DELETE /transactions` | ✅ |
+| Quick-add transaction per category | `+` button on each category row in `BudgetPage.tsx` — pre-populates modal with that category | — | ✅ |
 | Transaction list + search | `TransactionList.tsx`, `TransactionFilters.tsx` | `GET /transactions` | ✅ |
-| Month navigation | `MonthNavigator.tsx` | — | ✅ |
+| Month navigation | Month nav arrows in `BudgetPage.tsx` — timezone-safe local date formatting | — | ✅ |
+| Session expiry UX | Session-expired banner in `BudgetPage.tsx` — shown instead of silent blank/redirect when token refresh fails | — | ✅ |
 | Planned transactions | ❌ Not started | `POST /transaction-planning` | 🔄 Backend only |
 
 ---
@@ -658,7 +692,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Feature | Frontend | Backend API | Status |
 |---------|----------|-------------|--------|
 | Bills list — design tokens, budget link visible | `BillsPage.tsx` (redesigned) | `GET /bills` | ✅ |
-| Add/edit bill with category | `BillFormPage.tsx` (redesigned) | `POST/PUT /bills` | ✅ |
+| Add/edit bill with category | `BillFormPage.tsx` (redesigned) — fallback option shows saved category even if not in current budget | `POST/PUT /bills` | ✅ |
 | Bill category → budget transaction on payment | `BillsPage.tsx` | `POST /bills/{id}/pay` | ✅ |
 | Add subscription manually | `SubscriptionsPage.tsx` → `/bills/new?type=subscription` | `POST /bills` | ✅ |
 | AI subscription detection | `SubscriptionsPage.tsx` | `POST /subscriptions/detect` | ✅ |
@@ -746,7 +780,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Notification settings | `NotificationSettings.tsx` | — | ✅ |
 | Auto-categorization rules | `TransactionRulesSection` in `SettingsPage.tsx` | `GET/DELETE /rules` | ✅ |
 | Delete account | `DeleteAccountModal.tsx` | `DELETE /auth/account` | ✅ |
-| Dark mode | `ThemeContext.tsx` | — | ✅ |
+| Dark mode | `ThemeContext.tsx` — full systematic token coverage across all 81 page + component files (Session 153) | — | ✅ |
 | Pricing page | `PricingPage.tsx` at `/pricing` | — | ✅ |
 
 ---
