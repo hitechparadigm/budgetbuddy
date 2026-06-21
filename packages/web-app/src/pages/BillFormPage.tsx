@@ -82,36 +82,39 @@ export const BillFormPage: React.FC = () => {
 
         const expenseCategories: Category[] = [];
         if (budget.groups) {
-          // Handle both array format and object format from backend
-          let groups: any[] = [];
-          if (Array.isArray(budget.groups)) {
-            groups = budget.groups;
-          } else {
-            // Object format: { income: [...], savings: [...], expenses: [...] }
-            if (budget.groups.savings) {
-              budget.groups.savings.forEach((g: any) => {
-                groups.push({ ...g, type: 'savings' });
-              });
-            }
-            if (budget.groups.expenses) {
-              budget.groups.expenses.forEach((g: any) => {
-                groups.push({ ...g, type: 'expense' });
-              });
-            }
-          }
-
-          groups.forEach((group: any) => {
-            const t = group.type || '';
-            if (t === 'expense' || t === 'savings') {
-              (group.categories || []).forEach((cat: any) => {
-                expenseCategories.push({
-                  id: cat.id || cat.categoryId,
-                  name: cat.name || cat.categoryName,
-                  icon: cat.icon || '💰',
+          const g = budget.groups;
+          if (Array.isArray(g)) {
+            // Already-transformed array format: [{type, categories:[...]}, ...]
+            g.forEach((group: any) => {
+              const t = group.type || '';
+              if (t === 'expense' || t === 'savings') {
+                (group.categories || []).forEach((cat: any) => {
+                  expenseCategories.push({
+                    id: cat.id || cat.categoryId,
+                    name: cat.name || cat.categoryName,
+                    icon: cat.icon || '💰',
+                  });
                 });
+              }
+            });
+          } else {
+            // Object format from backend: { income:[...], savings:[...], expenses:[...] }
+            // Each value is a flat array of category objects directly.
+            (g.savings || []).forEach((cat: any) => {
+              expenseCategories.push({
+                id: cat.id || cat.categoryId,
+                name: cat.name || cat.categoryName,
+                icon: cat.icon || '💾',
               });
-            }
-          });
+            });
+            (g.expenses || []).forEach((cat: any) => {
+              expenseCategories.push({
+                id: cat.id || cat.categoryId,
+                name: cat.name || cat.categoryName,
+                icon: cat.icon || '💸',
+              });
+            });
+          }
         }
         setCategories(expenseCategories);
       } catch (err) {
