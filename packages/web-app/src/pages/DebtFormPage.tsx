@@ -242,30 +242,32 @@ export default function DebtFormPage() {
       >
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
+          <label htmlFor="debt-name" className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
             Debt Name *
           </label>
           <input
+            id="debt-name"
             type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
             placeholder="e.g., Chase Sapphire, Student Loan"
-            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
             required
           />
         </div>
 
         {/* Type */}
         <div>
-          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
+          <label htmlFor="debt-type" className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
             Debt Type
           </label>
           <select
+            id="debt-type"
             name="type"
             value={formData.type}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
           >
             {DEBT_TYPES.map((type) => (
               <option key={type.value} value={type.value}>
@@ -291,7 +293,7 @@ export default function DebtFormPage() {
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-background)] text-[var(--color-foreground)]"
                 required
               />
             </div>
@@ -310,7 +312,7 @@ export default function DebtFormPage() {
                 step="0.01"
                 min="0"
                 placeholder="Same as current"
-                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-background)] text-[var(--color-foreground)]"
               />
             </div>
           </div>
@@ -332,7 +334,7 @@ export default function DebtFormPage() {
                 min="0"
                 max="100"
                 placeholder="0.00"
-                className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-background)] text-[var(--color-foreground)]"
                 required
               />
               <span className="absolute right-3 top-2 text-[var(--color-muted-foreground)]">%</span>
@@ -352,7 +354,7 @@ export default function DebtFormPage() {
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-background)] text-[var(--color-foreground)]"
                 required
               />
             </div>
@@ -383,7 +385,7 @@ export default function DebtFormPage() {
             name="dueDay"
             value={formData.dueDay}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-background)] text-[var(--color-foreground)]"
           >
             {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
               <option key={day} value={day}>
@@ -404,7 +406,7 @@ export default function DebtFormPage() {
             onChange={handleChange}
             rows={3}
             placeholder="Any additional notes about this debt..."
-            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-background)] text-[var(--color-foreground)]"
           />
         </div>
 
@@ -431,7 +433,7 @@ export default function DebtFormPage() {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-6 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
             >
               {loading ? "Saving..." : isEditing ? "Save Changes" : "Add Debt"}
             </button>
