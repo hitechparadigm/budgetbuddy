@@ -1,6 +1,35 @@
 # Changelog
 
-## [1.9.156] - 2026-06-19
+## [1.9.165] - 2026-06-21
+
+### 📋 docs: product-requirements.md — Session 150 live test results verified
+
+- Added Session 150 Playwright verification section: all 18 polish criteria confirmed working live
+- Added new API endpoint test results: `/budget/health-score`, `/budget/cash-flow`, `/rules`, `/net-worth/allocation`
+- Added responsive test results at 375px viewport
+- Documented known non-issues (Google OAuth dev restriction, stale browser cache)
+
+## [1.9.164] - 2026-06-19
+
+### 📋 docs: update product-requirements.md — all 18 polish criteria, journeys, REQ-NEW complete
+
+- Updated Implemented Features with all Phase 3/4/5/6 completions
+- Moved all 18 REQ-NEW items from Planned ⚠️ to Built ✅
+- Updated User Journey tables for Onboarding, Overview, Insights, Goals, Debt, Settings, Plaid
+- Removed Net Worth from "Not Deployed" (Lambda now deployed in extended stack)
+
+## [1.9.163] - 2026-06-19
+
+### ⚡ perf: lazy-load 20 secondary pages — initial bundle 113KB gzip (was 242KB)
+
+- `packages/web-app/src/App.tsx`: Converted 20 secondary page imports to `React.lazy` + `Suspense`
+- Added `PageSkeleton` fallback component shown while lazy chunks load
+- `vite.config.ts`: Added `manualChunks` splitting `vendor-react` (53KB gz), `vendor-lucide` (3KB gz), `page-ai-budget` (5KB gz) into stable hashed files
+- Initial bundle: 509KB uncompressed → **113KB gzip** (was 242KB, −53% reduction)
+- recharts (107KB gz) deferred to Insights page only
+- `.gitignore`: Added `lighthouse-*.json` pattern
+
+
 
 ### 🐛 fix: Net-worth /allocation endpoint 404 — add stub handler
 
