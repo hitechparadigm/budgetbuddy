@@ -139,6 +139,35 @@ export class HostingStack extends cdk.Stack {
    */
   private createCloudFrontDistributions(): void {
     /**
+     * Cache policy for Vite content-hashed assets (/assets/*).
+     * Filenames include a content hash (e.g. AccountsPage-d2d8db62.js),
+     * so they are truly immutable — safe to cache for 1 year.
+     * This also prevents stale-chunk errors: if the file exists it's served
+     * correctly; if it doesn't exist we get a real 404, not a cached one.
+     */
+    const immutableAssetsCachePolicy = new cloudfront.CachePolicy(this, 'ImmutableAssets', {
+      comment: 'Long-lived cache for Vite content-hashed assets (immutable)',
+      defaultTtl: cdk.Duration.days(365),
+      maxTtl: cdk.Duration.days(365),
+      minTtl: cdk.Duration.days(365),
+      enableAcceptEncodingGzip: true,
+      enableAcceptEncodingBrotli: true,
+    });
+
+    /**
+     * Cache policy for index.html — must NEVER be cached by CloudFront
+     * so that after every deploy users get the latest entry-point immediately.
+     */
+    const noCachePolicy = new cloudfront.CachePolicy(this, 'NoCache', {
+      comment: 'No-cache for index.html and SPA entry points',
+      defaultTtl: cdk.Duration.seconds(0),
+      maxTtl: cdk.Duration.seconds(1),
+      minTtl: cdk.Duration.seconds(0),
+      enableAcceptEncodingGzip: true,
+      enableAcceptEncodingBrotli: true,
+    });
+
+    /**
      * CloudFront distribution for web application
      * Provides global CDN with caching optimized for SPA
      */
@@ -148,25 +177,27 @@ export class HostingStack extends cdk.Stack {
       // S3 origin with Origin Access Identity for security
       defaultRootObject: 'index.html',
 
-      // Default behavior for all requests
+      // Default behavior — serves index.html for all SPA routes; no caching
       defaultBehavior: {
         origin: new origins.S3Origin(this.webBucket),
-
-        // Viewer protocol policy - redirect HTTP to HTTPS
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-
-        // Caching policy optimized for SPA
-        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-
-        // Allowed HTTP methods
+        // Don't cache the SPA entry-point — always fetch fresh index.html after deploy
+        cachePolicy: noCachePolicy,
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
-
-        // Compress responses for better performance
         compress: true,
       },
 
-      // Additional behaviors for API calls (no caching)
       additionalBehaviors: {
+        // Content-hashed Vite assets — safe to cache indefinitely (immutable)
+        '/assets/*': {
+          origin: new origins.S3Origin(this.webBucket),
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: immutableAssetsCachePolicy,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+          compress: true,
+        },
+
+        // API proxy paths — no caching
         '/api/*': {
           origin: new origins.S3Origin(this.webBucket),
           viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -175,19 +206,24 @@ export class HostingStack extends cdk.Stack {
         },
       },
 
-      // Error pages for SPA routing
+      // Error pages for SPA routing.
+      // CRITICAL: ttl MUST be Duration.seconds(0) for 404/403.
+      // A non-zero TTL here is what causes the stale chunk-load error:
+      // CloudFront caches the 404→index.html response, so subsequent requests
+      // for a freshly-deployed asset (different hash) also get index.html
+      // with Content-Type: text/html, which the browser rejects as a JS module.
       errorResponses: [
         {
           httpStatus: 404,
           responseHttpStatus: 200,
           responsePagePath: '/index.html',
-          ttl: cdk.Duration.minutes(5),
+          ttl: cdk.Duration.seconds(0), // Never cache 404s
         },
         {
           httpStatus: 403,
           responseHttpStatus: 200,
           responsePagePath: '/index.html',
-          ttl: cdk.Duration.minutes(5),
+          ttl: cdk.Duration.seconds(0), // Never cache 403s
         },
       ],
 
@@ -210,24 +246,34 @@ export class HostingStack extends cdk.Stack {
       defaultBehavior: {
         origin: new origins.S3Origin(this.adminBucket),
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        cachePolicy: noCachePolicy,
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
         compress: true,
       },
 
-      // Error pages for SPA routing
+      additionalBehaviors: {
+        '/assets/*': {
+          origin: new origins.S3Origin(this.adminBucket),
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: immutableAssetsCachePolicy,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+          compress: true,
+        },
+      },
+
+      // Error pages for SPA routing — never cache error responses
       errorResponses: [
         {
           httpStatus: 404,
           responseHttpStatus: 200,
           responsePagePath: '/index.html',
-          ttl: cdk.Duration.minutes(5),
+          ttl: cdk.Duration.seconds(0),
         },
         {
           httpStatus: 403,
           responseHttpStatus: 200,
           responsePagePath: '/index.html',
-          ttl: cdk.Duration.minutes(5),
+          ttl: cdk.Duration.seconds(0),
         },
       ],
 
