@@ -185,7 +185,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             )}
             <button
               onClick={handleNext}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)]"
             >
               {isLastStep ? "Finish" : "Next"}
             </button>

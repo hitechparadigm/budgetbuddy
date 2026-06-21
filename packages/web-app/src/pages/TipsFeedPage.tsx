@@ -238,7 +238,7 @@ export const TipsFeedPage: React.FC = () => {
                   onClick={() => setSelectedCategory(cat.value)}
                   className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
                     selectedCategory === cat.value
-                      ? "bg-blue-600 text-white"
+                      ? "bg-[var(--color-primary)] text-white"
                       : "bg-[var(--color-surface)] text-[var(--color-foreground)] hover:bg-[var(--color-muted)]"
                   }`}
                 >
@@ -337,7 +337,7 @@ export const TipsFeedPage: React.FC = () => {
                 </p>
                 <button
                   onClick={() => setActiveTab("feed")}
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="mt-4 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)]"
                 >
                   Browse Tips
                 </button>

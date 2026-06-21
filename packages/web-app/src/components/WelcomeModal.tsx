@@ -83,7 +83,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
         <div className="px-6 pb-6 space-y-3">
           <button
             onClick={onStartTutorial}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="w-full py-3 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors font-medium"
           >
             Take a Quick Tour
           </button>

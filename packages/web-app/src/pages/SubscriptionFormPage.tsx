@@ -259,7 +259,7 @@ export default function SubscriptionFormPage() {
             value={formData.name}
             onChange={handleChange}
             placeholder="e.g., Netflix, Spotify, Adobe Creative Cloud"
-            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
             required
           />
         </div>
@@ -275,7 +275,7 @@ export default function SubscriptionFormPage() {
             value={formData.merchant}
             onChange={handleChange}
             placeholder="How it appears on your statement"
-            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
           />
           <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
             Used for matching with transactions. Leave blank to use subscription
@@ -299,7 +299,7 @@ export default function SubscriptionFormPage() {
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                 required
               />
             </div>
@@ -312,7 +312,7 @@ export default function SubscriptionFormPage() {
               name="frequency"
               value={formData.frequency}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
             >
               {FREQUENCIES.map((freq) => (
                 <option key={freq.value} value={freq.value}>
@@ -342,7 +342,7 @@ export default function SubscriptionFormPage() {
             name="category"
             value={formData.category}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
           >
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
@@ -362,7 +362,7 @@ export default function SubscriptionFormPage() {
             name="nextBillingDate"
             value={formData.nextBillingDate}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
           />
         </div>
 
@@ -377,7 +377,7 @@ export default function SubscriptionFormPage() {
             onChange={handleChange}
             rows={3}
             placeholder="Any additional notes about this subscription..."
-            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
           />
         </div>
 
@@ -404,7 +404,7 @@ export default function SubscriptionFormPage() {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="px-6 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
             >
               {loading
                 ? "Saving..."

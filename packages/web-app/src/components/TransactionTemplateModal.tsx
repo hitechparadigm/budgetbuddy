@@ -233,7 +233,7 @@ export const TransactionTemplateModal: React.FC<
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
                   placeholder="e.g., Weekly Groceries"
-                  className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
                   autoFocus
                 />
               </div>
@@ -270,7 +270,7 @@ export const TransactionTemplateModal: React.FC<
                   type="checkbox"
                   checked={saveAmount}
                   onChange={(e) => setSaveAmount(e.target.checked)}
-                  className="rounded border-[var(--color-border)] text-blue-600 focus:ring-blue-500"
+                  className="rounded border-[var(--color-border)] text-blue-600 focus:ring-[var(--color-primary)]"
                 />
                 <span className="text-sm text-[var(--color-foreground)]">
                   Save amount with template
@@ -307,7 +307,7 @@ export const TransactionTemplateModal: React.FC<
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search templates..."
-                    className="w-full pl-9 pr-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    className="w-full pl-9 pr-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)] text-sm"
                   />
                 </div>
 
@@ -318,7 +318,7 @@ export const TransactionTemplateModal: React.FC<
                       onClick={() => setFilterType(type)}
                       className={`px-3 py-1 text-xs rounded-full transition-colors ${
                         filterType === type
-                          ? "bg-blue-600 text-white"
+                          ? "bg-[var(--color-primary)] text-white"
                           : "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] hover:bg-gray-200"
                       }`}
                     >
@@ -416,7 +416,7 @@ export const TransactionTemplateModal: React.FC<
               <button
                 onClick={handleSaveTemplate}
                 disabled={!templateName.trim()}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Save Template
               </button>

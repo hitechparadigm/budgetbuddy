@@ -282,7 +282,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
         </p>
         <button
           onClick={handleCreateBudget}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+          className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-6 py-3 rounded-lg font-medium transition-colors"
         >
           Create Budget
         </button>
@@ -300,7 +300,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
           </h2>
           <button
             onClick={handleCreateBudget}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             Edit Budget
           </button>

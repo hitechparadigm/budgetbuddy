@@ -195,8 +195,8 @@ export const PlaidLinkButton: React.FC<PlaidLinkButtonProps> = ({
     <button
       onClick={openPlaidLink}
       disabled={loading || !sdkLoaded}
-      className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700
-        disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors ${className}`}
+      className={`px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)]
+        disabled:bg-[var(--color-muted)] disabled:cursor-not-allowed transition-colors ${className}`}
     >
       {loading ? (
         <span className="flex items-center gap-2">

@@ -196,7 +196,7 @@ export const LearnPage: React.FC = () => {
           <p className="text-[var(--color-muted-foreground)] mt-1">{newBadges[0].description}</p>
           <button
             onClick={() => setNewBadges((prev) => prev.slice(1))}
-            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="mt-4 px-6 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)]"
           >
             Awesome!
           </button>
@@ -446,7 +446,7 @@ export const LearnPage: React.FC = () => {
                     className={`px-4 py-2 rounded-lg font-medium ${
                       selectedCourse.completedLessons >=
                       selectedCourse.totalLessons
-                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        ? "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]"
                         : "bg-gray-200 text-[var(--color-muted-foreground)] cursor-not-allowed"
                     }`}
                   >
@@ -476,7 +476,7 @@ export const LearnPage: React.FC = () => {
                 className={`px-6 py-2 rounded-lg font-medium ${
                   selectedLesson.isCompleted
                     ? "bg-green-100 text-green-800 cursor-default"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]"
                 }`}
               >
                 {completingLesson
@@ -523,7 +523,7 @@ export const LearnPage: React.FC = () => {
                         setQuizResult(null);
                         setQuizAnswers({});
                       }}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      className="px-6 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)]"
                     >
                       Try Again
                     </button>
@@ -543,7 +543,7 @@ export const LearnPage: React.FC = () => {
                   <button
                     onClick={submitQuiz}
                     disabled={submittingQuiz}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    className="px-6 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-50"
                   >
                     {submittingQuiz ? "Submitting..." : "Submit Quiz"}
                   </button>

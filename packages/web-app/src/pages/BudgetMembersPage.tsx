@@ -319,7 +319,7 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
         <p className="text-[var(--color-muted-foreground)] mb-2">{error || 'No budget found. Please complete onboarding first.'}</p>
         <button
           onClick={() => navigate('/budget')}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="mt-4 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)]"
         >
           Go to Budget
         </button>
@@ -371,7 +371,7 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
             {isOwner && (
               <button
                 onClick={() => setShowInviteForm((v) => !v)}
-                className="flex items-center space-x-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                className="flex items-center space-x-1 px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -465,7 +465,7 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
                   <button
                     type="submit"
                     disabled={inviting}
-                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm"
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-[var(--color-muted)] disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm"
                   >
                     {inviting ? 'Sending…' : 'Send Invitation'}
                   </button>

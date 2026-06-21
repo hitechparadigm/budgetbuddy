@@ -330,7 +330,7 @@ export const InvestmentsPage: React.FC = () => {
                     onClick={() => setSelectedPeriod(period.value)}
                     className={`px-3 py-1 rounded-lg text-sm ${
                       selectedPeriod === period.value
-                        ? "bg-blue-600 text-white"
+                        ? "bg-[var(--color-primary)] text-white"
                         : "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] hover:bg-gray-200"
                     }`}
                   >
@@ -813,7 +813,7 @@ export const InvestmentsPage: React.FC = () => {
               </button>
               <button
                 onClick={handleSaveHolding}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)]"
               >
                 Save
               </button>

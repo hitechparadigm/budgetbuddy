@@ -168,7 +168,7 @@ export const DevHelper: React.FC = () => {
             <div className="space-y-2">
               <button
                 onClick={() => window.location.reload()}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+                className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-3 py-1 rounded text-sm"
               >
                 Reload Page
               </button>

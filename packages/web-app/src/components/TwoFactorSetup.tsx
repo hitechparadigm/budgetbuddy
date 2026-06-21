@@ -189,7 +189,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
             <button
               onClick={handleStartSetup}
               disabled={loading}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="w-full py-3 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50"
             >
               {loading ? "Setting up..." : "Get Started"}
             </button>
@@ -251,7 +251,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
 
             <button
               onClick={() => setStep("verify")}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="w-full py-3 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors"
             >
               I've Scanned the Code
             </button>
@@ -283,7 +283,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
                   setError(null);
                 }}
                 placeholder="000000"
-                className="w-full text-center text-3xl tracking-widest py-4 border-2 border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full text-center text-3xl tracking-widest py-4 border-2 border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
                 autoFocus
               />
               <p className="text-xs text-[var(--color-muted-foreground)] mt-2 text-center">
@@ -294,7 +294,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
             <button
               onClick={handleVerifyCode}
               disabled={loading || verificationCode.length !== 6}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="w-full py-3 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50"
             >
               {loading ? "Verifying..." : "Verify Code"}
             </button>
@@ -408,7 +408,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                     step === s
-                      ? "bg-blue-600 text-white"
+                      ? "bg-[var(--color-primary)] text-white"
                       : ["intro", "qr", "verify", "backup"].indexOf(step) >
                           index
                         ? "bg-green-500 text-white"

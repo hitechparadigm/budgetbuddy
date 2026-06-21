@@ -228,7 +228,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
                   }
                   setPendingRulePrompt(null);
                 }}
-                className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+                className="flex-1 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] text-sm font-medium"
               >
                 Yes, always
               </button>
@@ -302,7 +302,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
               checked={selectedIds.size === transactions.length}
               onChange={toggleSelectAll}
               className="w-4 h-4 text-blue-600 rounded border-[var(--color-border)]
-                focus:ring-blue-500"
+                focus:ring-[var(--color-primary)]"
             />
             <span className="text-sm text-[var(--color-muted-foreground)]">
               {selectedIds.size === transactions.length
@@ -326,7 +326,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
                     checked={selectedIds.has(transaction.pendingId)}
                     onChange={() => toggleSelection(transaction.pendingId)}
                     className="mt-1 w-4 h-4 text-blue-600 rounded border-[var(--color-border)]
-                      focus:ring-blue-500"
+                      focus:ring-[var(--color-primary)]"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4">
@@ -367,7 +367,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
                           )
                         }
                         className="text-sm border border-[var(--color-border)] rounded px-2 py-1
-                          focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
                       >
                         <option value="">Select category...</option>
                         {CATEGORIES.map((cat) => (

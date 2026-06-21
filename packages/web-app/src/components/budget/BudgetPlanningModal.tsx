@@ -370,7 +370,7 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
                   }}
                   className={`w-32 bg-gray-700 border ${
                     errors[category.id] ? "border-red-500" : "border-gray-600"
-                  } rounded px-3 py-2 text-white text-right focus:outline-none focus:border-blue-500`}
+                  } rounded px-3 py-2 text-white text-right focus:outline-none focus:border-[var(--color-primary)]`}
                   placeholder="0.00"
                 />
               </div>
@@ -398,7 +398,7 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
             </button>
             <button
               onClick={handleSave}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="px-6 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg transition-colors"
               disabled={loading}
             >
               {loading ? "Saving..." : "Save Budget"}

@@ -572,7 +572,7 @@ export const SettingsPage: React.FC = () => {
                     country: e.target.value,
                   }))
                 }
-                className="w-full px-3 py-2 border border-border bg-surface text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border bg-surface text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               >
                 <option value="">Select a country</option>
                 <option value="US">United States</option>
@@ -597,7 +597,7 @@ export const SettingsPage: React.FC = () => {
                 onChange={(e) =>
                   setLocationForm((prev) => ({ ...prev, city: e.target.value }))
                 }
-                className="w-full px-3 py-2 border border-border bg-surface text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border bg-surface text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                 placeholder="Enter your city"
               />
             </div>
@@ -619,7 +619,7 @@ export const SettingsPage: React.FC = () => {
                     zipCode: e.target.value,
                   }))
                 }
-                className="w-full px-3 py-2 border border-border bg-surface text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border bg-surface text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                 placeholder="Enter your zip or postal code"
               />
             </div>
@@ -633,7 +633,7 @@ export const SettingsPage: React.FC = () => {
                   !locationForm.city ||
                   !locationForm.zipCode
                 }
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:bg-[var(--color-muted)] disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors"
               >
                 {saving ? "Updating..." : "Update Location"}
               </button>
@@ -729,7 +729,7 @@ export const SettingsPage: React.FC = () => {
           </p>
           <button
             onClick={() => navigate("/accounts")}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors flex items-center space-x-2"
+            className="px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-md font-medium transition-colors flex items-center space-x-2"
           >
             <span>Manage Bank Accounts</span>
             <svg
@@ -891,7 +891,7 @@ export const SettingsPage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setShow2FASetup(true)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors flex items-center space-x-2"
+                    className="px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-md font-medium transition-colors flex items-center space-x-2"
                   >
                     <svg
                       className="w-5 h-5"
@@ -950,7 +950,7 @@ export const SettingsPage: React.FC = () => {
               <button
                 onClick={handleBackupData}
                 disabled={backupInProgress}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors flex items-center space-x-2"
+                className="px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:bg-[var(--color-muted)] disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors flex items-center space-x-2"
               >
                 {backupInProgress ? (
                   <>
@@ -1122,7 +1122,7 @@ export const SettingsPage: React.FC = () => {
           </p>
           <a
             href="/budget/members"
-            className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg text-sm font-medium transition-colors"
           >
             Manage Members →
           </a>
@@ -1351,7 +1351,7 @@ export const SettingsPage: React.FC = () => {
               <button
                 onClick={confirmCurrencyChange}
                 disabled={saving}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saving ? "Updating..." : "Confirm Change"}
               </button>

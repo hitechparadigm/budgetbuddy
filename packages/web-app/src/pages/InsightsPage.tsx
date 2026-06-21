@@ -334,7 +334,7 @@ export const InsightsPage: React.FC = () => {
                     <div key={i} className="space-y-2">
                       {/* User bubble — right */}
                       <div className="flex justify-end">
-                        <div className="bg-blue-600 text-white px-4 py-2 rounded-2xl rounded-tr-sm max-w-xs lg:max-w-md text-sm">
+                        <div className="bg-[var(--color-primary)] text-white px-4 py-2 rounded-2xl rounded-tr-sm max-w-xs lg:max-w-md text-sm">
                           {entry.question}
                         </div>
                       </div>
@@ -412,13 +412,13 @@ export const InsightsPage: React.FC = () => {
                   onChange={(e) => setAskQuestion(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAskQuestion()}
                   placeholder="Ask anything about your spending..."
-                  className="flex-1 px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   disabled={askLoading}
                 />
                 <button
                   onClick={handleAskQuestion}
                   disabled={askLoading || !askQuestion.trim()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Ask
                 </button>
@@ -556,7 +556,7 @@ export const InsightsPage: React.FC = () => {
                   onClick={() => setSelectedPeriod("6")}
                   className={`px-3 py-1 rounded-lg text-sm ${
                     selectedPeriod === "6"
-                      ? "bg-blue-600 text-white"
+                      ? "bg-[var(--color-primary)] text-white"
                       : "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] hover:bg-gray-200"
                   }`}
                 >
@@ -566,7 +566,7 @@ export const InsightsPage: React.FC = () => {
                   onClick={() => setSelectedPeriod("12")}
                   className={`px-3 py-1 rounded-lg text-sm ${
                     selectedPeriod === "12"
-                      ? "bg-blue-600 text-white"
+                      ? "bg-[var(--color-primary)] text-white"
                       : "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] hover:bg-gray-200"
                   }`}
                 >

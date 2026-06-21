@@ -267,7 +267,7 @@ export const AIBudgetGenerationPage: React.FC = () => {
           </h2>
           <button
             onClick={handleStartOver}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
+            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-6 py-3 rounded-lg"
           >
             Start Over
           </button>
@@ -462,13 +462,13 @@ export const AIBudgetGenerationPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
             onClick={handleAcceptBudget}
-            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-8 py-3 rounded-lg font-semibold transition-colors"
           >
             ✅ Use This Budget
           </button>
           <button
             onClick={handleCustomizeBudget}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+            className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white px-8 py-3 rounded-lg font-semibold transition-colors"
           >
             ✏️ Customize Budget
           </button>
