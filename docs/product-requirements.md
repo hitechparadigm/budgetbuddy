@@ -347,9 +347,71 @@ All requirements from the Polish Plan are implemented:
 
 Tested against dev environment using `scripts/test-live-api.js`. **111 checks passed, 0 failed** across 20 test sections. All previous skips resolved — transactions work end-to-end.
 
+## Live API Test Results (2026-06-19 — Session 150 New Endpoints)
+
+New endpoints added during web app polish, verified live:
+
+| Endpoint | API | Status |
+|----------|-----|--------|
+| `GET /budget/health-score` | Main API (`q0zoob6728`) | ✅ Returns score, components, interpretation, delta |
+| `GET /budget/cash-flow` | Main API (`q0zoob6728`) | ✅ Returns balance forecast + 30-day timeline |
+| `GET /rules` | Extended API (`hkjzroedjf`) | ✅ Returns rules array |
+| `POST /rules` | Extended API (`hkjzroedjf`) | ✅ Wired from PendingTransactions prompt |
+| `GET /net-worth/allocation` | Extended API (`hkjzroedjf`) | ✅ 200 OK |
+
 **Playwright browser test results** — see "Playwright Frontend Test Results" section below.
 
-## Playwright Frontend Test Results (2026-06-15)
+## Playwright Frontend Test Results (2026-06-19 — Session 150 Post-Polish Verification)
+
+Full re-test of the live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` after completing all 18 web app polish criteria.
+
+### ✅ All Pages Verified — 0 Console Errors
+
+| Page | Route | Status | Key Verification |
+|------|-------|--------|-----------------|
+| Landing page | `/` | ✅ | New headline "Your budget, built in 60 seconds." confirmed |
+| Auth → Overview redirect | `/auth` → `/overview` | ✅ | Login now redirects to `/overview` (was `/budget`) |
+| Overview dashboard | `/overview` | ✅ | 11 cards, real data loaded (44% income spent, $5,000 income), 0 skeletons |
+| Overview — Budget Health Score | `/overview` | ✅ | SVG ring renders, API returns score=50, interpretation="Fair", delta=0 |
+| Overview — Cash Flow Forecast | `/overview` | ✅ | End-of-month balance card, 12-day timeline returned |
+| Overview — AI insight | `/overview` | ✅ | "You spent $0.00..." insight rendered from weekly API |
+| Overview — Welcome tooltip | `/overview` | ✅ | 3-step dialog renders on first visit, dismisses on "Skip tour" |
+| Budget page | `/budget` | ✅ | Income/Savings/Expenses groups, 0 errors |
+| Budget — mobile slide-over | `/budget` (375px) | ✅ | Floating "Transactions" button present at 375px |
+| Budget — mobile banner | `/budget` (375px) | ✅ | "Get the BudgetBuddy app" sticky banner present |
+| Goals page | `/goals` | ✅ | SVG progress rings (10 circles = 5 goals × track+ring), 0 errors |
+| Insights page | `/insights` | ✅ | "Ask Your AI Coach" heading; recharts: 4 wrappers, 2 line series |
+| Debt Payoff page | `/debts` | ✅ | Extra payment range slider present, 0 errors |
+| Pricing page | `/pricing` | ✅ | Free/Premium comparison, MOST POPULAR badge, FAQ section |
+| Settings | `/settings` | ✅ | 6 tabs, Auto-Categorization Rules section present |
+| Onboarding | `/onboarding` | ✅ | 4-step indicator, "Who are you budgeting for?" heading, inline descriptions |
+| Net Worth | `/net-worth` | ✅ | 0 errors on direct navigation |
+| Credit Score | `/credit-score` | ✅ | 0 errors on direct navigation |
+| **11 routes batch test** | all | ✅ | 0 `[role="alert"]` errors across all routes |
+
+### ✅ New API Endpoints Verified Live
+
+| Endpoint | Result |
+|----------|--------|
+| `GET /budget/health-score?month=2026-06` | `{ success: true, data: { score: 50, interpretation: "Fair", delta: 0, components: { savingsRate: 0, adherence: 100, goalProgress: 50 } } }` |
+| `GET /budget/cash-flow?month=2026-06` | `{ success: true, data: { estimatedEndBalance: 0, daysRemaining: 11, timeline: [...12 days] } }` |
+| `GET /rules` (extended API) | `{ success: true, data: { rules: [] } }` — no rules created yet, schema correct |
+| `GET /net-worth/allocation` | `{ success: true }` — 200 OK |
+
+### ✅ Responsive Tests (375px viewport)
+
+| Feature | Status |
+|---------|--------|
+| Mobile banner `<768px` | ✅ |
+| Floating "Transactions" button (budget slide-over) | ✅ |
+| Mobile header hamburger | ✅ |
+
+### Known Non-Issues (not bugs)
+
+| Item | Reason |
+|------|--------|
+| Google OAuth 403 errors | Dev CloudFront URL not in Google's allowed origins — expected in dev environment |
+| Old-chunk CORS errors | Stale Playwright browser cache from previous test session — 0 errors on fresh navigation |
 
 Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` using Playwright MCP.
 

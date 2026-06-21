@@ -1,6 +1,26 @@
 # Development Log
 
-## 2026-06-19 - Fix net-worth /allocation 404 (Session 150)
+## 2026-06-21 - Session 150 Live Verification + Documentation (Session 150)
+
+### Verified
+Full Playwright live test of all 18 web app polish criteria against `https://d1ueeugn9zcx7n.cloudfront.net`:
+- **11 routes, 0 console errors** on fresh navigation
+- **Budget Health Score API**: `GET /budget/health-score` returns score=50, components, delta=0
+- **Cash Flow Forecast API**: `GET /budget/cash-flow` returns 12-day timeline
+- **SVG progress rings** on GoalsPage: 10 circles confirmed (5 goals × track+ring)
+- **recharts**: 4 wrappers, 2 line series (spending + income) on InsightsPage
+- **Welcome tooltip chain**: 3-step dialog renders on first visit to /overview
+- **4-step onboarding**: Step indicator, inline budget type descriptions confirmed
+- **Mobile slide-over (375px)**: Floating Transactions button + sticky app banner confirmed
+- **Pricing page**: Free/Premium comparison table, MOST POPULAR badge, FAQ section
+
+### Documentation Updated
+- `docs/product-requirements.md`: Added Session 150 verification results table
+- `CHANGELOG.md`: Added entries for lazy-loading perf work and docs update
+
+---
+
+
 
 ### Bug Fixed
 `/net-worth/allocation` returned 404 — added stub handler returning empty array. NetWorthPage no longer crashes.
