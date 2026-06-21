@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-21 (Session 153 — Auth session expiry UX, add-transaction modal redesign with per-category quick-add, dark mode systematic fix across 81 files, bill category fallback, month timezone bug)
+**Last Updated**: 2026-06-21 (Session 154 — Fix categories not loading in Add Transaction modal and Add Bill form)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -359,6 +359,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 **Bill Category Selection Fix:**
 - ✅ **Fallback option for saved category** — when editing a bill whose `categoryId` is not in the current month's budget categories (category deleted, or different month), a `(saved)` option is appended so the saved link isn't silently lost; user can keep it or reassign
+- ✅ **Categories not loading in Add Bill form** — `BillFormPage` was iterating `groups.expenses` items as group objects and calling `.categories` on them (undefined); fixed to read category items directly from `groups.income`, `groups.savings`, `groups.expenses`
 
 **Dark Mode — Systematic Fix (81 files):**
 - ✅ **27 page files** — `InsightsPage`, `NetWorthPage`, `InvestmentsPage`, `LearnPage`, `BudgetMembersPage`, `LandingPage`, `PrivacyPolicyPage`, `CreditScorePage`, `HelpCenterPage`, `AboutPage`, and 17 more — hardcoded `bg-white`, `bg-gray-50`, `bg-gray-100`, `text-gray-900/800/700/600/500/400`, `border-gray-200/300` replaced with CSS token vars
@@ -366,9 +367,17 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **Reset modal, Budget item modal, Transaction modal** — all three modals in `BudgetPage.tsx` updated; `bg-white` → `bg-[var(--color-surface)]`, cancel buttons → `bg-[var(--color-muted)]`, text → `text-[var(--color-foreground)]`
 - ✅ **Group headers and category rows** — `text-gray-900` → `text-[var(--color-foreground)]`, `text-gray-500` → `text-[var(--color-muted-foreground)]`; group total row `bg-muted` Tailwind alias → explicit `bg-[var(--color-muted)]`
 
+### Session 154 — Category Loading Fix in Add Transaction Modal and Add Bill Form (2026-06-21)
+
+**Root cause**: `budget/current` returns `groups` as `{ income: [...], savings: [...], expenses: [...] }` — a plain object where each key holds a flat array of category objects directly. Two components assumed it was either an array of group objects (with a nested `categories` property) or fell back to `[]` when `Array.isArray` returned false.
+
+- ✅ **`QuickAddTransactionModal` categories fixed** — was calling `Array.isArray(budget.groups)` → false → fell back to `[]` → "No expense categories found"; now reads `g.income`, `g.savings`, `g.expenses` directly when format is an object, with fallback for already-transformed array format
+- ✅ **`BillFormPage` categories fixed** — was pushing object-format items into `groups[]` then calling `group.categories` on each (undefined); now reads category items directly from `groups.expenses` and `groups.savings` flat arrays
+- ✅ Both fixes handle both response formats (backend object format and frontend-transformed array format) for robustness
+
 ---
 
-## Known Gaps (⚠️ Planned)
+
 
 ### High Priority
 1. ~~**Family budget transparency not enforced at category level**~~ ✅ **Fixed (Session 148)** — `createBudget` and `updateBudget` now reject any request containing categories with `hidden: true`, `isPrivate: true`, or `visibility: 'private'` when `budgetType === 'family'`. Returns HTTP 400.
@@ -638,7 +647,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Upcoming Bills | `OverviewPage.tsx` | `GET /bills` | ✅ |
 | Active Goals | `OverviewPage.tsx` | `GET /goals` | ✅ |
 | AI Insight of the Day | `OverviewPage.tsx` — daily rotating pool (30+ templates) + API fallback | `GET /insights/weekly` | ✅ |
-| Quick Add Transaction | `OverviewPage.tsx` | — (navigates to `/budget`) | ✅ |
+| Quick Add Transaction | `QuickAddTransactionModal.tsx` — loads categories from budget API, handles object-format groups response; available from Overview and all pages | `GET /budget/current` | ✅ |
 | Budget Health Score ring | `BudgetHealthScore` component in `OverviewPage.tsx` | `GET /budget/health-score` | ✅ |
 | Cash Flow Forecast | `CashFlowForecast` component in `OverviewPage.tsx` | `GET /budget/cash-flow` | ✅ |
 | Welcome tooltip chain | `WelcomeTooltipChain.tsx` | — | ✅ |
@@ -692,7 +701,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Feature | Frontend | Backend API | Status |
 |---------|----------|-------------|--------|
 | Bills list — design tokens, budget link visible | `BillsPage.tsx` (redesigned) | `GET /bills` | ✅ |
-| Add/edit bill with category | `BillFormPage.tsx` (redesigned) — fallback option shows saved category even if not in current budget | `POST/PUT /bills` | ✅ |
+| Add/edit bill with category | `BillFormPage.tsx` (redesigned) — fallback option shows saved category even if not in current budget; categories now load correctly from object-format groups response | `POST/PUT /bills` | ✅ |
 | Bill category → budget transaction on payment | `BillsPage.tsx` | `POST /bills/{id}/pay` | ✅ |
 | Add subscription manually | `SubscriptionsPage.tsx` → `/bills/new?type=subscription` | `POST /bills` | ✅ |
 | AI subscription detection | `SubscriptionsPage.tsx` | `POST /subscriptions/detect` | ✅ |

@@ -237,18 +237,18 @@ export const OnboardingPage: React.FC = () => {
             {/* Step progress indicator */}
             <div className="bg-[var(--color-primary)]/8 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {[1, 2, 3, 4].map((s) => (
+                {[1, 2, 3, 4, 5].map((s) => (
                   <div key={s} className="flex items-center gap-1">
                     <div
                       className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                         s === 1
                           ? 'bg-[var(--color-primary)] text-white'
-                          : 'bg-gray-200 text-[var(--color-muted-foreground)]'
+                          : 'bg-[var(--color-muted)] text-[var(--color-muted-foreground)]'
                       }`}
                     >
                       {s}
                     </div>
-                    {s < 4 && <div className="w-6 h-0.5 bg-gray-200" aria-hidden="true" />}
+                    {s < 5 && <div className="w-4 h-0.5 bg-[var(--color-border)]" aria-hidden="true" />}
                   </div>
                 ))}
               </div>
@@ -321,7 +321,7 @@ export const OnboardingPage: React.FC = () => {
                 onClick={handleBudgetTypeNext}
                 className="mt-8 w-full bg-[var(--color-primary)] text-white py-3 rounded-xl hover:bg-[var(--color-primary-hover)] font-semibold text-sm transition-colors"
               >
-                Continue — Step 2 of 4
+                Continue — Step 2 of 5
               </button>
             </div>
           </div>
