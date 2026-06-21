@@ -132,6 +132,8 @@ export default function SubscriptionsPage() {
   // Inline cancel picker states
   const [detectedCancelPicker, setDetectedCancelPicker] = useState<CancelPickerState>(null);
   const [trackedCancelPicker, setTrackedCancelPicker] = useState<TrackedCancelState>(null);
+  // Delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
 
   // Prevent double auto-scan
   const autoScanFired = useRef(false);
@@ -322,9 +324,16 @@ export default function SubscriptionsPage() {
 
   const removeSubscription = async (subscriptionId: string, name: string) => {
     if (!token) return;
-    if (!window.confirm(`Remove ${name} from tracked subscriptions?`)) return;
+    // Use controlled state confirmation instead of window.confirm
+    setDeleteConfirm({ id: subscriptionId, name });
+  };
+
+  const confirmRemoveSubscription = async () => {
+    if (!token || !deleteConfirm) return;
+    const { id } = deleteConfirm;
+    setDeleteConfirm(null);
     try {
-      const res = await fetch(`${FEATURES_API}/subscriptions/${subscriptionId}`, {
+      const res = await fetch(`${FEATURES_API}/subscriptions/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
@@ -352,8 +361,8 @@ export default function SubscriptionsPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading your subscriptions…</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-primary)] mx-auto mb-4"></div>
+          <p className="text-[var(--color-muted-foreground)]">Loading your subscriptions…</p>
         </div>
       </div>
     );
@@ -364,7 +373,31 @@ export default function SubscriptionsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
 
-      {/* ── Header ── */}
+      {/* Delete confirmation modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-[var(--color-surface)] rounded-xl shadow-xl p-6 max-w-sm mx-4 w-full">
+            <h3 className="font-semibold text-[var(--color-foreground)] mb-2">Remove subscription?</h3>
+            <p className="text-sm text-[var(--color-muted-foreground)] mb-5">
+              Remove <strong>{deleteConfirm.name}</strong> from your tracked subscriptions? This won't cancel the subscription itself.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={confirmRemoveSubscription}
+                className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
+              >
+                Remove
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-muted)] text-sm"
+              >
+                Keep it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <PageHeader
         title="🔄 Subscriptions"
         subtitle="Know what you're paying for"
@@ -372,7 +405,7 @@ export default function SubscriptionsPage() {
           <button
             onClick={detectSubscriptions}
             disabled={detecting}
-            className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-60 transition-colors font-medium shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-60 transition-colors font-medium shadow-sm"
           >
             {detecting ? (
               <>
@@ -405,25 +438,25 @@ export default function SubscriptionsPage() {
         <StatCard
           label="Total Monthly"
           value={formatCurrency(summary?.monthlyTotal ?? 0)}
-          valueColor={(summary?.monthlyTotal ?? 0) > 200 ? 'text-red-600' : 'text-gray-900'}
+          valueColor={(summary?.monthlyTotal ?? 0) > 200 ? 'text-red-600' : 'text-[var(--color-foreground)]'}
           sub={`${summary?.activeSubscriptions ?? 0} active`}
         />
         <StatCard
           label="Potential Savings"
           value={formatCurrency(potentialSavings)}
-          valueColor={potentialSavings > 0 ? 'text-orange-600' : 'text-gray-900'}
+          valueColor={potentialSavings > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--color-foreground)]'}
           sub="marked for cancel"
         />
         <StatCard
           label="Upcoming Renewals"
           value={String(summary?.upcomingRenewals ?? 0)}
-          valueColor="text-blue-600"
+          valueColor="text-[var(--color-primary)]"
           sub="in 7 days"
         />
         <StatCard
           label="Review Needed"
           value={String(reviewNeeded)}
-          valueColor={reviewNeeded > 0 ? 'text-yellow-600' : 'text-gray-900'}
+          valueColor={reviewNeeded > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-[var(--color-foreground)]'}
           sub="subscriptions"
         />
       </div>
@@ -450,12 +483,12 @@ export default function SubscriptionsPage() {
       )}
 
       {/* ── Tracked Subscriptions ── */}
-      <div className="bg-white rounded-xl shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">
+      <div className="card overflow-hidden">
+        <div className="px-6 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
             Tracked Subscriptions
             {subscriptions.length > 0 && (
-              <span className="ml-2 text-sm font-normal text-gray-400">({subscriptions.length})</span>
+              <span className="ml-2 text-sm font-normal text-[var(--color-muted-foreground)]">({subscriptions.length})</span>
             )}
           </h2>
         </div>
@@ -463,7 +496,7 @@ export default function SubscriptionsPage() {
         {subscriptions.length === 0 ? (
           <EmptyState onScan={detectSubscriptions} detecting={detecting} />
         ) : (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-[var(--color-border)]">
             {subscriptions.map(sub => (
               <TrackedSubscriptionRow
                 key={sub.subscriptionId}
@@ -536,10 +569,10 @@ interface StatCardProps {
 }
 function StatCard({ label, value, valueColor, sub }: StatCardProps) {
   return (
-    <div className="bg-white rounded-xl shadow p-5">
-      <p className="text-sm text-gray-500 mb-1">{label}</p>
-      <p className={`text-2xl font-bold ${valueColor}`}>{value}</p>
-      <p className="text-xs text-gray-400 mt-1">{sub}</p>
+    <div className="card p-5">
+      <p className="text-sm text-[var(--color-muted-foreground)] mb-1">{label}</p>
+      <p className={`text-2xl font-bold tabular-nums ${valueColor}`}>{value}</p>
+      <p className="text-xs text-[var(--color-muted-foreground)] mt-1">{sub}</p>
     </div>
   );
 }
@@ -742,16 +775,16 @@ function TrackedSubscriptionRow({
   })();
 
   return (
-    <div className="px-6 py-4 hover:bg-gray-50 transition-colors">
+    <div className="px-6 py-4 hover:bg-[var(--color-muted)]/50 transition-colors">
       <div className="flex items-center gap-4">
         {/* Icon + name */}
         <span className="text-xl flex-shrink-0">{getCategoryIcon(sub.category)}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-medium text-gray-900 truncate">{displayName}</p>
+            <p className="font-medium text-[var(--color-foreground)] truncate">{displayName}</p>
             {reviewBadge}
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-[var(--color-muted-foreground)] mt-0.5">
             {formatCurrency(sub.amount)} / {sub.frequency}
             {sub.monthlyAmount && sub.frequency !== 'monthly' ? ` (${formatCurrency(sub.monthlyAmount)}/mo)` : ''}
           </p>
@@ -759,9 +792,9 @@ function TrackedSubscriptionRow({
 
         {/* Next billing */}
         <div className="text-right flex-shrink-0 hidden sm:block">
-          <p className="text-sm text-gray-700">{sub.nextBillingDate ? formatDate(sub.nextBillingDate) : '—'}</p>
+          <p className="text-sm text-[var(--color-foreground)]">{sub.nextBillingDate ? formatDate(sub.nextBillingDate) : '—'}</p>
           {sub.daysUntilRenewal !== undefined && (
-            <p className={`text-xs ${sub.daysUntilRenewal <= 3 ? 'text-red-600 font-medium' : 'text-gray-400'}`}>
+            <p className={`text-xs ${sub.daysUntilRenewal <= 3 ? 'text-red-600 font-medium' : 'text-[var(--color-muted-foreground)]'}`}>
               {sub.daysUntilRenewal <= 0 ? 'Due today' : `In ${sub.daysUntilRenewal}d`}
             </p>
           )}
@@ -772,7 +805,7 @@ function TrackedSubscriptionRow({
           {sub.reviewStatus !== 'keep' && (
             <button
               onClick={() => onUpdateStatus(sub.subscriptionId, undefined, 'keep')}
-              className="text-xs px-2 py-1 text-green-700 bg-green-50 rounded hover:bg-green-100 transition-colors"
+              className="text-xs px-2 py-1 text-green-700 bg-green-50 dark:bg-green-900/30 dark:text-green-300 rounded hover:bg-green-100 transition-colors"
               title="Mark as keep"
             >
               ✅ Keep
@@ -781,7 +814,7 @@ function TrackedSubscriptionRow({
           {sub.reviewStatus !== 'cancel' && (
             <button
               onClick={() => isPickerOpen ? onClosePicker() : onStartCancelPicker(sub.subscriptionId)}
-              className="text-xs px-2 py-1 text-red-700 bg-red-50 rounded hover:bg-red-100 transition-colors"
+              className="text-xs px-2 py-1 text-red-700 bg-red-50 dark:bg-red-900/30 dark:text-red-300 rounded hover:bg-red-100 transition-colors"
               title="Set cancel reminder"
             >
               ⏰ Remind
@@ -789,7 +822,7 @@ function TrackedSubscriptionRow({
           )}
           <button
             onClick={() => onRemove(sub.subscriptionId, displayName)}
-            className="text-xs px-2 py-1 text-gray-500 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+            className="text-xs px-2 py-1 text-[var(--color-muted-foreground)] bg-[var(--color-muted)] rounded hover:bg-[var(--color-border)] transition-colors"
             title="Remove from tracked list"
           >
             Remove
@@ -799,14 +832,14 @@ function TrackedSubscriptionRow({
 
       {/* Inline cancel date picker for tracked sub */}
       {isPickerOpen && trackedCancelPicker && (
-        <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-3 flex-wrap">
-          <span className="text-sm text-gray-600 font-medium">Cancel by:</span>
+        <div className="mt-3 pt-3 border-t border-[var(--color-border)] flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-[var(--color-foreground)] font-medium">Cancel by:</span>
           <input
             type="date"
             value={trackedCancelPicker.date}
             min={new Date().toISOString().split('T')[0]}
             onChange={(e) => onCancelPickerChange(sub.subscriptionId, e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400"
+            className="px-3 py-1.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400"
           />
           <button
             onClick={() => onSaveCancelReminder(trackedCancelPicker.date)}
@@ -815,7 +848,7 @@ function TrackedSubscriptionRow({
           >
             {savingReminder ? 'Saving…' : 'Save Reminder'}
           </button>
-          <button onClick={onClosePicker} className="text-gray-400 hover:text-gray-600 text-sm">
+          <button onClick={onClosePicker} className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] text-sm">
             Cancel
           </button>
         </div>
@@ -830,15 +863,15 @@ function EmptyState({ onScan, detecting }: { onScan: () => void; detecting: bool
   return (
     <div className="text-center py-16 px-4">
       <p className="text-5xl mb-4">🔄</p>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">No subscriptions tracked yet</h3>
-      <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+      <h3 className="text-xl font-semibold text-[var(--color-foreground)] mb-2">No subscriptions tracked yet</h3>
+      <p className="text-[var(--color-muted-foreground)] mb-6 max-w-sm mx-auto">
         Scan your transactions and we'll find recurring charges automatically.
         Then decide what to keep and what to cancel.
       </p>
       <button
         onClick={onScan}
         disabled={detecting}
-        className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-60 font-medium transition-colors"
+        className="px-6 py-3 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-60 font-medium transition-colors"
       >
         {detecting ? '🔍 Scanning…' : '🔍 Scan Transactions'}
       </button>
