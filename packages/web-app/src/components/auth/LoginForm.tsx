@@ -256,7 +256,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-[var(--color-foreground)] dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-[var(--color-foreground)] text-[var(--color-foreground)] mb-1"
             >
               Email Address
             </label>
@@ -264,7 +264,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               {...register("email")}
               type="email"
               id="email"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              autoComplete="email"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] bg-[var(--color-background)] text-[var(--color-foreground)] ${
                 errors.email ? "border-red-300" : "border-[var(--color-border)]"
               }`}
               placeholder="Enter your email"
@@ -281,7 +282,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-[var(--color-foreground)] dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-[var(--color-foreground)] text-[var(--color-foreground)] mb-1"
             >
               Password
             </label>
@@ -289,7 +290,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               {...register("password")}
               type="password"
               id="password"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+              autoComplete="current-password"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] bg-[var(--color-background)] text-[var(--color-foreground)] ${
                 errors.password ? "border-red-300" : "border-[var(--color-border)]"
               }`}
               placeholder="Enter your password"
@@ -309,8 +311,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               disabled={isSubmitting || loading}
               className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                 isSubmitting || loading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  ? "bg-[var(--color-muted)] cursor-not-allowed"
+                  : "bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-ring)]"
               }`}
             >
               {isSubmitting || loading ? (
@@ -364,19 +366,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         {/* Forgot Password Link */}
         <div className="mt-4 text-center">
           {forgotPasswordSent ? (
-            <p className="text-sm text-green-600" role="status">
-              Password reset is not yet available. Please contact support at{" "}
+            <p className="text-sm text-[var(--color-foreground)]" role="status">
+              To reset your password, email us at{" "}
               <a
                 href="mailto:support@budgetbuddy.app"
-                className="font-medium underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+                className="font-medium text-[var(--color-primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)] focus:ring-offset-2 rounded"
               >
                 support@budgetbuddy.app
-              </a>
+              </a>{" "}
+              and we'll help you get back in.
             </p>
           ) : (
             <button
               type="button"
-              className="text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+              className="text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)] focus:ring-offset-2 rounded"
               disabled={isSubmitting || loading}
               onClick={() => setForgotPasswordSent(true)}
             >

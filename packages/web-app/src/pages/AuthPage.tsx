@@ -59,7 +59,7 @@ export const AuthPage: React.FC = () => {
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)] dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--color-background)] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
@@ -132,7 +132,7 @@ export const AuthPage: React.FC = () => {
       {/* Footer */}
       <div className="mt-8 text-center">
         <p className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
-          © 2025 BudgetBuddy. All rights reserved.
+          © 2026 BudgetBuddy. All rights reserved.
         </p>
       </div>
     </div>

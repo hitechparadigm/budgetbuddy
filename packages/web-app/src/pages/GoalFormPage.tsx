@@ -319,27 +319,29 @@ export const GoalFormPage: React.FC = () => {
 
           {/* Goal Name */}
           <div>
-            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
+            <label htmlFor="goal-name" className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
               Goal Name *
             </label>
             <input
+              id="goal-name"
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="e.g., Emergency Fund, Vacation, New Car"
-              className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)]"
               required
             />
           </div>
 
           {/* Target Amount */}
           <div>
-            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
+            <label htmlFor="goal-target" className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
               Target Amount *
             </label>
             <div className="relative">
               <span className="absolute left-4 top-2 text-[var(--color-muted-foreground)]">$</span>
               <input
+                id="goal-target"
                 type="number"
                 step="0.01"
                 min="1"
@@ -348,7 +350,7 @@ export const GoalFormPage: React.FC = () => {
                   setForm({ ...form, targetAmount: e.target.value })
                 }
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)]"
                 required
               />
             </div>
@@ -356,12 +358,13 @@ export const GoalFormPage: React.FC = () => {
 
           {/* Current Amount (for editing or starting with existing savings) */}
           <div>
-            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
+            <label htmlFor="goal-current" className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
               Starting Amount (Optional)
             </label>
             <div className="relative">
               <span className="absolute left-4 top-2 text-[var(--color-muted-foreground)]">$</span>
               <input
+                id="goal-current"
                 type="number"
                 step="0.01"
                 min="0"
@@ -370,7 +373,7 @@ export const GoalFormPage: React.FC = () => {
                   setForm({ ...form, currentAmount: e.target.value })
                 }
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)]"
               />
             </div>
             <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
@@ -380,15 +383,16 @@ export const GoalFormPage: React.FC = () => {
 
           {/* Target Date */}
           <div>
-            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
+            <label htmlFor="goal-date" className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
               Target Date (Optional)
             </label>
             <input
+              id="goal-date"
               type="date"
               value={form.targetDate}
               onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
               min={new Date().toISOString().split("T")[0]}
-              className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)]"
             />
             <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
               Setting a target date helps calculate your monthly savings goal
@@ -400,7 +404,7 @@ export const GoalFormPage: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate("/goals")}
-              className="flex-1 px-4 py-3 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)] transition-colors"
+              className="flex-1 px-4 py-3 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-muted)] transition-colors"
             >
               Cancel
             </button>
@@ -409,8 +413,8 @@ export const GoalFormPage: React.FC = () => {
               disabled={saving}
               className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
                 saving
-                  ? "bg-gray-300 text-[var(--color-muted-foreground)] cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
+                  ? "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] cursor-not-allowed"
+                  : "bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)]"
               }`}
             >
               {saving ? "Saving..." : isEditing ? "Update Goal" : "Create Goal"}
