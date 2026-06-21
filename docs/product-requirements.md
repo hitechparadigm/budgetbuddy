@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-21 (Session 154 — Fix categories not loading in Add Transaction modal and Add Bill form; Subscriptions onboarding step; Subscriptions as AI-generated budget category)
+**Last Updated**: 2026-06-21 (Session 155 — CloudFront stale chunk-load fix: 404/403 TTL→0, /assets/* immutable cache, no-cache index.html; ErrorBoundary auto-reload on chunk errors)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -332,6 +332,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **WCAG 2.1 AA color contrast** — `#059669` on white = 4.68:1 (AA pass)
 - ✅ **Performance — lazy loading** — 20 secondary pages lazy-loaded with `React.lazy`/`Suspense`; vendor chunks split (react, lucide, AI generation page); initial bundle **113KB gzip** (was 242KB, −53%); recharts 107KB deferred to Insights only
 - ✅ **Vite code-splitting config** — `vite.config.ts` with `manualChunks` for `vendor-react`, `vendor-lucide`, `page-ai-budget`
+- ✅ **`ErrorBoundary` auto-reload on chunk-load errors** — detects "Failed to fetch dynamically imported module"; shows "reloading…" spinner, reloads once (60s cooldown); `vite:preloadError` handler in `main.tsx` for pre-React interception
 
 ### Session 153 — Auth UX, Add-Transaction Redesign, Dark Mode Systematic Fix (2026-06-21)
 
@@ -389,6 +390,23 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **Onboarding step count updated** — 4 steps → 5 steps; `OnboardingPage` step progress dots updated (4 → 5), Continue button updated to "Step 2 of 5"; `OnboardingFlow` progress bar labels updated to: Location → Currency → Household → Subscriptions → Categories
 - ✅ **`handleSubscriptionsNext` function** — resolves city suggestions, applies subscription amount override, filters out Subscriptions if user opted out, advances to Categories step
 - ✅ **Back navigation updated** — Categories step "Back" now returns to Subscriptions step (was Family Size)
+
+---
+
+### Session 155 — CloudFront Stale Chunk-Load Fix + ErrorBoundary Auto-Reload (2026-06-21)
+
+**Root cause**: `hosting-stack.ts` had `errorResponses[404].ttl: Duration.minutes(5)`. After a deploy invalidates old Vite chunk hashes (e.g. `AccountsPage-aa75f312.js` no longer exists), CloudFront cached the `404 → index.html` redirect for 5 minutes. Subsequent requests for newly-named chunks also received the cached `index.html` response with `Content-Type: text/html`, which the browser rejects for JS module scripts — causing "Failed to fetch dynamically imported module" and the crash screen.
+
+**Infrastructure fix (`hosting-stack.ts`):**
+- ✅ **404/403 error response TTL set to 0** — was `Duration.minutes(5)`; now `Duration.seconds(0)` so 404s are never cached and every chunk request is evaluated fresh
+- ✅ **New `/assets/*` cache behavior** — Vite content-hashed chunks (e.g. `AccountsPage-d2d8db62.js`) are now cached for 365 days (immutable); correct files load fast on repeat visits; missing/old hashes 404 cleanly without caching
+- ✅ **`index.html` (default behavior) now uses no-cache policy** — was `CACHING_OPTIMIZED`; after every deploy users immediately get the latest entry-point with the correct chunk hashes, not a cached stale one
+- ✅ **New `ImmutableAssets` and `NoCache` CloudFront cache policies** created as named CDK resources
+
+**Frontend safety net (`ErrorBoundary.tsx`, `main.tsx`):**
+- ✅ **`ErrorBoundary` detects chunk-load errors** — `isChunkLoadError()` checks for "Failed to fetch dynamically imported module" and similar patterns; shows "New version available — reloading…" spinner instead of crash screen, then auto-reloads once (60s cooldown via `sessionStorage` to prevent infinite loops)
+- ✅ **`vite:preloadError` handler in `main.tsx`** — fires before React mounts; catches chunk-load errors at the Vite level and reloads silently, sharing the same `bb_chunk_reload_at` sessionStorage cooldown key
+- ✅ **ErrorBoundary buttons updated to CSS tokens** — was hardcoded `bg-emerald-600`, `bg-gray-200 dark:bg-gray-700`; now uses `bg-[var(--color-primary)]`, `bg-[var(--color-muted)]`
 
 ---
 
