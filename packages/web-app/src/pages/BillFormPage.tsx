@@ -50,6 +50,7 @@ export const BillFormPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -69,7 +70,9 @@ export const BillFormPage: React.FC = () => {
         const token = localStorage.getItem('budgetbuddy_id_token');
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/budget/current`, {
+        // /budget/current requires ?month=YYYY-MM
+        const currentMonth = new Date().toISOString().substring(0, 7);
+        const response = await fetch(`${API_BASE_URL}/budget/current?month=${currentMonth}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -113,6 +116,8 @@ export const BillFormPage: React.FC = () => {
         setCategories(expenseCategories);
       } catch (err) {
         console.error('Error loading categories:', err);
+      } finally {
+        setCategoriesLoading(false);
       }
     };
 
@@ -336,11 +341,15 @@ export const BillFormPage: React.FC = () => {
                   const cat = categories.find(c => c.id === e.target.value);
                   setForm({ ...form, categoryId: e.target.value, categoryName: cat?.name || '' });
                 }}
-                className="w-full pl-9 pr-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent text-sm appearance-none"
+                disabled={categoriesLoading}
+                className="w-full pl-9 pr-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent text-sm appearance-none disabled:opacity-60"
               >
                 <option value="">— No category —</option>
-                {categories.length === 0 && (
+                {categoriesLoading && (
                   <option disabled>Loading from your budget…</option>
+                )}
+                {!categoriesLoading && categories.length === 0 && (
+                  <option disabled>No expense categories found in budget</option>
                 )}
                 {categories.map(cat => (
                   <option key={cat.id} value={cat.id}>
@@ -352,7 +361,7 @@ export const BillFormPage: React.FC = () => {
             {form.categoryId ? (
               <p className="mt-1.5 text-xs text-[var(--color-primary)] flex items-center gap-1">
                 <span>✓</span>
-                Marking this bill paid will add a transaction to <strong>{form.categoryName}</strong> in your budget
+                Marking this bill paid will add a transaction to <strong>{form.categoryName || form.categoryId}</strong> in your budget
               </p>
             ) : (
               <p className="mt-1.5 text-xs text-[var(--color-muted-foreground)]">
