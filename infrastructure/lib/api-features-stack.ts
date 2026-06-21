@@ -316,7 +316,19 @@ export class ApiFeaturesStack extends cdk.Stack {
     this.functions.investmentsHandler = new lambda.Function(this, 'InvestmentsHandler', {
       ...commonProps,
       functionName: 'budgetbuddy-investments',
-      code: lambda.Code.fromAsset('../backend/functions/investments'),
+      code: lambda.Code.fromAsset('../backend/functions/investments', {
+        bundling: {
+          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          user: 'root',
+          command: [
+            'bash', '-c', [
+              'cp -r /asset-input/* /asset-output/',
+              'cd /asset-output',
+              'npm install --production --no-optional',
+            ].join(' && '),
+          ],
+        },
+      }),
       handler: 'index.handler',
       description: 'BudgetBuddy investments handler for portfolio tracking, market news, and trending signals via Alpha Vantage',
       timeout: cdk.Duration.seconds(30),
