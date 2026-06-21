@@ -1,18 +1,22 @@
 /**
- * Bills Page - Bill Reminders Management
+ * Bills Page — Bill Reminders Management
  *
- * Displays bills sorted by due date with status indicators,
- * one-tap mark as paid, and bill management.
+ * Redesigned to:
+ * 1. Use design tokens throughout (no hardcoded blue/gray-50)
+ * 2. Show budget category link on each bill row clearly
+ * 3. Explain the Bills→Budget connection via contextual cues
+ * 4. Match the green brand color
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
-import PatternReviewModal from "../components/PatternReviewModal";
-import { PageHeader, EmptyState } from "../components/ui";
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FileText, RefreshCw, Bot, CheckCircle, Pencil, Trash2 } from 'lucide-react';
+import { formatCurrency } from '@budget-buddy/shared/src/utils/currency';
+import PatternReviewModal from '../components/PatternReviewModal';
+import { PageHeader, EmptyState, Badge } from '../components/ui';
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
+  import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
 
 interface Bill {
   billId: string;
@@ -22,7 +26,7 @@ interface Bill {
   daysUntilDue: number;
   categoryId: string | null;
   categoryName: string | null;
-  status: "unpaid" | "paid" | "overdue";
+  status: 'unpaid' | 'paid' | 'overdue';
   statusIndicator: string;
   isRecurring: boolean;
   frequency: string | null;
@@ -31,217 +35,168 @@ interface Bill {
   paidAmount: number | null;
   transactionId: string | null;
   notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-  // AI metadata fields
   aiGenerated?: boolean;
   sourcePatternId?: string;
   aiConfidenceScore?: number;
-  aiDetectedDate?: string;
 }
 
-interface BillsResponse {
-  bills: Bill[];
-  count: number;
-}
-
-type FilterStatus = "all" | "unpaid" | "paid" | "overdue";
+type FilterStatus = 'all' | 'unpaid' | 'paid' | 'overdue';
 
 export const BillsPage: React.FC = () => {
   const navigate = useNavigate();
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [payingBillId, setPayingBillId] = useState<string | null>(null);
+  const [deletingBillId, setDeletingBillId] = useState<string | null>(null);
   const [showPatternModal, setShowPatternModal] = useState(false);
-  const currency = "USD";
+  const currency = 'USD';
 
   const loadBills = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const token = localStorage.getItem("budgetbuddy_id_token");
-      if (!token) {
-        navigate("/auth");
-        return;
-      }
+      const token = localStorage.getItem('budgetbuddy_id_token');
+      if (!token) { navigate('/auth'); return; }
 
       const response = await fetch(`${API_BASE_URL}/bills`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.status === 401) {
-        navigate("/auth");
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to load bills");
-      }
+      if (response.status === 401) { navigate('/auth'); return; }
+      if (!response.ok) throw new Error('Failed to load bills');
 
       const data = await response.json();
-      const billsData: BillsResponse = data.data || data;
+      const billsData = data.data || data;
       setBills(billsData.bills || []);
     } catch (err) {
-      console.error("Error loading bills:", err);
-      setError(err instanceof Error ? err.message : "Failed to load bills");
+      setError(err instanceof Error ? err.message : 'Failed to load bills');
     } finally {
       setLoading(false);
     }
   }, [navigate]);
 
-  useEffect(() => {
-    loadBills();
-  }, [loadBills]);
+  useEffect(() => { loadBills(); }, [loadBills]);
 
   const handleMarkPaid = async (bill: Bill) => {
     try {
       setPayingBillId(bill.billId);
-
-      const token = localStorage.getItem("budgetbuddy_id_token");
-      if (!token) {
-        navigate("/auth");
-        return;
-      }
+      const token = localStorage.getItem('budgetbuddy_id_token');
+      if (!token) { navigate('/auth'); return; }
 
       const response = await fetch(`${API_BASE_URL}/bills/${bill.billId}/pay`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          paidDate: new Date().toISOString().split("T")[0],
-        }),
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paidDate: new Date().toISOString().split('T')[0] }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to mark bill as paid");
-      }
-
-      // Reload bills to get updated list
+      if (!response.ok) throw new Error('Failed to mark bill as paid');
       await loadBills();
     } catch (err) {
-      console.error("Error marking bill as paid:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to mark bill as paid",
-      );
+      setError(err instanceof Error ? err.message : 'Failed to mark bill as paid');
     } finally {
       setPayingBillId(null);
     }
   };
 
-  const filteredBills = bills.filter((bill) => {
-    if (filterStatus === "all") return true;
-    if (filterStatus === "unpaid") return bill.status === "unpaid";
-    if (filterStatus === "paid") return bill.status === "paid";
-    if (filterStatus === "overdue")
-      return bill.status === "overdue" || bill.daysUntilDue < 0;
+  const handleDelete = async (bill: Bill) => {
+    try {
+      setDeletingBillId(bill.billId);
+      const token = localStorage.getItem('budgetbuddy_id_token');
+      if (!token) { navigate('/auth'); return; }
+
+      const response = await fetch(`${API_BASE_URL}/bills/${bill.billId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error('Failed to delete bill');
+      await loadBills();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete bill');
+    } finally {
+      setDeletingBillId(null);
+    }
+  };
+
+  const filteredBills = bills.filter(bill => {
+    if (filterStatus === 'all') return true;
+    if (filterStatus === 'unpaid') return bill.status === 'unpaid';
+    if (filterStatus === 'paid') return bill.status === 'paid';
+    if (filterStatus === 'overdue') return bill.status === 'overdue' || bill.daysUntilDue < 0;
     return true;
   });
 
-  const upcomingBills = filteredBills.filter((b) => b.status !== "paid");
-  const paidBills = filteredBills.filter((b) => b.status === "paid");
-
+  const upcomingBills = filteredBills.filter(b => b.status !== 'paid');
+  const paidBills = filteredBills.filter(b => b.status === 'paid');
   const totalDue = upcomingBills.reduce((sum, b) => sum + b.amount, 0);
-  const totalPaid = paidBills.reduce(
-    (sum, b) => sum + (b.paidAmount || b.amount),
-    0,
-  );
+  const totalPaid = paidBills.reduce((sum, b) => sum + (b.paidAmount || b.amount), 0);
+  const nextBill = [...upcomingBills].sort((a, b) => a.daysUntilDue - b.daysUntilDue)[0];
 
   const getStatusBadge = (bill: Bill) => {
-    if (bill.status === "paid") {
-      return (
-        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-          ✅ Paid
-        </span>
-      );
+    if (bill.status === 'paid') {
+      return <Badge variant="success" className="text-xs">Paid</Badge>;
     }
-    if (bill.status === "overdue" || bill.daysUntilDue < 0) {
-      return (
-        <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-          🔴 Overdue
-        </span>
-      );
+    if (bill.status === 'overdue' || bill.daysUntilDue < 0) {
+      return <Badge variant="danger" className="text-xs">Overdue</Badge>;
+    }
+    if (bill.daysUntilDue === 0) {
+      return <Badge variant="danger" className="text-xs">Due today</Badge>;
     }
     if (bill.daysUntilDue <= 3) {
-      return (
-        <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-          🟡 Due Soon
-        </span>
-      );
+      return <Badge variant="warning" className="text-xs">Due in {bill.daysUntilDue}d</Badge>;
     }
-    return (
-      <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-        🟢 Upcoming
-      </span>
-    );
+    return <Badge variant="neutral" className="text-xs">Upcoming</Badge>;
   };
+
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
   const getDaysText = (days: number) => {
     if (days < 0) return `${Math.abs(days)} days overdue`;
-    if (days === 0) return "Due today";
-    if (days === 1) return "Due tomorrow";
+    if (days === 0) return 'Due today';
+    if (days === 1) return 'Due tomorrow';
     return `Due in ${days} days`;
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr + "T00:00:00");
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading bills...</p>
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
+        <div className="h-8 w-32 rounded animate-pulse bg-[var(--color-muted)]" />
+        <div className="grid grid-cols-3 gap-4">
+          {[1,2,3].map(i => <div key={i} className="h-24 rounded-xl animate-pulse bg-[var(--color-muted)]" />)}
+        </div>
+        <div className="space-y-3">
+          {[1,2,3].map(i => <div key={i} className="h-20 rounded-xl animate-pulse bg-[var(--color-muted)]" />)}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button
-            onClick={() => navigate("/budget")}
-            className="text-gray-500 hover:text-gray-700 mb-2"
-          >
-            ← Back
-          </button>
-          <PageHeader
-            title="📋 Bills"
-            action={
-              <div className="flex gap-2">
-                <button
-                  onClick={() => navigate("/bills/new")}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  + Add Bill
-                </button>
-                <button
-                  onClick={() => setShowPatternModal(true)}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
-                >
-                  🤖 AI Scan
-                </button>
-              </div>
-            }
-          />
-        </div>
-      </header>
+    <div className="max-w-4xl mx-auto px-4 py-6">
+      <PageHeader
+        title="Bills"
+        subtitle={bills.length > 0 ? `${bills.filter(b => b.status !== 'paid').length} upcoming · ${bills.filter(b => b.status === 'paid').length} paid this month` : undefined}
+        action={
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/bills/new')}
+              className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors text-sm font-medium"
+            >
+              + Add Bill
+            </button>
+            <button
+              onClick={() => setShowPatternModal(true)}
+              className="px-4 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-muted)] transition-colors text-sm font-medium flex items-center gap-1.5"
+            >
+              <Bot className="w-4 h-4" aria-hidden="true" />
+              AI Scan
+            </button>
+          </div>
+        }
+      />
 
       {/* Pattern Review Modal */}
       <PatternReviewModal
@@ -251,174 +206,207 @@ export const BillsPage: React.FC = () => {
         currency={currency}
       />
 
-      {/* Summary Cards */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="text-sm text-gray-500">Total Due</div>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(totalDue, currency)}
-            </div>
-            <div className="text-xs text-gray-400">
-              {upcomingBills.length} bills
-            </div>
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-5 mb-6">
+        <div className="card p-4">
+          <div className="text-xs text-[var(--color-muted-foreground)] mb-1">Total Due</div>
+          <div className={`text-xl font-bold tabular-nums ${totalDue > 0 ? 'text-red-600 dark:text-red-400' : 'text-[var(--color-foreground)]'}`}>
+            {formatCurrency(totalDue, currency)}
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="text-sm text-gray-500">Paid This Month</div>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(totalPaid, currency)}
-            </div>
-            <div className="text-xs text-gray-400">
-              {paidBills.length} bills
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="text-sm text-gray-500">Next Due</div>
-            {upcomingBills.length > 0 ? (
-              <>
-                <div className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(upcomingBills[0].amount, currency)}
-                </div>
-                <div className="text-xs text-gray-400">
-                  {upcomingBills[0].name} -{" "}
-                  {getDaysText(upcomingBills[0].daysUntilDue)}
-                </div>
-              </>
-            ) : (
-              <div className="text-lg text-gray-400">No upcoming bills</div>
-            )}
-          </div>
+          <div className="text-xs text-[var(--color-muted-foreground)] mt-0.5">{upcomingBills.length} {upcomingBills.length === 1 ? 'bill' : 'bills'}</div>
         </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {(["all", "unpaid", "overdue", "paid"] as FilterStatus[]).map(
-            (status) => (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  filterStatus === status
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </button>
-            ),
+        <div className="card p-4">
+          <div className="text-xs text-[var(--color-muted-foreground)] mb-1">Paid This Month</div>
+          <div className="text-xl font-bold tabular-nums text-green-600 dark:text-green-400">
+            {formatCurrency(totalPaid, currency)}
+          </div>
+          <div className="text-xs text-[var(--color-muted-foreground)] mt-0.5">{paidBills.length} {paidBills.length === 1 ? 'bill' : 'bills'}</div>
+        </div>
+        <div className="card p-4">
+          <div className="text-xs text-[var(--color-muted-foreground)] mb-1">Next Due</div>
+          {nextBill ? (
+            <>
+              <div className="text-xl font-bold tabular-nums text-[var(--color-foreground)]">
+                {formatCurrency(nextBill.amount, currency)}
+              </div>
+              <div className="text-xs text-[var(--color-muted-foreground)] mt-0.5 truncate">
+                {nextBill.name} · {getDaysText(nextBill.daysUntilDue)}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-[var(--color-muted-foreground)]">No upcoming bills</div>
           )}
         </div>
+      </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
-            <button
-              onClick={() => setError(null)}
-              className="ml-4 text-red-500 hover:text-red-700"
-            >
-              ✕
-            </button>
-          </div>
-        )}
+      {/* How it works — shown only when no bills have categories yet */}
+      {bills.length > 0 && bills.filter(b => b.categoryId).length === 0 && (
+        <div className="mb-5 p-4 bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/15 rounded-xl flex items-start gap-3">
+          <FileText className="w-4 h-4 text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-xs text-[var(--color-muted-foreground)]">
+            <span className="font-medium text-[var(--color-foreground)]">Tip: </span>
+            Link bills to budget categories so paying a bill automatically records an expense in your budget. Edit any bill to add a category.
+          </p>
+        </div>
+      )}
 
-        {/* Bills List */}
-        {filteredBills.length === 0 ? (
-          <EmptyState
-            icon="📋"
-            title={filterStatus === "all" ? "No bills tracked" : `No ${filterStatus} bills`}
-            description={filterStatus === "all"
-              ? "Add your first bill to get payment reminders before due dates."
-              : undefined}
-            actionLabel={filterStatus === "all" ? "Add Your First Bill" : undefined}
-            onAction={filterStatus === "all" ? () => navigate('/bills/new') : undefined}
-          />
-        ) : (
-          <div className="space-y-3">
-            {filteredBills.map((bill) => (
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 mb-5">
+        {(['all', 'unpaid', 'overdue', 'paid'] as FilterStatus[]).map(status => (
+          <button
+            key={status}
+            onClick={() => setFilterStatus(status)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              filterStatus === status
+                ? 'bg-[var(--color-primary)] text-white'
+                : 'bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-muted)]'
+            }`}
+          >
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mb-5 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-700 dark:text-red-300 flex items-start justify-between gap-3">
+          {error}
+          <button onClick={() => setError(null)} className="shrink-0 text-red-400 hover:text-red-600" aria-label="Dismiss">✕</button>
+        </div>
+      )}
+
+      {/* Bills list */}
+      {filteredBills.length === 0 ? (
+        <EmptyState
+          icon="📋"
+          title={filterStatus === 'all' ? 'No bills tracked' : `No ${filterStatus} bills`}
+          description={
+            filterStatus === 'all'
+              ? 'Add your first bill to get reminders before due dates — and link it to a budget category to keep your budget up to date automatically.'
+              : undefined
+          }
+          actionLabel={filterStatus === 'all' ? 'Add Your First Bill' : undefined}
+          onAction={filterStatus === 'all' ? () => navigate('/bills/new') : undefined}
+        />
+      ) : (
+        <div className="space-y-2.5">
+          {filteredBills.map(bill => {
+            const isOverdue = bill.status === 'overdue' || bill.daysUntilDue < 0;
+            const isPaid = bill.status === 'paid';
+
+            return (
               <div
                 key={bill.billId}
-                className={`bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow ${
-                  bill.status === "paid" ? "opacity-75" : ""
-                }`}
+                className={`card p-4 transition-all ${isPaid ? 'opacity-70' : ''} ${isOverdue && !isPaid ? 'border-red-200 dark:border-red-900' : ''}`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="text-3xl">
-                      {bill.aiGenerated ? "🤖" : bill.isRecurring ? "🔄" : "📄"}
+                <div className="flex items-start justify-between gap-4">
+                  {/* Left: icon + name + meta */}
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                      isPaid ? 'bg-green-100 dark:bg-green-900/30' : isOverdue ? 'bg-red-100 dark:bg-red-900/30' : 'bg-[var(--color-muted)]'
+                    }`}>
+                      {bill.aiGenerated ? (
+                        <Bot className="w-4 h-4 text-indigo-600" aria-hidden="true" />
+                      ) : bill.isRecurring ? (
+                        <RefreshCw className={`w-4 h-4 ${isPaid ? 'text-green-600' : isOverdue ? 'text-red-500' : 'text-[var(--color-muted-foreground)]'}`} aria-hidden="true" />
+                      ) : (
+                        <FileText className={`w-4 h-4 ${isPaid ? 'text-green-600' : isOverdue ? 'text-red-500' : 'text-[var(--color-muted-foreground)]'}`} aria-hidden="true" />
+                      )}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900">
-                          {bill.name}
-                        </h3>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-[var(--color-foreground)] text-sm">{bill.name}</span>
                         {getStatusBadge(bill)}
                         {bill.aiGenerated && (
-                          <span
-                            className="px-2 py-0.5 text-xs font-medium rounded-full bg-indigo-100 text-indigo-800"
-                            title={`AI Confidence: ${bill.aiConfidenceScore}%`}
-                          >
-                            AI
+                          <span className="text-[10px] px-1.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-full font-medium">
+                            AI detected
                           </span>
                         )}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {formatDate(bill.dueDate)} •{" "}
-                        {getDaysText(bill.daysUntilDue)}
-                        {bill.isRecurring && (
-                          <span className="ml-2 text-blue-600">
-                            ({bill.frequency})
-                          </span>
+
+                      <div className="text-xs text-[var(--color-muted-foreground)] mt-0.5 flex items-center gap-2 flex-wrap">
+                        <span>{formatDate(bill.dueDate)}</span>
+                        {bill.isRecurring && bill.frequency && (
+                          <span className="text-[var(--color-primary)] font-medium">({bill.frequency})</span>
                         )}
                       </div>
-                      {bill.categoryName && (
-                        <div className="text-xs text-gray-400 mt-1">
-                          Category: {bill.categoryName}
-                          {bill.aiGenerated && bill.aiConfidenceScore && (
-                            <span className="ml-2 text-indigo-500">
-                              • {bill.aiConfidenceScore}% confidence
+
+                      {/* Budget category link — the key UX element */}
+                      {bill.categoryName ? (
+                        <div className="mt-1 text-xs flex items-center gap-1 text-[var(--color-primary)]">
+                          <span>→ Budget: {bill.categoryName}</span>
+                          {bill.transactionId && (
+                            <span className="text-green-600 dark:text-green-400 flex items-center gap-0.5">
+                              <CheckCircle className="w-3 h-3" aria-hidden="true" /> logged
                             </span>
                           )}
                         </div>
+                      ) : (
+                        !isPaid && (
+                          <button
+                            onClick={() => navigate(`/bills/${bill.billId}/edit`)}
+                            className="mt-1 text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] transition-colors flex items-center gap-0.5 group"
+                          >
+                            <span className="group-hover:underline">+ Link to budget category</span>
+                          </button>
+                        )
+                      )}
+
+                      {bill.notes && (
+                        <p className="mt-1 text-xs text-[var(--color-muted-foreground)] italic truncate max-w-xs">{bill.notes}</p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
+
+                  {/* Right: amount + actions */}
+                  <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
-                      <div className="text-xl font-bold text-gray-900">
+                      <div className="text-lg font-bold tabular-nums text-[var(--color-foreground)]">
                         {formatCurrency(bill.amount, currency)}
                       </div>
                       {bill.paidAmount && bill.paidAmount !== bill.amount && (
-                        <div className="text-xs text-gray-500">
-                          Paid: {formatCurrency(bill.paidAmount, currency)}
+                        <div className="text-xs text-[var(--color-muted-foreground)]">
+                          Paid {formatCurrency(bill.paidAmount, currency)}
                         </div>
                       )}
                     </div>
-                    {bill.status !== "paid" && (
+
+                    {!isPaid && (
                       <button
                         onClick={() => handleMarkPaid(bill)}
                         disabled={payingBillId === bill.billId}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                          payingBillId === bill.billId
-                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            : "bg-green-600 text-white hover:bg-green-700"
-                        }`}
+                        className="px-3 py-1.5 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium whitespace-nowrap"
                       >
-                        {payingBillId === bill.billId ? "..." : "Mark Paid"}
+                        {payingBillId === bill.billId ? '…' : 'Mark Paid'}
                       </button>
                     )}
+
+                    {/* Edit + Delete */}
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => navigate(`/bills/${bill.billId}/edit`)}
+                        className="p-1.5 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-muted)] rounded transition-colors"
+                        aria-label={`Edit ${bill.name}`}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(bill)}
+                        disabled={deletingBillId === bill.billId}
+                        className="p-1.5 text-[var(--color-muted-foreground)] hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded transition-colors disabled:opacity-50"
+                        aria-label={`Delete ${bill.name}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-                {bill.notes && (
-                  <div className="mt-2 text-sm text-gray-500 border-t pt-2">
-                    {bill.notes}
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
