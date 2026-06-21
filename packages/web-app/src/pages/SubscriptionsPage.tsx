@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { config } from '../config/environment';
 import { PageHeader } from '../components/ui';
 
@@ -115,6 +116,7 @@ function confidenceColor(confidence: number): string {
 export default function SubscriptionsPage() {
   const { tokens } = useAuth();
   const token = tokens?.idToken;
+  const navigate = useNavigate();
 
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -402,20 +404,28 @@ export default function SubscriptionsPage() {
         title="🔄 Subscriptions"
         subtitle="Know what you're paying for"
         action={
-          <button
-            onClick={detectSubscriptions}
-            disabled={detecting}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-60 transition-colors font-medium shadow-sm"
-          >
-            {detecting ? (
-              <>
-                <span className="animate-spin inline-block">⟳</span>
-                Scanning…
-              </>
-            ) : (
-              <>🔍 Scan Transactions</>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/bills/new?type=subscription')}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-muted)] transition-colors text-sm font-medium"
+            >
+              + Add manually
+            </button>
+            <button
+              onClick={detectSubscriptions}
+              disabled={detecting}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-60 transition-colors font-medium shadow-sm"
+            >
+              {detecting ? (
+                <>
+                  <span className="animate-spin inline-block">⟳</span>
+                  Scanning…
+                </>
+              ) : (
+                <>🔍 Scan Transactions</>
+              )}
+            </button>
+          </div>
         }
       />
 
@@ -494,7 +504,7 @@ export default function SubscriptionsPage() {
         </div>
 
         {subscriptions.length === 0 ? (
-          <EmptyState onScan={detectSubscriptions} detecting={detecting} />
+          <EmptyState onScan={detectSubscriptions} detecting={detecting} onAddManually={() => navigate('/bills/new?type=subscription')} />
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {subscriptions.map(sub => (
@@ -859,7 +869,7 @@ function TrackedSubscriptionRow({
 
 // ── Empty State ───────────────────────────────────────────────────────────────
 
-function EmptyState({ onScan, detecting }: { onScan: () => void; detecting: boolean }) {
+function EmptyState({ onScan, detecting, onAddManually }: { onScan: () => void; detecting: boolean; onAddManually: () => void }) {
   return (
     <div className="text-center py-16 px-4">
       <p className="text-5xl mb-4">🔄</p>
@@ -868,13 +878,24 @@ function EmptyState({ onScan, detecting }: { onScan: () => void; detecting: bool
         Scan your transactions and we'll find recurring charges automatically.
         Then decide what to keep and what to cancel.
       </p>
-      <button
-        onClick={onScan}
-        disabled={detecting}
-        className="px-6 py-3 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-60 font-medium transition-colors"
-      >
-        {detecting ? '🔍 Scanning…' : '🔍 Scan Transactions'}
-      </button>
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <button
+          onClick={onScan}
+          disabled={detecting}
+          className="px-6 py-3 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] disabled:opacity-60 font-medium transition-colors"
+        >
+          {detecting ? '🔍 Scanning…' : '🔍 Scan Transactions'}
+        </button>
+        <button
+          onClick={onAddManually}
+          className="px-6 py-3 bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-muted)] font-medium transition-colors text-sm"
+        >
+          + Add manually
+        </button>
+      </div>
+      <p className="mt-4 text-xs text-[var(--color-muted-foreground)]">
+        "Add manually" opens the Bill form — subscriptions are stored as recurring bills.
+      </p>
     </div>
   );
 }

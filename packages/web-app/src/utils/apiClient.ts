@@ -134,6 +134,15 @@ class SimpleApiClient {
     }
   }
 
+  /**
+   * Public method to attempt a token refresh.
+   * Used by pages that use raw fetch() instead of apiClient.request()
+   * to handle 401 responses with token refresh + retry.
+   */
+  async tryRefreshTokens(): Promise<boolean> {
+    return this.refreshTokens();
+  }
+
   private getRefreshToken(): string | null {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem('budgetbuddy_refresh_token');
