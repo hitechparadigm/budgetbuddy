@@ -292,7 +292,7 @@ export const QuickActionsFAB: React.FC<QuickActionsFABProps> = ({
         {/* Main FAB Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+          className={`w-14 h-14 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-full shadow-lg flex items-center justify-center transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
             isOpen ? "rotate-45" : ""
           }`}
           aria-expanded={isOpen}

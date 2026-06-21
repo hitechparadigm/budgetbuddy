@@ -145,7 +145,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
               type="text"
               value={formData.categoryName}
               onChange={(e) => setFormData(prev => ({ ...prev, categoryName: e.target.value }))}
-              className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               placeholder={`Enter ${groupType} name`}
               required
             />
@@ -161,7 +161,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
               step="0.01"
               value={formData.plannedAmount}
               onChange={(e) => setFormData(prev => ({ ...prev, plannedAmount: e.target.value }))}
-              className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               placeholder="0.00"
               required
             />
@@ -176,7 +176,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
               type="date"
               value={formData.startDate}
               onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-              className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
             />
           </div>
 
@@ -187,7 +187,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
               id="isRecurring"
               checked={formData.isRecurring}
               onChange={(e) => setFormData(prev => ({ ...prev, isRecurring: e.target.checked }))}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-[var(--color-border)] rounded"
+              className="h-4 w-4 text-blue-600 focus:ring-[var(--color-primary)] border-[var(--color-border)] rounded"
             />
             <label htmlFor="isRecurring" className="ml-2 block text-sm text-[var(--color-foreground)]">
               This is a recurring {groupType}
@@ -203,7 +203,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
               <select
                 value={formData.frequency}
                 onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as FrequencyOption }))}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               >
                 {frequencyOptions.map(option => (
                   <option key={option.value} value={option.value}>
@@ -224,7 +224,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               />
             </div>
           )}
@@ -239,7 +239,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
                 type="text"
                 value={formData.icon}
                 onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                 placeholder={getDefaultIcon()}
               />
             </div>
@@ -251,7 +251,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
                 type="color"
                 value={formData.colorCode}
                 onChange={(e) => setFormData(prev => ({ ...prev, colorCode: e.target.value }))}
-                className="w-full h-10 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-10 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               />
             </div>
           </div>
@@ -267,7 +267,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
             >
               {getSubmitButtonText()}
             </button>

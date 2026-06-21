@@ -323,7 +323,7 @@ export const AcceptInvitationPage: React.FC = () => {
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
-                      className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     />
                   </div>
                   <div>
@@ -339,7 +339,7 @@ export const AcceptInvitationPage: React.FC = () => {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
-                      className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                     />
                   </div>
                 </div>
@@ -357,7 +357,7 @@ export const AcceptInvitationPage: React.FC = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     readOnly={!!preview?.inviteeEmail}
-                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-[var(--color-background)]"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-background)]"
                   />
                   {preview?.inviteeEmail && (
                     <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
@@ -379,7 +379,7 @@ export const AcceptInvitationPage: React.FC = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={8}
-                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                   />
                   <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
                     Minimum 8 characters
@@ -409,7 +409,7 @@ export const AcceptInvitationPage: React.FC = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     readOnly={!!preview?.inviteeEmail}
-                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-[var(--color-background)]"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] bg-[var(--color-background)]"
                   />
                   {preview?.inviteeEmail && (
                     <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
@@ -430,7 +430,7 @@ export const AcceptInvitationPage: React.FC = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                   />
                 </div>
                 <button

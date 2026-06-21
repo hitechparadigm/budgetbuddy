@@ -57,7 +57,7 @@ export const RecurringOptions: React.FC<RecurringOptionsProps> = ({
             <select
               value={frequency || 'monthly'}
               onChange={(e) => onChange('frequency', e.target.value)}
-              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+              className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]"
             >
               {frequencyOptions.map(option => (
                 <option key={option.value} value={option.value}>
@@ -79,11 +79,11 @@ export const RecurringOptions: React.FC<RecurringOptionsProps> = ({
                   min="1"
                   value={customInterval || 1}
                   onChange={(e) => onChange('customInterval', parseInt(e.target.value) || 1)}
-                  className="w-20 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="w-20 bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]"
                 />
                 <select
                   value="months" // Default to months for custom intervals
-                  className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]"
                 >
                   <option value="days">days</option>
                   <option value="weeks">weeks</option>
@@ -102,7 +102,7 @@ export const RecurringOptions: React.FC<RecurringOptionsProps> = ({
                 id="lastDayOfMonth"
                 checked={onLastDayOfMonth || false}
                 onChange={(e) => onChange('onLastDayOfMonth', e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-[var(--color-primary)]"
               />
               <label htmlFor="lastDayOfMonth" className="text-sm text-gray-300">
                 On last day of month
@@ -156,7 +156,7 @@ export const RecurringOptions: React.FC<RecurringOptionsProps> = ({
                     type="date"
                     value={endDate}
                     onChange={(e) => onChange('endDate', e.target.value)}
-                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]"
                   />
                 </div>
               )}

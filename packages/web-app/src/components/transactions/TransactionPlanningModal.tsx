@@ -255,7 +255,7 @@ export const TransactionPlanningModal: React.FC<TransactionPlanningModalProps> =
               handleInputChange('date', now.toISOString().split('T')[0]);
               handleInputChange('time', now.toTimeString().slice(0, 5));
             }}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-medium py-2 px-4 rounded-lg transition-colors"
           >
             Today
           </button>
@@ -312,7 +312,7 @@ export const TransactionPlanningModal: React.FC<TransactionPlanningModalProps> =
             </button>
             <button
               type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+              className="flex-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white font-medium py-3 px-4 rounded-lg transition-colors"
               disabled={loading}
             >
               {loading ? 'Creating...' : 'Create'}

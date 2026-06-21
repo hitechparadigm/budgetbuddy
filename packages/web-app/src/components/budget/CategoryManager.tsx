@@ -556,7 +556,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                   <div className="space-x-3">
                     <button
                       onClick={() => setActiveTab("templates")}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]"
                     >
                       Browse Templates
                     </button>
@@ -632,7 +632,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                     onChange={(e) =>
                       setFormData({ ...formData, categoryName: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
                     placeholder="Enter category name"
                   />
                 </div>
@@ -651,7 +651,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                         plannedAmount: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
                     placeholder="0.00"
                     min="0"
                     step="0.01"
@@ -759,7 +759,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                               : null,
                           })
                         }
-                        className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
                         placeholder="No limit"
                         min="0"
                         step="0.01"
@@ -811,7 +811,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                         : handleAddCustomCategory
                     }
                     disabled={!formData.categoryName.trim()}
-                    className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-[var(--color-muted)] disabled:cursor-not-allowed"
                   >
                     {editingCategory ? "Update Category" : "Add Category"}
                   </button>

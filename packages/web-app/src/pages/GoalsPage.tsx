@@ -527,7 +527,7 @@ export const GoalsPage: React.FC = () => {
             action={
               <button
                 onClick={() => navigate("/goals/new")}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors"
               >
                 + New Goal
               </button>
@@ -873,7 +873,7 @@ export const GoalsPage: React.FC = () => {
                   value={contributionAmount}
                   onChange={(e) => setContributionAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full pl-8 pr-4 py-2 border border-border bg-surface text-foreground rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-8 pr-4 py-2 border border-border bg-surface text-foreground rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
                   autoFocus
                 />
               </div>

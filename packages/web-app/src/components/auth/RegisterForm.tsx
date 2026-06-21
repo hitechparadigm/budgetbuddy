@@ -264,9 +264,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         <div className="mt-4 text-center">
           <p className="text-xs text-[var(--color-muted-foreground)]">
             By creating an account, you agree to our{' '}
-            <a href="#" className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">Terms of Service</a>
+            <a href="/terms" className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">Terms of Service</a>
             {' '}and{' '}
-            <a href="#" className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">Privacy Policy</a>
+            <a href="/privacy" className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">Privacy Policy</a>
           </p>
         </div>
       </div>

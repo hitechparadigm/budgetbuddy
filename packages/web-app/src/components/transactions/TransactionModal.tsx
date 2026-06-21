@@ -373,7 +373,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               name="categoryId"
               value={formData.categoryId}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-[var(--color-border)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-[var(--color-border)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
               required
             >
               <option value="">Select a category...</option>
@@ -398,7 +398,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               name="accountId"
               value={formData.accountId || ""}
               onChange={handleAccountChange}
-              className="w-full px-4 py-2 border border-[var(--color-border)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-[var(--color-border)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
             >
               <option value="">No account selected</option>
               {ACCOUNT_TYPE_ORDER.map((accountType) => {
@@ -445,7 +445,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                 min="0.01"
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
                 placeholder="0.00"
                 required
               />
@@ -466,7 +466,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-[var(--color-border)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-[var(--color-border)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
               placeholder="Enter description..."
             />
           </div>
@@ -485,7 +485,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               name="date"
               value={formData.date}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-[var(--color-border)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-[var(--color-border)] dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
               required
             />
           </div>
@@ -497,7 +497,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               id="createAnother"
               checked={createAnother}
               onChange={(e) => setCreateAnother(e.target.checked)}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-[var(--color-border)] rounded"
+              className="h-4 w-4 text-blue-600 focus:ring-[var(--color-primary)] border-[var(--color-border)] rounded"
             />
             <label
               htmlFor="createAnother"
@@ -550,7 +550,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? "Saving..." : "Add Transaction"}
             </button>

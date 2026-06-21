@@ -88,7 +88,7 @@ export const TwoFactorVerify: React.FC<TwoFactorVerifyProps> = ({
                 value={code}
                 onChange={(e) => handleCodeChange(e.target.value)}
                 placeholder="XXXX-XXXX-XXXX"
-                className="w-full px-4 py-3 border-2 border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono text-lg tracking-wider"
+                className="w-full px-4 py-3 border-2 border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)] text-center font-mono text-lg tracking-wider"
                 disabled={loading}
               />
             </div>
@@ -106,7 +106,7 @@ export const TwoFactorVerify: React.FC<TwoFactorVerifyProps> = ({
                 value={code}
                 onChange={(e) => handleCodeChange(e.target.value)}
                 placeholder="000000"
-                className="w-full px-4 py-4 border-2 border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-3xl tracking-widest font-mono"
+                className="w-full px-4 py-4 border-2 border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)] text-center text-3xl tracking-widest font-mono"
                 disabled={loading}
                 autoComplete="one-time-code"
               />
@@ -119,7 +119,7 @@ export const TwoFactorVerify: React.FC<TwoFactorVerifyProps> = ({
           <button
             type="submit"
             disabled={loading || !code}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

@@ -56,7 +56,7 @@ export const FloatingActionButtons: React.FC<FloatingActionButtonsProps> = ({
         className={`w-14 h-14 rounded-full shadow-lg transition-all duration-200 transform ${
           isExpanded
             ? 'bg-gray-600 hover:bg-gray-700 rotate-45'
-            : 'bg-blue-600 hover:bg-blue-700 hover:scale-110'
+            : 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] hover:scale-110'
         } text-white flex items-center justify-center`}
       >
         {isExpanded ? (

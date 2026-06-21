@@ -265,7 +265,7 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
               <p className="text-[var(--color-muted-foreground)] mb-4">
                 Add income, savings, and expense categories to start budgeting.
               </p>
-              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary)]">
                 Add Categories
               </button>
             </div>
@@ -405,7 +405,7 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="text-sm border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="text-sm border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleSaveName(category);
@@ -431,7 +431,7 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
                             type="number"
                             value={editAmount}
                             onChange={(e) => setEditAmount(e.target.value)}
-                            className="w-24 px-2 py-1 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-24 px-2 py-1 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === "Enter") handleSaveEdit(category);

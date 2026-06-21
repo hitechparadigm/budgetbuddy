@@ -435,7 +435,7 @@ export const FamilySettings: React.FC = () => {
         {currentUserRole === "primary" && (
           <button
             onClick={() => setShowInviteForm(!showInviteForm)}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
+            className="px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
           >
             <svg
               className="w-5 h-5"
@@ -494,7 +494,7 @@ export const FamilySettings: React.FC = () => {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                 placeholder="partner@example.com"
               />
             </div>
@@ -512,7 +512,7 @@ export const FamilySettings: React.FC = () => {
                 onChange={(e) =>
                   setInviteRole(e.target.value as "spouse" | "viewer")
                 }
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
               >
                 <option value="spouse">
                   Spouse - Can edit budgets and transactions
@@ -535,7 +535,7 @@ export const FamilySettings: React.FC = () => {
               <button
                 type="submit"
                 disabled={inviting}
-                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg font-medium"
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-[var(--color-muted)] disabled:cursor-not-allowed text-white rounded-lg font-medium"
               >
                 {inviting ? "Sending..." : "Send Invitation"}
               </button>
@@ -620,7 +620,7 @@ export const FamilySettings: React.FC = () => {
                             e.target.value as "spouse" | "viewer",
                           )
                         }
-                        className="px-3 py-1 text-sm border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-3 py-1 text-sm border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
                       >
                         <option value="spouse">Spouse</option>
                         <option value="viewer">Viewer</option>

@@ -396,7 +396,7 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                             type="text"
                             value={editedName}
                             onChange={(e) => setEditedName(e.target.value)}
-                            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                           />
                         </div>
                         <div>
@@ -407,7 +407,7 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                             type="number"
                             value={editedAmount}
                             onChange={(e) => setEditedAmount(e.target.value)}
-                            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                           />
                         </div>
                         <div>
@@ -417,7 +417,7 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                           <select
                             value={editedFrequency}
                             onChange={(e) => setEditedFrequency(e.target.value)}
-                            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                           >
                             {Object.entries(frequencyLabels).map(
                               ([value, label]) => (

@@ -184,7 +184,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
           placeholder="Search transactions..."
           value={filters.search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="w-full pl-10 pr-10 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full pl-10 pr-10 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
         />
         {filters.search && (
           <button
@@ -326,7 +326,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
               <select
                 value={filters.category || ""}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)] text-sm"
               >
                 <option value="">All categories</option>
                 {incomeCategories.length > 0 && (
@@ -358,7 +358,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
               <select
                 value={filters.type || ""}
                 onChange={(e) => handleTypeChange(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)] text-sm"
               >
                 <option value="">All types</option>
                 <option value="income">Income</option>
@@ -375,7 +375,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                 type="date"
                 value={filters.dateFrom || ""}
                 onChange={(e) => handleDateFromChange(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)] text-sm"
               />
             </div>
 
@@ -387,7 +387,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                 type="date"
                 value={filters.dateTo || ""}
                 onChange={(e) => handleDateToChange(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)] text-sm"
               />
             </div>
 
@@ -403,7 +403,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                 placeholder="0.00"
                 value={filters.amountMin ?? ""}
                 onChange={(e) => handleAmountMinChange(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)] text-sm"
               />
             </div>
 
@@ -418,7 +418,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                 placeholder="No limit"
                 value={filters.amountMax ?? ""}
                 onChange={(e) => handleAmountMaxChange(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)] text-sm"
               />
             </div>
 

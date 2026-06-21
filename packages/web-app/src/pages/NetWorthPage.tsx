@@ -453,7 +453,7 @@ export const NetWorthPage: React.FC = () => {
               </h2>
               <button
                 onClick={handleAddLiability}
-                className="px-3 py-1 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700"
+                className="px-3 py-1 bg-[var(--color-destructive)] text-white rounded-lg text-sm hover:opacity-90"
               >
                 + Add Liability
               </button>
@@ -764,7 +764,7 @@ export const NetWorthPage: React.FC = () => {
               </button>
               <button
                 onClick={handleSaveLiability}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                className="flex-1 px-4 py-2 bg-[var(--color-destructive)] text-white rounded-lg hover:opacity-90"
               >
                 Save
               </button>
