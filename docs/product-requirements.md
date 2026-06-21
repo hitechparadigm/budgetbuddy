@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-21 (Session 151 — Bug fixes + new features: budget right sidebar UX redesign, bills/subscriptions workflow + category bug fix, budget 401 token refresh, net-worth save 500 fix, investments Lambda deployed + Alpha Vantage market news/signals)
+**Last Updated**: 2026-06-21 (Session 152 — Comprehensive responsive UI/UX audit + fixes: invitation resend bug, budget mobile header, touch targets 44px, design tokens, AWS Config disabled saving 30-40% cloud cost)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -283,7 +283,28 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **Daily rotating AI insight pool** — 30+ insight templates in `OverviewPage.tsx`; day-of-year cycling; falls back to pool if API call fails
 - ✅ **Monthly SES kickoff email** — `sendMonthlyKickoffEmail()` in `daily-reminders/index.js`; triggered on `isFirstDayOfMonth` check; includes pre-filled category count from previous month
 
-### Session 151 — Bug Fixes & Feature Work (2026-06-21)
+### Session 152 — Comprehensive Responsive UI/UX Audit + Fixes (2026-06-21)
+
+**Invitation Resend Bug (Critical):**
+- ✅ **`handleResendInvitation` fixed** — was blocking resend if original invitation expired; removed expired check on resend since resend's purpose is to refresh an expired invite
+- ✅ **`expiresAt` now reset to 7 days from now on resend** — old code kept the original expiry, causing "Invalid Invitation" on click
+- ✅ **Both `token` + `tokenHash` fields written** — scan-based `handleAcceptInvitation` and `handleInvitationPreview` filter on `tokenHash`; create/resend now writes both fields for compatibility
+- ✅ **`AcceptInvitationPage.tsx` design tokens** — replaced all hardcoded `bg-blue-600`, `text-gray-*` with `var(--color-primary)`, `var(--color-foreground)` etc.
+
+**Responsive UI/UX Audit Findings + Fixes:**
+- ✅ **Budget page mobile header decluttered** — Export CSV, Export PDF, Reset, Today, Keyboard shortcuts buttons now `hidden sm:` (hidden on <640px); only month navigation arrows remain visible on mobile
+- ✅ **Touch targets 44px minimum (WCAG 2.5.5)** — `Button` component `sm` size: added `min-h-[44px]`; hamburger: `48×48px` (was 40×40); Learn More banner link: `min-h-[44px]`; month navigation arrows: `min-w/h-[44px]`
+- ✅ **AppLayout mobile header design tokens** — was `bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700`; now uses `bg-[var(--color-surface)] border-[var(--color-border)]`
+- ✅ **Budget group total row gap** — "PlannedReceived" labels running together fixed by using `gap-6` instead of `md:space-x-4` with no mobile gap
+- ✅ **Month navigation arrows design tokens** — was `text-gray-600 border-gray-300 hover:bg-gray-100`; now uses CSS vars
+
+**Automated Audit Results (375px viewport, 13 pages):**
+- Zero horizontal overflow on all 13 pages
+- Zero page-level errors on any route
+- Dark mode CSS vars correctly resolving (`--color-background: #111827`, `--color-surface: #1f2937`)
+
+**AWS Config Disabled:**
+- ✅ AWS Config recorder deleted — was recording ALL 915 resources (including 555 API Gateway methods) since April 2022 with 0 rules configured; delivery channel pointing to deleted S3 bucket; estimated 30-40% of cloud bill. Recording stopped and recorder + delivery channel deleted from us-east-1.
 
 **Bug Fixes:**
 - ✅ **Budget right sidebar UX** — replaced cramped category details panel (text-only) with progress bars, over-budget `+X%` pill badges, design-token colors throughout; `+ Add Item` uses brand green; transaction tabs use `var(--color-primary)`
@@ -542,6 +563,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | 3 | ✅ Fixed (2026-06-21) | `POST /net-worth/assets` + `/liabilities` | Was 500 — `generateId("asset")` → `generateId.custom("asset")` |
 | 4 | ✅ Fixed (2026-06-21) | Bills category dropdown | `GET /budget/current` required `?month=YYYY-MM`; was returning 400 silently → empty dropdown |
 | 5 | ✅ Fixed (2026-06-21) | Budget page silent 401 | JWT expiry caused silent empty page. Now: token refresh attempt → redirect to `/auth?returnTo=` if refresh fails |
+| 6 | ✅ Fixed (2026-06-21) | Invitation resend "Invalid Invitation" | `handleResendInvitation` kept old `expiresAt`; resend now resets to 7 days from now + writes both `token`/`tokenHash` fields |
 
 ### Not Deployed (frontend components exist, no backend Lambda)
 
