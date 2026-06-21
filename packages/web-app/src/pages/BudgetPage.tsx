@@ -98,6 +98,7 @@ export const BudgetPage: React.FC = () => {
   const navigate = useNavigate();
   const [budget, setBudget] = useState<Budget | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const currency = "USD"; // Default currency
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   // P6-T2: Slide-over state for the right sidebar at <md breakpoints
@@ -502,11 +503,11 @@ export const BudgetPage: React.FC = () => {
           response = await fetchBudget();
           console.log("[loadBudget] Retry response status:", response.status);
         }
-        // If still 401 after refresh attempt, redirect to auth
+        // If still 401 after refresh attempt, show session-expired banner
         if (response.status === 401) {
-          console.log("[loadBudget] Token refresh failed — redirecting to /auth");
-          const returnTo = encodeURIComponent(`/budget?month=${currentMonth}`);
-          window.location.href = `/auth?returnTo=${returnTo}`;
+          console.log("[loadBudget] Token refresh failed — showing session expired banner");
+          setSessionExpired(true);
+          setLoading(false);
           return;
         }
       }
@@ -572,7 +573,7 @@ export const BudgetPage: React.FC = () => {
 
   const saveBudgetToBackend = async (budgetData: Budget) => {
     try {
-      const token = localStorage.getItem("budgetbuddy_id_token");
+      let token = localStorage.getItem("budgetbuddy_id_token");
       if (!token) {
         console.error("[saveBudgetToBackend] No auth token found");
         return;
@@ -593,18 +594,35 @@ export const BudgetPage: React.FC = () => {
           budgetData.groups.find((g) => g.type === "expense")?.categories || [],
       };
 
-      const response = await fetch(`${API_BASE_URL}/budget`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          month: budgetData.month,
-          groups: groupsForBackend,
-          isAIGenerated: budgetData.isAIGenerated,
-        }),
-      });
+      const doSave = async (authToken: string) =>
+        fetch(`${API_BASE_URL}/budget`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            month: budgetData.month,
+            groups: groupsForBackend,
+            isAIGenerated: budgetData.isAIGenerated,
+          }),
+        });
+
+      let response = await doSave(token);
+
+      // Handle 401: attempt token refresh once
+      if (response.status === 401) {
+        const refreshed = await apiClient.tryRefreshTokens();
+        if (refreshed) {
+          token = localStorage.getItem("budgetbuddy_id_token") || token;
+          response = await doSave(token);
+        }
+        if (response.status === 401) {
+          console.log("[saveBudgetToBackend] Auth failed — showing expired session");
+          setSessionExpired(true);
+          return;
+        }
+      }
 
       // CRITICAL FIX: Treat 409 conflict as success (budget already exists)
       if (response.ok || response.status === 409) {
@@ -1208,8 +1226,10 @@ export const BudgetPage: React.FC = () => {
 
     const [year, month] = currentMonth.split("-").map(Number);
     const offset = direction === "prev" ? -1 : 1;
+    // Use local timezone — new Date(year, month-1+offset, 1) creates date in LOCAL timezone
+    // Then format manually to avoid UTC conversion that .toISOString() would cause
     const date = new Date(year, month - 1 + offset, 1);
-    const newMonth = date.toISOString().slice(0, 7);
+    const newMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 
     console.log("[changeMonth] Switching from", currentMonth, "to", newMonth);
     setCurrentMonth(newMonth);
@@ -1552,6 +1572,35 @@ export const BudgetPage: React.FC = () => {
     setBudget(updatedBudget);
     await saveBudgetToBackend(updatedBudget);
   };
+
+  if (sessionExpired) {
+    return (
+      <div className="h-full bg-[var(--color-background)] flex items-center justify-center">
+        <div className="text-center max-w-sm px-6">
+          <div className="mb-4 flex justify-center">
+            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+            </div>
+          </div>
+          <h2 className="text-xl font-semibold text-[var(--color-foreground)] mb-2">Session expired</h2>
+          <p className="text-sm text-[var(--color-muted-foreground)] mb-6">
+            Your session timed out. Please sign in again to continue.
+          </p>
+          <button
+            onClick={() => {
+              const returnTo = encodeURIComponent(`/budget?month=${currentMonth}`);
+              window.location.href = `/auth?returnTo=${returnTo}`;
+            }}
+            className="px-6 py-2.5 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors font-medium"
+          >
+            Sign in again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -2025,13 +2074,13 @@ export const BudgetPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <span className="text-green-500 text-sm">●</span>
-                      <h2 className="text-lg font-semibold text-gray-900">
+                      <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
                         {group.name}
                       </h2>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-[var(--color-muted-foreground)]">
                         for {getMonthName(currentMonth).split(" ")[0]}
                       </span>
-                      <button className="text-gray-400 hover:text-gray-600">
+                      <button className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]">
                         <svg
                           className="w-4 h-4"
                           fill="none"
@@ -2049,10 +2098,10 @@ export const BudgetPage: React.FC = () => {
                     </div>
                     <div className="hidden md:flex items-center space-x-4 text-sm">
                       <div className="text-right w-24 flex-shrink-0">
-                        <div className="text-gray-500">Planned</div>
+                        <div className="text-[var(--color-muted-foreground)]">Planned</div>
                       </div>
                       <div className="text-right w-24 flex-shrink-0">
-                        <div className="text-gray-500">
+                        <div className="text-[var(--color-muted-foreground)]">
                           {group.type === "income" ? "Received" : "Spent"}
                         </div>
                       </div>
@@ -2070,18 +2119,18 @@ export const BudgetPage: React.FC = () => {
                         className={`group/item flex flex-col md:flex-row md:items-center justify-between py-3 px-4 rounded-lg space-y-2 md:space-y-0 ${
                           category.spentAmount > category.plannedAmount
                             ? "bg-red-50 dark:bg-red-950/20 border-l-4 border-red-500 hover:bg-red-100 dark:hover:bg-red-950/30"
-                            : "hover:bg-muted"
+                            : "hover:bg-[var(--color-muted)]"
                         }`}
                       >
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
                             <span>{category.icon}</span>
-                            <div className="font-medium text-foreground">
+                            <div className="font-medium text-[var(--color-foreground)]">
                               {category.name}
                             </div>
                           </div>
                           {category.isRecurring && (
-                            <div className="text-xs text-green-600 ml-6">
+                            <div className="text-xs text-green-600 dark:text-green-400 ml-6">
                               {category.recurringFrequency} •{" "}
                               {category.baseAmount &&
                                 `${formatCurrency(category.baseAmount, currency, { showSymbol: false })} per occurrence`}
@@ -2094,7 +2143,7 @@ export const BudgetPage: React.FC = () => {
                         </div>
                         <div className="flex items-center md:space-x-4">
                           <div className="text-left md:text-right md:w-24 flex-shrink-0">
-                            <div className="text-xs md:hidden text-gray-500">
+                            <div className="text-xs md:hidden text-[var(--color-muted-foreground)]">
                               Planned
                             </div>
                             {inlineEditId === category.id ? (
@@ -2110,7 +2159,7 @@ export const BudgetPage: React.FC = () => {
                                   if (e.key === 'Escape') setInlineEditId(null);
                                 }}
                                 autoFocus
-                                className="w-full text-right font-medium px-1 py-0.5 border border-[var(--color-primary)] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                                className="w-full text-right font-medium px-1 py-0.5 border border-[var(--color-primary)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
                                 aria-label={`Edit planned amount for ${category.name}`}
                               />
                             ) : (
@@ -2124,7 +2173,7 @@ export const BudgetPage: React.FC = () => {
                             )}
                           </div>
                           <div className="text-right md:w-24 flex-shrink-0">
-                            <div className="text-xs md:hidden text-gray-500">
+                            <div className="text-xs md:hidden text-[var(--color-muted-foreground)]">
                               {group.type === "income" ? "Received" : "Spent"}
                             </div>
                             <div
@@ -2133,7 +2182,7 @@ export const BudgetPage: React.FC = () => {
                                   ? "text-red-600"
                                   : category.spentAmount > 0
                                     ? "text-green-600"
-                                    : "text-gray-400"
+                                    : "text-[var(--color-muted-foreground)]"
                               }`}
                             >
                               {formatCurrency(category.spentAmount, currency)}
@@ -2144,7 +2193,7 @@ export const BudgetPage: React.FC = () => {
                               onClick={() =>
                                 openBudgetItemModal(group.type, category)
                               }
-                              className="p-1 text-gray-400 hover:text-blue-600 rounded"
+                              className="p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] rounded"
                               title="Edit"
                             >
                               <svg
@@ -2163,7 +2212,7 @@ export const BudgetPage: React.FC = () => {
                             </button>
                             <button
                               onClick={() => handleDeleteCategory(category.id)}
-                              className="p-1 text-gray-400 hover:text-red-600 rounded"
+                              className="p-1 text-[var(--color-muted-foreground)] hover:text-red-600 rounded"
                               title="Delete"
                             >
                               <svg
@@ -2857,23 +2906,47 @@ export const BudgetPage: React.FC = () => {
 
       {/* Transaction Modal */}
       {showTransactionModal && transactionType && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="bg-[var(--color-surface)] rounded-t-2xl sm:rounded-xl w-full sm:max-w-md p-6 shadow-xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {transactionType === "income"
-                  ? "Add Income Transaction"
-                  : "Add Expense Transaction"}
-              </h3>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
+                {/* Type toggle — switch between income and expense without closing */}
+                <button
+                  type="button"
+                  onClick={() => setTransactionType("income")}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    transactionType === "income"
+                      ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300"
+                      : "text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
+                  }`}
+                >
+                  Income
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTransactionType("expense");
+                    // Clear category if it was income-specific
+                    setTransactionForm(prev => ({ ...prev, categoryId: "" }));
+                  }}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    transactionType === "expense"
+                      ? "bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300"
+                      : "text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)]"
+                  }`}
+                >
+                  Expense
+                </button>
+              </div>
+              <div className="flex items-center space-x-1">
                 <button
                   type="button"
                   onClick={() => openTemplateModal("select")}
-                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="p-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] hover:bg-[var(--color-muted)] rounded-lg transition-colors"
                   title="Use template"
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-4 h-4"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -2888,10 +2961,11 @@ export const BudgetPage: React.FC = () => {
                 </button>
                 <button
                   onClick={closeTransactionModal}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="p-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-muted)] rounded-lg transition-colors"
+                  aria-label="Close"
                 >
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -2908,8 +2982,37 @@ export const BudgetPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleTransactionSubmit} className="space-y-4">
+              {/* Amount — most important field, show first and large */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-xs font-medium text-[var(--color-muted-foreground)] mb-1 uppercase tracking-wide">
+                  Amount
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-foreground)] font-medium">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={transactionForm.amount}
+                    onChange={(e) =>
+                      setTransactionForm((prev) => ({
+                        ...prev,
+                        amount: e.target.value,
+                      }))
+                    }
+                    className="w-full pl-8 pr-4 py-3 text-xl font-semibold border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                    placeholder="0.00"
+                    required
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-xs font-medium text-[var(--color-muted-foreground)] mb-1 uppercase tracking-wide">
                   Category
                 </label>
                 <select
@@ -2920,7 +3023,7 @@ export const BudgetPage: React.FC = () => {
                       categoryId: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   required
                 >
                   <option value="">Select a category...</option>
@@ -2932,72 +3035,49 @@ export const BudgetPage: React.FC = () => {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Amount
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-gray-500">
-                    $
-                  </span>
+              {/* Description + Date row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[var(--color-muted-foreground)] mb-1 uppercase tracking-wide">
+                    Description
+                  </label>
                   <input
-                    type="number"
-                    step="0.01"
-                    value={transactionForm.amount}
+                    type="text"
+                    value={transactionForm.description}
                     onChange={(e) =>
                       setTransactionForm((prev) => ({
                         ...prev,
-                        amount: e.target.value,
+                        description: e.target.value,
                       }))
                     }
-                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0.00"
+                    className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent text-sm"
+                    placeholder="What was this for?"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--color-muted-foreground)] mb-1 uppercase tracking-wide">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={transactionForm.date}
+                    onChange={(e) =>
+                      setTransactionForm((prev) => ({
+                        ...prev,
+                        date: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent text-sm"
                     required
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <input
-                  type="text"
-                  value={transactionForm.description}
-                  onChange={(e) =>
-                    setTransactionForm((prev) => ({
-                      ...prev,
-                      description: e.target.value,
-                    }))
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter description..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={transactionForm.date}
-                  onChange={(e) =>
-                    setTransactionForm((prev) => ({
-                      ...prev,
-                      date: e.target.value,
-                    }))
-                  }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="flex space-x-3 pt-4">
+              <div className="flex space-x-3 pt-2">
                 <button
                   type="button"
                   onClick={closeTransactionModal}
-                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="flex-1 px-4 py-2.5 text-[var(--color-foreground)] bg-[var(--color-muted)] rounded-lg hover:opacity-80 transition-opacity font-medium"
                 >
                   Cancel
                 </button>
@@ -3005,11 +3085,11 @@ export const BudgetPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => openTemplateModal("save")}
-                    className="px-4 py-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                    className="px-4 py-2.5 text-[var(--color-primary)] bg-[var(--color-accent)] rounded-lg hover:opacity-80 transition-opacity"
                     title="Save as template"
                   >
                     <svg
-                      className="w-5 h-5"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -3025,9 +3105,13 @@ export const BudgetPage: React.FC = () => {
                 )}
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className={`flex-1 px-4 py-2.5 text-white rounded-lg transition-colors font-semibold ${
+                    transactionType === "income"
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]"
+                  }`}
                 >
-                  Add Transaction
+                  Add {transactionType === "income" ? "Income" : "Expense"}
                 </button>
               </div>
             </form>
@@ -3046,10 +3130,10 @@ export const BudgetPage: React.FC = () => {
 
       {/* Budget Item Modal */}
       {showBudgetItemModal && selectedGroupType && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="bg-[var(--color-surface)] rounded-t-2xl sm:rounded-xl w-full sm:max-w-md p-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-[var(--color-foreground)]">
                 {editingCategory ? "Edit" : "Plan"}{" "}
                 {selectedGroupType === "income"
                   ? "Income"
@@ -3060,10 +3144,11 @@ export const BudgetPage: React.FC = () => {
               </h3>
               <button
                 onClick={closeBudgetItemModal}
-                className="text-gray-400 hover:text-gray-600"
+                className="p-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-muted)] rounded-lg transition-colors"
+                aria-label="Close"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -3080,7 +3165,7 @@ export const BudgetPage: React.FC = () => {
 
             <form onSubmit={handleBudgetItemSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   Name
                 </label>
                 <input
@@ -3092,14 +3177,14 @@ export const BudgetPage: React.FC = () => {
                       name: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   placeholder="e.g., Groceries, Rent, Salary..."
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   Icon
                 </label>
                 <input
@@ -3111,14 +3196,14 @@ export const BudgetPage: React.FC = () => {
                       icon: e.target.value,
                     }))
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   placeholder="e.g., 💰 🏠 🚗 🍔"
                   maxLength={2}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   {budgetItemForm.isRecurring
                     ? "Amount per Occurrence"
                     : selectedGroupType === "income" &&
@@ -3127,7 +3212,7 @@ export const BudgetPage: React.FC = () => {
                     : "Planned Amount"}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-gray-500">
+                  <span className="absolute left-3 top-2.5 text-[var(--color-muted-foreground)]">
                     $
                   </span>
                   <input
@@ -3140,7 +3225,7 @@ export const BudgetPage: React.FC = () => {
                         plannedAmount: e.target.value,
                       }))
                     }
-                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-8 pr-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     placeholder="0.00"
                     required={
                       !(selectedGroupType === "income" &&
@@ -3155,7 +3240,7 @@ export const BudgetPage: React.FC = () => {
                   />
                 </div>
                 {budgetItemForm.isRecurring && budgetItemForm.plannedAmount && (
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
                     Monthly total will be calculated based on frequency
                   </p>
                 )}
@@ -3164,7 +3249,7 @@ export const BudgetPage: React.FC = () => {
               {/* Income frequency selector */}
               {selectedGroupType === "income" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                     Pay Frequency
                   </label>
                   <select
@@ -3181,7 +3266,7 @@ export const BudgetPage: React.FC = () => {
                             : "",
                       }));
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                   >
                     <option value="monthly">Monthly</option>
                     <option value="semi-monthly">Semi-monthly (twice a month)</option>
@@ -3190,7 +3275,7 @@ export const BudgetPage: React.FC = () => {
                     <option value="one-time">One-time (won&apos;t repeat next month)</option>
                   </select>
                   {budgetItemForm.frequency === "one-time" && (
-                    <p className="text-xs text-amber-600 mt-1">
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                       ⚠️ This item won&apos;t be carried over to next month.
                     </p>
                   )}
@@ -3201,12 +3286,12 @@ export const BudgetPage: React.FC = () => {
               {selectedGroupType === "income" &&
                 (budgetItemForm.frequency === "biweekly" || budgetItemForm.frequency === "weekly") && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                       Amount per{" "}
                       {budgetItemForm.frequency === "biweekly" ? "Paycheck (every 2 weeks)" : "Week"}
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                      <span className="absolute left-3 top-2.5 text-[var(--color-muted-foreground)]">$</span>
                       <input
                         type="number"
                         step="0.01"
@@ -3230,13 +3315,13 @@ export const BudgetPage: React.FC = () => {
                             plannedAmount: monthly > 0 ? monthly.toString() : "",
                           }));
                         }}
-                        className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full pl-8 pr-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                         placeholder="0.00"
                         required
                       />
                     </div>
                     {budgetItemForm.frequencyAmount && parseFloat(budgetItemForm.frequencyAmount) > 0 && (
-                      <p className="text-xs text-green-600 mt-1">
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                         Monthly total for{" "}
                         {budget?.month || currentMonth}:{" "}
                         <strong>${budgetItemForm.plannedAmount}</strong>
@@ -3256,11 +3341,11 @@ export const BudgetPage: React.FC = () => {
                       isRecurring: e.target.checked,
                     }))
                   }
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="w-4 h-4 text-[var(--color-primary)] border-[var(--color-border)] rounded focus:ring-[var(--color-primary)]"
                 />
                 <label
                   htmlFor="isRecurring"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-[var(--color-foreground)]"
                 >
                   Recurring
                 </label>
@@ -3269,7 +3354,7 @@ export const BudgetPage: React.FC = () => {
               {budgetItemForm.isRecurring && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                       Frequency
                     </label>
                     <select
@@ -3280,7 +3365,7 @@ export const BudgetPage: React.FC = () => {
                           recurringFrequency: e.target.value as any,
                         }))
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                     >
                       <option value="weekly">Weekly</option>
                       <option value="bi-weekly">Bi-weekly</option>
@@ -3290,7 +3375,7 @@ export const BudgetPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                       First Occurrence Date
                     </label>
                     <input
@@ -3302,10 +3387,10 @@ export const BudgetPage: React.FC = () => {
                           startDate: e.target.value,
                         }))
                       }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
                       required
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
                       This determines how many times the item occurs in{" "}
                       {getMonthName(budget?.month || currentMonth)}
                     </p>
@@ -3317,13 +3402,13 @@ export const BudgetPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={closeBudgetItemModal}
-                  className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="flex-1 px-4 py-2.5 text-[var(--color-foreground)] bg-[var(--color-muted)] rounded-lg hover:opacity-80 transition-opacity font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors font-semibold"
                 >
                   {editingCategory ? "Save Changes" : "Plan Item"}
                 </button>
@@ -3335,10 +3420,10 @@ export const BudgetPage: React.FC = () => {
 
       {/* Reset Budget Confirmation Modal */}
       {showResetModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl shadow-xl max-w-md w-full p-6">
             {/* Warning Icon */}
-            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 dark:bg-red-900/30 rounded-full">
               <svg
                 className="w-6 h-6 text-red-600"
                 fill="none"
@@ -3355,12 +3440,12 @@ export const BudgetPage: React.FC = () => {
             </div>
 
             {/* Title */}
-            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+            <h3 className="text-xl font-bold text-[var(--color-foreground)] text-center mb-2">
               Reset Budget for {getMonthName(currentMonth).split(" ")[0]}?
             </h3>
 
             {/* Warning Message */}
-            <p className="text-gray-600 text-center mb-6">
+            <p className="text-[var(--color-muted-foreground)] text-center mb-6">
               This will permanently delete all categories and transactions for{" "}
               {getMonthName(currentMonth)}. This action cannot be undone.
             </p>
@@ -3369,7 +3454,7 @@ export const BudgetPage: React.FC = () => {
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowResetModal(false)}
-                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                className="flex-1 px-4 py-2.5 text-[var(--color-foreground)] bg-[var(--color-muted)] rounded-lg hover:opacity-80 transition-opacity font-medium"
               >
                 Cancel
               </button>
@@ -3378,7 +3463,7 @@ export const BudgetPage: React.FC = () => {
                   setShowResetModal(false);
                   handleResetBudget();
                 }}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
               >
                 Reset Budget
               </button>

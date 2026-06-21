@@ -356,6 +356,13 @@ export const BillFormPage: React.FC = () => {
                     {cat.icon} {cat.name}
                   </option>
                 ))}
+                {/* Fallback: show saved category even if not in current budget list */}
+                {!categoriesLoading && form.categoryId && form.categoryName &&
+                  !categories.find(c => c.id === form.categoryId) && (
+                  <option key={form.categoryId} value={form.categoryId}>
+                    {form.categoryName} (saved)
+                  </option>
+                )}
               </select>
             </div>
             {form.categoryId ? (
