@@ -789,8 +789,8 @@ export const OverviewPage: React.FC = () => {
       {/* Financial Health Bar — full width */}
       <FinancialHealthBar period={period} loading={loadingBudget} currency={currency} />
 
-      {/* Stat cards row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats — compact strip on mobile (no cards), 4-col grid on desktop */}
+      <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Monthly Income"
           value={loadingBudget ? '—' : formatCurrency(period?.totalIncome || 0, currency)}
@@ -818,10 +818,8 @@ export const OverviewPage: React.FC = () => {
         <StatCard
           label="Net Worth"
           value={
-            loadingNetWorth
-              ? '—'
-              : netWorthHistory.length
-              ? formatCurrency(netWorthHistory[netWorthHistory.length - 1], currency)
+            loadingNetWorth ? '—'
+              : netWorthHistory.length ? formatCurrency(netWorthHistory[netWorthHistory.length - 1], currency)
               : 'Connect accounts'
           }
           icon={Wallet}
@@ -833,9 +831,28 @@ export const OverviewPage: React.FC = () => {
         />
       </div>
 
-      {/* Net Worth Sparkline — only if data exists */}
+      {/* Mobile-only compact number strip — replaces 4 stat cards */}
+      <div className="sm:hidden grid grid-cols-2 gap-2">
+        {[
+          { label: 'Income', value: loadingBudget ? '…' : formatCurrency(period?.totalIncome || 0, currency), color: 'text-[var(--color-foreground)]', href: '/budget' },
+          { label: 'Spent', value: loadingBudget ? '…' : formatCurrency(period?.totalExpenses || 0, currency), color: 'text-red-600 dark:text-red-400', href: '/budget' },
+          { label: 'Saved', value: loadingBudget ? '…' : formatCurrency(period?.totalSavings || 0, currency), color: 'text-[var(--color-primary)]', href: '/goals' },
+          { label: 'Net Worth', value: loadingNetWorth ? '…' : netWorthHistory.length ? formatCurrency(netWorthHistory[netWorthHistory.length - 1], currency) : '—', color: 'text-[var(--color-foreground)]', href: '/net-worth' },
+        ].map(stat => (
+          <button
+            key={stat.label}
+            onClick={() => navigate(stat.href)}
+            className="card p-3 text-left"
+          >
+            <p className="text-[10px] font-medium text-[var(--color-muted-foreground)] uppercase tracking-wide">{stat.label}</p>
+            <p className={`text-base font-bold tabular-nums mt-0.5 ${stat.color}`}>{stat.value}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* Net Worth Sparkline — only if data exists, desktop only to reduce mobile clutter */}
       {!loadingNetWorth && netWorthHistory.length >= 2 && (
-        <div className="card p-5 flex items-center gap-6">
+        <div className="hidden sm:flex card p-5 items-center gap-6">
           <div>
             <p className="text-sm text-[var(--color-muted-foreground)] mb-1">Net Worth Trend (6 months)</p>
             <p className="text-2xl font-semibold tabular-nums">
@@ -885,7 +902,7 @@ export const OverviewPage: React.FC = () => {
 
 
       {/* Quick Add */}
-      <QuickAddTransaction />
+      <QuickAddTransaction onAddTransaction={() => setShowAddTxn(true)} />
     </div>
   );
 };
