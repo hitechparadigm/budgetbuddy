@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiClient } from "../utils/apiClient";
 import { QuickActionsFAB } from "../components/QuickActionsFAB";
 import { ReceiptUpload } from "../components/ReceiptUpload";
 import { CalendarView } from "../components/CalendarView";
@@ -476,21 +477,39 @@ export const BudgetPage: React.FC = () => {
 
       console.log("[loadBudget] Loading budget for month:", currentMonth);
 
-      // FIXED: Use /budget/current endpoint which auto-creates budget from previous month
-      // This triggers createBudgetWithRecurringItems on the backend
-      const response = await fetch(
-        `${API_BASE_URL}/budget/current?month=${currentMonth}&t=${Date.now()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem(
-              "budgetbuddy_id_token",
-            )}`,
-            "Content-Type": "application/json",
+      const fetchBudget = async (): Promise<Response> => {
+        return fetch(
+          `${API_BASE_URL}/budget/current?month=${currentMonth}&t=${Date.now()}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("budgetbuddy_id_token")}`,
+              "Content-Type": "application/json",
+            },
           },
-        },
-      );
+        );
+      };
+
+      let response = await fetchBudget();
 
       console.log("[loadBudget] Response status:", response.status);
+
+      // Handle 401: attempt silent token refresh once, then retry
+      if (response.status === 401) {
+        console.log("[loadBudget] 401 received — attempting token refresh");
+        const refreshed = await apiClient.tryRefreshTokens();
+        if (refreshed) {
+          console.log("[loadBudget] Token refreshed — retrying request");
+          response = await fetchBudget();
+          console.log("[loadBudget] Retry response status:", response.status);
+        }
+        // If still 401 after refresh attempt, redirect to auth
+        if (response.status === 401) {
+          console.log("[loadBudget] Token refresh failed — redirecting to /auth");
+          const returnTo = encodeURIComponent(`/budget?month=${currentMonth}`);
+          window.location.href = `/auth?returnTo=${returnTo}`;
+          return;
+        }
+      }
 
       if (response.status === 404) {
         // No budget exists and couldn't be created from previous month

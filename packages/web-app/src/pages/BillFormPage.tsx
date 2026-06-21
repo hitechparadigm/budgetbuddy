@@ -8,8 +8,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { FileText, RefreshCw, DollarSign, Calendar, Tag, AlignLeft } from 'lucide-react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { FileText, RefreshCw, DollarSign, Calendar, Tag, AlignLeft, Tv } from 'lucide-react';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
@@ -42,7 +42,11 @@ const FREQUENCIES = [
 export const BillFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { billId } = useParams<{ billId?: string }>();
+  const [searchParams] = useSearchParams();
   const isEditing = !!billId;
+
+  // ?type=subscription — pre-fills the form for subscription entry
+  const isSubscriptionMode = searchParams.get('type') === 'subscription';
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -59,8 +63,6 @@ export const BillFormPage: React.FC = () => {
     frequency: 'monthly',
     notes: '',
   });
-
-  // Load budget categories
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -197,7 +199,7 @@ export const BillFormPage: React.FC = () => {
         throw new Error(err.message || 'Failed to save bill');
       }
 
-      navigate('/bills');
+      navigate(isSubscriptionMode ? '/subscriptions' : '/bills');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save bill');
     } finally {
@@ -222,13 +224,13 @@ export const BillFormPage: React.FC = () => {
       <header className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
-            onClick={() => navigate('/bills')}
+            onClick={() => navigate(isSubscriptionMode ? '/subscriptions' : '/bills')}
             className="text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
           >
             ← Back
           </button>
           <h1 className="text-xl font-bold text-[var(--color-foreground)]">
-            {isEditing ? 'Edit Bill' : 'Add Bill'}
+            {isEditing ? 'Edit Bill' : isSubscriptionMode ? 'Add Subscription' : 'Add Bill'}
           </h1>
         </div>
       </header>
@@ -236,11 +238,20 @@ export const BillFormPage: React.FC = () => {
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* How Bills work — info banner */}
         <div className="mb-6 p-4 bg-[var(--color-primary)]/8 border border-[var(--color-primary)]/20 rounded-xl flex items-start gap-3">
-          <FileText className="w-5 h-5 text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />
+          {isSubscriptionMode ? (
+            <Tv className="w-5 h-5 text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />
+          ) : (
+            <FileText className="w-5 h-5 text-[var(--color-primary)] shrink-0 mt-0.5" aria-hidden="true" />
+          )}
           <div className="text-sm text-[var(--color-foreground)]">
-            <p className="font-medium mb-0.5">Bills → Budget connection</p>
+            <p className="font-medium mb-0.5">
+              {isSubscriptionMode ? 'Adding a subscription manually' : 'Bills → Budget connection'}
+            </p>
             <p className="text-[var(--color-muted-foreground)]">
-              When you link a bill to a budget category and mark it paid, a transaction is automatically added to that category — keeping your budget up to date without double-entry.
+              {isSubscriptionMode
+                ? 'This will appear in your Bills list as a recurring charge. Link it to a budget category so it updates your budget when paid. You can also find subscriptions automatically via AI Scan on the Subscriptions page.'
+                : 'When you link a bill to a budget category and mark it paid, a transaction is automatically added to that category — keeping your budget up to date without double-entry.'
+              }
             </p>
           </div>
         </div>
@@ -264,7 +275,7 @@ export const BillFormPage: React.FC = () => {
               type="text"
               value={form.name}
               onChange={e => setForm({ ...form, name: e.target.value })}
-              placeholder="e.g., London Hydro, Rogers, Rent"
+              placeholder={isSubscriptionMode ? 'e.g., Netflix, Spotify, Adobe Creative' : 'e.g., London Hydro, Rogers, Rent'}
               className="w-full px-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent text-sm"
               required
               autoFocus
@@ -418,7 +429,7 @@ export const BillFormPage: React.FC = () => {
           <div className="flex gap-3 pt-2">
             <button
               type="button"
-              onClick={() => navigate('/bills')}
+              onClick={() => navigate(isSubscriptionMode ? '/subscriptions' : '/bills')}
               className="flex-1 px-4 py-2.5 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-muted)] transition-colors text-sm font-medium"
             >
               Cancel
