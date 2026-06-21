@@ -482,7 +482,8 @@ async function handleInvite(event, userId, budgetId) {
     invitedEmail: email.toLowerCase(),
     role: inviteRole,
     accessLabel,
-    token: hashedToken,
+    token: hashedToken, // stored as 'token' for backward compat
+    tokenHash: hashedToken, // explicit field for ScanCommand filters in preview/accept handlers
     status: 'pending',
     expiresAt: invExpiresAt,
     viewerExpiresAt: inviteRole === 'viewer' ? viewerExpiresAt : null,
@@ -949,25 +950,29 @@ async function handleResendInvitation(event, userId, budgetId, invitationId) {
     throwError(400, `Cannot resend invitation with status: ${invitation.status}`);
   }
 
-  if (new Date() > new Date(invitation.expiresAt)) {
-    throwError(400, 'Invitation has expired. Please create a new one.');
-  }
+  // Note: we intentionally allow resending expired invitations — that's the purpose of resend.
+  // The new token gets a fresh 7-day expiry below.
 
-  // Generate a new token and update the invitation
+  // Generate a new token and reset expiry to 7 days from now
   const newToken = generateSecureToken();
   const hashedToken = hashToken(newToken);
+  const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   await dynamodb.send(new UpdateCommand({
     TableName: TABLE_NAME,
     Key: { PK: invitation.PK, SK: invitation.SK },
-    UpdateExpression: 'SET #token = :token, updatedAt = :now',
-    ExpressionAttributeNames: { '#token': 'token' },
-    ExpressionAttributeValues: { ':token': hashedToken, ':now': new Date().toISOString() },
+    UpdateExpression: 'SET tokenHash = :token, #tk = :token, expiresAt = :expires, updatedAt = :now',
+    ExpressionAttributeNames: { '#tk': 'token' },
+    ExpressionAttributeValues: {
+      ':token': hashedToken,
+      ':expires': newExpiresAt,
+      ':now': new Date().toISOString(),
+    },
   }));
 
   await sendInvitationEmail(
     event, userId, invitation.invitedEmail, invitation.role,
-    newToken, invitation.expiresAt, budgetId
+    newToken, newExpiresAt, budgetId
   ).catch(err => {
     logger.error('Failed to resend invitation email', err, { invitationId });
     throwError(500, 'Failed to send email. Please try again.');
