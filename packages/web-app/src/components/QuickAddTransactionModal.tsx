@@ -65,18 +65,36 @@ export const QuickAddTransactionModal: React.FC<QuickAddTransactionModalProps> =
         const data = await res.json();
         const budget = data.data || data;
         const cats: Category[] = [];
-        const groups = Array.isArray(budget.groups) ? budget.groups : [];
-        groups.forEach((g: any) => {
-          const t: string = g.type || '';
-          (g.categories || []).forEach((c: any) => {
-            cats.push({
-              id: c.id || c.categoryId,
-              name: c.name || c.categoryName,
-              icon: c.icon || (t === 'income' ? '💰' : '💸'),
-              type: t === 'income' ? 'income' : 'expense',
+        const g = budget.groups || {};
+
+        // Backend returns groups as { income: [...], savings: [...], expenses: [...] }
+        // where each value is a flat array of category objects (not group objects).
+        // Also handle array format (frontend-transformed) for robustness.
+        if (Array.isArray(g)) {
+          // Already-transformed array format: [{type, categories:[...]}, ...]
+          g.forEach((group: any) => {
+            const t: string = group.type || '';
+            (group.categories || []).forEach((c: any) => {
+              cats.push({
+                id: c.id || c.categoryId,
+                name: c.name || c.categoryName,
+                icon: c.icon || (t === 'income' ? '💰' : '💸'),
+                type: t === 'income' ? 'income' : 'expense',
+              });
             });
           });
-        });
+        } else {
+          // Object format from backend: { income:[...], savings:[...], expenses:[...] }
+          (g.income || []).forEach((c: any) => {
+            cats.push({ id: c.id || c.categoryId, name: c.name || c.categoryName, icon: c.icon || '💰', type: 'income' });
+          });
+          (g.savings || []).forEach((c: any) => {
+            cats.push({ id: c.id || c.categoryId, name: c.name || c.categoryName, icon: c.icon || '💾', type: 'expense' });
+          });
+          (g.expenses || []).forEach((c: any) => {
+            cats.push({ id: c.id || c.categoryId, name: c.name || c.categoryName, icon: c.icon || '💸', type: 'expense' });
+          });
+        }
         setCategories(cats);
       } catch {
         // silent — user can still enter without category
