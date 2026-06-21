@@ -144,7 +144,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               {...register('firstName')}
               type="text"
               id="firstName"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.firstName ? 'border-red-300' : 'border-[var(--color-border)]'
+              autoComplete="given-name"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] bg-[var(--color-background)] text-[var(--color-foreground)] ${errors.firstName ? 'border-red-300' : 'border-[var(--color-border)]'
                 }`}
               placeholder="Enter your first name"
               disabled={isSubmitting || loading}
@@ -163,7 +164,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               {...register('lastName')}
               type="text"
               id="lastName"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.lastName ? 'border-red-300' : 'border-[var(--color-border)]'
+              autoComplete="family-name"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] bg-[var(--color-background)] text-[var(--color-foreground)] ${errors.lastName ? 'border-red-300' : 'border-[var(--color-border)]'
                 }`}
               placeholder="Enter your last name"
               disabled={isSubmitting || loading}
@@ -182,7 +184,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               {...register('email')}
               type="email"
               id="email"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.email ? 'border-red-300' : 'border-[var(--color-border)]'
+              autoComplete="email"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] bg-[var(--color-background)] text-[var(--color-foreground)] ${errors.email ? 'border-red-300' : 'border-[var(--color-border)]'
                 }`}
               placeholder="Enter your email"
               disabled={isSubmitting || loading}
@@ -201,7 +204,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               {...register('password')}
               type="password"
               id="password"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.password ? 'border-red-300' : 'border-[var(--color-border)]'
+              autoComplete="new-password"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-[var(--color-primary)] bg-[var(--color-background)] text-[var(--color-foreground)] ${errors.password ? 'border-red-300' : 'border-[var(--color-border)]'
                 }`}
               placeholder="Create a strong password"
               disabled={isSubmitting || loading}
@@ -220,8 +224,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               type="submit"
               disabled={isSubmitting || loading}
               className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${isSubmitting || loading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
+                ? 'bg-[var(--color-muted)] cursor-not-allowed'
+                : 'bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-ring)]'
                 }`}
             >
               {isSubmitting || loading ? (
@@ -247,7 +251,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               <button
                 type="button"
                 onClick={onSwitchToLogin}
-                className="font-medium text-blue-600 hover:text-blue-500 focus:outline-none focus:underline"
+                className="font-medium text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] focus:outline-none focus:underline"
                 disabled={isSubmitting || loading}
               >
                 Sign in here
@@ -260,9 +264,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         <div className="mt-4 text-center">
           <p className="text-xs text-[var(--color-muted-foreground)]">
             By creating an account, you agree to our{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-500">Terms of Service</a>
+            <a href="#" className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">Terms of Service</a>
             {' '}and{' '}
-            <a href="#" className="text-blue-600 hover:text-blue-500">Privacy Policy</a>
+            <a href="#" className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)]">Privacy Policy</a>
           </p>
         </div>
       </div>
