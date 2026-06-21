@@ -46,7 +46,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Security pre-deployment scan
         run: |
@@ -117,11 +117,11 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install infrastructure dependencies
         working-directory: infrastructure
-        run: npm install
+        run: npm ci
 
       - name: Install Lambda layer dependencies
         run: |
@@ -222,7 +222,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build shared package
         working-directory: packages/shared
