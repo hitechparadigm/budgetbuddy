@@ -20,7 +20,10 @@ import {
   PerformanceHistory,
   CreateHoldingRequest,
   UpdateHoldingRequest,
+  MarketNewsResponse,
+  MarketSignalsResponse,
 } from "../services/investmentsApi";
+import { TrendingUp, TrendingDown, Minus, ExternalLink, RefreshCw, Newspaper, BarChart3 } from "lucide-react";
 
 const ACCOUNT_TYPES = [
   { value: "brokerage", label: "Brokerage" },
@@ -43,10 +46,12 @@ export const InvestmentsPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
-  const [performance, setPerformance] = useState<PerformanceHistory | null>(
-    null,
-  );
+  const [performance, setPerformance] = useState<PerformanceHistory | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState("1M");
+  const [news, setNews] = useState<MarketNewsResponse | null>(null);
+  const [signals, setSignals] = useState<MarketSignalsResponse | null>(null);
+  const [loadingNews, setLoadingNews] = useState(false);
+  const [loadingSignals, setLoadingSignals] = useState(false);
 
   // Modal state
   const [showHoldingModal, setShowHoldingModal] = useState(false);
@@ -64,6 +69,7 @@ export const InvestmentsPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    loadNewsAndSignals();
   }, []);
 
   useEffect(() => {
@@ -79,6 +85,30 @@ export const InvestmentsPage: React.FC = () => {
       console.error("Error loading portfolio data:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadNewsAndSignals = async () => {
+    // Load news
+    setLoadingNews(true);
+    try {
+      const newsData = await investmentsApi.getNews(undefined, 'finance,economy,earnings,ipo');
+      setNews(newsData);
+    } catch (err) {
+      console.error('Error loading market news:', err);
+    } finally {
+      setLoadingNews(false);
+    }
+
+    // Load signals
+    setLoadingSignals(true);
+    try {
+      const signalData = await investmentsApi.getSignals();
+      setSignals(signalData);
+    } catch (err) {
+      console.error('Error loading market signals:', err);
+    } finally {
+      setLoadingSignals(false);
     }
   };
 
@@ -530,6 +560,123 @@ export const InvestmentsPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* ── Market News & Signals ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          {/* Market News */}
+          <div className="bg-white rounded-xl shadow">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Newspaper className="w-5 h-5 text-[var(--color-primary)]" aria-hidden="true" />
+                <h2 className="text-base font-semibold text-gray-900">Market News</h2>
+              </div>
+              <button
+                onClick={loadNewsAndSignals}
+                disabled={loadingNews}
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors disabled:opacity-50"
+                aria-label="Refresh news"
+              >
+                <RefreshCw className={`w-4 h-4 ${loadingNews ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            <div className="divide-y divide-gray-50 max-h-96 overflow-y-auto">
+              {loadingNews ? (
+                <div className="p-6 space-y-3">
+                  {[1,2,3].map(i => <div key={i} className="h-14 bg-gray-100 rounded animate-pulse" />)}
+                </div>
+              ) : !news || news.news.length === 0 ? (
+                <div className="p-8 text-center">
+                  <p className="text-gray-500 text-sm">{news?.message || 'No news available right now.'}</p>
+                </div>
+              ) : (
+                news.news.map((article, i) => (
+                  <a
+                    key={i}
+                    href={article.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group"
+                  >
+                    {article.bannerImage ? (
+                      <img src={article.bannerImage} alt="" className="w-12 h-12 rounded object-cover shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center shrink-0">
+                        <Newspaper className="w-5 h-5 text-gray-400" aria-hidden="true" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors">{article.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-gray-400">{article.source}</span>
+                        {article.publishedAt && (
+                          <span className="text-xs text-gray-300">·</span>
+                        )}
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${
+                          article.sentiment === 'Bullish' || article.sentiment === 'Somewhat-Bullish'
+                            ? 'bg-green-50 text-green-700'
+                            : article.sentiment === 'Bearish' || article.sentiment === 'Somewhat-Bearish'
+                            ? 'bg-red-50 text-red-700'
+                            : 'bg-gray-50 text-gray-500'
+                        }`}>
+                          {article.sentiment === 'Somewhat-Bullish' ? '↑ Bullish' : article.sentiment === 'Somewhat-Bearish' ? '↓ Bearish' : article.sentiment}
+                        </span>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-400 shrink-0 mt-0.5" aria-hidden="true" />
+                  </a>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Market Signals */}
+          <div className="bg-white rounded-xl shadow">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-[var(--color-primary)]" aria-hidden="true" />
+                <h2 className="text-base font-semibold text-gray-900">Market Signals</h2>
+              </div>
+              {signals?.fetchedAt && (
+                <span className="text-xs text-gray-400">
+                  {new Date(signals.fetchedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+            </div>
+            {loadingSignals ? (
+              <div className="p-6 space-y-2">
+                {[1,2,3,4,5].map(i => <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />)}
+              </div>
+            ) : !signals ? (
+              <div className="p-8 text-center text-gray-500 text-sm">Signals unavailable right now.</div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {[
+                  { title: 'Top Gainers', data: signals.topGainers, color: 'text-green-600', icon: <TrendingUp className="w-4 h-4 text-green-500" /> },
+                  { title: 'Top Losers', data: signals.topLosers, color: 'text-red-600', icon: <TrendingDown className="w-4 h-4 text-red-500" /> },
+                  { title: 'Most Active', data: signals.mostActive, color: 'text-blue-600', icon: <Minus className="w-4 h-4 text-blue-500 rotate-90" /> },
+                ].map(section => (
+                  <div key={section.title} className="px-5 py-3">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      {section.icon}
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{section.title}</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {section.data.slice(0, 3).map((s, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <span className="text-sm font-mono font-semibold text-gray-900">{s.ticker}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm tabular-nums text-gray-600">${s.price}</span>
+                            <span className={`text-xs font-semibold tabular-nums ${section.color}`}>{s.changePercent}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Holding Modal */}
