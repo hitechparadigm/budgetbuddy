@@ -94,17 +94,17 @@ export const ReconcileModal: React.FC<ReconcileModalProps> = ({
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className="relative bg-white rounded-lg shadow-xl max-w-md w-full"
+          className="relative bg-[var(--color-surface)] rounded-lg shadow-xl max-w-md w-full"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
+          <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
               Reconcile Account
             </h2>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 p-1 rounded"
+              className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] p-1 rounded"
               aria-label="Close"
             >
               <svg
@@ -126,11 +126,11 @@ export const ReconcileModal: React.FC<ReconcileModalProps> = ({
           {/* Content */}
           <form onSubmit={handleSubmit} className="p-4 space-y-4">
             {/* Account Info */}
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Account</p>
-              <p className="font-medium text-gray-900">{account.nickname}</p>
+            <div className="p-3 bg-[var(--color-background)] rounded-lg">
+              <p className="text-sm text-[var(--color-muted-foreground)]">Account</p>
+              <p className="font-medium text-[var(--color-foreground)]">{account.nickname}</p>
               {account.institutionName && (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-[var(--color-muted-foreground)]">
                   {account.institutionName}
                 </p>
               )}
@@ -138,10 +138,10 @@ export const ReconcileModal: React.FC<ReconcileModalProps> = ({
 
             {/* Current Balance */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                 Current Balance (in BudgetBuddy)
               </label>
-              <div className="px-3 py-2 bg-gray-100 rounded-lg text-gray-900 font-medium">
+              <div className="px-3 py-2 bg-[var(--color-muted)] rounded-lg text-[var(--color-foreground)] font-medium">
                 {formatCurrency(currentBalance, account.currency)}
               </div>
             </div>
@@ -150,12 +150,12 @@ export const ReconcileModal: React.FC<ReconcileModalProps> = ({
             <div>
               <label
                 htmlFor="newBalance"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
               >
                 Actual Balance
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-foreground)]">
                   {account.currency === "USD" ? "$" : account.currency}
                 </span>
                 <input
@@ -164,7 +164,7 @@ export const ReconcileModal: React.FC<ReconcileModalProps> = ({
                   value={newBalance}
                   onChange={(e) => setNewBalance(e.target.value)}
                   step="0.01"
-                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full pl-8 pr-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   placeholder="0.00"
                   required
                 />
@@ -177,7 +177,7 @@ export const ReconcileModal: React.FC<ReconcileModalProps> = ({
                 className={`p-3 rounded-lg ${difference >= 0 ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Difference</span>
+                  <span className="text-sm text-[var(--color-foreground)]">Difference</span>
                   <span
                     className={`font-medium ${difference >= 0 ? "text-green-700" : "text-red-700"}`}
                   >
@@ -185,7 +185,7 @@ export const ReconcileModal: React.FC<ReconcileModalProps> = ({
                     {formatCurrency(difference, account.currency)}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
                   An adjustment transaction will be created to reconcile this
                   difference.
                 </p>
@@ -196,7 +196,7 @@ export const ReconcileModal: React.FC<ReconcileModalProps> = ({
             <div>
               <label
                 htmlFor="notes"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
               >
                 Notes (optional)
               </label>
@@ -206,7 +206,7 @@ export const ReconcileModal: React.FC<ReconcileModalProps> = ({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="e.g., Monthly reconciliation"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 maxLength={500}
               />
             </div>
@@ -223,7 +223,7 @@ export const ReconcileModal: React.FC<ReconcileModalProps> = ({
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="px-4 py-2 text-[var(--color-foreground)] hover:bg-[var(--color-muted)] rounded-lg transition-colors"
                 disabled={isSubmitting}
               >
                 Cancel

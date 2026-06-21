@@ -155,7 +155,7 @@ export const DevHelper: React.FC = () => {
                 {mockDataActive ? "ON" : "OFF"}
               </button>
             </div>
-            <div className="text-xs text-gray-400 mt-1">
+            <div className="text-xs text-[var(--color-muted-foreground)] mt-1">
               {mockDataActive
                 ? "Using mock data for API calls"
                 : "Using real API endpoints"}
@@ -186,7 +186,7 @@ export const DevHelper: React.FC = () => {
           </div>
 
           {/* API Status */}
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-[var(--color-muted-foreground)]">
             <div>Environment: {import.meta.env.MODE}</div>
             <div>API Base: {import.meta.env.VITE_API_BASE || "Default"}</div>
           </div>

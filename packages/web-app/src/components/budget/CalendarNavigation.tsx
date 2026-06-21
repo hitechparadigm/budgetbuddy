@@ -70,7 +70,7 @@ export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
       <div className="flex items-center justify-between">
         <button
           onClick={navigateToPrevious}
-          className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+          className="p-2 text-[var(--color-muted-foreground)] hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
         >
           ←
         </button>
@@ -89,7 +89,7 @@ export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
 
         <button
           onClick={navigateToNext}
-          className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+          className="p-2 text-[var(--color-muted-foreground)] hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
         >
           →
         </button>
@@ -147,7 +147,7 @@ export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-center space-x-4 text-xs text-gray-400">
+      <div className="flex items-center justify-center space-x-4 text-xs text-[var(--color-muted-foreground)]">
         <div className="flex items-center space-x-1">
           <div className="w-2 h-2 bg-green-400 rounded-full"></div>
           <span>Has Data</span>

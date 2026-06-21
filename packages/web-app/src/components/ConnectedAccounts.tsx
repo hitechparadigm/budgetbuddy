@@ -179,7 +179,7 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-[var(--color-surface)] rounded-lg shadow p-6">
         <div className="animate-pulse">
           <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="space-y-3">
@@ -192,10 +192,10 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="bg-[var(--color-surface)] rounded-lg shadow">
       {/* Header */}
       <div className="p-4 border-b flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-900">
+        <h3 className="text-lg font-semibold text-[var(--color-foreground)]">
           Connected Accounts
         </h3>
         {accounts.length > 0 && (
@@ -236,8 +236,8 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
       {accounts.length === 0 ? (
         <div className="p-8 text-center">
           <div className="text-4xl mb-3">🏦</div>
-          <p className="text-gray-500">No bank accounts connected yet</p>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-[var(--color-muted-foreground)]">No bank accounts connected yet</p>
+          <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
             Connect your bank to automatically import transactions
           </p>
         </div>
@@ -246,7 +246,7 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
           {accounts.map((account) => (
             <div
               key={account.accountId}
-              className="p-4 hover:bg-gray-50 transition-colors"
+              className="p-4 hover:bg-[var(--color-background)] transition-colors"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
@@ -255,26 +255,26 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
                   </span>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-gray-900">
+                      <h4 className="font-medium text-[var(--color-foreground)]">
                         {account.accountName}
                       </h4>
                       {getStatusBadge(account.syncStatus)}
                     </div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-[var(--color-muted-foreground)]">
                       {account.institutionName} •••• {account.mask}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
                       Last synced: {formatLastSynced(account.lastSynced)}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-gray-900">
+                  <p className="font-semibold text-[var(--color-foreground)]">
                     {formatCurrency(account.currentBalance, currency)}
                   </p>
                   {account.availableBalance !== null &&
                     account.availableBalance !== account.currentBalance && (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-[var(--color-muted-foreground)]">
                         Available:{" "}
                         {formatCurrency(account.availableBalance, currency)}
                       </p>
@@ -287,7 +287,7 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
                 <button
                   onClick={() => handleSyncAccount(account.accountId)}
                   disabled={syncing === account.accountId}
-                  className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded
+                  className="px-3 py-1 text-xs bg-[var(--color-muted)] text-[var(--color-foreground)] rounded
                     hover:bg-gray-200 disabled:opacity-50 transition-colors"
                 >
                   {syncing === account.accountId ? "Syncing..." : "Sync"}
@@ -302,7 +302,7 @@ export const ConnectedAccounts: React.FC<ConnectedAccountsProps> = ({
                     </button>
                     <button
                       onClick={() => setConfirmUnlink(null)}
-                      className="px-3 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                      className="px-3 py-1 text-xs bg-gray-200 text-[var(--color-foreground)] rounded hover:bg-gray-300"
                     >
                       Cancel
                     </button>

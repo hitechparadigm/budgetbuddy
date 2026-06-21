@@ -59,14 +59,14 @@ export const AuthPage: React.FC = () => {
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--color-background)] dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <h1 className="text-3xl font-bold text-[var(--color-foreground)] dark:text-gray-100 mb-2">
             BudgetBuddy
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
             AI-powered family budgeting made simple
           </p>
         </div>
@@ -74,7 +74,7 @@ export const AuthPage: React.FC = () => {
 
       {/* Tab Navigation */}
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white dark:bg-gray-800 py-2 px-4 shadow-sm rounded-t-lg">
+        <div className="bg-[var(--color-surface)] dark:bg-gray-800 py-2 px-4 shadow-sm rounded-t-lg">
           <nav
             className="flex space-x-8"
             aria-label="Authentication"
@@ -88,7 +88,7 @@ export const AuthPage: React.FC = () => {
               className={`py-2 px-1 border-b-2 font-medium text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 ${
                 authMode === "login"
                   ? "border-emerald-500 text-emerald-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  : "border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:border-[var(--color-border)]"
               }`}
             >
               Sign In
@@ -101,7 +101,7 @@ export const AuthPage: React.FC = () => {
               className={`py-2 px-1 border-b-2 font-medium text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-1 ${
                 authMode === "register"
                   ? "border-emerald-500 text-emerald-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  : "border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:border-[var(--color-border)]"
               }`}
             >
               Sign Up
@@ -131,7 +131,7 @@ export const AuthPage: React.FC = () => {
 
       {/* Footer */}
       <div className="mt-8 text-center">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
           © 2025 BudgetBuddy. All rights reserved.
         </p>
       </div>

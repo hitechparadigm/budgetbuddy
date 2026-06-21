@@ -233,7 +233,7 @@ export default function SubscriptionFormPage() {
         >
           ← Back to Subscriptions
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-[var(--color-foreground)]">
           {isEditing ? "✏️ Edit Subscription" : "➕ Add Subscription"}
         </h1>
       </div>
@@ -246,11 +246,11 @@ export default function SubscriptionFormPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow p-6 space-y-6"
+        className="bg-[var(--color-surface)] rounded-xl shadow p-6 space-y-6"
       >
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
             Subscription Name *
           </label>
           <input
@@ -259,14 +259,14 @@ export default function SubscriptionFormPage() {
             value={formData.name}
             onChange={handleChange}
             placeholder="e.g., Netflix, Spotify, Adobe Creative Cloud"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           />
         </div>
 
         {/* Merchant */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
             Merchant Name
           </label>
           <input
@@ -275,9 +275,9 @@ export default function SubscriptionFormPage() {
             value={formData.merchant}
             onChange={handleChange}
             placeholder="How it appears on your statement"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
             Used for matching with transactions. Leave blank to use subscription
             name.
           </p>
@@ -286,11 +286,11 @@ export default function SubscriptionFormPage() {
         {/* Amount and Frequency */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Amount *
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500">$</span>
+              <span className="absolute left-3 top-2 text-[var(--color-muted-foreground)]">$</span>
               <input
                 type="number"
                 name="amount"
@@ -299,20 +299,20 @@ export default function SubscriptionFormPage() {
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Frequency *
             </label>
             <select
               name="frequency"
               value={formData.frequency}
               onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {FREQUENCIES.map((freq) => (
                 <option key={freq.value} value={freq.value}>
@@ -335,14 +335,14 @@ export default function SubscriptionFormPage() {
 
         {/* Category */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
             Category
           </label>
           <select
             name="category"
             value={formData.category}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
@@ -354,7 +354,7 @@ export default function SubscriptionFormPage() {
 
         {/* Next Billing Date */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
             Next Billing Date
           </label>
           <input
@@ -362,13 +362,13 @@ export default function SubscriptionFormPage() {
             name="nextBillingDate"
             value={formData.nextBillingDate}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
             Notes
           </label>
           <textarea
@@ -377,7 +377,7 @@ export default function SubscriptionFormPage() {
             onChange={handleChange}
             rows={3}
             placeholder="Any additional notes about this subscription..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -397,7 +397,7 @@ export default function SubscriptionFormPage() {
             <button
               type="button"
               onClick={() => navigate("/subscriptions")}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-background)]"
             >
               Cancel
             </button>

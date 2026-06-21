@@ -723,7 +723,7 @@ export const SettingsPage: React.FC = () => {
           <h2 className="text-xl font-semibold text-foreground mb-4">
             🏦 Connected Bank Accounts
           </h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-[var(--color-muted-foreground)] mb-4">
             Link your bank accounts to automatically import transactions and
             track your spending.
           </p>
@@ -753,12 +753,12 @@ export const SettingsPage: React.FC = () => {
         {activeSettingsTab === 'profile' && <>
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">Profile</h2>
-          <p className="text-gray-600 text-sm mb-4">
+          <p className="text-[var(--color-muted-foreground)] text-sm mb-4">
             Update your name, profile picture, and personal information.
           </p>
           <button
             onClick={() => navigate("/settings/profile")}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors"
+            className="px-4 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)] text-sm font-medium transition-colors"
           >
             Edit Profile →
           </button>
@@ -767,13 +767,13 @@ export const SettingsPage: React.FC = () => {
         {/* Account Section */}
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
           <h2 className="text-xl font-semibold text-foreground mb-4">Account</h2>
-          <p className="text-gray-600 text-sm mb-4">
+          <p className="text-[var(--color-muted-foreground)] text-sm mb-4">
             Manage your email address, password, and account security settings.
           </p>
           <div className="flex gap-3">
             <button
               onClick={() => setShow2FASetup(true)}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors"
+              className="px-4 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)] text-sm font-medium transition-colors"
             >
               Change Password
             </button>
@@ -787,7 +787,7 @@ export const SettingsPage: React.FC = () => {
           </h2>
 
           {mfaLoading ? (
-            <div className="flex items-center space-x-3 text-gray-500">
+            <div className="flex items-center space-x-3 text-[var(--color-muted-foreground)]">
               <svg
                 className="animate-spin h-5 w-5"
                 xmlns="http://www.w3.org/2000/svg"
@@ -814,7 +814,7 @@ export const SettingsPage: React.FC = () => {
             <div className="space-y-4">
               {/* Status Indicator */}
               <div
-                className={`p-4 rounded-lg ${mfaEnabled ? "bg-green-50 border border-green-200" : "bg-gray-50 border border-gray-200"}`}
+                className={`p-4 rounded-lg ${mfaEnabled ? "bg-green-50 border border-green-200" : "bg-[var(--color-background)] border border-[var(--color-border)]"}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -822,10 +822,10 @@ export const SettingsPage: React.FC = () => {
                       className={`w-3 h-3 rounded-full ${mfaEnabled ? "bg-green-500" : "bg-gray-400"}`}
                     ></div>
                     <div>
-                      <div className="font-medium text-gray-900">
+                      <div className="font-medium text-[var(--color-foreground)]">
                         {mfaEnabled ? "2FA is enabled" : "2FA is not enabled"}
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-[var(--color-muted-foreground)]">
                         {mfaEnabled
                           ? "Your account is protected with two-factor authentication"
                           : "Add an extra layer of security to your account"}
@@ -833,7 +833,7 @@ export const SettingsPage: React.FC = () => {
                     </div>
                   </div>
                   <div
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${mfaEnabled ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-600"}`}
+                    className={`px-3 py-1 rounded-full text-sm font-medium ${mfaEnabled ? "bg-green-100 text-green-800" : "bg-gray-200 text-[var(--color-muted-foreground)]"}`}
                   >
                     {mfaEnabled ? "Active" : "Inactive"}
                   </div>
@@ -843,7 +843,7 @@ export const SettingsPage: React.FC = () => {
               {/* Action Button */}
               {mfaEnabled ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-[var(--color-muted-foreground)]">
                     You'll need to enter a code from your authenticator app each
                     time you sign in.
                   </p>
@@ -921,7 +921,7 @@ export const SettingsPage: React.FC = () => {
           <h2 className="text-xl font-semibold text-foreground mb-4">
             🎨 Appearance
           </h2>
-          <p className="text-gray-600 mb-4">
+          <p className="text-[var(--color-muted-foreground)] mb-4">
             Choose how BudgetBuddy looks to you. Select a theme or let it follow
             your system settings.
           </p>
@@ -942,7 +942,7 @@ export const SettingsPage: React.FC = () => {
               <h3 className="text-sm font-medium text-foreground mb-2">
                 Backup Your Data
               </h3>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-[var(--color-muted-foreground)] mb-3">
                 Download a complete backup of all your budgets, transactions,
                 and settings in JSON format. Keep this file safe - you can use
                 it to restore your data if needed.
@@ -1005,7 +1005,7 @@ export const SettingsPage: React.FC = () => {
               <h3 className="text-sm font-medium text-foreground mb-2">
                 Restore from Backup
               </h3>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-[var(--color-muted-foreground)] mb-3">
                 Upload a backup file to restore your data. This will add the
                 budgets and transactions from the backup to your account.
                 Existing data will not be deleted.
@@ -1069,7 +1069,7 @@ export const SettingsPage: React.FC = () => {
                   className="hidden"
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-[var(--color-muted-foreground)] mt-2">
                 Only JSON backup files are supported
               </p>
             </div>
@@ -1116,8 +1116,8 @@ export const SettingsPage: React.FC = () => {
         {/* Budget Members Section — Profile tab */}
         {activeSettingsTab === 'profile' && <>
         <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Budget Members</h2>
-          <p className="text-gray-600 text-sm mb-4">
+          <h2 className="text-xl font-semibold text-[var(--color-foreground)] mb-2">Budget Members</h2>
+          <p className="text-[var(--color-muted-foreground)] text-sm mb-4">
             Manage who has access to your budget, send invitations, and configure collaboration settings.
           </p>
           <a
@@ -1140,7 +1140,7 @@ export const SettingsPage: React.FC = () => {
               <h3 className="text-sm font-medium text-foreground mb-2">
                 Authentication Issues
               </h3>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-[var(--color-muted-foreground)] mb-3">
                 If you're experiencing "User profile not found" errors or login
                 issues, use the token diagnostics tool to identify and fix
                 authentication problems.
@@ -1158,7 +1158,7 @@ export const SettingsPage: React.FC = () => {
 
         {/* Danger Zone — Privacy tab */}
         {activeSettingsTab === 'privacy' && <>
-        <div className="bg-white rounded-lg shadow-sm border border-red-200 p-6 mb-6">
+        <div className="bg-[var(--color-surface)] rounded-lg shadow-sm border border-red-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-red-600 mb-4">
             ⚠️ Danger Zone
           </h2>
@@ -1206,7 +1206,7 @@ export const SettingsPage: React.FC = () => {
               <h3 className="text-sm font-medium text-foreground mb-2">
                 App Tutorial
               </h3>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-[var(--color-muted-foreground)] mb-3">
                 Need a refresher on how to use BudgetBuddy? Replay the tutorial
                 to learn about key features.
               </p>
@@ -1242,13 +1242,13 @@ export const SettingsPage: React.FC = () => {
               <h3 className="text-sm font-medium text-foreground mb-2">
                 Keyboard Shortcuts
               </h3>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-[var(--color-muted-foreground)] mb-3">
                 Use keyboard shortcuts to navigate faster. Press{" "}
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
+                <kbd className="px-2 py-1 bg-[var(--color-muted)] rounded text-xs font-mono">
                   Ctrl
                 </kbd>{" "}
                 +{" "}
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-xs font-mono">
+                <kbd className="px-2 py-1 bg-[var(--color-muted)] rounded text-xs font-mono">
                   /
                 </kbd>{" "}
                 to see all shortcuts.
@@ -1258,7 +1258,7 @@ export const SettingsPage: React.FC = () => {
               <h3 className="text-sm font-medium text-foreground mb-2">
                 About BudgetBuddy
               </h3>
-              <p className="text-sm text-gray-600 mb-3">
+              <p className="text-sm text-[var(--color-muted-foreground)] mb-3">
                 View app version, legal information, and contact support.
               </p>
               <button
@@ -1294,18 +1294,18 @@ export const SettingsPage: React.FC = () => {
           aria-labelledby="disable-2fa-title"
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
         >
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <h3 id="disable-2fa-title" className="text-xl font-semibold text-gray-900 mb-3">
+          <div className="bg-[var(--color-surface)] rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <h3 id="disable-2fa-title" className="text-xl font-semibold text-[var(--color-foreground)] mb-3">
               Disable Two-Factor Authentication?
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-[var(--color-muted-foreground)] mb-4">
               Removing 2FA will make your account less secure. Anyone with your password
               will be able to sign in without an additional verification step.
             </p>
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowDisable2FAConfirm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                className="flex-1 px-4 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
               >
                 Keep 2FA Enabled
               </button>
@@ -1323,11 +1323,11 @@ export const SettingsPage: React.FC = () => {
       {/* Currency Change Confirmation Dialog */}
       {showCurrencyConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+          <div className="bg-[var(--color-surface)] rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
             <h3 className="text-xl font-semibold text-foreground mb-4">
               Confirm Currency Change
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-[var(--color-muted-foreground)] mb-4">
               Are you sure you want to change your currency from{" "}
               <strong>{getCurrencyConfig(currency).name}</strong> to{" "}
               <strong>{getCurrencyConfig(pendingCurrency).name}</strong>?
@@ -1344,7 +1344,7 @@ export const SettingsPage: React.FC = () => {
               <button
                 onClick={cancelCurrencyChange}
                 disabled={saving}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>

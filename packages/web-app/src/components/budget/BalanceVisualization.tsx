@@ -31,7 +31,7 @@ export const BalanceVisualization: React.FC<BalanceVisualizationProps> = ({
   const getBalanceColor = (balance: number) => {
     if (balance > 0) return "text-green-400";
     if (balance < 0) return "text-red-400";
-    return "text-gray-400";
+    return "text-[var(--color-muted-foreground)]";
   };
 
   const getMonthLabel = (month: string, year: number) => {
@@ -70,7 +70,7 @@ export const BalanceVisualization: React.FC<BalanceVisualizationProps> = ({
     <div className="bg-gray-900 rounded-lg p-6 space-y-6">
       {/* Month Header */}
       <div className="text-center">
-        <h2 className="text-gray-400 text-sm font-medium mb-1">
+        <h2 className="text-[var(--color-muted-foreground)] text-sm font-medium mb-1">
           {getMonthLabel(balanceData.month, balanceData.year)} Balance
         </h2>
         <div
@@ -107,7 +107,7 @@ export const BalanceVisualization: React.FC<BalanceVisualizationProps> = ({
 
       {/* Progress Bar */}
       <div className="space-y-2">
-        <div className="flex justify-between text-xs text-gray-400">
+        <div className="flex justify-between text-xs text-[var(--color-muted-foreground)]">
           <span>Budget Allocation</span>
           <span>
             {balanceData.totalIncome > 0
@@ -149,7 +149,7 @@ export const BalanceVisualization: React.FC<BalanceVisualizationProps> = ({
                 key={index}
                 className="flex items-center justify-between py-2 px-3 bg-gray-800 rounded-lg"
               >
-                <span className="text-gray-400 text-sm">{week.period}</span>
+                <span className="text-[var(--color-muted-foreground)] text-sm">{week.period}</span>
                 <div className="flex items-center space-x-4">
                   <span className="text-green-400 text-sm">
                     +{formatCurrency(week.income, balanceData.currency)}
@@ -185,7 +185,7 @@ export const BalanceVisualization: React.FC<BalanceVisualizationProps> = ({
               ? "text-green-400"
               : balanceData.netBalance < 0
                 ? "text-red-400"
-                : "text-gray-400"
+                : "text-[var(--color-muted-foreground)]"
           }`}
         >
           {balanceData.netBalance > 0

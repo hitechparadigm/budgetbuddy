@@ -116,10 +116,10 @@ export const BudgetSwitcher: React.FC<BudgetSwitcherProps> = ({
         aria-label="Switch budget"
         className={`
           flex items-center space-x-2 px-3 py-1.5 rounded-lg border
-          bg-white dark:bg-gray-800
-          border-gray-200 dark:border-gray-700
-          text-gray-900 dark:text-gray-100
-          hover:bg-gray-50 dark:hover:bg-gray-700
+          bg-[var(--color-surface)] dark:bg-gray-800
+          border-[var(--color-border)] dark:border-gray-700
+          text-[var(--color-foreground)] dark:text-gray-100
+          hover:bg-[var(--color-background)] dark:hover:bg-gray-700
           focus:outline-none focus:ring-2 focus:ring-green-500
           transition-colors text-sm font-medium
           disabled:opacity-60 disabled:cursor-not-allowed
@@ -141,7 +141,7 @@ export const BudgetSwitcher: React.FC<BudgetSwitcherProps> = ({
         {/* Chevron / spinner */}
         {switching ? (
           <svg
-            className="w-4 h-4 animate-spin text-gray-400 flex-shrink-0"
+            className="w-4 h-4 animate-spin text-[var(--color-muted-foreground)] flex-shrink-0"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -156,7 +156,7 @@ export const BudgetSwitcher: React.FC<BudgetSwitcherProps> = ({
           </svg>
         ) : (
           <svg
-            className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 text-[var(--color-muted-foreground)] flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -174,8 +174,8 @@ export const BudgetSwitcher: React.FC<BudgetSwitcherProps> = ({
           aria-label="Available budgets"
           className="
             absolute left-0 mt-1 w-72 z-50
-            bg-white dark:bg-gray-800
-            border border-gray-200 dark:border-gray-700
+            bg-[var(--color-surface)] dark:bg-gray-800
+            border border-[var(--color-border)] dark:border-gray-700
             rounded-lg shadow-lg
             py-1 overflow-hidden
           "
@@ -190,8 +190,8 @@ export const BudgetSwitcher: React.FC<BudgetSwitcherProps> = ({
                 onClick={() => handleSelect(budget.budgetId)}
                 className={`
                   w-full text-left px-4 py-3 flex items-center justify-between
-                  hover:bg-gray-50 dark:hover:bg-gray-700
-                  focus:outline-none focus:bg-gray-50 dark:focus:bg-gray-700
+                  hover:bg-[var(--color-background)] dark:hover:bg-gray-700
+                  focus:outline-none focus:bg-[var(--color-background)] dark:focus:bg-gray-700
                   transition-colors
                   ${isActive ? 'bg-green-50 dark:bg-green-900/20' : ''}
                 `}
@@ -204,7 +204,7 @@ export const BudgetSwitcher: React.FC<BudgetSwitcherProps> = ({
                         font-medium text-sm truncate
                         ${isActive
                           ? 'text-green-700 dark:text-green-400'
-                          : 'text-gray-900 dark:text-gray-100'
+                          : 'text-[var(--color-foreground)] dark:text-gray-100'
                         }
                       `}
                     >
@@ -227,7 +227,7 @@ export const BudgetSwitcher: React.FC<BudgetSwitcherProps> = ({
                   </div>
 
                   {/* Role row */}
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  <div className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mt-0.5">
                     {ROLE_LABELS[budget.role]}
                   </div>
                 </div>

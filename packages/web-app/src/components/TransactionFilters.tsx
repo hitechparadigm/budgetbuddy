@@ -167,7 +167,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
       {/* Search Bar */}
       <div className="relative">
         <svg
-          className="absolute left-3 top-2.5 w-5 h-5 text-gray-400"
+          className="absolute left-3 top-2.5 w-5 h-5 text-[var(--color-muted-foreground)]"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -184,12 +184,12 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
           placeholder="Search transactions..."
           value={filters.search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full pl-10 pr-10 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
         {filters.search && (
           <button
             onClick={() => clearFilter("search")}
-            className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-2.5 text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)]"
             aria-label="Clear search"
           >
             <svg
@@ -216,7 +216,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
           className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
             hasActiveFilters
               ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              : "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] hover:bg-gray-200"
           }`}
         >
           <svg
@@ -314,19 +314,19 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
 
       {/* Expanded Filters */}
       {isExpanded && (
-        <div className="bg-gray-50 rounded-lg p-4 space-y-4 border border-gray-200">
+        <div className="bg-[var(--color-background)] rounded-lg p-4 space-y-4 border border-[var(--color-border)]">
           <div
             className={`grid gap-4 ${compact ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2"}`}
           >
             {/* Category Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                 Category
               </label>
               <select
                 value={filters.category || ""}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
                 <option value="">All categories</option>
                 {incomeCategories.length > 0 && (
@@ -352,13 +352,13 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
 
             {/* Type Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                 Type
               </label>
               <select
                 value={filters.type || ""}
                 onChange={(e) => handleTypeChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
                 <option value="">All types</option>
                 <option value="income">Income</option>
@@ -368,32 +368,32 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
 
             {/* Date Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                 Date From
               </label>
               <input
                 type="date"
                 value={filters.dateFrom || ""}
                 onChange={(e) => handleDateFromChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                 Date To
               </label>
               <input
                 type="date"
                 value={filters.dateTo || ""}
                 onChange={(e) => handleDateToChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
 
             {/* Amount Range */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                 Min Amount ($)
               </label>
               <input
@@ -403,12 +403,12 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                 placeholder="0.00"
                 value={filters.amountMin ?? ""}
                 onChange={(e) => handleAmountMinChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                 Max Amount ($)
               </label>
               <input
@@ -418,14 +418,14 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                 placeholder="No limit"
                 value={filters.amountMax ?? ""}
                 onChange={(e) => handleAmountMaxChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
               />
             </div>
 
             {/* Account Filter (NEW) */}
             {accounts.length > 0 && (
               <div className="col-span-full">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
                   Accounts
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -441,7 +441,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                         className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
                           isSelected
                             ? "border-blue-500 bg-blue-50 text-blue-700"
-                            : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+                            : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] hover:border-gray-400"
                         }`}
                       >
                         {account.nickname}
@@ -455,7 +455,7 @@ export const TransactionFilters: React.FC<TransactionFiltersProps> = ({
                     className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
                       filters.accountIds?.includes("unassigned")
                         ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+                        : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-foreground)] hover:border-gray-400"
                     }`}
                   >
                     📝 Unassigned

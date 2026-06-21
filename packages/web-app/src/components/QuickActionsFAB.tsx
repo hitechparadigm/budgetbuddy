@@ -158,14 +158,14 @@ export const QuickActionsFAB: React.FC<QuickActionsFABProps> = ({
       {/* Shortcuts Help Modal */}
       {showShortcutsHint && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+          <div className="bg-[var(--color-surface)] rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-[var(--color-foreground)]">
                 ⌨️ Keyboard Shortcuts
               </h3>
               <button
                 onClick={() => setShowShortcutsHint(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)]"
                 aria-label="Close shortcuts help"
               >
                 <svg
@@ -186,50 +186,50 @@ export const QuickActionsFAB: React.FC<QuickActionsFABProps> = ({
 
             <div className="space-y-3">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">Open Quick Actions</span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                <span className="text-[var(--color-foreground)]">Open Quick Actions</span>
+                <kbd className="px-2 py-1 bg-[var(--color-muted)] rounded text-sm font-mono">
                   Ctrl+N
                 </kbd>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">
+                <span className="text-[var(--color-foreground)]">
                   Add Income (when FAB open)
                 </span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                <kbd className="px-2 py-1 bg-[var(--color-muted)] rounded text-sm font-mono">
                   I
                 </kbd>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">
+                <span className="text-[var(--color-foreground)]">
                   Add Expense (when FAB open)
                 </span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                <kbd className="px-2 py-1 bg-[var(--color-muted)] rounded text-sm font-mono">
                   E
                 </kbd>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">
+                <span className="text-[var(--color-foreground)]">
                   Scan Receipt (when FAB open)
                 </span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                <kbd className="px-2 py-1 bg-[var(--color-muted)] rounded text-sm font-mono">
                   R
                 </kbd>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">Show/Hide Shortcuts</span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                <span className="text-[var(--color-foreground)]">Show/Hide Shortcuts</span>
+                <kbd className="px-2 py-1 bg-[var(--color-muted)] rounded text-sm font-mono">
                   Ctrl+/
                 </kbd>
               </div>
               <div className="flex justify-between items-center py-2">
-                <span className="text-gray-700">Close Menu/Modal</span>
-                <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                <span className="text-[var(--color-foreground)]">Close Menu/Modal</span>
+                <kbd className="px-2 py-1 bg-[var(--color-muted)] rounded text-sm font-mono">
                   Esc
                 </kbd>
               </div>
             </div>
 
-            <p className="mt-4 text-sm text-gray-500">
+            <p className="mt-4 text-sm text-[var(--color-muted-foreground)]">
               💡 Tip: On Mac, use ⌘ (Cmd) instead of Ctrl
             </p>
           </div>

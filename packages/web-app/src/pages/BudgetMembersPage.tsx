@@ -34,7 +34,7 @@ const ROLE_COLORS: Record<MemberRole, string> = {
   owner: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
   partner: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   household_member: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  viewer: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+  viewer: 'bg-[var(--color-muted)] text-[var(--color-foreground)] dark:bg-gray-700 dark:text-gray-300',
 };
 
 function addDays(days: number): string {
@@ -316,7 +316,7 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
   if (!budget) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-8 text-center">
-        <p className="text-gray-500 mb-2">{error || 'No budget found. Please complete onboarding first.'}</p>
+        <p className="text-[var(--color-muted-foreground)] mb-2">{error || 'No budget found. Please complete onboarding first.'}</p>
         <button
           onClick={() => navigate('/budget')}
           className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -329,13 +329,13 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
 
   // ---- render ----
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[var(--color-background)] dark:bg-gray-900">
       {/* Page header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-[var(--color-surface)] dark:bg-gray-800 border-b border-[var(--color-border)] dark:border-gray-700">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center space-x-4">
           <button
             onClick={() => navigate(-1)}
-            className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] dark:text-[var(--color-muted-foreground)] dark:hover:text-gray-100"
             aria-label="Go back"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,10 +343,10 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
             </svg>
           </button>
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-xl font-bold text-[var(--color-foreground)] dark:text-gray-100">
               {budget.name}
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Members &amp; Settings</p>
+            <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">Members &amp; Settings</p>
           </div>
         </div>
       </div>
@@ -367,7 +367,7 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
         {/* ---- Members section ---- */}
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Members</h2>
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-gray-100">Members</h2>
             {isOwner && (
               <button
                 onClick={() => setShowInviteForm((v) => !v)}
@@ -384,11 +384,11 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
           {/* Invite form */}
           {showInviteForm && isOwner && (
             <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-              <h3 className="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">Invite a Member</h3>
+              <h3 className="text-base font-medium text-[var(--color-foreground)] dark:text-gray-100 mb-4">Invite a Member</h3>
               <form onSubmit={handleInvite} className="space-y-4">
                 {/* Email */}
                 <div>
-                  <label htmlFor="invite-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="invite-email" className="block text-sm font-medium text-[var(--color-foreground)] dark:text-gray-300 mb-1">
                     Email address
                   </label>
                   <input
@@ -398,20 +398,20 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
                     value={inviteForm.email}
                     onChange={(e) => setInviteForm((f) => ({ ...f, email: e.target.value }))}
                     placeholder="colleague@example.com"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] dark:border-gray-600 rounded-md bg-[var(--color-surface)] dark:bg-gray-800 text-[var(--color-foreground)] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
 
                 {/* Role */}
                 <div>
-                  <label htmlFor="invite-role" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="invite-role" className="block text-sm font-medium text-[var(--color-foreground)] dark:text-gray-300 mb-1">
                     Role
                   </label>
                   <select
                     id="invite-role"
                     value={inviteForm.role}
                     onChange={(e) => setInviteForm((f) => ({ ...f, role: e.target.value as MemberRole }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] dark:border-gray-600 rounded-md bg-[var(--color-surface)] dark:bg-gray-800 text-[var(--color-foreground)] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
                   >
                     <option value="partner">Partner — full edit access</option>
                     <option value="household_member">Household Member — can add transactions</option>
@@ -423,14 +423,14 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
                 {inviteForm.role === 'viewer' && (
                   <>
                     <div>
-                      <label htmlFor="invite-expiry" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label htmlFor="invite-expiry" className="block text-sm font-medium text-[var(--color-foreground)] dark:text-gray-300 mb-1">
                         Access expires
                       </label>
                       <select
                         id="invite-expiry"
                         value={inviteForm.viewerExpiry}
                         onChange={(e) => setInviteForm((f) => ({ ...f, viewerExpiry: e.target.value as ViewerExpiry }))}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="w-full px-3 py-2 border border-[var(--color-border)] dark:border-gray-600 rounded-md bg-[var(--color-surface)] dark:bg-gray-800 text-[var(--color-foreground)] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
                       >
                         <option value="30">30 days</option>
                         <option value="60">60 days</option>
@@ -439,8 +439,8 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
                       </select>
                     </div>
                     <div>
-                      <label htmlFor="invite-label" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Access label <span className="text-gray-400 font-normal">(optional)</span>
+                      <label htmlFor="invite-label" className="block text-sm font-medium text-[var(--color-foreground)] dark:text-gray-300 mb-1">
+                        Access label <span className="text-[var(--color-muted-foreground)] font-normal">(optional)</span>
                       </label>
                       <input
                         id="invite-label"
@@ -448,7 +448,7 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
                         value={inviteForm.accessLabel}
                         onChange={(e) => setInviteForm((f) => ({ ...f, accessLabel: e.target.value }))}
                         placeholder="e.g. Financial Advisor"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="w-full px-3 py-2 border border-[var(--color-border)] dark:border-gray-600 rounded-md bg-[var(--color-surface)] dark:bg-gray-800 text-[var(--color-foreground)] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
                       />
                     </div>
                   </>
@@ -458,7 +458,7 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
                   <button
                     type="button"
                     onClick={() => { setShowInviteForm(false); setInviteForm(DEFAULT_INVITE_FORM); }}
-                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
+                    className="flex-1 px-4 py-2 border border-[var(--color-border)] dark:border-gray-600 text-[var(--color-foreground)] dark:text-gray-300 rounded-lg hover:bg-[var(--color-background)] dark:hover:bg-gray-700 text-sm"
                   >
                     Cancel
                   </button>
@@ -475,16 +475,16 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
           )}
 
           {/* Member list */}
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-100 dark:divide-gray-700">
+          <div className="bg-[var(--color-surface)] dark:bg-gray-800 border border-[var(--color-border)] dark:border-gray-700 rounded-lg divide-y divide-gray-100 dark:divide-gray-700">
             {members.length === 0 ? (
-              <p className="p-6 text-center text-gray-500 dark:text-gray-400">No members yet.</p>
+              <p className="p-6 text-center text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">No members yet.</p>
             ) : (
               members.map((member) => (
                 <div key={member.userId} className="p-4 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     {/* Name + role badge */}
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                      <span className="font-medium text-[var(--color-foreground)] dark:text-gray-100 truncate">
                         {member.name ?? member.email ?? 'Unknown'}
                       </span>
                       <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${ROLE_COLORS[member.role]}`}>
@@ -493,18 +493,18 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
                     </div>
                     {/* Email */}
                     {member.email && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate">{member.email}</p>
+                      <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mt-0.5 truncate">{member.email}</p>
                     )}
                     {/* Viewer extras */}
                     {member.role === 'viewer' && (
                       <div className="mt-1 space-y-0.5">
                         {member.accessLabel && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                             Label: <span className="font-medium">{member.accessLabel}</span>
                           </p>
                         )}
                         {member.expiresAt && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                             Expires: <span className="font-medium">{formatDate(member.expiresAt)}</span>
                           </p>
                         )}
@@ -540,15 +540,15 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
         {/* ---- Pending invitations ---- */}
         {invitations.length > 0 && (
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-gray-100 mb-4">
               Pending Invitations
             </h2>
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="bg-[var(--color-surface)] dark:bg-gray-800 border border-[var(--color-border)] dark:border-gray-700 rounded-lg divide-y divide-gray-100 dark:divide-gray-700">
               {invitations.map((inv) => (
                 <div key={inv.invitationId} className="p-4 flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{inv.email}</span>
+                      <span className="font-medium text-[var(--color-foreground)] dark:text-gray-100 truncate">{inv.email}</span>
                       <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${ROLE_COLORS[inv.role]}`}>
                         {ROLE_LABELS[inv.role]}
                       </span>
@@ -556,11 +556,11 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
                         Pending
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    <p className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mt-1">
                       Sent {formatDate(inv.createdAt)} · Expires {formatDate(inv.expiresAt)}
                     </p>
                     {inv.accessLabel && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      <p className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mt-0.5">
                         Label: <span className="font-medium">{inv.accessLabel}</span>
                       </p>
                     )}
@@ -593,22 +593,22 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
         {/* ---- Budget settings (owner only) ---- */}
         {isOwner && (
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-gray-100 mb-4">
               Budget Settings
             </h2>
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 space-y-4">
+            <div className="bg-[var(--color-surface)] dark:bg-gray-800 border border-[var(--color-border)] dark:border-gray-700 rounded-lg p-6 space-y-4">
               {/* Archive */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">Archive Budget</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="font-medium text-[var(--color-foreground)] dark:text-gray-100">Archive Budget</p>
+                  <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                     Makes the budget read-only. You can restore it later.
                   </p>
                 </div>
                 <button
                   onClick={handleArchive}
                   disabled={actionInProgress === 'archive'}
-                  className="flex-shrink-0 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium disabled:opacity-50"
+                  className="flex-shrink-0 px-4 py-2 border border-[var(--color-border)] dark:border-gray-600 text-[var(--color-foreground)] dark:text-gray-300 rounded-lg hover:bg-[var(--color-background)] dark:hover:bg-gray-700 text-sm font-medium disabled:opacity-50"
                 >
                   {actionInProgress === 'archive' ? 'Archiving…' : 'Archive Budget'}
                 </button>
@@ -620,7 +620,7 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-medium text-red-700 dark:text-red-400">Delete Budget</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                     {budget.budgetType === 'personal'
                       ? 'Personal budgets cannot be deleted.'
                       : 'Permanently deletes the budget and all its data. This cannot be undone.'}
@@ -641,11 +641,11 @@ export const BudgetMembersPage: React.FC<BudgetMembersPageProps> = ({
 
         {/* ---- Leave budget (non-owners) ---- */}
         {!isOwner && (
-          <section className="pt-2 border-t border-gray-200 dark:border-gray-700">
+          <section className="pt-2 border-t border-[var(--color-border)] dark:border-gray-700">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-medium text-gray-900 dark:text-gray-100">Leave Budget</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="font-medium text-[var(--color-foreground)] dark:text-gray-100">Leave Budget</p>
+                <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                   You will lose access to this budget. A new personal budget will be created for you if needed.
                 </p>
               </div>

@@ -80,12 +80,12 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
 
   if (variant === "list") {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg shadow-sm border border-[var(--color-border)] dark:border-gray-700">
+        <div className="p-4 border-b border-[var(--color-border)] dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-white">
             Language
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mt-1">
             Select your preferred language
           </p>
         </div>
@@ -94,7 +94,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             <button
               key={language.code}
               onClick={() => handleSelect(language.code)}
-              className={`w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+              className={`w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--color-background)] dark:hover:bg-gray-700 transition-colors ${
                 selectedLanguage === language.code
                   ? "bg-green-50 dark:bg-green-900/20"
                   : ""
@@ -103,11 +103,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               <div className="flex items-center space-x-3">
                 <span className="text-2xl">{language.flag}</span>
                 <div className="text-left">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-[var(--color-foreground)] dark:text-white">
                     {language.name}
                   </p>
                   {showNativeName && language.name !== language.nativeName && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                       {language.nativeName}
                     </p>
                   )}
@@ -131,8 +131,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             </button>
           ))}
         </div>
-        <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-b-lg">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+        <div className="px-4 py-3 bg-[var(--color-background)] dark:bg-gray-700/50 rounded-b-lg">
+          <p className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
             Note: Language support is coming soon. Currently, the app is
             available in English only.
           </p>
@@ -146,18 +146,18 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+        className="flex items-center justify-between w-full px-4 py-2 bg-[var(--color-surface)] dark:bg-gray-700 border border-[var(--color-border)] dark:border-gray-600 rounded-lg hover:bg-[var(--color-background)] dark:hover:bg-gray-600 transition-colors"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
         <div className="flex items-center space-x-2">
           <span className="text-lg">{currentLanguage?.flag}</span>
-          <span className="text-sm text-gray-900 dark:text-white">
+          <span className="text-sm text-[var(--color-foreground)] dark:text-white">
             {currentLanguage?.name}
           </span>
         </div>
         <svg
-          className={`w-5 h-5 text-gray-400 transition-transform ${
+          className={`w-5 h-5 text-[var(--color-muted-foreground)] transition-transform ${
             isOpen ? "rotate-180" : ""
           }`}
           fill="none"
@@ -174,12 +174,12 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-10 w-full mt-1 bg-[var(--color-surface)] dark:bg-gray-800 border border-[var(--color-border)] dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
           {SUPPORTED_LANGUAGES.map((language) => (
             <button
               key={language.code}
               onClick={() => handleSelect(language.code)}
-              className={`w-full flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+              className={`w-full flex items-center space-x-3 px-4 py-2 hover:bg-[var(--color-background)] dark:hover:bg-gray-700 transition-colors ${
                 selectedLanguage === language.code
                   ? "bg-green-50 dark:bg-green-900/20"
                   : ""
@@ -189,11 +189,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             >
               <span className="text-lg">{language.flag}</span>
               <div className="flex-1 text-left">
-                <span className="text-sm text-gray-900 dark:text-white">
+                <span className="text-sm text-[var(--color-foreground)] dark:text-white">
                   {language.name}
                 </span>
                 {showNativeName && language.name !== language.nativeName && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                  <span className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] ml-2">
                     ({language.nativeName})
                   </span>
                 )}

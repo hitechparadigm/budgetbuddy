@@ -153,18 +153,18 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
           </svg>
         </div>
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 className="text-xl font-semibold text-[var(--color-foreground)]">
             Delete Your Account
           </h3>
-          <p className="text-sm text-gray-500">This action cannot be undone</p>
+          <p className="text-sm text-[var(--color-muted-foreground)]">This action cannot be undone</p>
         </div>
       </div>
 
       <div className="space-y-4 mb-6">
-        <p className="text-gray-600">
+        <p className="text-[var(--color-muted-foreground)]">
           Deleting your account will permanently remove:
         </p>
-        <ul className="list-disc list-inside text-gray-600 space-y-2 ml-2">
+        <ul className="list-disc list-inside text-[var(--color-muted-foreground)] space-y-2 ml-2">
           <li>All your budgets and budget history</li>
           <li>All your transactions</li>
           <li>All your savings goals and progress</li>
@@ -183,7 +183,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
       <div className="flex space-x-3">
         <button
           onClick={handleClose}
-          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          className="flex-1 px-4 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)]"
         >
           Cancel
         </button>
@@ -216,17 +216,17 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
           </svg>
         </div>
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 className="text-xl font-semibold text-[var(--color-foreground)]">
             Export Your Data
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-[var(--color-muted-foreground)]">
             Download a copy before deleting
           </p>
         </div>
       </div>
 
       <div className="space-y-4 mb-6">
-        <p className="text-gray-600">
+        <p className="text-[var(--color-muted-foreground)]">
           Before deleting your account, we recommend downloading a backup of all
           your data. This will include your budgets, transactions, goals, and
           settings.
@@ -310,7 +310,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
       <div className="flex space-x-3">
         <button
           onClick={() => setStep("warning")}
-          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          className="flex-1 px-4 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)]"
         >
           Back
         </button>
@@ -346,10 +346,10 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
           </svg>
         </div>
         <div>
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 className="text-xl font-semibold text-[var(--color-foreground)]">
             Final Confirmation
           </h3>
-          <p className="text-sm text-gray-500">Type DELETE to confirm</p>
+          <p className="text-sm text-[var(--color-muted-foreground)]">Type DELETE to confirm</p>
         </div>
       </div>
 
@@ -364,10 +364,10 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
         <div>
           <label
             htmlFor="confirm-delete"
-            className="block text-sm font-medium text-gray-700 mb-2"
+            className="block text-sm font-medium text-[var(--color-foreground)] mb-2"
           >
             Type{" "}
-            <span className="font-mono bg-gray-100 px-2 py-0.5 rounded">
+            <span className="font-mono bg-[var(--color-muted)] px-2 py-0.5 rounded">
               DELETE
             </span>{" "}
             to confirm:
@@ -378,7 +378,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
             placeholder="Type DELETE here"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
             autoComplete="off"
           />
         </div>
@@ -396,7 +396,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
             setError(null);
             setStep("export");
           }}
-          className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          className="flex-1 px-4 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)]"
           disabled={isDeleting}
         >
           Back
@@ -440,7 +440,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-[var(--color-surface)] rounded-lg shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
         {step === "warning" && renderWarningStep()}
         {step === "export" && renderExportStep()}
         {step === "confirm" && renderConfirmStep()}

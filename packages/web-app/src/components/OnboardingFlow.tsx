@@ -210,21 +210,21 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-[var(--color-surface)] rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-6 border-b">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-[var(--color-foreground)]">
               Welcome to BudgetBuddy! 🎉
             </h2>
             <button
               onClick={onSkip}
-              className="text-gray-500 hover:text-gray-700 text-sm"
+              className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] text-sm"
             >
               Skip for now
             </button>
           </div>
-          <p className="text-gray-600 mt-2">
+          <p className="text-[var(--color-muted-foreground)] mt-2">
             Let's set up your budget with personalized suggestions
           </p>
         </div>
@@ -250,12 +250,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       "review",
                     ].indexOf(step) >= idx
                       ? "bg-green-500 text-white"
-                      : "bg-gray-200 text-gray-600"
+                      : "bg-gray-200 text-[var(--color-muted-foreground)]"
                   }`}
                 >
                   {idx + 1}
                 </div>
-                <span className="ml-2 text-sm text-gray-600 hidden sm:inline">
+                <span className="ml-2 text-sm text-[var(--color-muted-foreground)] hidden sm:inline">
                   {label}
                 </span>
               </div>
@@ -271,14 +271,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <h3 className="text-xl font-semibold">
                 📍 Where are you located?
               </h3>
-              <p className="text-gray-600">
+              <p className="text-[var(--color-muted-foreground)]">
                 We'll use your location to provide relevant budget suggestions
               </p>
 
               {isDetecting && (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">
+                  <p className="mt-4 text-[var(--color-muted-foreground)]">
                     Detecting your location...
                   </p>
                 </div>
@@ -334,8 +334,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
               {/* Manual City Selection */}
               {showManualSelection && (
-                <div className="bg-white border border-gray-300 rounded-lg p-4 mt-4">
-                  <h4 className="font-semibold text-gray-900 mb-3">
+                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 mt-4">
+                  <h4 className="font-semibold text-[var(--color-foreground)] mb-3">
                     Select Your City
                   </h4>
                   <input
@@ -343,7 +343,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     placeholder="Search for your city..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
                   <div className="mt-3 max-h-60 overflow-y-auto space-y-2">
                     {getAllCities()
@@ -362,10 +362,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         <button
                           key={`${city.city}-${city.country}`}
                           onClick={() => handleCitySelect(city)}
-                          className="w-full text-left px-4 py-2 rounded-lg hover:bg-gray-100 border border-gray-200"
+                          className="w-full text-left px-4 py-2 rounded-lg hover:bg-[var(--color-muted)] border border-[var(--color-border)]"
                         >
                           <div className="font-medium">{city.city}</div>
-                          <div className="text-sm text-gray-600">
+                          <div className="text-sm text-[var(--color-muted-foreground)]">
                             {city.country}
                           </div>
                         </button>
@@ -376,7 +376,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       setShowManualSelection(false);
                       setSearchQuery("");
                     }}
-                    className="mt-3 text-gray-600 hover:text-gray-800 text-sm"
+                    className="mt-3 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] text-sm"
                   >
                     Cancel
                   </button>
@@ -389,7 +389,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           {step === "currency" && (
             <div className="space-y-4">
               <h3 className="text-xl font-semibold">💱 Select your currency</h3>
-              <p className="text-gray-600">
+              <p className="text-[var(--color-muted-foreground)]">
                 Choose the currency you'll use for your budget. This will be
                 used for all amounts and transactions.
               </p>
@@ -415,7 +415,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex justify-between mt-8">
                 <button
                   onClick={() => setStep("location")}
-                  className="text-gray-600 hover:text-gray-800"
+                  className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
                 >
                   ← Back
                 </button>
@@ -435,7 +435,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <h3 className="text-xl font-semibold">
                 👨‍👩‍👧‍👦 How many people in your household?
               </h3>
-              <p className="text-gray-600">
+              <p className="text-[var(--color-muted-foreground)]">
                 This helps us adjust budget suggestions for your family size
               </p>
 
@@ -447,7 +447,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     className={`p-4 rounded-lg border-2 text-center transition-all ${
                       familySize === size
                         ? "border-green-500 bg-green-50"
-                        : "border-gray-200 hover:border-gray-300"
+                        : "border-[var(--color-border)] hover:border-[var(--color-border)]"
                     }`}
                   >
                     <div className="text-3xl mb-2">
@@ -471,7 +471,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex justify-between mt-8">
                 <button
                   onClick={() => setStep("currency")}
-                  className="text-gray-600 hover:text-gray-800"
+                  className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
                 >
                   ← Back
                 </button>
@@ -491,7 +491,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <h3 className="text-xl font-semibold">
                 💰 Select your budget categories
               </h3>
-              <p className="text-gray-600">
+              <p className="text-[var(--color-muted-foreground)]">
                 Based on {suggestions.city}, we suggest these categories. Select
                 the ones you want to track.
               </p>
@@ -515,7 +515,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       className={`p-4 rounded-lg border-2 text-left transition-all ${
                         isSelected
                           ? "border-green-500 bg-green-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-[var(--color-border)] hover:border-[var(--color-border)]"
                       }`}
                     >
                       <div className="flex items-start justify-between">
@@ -524,7 +524,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                             <span className="text-2xl">{category.icon}</span>
                             <span className="font-medium">{category.name}</span>
                           </div>
-                          <div className="text-sm text-gray-600 mt-1">
+                          <div className="text-sm text-[var(--color-muted-foreground)] mt-1">
                             {category.reason}
                           </div>
                           <div className="text-lg font-semibold text-green-600 mt-2">
@@ -545,7 +545,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex justify-between mt-8">
                 <button
                   onClick={() => setStep("family-size")}
-                  className="text-gray-600 hover:text-gray-800"
+                  className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
                 >
                   ← Back
                 </button>

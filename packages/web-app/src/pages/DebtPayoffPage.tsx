@@ -200,11 +200,11 @@ export default function DebtPayoffPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="h-8 w-48 rounded animate-pulse bg-gray-200 mb-8" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          {[1,2,3,4].map(i => <div key={i} className="h-24 rounded-xl animate-pulse bg-white shadow" />)}
+          {[1,2,3,4].map(i => <div key={i} className="h-24 rounded-xl animate-pulse bg-[var(--color-surface)] shadow" />)}
         </div>
-        <div className="h-48 rounded-xl animate-pulse bg-white shadow mb-8" />
+        <div className="h-48 rounded-xl animate-pulse bg-[var(--color-surface)] shadow mb-8" />
         <div className="space-y-4">
-          {[1,2].map(i => <div key={i} className="h-40 rounded-xl animate-pulse bg-white shadow" />)}
+          {[1,2].map(i => <div key={i} className="h-40 rounded-xl animate-pulse bg-[var(--color-surface)] shadow" />)}
         </div>
       </div>
     );
@@ -233,39 +233,39 @@ export default function DebtPayoffPage() {
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow p-6">
-            <p className="text-sm text-gray-500">Total Debt</p>
+          <div className="bg-[var(--color-surface)] rounded-xl shadow p-6">
+            <p className="text-sm text-[var(--color-muted-foreground)]">Total Debt</p>
             <p className="text-2xl font-bold text-red-600">
               {formatCurrency(summary.totalBalance)}
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-[var(--color-muted-foreground)]">
               {summary.activeDebts} active debts
             </p>
           </div>
-          <div className="bg-white rounded-xl shadow p-6">
-            <p className="text-sm text-gray-500">Monthly Minimum</p>
+          <div className="bg-[var(--color-surface)] rounded-xl shadow p-6">
+            <p className="text-sm text-[var(--color-muted-foreground)]">Monthly Minimum</p>
             <p className="text-2xl font-bold text-orange-600">
               {formatCurrency(summary.totalMinPayment)}
             </p>
           </div>
-          <div className="bg-white rounded-xl shadow p-6">
-            <p className="text-sm text-gray-500">Avg Interest Rate</p>
+          <div className="bg-[var(--color-surface)] rounded-xl shadow p-6">
+            <p className="text-sm text-[var(--color-muted-foreground)]">Avg Interest Rate</p>
             <p className="text-2xl font-bold text-purple-600">
               {summary.avgInterestRate.toFixed(1)}%
             </p>
           </div>
-          <div className="bg-white rounded-xl shadow p-6">
-            <p className="text-sm text-gray-500">Interest Savings</p>
+          <div className="bg-[var(--color-surface)] rounded-xl shadow p-6">
+            <p className="text-sm text-[var(--color-muted-foreground)]">Interest Savings</p>
             <p className="text-2xl font-bold text-green-600">
               {formatCurrency(summary.interestSavings)}
             </p>
-            <p className="text-xs text-gray-400">Avalanche vs Snowball</p>
+            <p className="text-xs text-[var(--color-muted-foreground)]">Avalanche vs Snowball</p>
           </div>
         </div>
       )}
 
       {/* Strategy Selector */}
-      <div className="bg-white rounded-xl shadow p-6 mb-8">
+      <div className="bg-[var(--color-surface)] rounded-xl shadow p-6 mb-8">
         <h2 className="text-lg font-semibold mb-4">📊 Payoff Strategy</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -275,13 +275,13 @@ export default function DebtPayoffPage() {
                 className={`flex-1 p-4 rounded-lg border-2 transition ${
                   strategy === "snowball"
                     ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    : "border-[var(--color-border)] hover:border-[var(--color-border)]"
                 }`}
               >
                 <p className="font-semibold">❄️ Snowball</p>
-                <p className="text-sm text-gray-500">Smallest balance first</p>
+                <p className="text-sm text-[var(--color-muted-foreground)]">Smallest balance first</p>
                 {summary && (
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-xs text-[var(--color-muted-foreground)] mt-2">
                     {summary.snowballPayoffMonths} months •{" "}
                     {formatCurrency(summary.snowballTotalInterest)} interest
                   </p>
@@ -292,13 +292,13 @@ export default function DebtPayoffPage() {
                 className={`flex-1 p-4 rounded-lg border-2 transition ${
                   strategy === "avalanche"
                     ? "border-blue-500 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    : "border-[var(--color-border)] hover:border-[var(--color-border)]"
                 }`}
               >
                 <p className="font-semibold">🏔️ Avalanche</p>
-                <p className="text-sm text-gray-500">Highest interest first</p>
+                <p className="text-sm text-[var(--color-muted-foreground)]">Highest interest first</p>
                 {summary && (
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-xs text-[var(--color-muted-foreground)] mt-2">
                     {summary.avalanchePayoffMonths} months •{" "}
                     {formatCurrency(summary.avalancheTotalInterest)} interest
                   </p>
@@ -306,7 +306,7 @@ export default function DebtPayoffPage() {
               </button>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
                 Extra Monthly Payment
               </label>
               <div className="flex items-center gap-4">
@@ -326,29 +326,29 @@ export default function DebtPayoffPage() {
             </div>
           </div>
           {payoffPlan && (
-            <div className="bg-gray-50 rounded-lg p-4">
+            <div className="bg-[var(--color-background)] rounded-lg p-4">
               <h3 className="font-semibold mb-3">📅 Payoff Timeline</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Debt-free date:</span>
+                  <span className="text-[var(--color-muted-foreground)]">Debt-free date:</span>
                   <span className="font-semibold">
                     {formatDate(payoffPlan.payoffDate)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total months:</span>
+                  <span className="text-[var(--color-muted-foreground)]">Total months:</span>
                   <span className="font-semibold">
                     {payoffPlan.totalMonths}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total interest:</span>
+                  <span className="text-[var(--color-muted-foreground)]">Total interest:</span>
                   <span className="font-semibold text-red-600">
                     {formatCurrency(payoffPlan.totalInterest)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total paid:</span>
+                  <span className="text-[var(--color-muted-foreground)]">Total paid:</span>
                   <span className="font-semibold">
                     {formatCurrency(payoffPlan.totalPaid)}
                   </span>
@@ -373,17 +373,17 @@ export default function DebtPayoffPage() {
                         return (
                           <div key={debt.debtId} className="flex flex-col items-center" style={{ width: `${(1 / payoffPlan.debtOrder.length) * 100}%` }}>
                             <div className={`w-4 h-4 rounded-full ${dotColor} border-2 border-white shadow z-10 relative`} title={`${debt.name} — Month ${debt.paidOffMonth}`} />
-                            <p className="text-xs text-gray-600 mt-1 text-center leading-tight max-w-[60px]">
+                            <p className="text-xs text-[var(--color-muted-foreground)] mt-1 text-center leading-tight max-w-[60px]">
                               {debt.name.length > 10 ? `${debt.name.slice(0, 8)}…` : debt.name}
                             </p>
-                            <p className="text-xs text-gray-400">Mo. {debt.paidOffMonth}</p>
+                            <p className="text-xs text-[var(--color-muted-foreground)]">Mo. {debt.paidOffMonth}</p>
                           </div>
                         );
                       })}
                     </div>
                   </div>
                   {/* Legend */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-gray-500">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-[var(--color-muted-foreground)]">
                     <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" /> Mortgage</span>
                     <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" /> Credit Card</span>
                     <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-gray-500 inline-block" /> Auto</span>
@@ -408,13 +408,13 @@ export default function DebtPayoffPage() {
       ) : (
         <div className="space-y-4">
           {debts.map((debt) => (
-            <div key={debt.debtId} className="bg-white rounded-xl shadow p-6">
+            <div key={debt.debtId} className="bg-[var(--color-surface)] rounded-xl shadow p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{getDebtTypeIcon(debt.type)}</span>
                   <div>
                     <h3 className="font-semibold text-lg">{debt.name}</h3>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-[var(--color-muted-foreground)]">
                       {debt.interestRate}% APR • Due day {debt.dueDay}
                     </p>
                   </div>
@@ -423,7 +423,7 @@ export default function DebtPayoffPage() {
                   <p className="text-2xl font-bold">
                     {formatCurrency(debt.currentBalance)}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-[var(--color-muted-foreground)]">
                     Min: {formatCurrency(debt.minimumPayment)}/mo
                   </p>
                 </div>
@@ -432,7 +432,7 @@ export default function DebtPayoffPage() {
               {/* Progress Bar */}
               <div className="mb-4">
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Progress</span>
+                  <span className="text-[var(--color-muted-foreground)]">Progress</span>
                   <span className="font-medium">
                     {debt.progressPercent}% paid off
                   </span>
@@ -443,7 +443,7 @@ export default function DebtPayoffPage() {
                     style={{ width: `${debt.progressPercent}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-[var(--color-muted-foreground)] mt-1">
                   <span>Paid: {formatCurrency(debt.totalPaid)}</span>
                   <span>Original: {formatCurrency(debt.originalBalance)}</span>
                 </div>
@@ -457,7 +457,7 @@ export default function DebtPayoffPage() {
                       ⚠️ Payment doesn't cover interest
                     </span>
                   ) : (
-                    <span className="text-gray-600">
+                    <span className="text-[var(--color-muted-foreground)]">
                       ~{debt.monthsToPayoff} months to payoff at minimum
                     </span>
                   )}
@@ -476,7 +476,7 @@ export default function DebtPayoffPage() {
                     onClick={() =>
                       (window.location.href = `/debts/${debt.debtId}/edit`)
                     }
-                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 text-sm"
+                    className="px-3 py-1 border border-[var(--color-border)] rounded hover:bg-[var(--color-background)] text-sm"
                   >
                     Edit
                   </button>
@@ -495,14 +495,14 @@ export default function DebtPayoffPage() {
           aria-labelledby="payment-modal-title"
           className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
         >
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm mx-4 w-full">
-            <h3 id="payment-modal-title" className="font-semibold text-gray-900 mb-1">
+          <div className="bg-[var(--color-surface)] rounded-xl shadow-xl p-6 max-w-sm mx-4 w-full">
+            <h3 id="payment-modal-title" className="font-semibold text-[var(--color-foreground)] mb-1">
               Record Payment
             </h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-[var(--color-muted-foreground)] mb-4">
               {paymentDebt.name} — current balance {formatCurrency(paymentDebt.currentBalance)}
             </p>
-            <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="payment-amount">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2" htmlFor="payment-amount">
               Amount
             </label>
             <input
@@ -512,7 +512,7 @@ export default function DebtPayoffPage() {
               step="0.01"
               value={paymentAmount}
               onChange={e => setPaymentAmount(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              className="w-full border border-[var(--color-border)] rounded-lg px-3 py-2 mb-4 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               autoFocus
             />
             <div className="flex gap-3">
@@ -531,7 +531,7 @@ export default function DebtPayoffPage() {
               </button>
               <button
                 onClick={() => { setPaymentDebt(null); setPaymentAmount(''); }}
-                className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+                className="flex-1 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)] text-sm"
               >
                 Cancel
               </button>

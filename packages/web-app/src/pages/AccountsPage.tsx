@@ -143,10 +143,10 @@ export const AccountsPage: React.FC = () => {
 
     return (
       <div key={type} className="mb-6">
-        <h3 className="flex items-center space-x-2 text-lg font-semibold text-gray-900 mb-3">
+        <h3 className="flex items-center space-x-2 text-lg font-semibold text-[var(--color-foreground)] mb-3">
           <span>{ACCOUNT_TYPE_ICONS[type]}</span>
           <span>{ACCOUNT_TYPE_LABELS[type]}</span>
-          <span className="text-sm font-normal text-gray-500">
+          <span className="text-sm font-normal text-[var(--color-muted-foreground)]">
             ({groupAccounts.length})
           </span>
         </h3>
@@ -168,14 +168,14 @@ export const AccountsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--color-background)]">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <Link
             to="/budget"
             aria-label="Back to Budget"
-            className="text-gray-600 hover:text-gray-900 flex items-center mb-2 w-fit"
+            className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] flex items-center mb-2 w-fit"
           >
             <svg
               className="w-5 h-5 mr-1"
@@ -209,13 +209,13 @@ export const AccountsPage: React.FC = () => {
           />
 
           {/* Tab switcher */}
-          <div className="flex space-x-1 mt-4 border-b border-gray-200">
+          <div className="flex space-x-1 mt-4 border-b border-[var(--color-border)]">
             <button
               onClick={() => setActiveTab("manual")}
               className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
                 activeTab === "manual"
                   ? "border-green-600 text-green-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  : "border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
               }`}
             >
               Manual Accounts
@@ -225,7 +225,7 @@ export const AccountsPage: React.FC = () => {
               className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center space-x-1 ${
                 activeTab === "connected"
                   ? "border-green-600 text-green-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  : "border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
               }`}
             >
               <span>🏦</span>
@@ -246,20 +246,20 @@ export const AccountsPage: React.FC = () => {
         {/* Summary Cards */}
         {!summaryLoading && summary && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600 mb-1">Total Assets</p>
+            <div className="bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] p-4">
+              <p className="text-sm text-[var(--color-muted-foreground)] mb-1">Total Assets</p>
               <p className="text-2xl font-bold text-green-600">
                 {formatCurrency(summary.totalAssets, "USD")}
               </p>
             </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600 mb-1">Total Liabilities</p>
+            <div className="bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] p-4">
+              <p className="text-sm text-[var(--color-muted-foreground)] mb-1">Total Liabilities</p>
               <p className="text-2xl font-bold text-red-600">
                 {formatCurrency(summary.totalLiabilities, "USD")}
               </p>
             </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600 mb-1">Net Worth</p>
+            <div className="bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] p-4">
+              <p className="text-sm text-[var(--color-muted-foreground)] mb-1">Net Worth</p>
               <p
                 className={`text-2xl font-bold ${summary.netWorth >= 0 ? "text-green-600" : "text-red-600"}`}
               >
@@ -282,13 +282,13 @@ export const AccountsPage: React.FC = () => {
                 </div>
                 <div className="space-y-3">
                   {[1,2].map(c => (
-                    <div key={c} className="bg-white rounded-lg border border-gray-200 p-4">
+                    <div key={c} className="bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full animate-pulse bg-gray-200" />
                           <div className="space-y-1">
                             <div className="h-4 w-32 rounded animate-pulse bg-gray-200" />
-                            <div className="h-3 w-20 rounded animate-pulse bg-gray-100" />
+                            <div className="h-3 w-20 rounded animate-pulse bg-[var(--color-muted)]" />
                           </div>
                         </div>
                         <div className="h-5 w-20 rounded animate-pulse bg-gray-200" />
@@ -316,12 +316,12 @@ export const AccountsPage: React.FC = () => {
 
         {/* Empty State */}
         {!isLoading && !error && accounts.length === 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+          <div className="bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] p-8 text-center">
             <div className="text-4xl mb-4">🏦</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2">
               No accounts yet
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-[var(--color-muted-foreground)] mb-4">
               Add your first account to start tracking your finances.
             </p>
             <button

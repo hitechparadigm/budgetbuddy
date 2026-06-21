@@ -176,7 +176,7 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
         />
 
         {/* Modal */}
-        <div className="relative inline-block w-full max-w-2xl bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8">
+        <div className="relative inline-block w-full max-w-2xl bg-[var(--color-surface)] rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8">
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-4">
             <div className="flex items-center justify-between">
@@ -238,7 +238,7 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
                     <>✨ Generate AI Suggestions</>
                   )}
                 </button>
-                <p className="text-xs text-gray-500 mt-2 text-center">
+                <p className="text-xs text-[var(--color-muted-foreground)] mt-2 text-center">
                   AI will analyze your bills and spending history to suggest
                   budget amounts
                 </p>
@@ -248,7 +248,7 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2" />
-                <p className="text-gray-500">Loading suggestions...</p>
+                <p className="text-[var(--color-muted-foreground)]">Loading suggestions...</p>
               </div>
             ) : suggestions ? (
               <>
@@ -284,7 +284,7 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
                   <button
                     onClick={handleGenerateSuggestions}
                     disabled={generating}
-                    className="text-sm text-gray-500 hover:text-gray-700"
+                    className="text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
                   >
                     🔄 Regenerate
                   </button>
@@ -298,7 +298,7 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
                       className={`border rounded-lg transition-colors ${
                         selectedCategories.has(suggestion.categoryId)
                           ? "border-purple-300 bg-purple-50"
-                          : "border-gray-200"
+                          : "border-[var(--color-border)]"
                       }`}
                     >
                       <div
@@ -318,7 +318,7 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
                               className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
                             />
                             <div>
-                              <h4 className="font-medium text-gray-900">
+                              <h4 className="font-medium text-[var(--color-foreground)]">
                                 {suggestion.categoryName}
                               </h4>
                               <div className="flex items-center gap-2 mt-1">
@@ -330,7 +330,7 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
                                 {suggestion.currentAmount !== undefined &&
                                   suggestion.currentAmount !==
                                     suggestion.suggestedAmount && (
-                                    <span className="text-xs text-gray-500">
+                                    <span className="text-xs text-[var(--color-muted-foreground)]">
                                       Current:{" "}
                                       {formatCurrency(
                                         suggestion.currentAmount,
@@ -342,7 +342,7 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-lg font-bold text-gray-900">
+                            <p className="text-lg font-bold text-[var(--color-foreground)]">
                               {formatCurrency(
                                 suggestion.suggestedAmount,
                                 currency,
@@ -370,13 +370,13 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
                       {/* Expanded Details */}
                       {expandedCategory === suggestion.categoryId && (
                         <div className="px-4 pb-4 border-t border-gray-100">
-                          <div className="mt-3 p-3 bg-white rounded-lg">
-                            <p className="text-sm text-gray-600 mb-3">
+                          <div className="mt-3 p-3 bg-[var(--color-surface)] rounded-lg">
+                            <p className="text-sm text-[var(--color-muted-foreground)] mb-3">
                               {suggestion.explanation}
                             </p>
                             {suggestion.breakdown.length > 0 && (
                               <div className="space-y-2">
-                                <p className="text-xs font-medium text-gray-500 uppercase">
+                                <p className="text-xs font-medium text-[var(--color-muted-foreground)] uppercase">
                                   Breakdown
                                 </p>
                                 {suggestion.breakdown.map((item, idx) => (
@@ -384,9 +384,9 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
                                     key={idx}
                                     className="flex justify-between text-sm"
                                   >
-                                    <span className="text-gray-600">
+                                    <span className="text-[var(--color-muted-foreground)]">
                                       {item.item}
-                                      <span className="ml-2 text-xs text-gray-400">
+                                      <span className="ml-2 text-xs text-[var(--color-muted-foreground)]">
                                         ({item.type})
                                       </span>
                                     </span>
@@ -407,8 +407,8 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
             ) : (
               <div className="text-center py-8">
                 <span className="text-4xl mb-2 block">💡</span>
-                <p className="text-gray-500">No suggestions yet</p>
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-[var(--color-muted-foreground)]">No suggestions yet</p>
+                <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
                   Generate AI suggestions to get started
                 </p>
               </div>
@@ -417,14 +417,14 @@ export const BudgetSuggestionsModal: React.FC<BudgetSuggestionsModalProps> = ({
 
           {/* Footer */}
           {suggestions && (
-            <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center">
-              <p className="text-sm text-gray-500">
+            <div className="px-6 py-4 bg-[var(--color-background)] border-t flex justify-between items-center">
+              <p className="text-sm text-[var(--color-muted-foreground)]">
                 Generated {new Date(suggestions.generatedAt).toLocaleString()}
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
+                  className="px-4 py-2 border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-muted)]"
                 >
                   Cancel
                 </button>

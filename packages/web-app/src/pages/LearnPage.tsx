@@ -165,16 +165,16 @@ export const LearnPage: React.FC = () => {
       case "advanced":
         return "bg-red-100 text-red-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-[var(--color-muted)] text-[var(--color-foreground)]";
     }
   };
 
   if (loading && viewMode === "courses") {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading courses...</p>
+          <p className="mt-4 text-[var(--color-muted-foreground)]">Loading courses...</p>
         </div>
       </div>
     );
@@ -185,15 +185,15 @@ export const LearnPage: React.FC = () => {
     if (newBadges.length === 0) return null;
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 max-w-sm mx-4 text-center">
+        <div className="bg-[var(--color-surface)] rounded-lg p-6 max-w-sm mx-4 text-center">
           <div className="text-6xl mb-4">{newBadges[0].icon}</div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">
+          <h3 className="text-xl font-bold text-[var(--color-foreground)] mb-2">
             Badge Earned!
           </h3>
-          <p className="text-lg font-medium text-gray-800">
+          <p className="text-lg font-medium text-[var(--color-foreground)]">
             {newBadges[0].name}
           </p>
-          <p className="text-gray-600 mt-1">{newBadges[0].description}</p>
+          <p className="text-[var(--color-muted-foreground)] mt-1">{newBadges[0].description}</p>
           <button
             onClick={() => setNewBadges((prev) => prev.slice(1))}
             className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -206,7 +206,7 @@ export const LearnPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[var(--color-background)] dark:bg-gray-900">
       <BadgeModal />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -228,7 +228,7 @@ export const LearnPage: React.FC = () => {
               ← Budget
             </button>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)] dark:text-white">
             📚 Financial Education
           </h1>
         </div>
@@ -236,35 +236,35 @@ export const LearnPage: React.FC = () => {
         {/* Progress Stats */}
         {viewMode === "courses" && progress && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+            <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg p-4 shadow-sm">
               <div className="text-3xl font-bold text-blue-600">
                 {progress.totalLessonsCompleted}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                 Lessons Completed
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+            <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg p-4 shadow-sm">
               <div className="text-3xl font-bold text-green-600">
                 {progress.totalCoursesCompleted}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                 Courses Completed
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+            <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg p-4 shadow-sm">
               <div className="text-3xl font-bold text-purple-600">
                 {progress.totalQuizzesPassed}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                 Quizzes Passed
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+            <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg p-4 shadow-sm">
               <div className="text-3xl font-bold text-orange-600">
                 🔥 {progress.currentStreak}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                 Day Streak
               </div>
             </div>
@@ -273,8 +273,8 @@ export const LearnPage: React.FC = () => {
 
         {/* Badges Section */}
         {viewMode === "courses" && badges.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+          <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg p-4 shadow-sm mb-8">
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-white mb-3">
               🏆 Your Badges
             </h2>
             <div className="flex flex-wrap gap-3">
@@ -284,13 +284,13 @@ export const LearnPage: React.FC = () => {
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
                     badge.earned
                       ? "bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800"
-                      : "bg-gray-100 dark:bg-gray-700 opacity-50"
+                      : "bg-[var(--color-muted)] dark:bg-gray-700 opacity-50"
                   }`}
                   title={badge.description}
                 >
                   <span className="text-2xl">{badge.icon}</span>
                   <span
-                    className={`text-sm font-medium ${badge.earned ? "text-gray-900 dark:text-white" : "text-gray-500"}`}
+                    className={`text-sm font-medium ${badge.earned ? "text-[var(--color-foreground)] dark:text-white" : "text-[var(--color-muted-foreground)]"}`}
                   >
                     {badge.name}
                   </span>
@@ -303,26 +303,26 @@ export const LearnPage: React.FC = () => {
         {/* Courses List */}
         {viewMode === "courses" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-white">
               Available Courses
             </h2>
             {courses.map((course) => (
               <div
                 key={course.id}
                 onClick={() => openCourse(course.id)}
-                className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      <h3 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-white">
                         {course.title}
                       </h3>
                       {course.isComplete && (
                         <span className="text-green-600">✓</span>
                       )}
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
+                    <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] text-sm mb-2">
                       {course.description}
                     </p>
                     <div className="flex items-center gap-3 text-sm">
@@ -331,10 +331,10 @@ export const LearnPage: React.FC = () => {
                       >
                         {course.difficulty}
                       </span>
-                      <span className="text-gray-500">
+                      <span className="text-[var(--color-muted-foreground)]">
                         ⏱️ {course.estimatedMinutes} min
                       </span>
-                      <span className="text-gray-500">
+                      <span className="text-[var(--color-muted-foreground)]">
                         📖 {course.completedLessons}/{course.totalLessons}{" "}
                         lessons
                       </span>
@@ -359,17 +359,17 @@ export const LearnPage: React.FC = () => {
 
         {/* Course Detail View */}
         {viewMode === "course" && selectedCourse && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+          <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg shadow-sm">
             <div className="p-6 border-b dark:border-gray-700">
               <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-[var(--color-foreground)] dark:text-white">
                   {selectedCourse.title}
                 </h2>
                 {selectedCourse.isComplete && (
                   <span className="text-green-600 text-xl">✓</span>
                 )}
               </div>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                 {selectedCourse.description}
               </p>
               <div className="flex items-center gap-4 mt-3 text-sm">
@@ -378,10 +378,10 @@ export const LearnPage: React.FC = () => {
                 >
                   {selectedCourse.difficulty}
                 </span>
-                <span className="text-gray-500">
+                <span className="text-[var(--color-muted-foreground)]">
                   ⏱️ {selectedCourse.estimatedMinutes} min
                 </span>
-                <span className="text-gray-500">
+                <span className="text-[var(--color-muted-foreground)]">
                   Progress: {selectedCourse.progressPercent}%
                 </span>
               </div>
@@ -389,7 +389,7 @@ export const LearnPage: React.FC = () => {
 
             {/* Lessons List */}
             <div className="p-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              <h3 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-white mb-3">
                 Lessons
               </h3>
               <div className="space-y-2">
@@ -400,24 +400,24 @@ export const LearnPage: React.FC = () => {
                     className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
                       lesson.isCompleted
                         ? "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30"
-                        : "bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600"
+                        : "bg-[var(--color-background)] dark:bg-gray-700 hover:bg-[var(--color-muted)] dark:hover:bg-gray-600"
                     }`}
                   >
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                         lesson.isCompleted
                           ? "bg-green-600 text-white"
-                          : "bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300"
+                          : "bg-gray-300 dark:bg-gray-600 text-[var(--color-foreground)] dark:text-gray-300"
                       }`}
                     >
                       {lesson.isCompleted ? "✓" : index + 1}
                     </div>
                     <span
-                      className={`flex-1 ${lesson.isCompleted ? "text-green-800 dark:text-green-300" : "text-gray-900 dark:text-white"}`}
+                      className={`flex-1 ${lesson.isCompleted ? "text-green-800 dark:text-green-300" : "text-[var(--color-foreground)] dark:text-white"}`}
                     >
                       {lesson.title}
                     </span>
-                    <span className="text-gray-400">→</span>
+                    <span className="text-[var(--color-muted-foreground)]">→</span>
                   </div>
                 ))}
               </div>
@@ -428,10 +428,10 @@ export const LearnPage: React.FC = () => {
               <div className="p-4 border-t dark:border-gray-700">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-white">
                       📝 Course Quiz
                     </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                       {selectedCourse.quiz.passed
                         ? `Passed with score: ${selectedCourse.quiz.score}`
                         : "Complete all lessons to unlock the quiz"}
@@ -447,7 +447,7 @@ export const LearnPage: React.FC = () => {
                       selectedCourse.completedLessons >=
                       selectedCourse.totalLessons
                         ? "bg-blue-600 text-white hover:bg-blue-700"
-                        : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        : "bg-gray-200 text-[var(--color-muted-foreground)] cursor-not-allowed"
                     }`}
                   >
                     {selectedCourse.quiz.passed ? "Retake Quiz" : "Take Quiz"}
@@ -460,12 +460,12 @@ export const LearnPage: React.FC = () => {
 
         {/* Lesson View */}
         {viewMode === "lesson" && selectedLesson && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+          <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-bold text-[var(--color-foreground)] dark:text-white mb-4">
               {selectedLesson.title}
             </h2>
             <div className="prose dark:prose-invert max-w-none">
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+              <p className="text-[var(--color-foreground)] dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                 {selectedLesson.content}
               </p>
             </div>
@@ -491,8 +491,8 @@ export const LearnPage: React.FC = () => {
 
         {/* Quiz View */}
         {viewMode === "quiz" && selectedCourse && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+          <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-bold text-[var(--color-foreground)] dark:text-white mb-6">
               📝 {selectedCourse.title} - Quiz
             </h2>
 
@@ -506,14 +506,14 @@ export const LearnPage: React.FC = () => {
                 >
                   {quizResult.passed ? "Congratulations!" : "Not quite..."}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mb-4">
                   You scored {quizResult.score} out of{" "}
                   {quizResult.totalQuestions}
                 </p>
                 <div className="flex justify-center gap-4">
                   <button
                     onClick={goBack}
-                    className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                    className="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-[var(--color-foreground)] dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
                   >
                     Back to Course
                   </button>
@@ -532,11 +532,11 @@ export const LearnPage: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                   Answer the following questions to complete the course.
                 </p>
                 {/* Quiz questions would be loaded from the course detail */}
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-[var(--color-muted-foreground)]">
                   Quiz questions loading...
                 </div>
                 <div className="flex justify-end">

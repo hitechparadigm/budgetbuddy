@@ -180,7 +180,7 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-white shadow rounded-lg p-6">
+          <div key={i} className="bg-[var(--color-surface)] shadow rounded-lg p-6">
             <div className="animate-pulse">
               <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
               <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
@@ -256,13 +256,13 @@ export const BudgetGroups: React.FC<BudgetGroupsProps> = ({
       {groups.income.length === 0 &&
         groups.savings.length === 0 &&
         groups.expenses.length === 0 && (
-          <div className="bg-white shadow rounded-lg p-8">
+          <div className="bg-[var(--color-surface)] shadow rounded-lg p-8">
             <div className="text-center">
-              <div className="text-gray-400 text-6xl mb-4">📋</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <div className="text-[var(--color-muted-foreground)] text-6xl mb-4">📋</div>
+              <h3 className="text-lg font-medium text-[var(--color-foreground)] mb-2">
                 No Budget Categories
               </h3>
-              <p className="text-gray-500 mb-4">
+              <p className="text-[var(--color-muted-foreground)] mb-4">
                 Add income, savings, and expense categories to start budgeting.
               </p>
               <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -308,9 +308,9 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
       case "savings":
         return "text-blue-700";
       case "expenses":
-        return "text-gray-700";
+        return "text-[var(--color-foreground)]";
       default:
-        return "text-gray-700";
+        return "text-[var(--color-foreground)]";
     }
   };
 
@@ -355,10 +355,10 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
   // ============================================================================
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg overflow-hidden">
       {/* Group Header - Simplified */}
       <div
-        className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100"
+        className="flex items-center justify-between px-4 py-3 bg-[var(--color-background)] border-b border-[var(--color-border)] cursor-pointer hover:bg-[var(--color-muted)]"
         onClick={onToggle}
       >
         <div className="flex items-center space-x-2">
@@ -380,8 +380,8 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
           </h3>
         </div>
         <div className="flex items-center space-x-6 text-sm">
-          <span className="text-gray-600 font-medium">Planned</span>
-          <span className="text-gray-600 font-medium w-24 text-right">
+          <span className="text-[var(--color-muted-foreground)] font-medium">Planned</span>
+          <span className="text-[var(--color-muted-foreground)] font-medium w-24 text-right">
             Remaining
           </span>
         </div>
@@ -397,7 +397,7 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
                   key={category.categoryId}
                   role="row"
                   aria-label={`${category.categoryName}: ${formatCurrency(category.plannedAmount, currency)} planned, ${formatCurrency(category.spentAmount ?? 0, currency)} spent, ${formatCurrency(category.remainingAmount, currency)} remaining`}
-                  className="flex items-center justify-between px-4 py-3 hover:bg-gray-50"
+                  className="flex items-center justify-between px-4 py-3 hover:bg-[var(--color-background)]"
                 >
                   <div className="flex-1">
                     {editingNameId === category.categoryId ? (
@@ -416,7 +416,7 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
                     ) : (
                       <button
                         onClick={() => handleStartNameEdit(category)}
-                        className="text-sm text-gray-900 hover:text-blue-600 text-left"
+                        className="text-sm text-[var(--color-foreground)] hover:text-blue-600 text-left"
                       >
                         {category.categoryName}
                       </button>
@@ -426,7 +426,7 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
                     {editingCategoryId === category.categoryId ? (
                       <>
                         <div className="flex items-center space-x-2">
-                          <span className="text-sm text-gray-500">$</span>
+                          <span className="text-sm text-[var(--color-muted-foreground)]">$</span>
                           <input
                             type="number"
                             value={editAmount}
@@ -460,7 +460,7 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
                           </button>
                           <button
                             onClick={handleCancelEdit}
-                            className="p-1 text-gray-400 hover:text-gray-600"
+                            className="p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)]"
                           >
                             <svg
                               className="w-4 h-4"
@@ -482,7 +482,7 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
                       <>
                         <button
                           onClick={() => handleStartEdit(category)}
-                          className="text-sm font-medium text-gray-900 hover:text-blue-600 w-24 text-right"
+                          className="text-sm font-medium text-[var(--color-foreground)] hover:text-blue-600 w-24 text-right"
                         >
                           {formatCurrency(category.plannedAmount, currency)}
                         </button>
@@ -504,7 +504,7 @@ const BudgetGroupCard: React.FC<BudgetGroupCardProps> = ({
           ) : null}
 
           {/* Add Category Link - EveryDollar Style */}
-          <div className="px-4 py-3 border-t border-gray-200">
+          <div className="px-4 py-3 border-t border-[var(--color-border)]">
             <button
               onClick={onAddCategory}
               className="text-sm text-blue-600 hover:text-blue-800 font-medium"

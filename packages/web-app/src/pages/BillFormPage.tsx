@@ -389,7 +389,7 @@ export const BillFormPage: React.FC = () => {
                   className="sr-only peer"
                 />
                 <div className="w-10 h-6 rounded-full bg-[var(--color-muted)] peer-checked:bg-[var(--color-primary)] transition-colors" />
-                <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-[var(--color-surface)] rounded-full shadow transition-transform peer-checked:translate-x-4" />
               </div>
               <div>
                 <span className="text-sm font-medium text-[var(--color-foreground)] flex items-center gap-1.5">

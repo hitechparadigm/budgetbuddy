@@ -172,7 +172,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-[var(--color-surface)] rounded-lg shadow p-6">
         <div className="animate-pulse">
           <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="space-y-3">
@@ -186,7 +186,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <div className="bg-[var(--color-surface)] rounded-lg shadow">
       {/* "Create a rule?" prompt — appears after recategorizing a transaction */}
       {pendingRulePrompt && (
         <div
@@ -195,11 +195,11 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
           aria-labelledby="rule-prompt-title"
           className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
         >
-          <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm mx-4 w-full">
-            <h3 id="rule-prompt-title" className="font-semibold text-gray-900 mb-2">
+          <div className="bg-[var(--color-surface)] rounded-xl shadow-xl p-6 max-w-sm mx-4 w-full">
+            <h3 id="rule-prompt-title" className="font-semibold text-[var(--color-foreground)] mb-2">
               Create an automatic rule?
             </h3>
-            <p className="text-sm text-gray-600 mb-5">
+            <p className="text-sm text-[var(--color-muted-foreground)] mb-5">
               Always categorize <strong>{pendingRulePrompt.merchant}</strong> as{' '}
               <strong>{pendingRulePrompt.category}</strong>? This rule will apply
               to future transactions automatically.
@@ -234,7 +234,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
               </button>
               <button
                 onClick={() => setPendingRulePrompt(null)}
-                className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+                className="flex-1 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)] text-sm"
               >
                 Just this once
               </button>
@@ -246,10 +246,10 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
       <div className="p-4 border-b">
         <div className="flex justify-between items-center">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-[var(--color-foreground)]">
               Pending Transactions
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-[var(--color-muted-foreground)]">
               {transactions.length} transaction
               {transactions.length !== 1 ? "s" : ""} awaiting review
             </p>
@@ -288,23 +288,23 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
       {transactions.length === 0 ? (
         <div className="p-8 text-center">
           <div className="text-4xl mb-3">✅</div>
-          <p className="text-gray-500">No pending transactions</p>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-[var(--color-muted-foreground)]">No pending transactions</p>
+          <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
             All imported transactions have been processed
           </p>
         </div>
       ) : (
         <>
           {/* Select All Header */}
-          <div className="px-4 py-2 bg-gray-50 border-b flex items-center gap-3">
+          <div className="px-4 py-2 bg-[var(--color-background)] border-b flex items-center gap-3">
             <input
               type="checkbox"
               checked={selectedIds.size === transactions.length}
               onChange={toggleSelectAll}
-              className="w-4 h-4 text-blue-600 rounded border-gray-300
+              className="w-4 h-4 text-blue-600 rounded border-[var(--color-border)]
                 focus:ring-blue-500"
             />
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-[var(--color-muted-foreground)]">
               {selectedIds.size === transactions.length
                 ? "Deselect all"
                 : "Select all"}
@@ -316,7 +316,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
             {transactions.map((transaction) => (
               <div
                 key={transaction.pendingId}
-                className={`p-4 hover:bg-gray-50 transition-colors ${
+                className={`p-4 hover:bg-[var(--color-background)] transition-colors ${
                   selectedIds.has(transaction.pendingId) ? "bg-blue-50" : ""
                 }`}
               >
@@ -325,16 +325,16 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
                     type="checkbox"
                     checked={selectedIds.has(transaction.pendingId)}
                     onChange={() => toggleSelection(transaction.pendingId)}
-                    className="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300
+                    className="mt-1 w-4 h-4 text-blue-600 rounded border-[var(--color-border)]
                       focus:ring-blue-500"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <p className="font-medium text-gray-900 truncate">
+                        <p className="font-medium text-[var(--color-foreground)] truncate">
                           {transaction.merchantName || transaction.description}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-[var(--color-muted-foreground)]">
                           {formatDate(transaction.date)} •{" "}
                           {transaction.institutionName}
                         </p>
@@ -343,7 +343,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
                         className={`font-semibold whitespace-nowrap ${
                           transaction.amount < 0
                             ? "text-green-600"
-                            : "text-gray-900"
+                            : "text-[var(--color-foreground)]"
                         }`}
                       >
                         {transaction.amount < 0 ? "+" : "-"}
@@ -353,7 +353,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
 
                     {/* Category Selection */}
                     <div className="mt-2 flex items-center gap-2">
-                      <label className="text-xs text-gray-500">Category:</label>
+                      <label className="text-xs text-[var(--color-muted-foreground)]">Category:</label>
                       <select
                         value={
                           categoryOverrides[transaction.pendingId] ||
@@ -366,7 +366,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
                             e.target.value,
                           )
                         }
-                        className="text-sm border border-gray-300 rounded px-2 py-1
+                        className="text-sm border border-[var(--color-border)] rounded px-2 py-1
                           focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">Select category...</option>
@@ -377,7 +377,7 @@ export const PendingTransactions: React.FC<PendingTransactionsProps> = ({
                         ))}
                       </select>
                       {transaction.suggestedCategory && (
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-[var(--color-muted-foreground)]">
                           (suggested: {transaction.suggestedCategory})
                         </span>
                       )}

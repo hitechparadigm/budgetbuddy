@@ -78,7 +78,7 @@ export const RateAppPrompt: React.FC<RateAppPromptProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden"
+        className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {!showFeedback ? (
@@ -88,10 +88,10 @@ export const RateAppPrompt: React.FC<RateAppPromptProps> = ({
               <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
                 <span className="text-3xl">💰</span>
               </div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              <h2 className="text-xl font-bold text-[var(--color-foreground)] dark:text-white mb-2">
                 Enjoying BudgetBuddy?
               </h2>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                 Your feedback helps us improve and helps others discover the
                 app!
               </p>
@@ -113,7 +113,7 @@ export const RateAppPrompt: React.FC<RateAppPromptProps> = ({
                       className={`w-10 h-10 ${
                         star <= (hoveredRating || selectedRating)
                           ? "text-yellow-400"
-                          : "text-gray-300 dark:text-gray-600"
+                          : "text-gray-300 dark:text-[var(--color-muted-foreground)]"
                       } transition-colors`}
                       fill="currentColor"
                       viewBox="0 0 20 20"
@@ -124,7 +124,7 @@ export const RateAppPrompt: React.FC<RateAppPromptProps> = ({
                 ))}
               </div>
               {(hoveredRating || selectedRating) > 0 && (
-                <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-2">
+                <p className="text-center text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mt-2">
                   {getRatingLabel(hoveredRating || selectedRating)}
                 </p>
               )}
@@ -134,13 +134,13 @@ export const RateAppPrompt: React.FC<RateAppPromptProps> = ({
             <div className="px-6 pb-6 space-y-3">
               <button
                 onClick={onRemindLater}
-                className="w-full py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+                className="w-full py-2 text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] dark:hover:text-gray-200 transition-colors"
               >
                 Remind me later
               </button>
               <button
                 onClick={onNeverAsk}
-                className="w-full py-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 text-sm transition-colors"
+                className="w-full py-2 text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] dark:hover:text-[var(--color-muted-foreground)] text-sm transition-colors"
               >
                 Don't ask again
               </button>
@@ -150,10 +150,10 @@ export const RateAppPrompt: React.FC<RateAppPromptProps> = ({
           <>
             {/* Feedback Form */}
             <div className="p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              <h2 className="text-xl font-bold text-[var(--color-foreground)] dark:text-white mb-2">
                 We'd love your feedback
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mb-4">
                 What could we do better? Your feedback helps us improve.
               </p>
 
@@ -161,14 +161,14 @@ export const RateAppPrompt: React.FC<RateAppPromptProps> = ({
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
                 placeholder="Tell us what you think..."
-                className="w-full h-32 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                className="w-full h-32 px-4 py-3 border border-[var(--color-border)] dark:border-gray-600 rounded-lg bg-[var(--color-surface)] dark:bg-gray-700 text-[var(--color-foreground)] dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
                 aria-label="Feedback"
               />
 
               <div className="flex space-x-3 mt-4">
                 <button
                   onClick={onClose}
-                  className="flex-1 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="flex-1 py-2 px-4 border border-[var(--color-border)] dark:border-gray-600 rounded-lg text-[var(--color-foreground)] dark:text-gray-300 hover:bg-[var(--color-background)] dark:hover:bg-gray-700 transition-colors"
                 >
                   Cancel
                 </button>

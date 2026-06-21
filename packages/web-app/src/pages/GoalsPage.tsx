@@ -897,7 +897,7 @@ export const GoalsPage: React.FC = () => {
                 disabled={contributing || !contributionAmount}
                 className={`flex-1 px-4 py-2 rounded-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 ${
                   contributing || !contributionAmount
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    ? "bg-gray-300 text-[var(--color-muted-foreground)] cursor-not-allowed"
                     : "bg-green-600 text-white hover:bg-green-700"
                 }`}
               >

@@ -32,16 +32,16 @@ export const TokenDiagnostics: React.FC<TokenDiagnosticsProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+      <div className="bg-[var(--color-surface)] rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
             Authentication Diagnostics
           </h2>
           {onClose && (
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)]"
             >
               <svg
                 className="w-5 h-5"
@@ -90,10 +90,10 @@ export const TokenDiagnostics: React.FC<TokenDiagnosticsProps> = ({
 
         {/* Recommended Action */}
         <div className="mb-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">
+          <h3 className="text-sm font-medium text-[var(--color-foreground)] mb-2">
             Recommended Action:
           </h3>
-          <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+          <p className="text-sm text-[var(--color-muted-foreground)] bg-[var(--color-background)] p-3 rounded">
             {diagnostics.recommendedAction}
           </p>
         </div>
@@ -109,7 +109,7 @@ export const TokenDiagnostics: React.FC<TokenDiagnosticsProps> = ({
             </button>
 
             {showDetails && (
-              <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-3 rounded">
+              <div className="mt-2 text-xs text-[var(--color-muted-foreground)] bg-[var(--color-background)] p-3 rounded">
                 <ul className="list-disc list-inside space-y-1">
                   {diagnostics.issues.map((issue, index) => (
                     <li key={index}>{issue}</li>
@@ -140,14 +140,14 @@ export const TokenDiagnostics: React.FC<TokenDiagnosticsProps> = ({
 
           <button
             onClick={handleRefresh}
-            className="px-4 py-2 text-sm font-medium text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-[var(--color-muted-foreground)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-background)] transition-colors"
           >
             Refresh Page
           </button>
         </div>
 
         {/* Help Text */}
-        <div className="mt-4 text-xs text-gray-500">
+        <div className="mt-4 text-xs text-[var(--color-muted-foreground)]">
           <p>
             If you're experiencing "User profile not found" errors, this tool
             can help identify and fix authentication token issues. After

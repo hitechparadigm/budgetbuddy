@@ -40,7 +40,7 @@ export const RecurringOptions: React.FC<RecurringOptionsProps> = ({
           }`}
         >
           <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            className={`inline-block h-4 w-4 transform rounded-full bg-[var(--color-surface)] transition-transform ${
               isRecurring ? 'translate-x-6' : 'translate-x-1'
             }`}
           />
@@ -166,7 +166,7 @@ export const RecurringOptions: React.FC<RecurringOptionsProps> = ({
           {/* Preview */}
           <div className="bg-gray-700 rounded-lg p-3">
             <h4 className="text-sm font-medium text-gray-300 mb-2">Preview</h4>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-[var(--color-muted-foreground)]">
               {getRecurringPreview(frequency, customInterval, onLastDayOfMonth, endDate)}
             </p>
           </div>

@@ -91,12 +91,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+      <div className="bg-[var(--color-surface)] shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
         <div className="mb-6 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-[var(--color-foreground)] mb-2">
             Create Your Account
           </h2>
-          <p className="text-gray-600">
+          <p className="text-[var(--color-muted-foreground)]">
             Join BudgetBuddy and take control of your finances
           </p>
         </div>
@@ -127,24 +127,24 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         {/* Divider */}
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
+            <div className="w-full border-t border-[var(--color-border)]"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or sign up with email</span>
+            <span className="px-2 bg-[var(--color-surface)] text-[var(--color-muted-foreground)]">Or sign up with email</span>
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* First Name Field */}
           <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="firstName" className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               First Name
             </label>
             <input
               {...register('firstName')}
               type="text"
               id="firstName"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.firstName ? 'border-red-300' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.firstName ? 'border-red-300' : 'border-[var(--color-border)]'
                 }`}
               placeholder="Enter your first name"
               disabled={isSubmitting || loading}
@@ -156,14 +156,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
           {/* Last Name Field */}
           <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="lastName" className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Last Name
             </label>
             <input
               {...register('lastName')}
               type="text"
               id="lastName"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.lastName ? 'border-red-300' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.lastName ? 'border-red-300' : 'border-[var(--color-border)]'
                 }`}
               placeholder="Enter your last name"
               disabled={isSubmitting || loading}
@@ -175,14 +175,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
           {/* Email Field */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Email Address
             </label>
             <input
               {...register('email')}
               type="email"
               id="email"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.email ? 'border-red-300' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.email ? 'border-red-300' : 'border-[var(--color-border)]'
                 }`}
               placeholder="Enter your email"
               disabled={isSubmitting || loading}
@@ -194,14 +194,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
           {/* Password Field */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Password
             </label>
             <input
               {...register('password')}
               type="password"
               id="password"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.password ? 'border-red-300' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${errors.password ? 'border-red-300' : 'border-[var(--color-border)]'
                 }`}
               placeholder="Create a strong password"
               disabled={isSubmitting || loading}
@@ -209,7 +209,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
             )}
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
               Password must be at least 8 characters with uppercase, lowercase, and number
             </p>
           </div>
@@ -242,7 +242,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         {/* Switch to Login */}
         {onSwitchToLogin && (
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[var(--color-muted-foreground)]">
               Already have an account?{' '}
               <button
                 type="button"
@@ -258,7 +258,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
         {/* Terms and Privacy */}
         <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-[var(--color-muted-foreground)]">
             By creating an account, you agree to our{' '}
             <a href="#" className="text-blue-600 hover:text-blue-500">Terms of Service</a>
             {' '}and{' '}

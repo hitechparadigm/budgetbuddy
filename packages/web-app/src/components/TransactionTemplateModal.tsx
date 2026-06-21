@@ -192,15 +192,15 @@ export const TransactionTemplateModal: React.FC<
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] flex flex-col">
+      <div className="bg-[var(--color-surface)] rounded-lg max-w-md w-full max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-[var(--color-foreground)]">
             {mode === "save" ? "Save as Template" : "Transaction Templates"}
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)]"
             aria-label="Close"
           >
             <svg
@@ -225,7 +225,7 @@ export const TransactionTemplateModal: React.FC<
             /* Save Template Form */
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   Template Name
                 </label>
                 <input
@@ -233,14 +233,14 @@ export const TransactionTemplateModal: React.FC<
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
                   placeholder="e.g., Weekly Groceries"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   autoFocus
                 />
               </div>
 
               {currentTransaction && (
-                <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                  <div className="text-sm text-gray-600">Template Preview:</div>
+                <div className="bg-[var(--color-background)] rounded-lg p-3 space-y-2">
+                  <div className="text-sm text-[var(--color-muted-foreground)]">Template Preview:</div>
                   <div className="flex items-center space-x-3">
                     <span className="text-xl">
                       {currentTransaction.categoryIcon}
@@ -249,7 +249,7 @@ export const TransactionTemplateModal: React.FC<
                       <div className="font-medium">
                         {currentTransaction.description}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-[var(--color-muted-foreground)]">
                         {currentTransaction.categoryName}
                       </div>
                     </div>
@@ -270,14 +270,14 @@ export const TransactionTemplateModal: React.FC<
                   type="checkbox"
                   checked={saveAmount}
                   onChange={(e) => setSaveAmount(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-[var(--color-border)] text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-[var(--color-foreground)]">
                   Save amount with template
                 </span>
               </label>
 
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-[var(--color-muted-foreground)]">
                 {saveAmount
                   ? "The amount will be pre-filled when using this template."
                   : "You'll enter the amount each time you use this template."}
@@ -290,7 +290,7 @@ export const TransactionTemplateModal: React.FC<
               <div className="space-y-2">
                 <div className="relative">
                   <svg
-                    className="absolute left-3 top-2.5 w-4 h-4 text-gray-400"
+                    className="absolute left-3 top-2.5 w-4 h-4 text-[var(--color-muted-foreground)]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -307,7 +307,7 @@ export const TransactionTemplateModal: React.FC<
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search templates..."
-                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    className="w-full pl-9 pr-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
                 </div>
 
@@ -319,7 +319,7 @@ export const TransactionTemplateModal: React.FC<
                       className={`px-3 py-1 text-xs rounded-full transition-colors ${
                         filterType === type
                           ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          : "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] hover:bg-gray-200"
                       }`}
                     >
                       {type === "all"
@@ -332,7 +332,7 @@ export const TransactionTemplateModal: React.FC<
 
               {/* Templates List */}
               {sortedTemplates.length === 0 ? (
-                <div className="text-center py-8 text-gray-400">
+                <div className="text-center py-8 text-[var(--color-muted-foreground)]">
                   {templates.length === 0 ? (
                     <>
                       <p className="text-sm">No templates saved yet</p>
@@ -350,16 +350,16 @@ export const TransactionTemplateModal: React.FC<
                     <button
                       key={template.id}
                       onClick={() => handleSelectTemplate(template)}
-                      className="w-full flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-left group"
+                      className="w-full flex items-center space-x-3 p-3 bg-[var(--color-background)] rounded-lg hover:bg-[var(--color-muted)] transition-colors text-left group"
                     >
                       <span className="text-xl flex-shrink-0">
                         {template.categoryIcon}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 truncate">
+                        <div className="font-medium text-[var(--color-foreground)] truncate">
                           {template.name}
                         </div>
-                        <div className="text-xs text-gray-500 truncate">
+                        <div className="text-xs text-[var(--color-muted-foreground)] truncate">
                           {template.categoryName}
                           {template.usageCount > 0 && (
                             <span className="ml-2">
@@ -378,7 +378,7 @@ export const TransactionTemplateModal: React.FC<
                       )}
                       <button
                         onClick={(e) => handleDeleteTemplate(template.id, e)}
-                        className="p-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                        className="p-1 text-[var(--color-muted-foreground)] hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                         title="Delete template"
                       >
                         <svg
@@ -404,12 +404,12 @@ export const TransactionTemplateModal: React.FC<
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t bg-gray-50">
+        <div className="p-4 border-t bg-[var(--color-background)]">
           {mode === "save" ? (
             <div className="flex space-x-3">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                className="flex-1 px-4 py-2 border border-[var(--color-border)] rounded-lg text-[var(--color-foreground)] hover:bg-[var(--color-muted)] transition-colors"
               >
                 Cancel
               </button>
@@ -422,7 +422,7 @@ export const TransactionTemplateModal: React.FC<
               </button>
             </div>
           ) : (
-            <div className="text-xs text-gray-500 text-center">
+            <div className="text-xs text-[var(--color-muted-foreground)] text-center">
               {templates.length} template{templates.length !== 1 ? "s" : ""}{" "}
               saved
               {templates.length >= MAX_TEMPLATES && " (max reached)"}

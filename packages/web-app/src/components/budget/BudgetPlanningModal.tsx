@@ -227,9 +227,9 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
             <h2 className="text-xl font-bold text-white">
               {existingBudget ? "Edit Budget" : "Create Budget"}
             </h2>
-            <p className="text-gray-400 text-sm">{getMonthName()}</p>
+            <p className="text-[var(--color-muted-foreground)] text-sm">{getMonthName()}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+          <button onClick={onClose} className="text-[var(--color-muted-foreground)] hover:text-white">
             ✕
           </button>
         </div>
@@ -312,7 +312,7 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
               className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
                 activeGroup === group.type
                   ? "text-white border-b-2 border-blue-500 bg-gray-800"
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  : "text-[var(--color-muted-foreground)] hover:text-white hover:bg-gray-800"
               }`}
             >
               {group.name}
@@ -336,7 +336,7 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
                 </div>
                 <div>
                   <div className="text-white font-medium">{category.name}</div>
-                  <div className="text-gray-400 text-sm">
+                  <div className="text-[var(--color-muted-foreground)] text-sm">
                     {activeGroup === "income"
                       ? "Expected income"
                       : activeGroup === "savings"
@@ -348,7 +348,7 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
 
               {/* Amount Input */}
               <div className="flex items-center space-x-2">
-                <span className="text-gray-400">$</span>
+                <span className="text-[var(--color-muted-foreground)]">$</span>
                 <input
                   type="number"
                   min="0"
@@ -380,7 +380,7 @@ export const BudgetPlanningModal: React.FC<BudgetPlanningModalProps> = ({
 
         {/* Actions */}
         <div className="flex justify-between items-center p-6 border-t border-gray-700">
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-[var(--color-muted-foreground)]">
             {totals.isBalanced ? (
               <span className="text-green-400">✓ Budget is balanced</span>
             ) : (

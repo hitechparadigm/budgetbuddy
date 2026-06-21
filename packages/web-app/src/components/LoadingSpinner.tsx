@@ -28,19 +28,19 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   const spinner = (
     <div className="flex flex-col items-center gap-3">
       <div
-        className={`${sizeClasses[size]} rounded-full border-gray-200 border-t-emerald-600 animate-spin`}
+        className={`${sizeClasses[size]} rounded-full border-[var(--color-border)] border-t-emerald-600 animate-spin`}
         role="status"
         aria-label={message || "Loading"}
       />
       {message && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">{message}</p>
+        <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">{message}</p>
       )}
     </div>
   );
 
   if (fullPage) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)] dark:bg-gray-900">
         {spinner}
       </div>
     );

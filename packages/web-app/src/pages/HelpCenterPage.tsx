@@ -116,14 +116,14 @@ export const HelpCenterPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-[var(--color-background)] dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-[var(--color-surface)] dark:bg-gray-800 border-b border-[var(--color-border)] dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate(-1)}
-              className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+              className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] dark:hover:text-gray-100"
               aria-label="Go back"
             >
               <svg
@@ -140,7 +140,7 @@ export const HelpCenterPage: React.FC = () => {
                 />
               </svg>
             </button>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-[var(--color-foreground)] dark:text-white">
               Help Center
             </h1>
           </div>
@@ -153,7 +153,7 @@ export const HelpCenterPage: React.FC = () => {
         <div className="mb-6">
           <div className="relative">
             <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--color-muted-foreground)]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -170,7 +170,7 @@ export const HelpCenterPage: React.FC = () => {
               placeholder="Search for help..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full pl-10 pr-4 py-3 border border-[var(--color-border)] dark:border-gray-600 rounded-lg bg-[var(--color-surface)] dark:bg-gray-800 text-[var(--color-foreground)] dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
         </div>
@@ -185,7 +185,7 @@ export const HelpCenterPage: React.FC = () => {
                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                   selectedCategory === category
                     ? "bg-green-600 text-white"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    : "bg-gray-200 dark:bg-gray-700 text-[var(--color-foreground)] dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
                 }`}
               >
                 {category}
@@ -195,11 +195,11 @@ export const HelpCenterPage: React.FC = () => {
         </div>
 
         {/* FAQs */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+        <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg shadow-sm border border-[var(--color-border)] dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
           {filteredFaqs.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+            <div className="p-8 text-center text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
               <svg
-                className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-gray-600"
+                className="w-12 h-12 mx-auto mb-4 text-gray-300 dark:text-[var(--color-muted-foreground)]"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -226,12 +226,12 @@ export const HelpCenterPage: React.FC = () => {
                     <span className="text-xs font-medium text-green-600 dark:text-green-400 uppercase tracking-wide">
                       {faq.category}
                     </span>
-                    <h3 className="mt-1 text-gray-900 dark:text-white font-medium">
+                    <h3 className="mt-1 text-[var(--color-foreground)] dark:text-white font-medium">
                       {faq.question}
                     </h3>
                   </div>
                   <svg
-                    className={`w-5 h-5 text-gray-400 transition-transform ${expandedFaq === faq.id ? "rotate-180" : ""}`}
+                    className={`w-5 h-5 text-[var(--color-muted-foreground)] transition-transform ${expandedFaq === faq.id ? "rotate-180" : ""}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -245,7 +245,7 @@ export const HelpCenterPage: React.FC = () => {
                   </svg>
                 </button>
                 {expandedFaq === faq.id && (
-                  <div className="mt-3 text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                  <div className="mt-3 text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] text-sm leading-relaxed">
                     {faq.answer}
                   </div>
                 )}
@@ -263,7 +263,7 @@ export const HelpCenterPage: React.FC = () => {
           <div className="flex flex-wrap gap-3">
             <a
               href="mailto:support@budgetbuddy.app"
-              className="inline-flex items-center px-4 py-2 bg-white text-green-600 rounded-lg font-medium hover:bg-green-50 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-[var(--color-surface)] text-green-600 rounded-lg font-medium hover:bg-green-50 transition-colors"
             >
               <svg
                 className="w-5 h-5 mr-2"
@@ -306,10 +306,10 @@ export const HelpCenterPage: React.FC = () => {
         <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
           <button
             onClick={() => navigate("/settings")}
-            className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 transition-colors text-center"
+            className="p-4 bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg border border-[var(--color-border)] dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 transition-colors text-center"
           >
             <svg
-              className="w-8 h-8 mx-auto mb-2 text-gray-400"
+              className="w-8 h-8 mx-auto mb-2 text-[var(--color-muted-foreground)]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -327,16 +327,16 @@ export const HelpCenterPage: React.FC = () => {
                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
-            <span className="text-sm text-gray-700 dark:text-gray-300">
+            <span className="text-sm text-[var(--color-foreground)] dark:text-gray-300">
               Settings
             </span>
           </button>
           <button
             onClick={() => navigate("/learn")}
-            className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 transition-colors text-center"
+            className="p-4 bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg border border-[var(--color-border)] dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 transition-colors text-center"
           >
             <svg
-              className="w-8 h-8 mx-auto mb-2 text-gray-400"
+              className="w-8 h-8 mx-auto mb-2 text-[var(--color-muted-foreground)]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -348,16 +348,16 @@ export const HelpCenterPage: React.FC = () => {
                 d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
               />
             </svg>
-            <span className="text-sm text-gray-700 dark:text-gray-300">
+            <span className="text-sm text-[var(--color-foreground)] dark:text-gray-300">
               Learn
             </span>
           </button>
           <button
             onClick={() => navigate("/tips")}
-            className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 transition-colors text-center"
+            className="p-4 bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg border border-[var(--color-border)] dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 transition-colors text-center"
           >
             <svg
-              className="w-8 h-8 mx-auto mb-2 text-gray-400"
+              className="w-8 h-8 mx-auto mb-2 text-[var(--color-muted-foreground)]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -369,16 +369,16 @@ export const HelpCenterPage: React.FC = () => {
                 d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
               />
             </svg>
-            <span className="text-sm text-gray-700 dark:text-gray-300">
+            <span className="text-sm text-[var(--color-foreground)] dark:text-gray-300">
               Tips
             </span>
           </button>
           <button
             onClick={() => navigate("/insights")}
-            className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 transition-colors text-center"
+            className="p-4 bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg border border-[var(--color-border)] dark:border-gray-700 hover:border-green-500 dark:hover:border-green-500 transition-colors text-center"
           >
             <svg
-              className="w-8 h-8 mx-auto mb-2 text-gray-400"
+              className="w-8 h-8 mx-auto mb-2 text-[var(--color-muted-foreground)]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -390,7 +390,7 @@ export const HelpCenterPage: React.FC = () => {
                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
               />
             </svg>
-            <span className="text-sm text-gray-700 dark:text-gray-300">
+            <span className="text-sm text-[var(--color-foreground)] dark:text-gray-300">
               Insights
             </span>
           </button>

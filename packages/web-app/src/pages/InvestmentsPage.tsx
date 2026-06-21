@@ -203,30 +203,30 @@ export const InvestmentsPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading portfolio data...</p>
+          <p className="mt-4 text-[var(--color-muted-foreground)]">Loading portfolio data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--color-background)]">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Investments</h1>
-              <p className="text-gray-600 mt-1">
+              <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Investments</h1>
+              <p className="text-[var(--color-muted-foreground)] mt-1">
                 Track your investment portfolio
               </p>
             </div>
             <button
               onClick={() => navigate("/budget")}
-              className="px-4 py-2 text-gray-600 hover:text-gray-900"
+              className="px-4 py-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
             >
               ← Back to Budget
             </button>
@@ -251,9 +251,9 @@ export const InvestmentsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 text-sm">Total Gain/Loss</span>
+                <span className="text-[var(--color-muted-foreground)] text-sm">Total Gain/Loss</span>
                 <span className="text-2xl">
                   {portfolio.totalGainLoss >= 0 ? "📊" : "📉"}
                 </span>
@@ -278,9 +278,9 @@ export const InvestmentsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 text-sm">Day Change</span>
+                <span className="text-[var(--color-muted-foreground)] text-sm">Day Change</span>
                 <span className="text-2xl">
                   {portfolio.dayChange >= 0 ? "⬆️" : "⬇️"}
                 </span>
@@ -303,24 +303,24 @@ export const InvestmentsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 text-sm">Cost Basis</span>
+                <span className="text-[var(--color-muted-foreground)] text-sm">Cost Basis</span>
                 <span className="text-2xl">💰</span>
               </div>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-[var(--color-foreground)]">
                 {formatCurrency(portfolio.totalCostBasis)}
               </div>
-              <div className="text-sm text-gray-500 mt-1">Total invested</div>
+              <div className="text-sm text-[var(--color-muted-foreground)] mt-1">Total invested</div>
             </div>
           </div>
         )}
 
         {/* Performance Chart */}
         {performance && performance.performance.length > 0 && (
-          <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+          <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
                 Portfolio Performance
               </h2>
               <div className="flex gap-2">
@@ -331,7 +331,7 @@ export const InvestmentsPage: React.FC = () => {
                     className={`px-3 py-1 rounded-lg text-sm ${
                       selectedPeriod === period.value
                         ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        : "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] hover:bg-gray-200"
                     }`}
                   >
                     {period.label}
@@ -386,7 +386,7 @@ export const InvestmentsPage: React.FC = () => {
               </svg>
 
               {/* Date labels */}
-              <div className="flex justify-between mt-2 text-xs text-gray-600">
+              <div className="flex justify-between mt-2 text-xs text-[var(--color-muted-foreground)]">
                 {performance.performance.map((p, i) => (
                   <span key={i}>{p.date}</span>
                 ))}
@@ -395,7 +395,7 @@ export const InvestmentsPage: React.FC = () => {
 
             <div className="mt-4 flex items-center justify-center gap-6 text-sm">
               <div>
-                <span className="text-gray-600">Total Return: </span>
+                <span className="text-[var(--color-muted-foreground)]">Total Return: </span>
                 <span
                   className={`font-semibold ${
                     performance.totalReturn >= 0
@@ -412,9 +412,9 @@ export const InvestmentsPage: React.FC = () => {
         )}
 
         {/* Holdings List */}
-        <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+        <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Holdings</h2>
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)]">Holdings</h2>
             <button
               onClick={handleAddHolding}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
@@ -424,36 +424,36 @@ export const InvestmentsPage: React.FC = () => {
           </div>
 
           {portfolio && portfolio.holdings.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
+            <p className="text-[var(--color-muted-foreground)] text-center py-8">
               No holdings yet. Add your first investment to start tracking.
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">
+                  <tr className="border-b border-[var(--color-border)]">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-muted-foreground)]">
                       Symbol
                     </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-muted-foreground)]">
                       Name
                     </th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
+                    <th className="text-right py-3 px-4 text-sm font-medium text-[var(--color-muted-foreground)]">
                       Shares
                     </th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
+                    <th className="text-right py-3 px-4 text-sm font-medium text-[var(--color-muted-foreground)]">
                       Price
                     </th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
+                    <th className="text-right py-3 px-4 text-sm font-medium text-[var(--color-muted-foreground)]">
                       Value
                     </th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
+                    <th className="text-right py-3 px-4 text-sm font-medium text-[var(--color-muted-foreground)]">
                       Gain/Loss
                     </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-[var(--color-muted-foreground)]">
                       Account
                     </th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-600">
+                    <th className="text-right py-3 px-4 text-sm font-medium text-[var(--color-muted-foreground)]">
                       Actions
                     </th>
                   </tr>
@@ -469,21 +469,21 @@ export const InvestmentsPage: React.FC = () => {
                     return (
                       <tr
                         key={holding.holdingId}
-                        className="border-b border-gray-100 hover:bg-gray-50"
+                        className="border-b border-gray-100 hover:bg-[var(--color-background)]"
                       >
-                        <td className="py-3 px-4 font-medium text-gray-900">
+                        <td className="py-3 px-4 font-medium text-[var(--color-foreground)]">
                           {holding.symbol}
                         </td>
-                        <td className="py-3 px-4 text-gray-600">
+                        <td className="py-3 px-4 text-[var(--color-muted-foreground)]">
                           {holding.name}
                         </td>
-                        <td className="py-3 px-4 text-right text-gray-900">
+                        <td className="py-3 px-4 text-right text-[var(--color-foreground)]">
                           {holding.shares.toFixed(4)}
                         </td>
-                        <td className="py-3 px-4 text-right text-gray-900">
+                        <td className="py-3 px-4 text-right text-[var(--color-foreground)]">
                           {formatCurrency(holding.currentPrice)}
                         </td>
-                        <td className="py-3 px-4 text-right font-medium text-gray-900">
+                        <td className="py-3 px-4 text-right font-medium text-[var(--color-foreground)]">
                           {formatCurrency(value)}
                         </td>
                         <td
@@ -496,13 +496,13 @@ export const InvestmentsPage: React.FC = () => {
                             {formatPercent(gainLossPercent)}
                           </div>
                         </td>
-                        <td className="py-3 px-4 text-gray-600">
+                        <td className="py-3 px-4 text-[var(--color-muted-foreground)]">
                           {getAccountTypeLabel(holding.accountType)}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <button
                             onClick={() => handleEditHolding(holding)}
-                            className="text-gray-400 hover:text-gray-600 mr-2"
+                            className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] mr-2"
                           >
                             ✏️
                           </button>
@@ -510,7 +510,7 @@ export const InvestmentsPage: React.FC = () => {
                             onClick={() =>
                               handleDeleteHolding(holding.holdingId)
                             }
-                            className="text-gray-400 hover:text-red-600"
+                            className="text-[var(--color-muted-foreground)] hover:text-red-600"
                           >
                             🗑️
                           </button>
@@ -526,8 +526,8 @@ export const InvestmentsPage: React.FC = () => {
 
         {/* Asset Allocation */}
         {portfolio && portfolio.allocation.length > 0 && (
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">
               Asset Allocation by Account Type
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
@@ -546,13 +546,13 @@ export const InvestmentsPage: React.FC = () => {
                               ? "🏥"
                               : "₿"}
                   </div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-[var(--color-foreground)]">
                     {getAccountTypeLabel(item.type)}
                   </p>
                   <p className="text-lg font-bold text-blue-600">
                     {item.percent.toFixed(1)}%
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-[var(--color-muted-foreground)]">
                     {formatCurrency(item.value)}
                   </p>
                 </div>
@@ -564,16 +564,16 @@ export const InvestmentsPage: React.FC = () => {
         {/* ── Market News & Signals ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
           {/* Market News */}
-          <div className="bg-white rounded-xl shadow">
+          <div className="bg-[var(--color-surface)] rounded-xl shadow">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Newspaper className="w-5 h-5 text-[var(--color-primary)]" aria-hidden="true" />
-                <h2 className="text-base font-semibold text-gray-900">Market News</h2>
+                <h2 className="text-base font-semibold text-[var(--color-foreground)]">Market News</h2>
               </div>
               <button
                 onClick={loadNewsAndSignals}
                 disabled={loadingNews}
-                className="p-1.5 text-gray-400 hover:text-gray-600 rounded transition-colors disabled:opacity-50"
+                className="p-1.5 text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] rounded transition-colors disabled:opacity-50"
                 aria-label="Refresh news"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingNews ? 'animate-spin' : ''}`} />
@@ -582,11 +582,11 @@ export const InvestmentsPage: React.FC = () => {
             <div className="divide-y divide-gray-50 max-h-96 overflow-y-auto">
               {loadingNews ? (
                 <div className="p-6 space-y-3">
-                  {[1,2,3].map(i => <div key={i} className="h-14 bg-gray-100 rounded animate-pulse" />)}
+                  {[1,2,3].map(i => <div key={i} className="h-14 bg-[var(--color-muted)] rounded animate-pulse" />)}
                 </div>
               ) : !news || !news.news || news.news.length === 0 ? (
                 <div className="p-8 text-center">
-                  <p className="text-gray-500 text-sm">{news?.message || 'No news available right now.'}</p>
+                  <p className="text-[var(--color-muted-foreground)] text-sm">{news?.message || 'No news available right now.'}</p>
                 </div>
               ) : (
                 news.news.map((article, i) => (
@@ -595,19 +595,19 @@ export const InvestmentsPage: React.FC = () => {
                     href={article.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 transition-colors group"
+                    className="flex items-start gap-3 px-5 py-3 hover:bg-[var(--color-background)] transition-colors group"
                   >
                     {article.bannerImage ? (
                       <img src={article.bannerImage} alt="" className="w-12 h-12 rounded object-cover shrink-0" />
                     ) : (
-                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center shrink-0">
-                        <Newspaper className="w-5 h-5 text-gray-400" aria-hidden="true" />
+                      <div className="w-12 h-12 bg-[var(--color-muted)] rounded flex items-center justify-center shrink-0">
+                        <Newspaper className="w-5 h-5 text-[var(--color-muted-foreground)]" aria-hidden="true" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors">{article.title}</p>
+                      <p className="text-sm font-medium text-[var(--color-foreground)] line-clamp-2 group-hover:text-[var(--color-primary)] transition-colors">{article.title}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-gray-400">{article.source}</span>
+                        <span className="text-xs text-[var(--color-muted-foreground)]">{article.source}</span>
                         {article.publishedAt && (
                           <span className="text-xs text-gray-300">·</span>
                         )}
@@ -616,13 +616,13 @@ export const InvestmentsPage: React.FC = () => {
                             ? 'bg-green-50 text-green-700'
                             : article.sentiment === 'Bearish' || article.sentiment === 'Somewhat-Bearish'
                             ? 'bg-red-50 text-red-700'
-                            : 'bg-gray-50 text-gray-500'
+                            : 'bg-[var(--color-background)] text-[var(--color-muted-foreground)]'
                         }`}>
                           {article.sentiment === 'Somewhat-Bullish' ? '↑ Bullish' : article.sentiment === 'Somewhat-Bearish' ? '↓ Bearish' : article.sentiment}
                         </span>
                       </div>
                     </div>
-                    <ExternalLink className="w-3.5 h-3.5 text-gray-300 group-hover:text-gray-400 shrink-0 mt-0.5" aria-hidden="true" />
+                    <ExternalLink className="w-3.5 h-3.5 text-gray-300 group-hover:text-[var(--color-muted-foreground)] shrink-0 mt-0.5" aria-hidden="true" />
                   </a>
                 ))
               )}
@@ -630,24 +630,24 @@ export const InvestmentsPage: React.FC = () => {
           </div>
 
           {/* Market Signals */}
-          <div className="bg-white rounded-xl shadow">
+          <div className="bg-[var(--color-surface)] rounded-xl shadow">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-[var(--color-primary)]" aria-hidden="true" />
-                <h2 className="text-base font-semibold text-gray-900">Market Signals</h2>
+                <h2 className="text-base font-semibold text-[var(--color-foreground)]">Market Signals</h2>
               </div>
               {signals?.fetchedAt && (
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-[var(--color-muted-foreground)]">
                   {new Date(signals.fetchedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               )}
             </div>
             {loadingSignals ? (
               <div className="p-6 space-y-2">
-                {[1,2,3,4,5].map(i => <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />)}
+                {[1,2,3,4,5].map(i => <div key={i} className="h-8 bg-[var(--color-muted)] rounded animate-pulse" />)}
               </div>
             ) : !signals ? (
-              <div className="p-8 text-center text-gray-500 text-sm">Signals unavailable right now.</div>
+              <div className="p-8 text-center text-[var(--color-muted-foreground)] text-sm">Signals unavailable right now.</div>
             ) : (
               <div className="divide-y divide-gray-50">
                 {[
@@ -658,14 +658,14 @@ export const InvestmentsPage: React.FC = () => {
                   <div key={section.title} className="px-5 py-3">
                     <div className="flex items-center gap-1.5 mb-2">
                       {section.icon}
-                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{section.title}</span>
+                      <span className="text-xs font-semibold text-[var(--color-muted-foreground)] uppercase tracking-wide">{section.title}</span>
                     </div>
                     <div className="space-y-1.5">
                       {section.data.slice(0, 3).map((s, i) => (
                         <div key={i} className="flex items-center justify-between">
-                          <span className="text-sm font-mono font-semibold text-gray-900">{s.ticker}</span>
+                          <span className="text-sm font-mono font-semibold text-[var(--color-foreground)]">{s.ticker}</span>
                           <div className="flex items-center gap-3">
-                            <span className="text-sm tabular-nums text-gray-600">${s.price}</span>
+                            <span className="text-sm tabular-nums text-[var(--color-muted-foreground)]">${s.price}</span>
                             <span className={`text-xs font-semibold tabular-nums ${section.color}`}>{s.changePercent}</span>
                           </div>
                         </div>
@@ -682,14 +682,14 @@ export const InvestmentsPage: React.FC = () => {
       {/* Holding Modal */}
       {showHoldingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-[var(--color-surface)] rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">
               {editingHolding ? "Edit Holding" : "Add Holding"}
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   Symbol
                 </label>
                 <input
@@ -701,14 +701,14 @@ export const InvestmentsPage: React.FC = () => {
                       symbol: e.target.value.toUpperCase(),
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg"
                   placeholder="e.g., AAPL"
                   disabled={!!editingHolding}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   Name
                 </label>
                 <input
@@ -717,7 +717,7 @@ export const InvestmentsPage: React.FC = () => {
                   onChange={(e) =>
                     setHoldingForm({ ...holdingForm, name: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg"
                   placeholder="e.g., Apple Inc."
                   disabled={!!editingHolding}
                 />
@@ -725,7 +725,7 @@ export const InvestmentsPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                     Shares
                   </label>
                   <input
@@ -738,12 +738,12 @@ export const InvestmentsPage: React.FC = () => {
                         shares: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg"
                     placeholder="0.0000"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                     Cost Basis
                   </label>
                   <input
@@ -756,14 +756,14 @@ export const InvestmentsPage: React.FC = () => {
                         costBasis: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg"
                     placeholder="0.00"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   Current Price
                 </label>
                 <input
@@ -776,13 +776,13 @@ export const InvestmentsPage: React.FC = () => {
                       currentPrice: parseFloat(e.target.value) || 0,
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg"
                   placeholder="0.00"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   Account Type
                 </label>
                 <select
@@ -793,7 +793,7 @@ export const InvestmentsPage: React.FC = () => {
                       accountType: e.target.value as Holding["accountType"],
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg"
                 >
                   {ACCOUNT_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
@@ -807,7 +807,7 @@ export const InvestmentsPage: React.FC = () => {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowHoldingModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="flex-1 px-4 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)]"
               >
                 Cancel
               </button>

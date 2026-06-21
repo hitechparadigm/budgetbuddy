@@ -10,15 +10,15 @@ export const NotFoundPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)] dark:bg-gray-900 px-4">
       <div className="max-w-md w-full text-center">
         <div className="mb-6">
           <span className="text-8xl font-bold text-emerald-500">404</span>
         </div>
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-2xl font-semibold text-[var(--color-foreground)] dark:text-white mb-2">
           Page not found
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mb-6">
           The page you're looking for doesn't exist or has been moved.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -30,7 +30,7 @@ export const NotFoundPage: React.FC = () => {
           </button>
           <button
             onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            className="px-4 py-2 bg-gray-200 text-[var(--color-foreground)] dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
           >
             Go Back
           </button>

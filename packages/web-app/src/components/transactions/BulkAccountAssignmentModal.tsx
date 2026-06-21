@@ -155,22 +155,22 @@ export const BulkAccountAssignmentModal: React.FC<
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div className="relative bg-[var(--color-surface)] rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">
+          <div className="px-6 py-4 border-b border-[var(--color-border)]">
+            <h2 className="text-xl font-semibold text-[var(--color-foreground)]">
               Bulk Assign Account
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
               Assign an account to multiple transactions at once
             </p>
           </div>
 
           {/* Filters */}
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <div className="px-6 py-4 bg-[var(--color-background)] border-b border-[var(--color-border)]">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   Start Date
                 </label>
                 <input
@@ -179,11 +179,11 @@ export const BulkAccountAssignmentModal: React.FC<
                   onChange={(e) =>
                     setFilters({ ...filters, startDate: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   End Date
                 </label>
                 <input
@@ -192,11 +192,11 @@ export const BulkAccountAssignmentModal: React.FC<
                   onChange={(e) =>
                     setFilters({ ...filters, endDate: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   Category
                 </label>
                 <select
@@ -204,7 +204,7 @@ export const BulkAccountAssignmentModal: React.FC<
                   onChange={(e) =>
                     setFilters({ ...filters, categoryId: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Categories</option>
                   {categories.map((cat) => (
@@ -215,7 +215,7 @@ export const BulkAccountAssignmentModal: React.FC<
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                   Description
                 </label>
                 <input
@@ -225,7 +225,7 @@ export const BulkAccountAssignmentModal: React.FC<
                   onChange={(e) =>
                     setFilters({ ...filters, description: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -237,9 +237,9 @@ export const BulkAccountAssignmentModal: React.FC<
                   onChange={(e) =>
                     setFilters({ ...filters, onlyUnassigned: e.target.checked })
                   }
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-[var(--color-border)] text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-gray-700">
+                <span className="text-[var(--color-foreground)]">
                   Show only unassigned transactions
                 </span>
               </label>
@@ -249,7 +249,7 @@ export const BulkAccountAssignmentModal: React.FC<
           {/* Transaction List */}
           <div className="px-6 py-4 overflow-y-auto max-h-[40vh]">
             {filteredTransactions.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">
+              <p className="text-center text-[var(--color-muted-foreground)] py-8">
                 No transactions match the current filters
               </p>
             ) : (
@@ -264,13 +264,13 @@ export const BulkAccountAssignmentModal: React.FC<
                         filteredTransactions.length > 0
                       }
                       onChange={handleSelectAll}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="rounded border-[var(--color-border)] text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="text-gray-700">
+                    <span className="text-[var(--color-foreground)]">
                       Select all ({filteredTransactions.length})
                     </span>
                   </label>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-[var(--color-muted-foreground)]">
                     {selectedTransactionIds.size} selected
                   </span>
                 </div>
@@ -281,7 +281,7 @@ export const BulkAccountAssignmentModal: React.FC<
                       className={`flex items-center p-3 rounded-lg border ${
                         selectedTransactionIds.has(txn.transactionId)
                           ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-[var(--color-border)] hover:border-[var(--color-border)]"
                       }`}
                     >
                       <input
@@ -290,13 +290,13 @@ export const BulkAccountAssignmentModal: React.FC<
                         onChange={() =>
                           handleSelectTransaction(txn.transactionId)
                         }
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3"
+                        className="rounded border-[var(--color-border)] text-blue-600 focus:ring-blue-500 mr-3"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-[var(--color-foreground)] truncate">
                           {txn.description}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-[var(--color-muted-foreground)]">
                           {txn.date} • {txn.categoryId}
                         </p>
                       </div>
@@ -318,14 +318,14 @@ export const BulkAccountAssignmentModal: React.FC<
           </div>
 
           {/* Account Selection */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="px-6 py-4 bg-[var(--color-background)] border-t border-[var(--color-border)]">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
               Assign to Account
             </label>
             <select
               value={selectedAccountId || ""}
               onChange={(e) => setSelectedAccountId(e.target.value || null)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Remove account assignment</option>
               {Object.entries(accountsByType).map(([type, accts]) => (
@@ -353,11 +353,11 @@ export const BulkAccountAssignmentModal: React.FC<
           )}
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+          <div className="px-6 py-4 border-t border-[var(--color-border)] flex justify-end space-x-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 text-sm font-medium text-[var(--color-foreground)] bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-background)]"
             >
               Cancel
             </button>

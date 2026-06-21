@@ -204,7 +204,7 @@ export const AcceptInvitationPage: React.FC = () => {
   // Loading preview
   if (loadingPreview) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -213,8 +213,8 @@ export const AcceptInvitationPage: React.FC = () => {
   // Invalid / expired invitation — show error immediately, no need to try accepting
   if (previewError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-8 text-center">
+      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center p-4">
+        <div className="bg-[var(--color-surface)] rounded-lg shadow-lg max-w-md w-full p-8 text-center">
           <div className="text-red-600 text-5xl mb-4">⚠️</div>
           <h1 className="text-2xl font-bold text-[var(--color-foreground)] mb-4">
             Invalid Invitation
@@ -235,20 +235,20 @@ export const AcceptInvitationPage: React.FC = () => {
   const budgetName = preview?.budgetName || "Family Budget";
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-8">
+    <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center p-4">
+      <div className="bg-[var(--color-surface)] rounded-lg shadow-lg max-w-md w-full p-8">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="text-5xl mb-4">👨‍👩‍👧‍👦</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)] mb-2">
             Family Invitation
           </h1>
-          <p className="text-gray-600">
-            <span className="font-semibold text-gray-900">
+          <p className="text-[var(--color-muted-foreground)]">
+            <span className="font-semibold text-[var(--color-foreground)]">
               {inviterFirstName}
             </span>{" "}
             invited you to join{" "}
-            <span className="font-semibold text-gray-900">{budgetName}</span>{" "}
+            <span className="font-semibold text-[var(--color-foreground)]">{budgetName}</span>{" "}
             on BudgetBuddy!
           </p>
         </div>
@@ -313,7 +313,7 @@ export const AcceptInvitationPage: React.FC = () => {
                   <div>
                     <label
                       htmlFor="firstName"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
                     >
                       First Name
                     </label>
@@ -323,13 +323,13 @@ export const AcceptInvitationPage: React.FC = () => {
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
                     <label
                       htmlFor="lastName"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
                     >
                       Last Name
                     </label>
@@ -339,14 +339,14 @@ export const AcceptInvitationPage: React.FC = () => {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
                 <div>
                   <label
                     htmlFor="registerEmail"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
                   >
                     Email
                   </label>
@@ -357,10 +357,10 @@ export const AcceptInvitationPage: React.FC = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     readOnly={!!preview?.inviteeEmail}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-[var(--color-background)]"
                   />
                   {preview?.inviteeEmail && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
                       Invitation sent to this email address
                     </p>
                   )}
@@ -368,7 +368,7 @@ export const AcceptInvitationPage: React.FC = () => {
                 <div>
                   <label
                     htmlFor="registerPassword"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
                   >
                     Password
                   </label>
@@ -379,9 +379,9 @@ export const AcceptInvitationPage: React.FC = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={8}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
                     Minimum 8 characters
                   </p>
                 </div>
@@ -398,7 +398,7 @@ export const AcceptInvitationPage: React.FC = () => {
                 <div>
                   <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
                   >
                     Email
                   </label>
@@ -409,10 +409,10 @@ export const AcceptInvitationPage: React.FC = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     readOnly={!!preview?.inviteeEmail}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-[var(--color-background)]"
                   />
                   {preview?.inviteeEmail && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
                       Your account email
                     </p>
                   )}
@@ -420,7 +420,7 @@ export const AcceptInvitationPage: React.FC = () => {
                 <div>
                   <label
                     htmlFor="password"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
                   >
                     Password
                   </label>
@@ -430,7 +430,7 @@ export const AcceptInvitationPage: React.FC = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <button
@@ -447,11 +447,11 @@ export const AcceptInvitationPage: React.FC = () => {
           <>
             {/* Invitation details for authenticated users */}
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="text-sm text-gray-600 mb-2">You'll join as:</div>
-              <div className="font-medium text-gray-900 text-lg capitalize">
+              <div className="text-sm text-[var(--color-muted-foreground)] mb-2">You'll join as:</div>
+              <div className="font-medium text-[var(--color-foreground)] text-lg capitalize">
                 {preview?.role || "Family Member"}
               </div>
-              <div className="text-sm text-gray-600 mt-1">
+              <div className="text-sm text-[var(--color-muted-foreground)] mt-1">
                 You'll gain access to <strong>{budgetName}</strong>
               </div>
             </div>
@@ -495,15 +495,15 @@ export const AcceptInvitationPage: React.FC = () => {
               <button
                 onClick={handleDeclineInvitation}
                 disabled={accepting}
-                className="w-full px-6 py-3 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium"
+                className="w-full px-6 py-3 border-2 border-[var(--color-border)] text-[var(--color-foreground)] hover:bg-[var(--color-background)] rounded-lg font-medium"
               >
                 Decline
               </button>
             </div>
 
             {/* Info Note */}
-            <div className="mt-6 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-              <p className="text-xs text-gray-600">
+            <div className="mt-6 p-3 bg-[var(--color-background)] border border-[var(--color-border)] rounded-lg">
+              <p className="text-xs text-[var(--color-muted-foreground)]">
                 By accepting, you'll gain access to the shared family budget.
                 You can leave at any time from settings.
               </p>

@@ -47,8 +47,8 @@ function formatDollar(value: number): string {
 const CustomTooltip: React.FC<TooltipProps<number, string>> = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-semibold text-gray-800 dark:text-gray-100 mb-1">{label}</p>
+    <div className="bg-[var(--color-surface)] dark:bg-gray-900 border border-[var(--color-border)] dark:border-gray-700 rounded-lg shadow-lg p-3 text-sm">
+      <p className="font-semibold text-[var(--color-foreground)] dark:text-gray-100 mb-1">{label}</p>
       {payload.map((entry) => (
         <p key={entry.name} style={{ color: entry.color }}>
           {entry.name}: {typeof entry.value === 'number' ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(entry.value) : entry.value}
@@ -97,7 +97,7 @@ const InsightsTrendChart: React.FC<InsightsTrendChartProps> = ({
             className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
               selectedCategory === 'all'
                 ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                : 'bg-[var(--color-surface)] text-[var(--color-muted-foreground)] border-[var(--color-border)] hover:border-gray-400'
             }`}
           >
             All categories
@@ -109,7 +109,7 @@ const InsightsTrendChart: React.FC<InsightsTrendChartProps> = ({
               className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                 selectedCategory === cat
                   ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                  : 'bg-[var(--color-surface)] text-[var(--color-muted-foreground)] border-[var(--color-border)] hover:border-gray-400'
               }`}
             >
               {cat}
@@ -183,17 +183,17 @@ const InsightsTrendChart: React.FC<InsightsTrendChartProps> = ({
 
       {/* Trend analysis summary */}
       {analysis && selectedCategory === 'all' && (
-        <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+        <div className="mt-4 p-4 bg-[var(--color-background)] dark:bg-gray-800/50 rounded-lg">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-gray-600 dark:text-gray-400">Spending Trend:</span>
+              <span className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">Spending Trend:</span>
               <span
                 className={`ml-2 font-medium ${
                   analysis.spendingTrend === 'increasing'
                     ? 'text-red-600'
                     : analysis.spendingTrend === 'decreasing'
                     ? 'text-green-600'
-                    : 'text-gray-600 dark:text-gray-300'
+                    : 'text-[var(--color-muted-foreground)] dark:text-gray-300'
                 }`}
               >
                 {analysis.spendingTrend === 'increasing'
@@ -205,8 +205,8 @@ const InsightsTrendChart: React.FC<InsightsTrendChartProps> = ({
             </div>
             {analysis.averageSpending != null && (
               <div>
-                <span className="text-gray-600 dark:text-gray-400">Avg/month:</span>
-                <span className="ml-2 font-medium text-gray-900 dark:text-gray-100">
+                <span className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">Avg/month:</span>
+                <span className="ml-2 font-medium text-[var(--color-foreground)] dark:text-gray-100">
                   {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(analysis.averageSpending as number)}
                 </span>
               </div>

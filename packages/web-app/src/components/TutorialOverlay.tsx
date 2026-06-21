@@ -145,7 +145,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
 
       {/* Tooltip */}
       <div
-        className="absolute bg-white rounded-lg shadow-xl p-6 max-w-sm z-10"
+        className="absolute bg-[var(--color-surface)] rounded-lg shadow-xl p-6 max-w-sm z-10"
         style={getTooltipStyle()}
       >
         {/* Progress indicator */}
@@ -161,16 +161,16 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
         </div>
 
         {/* Content */}
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2">
           {step.title}
         </h3>
-        <p className="text-gray-600 mb-6">{step.content}</p>
+        <p className="text-[var(--color-muted-foreground)] mb-6">{step.content}</p>
 
         {/* Navigation */}
         <div className="flex items-center justify-between">
           <button
             onClick={onSkip}
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
           >
             Skip tutorial
           </button>
@@ -178,7 +178,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             {currentStep > 0 && (
               <button
                 onClick={handlePrev}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="px-4 py-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
               >
                 Back
               </button>
@@ -193,7 +193,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
         </div>
 
         {/* Step counter */}
-        <div className="text-center text-xs text-gray-400 mt-4">
+        <div className="text-center text-xs text-[var(--color-muted-foreground)] mt-4">
           Step {currentStep + 1} of {steps.length}
         </div>
       </div>

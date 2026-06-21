@@ -186,38 +186,38 @@ export const InsightsPage: React.FC = () => {
   const getChangeColor = (change: number) => {
     if (change > 0) return "text-red-600";
     if (change < 0) return "text-green-600";
-    return "text-gray-600";
+    return "text-[var(--color-muted-foreground)]";
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white border-b border-gray-200">
+      <div className="min-h-screen bg-[var(--color-background)]">
+        <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
           <div className="max-w-7xl mx-auto px-4 py-6">
             <div className="h-8 w-48 rounded animate-pulse bg-gray-200 mb-2" />
-            <div className="h-4 w-64 rounded animate-pulse bg-gray-100" />
+            <div className="h-4 w-64 rounded animate-pulse bg-[var(--color-muted)]" />
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
           <div className="h-32 w-full rounded-lg animate-pulse bg-gray-200" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1,2,3].map(i => <div key={i} className="h-28 rounded-lg animate-pulse bg-white border border-gray-200" />)}
+            {[1,2,3].map(i => <div key={i} className="h-28 rounded-lg animate-pulse bg-[var(--color-surface)] border border-[var(--color-border)]" />)}
           </div>
-          <div className="h-48 w-full rounded-lg animate-pulse bg-white border border-gray-200" />
-          <div className="h-72 w-full rounded-lg animate-pulse bg-white border border-gray-200" />
+          <div className="h-48 w-full rounded-lg animate-pulse bg-[var(--color-surface)] border border-[var(--color-border)]" />
+          <div className="h-72 w-full rounded-lg animate-pulse bg-[var(--color-surface)] border border-[var(--color-border)]" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--color-background)]">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <button
             onClick={() => navigate("/budget")}
-            className="px-4 py-2 text-gray-600 hover:text-gray-900 mb-2"
+            className="px-4 py-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] mb-2"
           >
             ← Back to Budget
           </button>
@@ -259,14 +259,14 @@ export const InsightsPage: React.FC = () => {
         {/* Summary Cards */}
         {weeklyInsights && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 text-sm">
+                <span className="text-[var(--color-muted-foreground)] text-sm">
                   This Week's Spending
                 </span>
                 <span className="text-2xl">💸</span>
               </div>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-[var(--color-foreground)]">
                 {formatCurrency(weeklyInsights.summary.totalSpent)}
               </div>
               <div
@@ -277,12 +277,12 @@ export const InsightsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 text-sm">Income</span>
+                <span className="text-[var(--color-muted-foreground)] text-sm">Income</span>
                 <span className="text-2xl">💰</span>
               </div>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-[var(--color-foreground)]">
                 {formatCurrency(weeklyInsights.summary.totalIncome)}
               </div>
               <div
@@ -293,15 +293,15 @@ export const InsightsPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm">
+            <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600 text-sm">Savings Rate</span>
+                <span className="text-[var(--color-muted-foreground)] text-sm">Savings Rate</span>
                 <span className="text-2xl">🏦</span>
               </div>
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-[var(--color-foreground)]">
                 {((weeklyInsights.summary.savingsRate ?? 0) || 0).toFixed(1)}%
               </div>
-              <div className="text-sm text-gray-600 mt-1">
+              <div className="text-sm text-[var(--color-muted-foreground)] mt-1">
                 {weeklyInsights.summary.transactionCount} transactions
               </div>
             </div>
@@ -309,11 +309,11 @@ export const InsightsPage: React.FC = () => {
         )}
 
         {/* AI Ask About Spending Section — chat bubble UI */}
-        <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+        <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="text-2xl">🤖</span>
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
                 Ask Your AI Coach
               </h2>
               <PremiumBadge feature="AI Coach with memory" /></div>
@@ -340,7 +340,7 @@ export const InsightsPage: React.FC = () => {
                       </div>
                       {/* AI bubble — left */}
                       <div className="flex justify-start">
-                        <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-2xl rounded-tl-sm max-w-xs lg:max-w-md text-sm">
+                        <div className="bg-[var(--color-muted)] text-[var(--color-foreground)] px-4 py-2 rounded-2xl rounded-tl-sm max-w-xs lg:max-w-md text-sm">
                           {entry.answer}
                           {entry.suggestions && entry.suggestions.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1">
@@ -348,7 +348,7 @@ export const InsightsPage: React.FC = () => {
                                 <button
                                   key={si}
                                   onClick={() => handleSuggestionClick(s)}
-                                  className="px-2 py-0.5 text-xs bg-white text-blue-600 rounded border border-blue-200 hover:bg-blue-50"
+                                  className="px-2 py-0.5 text-xs bg-[var(--color-surface)] text-blue-600 rounded border border-blue-200 hover:bg-blue-50"
                                 >
                                   {s}
                                 </button>
@@ -362,7 +362,7 @@ export const InsightsPage: React.FC = () => {
                   {/* Typing indicator */}
                   {askLoading && (
                     <div className="flex justify-start">
-                      <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm">
+                      <div className="bg-[var(--color-muted)] px-4 py-3 rounded-2xl rounded-tl-sm">
                         <div className="flex gap-1">
                           <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}} />
                           <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}} />
@@ -372,7 +372,7 @@ export const InsightsPage: React.FC = () => {
                     </div>
                   )}
                   {/* Premium memory note */}
-                  <p className="text-xs text-gray-400 text-center mt-2">
+                  <p className="text-xs text-[var(--color-muted-foreground)] text-center mt-2">
                     Conversation history persists for this session only.
                     <button
                       onClick={() => { window.location.href = '/auth?upgrade=1'; }}
@@ -396,7 +396,7 @@ export const InsightsPage: React.FC = () => {
                     <button
                       key={i}
                       onClick={() => handleSuggestionClick(suggestion)}
-                      className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200"
+                      className="px-3 py-1 text-sm bg-[var(--color-muted)] text-[var(--color-foreground)] rounded-full hover:bg-gray-200"
                     >
                       {suggestion}
                     </button>
@@ -412,7 +412,7 @@ export const InsightsPage: React.FC = () => {
                   onChange={(e) => setAskQuestion(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAskQuestion()}
                   placeholder="Ask anything about your spending..."
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   disabled={askLoading}
                 />
                 <button
@@ -428,7 +428,7 @@ export const InsightsPage: React.FC = () => {
                       setChatHistory([]);
                       try { sessionStorage.removeItem('budgetbuddy_insights_chat'); } catch { /* ok */ }
                     }}
-                    className="px-3 py-2 text-gray-400 hover:text-gray-600 text-sm"
+                    className="px-3 py-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] text-sm"
                     title="Clear conversation"
                   >
                     Clear
@@ -441,8 +441,8 @@ export const InsightsPage: React.FC = () => {
 
         {/* Spending Patterns Section */}
         {patterns && patterns.patterns && (
-          <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm mb-6">
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">
               Spending Patterns
             </h2>
 
@@ -451,7 +451,7 @@ export const InsightsPage: React.FC = () => {
               {patterns.patterns.dayOfWeek &&
                 patterns.patterns.dayOfWeek.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">
+                    <h3 className="text-sm font-medium text-[var(--color-foreground)] mb-3">
                       By Day of Week
                     </h3>
                     <div className="space-y-2">
@@ -462,16 +462,16 @@ export const InsightsPage: React.FC = () => {
                         const percentage = maxAmount > 0 ? (day.amount / maxAmount) * 100 : 0;
                         return (
                           <div key={i} className="flex items-center gap-2">
-                            <span className="w-12 text-xs text-gray-600">
+                            <span className="w-12 text-xs text-[var(--color-muted-foreground)]">
                               {day.day.slice(0, 3)}
                             </span>
-                            <div className="flex-1 bg-gray-100 rounded-full h-4">
+                            <div className="flex-1 bg-[var(--color-muted)] rounded-full h-4">
                               <div
                                 className="bg-blue-500 h-4 rounded-full"
                                 style={{ width: `${percentage}%` }}
                               ></div>
                             </div>
-                            <span className="w-20 text-xs text-gray-600 text-right">
+                            <span className="w-20 text-xs text-[var(--color-muted-foreground)] text-right">
                               {formatCurrency(day.amount)}
                             </span>
                           </div>
@@ -485,7 +485,7 @@ export const InsightsPage: React.FC = () => {
               {patterns.patterns.timeOfMonth &&
                 patterns.patterns.timeOfMonth.length > 0 && (
                   <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">
+                    <h3 className="text-sm font-medium text-[var(--color-foreground)] mb-3">
                       By Time of Month
                     </h3>
                     <div className="space-y-2">
@@ -496,16 +496,16 @@ export const InsightsPage: React.FC = () => {
                         const percentage = maxAmount > 0 ? (period.amount / maxAmount) * 100 : 0;
                         return (
                           <div key={i} className="flex items-center gap-2">
-                            <span className="w-20 text-xs text-gray-600">
+                            <span className="w-20 text-xs text-[var(--color-muted-foreground)]">
                               {period.period}
                             </span>
-                            <div className="flex-1 bg-gray-100 rounded-full h-4">
+                            <div className="flex-1 bg-[var(--color-muted)] rounded-full h-4">
                               <div
                                 className="bg-purple-500 h-4 rounded-full"
                                 style={{ width: `${percentage}%` }}
                               ></div>
                             </div>
-                            <span className="w-20 text-xs text-gray-600 text-right">
+                            <span className="w-20 text-xs text-[var(--color-muted-foreground)] text-right">
                               {formatCurrency(period.amount)}
                             </span>
                           </div>
@@ -520,22 +520,22 @@ export const InsightsPage: React.FC = () => {
             {patterns.patterns.topMerchants &&
               patterns.patterns.topMerchants.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-3">
+                  <h3 className="text-sm font-medium text-[var(--color-foreground)] mb-3">
                     Top Merchants
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {patterns.patterns.topMerchants.slice(0, 8).map((m, i) => (
                       <div
                         key={i}
-                        className="px-3 py-2 bg-gray-50 rounded-lg text-sm"
+                        className="px-3 py-2 bg-[var(--color-background)] rounded-lg text-sm"
                       >
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-[var(--color-foreground)]">
                           {m.merchant}
                         </span>
-                        <span className="text-gray-500 ml-2">
+                        <span className="text-[var(--color-muted-foreground)] ml-2">
                           {formatCurrency(m.amount)}
                         </span>
-                        <span className="text-gray-400 ml-1">({m.count}x)</span>
+                        <span className="text-[var(--color-muted-foreground)] ml-1">({m.count}x)</span>
                       </div>
                     ))}
                   </div>
@@ -546,9 +546,9 @@ export const InsightsPage: React.FC = () => {
 
         {/* Spending Trends Chart — recharts (lazy loaded) */}
         {trends && (
-          <div className="bg-white rounded-lg p-6 shadow-sm mb-6">
+          <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm mb-6">
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
                 Spending Trends
               </h2>
               <div className="flex gap-2 flex-wrap">
@@ -557,7 +557,7 @@ export const InsightsPage: React.FC = () => {
                   className={`px-3 py-1 rounded-lg text-sm ${
                     selectedPeriod === "6"
                       ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      : "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] hover:bg-gray-200"
                   }`}
                 >
                   6 Months
@@ -567,7 +567,7 @@ export const InsightsPage: React.FC = () => {
                   className={`px-3 py-1 rounded-lg text-sm ${
                     selectedPeriod === "12"
                       ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      : "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] hover:bg-gray-200"
                   }`}
                 >
                   12 Months
@@ -588,8 +588,8 @@ export const InsightsPage: React.FC = () => {
 
         {/* Category Breakdown */}
         {weeklyInsights && weeklyInsights.categoryBreakdown.length > 0 && (
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">
               Top Spending Categories
             </h2>
             <div className="space-y-4">
@@ -598,11 +598,11 @@ export const InsightsPage: React.FC = () => {
                 .map((category, index) => (
                   <div key={index}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-[var(--color-foreground)]">
                         {category.category}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-[var(--color-foreground)]">
                           {formatCurrency(category.amount)}
                         </span>
                         {category.changePercent !== undefined && (
@@ -630,16 +630,16 @@ export const InsightsPage: React.FC = () => {
         {weeklyInsights && weeklyInsights.insights.length > 1 && (
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             {weeklyInsights.insights.slice(1).map((insight, index) => (
-              <div key={index} className="bg-white rounded-lg p-4 shadow-sm">
+              <div key={index} className="bg-[var(--color-surface)] rounded-lg p-4 shadow-sm">
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">
                     {getInsightIcon(insight.type)}
                   </span>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">
+                    <h3 className="font-semibold text-[var(--color-foreground)] mb-1">
                       {insight.title}
                     </h3>
-                    <p className="text-sm text-gray-600">{insight.message}</p>
+                    <p className="text-sm text-[var(--color-muted-foreground)]">{insight.message}</p>
                   </div>
                 </div>
               </div>

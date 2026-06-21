@@ -277,7 +277,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
         <h3 className="text-xl font-semibold text-white mb-4">
           No Budget for {new Date(currentYear, currentMonth - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
         </h3>
-        <p className="text-gray-400 mb-6">
+        <p className="text-[var(--color-muted-foreground)] mb-6">
           Create a budget to start tracking your income and expenses for this month.
         </p>
         <button
@@ -311,7 +311,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
           <div className="bg-green-900 bg-opacity-30 border border-green-700 rounded-lg p-4">
             <div className="text-green-400 text-sm font-medium">Total Income</div>
             <div className="text-2xl font-bold text-white">{formatCurrency(budget.totalIncome.planned)}</div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-[var(--color-muted-foreground)]">
               {formatCurrency(budget.totalIncome.actual)} actual
             </div>
           </div>
@@ -319,7 +319,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
           <div className="bg-blue-900 bg-opacity-30 border border-blue-700 rounded-lg p-4">
             <div className="text-blue-400 text-sm font-medium">Total Savings</div>
             <div className="text-2xl font-bold text-white">{formatCurrency(budget.totalSavings.planned)}</div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-[var(--color-muted-foreground)]">
               {formatCurrency(budget.totalSavings.actual)} actual
             </div>
           </div>
@@ -327,7 +327,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
           <div className="bg-red-900 bg-opacity-30 border border-red-700 rounded-lg p-4">
             <div className="text-red-400 text-sm font-medium">Total Expenses</div>
             <div className="text-2xl font-bold text-white">{formatCurrency(budget.totalExpenses.planned)}</div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-[var(--color-muted-foreground)]">
               {formatCurrency(budget.totalExpenses.actual)} actual
             </div>
           </div>
@@ -343,7 +343,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
               Net Balance
             </div>
             <div className="text-2xl font-bold text-white">{formatCurrency(budget.netBalance.planned)}</div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-[var(--color-muted-foreground)]">
               {budget.netBalance.planned >= 0 ? 'Surplus' : 'Deficit'}
             </div>
           </div>
@@ -369,7 +369,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
                 }
               </span>
             </div>
-            <div className="text-sm text-gray-400 mt-1">
+            <div className="text-sm text-[var(--color-muted-foreground)] mt-1">
               {Math.abs(budget.netBalance.planned) < 0.01
                 ? 'Every dollar has been allocated to income, savings, or expenses.'
                 : `You have ${formatCurrency(Math.abs(budget.netBalance.planned))} unallocated.`
@@ -394,7 +394,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
               <div className="text-lg font-semibold text-white">
                 {formatCurrency(group.totalActual)}
               </div>
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-[var(--color-muted-foreground)]">
                 of {formatCurrency(group.totalPlanned)}
               </div>
             </div>
@@ -410,7 +410,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
                     </div>
                     <div>
                       <div className="font-medium text-white">{category.categoryName}</div>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-sm text-[var(--color-muted-foreground)]">
                         {category.transactionCount} transaction{category.transactionCount !== 1 ? 's' : ''}
                         {category.lastTransactionDate && (
                           <span> • Last: {new Date(category.lastTransactionDate).toLocaleDateString()}</span>
@@ -422,7 +422,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
                     <div className="font-semibold text-white">
                       {formatCurrency(category.actualAmount)}
                     </div>
-                    <div className="text-sm text-gray-400">
+                    <div className="text-sm text-[var(--color-muted-foreground)]">
                       of {formatCurrency(category.plannedAmount)}
                     </div>
                   </div>
@@ -440,7 +440,7 @@ export const BudgetDashboard: React.FC<BudgetDashboardProps> = ({
 
                 <div className="flex justify-between text-sm">
                   <span className={`${
-                    category.isOverBudget ? 'text-red-400' : 'text-gray-400'
+                    category.isOverBudget ? 'text-red-400' : 'text-[var(--color-muted-foreground)]'
                   }`}>
                     {category.percentageUsed.toFixed(1)}% used
                   </span>
