@@ -2170,9 +2170,9 @@ export const BudgetPage: React.FC = () => {
                     <button
                       onClick={() => openBudgetItemModal(group.type)}
                       data-tutorial="add-transaction"
-                      className="w-full text-left py-3 px-4 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      className="w-full text-left py-2.5 px-4 text-sm text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 rounded-lg transition-colors flex items-center gap-1 font-medium"
                     >
-                      + Add Item
+                      <span aria-hidden="true" className="text-base leading-none">+</span> Add Item
                     </button>
                   </div>
 
@@ -2370,187 +2370,134 @@ export const BudgetPage: React.FC = () => {
 
             {/* Summary View */}
             {activeTab === "summary" && (
-              <div className="space-y-6">
-                {/* Circular Progress Chart */}
+              <div className="space-y-5">
+                {/* Donut chart + income label */}
                 <div className="flex flex-col items-center">
-                  <div className="relative w-48 h-48">
+                  <div className="relative w-40 h-40">
                     <svg className="w-full h-full transform -rotate-90">
+                      <circle cx="80" cy="80" r="64" fill="none" stroke="var(--color-muted)" strokeWidth="14" />
                       <circle
-                        cx="96"
-                        cy="96"
-                        r="80"
-                        fill="none"
-                        stroke="#e5e7eb"
-                        strokeWidth="16"
-                      />
-                      {/* Income segment (blue) */}
-                      <circle
-                        cx="96"
-                        cy="96"
-                        r="80"
-                        fill="none"
-                        stroke="#3b82f6"
-                        strokeWidth="16"
-                        strokeDasharray={`${
-                          (totals.income / totals.planned) * 502
-                        } 502`}
-                        strokeDashoffset="0"
+                        cx="80" cy="80" r="64" fill="none"
+                        stroke="var(--color-primary)"
+                        strokeWidth="14"
+                        strokeDasharray={`${Math.min((totals.spent / Math.max(totals.income, 1)) * 402, 402)} 402`}
+                        strokeLinecap="round"
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className="text-xs text-muted-foreground uppercase">
-                        Income
-                      </div>
-                      <div className="text-2xl font-bold text-foreground">
+                      <div className="text-xs text-[var(--color-muted-foreground)]">Income</div>
+                      <div className="text-xl font-bold text-[var(--color-foreground)] tabular-nums">
                         {formatCurrency(totals.income, currency)}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Stats Row */}
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div>
-                    <div className="text-gray-500 uppercase mb-1">Planned</div>
-                    <div className="font-semibold text-gray-900">
+                {/* Stats Row — cleaner labels, no uppercase noise */}
+                <div className="grid grid-cols-3 gap-1 text-center">
+                  <div className="bg-[var(--color-muted)] rounded-lg p-2.5">
+                    <div className="text-[10px] text-[var(--color-muted-foreground)] mb-0.5">Planned</div>
+                    <div className="text-sm font-semibold text-[var(--color-foreground)] tabular-nums">
                       {formatCurrency(totals.planned, currency)}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-gray-500 uppercase mb-1">Spent</div>
-                    <div className="font-semibold text-gray-900">
+                  <div className="bg-[var(--color-muted)] rounded-lg p-2.5">
+                    <div className="text-[10px] text-[var(--color-muted-foreground)] mb-0.5">Spent</div>
+                    <div className="text-sm font-semibold text-[var(--color-foreground)] tabular-nums">
                       {formatCurrency(totals.spent, currency)}
                     </div>
                   </div>
-                  <div>
-                    <div className="text-gray-500 uppercase mb-1">
-                      Remaining
-                    </div>
-                    <div className="font-semibold text-gray-900">
-                      {formatCurrency(totals.remaining, currency)}
+                  <div className="bg-[var(--color-muted)] rounded-lg p-2.5">
+                    <div className="text-[10px] text-[var(--color-muted-foreground)] mb-0.5">Left</div>
+                    <div className={`text-sm font-semibold tabular-nums ${totals.remaining < 0 ? 'text-red-600' : 'text-[var(--color-foreground)]'}`}>
+                      {formatCurrency(Math.abs(totals.remaining), currency)}
                     </div>
                   </div>
                 </div>
 
-                {/* Category Breakdown by Group */}
-                <div className="space-y-3">
+                {/* Group breakdown — pill badges, no % clutter */}
+                <div className="space-y-2">
                   {budget &&
                     budget.groups
                       .filter((g) => g.type !== "income")
                       .map((group, index) => {
-                        const groupTotal = group.categories.reduce(
-                          (sum, cat) => sum + cat.plannedAmount,
-                          0,
-                        );
-                        const percentage =
-                          totals.planned > 0
-                            ? Math.round((groupTotal / totals.planned) * 100)
-                            : 0;
-                        const colors = [
-                          "#10b981",
-                          "#f59e0b",
-                          "#ef4444",
-                          "#8b5cf6",
-                          "#ec4899",
-                          "#06b6d4",
-                        ];
+                        const groupTotal = group.categories.reduce((sum, cat) => sum + cat.plannedAmount, 0);
+                        const groupSpent = group.categories.reduce((sum, cat) => sum + cat.spentAmount, 0);
+                        const colors = ["#059669", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
                         const color = colors[index % colors.length];
-
+                        const pct = groupTotal > 0 ? Math.min((groupSpent / groupTotal) * 100, 100) : 0;
                         return (
-                          <div
-                            key={group.id}
-                            className="flex items-center justify-between"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <div
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: color }}
-                              ></div>
-                              <span
-                                className="text-sm font-medium"
-                                style={{ color }}
-                              >
-                                {group.name}
+                          <div key={group.id}>
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                <span className="text-sm font-medium text-[var(--color-foreground)]">{group.name}</span>
+                              </div>
+                              <span className="text-sm tabular-nums text-[var(--color-muted-foreground)]">
+                                {formatCurrency(groupSpent, currency)} / {formatCurrency(groupTotal, currency)}
                               </span>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-sm font-semibold text-gray-900">
-                                {formatCurrency(groupTotal, currency)}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                ({percentage}%)
-                              </span>
+                            <div className="h-1.5 bg-[var(--color-muted)] rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
                             </div>
                           </div>
                         );
                       })}
                 </div>
 
-                {/* Individual Category Details */}
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-4">
-                    Category Details
-                  </h3>
-                  <div className="space-y-4">
+                {/* Category Details — progress bars, clean layout */}
+                <div className="pt-4 border-t border-[var(--color-border)]">
+                  <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-3">By Category</h3>
+                  <div className="space-y-5">
                     {budget &&
                       budget.groups
                         .filter((g) => g.type !== "income")
                         .map((group) => (
                           <div key={group.id}>
-                            <div className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                            {/* Group label — understated, not ALL CAPS */}
+                            <div className="text-[10px] font-semibold text-[var(--color-muted-foreground)] tracking-wide uppercase mb-2">
                               {group.name}
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                               {group.categories.map((category) => {
                                 const spent = category.spentAmount;
                                 const planned = category.plannedAmount;
-                                const remaining = planned - spent;
-                                const percentSpent =
-                                  planned > 0
-                                    ? Math.round((spent / planned) * 100)
-                                    : 0;
                                 const isOverspent = spent > planned;
+                                const pct = planned > 0 ? Math.min((spent / planned) * 100, 100) : 0;
+                                const overPct = planned > 0 ? Math.round((spent / planned) * 100) : 0;
 
                                 return (
-                                  <div
-                                    key={category.id}
-                                    className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg"
-                                  >
-                                    <div className="flex items-center space-x-2 flex-1">
-                                      <span className="text-sm">
-                                        {category.icon}
-                                      </span>
-                                      <span className="text-sm font-medium text-gray-900">
-                                        {category.name}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center space-x-4 text-xs">
-                                      <div className="text-right">
-                                        <div
-                                          className={`font-semibold ${
-                                            isOverspent
-                                              ? "text-red-600"
-                                              : "text-gray-900"
-                                          }`}
-                                        >
+                                  <div key={category.id}>
+                                    {/* Name + amounts on one line */}
+                                    <div className="flex items-center justify-between mb-1">
+                                      <div className="flex items-center gap-1.5 min-w-0">
+                                        <span className="text-sm shrink-0">{category.icon}</span>
+                                        <span className="text-sm text-[var(--color-foreground)] truncate">{category.name}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                                        <span className={`text-sm tabular-nums font-medium ${isOverspent ? 'text-red-600 dark:text-red-400' : spent > 0 ? 'text-[var(--color-foreground)]' : 'text-[var(--color-muted-foreground)]'}`}>
                                           {formatCurrency(spent, currency)}
-                                        </div>
-                                        <div className="text-gray-500">
-                                          of {formatCurrency(planned, currency)}
-                                        </div>
-                                      </div>
-                                      <div
-                                        className={`font-medium ${
-                                          isOverspent
-                                            ? "text-red-600"
-                                            : remaining === 0
-                                              ? "text-gray-400"
-                                              : "text-green-600"
-                                        }`}
-                                      >
-                                        ({percentSpent}%)
+                                        </span>
+                                        {isOverspent ? (
+                                          <span className="text-[10px] font-semibold bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded-full">
+                                            +{overPct - 100}%
+                                          </span>
+                                        ) : planned > 0 ? (
+                                          <span className="text-[10px] text-[var(--color-muted-foreground)] tabular-nums">
+                                            of {formatCurrency(planned, currency)}
+                                          </span>
+                                        ) : null}
                                       </div>
                                     </div>
+                                    {/* Progress bar — only show if planned > 0 */}
+                                    {planned > 0 && (
+                                      <div className="h-1 bg-[var(--color-muted)] rounded-full overflow-hidden">
+                                        <div
+                                          className={`h-full rounded-full transition-all ${isOverspent ? 'bg-red-500' : pct > 80 ? 'bg-amber-500' : 'bg-[var(--color-primary)]'}`}
+                                          style={{ width: `${pct}%` }}
+                                        />
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -2565,15 +2512,15 @@ export const BudgetPage: React.FC = () => {
             {/* Transactions View */}
             {activeTab === "transactions" && (
               <>
-                {/* Transaction Tabs */}
-                <div className="flex space-x-6 mb-6 border-b border-gray-200">
-                  <button className="pb-2 text-sm font-medium text-gray-500">
+                {/* Transaction Tabs — use design tokens, not hardcoded blue */}
+                <div className="flex space-x-6 mb-5 border-b border-[var(--color-border)]">
+                  <button className="pb-2 text-sm font-medium text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors">
                     New
                   </button>
-                  <button className="pb-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
+                  <button className="pb-2 text-sm font-medium text-[var(--color-primary)] border-b-2 border-[var(--color-primary)]">
                     Tracked
                   </button>
-                  <button className="pb-2 text-sm font-medium text-gray-500">
+                  <button className="pb-2 text-sm font-medium text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors">
                     Deleted
                   </button>
                 </div>
