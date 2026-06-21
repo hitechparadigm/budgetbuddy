@@ -35,6 +35,7 @@ type OnboardingStep =
   | "location"
   | "currency"
   | "family-size"
+  | "subscriptions"
   | "categories"
   | "review";
 
@@ -56,6 +57,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const [isDetecting, setIsDetecting] = useState(false);
   const [showManualSelection, setShowManualSelection] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  // Subscription step state
+  const [hasSubscriptions, setHasSubscriptions] = useState(true);
+  const [subscriptionAmount, setSubscriptionAmount] = useState("85");
 
   // Auto-detect location on mount
   useEffect(() => {
@@ -125,34 +129,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   const handleFamilySizeNext = () => {
     if (!location) {
-      console.error("No location data available");
       alert("Please select a location first before continuing.");
       setStep("location");
       return;
     }
 
-    // Debug: Log the location object with detailed field analysis
-    console.log("Location data:", location);
-    console.log("Location field analysis:", {
-      hasCity: !!location.city,
-      hasCountryCode: !!location.countryCode,
-      city: location.city,
-      countryCode: location.countryCode,
-      cityType: typeof location.city,
-      countryCodeType: typeof location.countryCode,
-      cityLength: location.city?.length,
-      countryCodeLength: location.countryCode?.length,
-    });
-
-    // Ensure we have valid location data
     if (!location.city || !location.countryCode) {
-      console.error("Invalid location data:", location);
-      console.error("Missing fields:", {
-        hasCity: !!location.city,
-        hasCountryCode: !!location.countryCode,
-        city: location.city,
-        countryCode: location.countryCode,
-      });
       alert(
         `Invalid location data. Missing: ${!location.city ? "city" : ""} ${
           !location.countryCode ? "country code" : ""
@@ -162,21 +144,35 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       return;
     }
 
-    const cityKey = createCityKey(location.city, location.countryCode);
-    console.log("Generated city key:", cityKey);
+    // Go to subscription step next
+    setStep("subscriptions");
+  };
 
+  const handleSubscriptionsNext = () => {
+    const cityKey = createCityKey(location!.city, location!.countryCode);
     const sug = getSuggestions(cityKey, familySize);
 
     if (sug) {
-      console.log("Found suggestions for:", sug.city, sug.country);
-      setSuggestions(sug);
-      setSelectedCategories(sug.categories.slice(0, 8)); // Select top 8 by default
+      // Override the Subscriptions category amount based on user input
+      const subsAmount = hasSubscriptions ? Math.max(0, parseFloat(subscriptionAmount) || 0) : 0;
+      const adjustedCategories = sug.categories.map((cat) => {
+        if (cat.name === 'Subscriptions') {
+          return { ...cat, adjustedAmount: subsAmount };
+        }
+        return cat;
+      });
+      // Filter out Subscriptions if user said they have none
+      const filteredCategories = hasSubscriptions
+        ? adjustedCategories
+        : adjustedCategories.filter((c) => c.name !== 'Subscriptions');
+
+      const adjustedSuggestions = { ...sug, categories: filteredCategories };
+      setSuggestions(adjustedSuggestions);
+      setSelectedCategories(filteredCategories.slice(0, 8));
       setStep("categories");
     } else {
-      console.error("No suggestions found for city key:", cityKey);
-      // Show error message to user
       alert(
-        `Sorry, we don't have budget data for ${location.city}, ${location.country}. Please try selecting a different city or use "Start from Scratch" instead.`,
+        `Sorry, we don't have budget data for ${location!.city}, ${location!.country}. Please try selecting a different city or use "Start from Scratch" instead.`,
       );
     }
   };
@@ -235,9 +231,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {[
               "Location",
               "Currency",
-              "Family Size",
+              "Household",
+              "Subscriptions",
               "Categories",
-              "Review",
             ].map((label, idx) => (
               <div key={label} className="flex items-center">
                 <div
@@ -246,16 +242,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       "location",
                       "currency",
                       "family-size",
+                      "subscriptions",
                       "categories",
-                      "review",
                     ].indexOf(step) >= idx
                       ? "bg-green-500 text-white"
-                      : "bg-gray-200 text-[var(--color-muted-foreground)]"
+                      : "bg-[var(--color-muted)] text-[var(--color-muted-foreground)]"
                   }`}
                 >
                   {idx + 1}
                 </div>
-                <span className="ml-2 text-sm text-[var(--color-muted-foreground)] hidden sm:inline">
+                <span className="ml-1 text-xs text-[var(--color-muted-foreground)] hidden sm:inline">
                   {label}
                 </span>
               </div>
@@ -485,7 +481,107 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </div>
           )}
 
-          {/* Step 4: Category Selection */}
+          {/* Step 4: Subscriptions */}
+          {step === "subscriptions" && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-xl font-semibold">📺 Streaming & Subscriptions</h3>
+                <p className="text-[var(--color-muted-foreground)] mt-1 text-sm">
+                  Do you pay for streaming services, software, or other recurring subscriptions?
+                </p>
+              </div>
+
+              {/* Yes/No toggle */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setHasSubscriptions(true)}
+                  className={`p-4 rounded-xl border-2 text-center transition-all ${
+                    hasSubscriptions
+                      ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                      : "border-[var(--color-border)] hover:border-[var(--color-border)]"
+                  }`}
+                >
+                  <div className="text-2xl mb-1">✅</div>
+                  <div className="font-medium text-sm text-[var(--color-foreground)]">Yes</div>
+                  <div className="text-xs text-[var(--color-muted-foreground)] mt-0.5">I have subscriptions</div>
+                </button>
+                <button
+                  onClick={() => setHasSubscriptions(false)}
+                  className={`p-4 rounded-xl border-2 text-center transition-all ${
+                    !hasSubscriptions
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                      : "border-[var(--color-border)] hover:border-[var(--color-border)]"
+                  }`}
+                >
+                  <div className="text-2xl mb-1">❌</div>
+                  <div className="font-medium text-sm text-[var(--color-foreground)]">No</div>
+                  <div className="text-xs text-[var(--color-muted-foreground)] mt-0.5">Skip this category</div>
+                </button>
+              </div>
+
+              {/* Amount input — shown only when Yes */}
+              {hasSubscriptions && (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
+                    How much do you spend on subscriptions monthly?
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-muted-foreground)] font-medium">$</span>
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      value={subscriptionAmount}
+                      onChange={e => setSubscriptionAmount(e.target.value)}
+                      className="w-full pl-8 pr-4 py-3 text-lg font-semibold border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-xl focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      placeholder="85"
+                    />
+                  </div>
+                  {/* Common examples */}
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {[
+                      { label: "Basic (Netflix only)", amount: "18" },
+                      { label: "Standard (Netflix + Spotify)", amount: "28" },
+                      { label: "Full suite", amount: "85" },
+                      { label: "Family bundle", amount: "120" },
+                    ].map(preset => (
+                      <button
+                        key={preset.amount}
+                        onClick={() => setSubscriptionAmount(preset.amount)}
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors border ${
+                          subscriptionAmount === preset.amount
+                            ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)]"
+                            : "bg-[var(--color-muted)] text-[var(--color-muted-foreground)] border-[var(--color-border)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+                        }`}
+                      >
+                        {preset.label} · ${preset.amount}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-[var(--color-muted-foreground)] mt-2">
+                    Common services: Netflix ($18), Spotify ($10), Disney+ ($8), Amazon Prime ($9), Apple TV+ ($10)
+                  </p>
+                </div>
+              )}
+
+              <div className="flex justify-between mt-4">
+                <button
+                  onClick={() => setStep("family-size")}
+                  className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
+                >
+                  ← Back
+                </button>
+                <button
+                  onClick={handleSubscriptionsNext}
+                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 5: Category Selection */}
           {step === "categories" && suggestions && (
             <div className="space-y-4">
               <h3 className="text-xl font-semibold">
@@ -544,7 +640,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
               <div className="flex justify-between mt-8">
                 <button
-                  onClick={() => setStep("family-size")}
+                  onClick={() => setStep("subscriptions")}
                   className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
                 >
                   ← Back

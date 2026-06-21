@@ -138,7 +138,17 @@ function generateCategorySuggestions(
       adjustedAmount: Math.round(
         cityData.expenses.entertainment * multiplier * adjustments.entertainment
       ),
-      reason: 'Movies, streaming, hobbies',
+      reason: 'Movies, events, hobbies (not streaming)',
+      priority: 'medium',
+    },
+    {
+      name: 'Subscriptions',
+      icon: '📺',
+      baseAmount: 85,
+      // Subscriptions are mostly per-person, not location-dependent
+      // Netflix ~$18, Spotify ~$10, Disney+ ~$8, Amazon ~$9, other ~$40 ≈ $85/mo solo
+      adjustedAmount: familySize <= 1 ? 85 : familySize <= 3 ? 110 : 130,
+      reason: 'Streaming, software, subscription services',
       priority: 'medium',
     },
     {
