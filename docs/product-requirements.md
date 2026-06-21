@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-21 (Session 155 — CloudFront stale chunk-load fix: 404/403 TTL→0, /assets/* immutable cache, no-cache index.html; ErrorBoundary auto-reload on chunk errors)
+**Last Updated**: 2026-06-21 (Session 156 — Comprehensive UI/UX production readiness audit: auth form accessibility, design token fixes across GoalFormPage and DebtFormPage, copyright year)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -410,6 +410,50 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 ---
 
+### Session 156 — Production Readiness Audit (2026-06-21)
+
+Comprehensive Playwright-driven audit of the live dev environment (`https://d1ueeugn9zcx7n.cloudfront.net`), testing all 15+ pages at desktop (1280×800) and mobile (375×812) viewports, all forms, modals, navigation flows, and data interactions.
+
+**Auth Forms — Accessibility & UX fixes:**
+- ✅ **`autocomplete` attributes added** — `LoginForm`: email=`"email"`, password=`"current-password"`; `RegisterForm`: firstName=`"given-name"`, lastName=`"family-name"`, email=`"email"`, password=`"new-password"` — eliminates browser warnings, required for password managers and accessibility
+- ✅ **Submit buttons use design tokens** — was hardcoded `bg-blue-600 hover:bg-blue-700`; now `bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]` across both forms; disabled state uses `bg-[var(--color-muted)]`
+- ✅ **Forgot Password UX** — was showing confusing "Password reset is not yet available" stub; now shows clear "Email us at support@budgetbuddy.app and we'll help you get back in" message with mailto link
+- ✅ **Dark mode label fix** — LoginForm labels had `dark:text-gray-300` hardcoded; replaced with `text-[var(--color-foreground)]`
+- ✅ **AuthPage dark mode** — removed `dark:bg-gray-900` hardcoded class; uses `bg-[var(--color-background)]`
+- ✅ **Copyright year** — updated `© 2025` → `© 2026`
+
+**GoalFormPage — Accessibility & Design Token fixes:**
+- ✅ **`htmlFor`/`id` added to all form fields** — Goal Name (`id="goal-name"`), Target Amount (`id="goal-target"`), Starting Amount (`id="goal-current"`), Target Date (`id="goal-date"`) — clicking labels now correctly focuses inputs
+- ✅ **All inputs use design tokens** — added `bg-[var(--color-background)] text-[var(--color-foreground)]`; focus rings changed from `focus:ring-blue-500` to `focus:ring-[var(--color-primary)]`
+- ✅ **Submit button** — was `bg-blue-600 hover:bg-blue-700`; now `bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]`; disabled uses `bg-[var(--color-muted)]`
+- ✅ **Cancel button** — hover was `hover:bg-[var(--color-background)]`; now `hover:bg-[var(--color-muted)]`
+
+**DebtFormPage — Accessibility & Design Token fixes:**
+- ✅ **`htmlFor="debt-name"` + `id="debt-name"`** on debt name label/input
+- ✅ **`htmlFor="debt-type"` + `id="debt-type"`** on debt type label/select
+- ✅ **All inputs/selects use design tokens** — `bg-[var(--color-background)] text-[var(--color-foreground)]` added throughout
+- ✅ **Focus rings** — all `focus:ring-blue-500 focus:border-transparent` → `focus:ring-[var(--color-primary)] focus:border-transparent`
+- ✅ **Submit button** — was `bg-blue-600 hover:bg-blue-700`; now `bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]`
+
+**Audit Findings — All Passing:**
+- ✅ All 15 nav routes load correctly (Overview, Budget, Accounts, Goals, Insights, Bills, Subscriptions, Debt Payoff, Credit Score, Investments, Net Worth, Settings, Members, Pricing, Help)
+- ✅ Month navigation (prev/next/today) works without data loss
+- ✅ Add Transaction modal: opens from FAB, per-category row `+` button, Overview — 5 categories load, amount/date/description fields work, submit saves and closes
+- ✅ Add Bill: all 6 fields work, budget category dropdown loads categories from current budget, recurring toggle + 5 frequency options work, cancel navigates back
+- ✅ Quick Add Transaction from Overview: categories load correctly (5 options), submit saves
+- ✅ Subscriptions → "Add manually" → correctly routes to `/bills/new?type=subscription`
+- ✅ Auth flows: sign in/out/re-login all work; protected routes redirect to `/auth` when logged out
+- ✅ Zero horizontal overflow on all 12 pages at 375px mobile viewport
+- ✅ Mobile hamburger menu visible and functional
+- ✅ 404 page shown correctly for non-existent routes
+- ✅ Settings tabs (Profile/Budget/Notifications/Banks/Privacy/Help) all work
+- ✅ Budget Members + Invite form (email input + role select) functional
+- ✅ Investments, NetWorth, Insights, Debt Payoff, Credit Score all load with data
+- ✅ Credit Score demo disclaimer prominently visible
+- ✅ Keyboard shortcuts on Budget page functional (test env focus limitations noted)
+
+---
+
 ## Known Gaps (⚠️ Planned)
 1. ~~**Family budget transparency not enforced at category level**~~ ✅ **Fixed (Session 148)** — `createBudget` and `updateBudget` now reject any request containing categories with `hidden: true`, `isPrivate: true`, or `visibility: 'private'` when `budgetType === 'family'`. Returns HTTP 400.
 
@@ -655,8 +699,9 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 
 | Step | Frontend | Backend API | Status |
 |------|----------|-------------|--------|
-| Register | `AuthPage.tsx` | `POST /auth/register` | ✅ |
+| Register | `AuthPage.tsx` / `RegisterForm.tsx` — autocomplete attrs, design token buttons, proper `htmlFor`/`id` structure | `POST /auth/register` | ✅ |
 | Google Sign-In | `GoogleSignInButton.tsx` | `POST /auth/google` | ✅ |
+| Sign In | `LoginForm.tsx` — autocomplete on email+password, design token submit button, improved Forgot Password UX | `POST /auth/login` | ✅ |
 | Budget type selection | `OnboardingPage.tsx` — 5-step total, inline descriptions, no disclosure modal | `POST /auth/onboarding` | ✅ |
 | Location + currency + household | `OnboardingFlow.tsx` Steps 2-4 | `GET /auth/geolocation` | ✅ |
 | Subscriptions step | `OnboardingFlow.tsx` Step 4 — Yes/No + amount input, quick presets; carries into Subscriptions category | — | ✅ |
@@ -790,9 +835,10 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Feature | Frontend | Backend API | Status |
 |---------|----------|-------------|--------|
 | Goals card grid | `GoalsPage.tsx` — SVG progress rings, drag-and-drop reorder, "Add Funds" on card | `GET /goals` | ✅ |
-| Create / edit / delete goal | `GoalFormPage.tsx` | `POST/PUT/DELETE /goals` | ✅ |
+| Create / edit / delete goal | `GoalFormPage.tsx` — `htmlFor`/`id` on all fields, design token inputs + button | `POST/PUT/DELETE /goals` | ✅ |
 | Debt payoff calculator | `DebtPayoffPage.tsx` — strategy selector, extra payment slider | `GET /debts/payoff-plan` | ✅ |
 | Debt payoff timeline | `DebtPayoffPage.tsx` — horizontal timeline, color-coded by type, payment modal | `GET /debts/summary` | ✅ |
+| Add / edit debt | `DebtFormPage.tsx` — `htmlFor`/`id` on name+type, design token focus rings + inputs + submit button | `POST/PUT /debts` | ✅ |
 | Mobile goals | `GoalsScreen.tsx` | Same as web | ✅ |
 
 ---
