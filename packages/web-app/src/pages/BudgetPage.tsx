@@ -1864,7 +1864,7 @@ export const BudgetPage: React.FC = () => {
                 {/* Previous Month Button */}
                 <button
                   onClick={() => changeMonth("prev")}
-                  className="p-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                  className="p-2.5 text-[var(--color-muted-foreground)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-muted)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                   aria-label="Previous month"
                 >
                   <svg
@@ -1885,7 +1885,7 @@ export const BudgetPage: React.FC = () => {
                 {/* Next Month Button */}
                 <button
                   onClick={() => changeMonth("next")}
-                  className="p-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors"
+                  className="p-2.5 text-[var(--color-muted-foreground)] border border-[var(--color-border)] rounded-md hover:bg-[var(--color-muted)] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
                   aria-label="Next month"
                 >
                   <svg
