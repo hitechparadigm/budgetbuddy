@@ -45,9 +45,10 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-sm gap-1.5',
-  md: 'px-4 py-2 text-sm gap-2',
-  lg: 'px-6 py-2.5 text-base gap-2',
+  // min-h-[44px] on sm ensures WCAG 2.5.5 touch target compliance on mobile
+  sm: 'px-3 py-1.5 text-sm gap-1.5 min-h-[44px] sm:min-h-0',
+  md: 'px-4 py-2 text-sm gap-2 min-h-[44px]',
+  lg: 'px-6 py-2.5 text-base gap-2 min-h-[44px]',
 };
 
 /**

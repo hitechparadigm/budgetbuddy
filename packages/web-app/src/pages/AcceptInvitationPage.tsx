@@ -216,13 +216,13 @@ export const AcceptInvitationPage: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-8 text-center">
           <div className="text-red-600 text-5xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-[var(--color-foreground)] mb-4">
             Invalid Invitation
           </h1>
-          <p className="text-gray-600 mb-6">{previewError}</p>
+          <p className="text-[var(--color-muted-foreground)] mb-6">{previewError}</p>
           <button
             onClick={() => navigate("/")}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+            className="px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white rounded-lg font-medium"
           >
             Go to Home
           </button>
@@ -280,8 +280,8 @@ export const AcceptInvitationPage: React.FC = () => {
                 }}
                 className={`flex-1 px-4 py-2 rounded-lg font-medium ${
                   authMode === "register"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "bg-[var(--color-muted)] text-[var(--color-foreground)] hover:bg-[var(--color-border)]"
                 }`}
               >
                 Create Account
@@ -293,8 +293,8 @@ export const AcceptInvitationPage: React.FC = () => {
                 }}
                 className={`flex-1 px-4 py-2 rounded-lg font-medium ${
                   authMode === "login"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-[var(--color-primary)] text-white"
+                    : "bg-[var(--color-muted)] text-[var(--color-foreground)] hover:bg-[var(--color-border)]"
                 }`}
               >
                 Log In
@@ -388,7 +388,7 @@ export const AcceptInvitationPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={authenticating}
-                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium"
+                  className="w-full px-4 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white rounded-lg font-medium"
                 >
                   {authenticating ? "Creating account..." : "Create Account & Join"}
                 </button>
@@ -436,7 +436,7 @@ export const AcceptInvitationPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={authenticating}
-                  className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium"
+                  className="w-full px-4 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white rounded-lg font-medium"
                 >
                   {authenticating ? "Logging in..." : "Log In & Accept Invitation"}
                 </button>
@@ -461,7 +461,7 @@ export const AcceptInvitationPage: React.FC = () => {
               <button
                 onClick={handleAcceptInvitation}
                 disabled={accepting}
-                className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg font-medium flex items-center justify-center space-x-2"
+                className="w-full px-6 py-3 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] disabled:opacity-50 text-white rounded-lg font-medium flex items-center justify-center space-x-2"
               >
                 {accepting ? (
                   <>
@@ -516,3 +516,4 @@ export const AcceptInvitationPage: React.FC = () => {
 };
 
 export default AcceptInvitationPage;
+
