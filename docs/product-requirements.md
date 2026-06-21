@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-21 (Session 154 — Fix categories not loading in Add Transaction modal and Add Bill form)
+**Last Updated**: 2026-06-21 (Session 154 — Fix categories not loading in Add Transaction modal and Add Bill form; Subscriptions onboarding step; Subscriptions as AI-generated budget category)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -166,7 +166,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ Rollover logic (basic — surplus/deficit carries between periods)
 
 ### Onboarding
-- ✅ AI-powered budget generation from location + household size (348 cities)
+- ✅ AI-powered budget generation from location + household size (348 cities); **Subscriptions 📺 now always included** as a suggested category (fixed amount, not location-dependent; $85/$110/$130 by household size)
 - ✅ Budget type selection (personal / family / shared) during onboarding
 - ✅ Creates `BUDGET#<id>/METADATA`, `MEMBER#<userId>` (owner), `PERIOD#<month>`, `ACCOUNT#cash` on completion
 - ✅ Writes `defaultBudgetId` to user profile
@@ -276,7 +276,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 ### Web App Polish (Phase 5 — Onboarding & Conversion)
 - ✅ **Landing page rewrite** — new headline "Your budget, built in 60 seconds", 3-step proof, pricing section
 - ✅ **`/pricing` page** — `PricingPage.tsx` at `/pricing`; Free vs Premium comparison table with 17 feature rows; in-app upgrade prompts link here
-- ✅ **Onboarding 4-step redesign** — step progress indicator (1→2→3→4); budget type descriptions shown inline (no separate disclosure modal); navigates to `/overview` after completion
+- ✅ **Onboarding 5-step flow** — Step 1: budget type; Steps 2-5 in `OnboardingFlow`: Location → Currency → Household → **Subscriptions** → Categories; Subscriptions step asks "Do you have streaming services?" with amount input and quick-select presets; budget type descriptions shown inline; navigates to `/overview` after completion
 - ✅ **AI generation animation** — 5-step progress animation during Bedrock call
 - ✅ **Welcome tooltip chain** — `WelcomeTooltipChain.tsx` shows on first login to `/overview`; 3-step spotlight tour (Financial Health Bar → AI Insight → Add Transaction); localStorage gated
 - ✅ **Premium gates** — `PremiumGate` + `PremiumBadge` components; 3 gates: Insights memory, Export buttons, Budget Health Score
@@ -367,7 +367,9 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **Reset modal, Budget item modal, Transaction modal** — all three modals in `BudgetPage.tsx` updated; `bg-white` → `bg-[var(--color-surface)]`, cancel buttons → `bg-[var(--color-muted)]`, text → `text-[var(--color-foreground)]`
 - ✅ **Group headers and category rows** — `text-gray-900` → `text-[var(--color-foreground)]`, `text-gray-500` → `text-[var(--color-muted-foreground)]`; group total row `bg-muted` Tailwind alias → explicit `bg-[var(--color-muted)]`
 
-### Session 154 — Category Loading Fix in Add Transaction Modal and Add Bill Form (2026-06-21)
+### Session 154 — Category Loading Fix + Subscriptions Onboarding Step (2026-06-21)
+
+**Category Loading Bug Fixes:**
 
 **Root cause**: `budget/current` returns `groups` as `{ income: [...], savings: [...], expenses: [...] }` — a plain object where each key holds a flat array of category objects directly. Two components assumed it was either an array of group objects (with a nested `categories` property) or fell back to `[]` when `Array.isArray` returned false.
 
@@ -375,11 +377,22 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **`BillFormPage` categories fixed** — was pushing object-format items into `groups[]` then calling `group.categories` on each (undefined); now reads category items directly from `groups.expenses` and `groups.savings` flat arrays
 - ✅ Both fixes handle both response formats (backend object format and frontend-transformed array format) for robustness
 
+**"Add Subscription" already used BillFormPage** — confirmed from screenshot: `/bills/new?type=subscription` already routes to `BillFormPage` with subscription-specific copy. No routing change needed.
+
+**Subscriptions as an AI-generated Budget Category:**
+- ✅ **"Subscriptions 📺" added to `categorySuggestionService.ts`** — always included in AI-suggested budgets regardless of city; uses realistic fixed defaults ($85 solo, $110 for 2-3 people, $130 for 4+) since streaming costs are not location-dependent; "Entertainment" description updated to "Movies, events, hobbies (not streaming)" to prevent double-counting
+- ✅ **Dedicated "Streaming & Subscriptions" step added to onboarding** — new Step 4 (of 5) inserted between "Household size" and "Categories":
+  - Yes/No selector: "Do you have streaming services or subscriptions?"
+  - If Yes: amount input pre-filled with $85 + quick-select presets (Basic $18, Standard $28, Full suite $85, Family bundle $120) + hint listing common service prices
+  - If No: Subscriptions category is excluded from the generated budget entirely
+  - User's chosen amount overrides the default and carries forward into the category selection step
+- ✅ **Onboarding step count updated** — 4 steps → 5 steps; `OnboardingPage` step progress dots updated (4 → 5), Continue button updated to "Step 2 of 5"; `OnboardingFlow` progress bar labels updated to: Location → Currency → Household → Subscriptions → Categories
+- ✅ **`handleSubscriptionsNext` function** — resolves city suggestions, applies subscription amount override, filters out Subscriptions if user opted out, advances to Categories step
+- ✅ **Back navigation updated** — Categories step "Back" now returns to Subscriptions step (was Family Size)
+
 ---
 
-
-
-### High Priority
+## Known Gaps (⚠️ Planned)
 1. ~~**Family budget transparency not enforced at category level**~~ ✅ **Fixed (Session 148)** — `createBudget` and `updateBudget` now reject any request containing categories with `hidden: true`, `isPrivate: true`, or `visibility: 'private'` when `budgetType === 'family'`. Returns HTTP 400.
 
 2. **`canUseFeature()` not called in Lambda handlers** — the entitlement pattern is wired but Phase 1 intentionally leaves all features open. Phase 2 will add actual gating for `reports.advanced` and `budget.export`.
@@ -626,12 +639,13 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 |------|----------|-------------|--------|
 | Register | `AuthPage.tsx` | `POST /auth/register` | ✅ |
 | Google Sign-In | `GoogleSignInButton.tsx` | `POST /auth/google` | ✅ |
-| Budget type selection | `OnboardingPage.tsx` — 4-step, inline descriptions, no disclosure modal | `POST /auth/onboarding` | ✅ |
-| Location + currency + household | `OnboardingFlow.tsx` | `GET /auth/geolocation` | ✅ |
+| Budget type selection | `OnboardingPage.tsx` — 5-step total, inline descriptions, no disclosure modal | `POST /auth/onboarding` | ✅ |
+| Location + currency + household | `OnboardingFlow.tsx` Steps 2-4 | `GET /auth/geolocation` | ✅ |
+| Subscriptions step | `OnboardingFlow.tsx` Step 4 — Yes/No + amount input, quick presets; carries into Subscriptions category | — | ✅ |
 | AI budget generation | `AIBudgetGenerationPage.tsx` — 5-step progress animation | `POST /budget/ai-generate` (real Bedrock call) | ✅ |
 | Welcome tour | `WelcomeTooltipChain.tsx` — 3-step spotlight on `/overview` | — | ✅ |
 
-**Completed since Session 149**: AI generation mock replaced with real Bedrock call; onboarding redesigned with 4-step progress indicator; navigates to `/overview` (was `/budget`); welcome tooltip chain added
+**Completed since Session 149**: AI generation mock replaced with real Bedrock call; onboarding redesigned with 5-step flow (was 4); Subscriptions step added; navigates to `/overview` (was `/budget`); welcome tooltip chain added
 
 ---
 
