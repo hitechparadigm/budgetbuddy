@@ -227,10 +227,10 @@ export const AIBudgetGenerationPage: React.FC = () => {
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-[var(--color-foreground)] mb-2">
             Building your budget...
           </h2>
-          <p className="text-gray-600 mb-6 min-h-[1.5rem] transition-all">
+          <p className="text-[var(--color-muted-foreground)] mb-6 min-h-[1.5rem] transition-all">
             {step.label}
           </p>
 
@@ -260,9 +260,9 @@ export const AIBudgetGenerationPage: React.FC = () => {
 
   if (!budget) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-[var(--color-foreground)] mb-4">
             Something went wrong
           </h2>
           <button
@@ -277,7 +277,7 @@ export const AIBudgetGenerationPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-[var(--color-background)] py-8">
       <div className="max-w-4xl mx-auto px-4">
         {/* Fallback notice when AI was unavailable */}
         {error && (
@@ -292,23 +292,23 @@ export const AIBudgetGenerationPage: React.FC = () => {
               ✨ AI-Generated Budget
             </span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-[var(--color-foreground)] mb-2">
             Here's your personalized budget! 🎯
           </h1>
-          <p className="text-gray-600">
+          <p className="text-[var(--color-muted-foreground)]">
             Based on your responses and cost-of-living data for{" "}
             {budget.location}
           </p>
         </div>
 
         {/* Budget Summary */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="bg-[var(--color-surface)] rounded-lg shadow-sm border border-[var(--color-border)] p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
                 {formatCurrency(budget.monthlyIncome, budget.currency || "USD")}
               </div>
-              <div className="text-sm text-gray-600">Monthly Income</div>
+              <div className="text-sm text-[var(--color-muted-foreground)]">Monthly Income</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
@@ -317,7 +317,7 @@ export const AIBudgetGenerationPage: React.FC = () => {
                   budget.currency || "USD",
                 )}
               </div>
-              <div className="text-sm text-gray-600">Total Allocated</div>
+              <div className="text-sm text-[var(--color-muted-foreground)]">Total Allocated</div>
             </div>
             <div className="text-center">
               <div
@@ -328,7 +328,7 @@ export const AIBudgetGenerationPage: React.FC = () => {
                   budget.currency || "USD",
                 )}
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-[var(--color-muted-foreground)]">
                 {budget.remaining >= 0 ? "Remaining" : "Over Budget"}
               </div>
             </div>
@@ -336,7 +336,7 @@ export const AIBudgetGenerationPage: React.FC = () => {
               <div className="text-2xl font-bold text-purple-600">
                 {budget.householdSize}
               </div>
-              <div className="text-sm text-gray-600">Household Size</div>
+              <div className="text-sm text-[var(--color-muted-foreground)]">Household Size</div>
             </div>
           </div>
         </div>
@@ -344,7 +344,7 @@ export const AIBudgetGenerationPage: React.FC = () => {
         {/* Budget Categories */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Income */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-[var(--color-surface)] rounded-lg shadow-sm border border-[var(--color-border)] p-6">
             <h3 className="text-lg font-semibold text-green-600 mb-4 flex items-center">
               💰 Income
             </h3>
@@ -357,10 +357,10 @@ export const AIBudgetGenerationPage: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{category.icon}</span>
                     <div>
-                      <div className="text-gray-900 font-medium">
+                      <div className="text-[var(--color-foreground)] font-medium">
                         {category.name}
                       </div>
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs text-[var(--color-muted-foreground)]">
                         {category.description}
                       </div>
                     </div>
@@ -377,7 +377,7 @@ export const AIBudgetGenerationPage: React.FC = () => {
           </div>
 
           {/* Savings */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-[var(--color-surface)] rounded-lg shadow-sm border border-[var(--color-border)] p-6">
             <h3 className="text-lg font-semibold text-blue-600 mb-4 flex items-center">
               💾 Savings
             </h3>
@@ -390,10 +390,10 @@ export const AIBudgetGenerationPage: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{category.icon}</span>
                     <div>
-                      <div className="text-gray-900 font-medium">
+                      <div className="text-[var(--color-foreground)] font-medium">
                         {category.name}
                       </div>
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs text-[var(--color-muted-foreground)]">
                         {category.description}
                       </div>
                     </div>
@@ -410,7 +410,7 @@ export const AIBudgetGenerationPage: React.FC = () => {
           </div>
 
           {/* Expenses */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-[var(--color-surface)] rounded-lg shadow-sm border border-[var(--color-border)] p-6">
             <h3 className="text-lg font-semibold text-red-600 mb-4 flex items-center">
               💸 Expenses
             </h3>
@@ -423,10 +423,10 @@ export const AIBudgetGenerationPage: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{category.icon}</span>
                     <div>
-                      <div className="text-gray-900 font-medium">
+                      <div className="text-[var(--color-foreground)] font-medium">
                         {category.name}
                       </div>
-                      <div className="text-xs text-gray-600">
+                      <div className="text-xs text-[var(--color-muted-foreground)]">
                         {category.description}
                       </div>
                     </div>
@@ -445,14 +445,14 @@ export const AIBudgetGenerationPage: React.FC = () => {
 
         {/* AI Insights */}
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4 flex items-center">
             🤖 AI Insights & Recommendations
           </h3>
           <div className="space-y-3">
             {budget.aiInsights.map((insight, index) => (
               <div key={index} className="flex items-start space-x-3">
                 <span className="text-blue-600 mt-1">•</span>
-                <p className="text-gray-700">{insight}</p>
+                <p className="text-[var(--color-foreground)]">{insight}</p>
               </div>
             ))}
           </div>
@@ -474,7 +474,7 @@ export const AIBudgetGenerationPage: React.FC = () => {
           </button>
           <button
             onClick={handleStartOver}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-8 py-3 rounded-lg font-semibold transition-colors"
+            className="bg-gray-200 hover:bg-gray-300 text-[var(--color-foreground)] px-8 py-3 rounded-lg font-semibold transition-colors"
           >
             🔄 Start Over
           </button>

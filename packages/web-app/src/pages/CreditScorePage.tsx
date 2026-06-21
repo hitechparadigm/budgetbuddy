@@ -82,7 +82,7 @@ const CreditScorePage: React.FC = () => {
       case "poor":
         return "text-red-600";
       default:
-        return "text-gray-600";
+        return "text-[var(--color-muted-foreground)]";
     }
   };
 
@@ -95,7 +95,7 @@ const CreditScorePage: React.FC = () => {
       case "low":
         return "bg-green-100 text-green-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-[var(--color-muted)] text-[var(--color-foreground)]";
     }
   };
 
@@ -211,14 +211,14 @@ const CreditScorePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-[var(--color-background)] p-6">
         <div className="max-w-4xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <div className="bg-[var(--color-surface)] rounded-lg shadow p-6 mb-6">
               <div className="h-32 bg-gray-200 rounded"></div>
             </div>
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[var(--color-surface)] rounded-lg shadow p-6">
               <div className="h-64 bg-gray-200 rounded"></div>
             </div>
           </div>
@@ -228,7 +228,7 @@ const CreditScorePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-[var(--color-background)] p-6">
       <div className="max-w-4xl mx-auto">
         {/* Simulation disclaimer — remove when real credit bureau integration is live */}
         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
@@ -314,11 +314,11 @@ const CreditScorePage: React.FC = () => {
         )}
 
         {/* Current Score Card */}
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
+        <div className="bg-[var(--color-surface)] rounded-lg shadow-lg p-8 mb-6">
           {creditScore?.score ? (
             <>
               <div className="text-center mb-6">
-                <div className="text-6xl font-bold text-gray-900 mb-2">
+                <div className="text-6xl font-bold text-[var(--color-foreground)] mb-2">
                   {creditScore.score}
                 </div>
                 <div
@@ -369,18 +369,18 @@ const CreditScorePage: React.FC = () => {
               {/* Score Range Indicator */}
               <div className="relative h-3 bg-gradient-to-r from-red-500 via-yellow-500 via-green-500 to-blue-500 rounded-full mb-2">
                 <div
-                  className="absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-white border-4 border-gray-900 rounded-full shadow-lg"
+                  className="absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-[var(--color-surface)] border-4 border-gray-900 rounded-full shadow-lg"
                   style={{
                     left: `${((creditScore.score - 300) / 550) * 100}%`,
                   }}
                 />
               </div>
-              <div className="flex justify-between text-xs text-gray-600">
+              <div className="flex justify-between text-xs text-[var(--color-muted-foreground)]">
                 <span>300</span>
                 <span>850</span>
               </div>
 
-              <div className="mt-4 text-center text-sm text-gray-600">
+              <div className="mt-4 text-center text-sm text-[var(--color-muted-foreground)]">
                 Last updated:{" "}
                 {new Date(creditScore.lastUpdated).toLocaleDateString()}
               </div>
@@ -388,7 +388,7 @@ const CreditScorePage: React.FC = () => {
           ) : (
             <div className="text-center py-8">
               <svg
-                className="h-16 w-16 text-gray-400 mx-auto mb-4"
+                className="h-16 w-16 text-[var(--color-muted-foreground)] mx-auto mb-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -400,10 +400,10 @@ const CreditScorePage: React.FC = () => {
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2">
                 No Credit Score Data
               </h3>
-              <p className="text-gray-600 mb-4">
+              <p className="text-[var(--color-muted-foreground)] mb-4">
                 Connect your credit bureau account to start monitoring your
                 credit score
               </p>
@@ -420,21 +420,21 @@ const CreditScorePage: React.FC = () => {
         {creditScore?.score && (
           <>
             {/* Factors Affecting Score */}
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <div className="bg-[var(--color-surface)] rounded-lg shadow-lg p-6 mb-6">
+              <h2 className="text-xl font-bold text-[var(--color-foreground)] mb-4">
                 Factors Affecting Your Score
               </h2>
               <div className="space-y-3">
                 {creditScore.factors.map((factor, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-[var(--color-background)] rounded-lg"
                   >
                     <div className="flex-1">
-                      <div className="font-semibold text-gray-900">
+                      <div className="font-semibold text-[var(--color-foreground)]">
                         {factor.name}
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-[var(--color-muted-foreground)]">
                         {factor.status}
                       </div>
                     </div>
@@ -450,24 +450,24 @@ const CreditScorePage: React.FC = () => {
 
             {/* Score History Chart */}
             {history.length > 0 && (
-              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
+              <div className="bg-[var(--color-surface)] rounded-lg shadow-lg p-6 mb-6">
+                <h2 className="text-xl font-bold text-[var(--color-foreground)] mb-4">
                   Score History
                 </h2>
                 <div className="space-y-2">
                   {history.map((entry, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-[var(--color-background)] rounded-lg"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-[var(--color-muted-foreground)]">
                           {new Date(entry.date).toLocaleDateString("en-US", {
                             month: "short",
                             year: "numeric",
                           })}
                         </div>
-                        <div className="font-semibold text-gray-900">
+                        <div className="font-semibold text-[var(--color-foreground)]">
                           {entry.score}
                         </div>
                         <div
@@ -491,18 +491,18 @@ const CreditScorePage: React.FC = () => {
             )}
 
             {/* Improvement Tips */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <div className="bg-[var(--color-surface)] rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-bold text-[var(--color-foreground)] mb-4">
                 Personalized Tips to Improve Your Score
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-[var(--color-muted-foreground)] mb-6">
                 Based on your current score and factors, here are specific
                 actions you can take:
               </p>
               <div className="space-y-6">
                 {getImprovementTips().map((section, sectionIndex) => (
                   <div key={sectionIndex}>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-3 flex items-center gap-2">
                       <svg
                         className="h-5 w-5 text-blue-600"
                         fill="none"
@@ -522,7 +522,7 @@ const CreditScorePage: React.FC = () => {
                       {section.tips.map((tip, tipIndex) => (
                         <div
                           key={tipIndex}
-                          className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                          className="flex items-start gap-3 p-3 bg-[var(--color-background)] rounded-lg"
                         >
                           <svg
                             className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5"
@@ -537,7 +537,7 @@ const CreditScorePage: React.FC = () => {
                               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                           </svg>
-                          <p className="text-gray-700 text-sm">{tip}</p>
+                          <p className="text-[var(--color-foreground)] text-sm">{tip}</p>
                         </div>
                       ))}
                     </div>

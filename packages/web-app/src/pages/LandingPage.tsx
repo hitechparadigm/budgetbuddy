@@ -71,16 +71,16 @@ export const LandingPage: React.FC = () => {
   useAuthRedirect(); // Redirect to /overview if already authenticated
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
+    <div className="min-h-screen bg-[var(--color-surface)] dark:bg-gray-900">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-800">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-[var(--color-border)] dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">$</span>
               </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
+              <span className="text-xl font-bold text-[var(--color-foreground)] dark:text-white">
                 BudgetBuddy
               </span>
             </div>
@@ -113,11 +113,11 @@ export const LandingPage: React.FC = () => {
             <span>Used across 348 cities worldwide</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[var(--color-foreground)] dark:text-white leading-tight">
             Your budget, built in{' '}
             <span className="text-emerald-600">60 seconds.</span>
           </h1>
-          <p className="mt-6 text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+          <p className="mt-6 text-lg sm:text-xl text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] max-w-2xl mx-auto">
             Tell us your city and household size. We'll generate a personalized
             zero-based budget using local cost-of-living data. No spreadsheets.
             No guesswork.
@@ -142,7 +142,7 @@ export const LandingPage: React.FC = () => {
               See how it works
             </Button>
           </div>
-          <p className="mt-4 text-sm text-gray-500 dark:text-gray-500">
+          <p className="mt-4 text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
             Free forever. No credit card required.
           </p>
         </div>
@@ -152,19 +152,19 @@ export const LandingPage: React.FC = () => {
       <section id="how-it-works" className="py-16 px-4 sm:px-6 lg:px-8 bg-emerald-50 dark:bg-emerald-950/20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[var(--color-foreground)] dark:text-white">
               From zero to budget in 3 steps
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {PROOF_STEPS.map(({ step, label, icon, desc }) => (
-              <div key={step} className="flex flex-col items-center text-center p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-emerald-100 dark:border-emerald-900">
+              <div key={step} className="flex flex-col items-center text-center p-6 bg-[var(--color-surface)] dark:bg-gray-800 rounded-xl shadow-sm border border-emerald-100 dark:border-emerald-900">
                 <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-full flex items-center justify-center text-xl font-bold mb-4">
                   {step}
                 </div>
                 <div className="text-2xl mb-2">{icon}</div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{label}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{desc}</p>
+                <h3 className="font-semibold text-[var(--color-foreground)] dark:text-white mb-1">{label}</h3>
+                <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">{desc}</p>
               </div>
             ))}
           </div>
@@ -172,13 +172,13 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800/50">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[var(--color-background)] dark:bg-gray-800/50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-3xl sm:text-4xl font-bold text-[var(--color-foreground)] dark:text-white">
               Everything you need to budget smarter
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">
+            <p className="mt-4 text-lg text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
               For individuals, couples, families, and roommates.
             </p>
           </div>
@@ -186,13 +186,13 @@ export const LandingPage: React.FC = () => {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                className="p-6 bg-[var(--color-surface)] dark:bg-gray-800 rounded-xl shadow-sm border border-[var(--color-border)] dark:border-gray-700 hover:shadow-md transition-shadow"
               >
                 <div className="text-3xl mb-4">{feature.icon}</div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-white mb-2">
                   {feature.title}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                   {feature.description}
                 </p>
               </div>
@@ -204,18 +204,18 @@ export const LandingPage: React.FC = () => {
       {/* Pricing Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-[var(--color-foreground)] dark:text-white mb-4">
             Simple, transparent pricing
           </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400 mb-12">
+          <p className="text-lg text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mb-12">
             Start free — upgrade when you're ready.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Free tier */}
-            <div className="border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-8 text-left">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Free</h3>
-              <p className="text-4xl font-bold text-gray-900 dark:text-white mb-6">$0<span className="text-base font-normal text-gray-500">/mo</span></p>
-              <ul className="space-y-3 mb-8 text-gray-600 dark:text-gray-400 text-sm">
+            <div className="border-2 border-[var(--color-border)] dark:border-gray-700 rounded-2xl p-8 text-left">
+              <h3 className="text-xl font-bold text-[var(--color-foreground)] dark:text-white mb-1">Free</h3>
+              <p className="text-4xl font-bold text-[var(--color-foreground)] dark:text-white mb-6">$0<span className="text-base font-normal text-[var(--color-muted-foreground)]">/mo</span></p>
+              <ul className="space-y-3 mb-8 text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] text-sm">
                 {['1 personal budget', 'AI budget generation', 'Bank account sync (Plaid)', 'Goals & debt payoff tracking', 'Basic spending insights', 'Invite 1 viewer'].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <span className="text-emerald-500">✓</span> {item}
@@ -231,9 +231,9 @@ export const LandingPage: React.FC = () => {
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
                 Most popular
               </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Premium</h3>
-              <p className="text-4xl font-bold text-gray-900 dark:text-white mb-6">$9.99<span className="text-base font-normal text-gray-500">/mo</span></p>
-              <ul className="space-y-3 mb-8 text-gray-600 dark:text-gray-400 text-sm">
+              <h3 className="text-xl font-bold text-[var(--color-foreground)] dark:text-white mb-1">Premium</h3>
+              <p className="text-4xl font-bold text-[var(--color-foreground)] dark:text-white mb-6">$9.99<span className="text-base font-normal text-[var(--color-muted-foreground)]">/mo</span></p>
+              <ul className="space-y-3 mb-8 text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] text-sm">
                 {['Everything in Free', 'Multiple budgets (personal, family, shared)', 'AI coach with conversation memory', 'Advanced spending reports', 'Data export (CSV, PDF)', 'Budget Health Score history', 'Unlimited members & viewers'].map(item => (
                   <li key={item} className="flex items-center gap-2">
                     <span className="text-emerald-500">✓</span> {item}
@@ -261,7 +261,7 @@ export const LandingPage: React.FC = () => {
             variant="secondary"
             size="lg"
             onClick={() => navigate("/auth")}
-            className="bg-white text-emerald-700 hover:bg-emerald-50 border-0"
+            className="bg-[var(--color-surface)] text-emerald-700 hover:bg-emerald-50 border-0"
           >
             Build my budget — it's free
           </Button>
@@ -269,43 +269,43 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-gray-200 dark:border-gray-800">
+      <footer className="py-12 px-4 sm:px-6 lg:px-8 border-t border-[var(--color-border)] dark:border-gray-800">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-emerald-600 rounded flex items-center justify-center">
               <span className="text-white font-bold text-xs">$</span>
             </div>
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <span className="text-sm font-medium text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
               BudgetBuddy
             </span>
           </div>
-          <div className="flex gap-6 text-sm text-gray-500 dark:text-gray-500">
+          <div className="flex gap-6 text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
             <button
               onClick={() => navigate("/privacy")}
-              className="hover:text-gray-700 dark:hover:text-gray-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
+              className="hover:text-[var(--color-foreground)] dark:hover:text-gray-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
             >
               Privacy
             </button>
             <button
               onClick={() => navigate("/terms")}
-              className="hover:text-gray-700 dark:hover:text-gray-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
+              className="hover:text-[var(--color-foreground)] dark:hover:text-gray-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
             >
               Terms
             </button>
             <button
               onClick={() => navigate("/help")}
-              className="hover:text-gray-700 dark:hover:text-gray-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
+              className="hover:text-[var(--color-foreground)] dark:hover:text-gray-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
             >
               Help
             </button>
             <button
               onClick={() => navigate("/about")}
-              className="hover:text-gray-700 dark:hover:text-gray-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
+              className="hover:text-[var(--color-foreground)] dark:hover:text-gray-300 underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded"
             >
               About
             </button>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-500">
+          <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
             © 2026 BudgetBuddy. All rights reserved.
           </p>
         </div>

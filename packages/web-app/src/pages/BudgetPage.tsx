@@ -1732,15 +1732,15 @@ export const BudgetPage: React.FC = () => {
               {/* AI-Generated Budget Option */}
               <button
                 onClick={() => navigate("/onboarding")}
-                className="p-6 bg-white border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-left"
+                className="p-6 bg-[var(--color-surface)] border-2 border-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-left"
               >
                 <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mb-4 mx-auto">
                   <span className="text-2xl">🤖</span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
+                <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2 text-center">
                   AI-Generated
                 </h3>
-                <p className="text-sm text-gray-600 text-center">
+                <p className="text-sm text-[var(--color-muted-foreground)] text-center">
                   Let AI create a personalized budget based on your income and
                   goals
                 </p>
@@ -1791,7 +1791,7 @@ export const BudgetPage: React.FC = () => {
                   setBudget(emptyBudget);
                   saveBudgetToBackend(emptyBudget);
                 }}
-                className="p-6 bg-surface border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors text-left"
+                className="p-6 bg-surface border-2 border-[var(--color-border)] dark:border-gray-600 rounded-lg hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors text-left"
               >
                 <div className="flex items-center justify-center w-12 h-12 bg-muted rounded-lg mb-4 mx-auto">
                   <span className="text-2xl">✏️</span>
@@ -2005,9 +2005,9 @@ export const BudgetPage: React.FC = () => {
               <div className="text-center max-w-md">
                 {/* Icon */}
                 <div className="mb-6 flex justify-center">
-                  <div className="w-48 h-48 rounded-full border-4 border-gray-200 flex items-center justify-center">
+                  <div className="w-48 h-48 rounded-full border-4 border-[var(--color-border)] flex items-center justify-center">
                     <svg
-                      className="w-24 h-24 text-gray-400"
+                      className="w-24 h-24 text-[var(--color-muted-foreground)]"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -2029,11 +2029,11 @@ export const BudgetPage: React.FC = () => {
                 </div>
 
                 {/* Message */}
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                <h2 className="text-2xl font-bold text-[var(--color-foreground)] mb-3">
                   Hey there, looks like you need a budget for{" "}
                   {getMonthName(currentMonth).split(" ")[0]}.
                 </h2>
-                <p className="text-gray-600 mb-6">
+                <p className="text-[var(--color-muted-foreground)] mb-6">
                   We'll copy{" "}
                   {(() => {
                     const [year, month] = currentMonth.split("-").map(Number);
@@ -2249,7 +2249,7 @@ export const BudgetPage: React.FC = () => {
                     <div className="text-foreground">Total {group.name}</div>
                     <div className="flex items-center gap-6 md:gap-4">
                       <div className="text-left md:text-right md:w-24 flex-shrink-0">
-                        <div className="text-xs md:hidden text-gray-500 font-normal mb-0.5">
+                        <div className="text-xs md:hidden text-[var(--color-muted-foreground)] font-normal mb-0.5">
                           Planned
                         </div>
                         <div>
@@ -2263,7 +2263,7 @@ export const BudgetPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right md:w-24 flex-shrink-0">
-                        <div className="text-xs md:hidden text-gray-500 font-normal mb-0.5">
+                        <div className="text-xs md:hidden text-[var(--color-muted-foreground)] font-normal mb-0.5">
                           Received
                         </div>
                         <div>
@@ -2605,7 +2605,7 @@ export const BudgetPage: React.FC = () => {
 
                 {/* Filtered Transactions */}
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
+                  <div className="flex items-center justify-between text-sm text-[var(--color-muted-foreground)] mb-2">
                     <span>
                       {hasActiveFilters
                         ? `${filteredTransactions.length} result${filteredTransactions.length !== 1 ? "s" : ""}`
@@ -2614,14 +2614,14 @@ export const BudgetPage: React.FC = () => {
                           })}
                     </span>
                     {hasActiveFilters && (
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-[var(--color-muted-foreground)]">
                         of {allTransactions.length} total
                       </span>
                     )}
                   </div>
 
                   {/* Sort controls */}
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
+                  <div className="flex items-center gap-2 text-xs text-[var(--color-muted-foreground)] mb-2">
                     <span>Sort:</span>
                     {(["date", "amount", "description"] as const).map(
                       (field) => (
@@ -2640,7 +2640,7 @@ export const BudgetPage: React.FC = () => {
                           className={`px-2 py-0.5 rounded capitalize transition-colors ${
                             sortBy === field
                               ? "bg-emerald-100 text-emerald-700 font-medium"
-                              : "hover:bg-gray-100"
+                              : "hover:bg-[var(--color-muted)]"
                           }`}
                         >
                           {field}{" "}
@@ -2661,7 +2661,7 @@ export const BudgetPage: React.FC = () => {
                       return (
                         <div
                           key={txn.id}
-                          className="group/transaction flex items-center space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100"
+                          className="group/transaction flex items-center space-x-3 p-3 bg-[var(--color-background)] rounded-lg hover:bg-[var(--color-muted)]"
                         >
                           <div
                             className={`w-8 h-8 ${
@@ -2677,13 +2677,13 @@ export const BudgetPage: React.FC = () => {
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-gray-900 truncate">
+                            <div className="text-sm font-medium text-[var(--color-foreground)] truncate">
                               {txn.description}
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-[var(--color-muted-foreground)]">
                               {txn.categoryName}
                               {txn.date && (
-                                <span className="ml-2 text-gray-400">
+                                <span className="ml-2 text-[var(--color-muted-foreground)]">
                                   {new Date(txn.date).toLocaleDateString(
                                     "en-US",
                                     {
@@ -2707,7 +2707,7 @@ export const BudgetPage: React.FC = () => {
                             onClick={() =>
                               handleDeleteTransaction(txn.id, txn.categoryId)
                             }
-                            className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors flex-shrink-0"
+                            className="p-1 text-[var(--color-muted-foreground)] hover:text-red-600 rounded transition-colors flex-shrink-0"
                             title="Delete transaction"
                           >
                             <svg
@@ -2737,7 +2737,7 @@ export const BudgetPage: React.FC = () => {
                                 });
                                 setShowRecurringModal(true);
                               }}
-                              className="p-1 text-gray-400 hover:text-indigo-600 rounded transition-colors flex-shrink-0 opacity-0 group-hover/transaction:opacity-100"
+                              className="p-1 text-[var(--color-muted-foreground)] hover:text-indigo-600 rounded transition-colors flex-shrink-0 opacity-0 group-hover/transaction:opacity-100"
                               title="Mark as recurring bill"
                             >
                               <svg
@@ -2761,7 +2761,7 @@ export const BudgetPage: React.FC = () => {
 
                     {/* Empty state */}
                     {sortedTransactions.length === 0 && (
-                      <div className="text-center py-8 text-gray-400">
+                      <div className="text-center py-8 text-[var(--color-muted-foreground)]">
                         {hasActiveFilters ? (
                           <>
                             <EmptyState

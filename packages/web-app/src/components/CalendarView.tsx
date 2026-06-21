@@ -138,13 +138,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg shadow-sm border border-[var(--color-border)] dark:border-gray-700">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <div className="p-4 border-b border-[var(--color-border)] dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-white">
           {monthNames[monthNum - 1]} {year}
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mt-1">
           Click on a day to see transactions
         </p>
       </div>
@@ -156,7 +156,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           {weekDays.map((day) => (
             <div
               key={day}
-              className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-2"
+              className="text-center text-xs font-medium text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] py-2"
             >
               {day}
             </div>
@@ -184,8 +184,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   isSelected
                     ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                     : hasTransactions
-                      ? "border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500"
-                      : "border-transparent hover:bg-gray-50 dark:hover:bg-gray-700"
+                      ? "border-[var(--color-border)] dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500"
+                      : "border-transparent hover:bg-[var(--color-background)] dark:hover:bg-gray-700"
                 } ${isToday(day) ? "ring-2 ring-blue-500 ring-offset-1" : ""}`}
               >
                 <div className="flex flex-col h-full">
@@ -193,7 +193,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     className={`text-sm font-medium ${
                       isToday(day)
                         ? "text-blue-600 dark:text-blue-400"
-                        : "text-gray-900 dark:text-white"
+                        : "text-[var(--color-foreground)] dark:text-white"
                     }`}
                   >
                     {day}
@@ -211,7 +211,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           -{formatCurrency(totals.expense)}
                         </div>
                       )}
-                      <div className="text-xs text-gray-400 dark:text-gray-500">
+                      <div className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                         {dayTransactions.length} txn
                         {dayTransactions.length !== 1 ? "s" : ""}
                       </div>
@@ -226,8 +226,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* Selected Date Details */}
       {selectedDate && transactionsByDate[selectedDate]?.length > 0 && (
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+        <div className="border-t border-[var(--color-border)] dark:border-gray-700 p-4">
+          <h4 className="text-sm font-semibold text-[var(--color-foreground)] dark:text-white mb-3">
             Transactions on{" "}
             {new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", {
               weekday: "long",
@@ -239,14 +239,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             {transactionsByDate[selectedDate].map((tx) => (
               <div
                 key={tx.id}
-                className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                className="flex items-center justify-between py-2 px-3 bg-[var(--color-background)] dark:bg-gray-700 rounded-lg"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  <p className="text-sm font-medium text-[var(--color-foreground)] dark:text-white truncate">
                     {tx.description}
                   </p>
                   {tx.categoryName && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
                       {tx.categoryName}
                     </p>
                   )}
@@ -269,7 +269,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
       {/* Legend */}
       <div className="px-4 pb-4">
-        <div className="flex items-center justify-center space-x-6 text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex items-center justify-center space-x-6 text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
           <div className="flex items-center space-x-1">
             <div className="w-3 h-3 rounded bg-green-500" />
             <span>Income</span>

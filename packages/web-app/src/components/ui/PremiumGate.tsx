@@ -84,11 +84,11 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
           <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center mx-auto mb-3">
             <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
           </div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
+          <h3 className="text-sm font-semibold text-[var(--color-foreground)] dark:text-white mb-1">
             {feature} is a Premium feature
           </h3>
           {description && (
-            <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-xs text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mb-4">
               {description}
             </p>
           )}
@@ -100,7 +100,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
           >
             Upgrade to Premium
           </Button>
-          <p className="mt-2 text-xs text-gray-400">$9.99/mo — cancel anytime</p>
+          <p className="mt-2 text-xs text-[var(--color-muted-foreground)]">$9.99/mo — cancel anytime</p>
         </div>
       </div>
     </div>

@@ -56,7 +56,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
   }, [location.pathname]);
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen bg-[var(--color-background)] dark:bg-gray-900">
       {/* Sidebar Navigation */}
       <Sidebar
         collapsed={collapsed}
@@ -95,7 +95,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
                 <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">$</span>
                 </div>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                <span className="font-semibold text-[var(--color-foreground)] dark:text-gray-100">
                   BudgetBuddy
                 </span>
               </div>

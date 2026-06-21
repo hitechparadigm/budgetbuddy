@@ -408,13 +408,13 @@ export const FamilySettings: React.FC = () => {
       case "viewer":
         return {
           label: "Viewer",
-          color: "bg-gray-100 text-gray-800",
+          color: "bg-[var(--color-muted)] text-[var(--color-foreground)]",
           description: "Read-only access",
         };
       default:
         return {
           label: role,
-          color: "bg-gray-100 text-gray-800",
+          color: "bg-[var(--color-muted)] text-[var(--color-foreground)]",
           description: "",
         };
     }
@@ -431,7 +431,7 @@ export const FamilySettings: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">Family Members</h2>
+        <h2 className="text-xl font-semibold text-[var(--color-foreground)]">Family Members</h2>
         {currentUserRole === "primary" && (
           <button
             onClick={() => setShowInviteForm(!showInviteForm)}
@@ -477,14 +477,14 @@ export const FamilySettings: React.FC = () => {
       {/* Invite Form */}
       {showInviteForm && currentUserRole === "primary" && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <h3 className="text-lg font-medium text-[var(--color-foreground)] mb-4">
             Invite Family Member
           </h3>
           <form onSubmit={handleSendInvitation} className="space-y-4">
             <div>
               <label
                 htmlFor="inviteEmail"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
               >
                 Email Address
               </label>
@@ -494,7 +494,7 @@ export const FamilySettings: React.FC = () => {
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="partner@example.com"
               />
             </div>
@@ -502,7 +502,7 @@ export const FamilySettings: React.FC = () => {
             <div>
               <label
                 htmlFor="inviteRole"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
               >
                 Role
               </label>
@@ -512,7 +512,7 @@ export const FamilySettings: React.FC = () => {
                 onChange={(e) =>
                   setInviteRole(e.target.value as "spouse" | "viewer")
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="spouse">
                   Spouse - Can edit budgets and transactions
@@ -528,7 +528,7 @@ export const FamilySettings: React.FC = () => {
                   setShowInviteForm(false);
                   setInviteEmail("");
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="flex-1 px-4 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)]"
               >
                 Cancel
               </button>
@@ -545,9 +545,9 @@ export const FamilySettings: React.FC = () => {
       )}
 
       {/* Current Members */}
-      <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-200">
+      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg divide-y divide-gray-200">
         {members.length === 0 ? (
-          <div className="p-6 text-center text-gray-500">
+          <div className="p-6 text-center text-[var(--color-muted-foreground)]">
             No family members yet. Invite someone to share your budget!
           </div>
         ) : (
@@ -576,17 +576,17 @@ export const FamilySettings: React.FC = () => {
                   <div className="flex items-center space-x-3">
                     <div className="flex-shrink-0">
                       <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                        <span className="text-gray-600 font-medium">
+                        <span className="text-[var(--color-muted-foreground)] font-medium">
                           {member.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-[var(--color-foreground)]">
                           {member.name}
                           {isCurrentUser && (
-                            <span className="text-gray-500 text-sm ml-1">
+                            <span className="text-[var(--color-muted-foreground)] text-sm ml-1">
                               (You)
                             </span>
                           )}
@@ -597,10 +597,10 @@ export const FamilySettings: React.FC = () => {
                           {roleInfo.label}
                         </span>
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-[var(--color-muted-foreground)]">
                         {member.email}
                       </div>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-[var(--color-muted-foreground)]">
                         Joined {new Date(member.joinedAt).toLocaleDateString()}
                       </div>
                     </div>
@@ -620,7 +620,7 @@ export const FamilySettings: React.FC = () => {
                             e.target.value as "spouse" | "viewer",
                           )
                         }
-                        className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="px-3 py-1 text-sm border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="spouse">Spouse</option>
                         <option value="viewer">Viewer</option>
@@ -644,10 +644,10 @@ export const FamilySettings: React.FC = () => {
       {/* Pending Invitations */}
       {pendingInvitations.length > 0 && (
         <div>
-          <h3 className="text-lg font-medium text-gray-900 mb-3">
+          <h3 className="text-lg font-medium text-[var(--color-foreground)] mb-3">
             Pending Invitations
           </h3>
-          <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-200">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg divide-y divide-gray-200">
             {pendingInvitations.map((invitation) => {
               const roleInfo = getRoleDisplay(invitation.role);
 
@@ -658,7 +658,7 @@ export const FamilySettings: React.FC = () => {
                 >
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-[var(--color-foreground)]">
                         {invitation.email}
                       </span>
                       <span
@@ -670,7 +670,7 @@ export const FamilySettings: React.FC = () => {
                         Pending
                       </span>
                     </div>
-                    <div className="text-xs text-gray-400">
+                    <div className="text-xs text-[var(--color-muted-foreground)]">
                       Sent {new Date(invitation.createdAt).toLocaleDateString()}{" "}
                       • Expires{" "}
                       {new Date(invitation.expiresAt).toLocaleDateString()}
@@ -715,14 +715,14 @@ export const FamilySettings: React.FC = () => {
 
       {/* Leave Family Button (for non-primary users) */}
       {currentUserRole !== "primary" && (
-        <div className="pt-6 border-t border-gray-200">
+        <div className="pt-6 border-t border-[var(--color-border)]">
           <button
             onClick={handleLeaveFamily}
             className="px-4 py-2 text-red-600 hover:bg-red-50 border border-red-300 rounded-lg font-medium"
           >
             Leave Family
           </button>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-[var(--color-muted-foreground)] mt-2">
             Leaving the family will create a new personal budget for you. You
             will lose access to the shared budget.
           </p>

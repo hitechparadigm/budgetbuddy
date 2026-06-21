@@ -61,19 +61,19 @@ export const BankSyncPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--color-background)]">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-[var(--color-surface)] shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate("/budget")}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
               >
                 ← Back
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">🏦 Bank Sync</h1>
+              <h1 className="text-2xl font-bold text-[var(--color-foreground)]">🏦 Bank Sync</h1>
             </div>
             <div className="flex gap-2">
               <PlaidLinkButton
@@ -174,31 +174,31 @@ export const BankSyncPage: React.FC = () => {
         </div>
 
         {/* Help Section */}
-        <div className="mt-8 p-6 bg-white rounded-lg shadow">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="mt-8 p-6 bg-[var(--color-surface)] rounded-lg shadow">
+          <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">
             How Bank Sync Works
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="text-3xl mb-2">1️⃣</div>
-              <h4 className="font-medium text-gray-900">Connect</h4>
-              <p className="text-sm text-gray-500 mt-1">
+              <h4 className="font-medium text-[var(--color-foreground)]">Connect</h4>
+              <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
                 Securely link your bank accounts using Plaid's encrypted
                 connection
               </p>
             </div>
             <div className="text-center">
               <div className="text-3xl mb-2">2️⃣</div>
-              <h4 className="font-medium text-gray-900">Review</h4>
-              <p className="text-sm text-gray-500 mt-1">
+              <h4 className="font-medium text-[var(--color-foreground)]">Review</h4>
+              <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
                 Imported transactions appear as pending for you to categorize
                 and approve
               </p>
             </div>
             <div className="text-center">
               <div className="text-3xl mb-2">3️⃣</div>
-              <h4 className="font-medium text-gray-900">Track</h4>
-              <p className="text-sm text-gray-500 mt-1">
+              <h4 className="font-medium text-[var(--color-foreground)]">Track</h4>
+              <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
                 Approved transactions are added to your budget automatically
               </p>
             </div>
@@ -206,8 +206,8 @@ export const BankSyncPage: React.FC = () => {
         </div>
 
         {/* Security Notice */}
-        <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="mt-6 p-4 bg-[var(--color-muted)] rounded-lg">
+          <div className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
             <span>🔒</span>
             <span>
               Your bank credentials are never stored by BudgetBuddy. All

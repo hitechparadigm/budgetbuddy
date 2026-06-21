@@ -53,12 +53,12 @@ export const AccountCard: React.FC<AccountCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+    <div className="bg-[var(--color-surface)] rounded-lg border border-[var(--color-border)] p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between">
         {/* Account Info */}
         <div className="flex items-start space-x-3 flex-1 min-w-0">
           {/* Icon */}
-          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 bg-[var(--color-muted)] rounded-lg flex items-center justify-center flex-shrink-0">
             <span className="text-xl" aria-hidden="true">
               {icon}
             </span>
@@ -67,12 +67,12 @@ export const AccountCard: React.FC<AccountCardProps> = ({
           {/* Details */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-2">
-              <h3 className="font-medium text-gray-900 truncate">
+              <h3 className="font-medium text-[var(--color-foreground)] truncate">
                 {account.nickname}
               </h3>
               {/* Status Badges */}
               {!account.isTracked && (
-                <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full">
+                <span className="px-2 py-0.5 text-xs bg-[var(--color-muted)] text-[var(--color-muted-foreground)] rounded-full">
                   Not Tracked
                 </span>
               )}
@@ -83,7 +83,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({
               )}
             </div>
 
-            <div className="flex items-center space-x-2 text-sm text-gray-500 mt-0.5">
+            <div className="flex items-center space-x-2 text-sm text-[var(--color-muted-foreground)] mt-0.5">
               <span>{subtypeLabel}</span>
               {account.institutionName && (
                 <>
@@ -101,7 +101,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({
 
             {/* Last synced/reconciled info */}
             {account.lastSynced && (
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
                 Last synced: {new Date(account.lastSynced).toLocaleDateString()}
               </p>
             )}
@@ -115,14 +115,14 @@ export const AccountCard: React.FC<AccountCardProps> = ({
             <p className={`font-semibold ${balanceColor}`}>
               {formatCurrency(displayBalance, account.currency)}
             </p>
-            <p className="text-xs text-gray-400">{account.currency}</p>
+            <p className="text-xs text-[var(--color-muted-foreground)]">{account.currency}</p>
           </div>
 
           {/* Menu Button */}
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+              className="p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] rounded-full hover:bg-[var(--color-muted)]"
               aria-label="Account actions"
               aria-expanded={showMenu}
               aria-haspopup="menu"
@@ -143,12 +143,12 @@ export const AccountCard: React.FC<AccountCardProps> = ({
 
                 {/* Menu */}
                 <div
-                  className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20"
+                  className="absolute right-0 mt-1 w-48 bg-[var(--color-surface)] rounded-lg shadow-lg border border-[var(--color-border)] py-1 z-20"
                   role="menu"
                 >
                   <button
                     onClick={() => handleMenuAction(() => onEdit(account))}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                    className="w-full px-4 py-2 text-left text-sm text-[var(--color-foreground)] hover:bg-[var(--color-muted)] flex items-center space-x-2"
                     role="menuitem"
                   >
                     <span>✏️</span>
@@ -159,7 +159,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                     onClick={() =>
                       handleMenuAction(() => onReconcile(account.accountId))
                     }
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                    className="w-full px-4 py-2 text-left text-sm text-[var(--color-foreground)] hover:bg-[var(--color-muted)] flex items-center space-x-2"
                     role="menuitem"
                   >
                     <span>🔄</span>
@@ -173,7 +173,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                           onViewTransactions(account.accountId),
                         )
                       }
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                      className="w-full px-4 py-2 text-left text-sm text-[var(--color-foreground)] hover:bg-[var(--color-muted)] flex items-center space-x-2"
                       role="menuitem"
                     >
                       <span>📋</span>
@@ -187,7 +187,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                         onToggleTracking(account.accountId, !account.isTracked),
                       )
                     }
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                    className="w-full px-4 py-2 text-left text-sm text-[var(--color-foreground)] hover:bg-[var(--color-muted)] flex items-center space-x-2"
                     role="menuitem"
                   >
                     <span>{account.isTracked ? "👁️‍🗨️" : "👁️"}</span>
@@ -196,7 +196,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                     </span>
                   </button>
 
-                  <hr className="my-1 border-gray-200" />
+                  <hr className="my-1 border-[var(--color-border)]" />
 
                   {account.isManual && (
                     <button

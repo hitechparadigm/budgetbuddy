@@ -56,14 +56,14 @@ export const TwoFactorVerify: React.FC<TwoFactorVerifyProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+    <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center p-4">
+      <div className="bg-[var(--color-surface)] rounded-lg shadow-lg max-w-md w-full p-6">
         <div className="text-center mb-6">
           <div className="text-5xl mb-4">🔐</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-[var(--color-foreground)] mb-2">
             Two-Factor Authentication
           </h2>
-          <p className="text-gray-600">
+          <p className="text-[var(--color-muted-foreground)]">
             {useBackupCode
               ? "Enter one of your backup codes"
               : "Enter the 6-digit code from your authenticator app"}
@@ -79,7 +79,7 @@ export const TwoFactorVerify: React.FC<TwoFactorVerifyProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {useBackupCode ? (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
                 Backup Code
               </label>
               <input
@@ -88,13 +88,13 @@ export const TwoFactorVerify: React.FC<TwoFactorVerifyProps> = ({
                 value={code}
                 onChange={(e) => handleCodeChange(e.target.value)}
                 placeholder="XXXX-XXXX-XXXX"
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono text-lg tracking-wider"
+                className="w-full px-4 py-3 border-2 border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono text-lg tracking-wider"
                 disabled={loading}
               />
             </div>
           ) : (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
                 Verification Code
               </label>
               <input
@@ -106,11 +106,11 @@ export const TwoFactorVerify: React.FC<TwoFactorVerifyProps> = ({
                 value={code}
                 onChange={(e) => handleCodeChange(e.target.value)}
                 placeholder="000000"
-                className="w-full px-4 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-3xl tracking-widest font-mono"
+                className="w-full px-4 py-4 border-2 border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center text-3xl tracking-widest font-mono"
                 disabled={loading}
                 autoComplete="one-time-code"
               />
-              <p className="text-xs text-gray-500 mt-2 text-center">
+              <p className="text-xs text-[var(--color-muted-foreground)] mt-2 text-center">
                 Code refreshes every 30 seconds
               </p>
             </div>
@@ -132,7 +132,7 @@ export const TwoFactorVerify: React.FC<TwoFactorVerifyProps> = ({
           </button>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-gray-200">
+        <div className="mt-6 pt-4 border-t border-[var(--color-border)]">
           <button
             onClick={() => {
               setUseBackupCode(!useBackupCode);
@@ -150,7 +150,7 @@ export const TwoFactorVerify: React.FC<TwoFactorVerifyProps> = ({
         <div className="mt-4">
           <button
             onClick={onCancel}
-            className="w-full text-sm text-gray-500 hover:text-gray-700"
+            className="w-full text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
             disabled={loading}
           >
             Cancel and sign in with a different account

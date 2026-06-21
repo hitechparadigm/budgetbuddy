@@ -152,10 +152,10 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
           <div className="space-y-6">
             <div className="text-center">
               <div className="text-6xl mb-4">🔐</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-[var(--color-foreground)] mb-2">
                 Secure Your Account
               </h3>
-              <p className="text-gray-600">
+              <p className="text-[var(--color-muted-foreground)]">
                 Two-factor authentication adds an extra layer of security to
                 your account. You'll need your phone to sign in.
               </p>
@@ -200,10 +200,10 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-[var(--color-foreground)] mb-2">
                 Scan QR Code
               </h3>
-              <p className="text-gray-600 text-sm">
+              <p className="text-[var(--color-muted-foreground)] text-sm">
                 Open your authenticator app and scan this QR code
               </p>
             </div>
@@ -211,9 +211,9 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
             {mfaData && (
               <>
                 <div className="flex justify-center">
-                  <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                  <div className="bg-[var(--color-surface)] p-4 rounded-lg border-2 border-[var(--color-border)]">
                     {/* QR Code placeholder - in production, use a QR code library */}
-                    <div className="w-48 h-48 bg-gray-100 flex items-center justify-center">
+                    <div className="w-48 h-48 bg-[var(--color-muted)] flex items-center justify-center">
                       <img
                         src={mfaData.qrCodeUrl}
                         alt="QR Code for 2FA setup"
@@ -227,12 +227,12 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 mb-2">
+                <div className="bg-[var(--color-background)] rounded-lg p-4">
+                  <p className="text-sm text-[var(--color-muted-foreground)] mb-2">
                     Can't scan? Enter this code manually:
                   </p>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-white px-3 py-2 rounded border text-sm font-mono break-all">
+                    <code className="flex-1 bg-[var(--color-surface)] px-3 py-2 rounded border text-sm font-mono break-all">
                       {mfaData.secretCode}
                     </code>
                     <button
@@ -262,10 +262,10 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-[var(--color-foreground)] mb-2">
                 Verify Setup
               </h3>
-              <p className="text-gray-600 text-sm">
+              <p className="text-[var(--color-muted-foreground)] text-sm">
                 Enter the 6-digit code from your authenticator app
               </p>
             </div>
@@ -283,10 +283,10 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
                   setError(null);
                 }}
                 placeholder="000000"
-                className="w-full text-center text-3xl tracking-widest py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full text-center text-3xl tracking-widest py-4 border-2 border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 autoFocus
               />
-              <p className="text-xs text-gray-500 mt-2 text-center">
+              <p className="text-xs text-[var(--color-muted-foreground)] mt-2 text-center">
                 The code changes every 30 seconds
               </p>
             </div>
@@ -301,7 +301,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
 
             <button
               onClick={() => setStep("qr")}
-              className="w-full py-2 text-gray-600 hover:text-gray-800"
+              className="w-full py-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
             >
               ← Back to QR Code
             </button>
@@ -313,10 +313,10 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
           <div className="space-y-6">
             <div className="text-center">
               <div className="text-6xl mb-4">✅</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-semibold text-[var(--color-foreground)] mb-2">
                 2FA Enabled!
               </h3>
-              <p className="text-gray-600 text-sm">
+              <p className="text-[var(--color-muted-foreground)] text-sm">
                 Save these backup codes in a safe place
               </p>
             </div>
@@ -330,7 +330,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
                 {backupCodes.map((code, index) => (
                   <code
                     key={index}
-                    className="bg-white px-3 py-2 rounded border text-sm font-mono text-center"
+                    className="bg-[var(--color-surface)] px-3 py-2 rounded border text-sm font-mono text-center"
                   >
                     {code}
                   </code>
@@ -340,7 +340,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
 
             <button
               onClick={handleCopyBackupCodes}
-              className="w-full py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2 border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-background)] transition-colors flex items-center justify-center gap-2"
             >
               {copiedBackup ? (
                 <>
@@ -368,19 +368,19 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-[var(--color-surface)] rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
             <span className="text-xl">🔐</span>
-            <span className="font-semibold text-gray-900">
+            <span className="font-semibold text-[var(--color-foreground)]">
               Two-Factor Authentication
             </span>
           </div>
           {step !== "backup" && (
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)]"
               aria-label="Close"
             >
               <svg
@@ -412,7 +412,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
                       : ["intro", "qr", "verify", "backup"].indexOf(step) >
                           index
                         ? "bg-green-500 text-white"
-                        : "bg-gray-200 text-gray-500"
+                        : "bg-gray-200 text-[var(--color-muted-foreground)]"
                   }`}
                 >
                   {["intro", "qr", "verify", "backup"].indexOf(step) > index
@@ -431,7 +431,7 @@ export const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({
               </React.Fragment>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-500 mb-4">
+          <div className="flex justify-between text-xs text-[var(--color-muted-foreground)] mb-4">
             <span>Intro</span>
             <span>Scan</span>
             <span>Verify</span>

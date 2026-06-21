@@ -171,13 +171,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   if (mfaChallenge) {
     return (
       <div className="w-full max-w-md mx-auto">
-        <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+        <div className="bg-[var(--color-surface)] dark:bg-gray-800 shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
           <div className="mb-6 text-center">
             <div className="text-4xl mb-4">🔐</div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            <h2 className="text-2xl font-bold text-[var(--color-foreground)] dark:text-gray-100 mb-2">
               Two-Factor Authentication
             </h2>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
               Enter the 6-digit code from your authenticator app
             </p>
           </div>
@@ -200,12 +200,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+      <div className="bg-[var(--color-surface)] dark:bg-gray-800 shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
         <div className="mb-6 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <h2 className="text-2xl font-bold text-[var(--color-foreground)] dark:text-gray-100 mb-2">
             Welcome Back
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">Sign in to your BudgetBuddy account</p>
+          <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">Sign in to your BudgetBuddy account</p>
         </div>
 
         {displayError && (
@@ -242,10 +242,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         {/* Divider */}
         <div className="relative mb-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+            <div className="w-full border-t border-[var(--color-border)] dark:border-gray-600"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+            <span className="px-2 bg-[var(--color-surface)] dark:bg-gray-800 text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
               Or continue with email
             </span>
           </div>
@@ -256,7 +256,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-[var(--color-foreground)] dark:text-gray-300 mb-1"
             >
               Email Address
             </label>
@@ -265,7 +265,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               type="email"
               id="email"
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.email ? "border-red-300" : "border-gray-300"
+                errors.email ? "border-red-300" : "border-[var(--color-border)]"
               }`}
               placeholder="Enter your email"
               disabled={isSubmitting || loading}
@@ -281,7 +281,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-sm font-medium text-[var(--color-foreground)] dark:text-gray-300 mb-1"
             >
               Password
             </label>
@@ -290,7 +290,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               type="password"
               id="password"
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.password ? "border-red-300" : "border-gray-300"
+                errors.password ? "border-red-300" : "border-[var(--color-border)]"
               }`}
               placeholder="Enter your password"
               disabled={isSubmitting || loading}
@@ -347,7 +347,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         {/* Switch to Register */}
         {onSwitchToRegister && (
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[var(--color-muted-foreground)]">
               Don't have an account?{" "}
               <button
                 type="button"
@@ -376,7 +376,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           ) : (
             <button
               type="button"
-              className="text-sm text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+              className="text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
               disabled={isSubmitting || loading}
               onClick={() => setForgotPasswordSent(true)}
             >

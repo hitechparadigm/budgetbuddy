@@ -124,12 +124,12 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+      <div className="bg-[var(--color-surface)] rounded-lg p-6 w-full max-w-md mx-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">{getModalTitle()}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)]"
           >
             ✕
           </button>
@@ -138,14 +138,14 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Item Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Name
             </label>
             <input
               type="text"
               value={formData.categoryName}
               onChange={(e) => setFormData(prev => ({ ...prev, categoryName: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder={`Enter ${groupType} name`}
               required
             />
@@ -153,7 +153,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
 
           {/* Amount */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Amount
             </label>
             <input
@@ -161,7 +161,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
               step="0.01"
               value={formData.plannedAmount}
               onChange={(e) => setFormData(prev => ({ ...prev, plannedAmount: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="0.00"
               required
             />
@@ -169,14 +169,14 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
 
           {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Date
             </label>
             <input
               type="date"
               value={formData.startDate}
               onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -187,9 +187,9 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
               id="isRecurring"
               checked={formData.isRecurring}
               onChange={(e) => setFormData(prev => ({ ...prev, isRecurring: e.target.checked }))}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-[var(--color-border)] rounded"
             />
-            <label htmlFor="isRecurring" className="ml-2 block text-sm text-gray-700">
+            <label htmlFor="isRecurring" className="ml-2 block text-sm text-[var(--color-foreground)]">
               This is a recurring {groupType}
             </label>
           </div>
@@ -197,13 +197,13 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
           {/* Frequency (only if recurring) */}
           {formData.isRecurring && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                 Frequency
               </label>
               <select
                 value={formData.frequency}
                 onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as FrequencyOption }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {frequencyOptions.map(option => (
                   <option key={option.value} value={option.value}>
@@ -217,14 +217,14 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
           {/* End Date (only if recurring) */}
           {formData.isRecurring && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                 End Date (Optional)
               </label>
               <input
                 type="date"
                 value={formData.endDate}
                 onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           )}
@@ -232,26 +232,26 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
           {/* Icon and Color */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                 Icon
               </label>
               <input
                 type="text"
                 value={formData.icon}
                 onChange={(e) => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder={getDefaultIcon()}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                 Color
               </label>
               <input
                 type="color"
                 value={formData.colorCode}
                 onChange={(e) => setFormData(prev => ({ ...prev, colorCode: e.target.value }))}
-                className="w-full h-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full h-10 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -261,7 +261,7 @@ export const AddBudgetItem: React.FC<AddBudgetItemProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              className="px-4 py-2 text-[var(--color-foreground)] bg-[var(--color-muted)] rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
             >
               Cancel
             </button>

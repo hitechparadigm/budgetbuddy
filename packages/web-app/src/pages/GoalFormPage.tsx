@@ -211,29 +211,29 @@ export const GoalFormPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-[var(--color-muted-foreground)]">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--color-background)]">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-[var(--color-surface)] shadow-sm border-b">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate("/goals")}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
               >
                 ← Back
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
                 {isEditing ? "Edit Goal" : "New Goal"}
               </h1>
             </div>
@@ -246,7 +246,7 @@ export const GoalFormPage: React.FC = () => {
         {/* Templates (only for new goals) */}
         {!isEditing && templates.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">
+            <h3 className="text-sm font-medium text-[var(--color-foreground)] mb-3">
               Quick Start Templates
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -254,7 +254,7 @@ export const GoalFormPage: React.FC = () => {
                 <button
                   key={template.id}
                   onClick={() => handleTemplateSelect(template)}
-                  className="px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  className="px-3 py-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-background)] transition-colors flex items-center gap-2"
                 >
                   <span>{template.icon}</span>
                   <span className="text-sm">{template.name}</span>
@@ -278,23 +278,23 @@ export const GoalFormPage: React.FC = () => {
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white rounded-lg shadow p-6 space-y-6"
+          className="bg-[var(--color-surface)] rounded-lg shadow p-6 space-y-6"
         >
           {/* Icon Picker */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
               Icon
             </label>
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setShowIconPicker(!showIconPicker)}
-                className="w-16 h-16 text-3xl bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center"
+                className="w-16 h-16 text-3xl bg-[var(--color-muted)] rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center"
               >
                 {form.icon}
               </button>
               {showIconPicker && (
-                <div className="absolute top-20 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10">
+                <div className="absolute top-20 left-0 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg p-3 z-10">
                   <div className="grid grid-cols-5 gap-2">
                     {ICONS.map((icon) => (
                       <button
@@ -304,7 +304,7 @@ export const GoalFormPage: React.FC = () => {
                           setForm({ ...form, icon });
                           setShowIconPicker(false);
                         }}
-                        className={`w-10 h-10 text-xl rounded hover:bg-gray-100 ${
+                        className={`w-10 h-10 text-xl rounded hover:bg-[var(--color-muted)] ${
                           form.icon === icon ? "bg-blue-100" : ""
                         }`}
                       >
@@ -319,7 +319,7 @@ export const GoalFormPage: React.FC = () => {
 
           {/* Goal Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
               Goal Name *
             </label>
             <input
@@ -327,18 +327,18 @@ export const GoalFormPage: React.FC = () => {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="e.g., Emergency Fund, Vacation, New Car"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
           </div>
 
           {/* Target Amount */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
               Target Amount *
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-2 text-gray-500">$</span>
+              <span className="absolute left-4 top-2 text-[var(--color-muted-foreground)]">$</span>
               <input
                 type="number"
                 step="0.01"
@@ -348,7 +348,7 @@ export const GoalFormPage: React.FC = () => {
                   setForm({ ...form, targetAmount: e.target.value })
                 }
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
@@ -356,11 +356,11 @@ export const GoalFormPage: React.FC = () => {
 
           {/* Current Amount (for editing or starting with existing savings) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
               Starting Amount (Optional)
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-2 text-gray-500">$</span>
+              <span className="absolute left-4 top-2 text-[var(--color-muted-foreground)]">$</span>
               <input
                 type="number"
                 step="0.01"
@@ -370,17 +370,17 @@ export const GoalFormPage: React.FC = () => {
                   setForm({ ...form, currentAmount: e.target.value })
                 }
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
               If you already have some savings toward this goal
             </p>
           </div>
 
           {/* Target Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
               Target Date (Optional)
             </label>
             <input
@@ -388,9 +388,9 @@ export const GoalFormPage: React.FC = () => {
               value={form.targetDate}
               onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
               min={new Date().toISOString().split("T")[0]}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-[var(--color-muted-foreground)]">
               Setting a target date helps calculate your monthly savings goal
             </p>
           </div>
@@ -400,7 +400,7 @@ export const GoalFormPage: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate("/goals")}
-              className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-3 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)] transition-colors"
             >
               Cancel
             </button>
@@ -409,7 +409,7 @@ export const GoalFormPage: React.FC = () => {
               disabled={saving}
               className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${
                 saving
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  ? "bg-gray-300 text-[var(--color-muted-foreground)] cursor-not-allowed"
                   : "bg-blue-600 text-white hover:bg-blue-700"
               }`}
             >

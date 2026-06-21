@@ -287,7 +287,7 @@ export const TransactionForm: React.FC<TransactionFormProps> = ({
                 <div className="flex-1">
                   <h4 className="font-semibold text-yellow-400 mb-1">Warning: Date Outside Current Month</h4>
                   <p className="text-sm text-gray-300">{dateValidation.warning}</p>
-                  <p className="text-sm text-gray-400 mt-2">What would you like to do?</p>
+                  <p className="text-sm text-[var(--color-muted-foreground)] mt-2">What would you like to do?</p>
                 </div>
               </div>
 

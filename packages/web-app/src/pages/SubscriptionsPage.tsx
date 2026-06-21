@@ -654,13 +654,13 @@ function DetectionBanner({
           {detected.map((d, idx) => {
             const isPickerOpen = detectedCancelPicker?.merchant === d.merchant;
             return (
-              <div key={idx} className="bg-white rounded-lg border border-amber-100 p-4 shadow-sm">
+              <div key={idx} className="bg-[var(--color-surface)] rounded-lg border border-amber-100 p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="text-2xl flex-shrink-0">{getCategoryIcon(d.suggestedCategory)}</span>
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{d.merchant}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="font-semibold text-[var(--color-foreground)] truncate">{d.merchant}</p>
+                      <p className="text-sm text-[var(--color-muted-foreground)]">
                         {formatCurrency(d.amount)} / {d.frequency} · {d.suggestedCategory}
                       </p>
                       {/* Confidence bar */}
@@ -671,7 +671,7 @@ function DetectionBanner({
                             style={{ width: `${Math.round(d.confidence * 100)}%` }}
                           />
                         </div>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-[var(--color-muted-foreground)]">
                           {confidenceLabel(d.confidence)} — charged {d.transactionCount} month{d.transactionCount !== 1 ? 's' : ''} in a row
                         </span>
                       </div>
@@ -698,7 +698,7 @@ function DetectionBanner({
                     </button>
                     <button
                       onClick={() => onIgnore(d)}
-                      className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm font-medium transition-colors"
+                      className="px-3 py-1.5 bg-[var(--color-muted)] text-[var(--color-muted-foreground)] rounded-lg hover:bg-gray-200 text-sm font-medium transition-colors"
                       title="Dismiss — won't show for 30 days"
                     >
                       👻 Ignore
@@ -709,13 +709,13 @@ function DetectionBanner({
                 {/* Inline cancel date picker */}
                 {isPickerOpen && detectedCancelPicker && (
                   <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-3 flex-wrap">
-                    <span className="text-sm text-gray-600 font-medium">Cancel by:</span>
+                    <span className="text-sm text-[var(--color-muted-foreground)] font-medium">Cancel by:</span>
                     <input
                       type="date"
                       value={detectedCancelPicker.date}
                       min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => onCancelPickerChange(d.merchant, e.target.value)}
-                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400"
+                      className="px-3 py-1.5 border border-[var(--color-border)] rounded-lg text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400"
                     />
                     <button
                       onClick={() => onSaveCancelReminder(d, detectedCancelPicker.date)}
@@ -726,7 +726,7 @@ function DetectionBanner({
                     </button>
                     <button
                       onClick={onClosePicker}
-                      className="text-gray-400 hover:text-gray-600 text-sm"
+                      className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] text-sm"
                     >
                       Cancel
                     </button>

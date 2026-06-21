@@ -82,12 +82,12 @@ export const PrivacySettings: React.FC<PrivacySettingsProps> = ({ onSave }) => {
     label: string;
     description: string;
   }> = ({ enabled, onChange, label, description }) => (
-    <div className="flex items-start justify-between py-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
+    <div className="flex items-start justify-between py-4 border-b border-[var(--color-border)] dark:border-gray-700 last:border-0">
       <div className="flex-1 pr-4">
-        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+        <h4 className="text-sm font-medium text-[var(--color-foreground)] dark:text-white">
           {label}
         </h4>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mt-1">
           {description}
         </p>
       </div>
@@ -101,7 +101,7 @@ export const PrivacySettings: React.FC<PrivacySettingsProps> = ({ onSave }) => {
         aria-label={label}
       >
         <span
-          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-[var(--color-surface)] shadow ring-0 transition duration-200 ease-in-out ${
             enabled ? "translate-x-5" : "translate-x-0"
           }`}
         />
@@ -110,12 +110,12 @@ export const PrivacySettings: React.FC<PrivacySettingsProps> = ({ onSave }) => {
   );
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+    <div className="bg-[var(--color-surface)] dark:bg-gray-800 rounded-lg shadow-sm border border-[var(--color-border)] dark:border-gray-700">
+      <div className="p-6 border-b border-[var(--color-border)] dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-white">
           Privacy Settings
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mt-1">
           Control how your data is used and shared
         </p>
       </div>
@@ -123,7 +123,7 @@ export const PrivacySettings: React.FC<PrivacySettingsProps> = ({ onSave }) => {
       <div className="p-6">
         {/* Data Sharing Section */}
         <div className="mb-6">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">
+          <h4 className="text-sm font-semibold text-[var(--color-foreground)] dark:text-gray-300 uppercase tracking-wider mb-4">
             Data Sharing
           </h4>
 
@@ -151,7 +151,7 @@ export const PrivacySettings: React.FC<PrivacySettingsProps> = ({ onSave }) => {
 
         {/* Visibility Section */}
         <div className="mb-6">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">
+          <h4 className="text-sm font-semibold text-[var(--color-foreground)] dark:text-gray-300 uppercase tracking-wider mb-4">
             Visibility
           </h4>
 
@@ -165,7 +165,7 @@ export const PrivacySettings: React.FC<PrivacySettingsProps> = ({ onSave }) => {
 
         {/* Communication Section */}
         <div className="mb-6">
-          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-4">
+          <h4 className="text-sm font-semibold text-[var(--color-foreground)] dark:text-gray-300 uppercase tracking-wider mb-4">
             Communication
           </h4>
 
@@ -185,7 +185,7 @@ export const PrivacySettings: React.FC<PrivacySettingsProps> = ({ onSave }) => {
         </div>
 
         {/* Save Button */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between pt-4 border-t border-[var(--color-border)] dark:border-gray-700">
           {saveMessage && (
             <p
               className={`text-sm ${
@@ -233,7 +233,7 @@ export const PrivacySettings: React.FC<PrivacySettingsProps> = ({ onSave }) => {
       </div>
 
       {/* Privacy Info */}
-      <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/50 rounded-b-lg">
+      <div className="px-6 py-4 bg-[var(--color-background)] dark:bg-gray-700/50 rounded-b-lg">
         <div className="flex items-start space-x-3">
           <svg
             className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0"
@@ -249,7 +249,7 @@ export const PrivacySettings: React.FC<PrivacySettingsProps> = ({ onSave }) => {
             />
           </svg>
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-[var(--color-muted-foreground)] dark:text-gray-300">
               Your privacy is important to us. We never sell your personal data.
               Read our{" "}
               <a

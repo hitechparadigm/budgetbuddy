@@ -80,13 +80,13 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
   // ============================================================================
 
   return (
-    <div className="bg-white shadow rounded-lg p-4">
+    <div className="bg-[var(--color-surface)] shadow rounded-lg p-4">
       <div className="flex items-center justify-between">
         {/* Month Navigation */}
         <div className="flex items-center space-x-2">
           <button
             onClick={() => navigateMonth('prev')}
-            className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            className="p-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
             disabled={monthOptions.findIndex(option => option.value === selectedMonth) === 0}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -99,7 +99,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
             <select
               value={selectedMonth}
               onChange={handleMonthChange}
-              className="appearance-none bg-white border border-gray-300 rounded-md px-4 py-2 pr-8 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="appearance-none bg-[var(--color-surface)] border border-[var(--color-border)] rounded-md px-4 py-2 pr-8 text-sm font-medium text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               {monthOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -108,7 +108,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
               ))}
             </select>
             <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-[var(--color-muted-foreground)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </div>
@@ -116,7 +116,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
 
           <button
             onClick={() => navigateMonth('next')}
-            className="p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            className="p-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
             disabled={monthOptions.findIndex(option => option.value === selectedMonth) === monthOptions.length - 1}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,7 +137,7 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
                 <span className="text-sm font-medium">Budget exists</span>
               </div>
             ) : (
-              <div className="flex items-center space-x-1 text-gray-500">
+              <div className="flex items-center space-x-1 text-[var(--color-muted-foreground)]">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
@@ -157,10 +157,10 @@ export const MonthSelector: React.FC<MonthSelectorProps> = ({
       </div>
 
       {/* Month Summary */}
-      <div className="mt-3 pt-3 border-t border-gray-200">
-        <div className="flex items-center justify-between text-sm text-gray-600">
+      <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+        <div className="flex items-center justify-between text-sm text-[var(--color-muted-foreground)]">
           <span>
-            Viewing: <span className="font-medium text-gray-900">{selectedOption?.label}</span>
+            Viewing: <span className="font-medium text-[var(--color-foreground)]">{selectedOption?.label}</span>
           </span>
           <span>
             {availableMonths.length} {availableMonths.length === 1 ? 'budget' : 'budgets'} created

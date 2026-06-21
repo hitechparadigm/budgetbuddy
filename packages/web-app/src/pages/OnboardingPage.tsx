@@ -207,15 +207,15 @@ export const OnboardingPage: React.FC = () => {
       {/* Family Budget transparency disclosure modal */}
       {showFamilyDisclosure && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-3">
+          <div className="bg-[var(--color-surface)] rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-[var(--color-foreground)] mb-3">
               👫 Family Budget — Full Transparency
             </h3>
-            <p className="text-gray-700 leading-relaxed">{FAMILY_BUDGET_DISCLOSURE}</p>
+            <p className="text-[var(--color-foreground)] leading-relaxed">{FAMILY_BUDGET_DISCLOSURE}</p>
             <div className="mt-6 flex gap-3 justify-end">
               <button
                 onClick={() => setShowFamilyDisclosure(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-background)]"
               >
                 Go Back
               </button>
@@ -233,7 +233,7 @@ export const OnboardingPage: React.FC = () => {
       {/* Step 1: Budget type selection — inline descriptions, no extra modal */}
       {pageStep === "budget-type" && (
         <div className="min-h-screen bg-gradient-to-br from-[var(--color-primary)]/5 to-transparent flex items-center justify-center px-4 py-12">
-          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full mx-4 overflow-hidden">
+          <div className="bg-[var(--color-surface)] rounded-2xl shadow-xl max-w-lg w-full mx-4 overflow-hidden">
             {/* Step progress indicator */}
             <div className="bg-[var(--color-primary)]/8 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -243,7 +243,7 @@ export const OnboardingPage: React.FC = () => {
                       className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                         s === 1
                           ? 'bg-[var(--color-primary)] text-white'
-                          : 'bg-gray-200 text-gray-500'
+                          : 'bg-gray-200 text-[var(--color-muted-foreground)]'
                       }`}
                     >
                       {s}
@@ -254,17 +254,17 @@ export const OnboardingPage: React.FC = () => {
               </div>
               <button
                 onClick={handleSkip}
-                className="text-gray-500 hover:text-gray-700 text-sm"
+                className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] text-sm"
               >
                 Skip
               </button>
             </div>
 
             <div className="p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+              <h2 className="text-2xl font-bold text-[var(--color-foreground)] mb-1">
                 Who are you budgeting for?
               </h2>
-              <p className="text-gray-500 text-sm mb-6">
+              <p className="text-[var(--color-muted-foreground)] text-sm mb-6">
                 Choose the option that best fits your household. You can change this later.
               </p>
 
@@ -282,7 +282,7 @@ export const OnboardingPage: React.FC = () => {
                     className={`w-full text-left p-4 rounded-xl border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] ${
                       selectedBudgetType === option.value
                         ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        : 'border-[var(--color-border)] hover:border-[var(--color-border)] hover:bg-[var(--color-background)]'
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -290,13 +290,13 @@ export const OnboardingPage: React.FC = () => {
                         className={`w-6 h-6 shrink-0 mt-0.5 ${
                           selectedBudgetType === option.value
                             ? 'text-[var(--color-primary)]'
-                            : 'text-gray-400'
+                            : 'text-[var(--color-muted-foreground)]'
                         }`}
                         aria-hidden="true"
                       />
                       <div className="flex-1">
-                        <div className="font-semibold text-gray-900">{option.label}</div>
-                        <div className="text-sm text-gray-500 mt-0.5">{option.description}</div>
+                        <div className="font-semibold text-[var(--color-foreground)]">{option.label}</div>
+                        <div className="text-sm text-[var(--color-muted-foreground)] mt-0.5">{option.description}</div>
                         {/* Show transparency note inline — no extra modal needed */}
                         {option.value === 'family' && (
                           <p className="text-xs text-[var(--color-primary)] mt-1.5 leading-relaxed">

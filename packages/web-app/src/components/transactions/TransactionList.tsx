@@ -85,7 +85,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   if (loading) {
     return (
       <div className="transaction-list-loading p-8 text-center">
-        <div className="loading-spinner text-gray-500">
+        <div className="loading-spinner text-[var(--color-muted-foreground)]">
           Loading transactions...
         </div>
       </div>
@@ -96,10 +96,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
     return (
       <div className="transaction-list-empty p-8 text-center">
         <div className="empty-state">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-lg font-medium text-[var(--color-foreground)]">
             No transactions yet
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
             Start by adding your first income or expense transaction.
           </p>
         </div>
@@ -118,10 +118,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   return (
     <div className="transaction-list">
       <div className="transaction-list-header flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
           Recent Transactions
         </h2>
-        <div className="transaction-count text-sm text-gray-500">
+        <div className="transaction-count text-sm text-[var(--color-muted-foreground)]">
           {transactions.length} transaction
           {transactions.length !== 1 ? "s" : ""}
         </div>
@@ -135,7 +135,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           return (
             <div
               key={transaction.transactionId}
-              className="transaction-item group flex items-center p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              className="transaction-item group flex items-center p-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-background)] transition-colors cursor-pointer"
               onDoubleClick={() => onEdit(transaction)}
               title="Double-click to edit"
             >
@@ -157,11 +157,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               {/* Transaction Info */}
               <div className="flex-1 min-w-0 ml-3">
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-900 truncate">
+                  <span className="text-sm font-medium text-[var(--color-foreground)] truncate">
                     {transaction.description}
                   </span>
                 </div>
-                <div className="flex items-center space-x-2 text-xs text-gray-500 mt-0.5">
+                <div className="flex items-center space-x-2 text-xs text-[var(--color-muted-foreground)] mt-0.5">
                   <span>
                     {transaction.categoryName || transaction.categoryId}
                   </span>
@@ -180,7 +180,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               <div
                 className={`flex items-center space-x-1 px-2 py-1 rounded text-xs ${
                   accountDisplay.isUnassigned
-                    ? "bg-gray-100 text-gray-500"
+                    ? "bg-[var(--color-muted)] text-[var(--color-muted-foreground)]"
                     : "bg-blue-50 text-blue-700"
                 }`}
                 title={accountDisplay.name}
@@ -208,7 +208,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     e.stopPropagation();
                     onEdit(transaction);
                   }}
-                  className="p-1 text-gray-400 hover:text-blue-600 rounded transition-colors"
+                  className="p-1 text-[var(--color-muted-foreground)] hover:text-blue-600 rounded transition-colors"
                   title="Edit transaction"
                 >
                   <svg
@@ -230,7 +230,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     e.stopPropagation();
                     onDelete(transaction.transactionId);
                   }}
-                  className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
+                  className="p-1 text-[var(--color-muted-foreground)] hover:text-red-600 rounded transition-colors"
                   title="Delete transaction"
                 >
                   <svg

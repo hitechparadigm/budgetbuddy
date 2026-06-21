@@ -136,23 +136,23 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+          className="relative bg-[var(--color-surface)] rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
                 Configure Connected Accounts
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-[var(--color-muted-foreground)]">
                 {institutionName} • {accounts.length} account
                 {accounts.length !== 1 ? "s" : ""} found
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 p-1 rounded"
+              className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] p-1 rounded"
               aria-label="Close"
             >
               <svg
@@ -173,7 +173,7 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
 
           {/* Content */}
           <div className="p-4 overflow-y-auto max-h-[60vh]">
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-[var(--color-muted-foreground)] mb-4">
               Review your accounts below. You can customize nicknames, change
               account types, and choose which accounts to track in your budget.
             </p>
@@ -188,22 +188,22 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
                     className={`border rounded-lg p-4 ${
                       mapping.isTracked
                         ? "border-green-200 bg-green-50"
-                        : "border-gray-200 bg-gray-50"
+                        : "border-[var(--color-border)] bg-[var(--color-background)]"
                     }`}
                   >
                     {/* Account Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-gray-200">
+                        <div className="w-10 h-10 bg-[var(--color-surface)] rounded-lg flex items-center justify-center border border-[var(--color-border)]">
                           <span className="text-xl">
                             {ACCOUNT_TYPE_ICONS[mapping.accountType]}
                           </span>
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-[var(--color-foreground)]">
                             {account.officialName || account.name}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-[var(--color-muted-foreground)]">
                             {account.mask && `••••${account.mask}`}
                             {account.mask && " • "}
                             {account.type}
@@ -212,13 +212,13 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-[var(--color-foreground)]">
                           $
                           {account.currentBalance.toLocaleString("en-US", {
                             minimumFractionDigits: 2,
                           })}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-[var(--color-muted-foreground)]">
                           {account.currency}
                         </p>
                       </div>
@@ -228,7 +228,7 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Nickname */}
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-medium text-[var(--color-foreground)] mb-1">
                           Nickname
                         </label>
                         <input
@@ -239,14 +239,14 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
                               nickname: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          className="w-full px-3 py-1.5 text-sm border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                           placeholder="Account nickname"
                         />
                       </div>
 
                       {/* Account Type */}
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                        <label className="block text-xs font-medium text-[var(--color-foreground)] mb-1">
                           Account Type
                         </label>
                         <select
@@ -256,7 +256,7 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
                               accountType: e.target.value as AccountType,
                             })
                           }
-                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          className="w-full px-3 py-1.5 text-sm border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         >
                           {Object.values(AccountType).map((type) => (
                             <option key={type} value={type}>
@@ -280,9 +280,9 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
                               includeInBudget: e.target.checked,
                             })
                           }
-                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-green-600 focus:ring-green-500 border-[var(--color-border)] rounded"
                         />
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-[var(--color-foreground)]">
                           Track this account
                         </span>
                       </label>
@@ -297,9 +297,9 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
                                 includeInBudget: e.target.checked,
                               })
                             }
-                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-[var(--color-border)] rounded"
                           />
-                          <span className="text-sm text-gray-700">
+                          <span className="text-sm text-[var(--color-foreground)]">
                             Include in budget
                           </span>
                         </label>
@@ -312,7 +312,7 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-200 bg-gray-50">
+          <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-background)]">
             {error && (
               <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                 {error}
@@ -320,14 +320,14 @@ export const AccountMappingModal: React.FC<AccountMappingModalProps> = ({
             )}
 
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-[var(--color-muted-foreground)]">
                 {trackedCount} of {accounts.length} accounts will be tracked
               </p>
               <div className="flex space-x-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="px-4 py-2 text-[var(--color-foreground)] hover:bg-[var(--color-muted)] rounded-lg transition-colors"
                   disabled={isSubmitting}
                 >
                   Cancel

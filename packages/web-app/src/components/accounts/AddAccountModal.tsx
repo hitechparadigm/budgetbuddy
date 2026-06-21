@@ -141,17 +141,17 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className="relative bg-white rounded-lg shadow-xl max-w-md w-full"
+          className="relative bg-[var(--color-surface)] rounded-lg shadow-xl max-w-md w-full"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
+          <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)]">
+            <h2 className="text-lg font-semibold text-[var(--color-foreground)]">
               {step === "type" ? "Add Manual Account" : "Account Details"}
             </h2>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-gray-600 p-1 rounded"
+              className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] p-1 rounded"
               aria-label="Close"
             >
               <svg
@@ -175,7 +175,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
             {step === "type" ? (
               /* Step 1: Account Type Selection */
               <div className="space-y-3">
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-[var(--color-muted-foreground)] mb-4">
                   Select the type of account you want to add:
                 </p>
                 <div className="grid grid-cols-2 gap-3">
@@ -183,12 +183,12 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                     <button
                       key={type}
                       onClick={() => handleTypeSelect(type)}
-                      className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
+                      className="flex flex-col items-center p-4 border border-[var(--color-border)] rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
                     >
                       <span className="text-2xl mb-2">
                         {ACCOUNT_TYPE_ICONS[type]}
                       </span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium text-[var(--color-foreground)]">
                         {ACCOUNT_TYPE_LABELS[type]}
                       </span>
                     </button>
@@ -202,7 +202,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setStep("type")}
-                  className="flex items-center text-sm text-gray-600 hover:text-gray-900"
+                  className="flex items-center text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
                 >
                   <svg
                     className="w-4 h-4 mr-1"
@@ -221,7 +221,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                 </button>
 
                 {/* Selected Type Display */}
-                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3 p-3 bg-[var(--color-background)] rounded-lg">
                   <span className="text-2xl">
                     {selectedType && ACCOUNT_TYPE_ICONS[selectedType]}
                   </span>
@@ -233,7 +233,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                 {/* Subtype Selection */}
                 {selectedType && ACCOUNT_SUBTYPES[selectedType].length > 1 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
                       Account Subtype
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -245,7 +245,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                           className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                             selectedSubtype === subtype
                               ? "border-green-500 bg-green-50 text-green-700"
-                              : "border-gray-200 hover:border-gray-300"
+                              : "border-[var(--color-border)] hover:border-[var(--color-border)]"
                           }`}
                         >
                           <span className="mr-1">
@@ -262,7 +262,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                 <div>
                   <label
                     htmlFor="nickname"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
                   >
                     Account Nickname *
                   </label>
@@ -273,7 +273,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                     value={formData.nickname}
                     onChange={handleInputChange}
                     placeholder="e.g., Main Checking, Emergency Fund"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     required
                   />
                 </div>
@@ -282,7 +282,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                 <div>
                   <label
                     htmlFor="institutionName"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
                   >
                     Institution Name (optional)
                   </label>
@@ -293,7 +293,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                     value={formData.institutionName}
                     onChange={handleInputChange}
                     placeholder="e.g., Chase Bank, Fidelity"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
 
@@ -302,7 +302,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                   <div>
                     <label
                       htmlFor="currentBalance"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
                     >
                       Current Balance
                     </label>
@@ -314,13 +314,13 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                       onChange={handleInputChange}
                       placeholder="0.00"
                       step="0.01"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
                   </div>
                   <div>
                     <label
                       htmlFor="currency"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
                     >
                       Currency
                     </label>
@@ -329,7 +329,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                       name="currency"
                       value={formData.currency}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     >
                       {CURRENCIES.map((currency) => (
                         <option key={currency} value={currency}>
@@ -352,7 +352,7 @@ export const AddAccountModal: React.FC<AddAccountModalProps> = ({
                   <button
                     type="button"
                     onClick={handleClose}
-                    className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="px-4 py-2 text-[var(--color-foreground)] hover:bg-[var(--color-muted)] rounded-lg transition-colors"
                     disabled={isSubmitting}
                   >
                     Cancel

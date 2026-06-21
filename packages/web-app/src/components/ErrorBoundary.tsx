@@ -49,7 +49,7 @@ export class ErrorBoundary extends Component<
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-[var(--color-background)] dark:bg-gray-900 px-4">
           <div className="max-w-md w-full text-center">
             <div className="mb-6">
               <svg
@@ -67,10 +67,10 @@ export class ErrorBoundary extends Component<
                 />
               </svg>
             </div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-2xl font-semibold text-[var(--color-foreground)] dark:text-white mb-2">
               Something went wrong
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mb-6">
               An unexpected error occurred. Please try again or return to the
               home page.
             </p>
@@ -83,17 +83,17 @@ export class ErrorBoundary extends Component<
               </button>
               <button
                 onClick={this.handleReload}
-                className="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                className="px-4 py-2 bg-gray-200 text-[var(--color-foreground)] dark:bg-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
               >
                 Go Home
               </button>
             </div>
             {this.state.error && (
               <details className="mt-6 text-left">
-                <summary className="text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">
+                <summary className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] cursor-pointer hover:text-[var(--color-foreground)] dark:hover:text-gray-300">
                   Error details
                 </summary>
-                <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-800 rounded text-xs text-red-600 dark:text-red-400 overflow-auto max-h-32">
+                <pre className="mt-2 p-3 bg-[var(--color-muted)] dark:bg-gray-800 rounded text-xs text-red-600 dark:text-red-400 overflow-auto max-h-32">
                   {this.state.error.message}
                 </pre>
               </details>

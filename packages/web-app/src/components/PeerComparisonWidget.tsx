@@ -40,8 +40,8 @@ const statusConfig: Record<
     icon: "⚠️",
   },
   "no-data": {
-    color: "text-gray-500",
-    bgColor: "bg-gray-100",
+    color: "text-[var(--color-muted-foreground)]",
+    bgColor: "bg-[var(--color-muted)]",
     label: "No Data",
     icon: "❓",
   },
@@ -125,7 +125,7 @@ export const PeerComparisonWidget: React.FC<PeerComparisonWidgetProps> = ({
   // Render loading state
   if (loading) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm p-6 ${className}`}>
+      <div className={`bg-[var(--color-surface)] rounded-lg shadow-sm p-6 ${className}`}>
         <div className="animate-pulse">
           <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
           <div className="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
@@ -138,7 +138,7 @@ export const PeerComparisonWidget: React.FC<PeerComparisonWidgetProps> = ({
   // Render error state
   if (error) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm p-6 ${className}`}>
+      <div className={`bg-[var(--color-surface)] rounded-lg shadow-sm p-6 ${className}`}>
         <div className="text-center text-red-500">
           <p>{error}</p>
           <button
@@ -155,8 +155,8 @@ export const PeerComparisonWidget: React.FC<PeerComparisonWidgetProps> = ({
   // Render opted out state
   if (data?.optedOut) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm p-6 ${className}`}>
-        <div className="text-center text-gray-500">
+      <div className={`bg-[var(--color-surface)] rounded-lg shadow-sm p-6 ${className}`}>
+        <div className="text-center text-[var(--color-muted-foreground)]">
           <span className="text-3xl mb-2 block">🔒</span>
           <p>Peer comparison is disabled</p>
           <p className="text-sm mt-1">
@@ -170,8 +170,8 @@ export const PeerComparisonWidget: React.FC<PeerComparisonWidgetProps> = ({
   // Render not available state
   if (!data?.available) {
     return (
-      <div className={`bg-white rounded-lg shadow-sm p-6 ${className}`}>
-        <div className="text-center text-gray-500">
+      <div className={`bg-[var(--color-surface)] rounded-lg shadow-sm p-6 ${className}`}>
+        <div className="text-center text-[var(--color-muted-foreground)]">
           <span className="text-3xl mb-2 block">📊</span>
           <p>{data?.message || "Comparison data not available"}</p>
           {data?.minRequired && data?.currentGroupSize !== undefined && (
@@ -192,7 +192,7 @@ export const PeerComparisonWidget: React.FC<PeerComparisonWidgetProps> = ({
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-sm overflow-hidden ${className}`}
+      className={`bg-[var(--color-surface)] rounded-lg shadow-sm overflow-hidden ${className}`}
     >
       {/* Header */}
       <div
@@ -242,7 +242,7 @@ export const PeerComparisonWidget: React.FC<PeerComparisonWidgetProps> = ({
                   {/* Category Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-gray-900 text-sm">
+                      <span className="font-medium text-[var(--color-foreground)] text-sm">
                         {category}
                       </span>
                       <span className={`text-sm font-medium ${config.color}`}>
@@ -280,7 +280,7 @@ export const PeerComparisonWidget: React.FC<PeerComparisonWidgetProps> = ({
                         {config.icon} {config.label}
                       </span>
                       {comp.vsAverage !== null && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-[var(--color-muted-foreground)]">
                           {comp.vsAverage > 0 ? "+" : ""}
                           {comp.vsAverage}% vs avg
                         </span>
@@ -293,8 +293,8 @@ export const PeerComparisonWidget: React.FC<PeerComparisonWidgetProps> = ({
           </div>
 
           {/* Legend */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="flex justify-center gap-4 text-xs text-gray-500">
+          <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
+            <div className="flex justify-center gap-4 text-xs text-[var(--color-muted-foreground)]">
               <span className="flex items-center gap-1">
                 <span className="w-3 h-3 bg-green-500 rounded-full"></span>
                 Below Avg
@@ -312,7 +312,7 @@ export const PeerComparisonWidget: React.FC<PeerComparisonWidgetProps> = ({
 
           {/* Group Info */}
           {data.groupCriteria && (
-            <div className="mt-3 text-center text-xs text-gray-400">
+            <div className="mt-3 text-center text-xs text-[var(--color-muted-foreground)]">
               Comparing with {data.groupCriteria.region} •{" "}
               {data.groupCriteria.familySize} person household •{" "}
               {data.groupCriteria.incomeRange}

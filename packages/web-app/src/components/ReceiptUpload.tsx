@@ -260,14 +260,14 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6">
+    <div className="bg-[var(--color-surface)] rounded-lg shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-2xl">📷</span>
-          <h2 className="text-lg font-semibold text-gray-900">Scan Receipt</h2>
+          <h2 className="text-lg font-semibold text-[var(--color-foreground)]">Scan Receipt</h2>
         </div>
         {remainingScans !== null && (
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-[var(--color-muted-foreground)]">
             {remainingScans} scans remaining today
           </span>
         )}
@@ -279,14 +279,14 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
           className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
             isDragging
               ? "border-blue-500 bg-blue-50"
-              : "border-gray-300 hover:border-gray-400"
+              : "border-[var(--color-border)] hover:border-gray-400"
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
           <div className="text-4xl mb-4">📄</div>
-          <p className="text-gray-600 mb-2">
+          <p className="text-[var(--color-muted-foreground)] mb-2">
             Drag and drop your receipt here, or
           </p>
           <button
@@ -295,7 +295,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
           >
             Browse Files
           </button>
-          <p className="text-sm text-gray-500 mt-4">
+          <p className="text-sm text-[var(--color-muted-foreground)] mt-4">
             Supports JPEG, PNG, WebP, HEIC, and PDF (max 10MB)
           </p>
           <input
@@ -311,7 +311,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
       {/* File preview */}
       {selectedFile && (
         <div className="space-y-4">
-          <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-start gap-4 p-4 bg-[var(--color-background)] rounded-lg">
             {previewUrl ? (
               <img
                 src={previewUrl}
@@ -324,15 +324,15 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
               </div>
             )}
             <div className="flex-1">
-              <p className="font-medium text-gray-900">{selectedFile.name}</p>
-              <p className="text-sm text-gray-500">
+              <p className="font-medium text-[var(--color-foreground)]">{selectedFile.name}</p>
+              <p className="text-sm text-[var(--color-muted-foreground)]">
                 {formatFileSize(selectedFile.size)}
               </p>
-              <p className="text-sm text-gray-500">{selectedFile.type}</p>
+              <p className="text-sm text-[var(--color-muted-foreground)]">{selectedFile.type}</p>
             </div>
             <button
               onClick={handleClear}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)]"
               disabled={uploading || processing}
             >
               ✕
@@ -343,7 +343,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
           <div className="flex gap-3">
             <button
               onClick={handleClear}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="flex-1 px-4 py-2 border border-[var(--color-border)] text-[var(--color-foreground)] rounded-lg hover:bg-[var(--color-background)]"
               disabled={uploading || processing}
             >
               Cancel
@@ -394,10 +394,10 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
 
       {/* Close button */}
       {onClose && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
           <button
             onClick={onClose}
-            className="w-full px-4 py-2 text-gray-600 hover:text-gray-900"
+            className="w-full px-4 py-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
           >
             Close
           </button>

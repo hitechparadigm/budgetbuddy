@@ -141,23 +141,23 @@ export const TipsFeedPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--color-background)] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading tips...</p>
+          <p className="mt-4 text-[var(--color-muted-foreground)]">Loading tips...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--color-background)]">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-[var(--color-surface)] border-b border-[var(--color-border)]">
         <div className="max-w-4xl mx-auto px-4 py-6">
           <button
             onClick={() => navigate("/budget")}
-            className="px-4 py-2 text-gray-600 hover:text-gray-900 mb-2"
+            className="px-4 py-2 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] mb-2"
           >
             ← Back to Budget
           </button>
@@ -167,13 +167,13 @@ export const TipsFeedPage: React.FC = () => {
           />
 
           {/* Tabs */}
-          <div className="flex gap-4 mt-6 border-b border-gray-200">
+          <div className="flex gap-4 mt-6 border-b border-[var(--color-border)]">
             <button
               onClick={() => setActiveTab("feed")}
               className={`pb-3 px-2 font-medium transition-colors relative ${
                 activeTab === "feed"
                   ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-600 hover:text-gray-900"
+                  : "text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
               }`}
             >
               📚 Tips Feed ({tips.length})
@@ -188,7 +188,7 @@ export const TipsFeedPage: React.FC = () => {
               className={`pb-3 px-2 font-medium transition-colors ${
                 activeTab === "saved"
                   ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-600 hover:text-gray-900"
+                  : "text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
               }`}
             >
               ⭐ Saved ({savedTips.length})
@@ -220,7 +220,7 @@ export const TipsFeedPage: React.FC = () => {
                       savingTipId === dailyTip.id ||
                       savedTips.some((t) => t.id === dailyTip.id)
                     }
-                    className="ml-4 px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="ml-4 px-4 py-2 bg-[var(--color-surface)] text-blue-600 rounded-lg hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {savedTips.some((t) => t.id === dailyTip.id)
                       ? "✓ Saved"
@@ -239,7 +239,7 @@ export const TipsFeedPage: React.FC = () => {
                   className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
                     selectedCategory === cat.value
                       ? "bg-blue-600 text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                      : "bg-[var(--color-surface)] text-[var(--color-foreground)] hover:bg-[var(--color-muted)]"
                   }`}
                 >
                   {cat.icon} {cat.label}
@@ -250,8 +250,8 @@ export const TipsFeedPage: React.FC = () => {
             {/* Tips Feed */}
             <div className="space-y-4">
               {tips.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-lg">
-                  <p className="text-gray-500">
+                <div className="text-center py-12 bg-[var(--color-surface)] rounded-lg">
+                  <p className="text-[var(--color-muted-foreground)]">
                     No tips available in this category.
                   </p>
                   <button
@@ -265,7 +265,7 @@ export const TipsFeedPage: React.FC = () => {
                 tips.map((tip) => (
                   <div
                     key={tip.id}
-                    className={`bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow relative ${
+                    className={`bg-[var(--color-surface)] rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow relative ${
                       !readTips.has(tip.id) ? "border-l-4 border-blue-500" : ""
                     }`}
                     onMouseEnter={() => markAsRead(tip.id)}
@@ -284,7 +284,7 @@ export const TipsFeedPage: React.FC = () => {
                           <span className="text-xl">
                             {getCategoryIcon(tip.category)}
                           </span>
-                          <span className="text-xs font-medium text-gray-500 uppercase">
+                          <span className="text-xs font-medium text-[var(--color-muted-foreground)] uppercase">
                             {tip.category}
                           </span>
                           <span
@@ -293,10 +293,10 @@ export const TipsFeedPage: React.FC = () => {
                             {tip.difficulty}
                           </span>
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2">
                           {tip.title}
                         </h3>
-                        <p className="text-gray-600">{tip.content}</p>
+                        <p className="text-[var(--color-muted-foreground)]">{tip.content}</p>
                       </div>
                       <div className="flex gap-2 ml-4 mt-6">
                         <button
@@ -313,7 +313,7 @@ export const TipsFeedPage: React.FC = () => {
                         <button
                           onClick={() => handleDismissTip(tip.id)}
                           disabled={dismissingTipId === tip.id}
-                          className="px-3 py-2 text-sm bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                          className="px-3 py-2 text-sm bg-[var(--color-background)] text-[var(--color-muted-foreground)] rounded-lg hover:bg-[var(--color-muted)] transition-colors disabled:opacity-50"
                           title="Dismiss tip"
                         >
                           ✕
@@ -329,10 +329,10 @@ export const TipsFeedPage: React.FC = () => {
           /* Saved Tips */
           <div className="space-y-4">
             {savedTips.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-lg">
+              <div className="text-center py-12 bg-[var(--color-surface)] rounded-lg">
                 <span className="text-6xl">⭐</span>
-                <p className="text-gray-500 mt-4">No saved tips yet.</p>
-                <p className="text-gray-400 text-sm mt-2">
+                <p className="text-[var(--color-muted-foreground)] mt-4">No saved tips yet.</p>
+                <p className="text-[var(--color-muted-foreground)] text-sm mt-2">
                   Save tips from the feed to access them later.
                 </p>
                 <button
@@ -344,14 +344,14 @@ export const TipsFeedPage: React.FC = () => {
               </div>
             ) : (
               savedTips.map((tip) => (
-                <div key={tip.id} className="bg-white rounded-lg p-6 shadow-sm">
+                <div key={tip.id} className="bg-[var(--color-surface)] rounded-lg p-6 shadow-sm">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-xl">
                           {getCategoryIcon(tip.category)}
                         </span>
-                        <span className="text-xs font-medium text-gray-500 uppercase">
+                        <span className="text-xs font-medium text-[var(--color-muted-foreground)] uppercase">
                           {tip.category}
                         </span>
                         <span
@@ -360,15 +360,15 @@ export const TipsFeedPage: React.FC = () => {
                           {tip.difficulty}
                         </span>
                         {tip.savedAt && (
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-[var(--color-muted-foreground)]">
                             Saved {new Date(tip.savedAt).toLocaleDateString()}
                           </span>
                         )}
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-2">
                         {tip.title}
                       </h3>
-                      <p className="text-gray-600">{tip.content}</p>
+                      <p className="text-[var(--color-muted-foreground)]">{tip.content}</p>
                     </div>
                   </div>
                 </div>

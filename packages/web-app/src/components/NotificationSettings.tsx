@@ -149,8 +149,8 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center gap-3 py-4 text-gray-500 dark:text-gray-400">
-        <div className="h-5 w-5 rounded-full border-2 border-gray-300 border-t-emerald-600 animate-spin" />
+      <div className="flex items-center gap-3 py-4 text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
+        <div className="h-5 w-5 rounded-full border-2 border-[var(--color-border)] border-t-emerald-600 animate-spin" />
         <span className="text-sm">Loading notification preferences...</span>
       </div>
     );
@@ -158,7 +158,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <h3 className="text-lg font-semibold text-[var(--color-foreground)] dark:text-white">
         Notification Preferences
       </h3>
 
@@ -175,12 +175,12 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       )}
 
       {/* Budget Alerts */}
-      <div className="flex items-start justify-between py-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-start justify-between py-4 border-b border-[var(--color-border)] dark:border-gray-700">
         <div>
-          <p className="font-medium text-gray-900 dark:text-white">
+          <p className="font-medium text-[var(--color-foreground)] dark:text-white">
             Budget Alerts
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mt-1">
             Receive alerts when spending reaches 80%, 90%, or 100% of your
             budget
           </p>
@@ -196,7 +196,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           }`}
         >
           <span
-            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-[var(--color-surface)] shadow ring-0 transition duration-200 ${
               preferences.budgetAlertsEnabled
                 ? "translate-x-5"
                 : "translate-x-0"
@@ -206,12 +206,12 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
       </div>
 
       {/* Daily Reminders */}
-      <div className="flex items-start justify-between py-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-start justify-between py-4 border-b border-[var(--color-border)] dark:border-gray-700">
         <div>
-          <p className="font-medium text-gray-900 dark:text-white">
+          <p className="font-medium text-[var(--color-foreground)] dark:text-white">
             Daily Reminders
           </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)] mt-1">
             Receive daily reminders to log your expenses
           </p>
         </div>
@@ -226,7 +226,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           }`}
         >
           <span
-            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-[var(--color-surface)] shadow ring-0 transition duration-200 ${
               preferences.dailyRemindersEnabled
                 ? "translate-x-5"
                 : "translate-x-0"
@@ -237,10 +237,10 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
 
       {/* Reminder Time */}
       {preferences.dailyRemindersEnabled && (
-        <div className="py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="py-4 border-b border-[var(--color-border)] dark:border-gray-700">
           <label
             htmlFor="reminderTime"
-            className="block font-medium text-gray-900 dark:text-white mb-2"
+            className="block font-medium text-[var(--color-foreground)] dark:text-white mb-2"
           >
             Reminder Time
           </label>
@@ -249,9 +249,9 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
             type="time"
             value={preferences.reminderTime}
             onChange={(e) => handleTimeChange("reminderTime", e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-3 py-2 border border-[var(--color-border)] dark:border-gray-600 rounded-lg bg-[var(--color-surface)] dark:bg-gray-800 text-[var(--color-foreground)] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
             Time of day to receive daily reminders
           </p>
         </div>
@@ -259,7 +259,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
 
       {/* Quiet Hours */}
       <div className="py-4">
-        <p className="font-medium text-gray-900 dark:text-white mb-2">
+        <p className="font-medium text-[var(--color-foreground)] dark:text-white mb-2">
           Quiet Hours
         </p>
         <div className="flex items-center gap-3">
@@ -269,17 +269,17 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
             onChange={(e) =>
               handleTimeChange("quietHoursStart", e.target.value)
             }
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-3 py-2 border border-[var(--color-border)] dark:border-gray-600 rounded-lg bg-[var(--color-surface)] dark:bg-gray-800 text-[var(--color-foreground)] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
-          <span className="text-gray-500 dark:text-gray-400">to</span>
+          <span className="text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">to</span>
           <input
             type="time"
             value={preferences.quietHoursEnd}
             onChange={(e) => handleTimeChange("quietHoursEnd", e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="px-3 py-2 border border-[var(--color-border)] dark:border-gray-600 rounded-lg bg-[var(--color-surface)] dark:bg-gray-800 text-[var(--color-foreground)] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-1 text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
           No notifications will be sent during these hours
         </p>
       </div>

@@ -198,7 +198,7 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
         />
 
         {/* Modal */}
-        <div className="relative inline-block w-full max-w-2xl bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8">
+        <div className="relative inline-block w-full max-w-2xl bg-[var(--color-surface)] rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8">
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
             <div className="flex items-center justify-between">
@@ -276,7 +276,7 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                       <>🔍 Scan for Recurring Bills</>
                     )}
                   </button>
-                  <p className="text-xs text-gray-500 mt-2 text-center">
+                  <p className="text-xs text-[var(--color-muted-foreground)] mt-2 text-center">
                     AI will analyze your last 6 months of transactions
                   </p>
                 </div>
@@ -285,15 +285,15 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                 {loading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2" />
-                    <p className="text-gray-500">Loading patterns...</p>
+                    <p className="text-[var(--color-muted-foreground)]">Loading patterns...</p>
                   </div>
                 ) : patterns.length === 0 ? (
                   <div className="text-center py-8">
                     <span className="text-4xl mb-2 block">📊</span>
-                    <p className="text-gray-500">
+                    <p className="text-[var(--color-muted-foreground)]">
                       No pending patterns to review
                     </p>
-                    <p className="text-sm text-gray-400 mt-1">
+                    <p className="text-sm text-[var(--color-muted-foreground)] mt-1">
                       Click "Scan" to detect recurring bills
                     </p>
                   </div>
@@ -302,12 +302,12 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                     {patterns.map((pattern) => (
                       <div
                         key={pattern.patternId}
-                        className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+                        className="border border-[var(--color-border)] rounded-lg p-4 hover:border-blue-300 transition-colors"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-medium text-gray-900">
+                              <h4 className="font-medium text-[var(--color-foreground)]">
                                 {pattern.suggestedBillName}
                               </h4>
                               <span
@@ -317,10 +317,10 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                                 {pattern.confidenceScore}%)
                               </span>
                             </div>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-[var(--color-muted-foreground)]">
                               {pattern.merchantName}
                             </p>
-                            <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                            <div className="flex items-center gap-4 mt-2 text-sm text-[var(--color-muted-foreground)]">
                               <span>
                                 {formatCurrency(
                                   pattern.averageAmount,
@@ -389,35 +389,35 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                     {editMode ? (
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                             Bill Name
                           </label>
                           <input
                             type="text"
                             value={editedName}
                             onChange={(e) => setEditedName(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                             Amount
                           </label>
                           <input
                             type="number"
                             value={editedAmount}
                             onChange={(e) => setEditedAmount(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                             Frequency
                           </label>
                           <select
                             value={editedFrequency}
                             onChange={(e) => setEditedFrequency(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500"
                           >
                             {Object.entries(frequencyLabels).map(
                               ([value, label]) => (
@@ -440,7 +440,7 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                           </button>
                           <button
                             onClick={() => setEditMode(false)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                            className="px-4 py-2 border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-background)]"
                           >
                             Cancel
                           </button>
@@ -449,19 +449,19 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                     ) : (
                       <div className="space-y-3">
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Bill Name</span>
+                          <span className="text-[var(--color-muted-foreground)]">Bill Name</span>
                           <span className="font-medium">
                             {selectedPattern.suggestedBillName}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Merchant</span>
+                          <span className="text-[var(--color-muted-foreground)]">Merchant</span>
                           <span className="font-medium">
                             {selectedPattern.merchantName}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Amount</span>
+                          <span className="text-[var(--color-muted-foreground)]">Amount</span>
                           <span className="font-medium">
                             {formatCurrency(
                               selectedPattern.averageAmount,
@@ -470,13 +470,13 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Frequency</span>
+                          <span className="text-[var(--color-muted-foreground)]">Frequency</span>
                           <span className="font-medium">
                             {frequencyLabels[selectedPattern.frequency]}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Next Expected</span>
+                          <span className="text-[var(--color-muted-foreground)]">Next Expected</span>
                           <span className="font-medium">
                             {new Date(
                               selectedPattern.nextExpectedDate,
@@ -499,7 +499,7 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
 
                   {/* Occurrences */}
                   <div className="mb-6">
-                    <h5 className="font-medium text-gray-900 mb-3">
+                    <h5 className="font-medium text-[var(--color-foreground)] mb-3">
                       Transaction History ({selectedPattern.occurrences.length})
                     </h5>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
@@ -508,7 +508,7 @@ export const PatternReviewModal: React.FC<PatternReviewModalProps> = ({
                           key={idx}
                           className="flex justify-between text-sm py-2 border-b border-gray-100"
                         >
-                          <span className="text-gray-600">
+                          <span className="text-[var(--color-muted-foreground)]">
                             {new Date(occ.date).toLocaleDateString()}
                           </span>
                           <span className="font-medium">

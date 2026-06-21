@@ -225,7 +225,7 @@ export default function DebtFormPage() {
         >
           ← Back to Debts
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">
+        <h1 className="text-3xl font-bold text-[var(--color-foreground)]">
           {isEditing ? "✏️ Edit Debt" : "➕ Add Debt"}
         </h1>
       </div>
@@ -238,11 +238,11 @@ export default function DebtFormPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow p-6 space-y-6"
+        className="bg-[var(--color-surface)] rounded-xl shadow p-6 space-y-6"
       >
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
             Debt Name *
           </label>
           <input
@@ -251,21 +251,21 @@ export default function DebtFormPage() {
             value={formData.name}
             onChange={handleChange}
             placeholder="e.g., Chase Sapphire, Student Loan"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           />
         </div>
 
         {/* Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
             Debt Type
           </label>
           <select
             name="type"
             value={formData.type}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             {DEBT_TYPES.map((type) => (
               <option key={type.value} value={type.value}>
@@ -278,11 +278,11 @@ export default function DebtFormPage() {
         {/* Balances */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Current Balance *
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500">$</span>
+              <span className="absolute left-3 top-2 text-[var(--color-muted-foreground)]">$</span>
               <input
                 type="number"
                 name="currentBalance"
@@ -291,17 +291,17 @@ export default function DebtFormPage() {
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Original Balance
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500">$</span>
+              <span className="absolute left-3 top-2 text-[var(--color-muted-foreground)]">$</span>
               <input
                 type="number"
                 name="originalBalance"
@@ -310,7 +310,7 @@ export default function DebtFormPage() {
                 step="0.01"
                 min="0"
                 placeholder="Same as current"
-                className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -319,7 +319,7 @@ export default function DebtFormPage() {
         {/* Interest Rate and Minimum Payment */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Interest Rate (APR) *
             </label>
             <div className="relative">
@@ -332,18 +332,18 @@ export default function DebtFormPage() {
                 min="0"
                 max="100"
                 placeholder="0.00"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
-              <span className="absolute right-3 top-2 text-gray-500">%</span>
+              <span className="absolute right-3 top-2 text-[var(--color-muted-foreground)]">%</span>
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
               Minimum Payment *
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500">$</span>
+              <span className="absolute left-3 top-2 text-[var(--color-muted-foreground)]">$</span>
               <input
                 type="number"
                 name="minimumPayment"
@@ -352,7 +352,7 @@ export default function DebtFormPage() {
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-8 pr-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
             </div>
@@ -376,14 +376,14 @@ export default function DebtFormPage() {
 
         {/* Due Day */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
             Due Day of Month
           </label>
           <select
             name="dueDay"
             value={formData.dueDay}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
               <option key={day} value={day}>
@@ -395,7 +395,7 @@ export default function DebtFormPage() {
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
             Notes
           </label>
           <textarea
@@ -404,7 +404,7 @@ export default function DebtFormPage() {
             onChange={handleChange}
             rows={3}
             placeholder="Any additional notes about this debt..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-[var(--color-border)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -424,7 +424,7 @@ export default function DebtFormPage() {
             <button
               type="button"
               onClick={() => navigate("/debts")}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border border-[var(--color-border)] rounded-lg hover:bg-[var(--color-background)]"
             >
               Cancel
             </button>

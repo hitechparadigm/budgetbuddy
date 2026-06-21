@@ -347,15 +347,15 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-      <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+      <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-[var(--color-surface)]">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-lg font-medium text-[var(--color-foreground)]">
             Manage Categories - {group.groupName}
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)]"
           >
             <svg
               className="w-6 h-6"
@@ -374,7 +374,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 mb-6">
+        <div className="border-b border-[var(--color-border)] mb-6">
           <nav className="-mb-px flex space-x-8">
             {[
               {
@@ -398,12 +398,12 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === tab.key
                     ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    : "border-transparent text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:border-[var(--color-border)]"
                 }`}
               >
                 {tab.label}
                 {tab.count !== undefined && (
-                  <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2 rounded-full text-xs">
+                  <span className="ml-2 bg-[var(--color-muted)] text-[var(--color-foreground)] py-0.5 px-2 rounded-full text-xs">
                     {tab.count}
                   </span>
                 )}
@@ -422,15 +422,15 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                   {group.categories.map((category, index) => (
                     <div
                       key={category.categoryId}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                      className="flex items-center justify-between p-4 border border-[var(--color-border)] rounded-lg"
                     >
                       <div className="flex items-center space-x-3">
                         <span className="text-2xl">{category.icon}</span>
                         <div>
-                          <h4 className="text-sm font-medium text-gray-900">
+                          <h4 className="text-sm font-medium text-[var(--color-foreground)]">
                             {category.categoryName}
                           </h4>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-[var(--color-muted-foreground)]">
                             {formatCurrency(category.plannedAmount, currency)}{" "}
                             planned
                             {category.rolloverEnabled && (
@@ -463,7 +463,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                             handleMoveCategory(category.categoryId, "up")
                           }
                           disabled={index === 0}
-                          className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                          className="p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] disabled:opacity-50"
                         >
                           <svg
                             className="w-4 h-4"
@@ -484,7 +484,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                             handleMoveCategory(category.categoryId, "down")
                           }
                           disabled={index === group.categories.length - 1}
-                          className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
+                          className="p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-muted-foreground)] disabled:opacity-50"
                         >
                           <svg
                             className="w-4 h-4"
@@ -546,11 +546,11 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className="text-gray-400 text-6xl mb-4">📋</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  <div className="text-[var(--color-muted-foreground)] text-6xl mb-4">📋</div>
+                  <h3 className="text-lg font-medium text-[var(--color-foreground)] mb-2">
                     No Categories Yet
                   </h3>
-                  <p className="text-gray-500 mb-4">
+                  <p className="text-[var(--color-muted-foreground)] mb-4">
                     Add categories from templates or create custom ones.
                   </p>
                   <div className="space-x-3">
@@ -562,7 +562,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                     </button>
                     <button
                       onClick={() => setActiveTab("custom")}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                      className="inline-flex items-center px-4 py-2 border border-[var(--color-border)] text-sm font-medium rounded-md text-[var(--color-foreground)] bg-[var(--color-surface)] hover:bg-[var(--color-background)]"
                     >
                       Create Custom
                     </button>
@@ -576,10 +576,10 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
           {activeTab === "templates" && (
             <div>
               <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-2">
+                <h4 className="text-sm font-medium text-[var(--color-foreground)] mb-2">
                   Common {groupType} categories
                 </h4>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-[var(--color-muted-foreground)]">
                   Click to add a category to your budget. You can customize it
                   later.
                 </p>
@@ -589,11 +589,11 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                   <button
                     key={index}
                     onClick={() => handleAddFromTemplate(template)}
-                    className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                    className="flex items-center space-x-3 p-3 border border-[var(--color-border)] rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
                   >
                     <span className="text-2xl">{template.icon}</span>
                     <div className="text-left">
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-[var(--color-foreground)]">
                         {template.name}
                       </p>
                       <div
@@ -611,10 +611,10 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
           {activeTab === "custom" && (
             <div>
               <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-2">
+                <h4 className="text-sm font-medium text-[var(--color-foreground)] mb-2">
                   {editingCategory ? "Edit Category" : "Create Custom Category"}
                 </h4>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-[var(--color-muted-foreground)]">
                   {editingCategory
                     ? "Update the category details below."
                     : "Add a custom category with your own name, icon, and color."}
@@ -623,7 +623,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
               <div className="space-y-4">
                 {/* Category Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                     Category Name
                   </label>
                   <input
@@ -632,14 +632,14 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                     onChange={(e) =>
                       setFormData({ ...formData, categoryName: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter category name"
                   />
                 </div>
 
                 {/* Planned Amount */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                     Planned Amount
                   </label>
                   <input
@@ -651,7 +651,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                         plannedAmount: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="0.00"
                     min="0"
                     step="0.01"
@@ -660,7 +660,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
 
                 {/* Icon Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
                     Icon
                   </label>
                   <div className="grid grid-cols-8 gap-2">
@@ -671,7 +671,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                         className={`p-2 text-2xl border rounded-md hover:border-blue-300 ${
                           formData.icon === icon
                             ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200"
+                            : "border-[var(--color-border)]"
                         }`}
                       >
                         {icon}
@@ -682,7 +682,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
 
                 {/* Color Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
                     Color
                   </label>
                   <div className="grid grid-cols-10 gap-2">
@@ -695,7 +695,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                         className={`w-8 h-8 rounded-full border-2 ${
                           formData.colorCode === color
                             ? "border-gray-800"
-                            : "border-gray-300"
+                            : "border-[var(--color-border)]"
                         }`}
                         style={{ backgroundColor: color }}
                       />
@@ -704,13 +704,13 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                 </div>
 
                 {/* Rollover Settings (Requirement 40) */}
-                <div className="border-t border-gray-200 pt-4">
+                <div className="border-t border-[var(--color-border)] pt-4">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-medium text-[var(--color-foreground)]">
                         Enable Rollover
                       </label>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-[var(--color-muted-foreground)]">
                         Unused budget carries over to next month
                       </p>
                     </div>
@@ -729,7 +729,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                       aria-checked={formData.rolloverEnabled}
                     >
                       <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-[var(--color-surface)] shadow ring-0 transition duration-200 ease-in-out ${
                           formData.rolloverEnabled
                             ? "translate-x-5"
                             : "translate-x-0"
@@ -741,10 +741,10 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                   {/* Rollover Cap (only shown when rollover is enabled) */}
                   {formData.rolloverEnabled && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
                         Rollover Cap (optional)
                       </label>
-                      <p className="text-xs text-gray-500 mb-2">
+                      <p className="text-xs text-[var(--color-muted-foreground)] mb-2">
                         Maximum amount that can roll over. Leave empty for no
                         limit.
                       </p>
@@ -759,7 +759,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                               : null,
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-[var(--color-border)] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="No limit"
                         min="0"
                         step="0.01"
@@ -800,7 +800,7 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                         rolloverCap: null,
                       });
                     }}
-                    className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    className="px-4 py-2 border border-[var(--color-border)] text-sm font-medium rounded-md text-[var(--color-foreground)] bg-[var(--color-surface)] hover:bg-[var(--color-background)]"
                   >
                     Cancel
                   </button>
