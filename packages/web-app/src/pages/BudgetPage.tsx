@@ -2188,7 +2188,27 @@ export const BudgetPage: React.FC = () => {
                               {formatCurrency(category.spentAmount, currency)}
                             </div>
                           </div>
-                          <div className="flex items-center space-x-1 w-16 justify-end opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0">
+                          <div className="flex items-center space-x-1 w-20 justify-end md:opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0">
+                            {/* Quick-add transaction for this category */}
+                            <button
+                              onClick={() => {
+                                const txType = group.type === "income" ? "income" : "expense";
+                                setTransactionType(txType);
+                                setTransactionForm({
+                                  amount: "",
+                                  description: "",
+                                  date: getTodayString(),
+                                  categoryId: category.id,
+                                });
+                                setShowTransactionModal(true);
+                              }}
+                              className="p-1 text-[var(--color-muted-foreground)] hover:text-green-600 rounded"
+                              title="Add transaction"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                            </button>
                             <button
                               onClick={() =>
                                 openBudgetItemModal(group.type, category)
@@ -2245,8 +2265,8 @@ export const BudgetPage: React.FC = () => {
                   </div>
 
                   {/* Group Total */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between py-3 px-4 bg-muted rounded-lg font-semibold space-y-2 md:space-y-0">
-                    <div className="text-foreground">Total {group.name}</div>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between py-3 px-4 bg-[var(--color-muted)] rounded-lg font-semibold space-y-2 md:space-y-0">
+                    <div className="text-[var(--color-foreground)]">Total {group.name}</div>
                     <div className="flex items-center gap-6 md:gap-4">
                       <div className="text-left md:text-right md:w-24 flex-shrink-0">
                         <div className="text-xs md:hidden text-[var(--color-muted-foreground)] font-normal mb-0.5">
