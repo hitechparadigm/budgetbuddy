@@ -70,11 +70,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
       <main id="main-content" className="flex-1 overflow-auto" tabIndex={-1}>
         {/* Mobile Header with hamburger menu */}
         {isMobile && (
-          <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+          <header className="sticky top-0 z-30 bg-[var(--color-surface)] border-b border-[var(--color-border)] px-4 py-3">
             <div className="flex items-center justify-between">
               <button
                 onClick={toggleCollapse}
-                className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-3 rounded-lg text-[var(--color-muted-foreground)] hover:bg-[var(--color-muted)] min-w-[44px] min-h-[44px] flex items-center justify-center"
                 aria-label="Open navigation menu"
               >
                 <svg
@@ -117,7 +117,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           </div>
           <a
             href="/about"
-            className="shrink-0 text-xs font-semibold bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition-colors whitespace-nowrap"
+            className="shrink-0 text-xs font-semibold bg-white/20 hover:bg-white/30 px-3 py-2.5 rounded-full transition-colors whitespace-nowrap min-h-[44px] flex items-center"
           >
             Learn more
           </a>

@@ -1806,12 +1806,12 @@ export const BudgetPage: React.FC = () => {
 
               {/* Right: Navigation Controls */}
               <div className="flex items-center space-x-2">
-                {/* Export Button - Only show if budget exists */}
+                {/* Export Buttons — hidden on mobile to save space, accessible via FAB menu */}
                 {budget && (
                   <>
                     <button
                       onClick={handleExportCSV}
-                      className="px-4 py-2 text-sm font-medium text-green-600 border border-green-600 rounded-md hover:bg-green-50 transition-colors flex items-center gap-1.5"
+                      className="hidden sm:flex px-4 py-2 text-sm font-medium text-green-600 border border-green-600 rounded-md hover:bg-green-50 transition-colors items-center gap-1.5"
                     >
                       Export CSV
                       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
@@ -1821,7 +1821,7 @@ export const BudgetPage: React.FC = () => {
                     <button
                       onClick={handleExportPDF}
                       data-export="pdf"
-                      className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors flex items-center gap-1.5"
+                      className="hidden sm:flex px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors items-center gap-1.5"
                     >
                       Export PDF
                       <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">
@@ -1831,10 +1831,10 @@ export const BudgetPage: React.FC = () => {
                   </>
                 )}
 
-                {/* Keyboard shortcuts help button */}
+                {/* Keyboard shortcuts help button — hidden on mobile */}
                 <button
                   onClick={() => setShowShortcutsHelp(prev => !prev)}
-                  className="p-2 text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
+                  className="hidden sm:flex p-2 text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
                   aria-label="Show keyboard shortcuts"
                   title="Keyboard shortcuts (?)"
                 >
@@ -1843,20 +1843,20 @@ export const BudgetPage: React.FC = () => {
                   </svg>
                 </button>
 
-                {/* Reset Button - Only show if budget exists */}
+                {/* Reset Button — hidden on mobile */}
                 {budget && (
                   <button
                     onClick={() => setShowResetModal(true)}
-                    className="px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-md hover:bg-muted transition-colors"
+                    className="hidden sm:flex px-4 py-2 text-sm font-medium text-muted-foreground border border-border rounded-md hover:bg-muted transition-colors"
                   >
                     Reset
                   </button>
                 )}
 
-                {/* Today Button */}
+                {/* Today Button — hidden on mobile (navigate with arrows) */}
                 <button
                   onClick={goToToday}
-                  className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                  className="hidden sm:flex px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
                 >
                   Today
                 </button>
@@ -2198,9 +2198,9 @@ export const BudgetPage: React.FC = () => {
                   {/* Group Total */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between py-3 px-4 bg-muted rounded-lg font-semibold space-y-2 md:space-y-0">
                     <div className="text-foreground">Total {group.name}</div>
-                    <div className="flex items-center md:space-x-4">
+                    <div className="flex items-center gap-6 md:gap-4">
                       <div className="text-left md:text-right md:w-24 flex-shrink-0">
-                        <div className="text-xs md:hidden text-gray-500 font-normal">
+                        <div className="text-xs md:hidden text-gray-500 font-normal mb-0.5">
                           Planned
                         </div>
                         <div>
@@ -2214,7 +2214,7 @@ export const BudgetPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right md:w-24 flex-shrink-0">
-                        <div className="text-xs md:hidden text-gray-500 font-normal">
+                        <div className="text-xs md:hidden text-gray-500 font-normal mb-0.5">
                           Received
                         </div>
                         <div>
