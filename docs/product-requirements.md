@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-19 (Session 150 — Web App Polish complete: Goals card grid + SVG rings, recharts charts, pricing page, AI coach rename, welcome tooltips, error states, rule prompt, daily insight pool, debt timeline, onboarding 4-step, budget health score, monthly kickoff email, cash flow forecast, budget sidebar slide-over, responsive, accessibility, lazy-loading for Lighthouse ≥85)
+**Last Updated**: 2026-06-21 (Session 151 — Bug fixes + new features: budget right sidebar UX redesign, bills/subscriptions workflow + category bug fix, budget 401 token refresh, net-worth save 500 fix, investments Lambda deployed + Alpha Vantage market news/signals)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -217,10 +217,12 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ Financial insights (AI-powered, spending patterns, peer comparison)
 - ✅ Receipt scanning (OCR via AWS Textract, web upload + mobile camera)
 - ✅ Credit score monitoring
-- ✅ Investment tracking (holdings, portfolio performance, net worth integration)
+- ✅ Investment tracking — `backend/functions/investments/` deployed to `api-features-stack`; holdings CRUD, portfolio summary, performance history
+- ✅ **Investment market news** — Alpha Vantage `NEWS_SENTIMENT` API; articles with sentiment (Bullish/Bearish/Neutral), source, related tickers
+- ✅ **Investment market signals** — Alpha Vantage `TOP_GAINERS_LOSERS` API; top gainers, losers, most active with price/change%
 - ✅ Subscriptions: list, AI detection from transactions (`POST /subscriptions/detect`), add/edit/delete, monthly/yearly cost tracking, renewal reminders, review status (Keep/Review/Cancel)
 - ✅ Notifications: device registration, preferences (GET/PUT), notification history, push delivery via Expo
-- ✅ Net worth tracking (manual + investment accounts)
+- ✅ Net worth tracking (manual + investment accounts) — `backend/functions/net-worth/` deployed to extended stack
 
 ### Frontend
 - ✅ `BudgetMembersPage` at `/budget/members` — full member management UI
@@ -281,7 +283,27 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **Daily rotating AI insight pool** — 30+ insight templates in `OverviewPage.tsx`; day-of-year cycling; falls back to pool if API call fails
 - ✅ **Monthly SES kickoff email** — `sendMonthlyKickoffEmail()` in `daily-reminders/index.js`; triggered on `isFirstDayOfMonth` check; includes pre-filled category count from previous month
 
-### Web App Polish (Phase 6 — Quality & Polish)
+### Session 151 — Bug Fixes & Feature Work (2026-06-21)
+
+**Bug Fixes:**
+- ✅ **Budget right sidebar UX** — replaced cramped category details panel (text-only) with progress bars, over-budget `+X%` pill badges, design-token colors throughout; `+ Add Item` uses brand green; transaction tabs use `var(--color-primary)`
+- ✅ **Bills category dropdown empty** — `GET /budget/current` requires `?month=YYYY-MM`; BillFormPage was calling it without the param → 400 → silent fail → empty dropdown. Fixed + added `categoriesLoading` state + disabled select while loading
+- ✅ **Budget 401 silent fail** — when JWT expired mid-session, `loadBudget()` (raw `fetch`, not `apiClient`) would get 401 and silently show empty budget. Now: attempt silent token refresh via `apiClient.tryRefreshTokens()` → retry; if refresh fails → redirect to `/auth?returnTo=/budget?month=YYYY-MM`
+- ✅ **Net Worth assets save 500** — `createAsset` and `createLiability` called `generateId("asset")` but `generateId` is an object; fixed to `generateId.custom("asset")` / `generateId.custom("liab")`
+- ✅ **Net Worth liabilities save 500** — same fix
+
+**Bills & Subscriptions workflow clarification + improvements:**
+- ✅ **Bills redesign** — design tokens throughout (no more hardcoded blue/gray-50); `+ Link to budget category` inline prompt on bills without a category; "→ Budget: [Category]" shown when linked; logged transaction badge when paid; inline edit/delete buttons
+- ✅ **Bills form redesign** — category loading fixed; `?type=subscription` mode shows subscription-specific copy and routes back to Subscriptions on save; toggle switch for recurring instead of checkbox
+- ✅ **Subscriptions redesign** — design tokens; `window.confirm` replaced with controlled delete modal; `+ Add manually` button routes to Bills form in subscription mode; `StatCard` uses `card` CSS class
+- ✅ **Subscription "Add manually" bridge** — Subscriptions page now has `+ Add manually` button → `/bills/new?type=subscription` → form shows "Adding a subscription manually" copy → saves and returns to Subscriptions
+
+**Investments:**
+- ✅ **Alpha Vantage API key** — stored in Secrets Manager at `budgetbuddy/alphavantage/api-key`
+- ✅ **Investments Lambda deployed** — added to `api-features-stack.ts`; 10 routes including `/investments/news` and `/investments/signals`
+- ✅ **`investmentsApi.ts` base URL fixed** — was calling main API (`q0zoob6728`); investments is on features API (`0poeu07vth`)
+- ✅ **Market news section** — `InvestmentsPage.tsx` now shows Alpha Vantage news feed with sentiment badges, article thumbnails, source attribution, click-through to full article
+- ✅ **Market signals section** — Top gainers, losers, most active with price and change%; refresh button
 - ✅ **Mobile app banner** — sticky bottom banner at `<768px` in AppLayout
 - ✅ **Budget transaction slide-over** — floating "Transactions" button at `<md` breakpoints opens slide-over panel with last 20 transactions; closes on backdrop click
 - ✅ **Transaction filter session persistence** — `sessionStorage` via `useTransactionFilters` hook
@@ -511,18 +533,21 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Notifications | `GET/PUT /notifications/preferences`, `GET /notifications/history`, `POST /notifications/register-device` | ✅ |
 | Deprecated /family/* | Returns 410 Gone for all routes | ✅ |
 
-### 🐛 Remaining Known Bugs (2 low priority)
+### 🐛 Remaining Known Bugs (2 low priority, rest fixed)
 
 | # | Severity | Component | Description |
 |---|----------|-----------|-------------|
 | 1 | Low | `POST /plaid/sandbox/create-item` | 500 — Plaid sandbox credentials not configured in dev environment |
 | 2 | Low | `POST /transactions` create | Test skips: `categoryId` must be fetched from `GET /budget/current`, not `GET /budget` (which returns a list) |
+| 3 | ✅ Fixed (2026-06-21) | `POST /net-worth/assets` + `/liabilities` | Was 500 — `generateId("asset")` → `generateId.custom("asset")` |
+| 4 | ✅ Fixed (2026-06-21) | Bills category dropdown | `GET /budget/current` required `?month=YYYY-MM`; was returning 400 silently → empty dropdown |
+| 5 | ✅ Fixed (2026-06-21) | Budget page silent 401 | JWT expiry caused silent empty page. Now: token refresh attempt → redirect to `/auth?returnTo=` if refresh fails |
 
 ### Not Deployed (frontend components exist, no backend Lambda)
 
 | Feature | Status |
 |---------|--------|
-| Investment tracking (`/investments/*`) | ❌ No Lambda on any API gateway |
+| Investment tracking (`/investments/*`) | ✅ **Now deployed** — added to `api-features-stack`, endpoints live on features API (`0poeu07vth`) |
 
 ---
 
@@ -599,6 +624,26 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 
 ---
 
+### 3b. Bills & Subscriptions Workflow
+
+**Goal**: Track recurring bills and subscriptions, link them to budget categories, mark paid automatically updates budget.
+
+**How it works:**
+- Bills and subscriptions are the same entity (recurring bills). Subscriptions are detected via AI scan; bills are added manually.
+- When a bill is linked to a budget category and marked paid → a transaction is auto-created in that category → budget `spentAmount` updates.
+- "Add subscription manually" → Bills form with `?type=subscription` param → saves as recurring bill → returns to Subscriptions page.
+
+| Feature | Frontend | Backend API | Status |
+|---------|----------|-------------|--------|
+| Bills list — design tokens, budget link visible | `BillsPage.tsx` (redesigned) | `GET /bills` | ✅ |
+| Add/edit bill with category | `BillFormPage.tsx` (redesigned) | `POST/PUT /bills` | ✅ |
+| Bill category → budget transaction on payment | `BillsPage.tsx` | `POST /bills/{id}/pay` | ✅ |
+| Add subscription manually | `SubscriptionsPage.tsx` → `/bills/new?type=subscription` | `POST /bills` | ✅ |
+| AI subscription detection | `SubscriptionsPage.tsx` | `POST /subscriptions/detect` | ✅ |
+| Delete subscription confirmation modal | `SubscriptionsPage.tsx` | `DELETE /subscriptions/{id}` | ✅ |
+
+---
+
 ### 4. Budget Collaboration
 
 **Goal**: Invite partner, household members, or a financial advisor with the right access level.
@@ -635,7 +680,9 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Tips feed | `TipsFeedPage.tsx` | `GET /tips/feed` | ✅ |
 | Receipt scanning | `ReceiptUpload.tsx`, `ReceiptScanner.tsx` | `POST /receipt/upload` | ✅ |
 | Credit score | `CreditScorePage.tsx` | `GET /credit-score` | ✅ |
-| Investment tracking | `InvestmentsPage.tsx` | `GET /investments/portfolio` | ❌ Not deployed |
+| Investment tracking | `InvestmentsPage.tsx` | `GET /investments/portfolio` | ✅ Deployed to features API |
+| Investment market news | `InvestmentsPage.tsx` — news feed with sentiment | `GET /investments/news` (Alpha Vantage) | ✅ |
+| Investment market signals | `InvestmentsPage.tsx` — gainers/losers/active | `GET /investments/signals` (Alpha Vantage) | ✅ |
 
 ---
 
