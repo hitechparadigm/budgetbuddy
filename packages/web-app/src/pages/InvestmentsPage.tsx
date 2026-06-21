@@ -584,7 +584,7 @@ export const InvestmentsPage: React.FC = () => {
                 <div className="p-6 space-y-3">
                   {[1,2,3].map(i => <div key={i} className="h-14 bg-gray-100 rounded animate-pulse" />)}
                 </div>
-              ) : !news || news.news.length === 0 ? (
+              ) : !news || !news.news || news.news.length === 0 ? (
                 <div className="p-8 text-center">
                   <p className="text-gray-500 text-sm">{news?.message || 'No news available right now.'}</p>
                 </div>
@@ -651,9 +651,9 @@ export const InvestmentsPage: React.FC = () => {
             ) : (
               <div className="divide-y divide-gray-50">
                 {[
-                  { title: 'Top Gainers', data: signals.topGainers, color: 'text-green-600', icon: <TrendingUp className="w-4 h-4 text-green-500" /> },
-                  { title: 'Top Losers', data: signals.topLosers, color: 'text-red-600', icon: <TrendingDown className="w-4 h-4 text-red-500" /> },
-                  { title: 'Most Active', data: signals.mostActive, color: 'text-blue-600', icon: <Minus className="w-4 h-4 text-blue-500 rotate-90" /> },
+                  { title: 'Top Gainers', data: signals.topGainers || [], color: 'text-green-600', icon: <TrendingUp className="w-4 h-4 text-green-500" /> },
+                  { title: 'Top Losers', data: signals.topLosers || [], color: 'text-red-600', icon: <TrendingDown className="w-4 h-4 text-red-500" /> },
+                  { title: 'Most Active', data: signals.mostActive || [], color: 'text-blue-600', icon: <Minus className="w-4 h-4 text-blue-500 rotate-90" /> },
                 ].map(section => (
                   <div key={section.title} className="px-5 py-3">
                     <div className="flex items-center gap-1.5 mb-2">
