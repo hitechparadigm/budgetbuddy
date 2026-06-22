@@ -1,6 +1,31 @@
 # Changelog
 
-## [1.9.165] - 2026-06-21
+## [1.9.166] - 2026-06-22
+
+### 🔧 fix: Production Readiness — Full UI/UX Audit + Design Token Sweep + CI/CD Fix
+
+- Replaced all remaining hardcoded `bg-blue-600`, `focus:ring-blue-500`, `bg-green-600`, `disabled:bg-gray-400` with CSS design token vars across 37 files (pages + components)
+- NetWorthPage Add/Save Liability buttons: `bg-red-600` → `bg-[var(--color-destructive)]`
+- RegisterForm Terms/Privacy links: `href="#"` → `/terms` and `/privacy`
+- CI/CD workflows (5 files): `npm install` → `npm ci` — eliminates EEXIST cache race conditions on GitHub Actions
+
+### 🔧 fix: Auth Forms Accessibility
+
+- LoginForm + RegisterForm: added `autocomplete` attributes on all inputs
+- LoginForm submit button: `bg-blue-600` → `bg-[var(--color-primary)]`
+- Forgot Password: replaced stub with email-to-support instruction
+- AuthPage: removed `dark:bg-gray-900` hardcoded, copyright 2025 → 2026
+
+### 🔧 fix: GoalFormPage + DebtFormPage Accessibility
+
+- GoalFormPage: added `htmlFor`/`id` on all 4 form fields, design token inputs/buttons
+- DebtFormPage: added `htmlFor`/`id` on name+type, design token focus rings/inputs/buttons
+
+### 🧪 test: Production Readiness Playwright Audit
+
+- Tested all 15+ pages at desktop (1280×800) and mobile (375×812)
+- Verified: Add Transaction modal (categories load, submit saves), Add Bill form (all fields, categories), Quick Add from Overview, auth flows, zero horizontal overflow on all pages
+
 
 ### 📋 docs: product-requirements.md — Session 150 live test results verified
 

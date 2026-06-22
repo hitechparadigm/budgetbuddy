@@ -1,6 +1,24 @@
 # Development Log
 
-## 2026-06-21 - Session 150 Live Verification + Documentation (Session 150)
+## 2026-06-22 - Production Readiness Audit + Design Token Sweep (Session 156)
+
+### What Was Done
+Comprehensive Playwright-driven production readiness audit of the live dev environment. Tested all 15+ pages, all forms, all modals, navigation flows, auth flows, and data interactions at desktop and mobile viewports.
+
+### Issues Found and Fixed
+- **Auth forms**: added `autocomplete` attrs, design token buttons, improved Forgot Password UX, copyright 2026, removed hardcoded dark mode classes
+- **GoalFormPage + DebtFormPage**: added `htmlFor`/`id` on form labels/inputs (accessibility), design tokens throughout
+- **Design token sweep — 37 more files**: replaced all remaining `bg-blue-600`, `focus:ring-blue-500`, `bg-green-600`, `disabled:bg-gray-400` with CSS vars
+- **NetWorthPage**: Add/Save Liability buttons use `bg-[var(--color-destructive)]`
+- **RegisterForm**: Terms/Privacy links `href="#"` → `/terms` and `/privacy`
+- **CI/CD**: `npm install` → `npm ci` in all 5 workflow files — eliminates EEXIST cache race condition
+
+### All Passing After Audit
+- All 15 nav routes, all forms submit correctly, Add Transaction modal categories load
+- Zero horizontal overflow on all pages at 375px mobile
+- Auth sign-in/out/re-login, protected route redirect
+- CloudFront chunk-load errors fixed (ErrorBoundary auto-reload, /assets/* immutable cache, 404 TTL=0)
+
 
 ### Verified
 Full Playwright live test of all 18 web app polish criteria against `https://d1ueeugn9zcx7n.cloudfront.net`:
