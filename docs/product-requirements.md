@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-21 (Session 156 — Comprehensive UI/UX production readiness audit: auth form accessibility, design token fixes across GoalFormPage and DebtFormPage, copyright year)
+**Last Updated**: 2026-06-21 (Session 156 complete — production readiness audit, design token sweep across 80+ files, CI/CD npm ci fix, accessibility improvements)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -451,6 +451,12 @@ Comprehensive Playwright-driven audit of the live dev environment (`https://d1ue
 - ✅ Investments, NetWorth, Insights, Debt Payoff, Credit Score all load with data
 - ✅ Credit Score demo disclaimer prominently visible
 - ✅ Keyboard shortcuts on Budget page functional (test env focus limitations noted)
+
+**Remaining fixes after audit (2 additional commits):**
+- ✅ **Design token sweep — 37 more files** — replaced all remaining `bg-blue-600`, `focus:ring-blue-500`, `bg-green-600 hover:bg-green-700`, `disabled:bg-gray-400` with CSS design token vars across pages and components (TipsFeedPage, SubscriptionsPage, SubscriptionFormPage, SettingsPage, NetWorthPage, LearnPage, and 31 more)
+- ✅ **NetWorthPage "Add Liability" + "Save Liability" buttons** — were `bg-red-600 hover:bg-red-700`; now `bg-[var(--color-destructive)] hover:opacity-90`
+- ✅ **RegisterForm Terms/Privacy links** — were `href="#"` placeholders; now properly link to `/terms` and `/privacy`
+- ✅ **CI/CD `npm install` → `npm ci`** — replaced in all 5 workflow files; `npm ci` is deterministic, faster, and eliminates `EEXIST` cache race conditions on GitHub Actions runners that were causing intermittent deployment failures
 
 ---
 
