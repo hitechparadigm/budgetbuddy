@@ -17,7 +17,15 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
-### Recent Achievements (2026-06-15)
+### Recent Achievements (2026-08-08)
+
+- 🐛 **BUDGET ROLLOVER BUG FIXED** - July→August categories now copy correctly (flat array structure fix in 5 functions)
+- 🔑 **FORGOT PASSWORD** - Full Cognito reset flow: email → 6-digit code → new password (3-step inline UI)
+- 📷 **RECEIPT SCANNING** - Fixed API URL to Extended Features endpoint; OCR scanning now functional end-to-end
+- 🔒 **SECURITY AUDIT** - npm audit fix applied; high/critical CVEs resolved
+
+### Recent Achievements (2026-06-22)
+
 
 - 💰 **INCOME FREQUENCY SUPPORT** - Biweekly/weekly income, one-time categories, onboarding placeholder
   - New onboarding: default Income placeholder added so new users see an entry to fill in

@@ -1,6 +1,15 @@
 # Changelog
 
-## [1.9.166] - 2026-06-22
+## [1.9.167] - 2026-08-08
+
+### 🔧 fix: Budget rollover, Forgot Password, Receipt Scanning API URL
+
+- **Budget rollover** — `createBudgetWithRecurringItems` was iterating groups as nested `{categories:[]}` objects but they are flat category arrays. Fixed 5 functions in `budget/index.js` to correctly handle `groups.income/savings/expenses` as direct category arrays. Transactions are also cleared on rollover.
+- **Forgot Password** — full 3-step Cognito flow: enter email → code sent → enter code + new password. Backend: `POST /auth/forgot-password` + `POST /auth/confirm-forgot-password` using Cognito SDK commands. Frontend: inline multi-step UI in `LoginForm.tsx`.
+- **Receipt scanning** — `ReceiptUpload.tsx` was using main API URL; receipt endpoints are on Extended Features API. Fixed to use `config.extendedFeaturesApiUrl`.
+- **npm audit** — ran `npm audit fix` to resolve `@babel/core`, `brace-expansion`, `js-yaml` high severity CVEs.
+
+
 
 ### 🔧 fix: Production Readiness — Full UI/UX Audit + Design Token Sweep + CI/CD Fix
 

@@ -777,45 +777,28 @@ async function updateCategoryRollover(event, user, categoryId) {
     return errorResponse.notFound(`Budget not found for ${requestBody.month}`);
   }
 
-  // Find and update the category
+  // Find and update the category — groups are FLAT arrays of category objects
   let categoryFound = false;
   const updatedGroups = { ...budget.groups };
 
-  if (updatedGroups[requestBody.groupType]) {
-    updatedGroups[requestBody.groupType] = updatedGroups[
-      requestBody.groupType
-    ].map((group) => ({
-      ...group,
-      categories: group.categories
-        ? group.categories.map((category) => {
-            if (category.id === categoryId) {
-              categoryFound = true;
-              const updatedCategory = {
-                ...category,
-                rolloverEnabled: requestBody.rolloverEnabled,
-                // If disabling rollover, reset rolloverAmount to 0
-                rolloverAmount: requestBody.rolloverEnabled
-                  ? category.rolloverAmount || 0
-                  : 0,
-              };
-
-              // Handle rolloverCap
-              if (
-                requestBody.rolloverCap !== undefined &&
-                requestBody.rolloverCap !== null
-              ) {
-                updatedCategory.rolloverCap = requestBody.rolloverCap;
-              } else if (!requestBody.rolloverEnabled) {
-                // Remove rolloverCap if disabling rollover
-                delete updatedCategory.rolloverCap;
-              }
-
-              return updatedCategory;
-            }
-            return category;
-          })
-        : [],
-    }));
+  if (Array.isArray(updatedGroups[requestBody.groupType])) {
+    updatedGroups[requestBody.groupType] = updatedGroups[requestBody.groupType].map((category) => {
+      if (category.id === categoryId) {
+        categoryFound = true;
+        const updatedCategory = {
+          ...category,
+          rolloverEnabled: requestBody.rolloverEnabled,
+          rolloverAmount: requestBody.rolloverEnabled ? (category.rolloverAmount || 0) : 0,
+        };
+        if (requestBody.rolloverCap !== undefined && requestBody.rolloverCap !== null) {
+          updatedCategory.rolloverCap = requestBody.rolloverCap;
+        } else if (!requestBody.rolloverEnabled) {
+          delete updatedCategory.rolloverCap;
+        }
+        return updatedCategory;
+      }
+      return category;
+    });
   }
 
   if (!categoryFound) {
@@ -909,30 +892,20 @@ async function resetCategoryRollover(event, user, categoryId) {
     return errorResponse.notFound(`Budget not found for ${requestBody.month}`);
   }
 
-  // Find and reset the category rollover
+  // Find and reset the category rollover — groups are FLAT arrays of category objects
   let categoryFound = false;
   let previousRollover = 0;
   const updatedGroups = { ...budget.groups };
 
-  if (updatedGroups[requestBody.groupType]) {
-    updatedGroups[requestBody.groupType] = updatedGroups[
-      requestBody.groupType
-    ].map((group) => ({
-      ...group,
-      categories: group.categories
-        ? group.categories.map((category) => {
-            if (category.id === categoryId) {
-              categoryFound = true;
-              previousRollover = category.rolloverAmount || 0;
-              return {
-                ...category,
-                rolloverAmount: 0, // Reset to 0
-              };
-            }
-            return category;
-          })
-        : [],
-    }));
+  if (Array.isArray(updatedGroups[requestBody.groupType])) {
+    updatedGroups[requestBody.groupType] = updatedGroups[requestBody.groupType].map((category) => {
+      if (category.id === categoryId) {
+        categoryFound = true;
+        previousRollover = category.rolloverAmount || 0;
+        return { ...category, rolloverAmount: 0 };
+      }
+      return category;
+    });
   }
 
   if (!categoryFound) {
@@ -1033,22 +1006,15 @@ function normalizeCategoryWithRollover(category) {
 }
 
 /**
- * Normalize all categories in budget groups with rollover fields
- *
- * @param {Object} groups - Budget groups (income, savings, expenses)
- * @returns {Object} - Groups with normalized categories
+ * Normalize all categories in budget groups with rollover fields.
+ * groups.income/savings/expenses are FLAT arrays of category objects.
  */
 function normalizeGroupsWithRollover(groups) {
   const normalizedGroups = {};
 
   ["income", "savings", "expenses"].forEach((groupType) => {
-    if (groups[groupType]) {
-      normalizedGroups[groupType] = groups[groupType].map((group) => ({
-        ...group,
-        categories: group.categories
-          ? group.categories.map(normalizeCategoryWithRollover)
-          : [],
-      }));
+    if (Array.isArray(groups[groupType])) {
+      normalizedGroups[groupType] = groups[groupType].map(normalizeCategoryWithRollover);
     } else {
       normalizedGroups[groupType] = [];
     }
@@ -1058,23 +1024,17 @@ function normalizeGroupsWithRollover(groups) {
 }
 
 /**
- * Calculate total rollover amount across all categories
- *
- * @param {Object} groups - Budget groups (income, savings, expenses)
- * @returns {number} - Total rollover amount
+ * Calculate total rollover amount across all categories.
+ * groups.income/savings/expenses are FLAT arrays of category objects.
  */
 function calculateTotalRollover(groups) {
   let totalRollover = 0;
 
   ["income", "savings", "expenses"].forEach((groupType) => {
-    if (groups[groupType]) {
-      groups[groupType].forEach((group) => {
-        if (group.categories) {
-          group.categories.forEach((category) => {
-            if (category.rolloverEnabled && category.rolloverAmount) {
-              totalRollover += category.rolloverAmount;
-            }
-          });
+    if (Array.isArray(groups[groupType])) {
+      groups[groupType].forEach((category) => {
+        if (category.rolloverEnabled && category.rolloverAmount) {
+          totalRollover += category.rolloverAmount;
         }
       });
     }
@@ -1177,55 +1137,50 @@ async function createBudgetWithRecurringItems(budgetId, month) {
         currentMonth: month,
       });
 
-      // Copy items from each group with rollover calculation
-      // One-time categories (isOneTime === true) are NOT carried over to the new month
+      // Copy items from each group with rollover calculation.
+      // IMPORTANT: groups.income/savings/expenses store FLAT arrays of category objects
+      // (not arrays of group-wrapper objects). Iterate them directly.
       ["income", "savings", "expenses"].forEach((groupType) => {
-        if (previousBudget.groups[groupType]) {
-          newBudget.groups[groupType] = previousBudget.groups[groupType].map(
-            (group) => ({
-              ...group,
-              // Reset spent amounts for new month
-              totalSpent: 0,
-              categories: group.categories
-                ? group.categories
-                    .map((category) => {
-                      // Skip one-time categories — they don't carry over
-                      if (category.isOneTime) return null;
+        const groupCategories = previousBudget.groups[groupType];
+        if (!Array.isArray(groupCategories)) return;
 
-                      // Calculate new rollover amount based on previous month's spending
-                      const newRolloverAmount = calculateRollover(category);
+        newBudget.groups[groupType] = groupCategories
+          .map((category) => {
+            // Skip one-time categories — they don't carry over
+            if (category.isOneTime) return null;
 
-                      // Recalculate planned amount based on frequency (biweekly/weekly may differ by month)
-                      const newPlannedAmount = calculateMonthlyAmount(category, month);
+            // Calculate new rollover amount based on previous month's spending
+            const newRolloverAmount = calculateRollover(category);
 
-                      const newCategory = {
-                        ...category,
-                        // Recalculate planned amount for frequency-based categories
-                        plannedAmount: newPlannedAmount,
-                        // Reset spent amount for new month
-                        spentAmount: 0,
-                        remainingAmount: newPlannedAmount,
-                        // Preserve rollover enabled setting
-                        rolloverEnabled: category.rolloverEnabled || false,
-                        // Set calculated rollover amount (0 if rollover disabled)
-                        rolloverAmount: newRolloverAmount,
-                      };
+            // Recalculate planned amount based on frequency (biweekly/weekly may differ by month)
+            const newPlannedAmount = calculateMonthlyAmount(category, month);
 
-                      // Only include rolloverCap if it was set in previous month
-                      if (
-                        category.rolloverCap !== undefined &&
-                        category.rolloverCap !== null
-                      ) {
-                        newCategory.rolloverCap = category.rolloverCap;
-                      }
+            const newCategory = {
+              ...category,
+              // Recalculate planned amount for frequency-based categories
+              plannedAmount: newPlannedAmount,
+              // Reset spent amount for new month
+              spentAmount: 0,
+              remainingAmount: newPlannedAmount,
+              // Clear transaction history for new month
+              transactions: [],
+              // Preserve rollover enabled setting
+              rolloverEnabled: category.rolloverEnabled || false,
+              // Set calculated rollover amount (0 if rollover disabled)
+              rolloverAmount: newRolloverAmount,
+            };
 
-                      return newCategory;
-                    })
-                    .filter((c) => c !== null)
-                : [],
-            }),
-          );
-        }
+            // Only include rolloverCap if it was set in previous month
+            if (
+              category.rolloverCap !== undefined &&
+              category.rolloverCap !== null
+            ) {
+              newCategory.rolloverCap = category.rolloverCap;
+            }
+
+            return newCategory;
+          })
+          .filter((c) => c !== null);
       });
 
       // Recalculate totals based on planned amounts

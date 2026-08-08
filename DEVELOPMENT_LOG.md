@@ -1,6 +1,13 @@
 # Development Log
 
-## 2026-06-22 - Production Readiness Audit + Design Token Sweep (Session 156)
+## 2026-08-08 - Budget Rollover Fix + Forgot Password + Receipt Scanning Fix (Session 157)
+
+### Bugs Fixed
+- **Budget rollover** — `createBudgetWithRecurringItems` was treating flat category arrays as nested group-of-groups structures. `groups.income/savings/expenses` store category objects directly (not `{ categories: [...] }` wrappers). Fixed `createBudgetWithRecurringItems`, `normalizeGroupsWithRollover`, `calculateTotalRollover`, `updateCategoryRollover`, and `resetCategoryRollover`. July → August rollover now works correctly.
+- **Receipt scanning API URL** — `ReceiptUpload.tsx` was calling the main API (`q0zoob6728`) for `/receipt/*` endpoints, but those are on the Extended Features API (`hkjzroedjf`). Fixed to use `config.extendedFeaturesApiUrl`.
+- **Forgot Password** — was a stub showing "email us at support". Now a full 3-step inline flow: enter email → receive Cognito code → enter code + new password. Backend: added `POST /auth/forgot-password` and `POST /auth/confirm-forgot-password` using Cognito `ForgotPasswordCommand` + `ConfirmForgotPasswordCommand`.
+
+
 
 ### What Was Done
 Comprehensive Playwright-driven production readiness audit of the live dev environment. Tested all 15+ pages, all forms, all modals, navigation flows, auth flows, and data interactions at desktop and mobile viewports.
