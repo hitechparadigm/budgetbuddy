@@ -9,6 +9,8 @@ const {
   AdminSetUserPasswordCommand,
   InitiateAuthCommand,
   AdminGetUserCommand,
+  ForgotPasswordCommand,
+  ConfirmForgotPasswordCommand,
 } = require("@aws-sdk/client-cognito-identity-provider");
 
 // Google ID token verification — lazy-loaded to avoid cold-start failure
@@ -1517,6 +1519,84 @@ exports.handler = async (event, _context) => {
           note: "This endpoint is not yet implemented",
         }),
       };
+    }
+
+    // ── Forgot Password ─────────────────────────────────────────────────────
+    // POST /auth/forgot-password  { email }
+    // Triggers Cognito to send a verification code to the user's email
+    if (httpMethod === "POST" && path === "/auth/forgot-password") {
+      let body;
+      try {
+        body = JSON.parse(event.body || "{}");
+      } catch {
+        return { statusCode: 400, headers: getCorsHeaders(origin), body: JSON.stringify({ error: "Bad Request", message: "Invalid JSON" }) };
+      }
+      if (!body.email) {
+        return { statusCode: 400, headers: getCorsHeaders(origin), body: JSON.stringify({ error: "Validation Error", message: "Email is required" }) };
+      }
+      try {
+        await cognitoClient.send(new ForgotPasswordCommand({
+          ClientId: CLIENT_ID,
+          Username: body.email.toLowerCase().trim(),
+        }));
+        // Always return success to prevent email enumeration
+        return {
+          statusCode: 200,
+          headers: getCorsHeaders(origin),
+          body: JSON.stringify({ message: "If an account exists for this email, a password reset code has been sent." }),
+        };
+      } catch (err) {
+        console.error("ForgotPassword error:", err.name, err.message);
+        // Return 200 for UserNotFoundException to prevent enumeration
+        if (err.name === "UserNotFoundException" || err.name === "LimitExceededException") {
+          return {
+            statusCode: 200,
+            headers: getCorsHeaders(origin),
+            body: JSON.stringify({ message: "If an account exists for this email, a password reset code has been sent." }),
+          };
+        }
+        return { statusCode: 500, headers: getCorsHeaders(origin), body: JSON.stringify({ error: "Internal Server Error", message: "Failed to initiate password reset" }) };
+      }
+    }
+
+    // POST /auth/confirm-forgot-password  { email, code, newPassword }
+    // Confirms a password reset using the code sent to email
+    if (httpMethod === "POST" && path === "/auth/confirm-forgot-password") {
+      let body;
+      try {
+        body = JSON.parse(event.body || "{}");
+      } catch {
+        return { statusCode: 400, headers: getCorsHeaders(origin), body: JSON.stringify({ error: "Bad Request", message: "Invalid JSON" }) };
+      }
+      const { email, code, newPassword } = body;
+      if (!email || !code || !newPassword) {
+        return { statusCode: 400, headers: getCorsHeaders(origin), body: JSON.stringify({ error: "Validation Error", message: "email, code, and newPassword are required" }) };
+      }
+      if (newPassword.length < 8) {
+        return { statusCode: 400, headers: getCorsHeaders(origin), body: JSON.stringify({ error: "Validation Error", message: "Password must be at least 8 characters" }) };
+      }
+      try {
+        await cognitoClient.send(new ConfirmForgotPasswordCommand({
+          ClientId: CLIENT_ID,
+          Username: email.toLowerCase().trim(),
+          ConfirmationCode: code.trim(),
+          Password: newPassword,
+        }));
+        return {
+          statusCode: 200,
+          headers: getCorsHeaders(origin),
+          body: JSON.stringify({ message: "Password reset successfully. You can now sign in with your new password." }),
+        };
+      } catch (err) {
+        console.error("ConfirmForgotPassword error:", err.name, err.message);
+        if (err.name === "CodeMismatchException" || err.name === "ExpiredCodeException") {
+          return { statusCode: 400, headers: getCorsHeaders(origin), body: JSON.stringify({ error: "Invalid Code", message: err.name === "ExpiredCodeException" ? "The reset code has expired. Please request a new one." : "The reset code is incorrect. Please check and try again." }) };
+        }
+        if (err.name === "InvalidPasswordException") {
+          return { statusCode: 400, headers: getCorsHeaders(origin), body: JSON.stringify({ error: "Invalid Password", message: "Password does not meet requirements. Must include uppercase, lowercase, and a number." }) };
+        }
+        return { statusCode: 500, headers: getCorsHeaders(origin), body: JSON.stringify({ error: "Internal Server Error", message: "Failed to reset password" }) };
+      }
     }
 
     // Default response for unhandled routes

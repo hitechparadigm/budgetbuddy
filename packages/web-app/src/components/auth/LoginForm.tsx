@@ -41,7 +41,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [mfaChallenge, setMfaChallenge] = useState<MFAChallenge | null>(null);
   const [mfaVerifying, setMfaVerifying] = useState(false);
-  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
+  // Forgot password flow: null | 'email' | 'code' | 'done'
+  const [forgotStep, setForgotStep] = useState<null | 'email' | 'code' | 'done'>(null);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotCode, setForgotCode] = useState('');
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
 
   const {
     register,
@@ -159,6 +165,48 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const handleMfaCancel = () => {
     setMfaChallenge(null);
     setSubmitError(null);
+  };
+
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
+
+  const handleForgotSendCode = async () => {
+    if (!forgotEmail.trim()) { setForgotError('Enter your email address'); return; }
+    setForgotLoading(true);
+    setForgotError(null);
+    try {
+      const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim() }),
+      });
+      if (!res.ok) throw new Error('Failed to send code');
+      setForgotStep('code');
+    } catch (e) {
+      setForgotError(e instanceof Error ? e.message : 'Failed to send reset code');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleForgotConfirm = async () => {
+    if (!forgotCode.trim() || !forgotNewPassword) { setForgotError('Enter the code and new password'); return; }
+    if (forgotNewPassword.length < 8) { setForgotError('Password must be at least 8 characters'); return; }
+    setForgotLoading(true);
+    setForgotError(null);
+    try {
+      const res = await fetch(`${API_BASE}/auth/confirm-forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim(), code: forgotCode.trim(), newPassword: forgotNewPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to reset password');
+      setForgotStep('done');
+    } catch (e) {
+      setForgotError(e instanceof Error ? e.message : 'Failed to reset password');
+    } finally {
+      setForgotLoading(false);
+    }
   };
 
   // ============================================================================
@@ -363,28 +411,93 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           </div>
         )}
 
-        {/* Forgot Password Link */}
+        {/* Forgot Password Flow */}
         <div className="mt-4 text-center">
-          {forgotPasswordSent ? (
-            <p className="text-sm text-[var(--color-foreground)]" role="status">
-              To reset your password, email us at{" "}
-              <a
-                href="mailto:support@budgetbuddy.app"
-                className="font-medium text-[var(--color-primary)] hover:underline focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)] focus:ring-offset-2 rounded"
-              >
-                support@budgetbuddy.app
-              </a>{" "}
-              and we'll help you get back in.
-            </p>
-          ) : (
+          {forgotStep === null && (
             <button
               type="button"
               className="text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--color-ring)] focus:ring-offset-2 rounded"
               disabled={isSubmitting || loading}
-              onClick={() => setForgotPasswordSent(true)}
+              onClick={() => { setForgotStep('email'); setForgotError(null); setForgotEmail(''); }}
             >
               Forgot your password?
             </button>
+          )}
+
+          {forgotStep === 'email' && (
+            <div className="mt-2 text-left space-y-3">
+              <p className="text-sm font-medium text-[var(--color-foreground)]">Reset your password</p>
+              <p className="text-xs text-[var(--color-muted-foreground)]">Enter your email and we'll send a reset code.</p>
+              <input
+                type="email"
+                autoComplete="email"
+                value={forgotEmail}
+                onChange={e => setForgotEmail(e.target.value)}
+                placeholder="Your email address"
+                className="w-full px-3 py-2 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-md text-sm focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+              />
+              {forgotError && <p className="text-xs text-red-600">{forgotError}</p>}
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setForgotStep(null)}
+                  className="flex-1 px-3 py-2 text-sm text-[var(--color-muted-foreground)] bg-[var(--color-muted)] rounded-md hover:opacity-80">
+                  Cancel
+                </button>
+                <button type="button" onClick={handleForgotSendCode} disabled={forgotLoading}
+                  className="flex-1 px-3 py-2 text-sm text-white bg-[var(--color-primary)] rounded-md hover:bg-[var(--color-primary-hover)] disabled:opacity-50">
+                  {forgotLoading ? 'Sending…' : 'Send Code'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {forgotStep === 'code' && (
+            <div className="mt-2 text-left space-y-3">
+              <p className="text-sm font-medium text-[var(--color-foreground)]">Enter reset code</p>
+              <p className="text-xs text-[var(--color-muted-foreground)]">Check your email for a 6-digit code from no-reply@verificationemail.com</p>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={forgotCode}
+                onChange={e => setForgotCode(e.target.value)}
+                placeholder="6-digit code"
+                className="w-full px-3 py-2 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-md text-sm focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+              />
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={forgotNewPassword}
+                onChange={e => setForgotNewPassword(e.target.value)}
+                placeholder="New password (min 8 chars)"
+                className="w-full px-3 py-2 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-md text-sm focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+              />
+              {forgotError && <p className="text-xs text-red-600">{forgotError}</p>}
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setForgotStep('email')}
+                  className="flex-1 px-3 py-2 text-sm text-[var(--color-muted-foreground)] bg-[var(--color-muted)] rounded-md hover:opacity-80">
+                  Back
+                </button>
+                <button type="button" onClick={handleForgotConfirm} disabled={forgotLoading}
+                  className="flex-1 px-3 py-2 text-sm text-white bg-[var(--color-primary)] rounded-md hover:bg-[var(--color-primary-hover)] disabled:opacity-50">
+                  {forgotLoading ? 'Resetting…' : 'Reset Password'}
+                </button>
+              </div>
+              <button type="button" onClick={handleForgotSendCode} disabled={forgotLoading}
+                className="text-xs text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]">
+                Resend code
+              </button>
+            </div>
+          )}
+
+          {forgotStep === 'done' && (
+            <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm text-green-800 dark:text-green-300" role="status">
+              ✅ Password reset successfully! You can now sign in with your new password.
+              <br />
+              <button type="button" onClick={() => setForgotStep(null)}
+                className="mt-2 text-xs font-medium text-[var(--color-primary)] hover:underline">
+                Back to Sign In
+              </button>
+            </div>
           )}
         </div>
       </div>
