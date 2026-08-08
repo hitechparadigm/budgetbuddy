@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-06-21 (Session 156 complete — production readiness audit, design token sweep across 80+ files, CI/CD npm ci fix, accessibility improvements)
+**Last Updated**: 2026-08-08 (Session 157 — Budget rollover fix, Forgot Password Cognito flow, Receipt scanning API URL fix)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -417,7 +417,7 @@ Comprehensive Playwright-driven audit of the live dev environment (`https://d1ue
 **Auth Forms — Accessibility & UX fixes:**
 - ✅ **`autocomplete` attributes added** — `LoginForm`: email=`"email"`, password=`"current-password"`; `RegisterForm`: firstName=`"given-name"`, lastName=`"family-name"`, email=`"email"`, password=`"new-password"` — eliminates browser warnings, required for password managers and accessibility
 - ✅ **Submit buttons use design tokens** — was hardcoded `bg-blue-600 hover:bg-blue-700`; now `bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]` across both forms; disabled state uses `bg-[var(--color-muted)]`
-- ✅ **Forgot Password UX** — was showing confusing "Password reset is not yet available" stub; now shows clear "Email us at support@budgetbuddy.app and we'll help you get back in" message with mailto link
+- ✅ **Forgot Password UX** — full Cognito reset flow (Session 157): `POST /auth/forgot-password` sends code, `POST /auth/confirm-forgot-password` sets new password; 3-step inline UI in `LoginForm.tsx`
 - ✅ **Dark mode label fix** — LoginForm labels had `dark:text-gray-300` hardcoded; replaced with `text-[var(--color-foreground)]`
 - ✅ **AuthPage dark mode** — removed `dark:bg-gray-900` hardcoded class; uses `bg-[var(--color-background)]`
 - ✅ **Copyright year** — updated `© 2025` → `© 2026`
@@ -457,6 +457,35 @@ Comprehensive Playwright-driven audit of the live dev environment (`https://d1ue
 - ✅ **NetWorthPage "Add Liability" + "Save Liability" buttons** — were `bg-red-600 hover:bg-red-700`; now `bg-[var(--color-destructive)] hover:opacity-90`
 - ✅ **RegisterForm Terms/Privacy links** — were `href="#"` placeholders; now properly link to `/terms` and `/privacy`
 - ✅ **CI/CD `npm install` → `npm ci`** — replaced in all 5 workflow files; `npm ci` is deterministic, faster, and eliminates `EEXIST` cache race conditions on GitHub Actions runners that were causing intermittent deployment failures
+
+---
+
+### Session 157 — Budget Rollover Fix + Forgot Password + Receipt Scanning (2026-08-08)
+
+**Budget Rollover Bug (Critical):**
+- ✅ **Root cause identified and fixed** — `createBudgetWithRecurringItems`, `normalizeGroupsWithRollover`, `calculateTotalRollover`, `updateCategoryRollover`, and `resetCategoryRollover` in `budget/index.js` all iterated `groups.income/savings/expenses` as if they were arrays of group-wrapper objects `{ categories: [...] }`, but the actual storage format is a **flat array of category objects directly**. `group.categories` was always `undefined`, silently dropping all categories on rollover.
+- ✅ **Fixed all 5 functions** to iterate flat arrays directly — `groups[groupType].map(category => ...)` instead of `groups[groupType].map(group => group.categories.map(...))`
+- ✅ **Transactions cleared on rollover** — new month categories now have `transactions: []` and `spentAmount: 0`
+- ✅ **Verified live** — September 2026 created from August: `Groceries $500`, `Transport $200`, `Housing $1500` correctly rolled over from prior month
+
+**Forgot Password — Full Cognito Flow:**
+- ✅ **Backend** — two new endpoints added to `auth/index.js`:
+  - `POST /auth/forgot-password` — calls Cognito `ForgotPasswordCommand`; sends 6-digit code to user's email; always returns 200 to prevent email enumeration
+  - `POST /auth/confirm-forgot-password` — calls Cognito `ConfirmForgotPasswordCommand`; validates code, sets new password; specific errors for expired code, wrong code, weak password
+- ✅ **Frontend** — `LoginForm.tsx` replaced stub message with 3-step inline flow:
+  - Step 1 (`email`): email input → sends code
+  - Step 2 (`code`): 6-digit code + new password inputs → resets
+  - Step 3 (`done`): success message with "Back to Sign In"
+  - Error handling for all Cognito error codes; "Resend code" button on step 2
+- ✅ **Imports** added: `ForgotPasswordCommand`, `ConfirmForgotPasswordCommand` from `@aws-sdk/client-cognito-identity-provider`
+
+**Receipt Scanning — API URL Fix:**
+- ✅ **`ReceiptUpload.tsx` was calling wrong API** — used `VITE_API_BASE_URL` (main API `q0zoob6728`) but receipt endpoints (`/receipt/upload`, `/receipt/process`) live on the Extended Features API (`hkjzroedjf`)
+- ✅ **Fixed** to use `config.extendedFeaturesApiUrl` from `environment.ts`
+- ✅ **Receipt scanning was already fully built** — Lambda + Textract + S3 presigned URL + CDK stack in `api-features-extended-stack.ts`; this was the only broken wire
+
+**npm audit fix:**
+- ✅ `@babel/core`, `brace-expansion`, `js-yaml` high severity CVEs resolved via `npm audit fix`; 2 moderate `aws-sdk@v2`/`uuid` remain (require breaking change, acceptable for dev)
 
 ---
 
@@ -686,6 +715,9 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | 4 | ✅ Fixed (2026-06-21) | Bills category dropdown | `GET /budget/current` required `?month=YYYY-MM`; was returning 400 silently → empty dropdown |
 | 5 | ✅ Fixed (2026-06-21) | Budget page silent 401 | JWT expiry caused silent empty page. Now: token refresh attempt → redirect to `/auth?returnTo=` if refresh fails |
 | 6 | ✅ Fixed (2026-06-21) | Invitation resend "Invalid Invitation" | `handleResendInvitation` kept old `expiresAt`; resend now resets to 7 days from now + writes both `token`/`tokenHash` fields |
+| 7 | ✅ Fixed (2026-08-08) | Budget month rollover | `createBudgetWithRecurringItems` iterated flat category arrays as nested group objects → `group.categories` was always `undefined` → all categories dropped on rollover. Fixed 5 functions. |
+| 8 | ✅ Fixed (2026-08-08) | Forgot Password | Was a stub message. Now full Cognito `ForgotPassword`/`ConfirmForgotPassword` flow with 3-step inline UI. |
+| 9 | ✅ Fixed (2026-08-08) | Receipt Scanning | `ReceiptUpload.tsx` called main API; receipt endpoints are on Extended Features API. Fixed to `config.extendedFeaturesApiUrl`. |
 
 ### Not Deployed (frontend components exist, no backend Lambda)
 
@@ -707,7 +739,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 |------|----------|-------------|--------|
 | Register | `AuthPage.tsx` / `RegisterForm.tsx` — autocomplete attrs, design token buttons, proper `htmlFor`/`id` structure | `POST /auth/register` | ✅ |
 | Google Sign-In | `GoogleSignInButton.tsx` | `POST /auth/google` | ✅ |
-| Sign In | `LoginForm.tsx` — autocomplete on email+password, design token submit button, improved Forgot Password UX | `POST /auth/login` | ✅ |
+| Sign In | `LoginForm.tsx` — autocomplete on email+password, design token submit button, full 3-step Forgot Password inline flow (email → code → new password) | `POST /auth/login`, `POST /auth/forgot-password`, `POST /auth/confirm-forgot-password` | ✅ |
 | Budget type selection | `OnboardingPage.tsx` — 5-step total, inline descriptions, no disclosure modal | `POST /auth/onboarding` | ✅ |
 | Location + currency + household | `OnboardingFlow.tsx` Steps 2-4 | `GET /auth/geolocation` | ✅ |
 | Subscriptions step | `OnboardingFlow.tsx` Step 4 — Yes/No + amount input, quick presets; carries into Subscriptions category | — | ✅ |
@@ -752,6 +784,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Transaction list + search | `TransactionList.tsx`, `TransactionFilters.tsx` | `GET /transactions` | ✅ |
 | Month navigation | Month nav arrows in `BudgetPage.tsx` — timezone-safe local date formatting | — | ✅ |
 | Session expiry UX | Session-expired banner in `BudgetPage.tsx` — shown instead of silent blank/redirect when token refresh fails | — | ✅ |
+| Budget month rollover | `createBudgetWithRecurringItems` in `budget/index.js` — copies all non-one-time categories from previous month; resets spentAmount/transactions; recalculates biweekly/weekly amounts for new month | `GET /budget/current` (auto-triggers) | ✅ |
 | Planned transactions | ❌ Not started | `POST /transaction-planning` | 🔄 Backend only |
 
 ---
@@ -826,7 +859,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Spending patterns (day/merchant) | `InsightsPage.tsx` | `GET /insights/patterns` | ✅ |
 | Peer comparison | `PeerComparisonWidget.tsx` | `GET /comparison/summary` | ✅ |
 | Tips feed | `TipsFeedPage.tsx` | `GET /tips/feed` | ✅ |
-| Receipt scanning | `ReceiptUpload.tsx`, `ReceiptScanner.tsx` | `POST /receipt/upload` | ✅ |
+| Receipt scanning | `ReceiptUpload.tsx` — drag/drop or file picker, presigned S3 upload, Textract OCR, pre-fills transaction modal; uses `config.extendedFeaturesApiUrl` (fixed Session 157) | `POST /receipt/upload`, `POST /receipt/process` | ✅ |
 | Credit score | `CreditScorePage.tsx` | `GET /credit-score` | ✅ |
 | Investment tracking | `InvestmentsPage.tsx` | `GET /investments/portfolio` | ✅ Deployed to features API |
 | Investment market news | `InvestmentsPage.tsx` — news feed with sentiment | `GET /investments/news` (Alpha Vantage) | ✅ |
