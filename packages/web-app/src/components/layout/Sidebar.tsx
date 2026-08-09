@@ -34,6 +34,7 @@ import {
   TrendingUp,
   Wallet,
   Users,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -71,6 +72,7 @@ export const manageItems: NavItem[] = [
   { id: 'investments',   label: 'Investments',   icon: TrendingUp, path: '/investments' },
   { id: 'net-worth',     label: 'Net Worth',     icon: Wallet,     path: '/net-worth' },
   { id: 'members',       label: 'Members',       icon: Users,      path: '/budget/members' },
+  { id: 'tools',         label: 'Tools',         icon: Wrench,     path: '/tools' },
 ];
 
 /** Bottom secondary nav */
