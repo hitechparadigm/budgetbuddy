@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-08-09 (Session 158/159 — Accept invitation 401 fix, budget auto-repair, TutorialOverlay dark screen fix)
+**Last Updated**: 2026-08-09 (Session 159 — Inline transaction list on category click, sub-category grouping with parentId)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -253,6 +253,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **Budget page skeleton loading** — 3-column layout skeleton replaces full-page spinner
 - ✅ **Budget page inline category editing** — click planned amount → inline input, Enter/blur saves (P3-T4)
 - ✅ **Budget page keyboard shortcuts** — T, B, ←/→, ?, Esc (P3-T3)
+- ✅ **Budget category inline transaction list** — click category row → inline expand shows all transactions with edit/delete; chevron + count badge; sub-category grouping via `parentId`
 - ✅ **Over-budget row highlighting** — amber bg + red border on category rows (pre-existing, confirmed)
 - ✅ **Skeleton screens** — GoalsPage, InsightsPage, DebtPayoffPage, AccountsPage
 - ✅ **Insights AI chat bubbles** — chat thread UI (user right, AI left), 3-dot typing indicator, `sessionStorage` persistence (last 5 Q&A)
@@ -502,6 +503,40 @@ Comprehensive Playwright-driven audit of the live dev environment (`https://d1ue
 
 **Budget Auto-Repair for Corrupted Empty Months:**
 - ✅ **`getCurrentBudget` auto-repair logic** (`budget/index.js`) — when the budget exists but has zero categories across all groups (income=[], savings=[], expenses=[]) AND the previous month has categories → soft-deletes the corrupted empty budget and immediately recreates it via `createBudgetWithRecurringItems`. This self-heals budgets created by the old buggy rollover code (which dropped all categories) without requiring any manual intervention or data migration.
+
+---
+
+### Session 159 — Inline Transaction List + Sub-Category Grouping (2026-08-09)
+
+**Clickable Category Rows → Inline Transaction Detail:**
+- ✅ **Click category row** → expands inline to show all transactions logged against that category, sorted newest-first
+- ✅ **Transaction count badge** on category name ("3 txns") so users know what's expandable without clicking
+- ✅ **Chevron indicator** `▶` rotates 90° when row is expanded — standard expand affordance
+- ✅ **Inline transaction edit** — hover transaction → pencil icon → amount/description/date fields appear in-row with Save/Cancel; saves to budget backend immediately
+- ✅ **Inline transaction delete** — hover → trash icon → immediate delete (reuses existing `handleDeleteTransaction`)
+- ✅ **Empty state with quick-add** — "No transactions yet. Add one →" link when category has no transactions
+- ✅ **Click-to-expand vs click-for-action** — clicking buttons/inputs inside the row does NOT trigger expand/collapse (uses `e.target.closest('button, input')` guard)
+- ✅ **`expandedCategoryId` state** — only one category expanded at a time; collapses on re-click
+- ✅ **`editingTransactionId` + `editingTransactionForm` state** — manages the inline edit UX without a modal
+
+**Sub-Category Grouping with `parentId`:**
+- ✅ **`parentId?: string` field added to `BudgetCategory` interface** — backward compatible; all existing categories have no `parentId` (top-level)
+- ✅ **"Group under" selector in Add/Edit Item modal** — optional dropdown listing all existing top-level categories in the same group; empty = top-level
+- ✅ **Parent rows show aggregate totals** — `effectivePlanned` and `effectiveSpent` sum parent's own amounts + all children's amounts
+- ✅ **Parent rows show "N items" badge** — `{myChildren.length} items` pill so users know the parent has sub-items
+- ✅ **Click parent → shows sub-categories** — instead of transactions, expanding a parent shows its children (each child is also clickable for transactions)
+- ✅ **"Add sub-item under [Parent]" button** — appears at the bottom of the expanded parent; pre-fills `parentId` in the modal
+- ✅ **Children rendered indented** — `pl-8 ml-2 border-l-2` left-border indent for sub-items
+- ✅ **Rollover/save preserves `parentId`** — `handleBudgetItemSubmit` writes `parentId: budgetItemForm.parentId || undefined` on both create and edit
+- ✅ **`openBudgetItemModal` accepts `defaultParentId`** — so "Add sub-item under Insurance" pre-fills the parent
+
+**Example flow (Insurance grouping):**
+1. Create "Insurance" top-level category
+2. Add "Life Insurance" → "Group under: Insurance" → saved with `parentId: insurance-id`
+3. Add "Car Insurance" → same
+4. Budget page now shows: Insurance `3 items` `$X planned` `$Y spent`
+5. Click Insurance → expands showing Life Insurance, Car Insurance, Home Insurance each with their own amounts
+6. Click Life Insurance → shows transactions for that sub-item
 
 ---
 
@@ -802,6 +837,8 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Budget dashboard | `BudgetPage.tsx` | `GET /budget?month=YYYY-MM` | ✅ |
 | Add/edit/delete transaction | Transaction modal in `BudgetPage.tsx` — sheet-style on mobile, income/expense toggle, amount-first layout | `POST/PUT/DELETE /transactions` | ✅ |
 | Quick-add transaction per category | `+` button on each category row in `BudgetPage.tsx` — pre-populates modal with that category | — | ✅ |
+| Inline transaction list | Click category row → expands inline transaction list with edit/delete per transaction; chevron + count badge | — | ✅ |
+| Sub-category grouping | `parentId` on `BudgetCategory` — nest Life/Car/Home Insurance under Insurance parent; parent shows aggregate totals; "Group under" selector in Add Item modal | — | ✅ |
 | Transaction list + search | `TransactionList.tsx`, `TransactionFilters.tsx` | `GET /transactions` | ✅ |
 | Month navigation | Month nav arrows in `BudgetPage.tsx` — timezone-safe local date formatting | — | ✅ |
 | Session expiry UX | Session-expired banner in `BudgetPage.tsx` — shown instead of silent blank/redirect when token refresh fails | — | ✅ |
