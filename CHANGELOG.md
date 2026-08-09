@@ -1,6 +1,14 @@
 # Changelog
 
-## [1.9.167] - 2026-08-08
+## [1.9.168] - 2026-08-09
+
+### 🔧 fix: Accept invitation 401 + budget auto-repair for empty months
+
+- **Accept invitation 401** — `POST /budgets/accept-invitation` uses `AuthorizationType.NONE` (no Cognito authorizer), so `event.requestContext.authorizer.claims` was undefined. `getUserFromEvent()` threw, causing 401. Fixed by manually decoding the JWT from the Authorization header in the `budgets/index.js` handler.
+- **AcceptInvitationPage race condition** — After register+login, `handleAcceptInvitation` checked `isAuthenticated` React state which was still `false` (async). Added `acceptInvitationCore()` that reads localStorage directly, called after login succeeds.
+- **Budget auto-repair** — `getCurrentBudget` now detects corrupted empty budgets (created by old rollover code): if budget exists with zero categories but previous month has categories, soft-deletes it and recreates from previous month automatically.
+
+
 
 ### 🔧 fix: Budget rollover, Forgot Password, Receipt Scanning API URL
 

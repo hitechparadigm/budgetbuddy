@@ -451,6 +451,40 @@ async function getCurrentBudget(event, user) {
   // Treat soft-deleted budgets as non-existent
   if (budget?.isDeleted) budget = null;
 
+  // Auto-repair: if the budget exists but is completely empty (no categories in any group)
+  // and the previous month has categories, treat it as corrupted and recreate from prev month.
+  // This handles the case where a budget was created by the old buggy code that dropped all categories.
+  if (budget && budget.groups) {
+    const g = budget.groups;
+    const isEmpty =
+      (!g.income || g.income.length === 0) &&
+      (!g.savings || g.savings.length === 0) &&
+      (!g.expenses || g.expenses.length === 0);
+    if (isEmpty) {
+      const prevMonth = getPreviousMonth(month);
+      const prevBudget = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, `PERIOD#${prevMonth}`);
+      if (prevBudget && prevBudget.groups) {
+        const pg = prevBudget.groups;
+        const prevHasCategories =
+          (pg.income && pg.income.length > 0) ||
+          (pg.savings && pg.savings.length > 0) ||
+          (pg.expenses && pg.expenses.length > 0);
+        if (prevHasCategories) {
+          logger.info("Existing budget is empty but previous month has categories — recreating", {
+            budgetId, month, prevMonth,
+          });
+          // Soft-delete the empty budget and recreate from prev month
+          await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, `PERIOD#${month}`, {
+            isDeleted: true,
+            deletedAt: new Date().toISOString(),
+            deletedBy: 'system-auto-repair',
+          });
+          budget = await createBudgetWithRecurringItems(budgetId, month);
+        }
+      }
+    }
+  }
+
   // If no budget exists for this month, create one with recurring items from previous month
   if (!budget) {
     logger.info("No budget found for month, creating with recurring items", {
