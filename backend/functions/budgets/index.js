@@ -110,14 +110,25 @@ exports.handler = async (event) => {
 
     // POST /budgets/accept-invitation — handle before getUserFromEvent since the
     // endpoint is public (NONE auth) but still requires the user to be logged in.
-    // We extract userId from claims if present, or return 401 if not authenticated.
+    // We extract userId from the raw Authorization header JWT (no Cognito authorizer
+    // populates requestContext.authorizer for NONE auth routes).
     if (
       httpMethod === 'POST' &&
       (path === '/budgets/accept-invitation' || path === '/v1/budgets/accept-invitation')
     ) {
       let userId;
       try {
-        userId = getUserFromEvent(event).userId;
+        // Manually decode the JWT from the Authorization header.
+        // The Cognito authorizer is NOT active on this route (NONE auth), so
+        // event.requestContext.authorizer.claims is empty. We decode it here.
+        const authHeader = event.headers?.Authorization || event.headers?.authorization || '';
+        const rawToken = authHeader.replace(/^Bearer\s+/i, '').trim();
+        if (!rawToken) throw new Error('No Authorization header');
+        const parts = rawToken.split('.');
+        if (parts.length !== 3) throw new Error('Invalid JWT format');
+        const payload = JSON.parse(Buffer.from(parts[1] + '==', 'base64').toString('utf8'));
+        userId = payload['custom:userId'] || payload.sub;
+        if (!userId) throw new Error('No userId in token');
       } catch (_e) {
         return withCors(event, {
           statusCode: 401,

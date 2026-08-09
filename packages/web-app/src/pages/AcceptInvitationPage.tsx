@@ -98,20 +98,26 @@ export const AcceptInvitationPage: React.FC = () => {
       return;
     }
 
+    // Call the core accept logic directly — bypasses stale state checks
+    await acceptInvitationCore(token);
+  };
+
+  // Core accept logic — reads token directly from localStorage, does NOT depend on React state
+  const acceptInvitationCore = async (inviteToken: string) => {
+    const idToken = localStorage.getItem("budgetbuddy_id_token");
+    if (!idToken) {
+      setShowAuthForm(true);
+      setAccepting(false);
+      return;
+    }
+
     setAccepting(true);
     setError(null);
 
     try {
-      const idToken = localStorage.getItem("budgetbuddy_id_token");
-      if (!idToken) {
-        setShowAuthForm(true);
-        setAccepting(false);
-        return;
-      }
+      const data = await budgetService.acceptInvitation(inviteToken);
 
-      const data = await budgetService.acceptInvitation(token);
-
-      navigate(`/budget/${data.budgetId}`, {
+      navigate(`/budget`, {
         state: {
           message: `Successfully joined ${preview?.budgetName || "budget"}! You are now a ${data.role}.`,
         },
@@ -166,8 +172,12 @@ export const AcceptInvitationPage: React.FC = () => {
       setIsAuthenticated(true);
       setShowAuthForm(false);
 
-      // Accept the invitation now that we're authenticated
-      await handleAcceptInvitation();
+      // Accept the invitation now that we're authenticated.
+      // Use acceptInvitationCore directly — React state (isAuthenticated) hasn't updated yet
+      // so calling handleAcceptInvitation would see stale false and abort.
+      if (token) {
+        await acceptInvitationCore(token);
+      }
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Login failed");
     } finally {

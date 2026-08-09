@@ -1,6 +1,13 @@
 # Development Log
 
-## 2026-08-08 - Budget Rollover Fix + Forgot Password + Receipt Scanning Fix (Session 157)
+## 2026-08-09 - Accept Invitation 401 Fix + Budget Auto-Repair (Session 158)
+
+### Fixed
+- **Accept invitation 401** — `NONE` auth route had no Cognito claims; manually decode JWT from Authorization header
+- **AcceptInvitationPage race condition** — `isAuthenticated` state stale after login; `acceptInvitationCore()` reads localStorage directly
+- **Budget auto-repair** — empty months with corrupted zero-category budgets auto-recreated from previous month
+
+
 
 ### Bugs Fixed
 - **Budget rollover** — `createBudgetWithRecurringItems` was treating flat category arrays as nested group-of-groups structures. `groups.income/savings/expenses` store category objects directly (not `{ categories: [...] }` wrappers). Fixed `createBudgetWithRecurringItems`, `normalizeGroupsWithRollover`, `calculateTotalRollover`, `updateCategoryRollover`, and `resetCategoryRollover`. July → August rollover now works correctly.
