@@ -264,64 +264,102 @@ export default function DebtPayoffPage() {
         </div>
       )}
 
-      {/* Strategy Selector */}
+      {/* Strategy Selector — redesigned for clarity */}
       <div className="bg-[var(--color-surface)] rounded-xl shadow p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-4">📊 Payoff Strategy</h2>
+        <h2 className="text-lg font-semibold mb-1 text-[var(--color-foreground)]">📊 Payoff Strategy</h2>
+        <p className="text-sm text-[var(--color-muted-foreground)] mb-5">
+          Both strategies use the same total monthly payment. The difference is which debt you focus on first.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <div className="flex gap-4 mb-4">
+            {/* Strategy cards — side by side comparison */}
+            <div className="grid grid-cols-2 gap-3 mb-5">
               <button
                 onClick={() => setStrategy("snowball")}
-                className={`flex-1 p-4 rounded-lg border-2 transition ${
+                className={`p-4 rounded-xl border-2 transition-all text-left ${
                   strategy === "snowball"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-[var(--color-border)] hover:border-[var(--color-border)]"
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                    : "border-[var(--color-border)] hover:border-[var(--color-primary)]/40"
                 }`}
               >
-                <p className="font-semibold">❄️ Snowball</p>
-                <p className="text-sm text-[var(--color-muted-foreground)]">Smallest balance first</p>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xl">❄️</span>
+                  {strategy === "snowball" && <span className="text-xs px-1.5 py-0.5 bg-[var(--color-primary)] text-white rounded-full font-medium">Active</span>}
+                </div>
+                <p className="font-semibold text-sm text-[var(--color-foreground)]">Snowball</p>
+                <p className="text-xs text-[var(--color-muted-foreground)] mt-0.5 leading-snug">
+                  Smallest balance first → quick wins keep you motivated
+                </p>
                 {summary && (
-                  <p className="text-xs text-[var(--color-muted-foreground)] mt-2">
-                    {summary.snowballPayoffMonths} months •{" "}
-                    {formatCurrency(summary.snowballTotalInterest)} interest
-                  </p>
+                  <div className="mt-2 pt-2 border-t border-[var(--color-border)]">
+                    <p className="text-xs font-medium text-[var(--color-foreground)]">{summary.snowballPayoffMonths} months</p>
+                    <p className="text-xs text-red-600">{new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(summary.snowballTotalInterest)} interest</p>
+                  </div>
                 )}
               </button>
               <button
                 onClick={() => setStrategy("avalanche")}
-                className={`flex-1 p-4 rounded-lg border-2 transition ${
+                className={`p-4 rounded-xl border-2 transition-all text-left ${
                   strategy === "avalanche"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-[var(--color-border)] hover:border-[var(--color-border)]"
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                    : "border-[var(--color-border)] hover:border-[var(--color-primary)]/40"
                 }`}
               >
-                <p className="font-semibold">🏔️ Avalanche</p>
-                <p className="text-sm text-[var(--color-muted-foreground)]">Highest interest first</p>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xl">🏔️</span>
+                  {summary && summary.avalancheTotalInterest < summary.snowballTotalInterest && (
+                    <span className="text-xs px-1.5 py-0.5 bg-green-500 text-white rounded-full font-medium">Saves most</span>
+                  )}
+                  {strategy === "avalanche" && !(summary && summary.avalancheTotalInterest < summary.snowballTotalInterest) && (
+                    <span className="text-xs px-1.5 py-0.5 bg-[var(--color-primary)] text-white rounded-full font-medium">Active</span>
+                  )}
+                </div>
+                <p className="font-semibold text-sm text-[var(--color-foreground)]">Avalanche</p>
+                <p className="text-xs text-[var(--color-muted-foreground)] mt-0.5 leading-snug">
+                  Highest interest first → mathematically optimal, pays less interest
+                </p>
                 {summary && (
-                  <p className="text-xs text-[var(--color-muted-foreground)] mt-2">
-                    {summary.avalanchePayoffMonths} months •{" "}
-                    {formatCurrency(summary.avalancheTotalInterest)} interest
-                  </p>
+                  <div className="mt-2 pt-2 border-t border-[var(--color-border)]">
+                    <p className="text-xs font-medium text-[var(--color-foreground)]">{summary.avalanchePayoffMonths} months</p>
+                    <p className="text-xs text-red-600">{new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(summary.avalancheTotalInterest)} interest</p>
+                  </div>
                 )}
               </button>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
-                Extra Monthly Payment
-              </label>
-              <div className="flex items-center gap-4">
-                <input
-                  type="range"
-                  min="0"
-                  max="1000"
-                  step="50"
-                  value={extraPayment}
-                  onChange={(e) => setExtraPayment(parseInt(e.target.value))}
-                  className="flex-1"
-                />
-                <span className="text-lg font-semibold w-24 text-right">
-                  {formatCurrency(extraPayment)}
+
+            {/* Interest savings callout */}
+            {summary && summary.interestSavings > 0 && (
+              <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg mb-5 text-sm">
+                <span className="text-green-600 mt-0.5">💡</span>
+                <span className="text-green-800 dark:text-green-300">
+                  Switching to Avalanche saves you{' '}
+                  <strong>{new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(summary.interestSavings)}</strong> in interest.
                 </span>
+              </div>
+            )}
+
+            {/* Extra payment slider */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-[var(--color-foreground)]">
+                  Extra Monthly Payment
+                </label>
+                <span className="text-base font-bold text-[var(--color-primary)]">
+                  {new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(extraPayment)}
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1000"
+                step="50"
+                value={extraPayment}
+                onChange={(e) => setExtraPayment(parseInt(e.target.value))}
+                className="w-full accent-[var(--color-primary)]"
+              />
+              <div className="flex justify-between text-xs text-[var(--color-muted-foreground)] mt-1">
+                <span>$0</span>
+                <span>$1,000</span>
               </div>
             </div>
           </div>

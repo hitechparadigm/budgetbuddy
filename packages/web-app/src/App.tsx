@@ -37,6 +37,7 @@ const DebtFormPage = lazy(() => import("./pages/DebtFormPage"));
 const CreditScorePage = lazy(() => import("./pages/CreditScorePage"));
 const InvestmentsPage = lazy(() => import("./pages/InvestmentsPage"));
 const LearnPage = lazy(() => import("./pages/LearnPage").then(m => ({ default: m.LearnPage })));
+const ToolsPage = lazy(() => import("./pages/ToolsPage").then(m => ({ default: m.ToolsPage })));
 const AboutPage = lazy(() => import("./pages/AboutPage").then(m => ({ default: m.AboutPage })));
 const HelpCenterPage = lazy(() => import("./pages/HelpCenterPage").then(m => ({ default: m.HelpCenterPage })));
 const TermsOfServicePage = lazy(() => import("./pages/TermsOfServicePage").then(m => ({ default: m.TermsOfServicePage })));
@@ -266,6 +267,15 @@ const App: React.FC = () => {
                     element={
                       <ProtectedLayout>
                         <LearnPage />
+                      </ProtectedLayout>
+                    }
+                  />
+                  {/* Tools Page — Financial Calculators */}
+                  <Route
+                    path="/tools"
+                    element={
+                      <ProtectedLayout>
+                        <ToolsPage />
                       </ProtectedLayout>
                     }
                   />
