@@ -2276,10 +2276,11 @@ export const BudgetPage: React.FC = () => {
                                       setShowTransactionModal(true);
                                     }}
                                     className="p-1 text-[var(--color-muted-foreground)] hover:text-green-600 rounded"
-                                    title="Add transaction"
+                                    title="Record transaction"
                                   >
+                                    {/* Receipt/transaction icon — distinct from the category + */}
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
                                     </svg>
                                   </button>
                                   <button
@@ -2315,7 +2316,7 @@ export const BudgetPage: React.FC = () => {
                                       onClick={(e) => { e.stopPropagation(); openBudgetItemModal(group.type, undefined, category.id); }}
                                       className="w-full text-left py-1.5 px-4 pl-8 text-xs text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 rounded transition-colors flex items-center gap-1 font-medium"
                                     >
-                                      <span>+</span> Add sub-item under {category.name}
+                                      <span>+</span> Sub-category
                                     </button>
                                   </div>
                                 ) : (
@@ -2431,13 +2432,13 @@ export const BudgetPage: React.FC = () => {
                       return topLevel.map(cat => renderCategory(cat));
                     })()}
 
-                    {/* Add Item Button */}
+                    {/* Add Category Button */}
                     <button
                       onClick={() => openBudgetItemModal(group.type)}
                       data-tutorial="add-transaction"
-                      className="w-full text-left py-2.5 px-4 text-sm text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 rounded-lg transition-colors flex items-center gap-1 font-medium"
+                      className="w-full text-left py-2.5 px-4 text-sm text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 rounded-lg transition-colors flex items-center gap-1.5 font-medium"
                     >
-                      <span aria-hidden="true" className="text-base leading-none">+</span> Add Item
+                      <span aria-hidden="true" className="text-base leading-none">+</span> New Category
                     </button>
                   </div>
 
