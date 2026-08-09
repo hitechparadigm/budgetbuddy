@@ -52,10 +52,59 @@ function calcDebtPayoff(balance: number, apr: number, minPayment: number, extra:
   };
 }
 
+/**
+ * Standard minimum payment formula used by most lenders:
+ * max($25, 1% of balance + monthly interest)
+ * This ensures the payment always covers interest + a little principal.
+ */
+function calcMinPayment(balance: number, apr: number): number {
+  if (balance <= 0 || apr < 0) return 0;
+  const monthlyRate = apr / 100 / 12;
+  const monthlyInterest = balance * monthlyRate;
+  // 1% of balance + full monthly interest — covers interest and chips away principal
+  const computed = Math.ceil(balance * 0.01 + monthlyInterest);
+  return Math.max(computed, 25); // $25 minimum floor
+}
+
 function DebtCalculator() {
   const [balance, setBalance] = useState('10000');
   const [apr, setApr] = useState('19.99');
-  const [minPayment, setMinPayment] = useState('250');
+  const [minPaymentOverridden, setMinPaymentOverridden] = useState(false);
+  const [minPayment, setMinPayment] = useState(() => {
+    // Initial auto-calculated value for defaults
+    return String(calcMinPayment(10000, 19.99));
+  });
+
+  // Auto-recalculate min payment when balance/APR changes — unless user has overridden
+  const handleBalanceChange = (val: string) => {
+    setBalance(val);
+    if (!minPaymentOverridden) {
+      const b = parseFloat(val);
+      const a = parseFloat(apr);
+      if (b > 0 && a >= 0) setMinPayment(String(calcMinPayment(b, a)));
+    }
+  };
+
+  const handleAprChange = (val: string) => {
+    setApr(val);
+    if (!minPaymentOverridden) {
+      const b = parseFloat(balance);
+      const a = parseFloat(val);
+      if (b > 0 && a >= 0) setMinPayment(String(calcMinPayment(b, a)));
+    }
+  };
+
+  const handleMinPaymentChange = (val: string) => {
+    setMinPayment(val);
+    setMinPaymentOverridden(true);
+  };
+
+  const resetMinPayment = () => {
+    const b = parseFloat(balance);
+    const a = parseFloat(apr);
+    setMinPayment(String(calcMinPayment(b, a)));
+    setMinPaymentOverridden(false);
+  };
 
   const extraOptions = [0, 50, 100, 200, 500];
 
@@ -95,7 +144,7 @@ function DebtCalculator() {
               type="number"
               inputMode="decimal"
               value={balance}
-              onChange={e => setBalance(e.target.value)}
+              onChange={e => handleBalanceChange(e.target.value)}
               className="w-full pl-8 pr-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
               placeholder="10000"
               min="0"
@@ -112,7 +161,7 @@ function DebtCalculator() {
               type="number"
               inputMode="decimal"
               value={apr}
-              onChange={e => setApr(e.target.value)}
+              onChange={e => handleAprChange(e.target.value)}
               className="w-full pl-4 pr-8 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
               placeholder="19.99"
               step="0.01"
@@ -123,9 +172,24 @@ function DebtCalculator() {
           </div>
         </div>
         <div>
-          <label htmlFor="dc-min" className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">
-            Minimum Monthly Payment
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="dc-min" className="text-sm font-medium text-[var(--color-foreground)]">
+              Minimum Monthly Payment
+            </label>
+            {minPaymentOverridden ? (
+              <button
+                type="button"
+                onClick={resetMinPayment}
+                className="text-xs text-[var(--color-primary)] hover:underline"
+              >
+                Reset to auto
+              </button>
+            ) : (
+              <span className="text-xs px-1.5 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full font-medium">
+                Auto
+              </span>
+            )}
+          </div>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted-foreground)]">$</span>
             <input
@@ -133,12 +197,17 @@ function DebtCalculator() {
               type="number"
               inputMode="decimal"
               value={minPayment}
-              onChange={e => setMinPayment(e.target.value)}
-              className="w-full pl-8 pr-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-              placeholder="250"
+              onChange={e => handleMinPaymentChange(e.target.value)}
+              className={`w-full pl-8 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent bg-[var(--color-background)] text-[var(--color-foreground)] ${
+                minPaymentOverridden ? 'border-[var(--color-primary)]' : 'border-[var(--color-border)]'
+              }`}
+              placeholder="auto"
               min="0"
             />
           </div>
+          <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
+            Calculated as 1% of balance + monthly interest
+          </p>
         </div>
       </div>
 
