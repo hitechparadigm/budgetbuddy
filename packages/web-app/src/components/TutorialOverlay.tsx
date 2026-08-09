@@ -126,8 +126,12 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
 
   return (
     <div className="fixed inset-0 z-50">
-      {/* Overlay with spotlight */}
-      <div className="absolute inset-0 bg-black bg-opacity-70">
+      {/* Overlay with spotlight — clicking backdrop dismisses */}
+      <div
+        className="absolute inset-0 bg-black bg-opacity-70 cursor-pointer"
+        onClick={onSkip}
+        aria-label="Close tutorial"
+      >
         {targetRect && (
           <div
             className="absolute bg-transparent"

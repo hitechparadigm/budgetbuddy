@@ -118,8 +118,10 @@ export const BudgetPage: React.FC = () => {
     "select",
   );
 
-  // Tutorial state
-  const [showTutorial, setShowTutorial] = useState(false);
+  // Tutorial state — disabled: TutorialOverlay conflicts with WelcomeTooltipChain
+  // and blocks interaction when target elements aren't found. WelcomeTooltipChain
+  // on the Overview page provides the first-time user education.
+  const [showTutorial] = useState(false);
 
   const [transactionType, setTransactionType] = useState<
     "income" | "expense" | null
@@ -294,32 +296,13 @@ export const BudgetPage: React.FC = () => {
   }, [isResizing]);
 
   // Check if user should see tutorial (first-time users)
-  useEffect(() => {
-    const hasSeenTutorial = localStorage.getItem(
-      "budgetbuddy_tutorial_completed",
-    );
-    const isFirstVisit = !localStorage.getItem("budgetbuddy_visited");
-
-    if (!hasSeenTutorial && isFirstVisit) {
-      // Mark as visited
-      localStorage.setItem("budgetbuddy_visited", "true");
-      // Show tutorial after a short delay to let the page load
-      const timer = setTimeout(() => {
-        setShowTutorial(true);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  // Tutorial completion handlers
+  // Tutorial completion handlers (kept for compatibility — tutorial is disabled)
   const handleTutorialComplete = useCallback(() => {
     localStorage.setItem("budgetbuddy_tutorial_completed", "true");
-    setShowTutorial(false);
   }, []);
 
   const handleTutorialSkip = useCallback(() => {
     localStorage.setItem("budgetbuddy_tutorial_completed", "true");
-    setShowTutorial(false);
   }, []);
 
   useEffect(() => {
