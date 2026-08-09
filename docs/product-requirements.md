@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-08-08 (Session 157 — Budget rollover fix, Forgot Password Cognito flow, Receipt scanning API URL fix)
+**Last Updated**: 2026-08-09 (Session 158 — Accept invitation 401 fix, budget auto-repair for empty months)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -489,6 +489,21 @@ Comprehensive Playwright-driven audit of the live dev environment (`https://d1ue
 
 ---
 
+### Session 158 — Accept Invitation 401 Fix + Budget Auto-Repair (2026-08-09)
+
+**Accept Invitation 401 — Two-Layer Fix:**
+
+*Backend root cause*: `POST /budgets/accept-invitation` has `AuthorizationType.NONE` in CDK (correct — invitee may not be logged in yet). But `getUserFromEvent()` reads `event.requestContext.authorizer.claims`, which is only populated by the Cognito authorizer when `AuthorizationType.COGNITO` is set. With NONE auth, `claims` is undefined, `getUserFromEvent` throws, and the handler catches it returning 401 "You must be logged in".
+- ✅ **Backend fix** (`budgets/index.js`) — manually decode the JWT from the raw `Authorization: Bearer <token>` header before calling `getUserFromEvent`: base64-decode the payload, extract `custom:userId` or `sub`; returns proper 401 only when no token present at all
+
+*Frontend race condition*: After `handleRegister` calls `handleLogin`, `handleLogin` sets `localStorage.setItem("budgetbuddy_id_token", ...)` then calls `handleAcceptInvitation()`. But `handleAcceptInvitation` checks the React `isAuthenticated` state — which `setIsAuthenticated(true)` set just prior but hasn't re-rendered yet (async). Sees stale `false` → calls `setShowAuthForm(true); return` → aborts without calling the API at all.
+- ✅ **Frontend fix** (`AcceptInvitationPage.tsx`) — added `acceptInvitationCore(inviteToken)` that reads the token directly from `localStorage.getItem('budgetbuddy_id_token')` (bypasses stale React state). `handleLogin` calls `acceptInvitationCore` directly after setting localStorage instead of going through the state-dependent `handleAcceptInvitation`. Also fixed navigation: was `navigate('/budget/${data.budgetId}')` which doesn't exist as a route; now `navigate('/budget')`.
+
+**Budget Auto-Repair for Corrupted Empty Months:**
+- ✅ **`getCurrentBudget` auto-repair logic** (`budget/index.js`) — when the budget exists but has zero categories across all groups (income=[], savings=[], expenses=[]) AND the previous month has categories → soft-deletes the corrupted empty budget and immediately recreates it via `createBudgetWithRecurringItems`. This self-heals budgets created by the old buggy rollover code (which dropped all categories) without requiring any manual intervention or data migration.
+
+---
+
 ## Known Gaps (⚠️ Planned)
 1. ~~**Family budget transparency not enforced at category level**~~ ✅ **Fixed (Session 148)** — `createBudget` and `updateBudget` now reject any request containing categories with `hidden: true`, `isPrivate: true`, or `visibility: 'private'` when `budgetType === 'family'`. Returns HTTP 400.
 
@@ -718,6 +733,9 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | 7 | ✅ Fixed (2026-08-08) | Budget month rollover | `createBudgetWithRecurringItems` iterated flat category arrays as nested group objects → `group.categories` was always `undefined` → all categories dropped on rollover. Fixed 5 functions. |
 | 8 | ✅ Fixed (2026-08-08) | Forgot Password | Was a stub message. Now full Cognito `ForgotPassword`/`ConfirmForgotPassword` flow with 3-step inline UI. |
 | 9 | ✅ Fixed (2026-08-08) | Receipt Scanning | `ReceiptUpload.tsx` called main API; receipt endpoints are on Extended Features API. Fixed to `config.extendedFeaturesApiUrl`. |
+| 10 | ✅ Fixed (2026-08-09) | Accept invitation 401 | `NONE` auth route had no Cognito claims; `getUserFromEvent` threw. Fixed by manually decoding JWT from Authorization header in `budgets/index.js`. |
+| 11 | ✅ Fixed (2026-08-09) | Accept invitation race condition | `isAuthenticated` React state stale after login; `acceptInvitationCore()` reads localStorage directly. |
+| 12 | ✅ Fixed (2026-08-09) | Budget auto-repair | Empty months (corrupted by old rollover code) auto-recreated from previous month on `GET /budget/current`. |
 
 ### Not Deployed (frontend components exist, no backend Lambda)
 
@@ -740,6 +758,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Register | `AuthPage.tsx` / `RegisterForm.tsx` — autocomplete attrs, design token buttons, proper `htmlFor`/`id` structure | `POST /auth/register` | ✅ |
 | Google Sign-In | `GoogleSignInButton.tsx` | `POST /auth/google` | ✅ |
 | Sign In | `LoginForm.tsx` — autocomplete on email+password, design token submit button, full 3-step Forgot Password inline flow (email → code → new password) | `POST /auth/login`, `POST /auth/forgot-password`, `POST /auth/confirm-forgot-password` | ✅ |
+| Accept invitation | `AcceptInvitationPage.tsx` — smart tab (Login vs Create Account), pre-fills email; fixed: JWT decoded manually on NONE-auth route, `acceptInvitationCore` bypasses stale React state | `POST /budgets/accept-invitation` | ✅ |
 | Budget type selection | `OnboardingPage.tsx` — 5-step total, inline descriptions, no disclosure modal | `POST /auth/onboarding` | ✅ |
 | Location + currency + household | `OnboardingFlow.tsx` Steps 2-4 | `GET /auth/geolocation` | ✅ |
 | Subscriptions step | `OnboardingFlow.tsx` Step 4 — Yes/No + amount input, quick presets; carries into Subscriptions category | — | ✅ |
@@ -784,7 +803,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Transaction list + search | `TransactionList.tsx`, `TransactionFilters.tsx` | `GET /transactions` | ✅ |
 | Month navigation | Month nav arrows in `BudgetPage.tsx` — timezone-safe local date formatting | — | ✅ |
 | Session expiry UX | Session-expired banner in `BudgetPage.tsx` — shown instead of silent blank/redirect when token refresh fails | — | ✅ |
-| Budget month rollover | `createBudgetWithRecurringItems` in `budget/index.js` — copies all non-one-time categories from previous month; resets spentAmount/transactions; recalculates biweekly/weekly amounts for new month | `GET /budget/current` (auto-triggers) | ✅ |
+| Budget month rollover | `createBudgetWithRecurringItems` in `budget/index.js` — copies all non-one-time categories from previous month; resets spentAmount/transactions; recalculates biweekly/weekly amounts for new month; **auto-repairs** corrupted empty months by detecting zero-category budgets and recreating from prev month | `GET /budget/current` (auto-triggers) | ✅ |
 | Planned transactions | ❌ Not started | `POST /transaction-planning` | 🔄 Backend only |
 
 ---
