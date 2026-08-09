@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-08-09 (Session 158 — Accept invitation 401 fix, budget auto-repair for empty months)
+**Last Updated**: 2026-08-09 (Session 158/159 — Accept invitation 401 fix, budget auto-repair, TutorialOverlay dark screen fix)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -333,6 +333,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **Performance — lazy loading** — 20 secondary pages lazy-loaded with `React.lazy`/`Suspense`; vendor chunks split (react, lucide, AI generation page); initial bundle **113KB gzip** (was 242KB, −53%); recharts 107KB deferred to Insights only
 - ✅ **Vite code-splitting config** — `vite.config.ts` with `manualChunks` for `vendor-react`, `vendor-lucide`, `page-ai-budget`
 - ✅ **`ErrorBoundary` auto-reload on chunk-load errors** — detects "Failed to fetch dynamically imported module"; shows "reloading…" spinner, reloads once (60s cooldown); `vite:preloadError` handler in `main.tsx` for pre-React interception
+- ✅ **`TutorialOverlay` disabled on Budget page** — was blocking entire screen for first-time users when target elements not found; `WelcomeTooltipChain` on Overview page provides first-time UX; TutorialOverlay backdrop now clickable to dismiss if ever shown
 
 ### Session 153 — Auth UX, Add-Transaction Redesign, Dark Mode Systematic Fix (2026-06-21)
 
@@ -736,6 +737,7 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | 10 | ✅ Fixed (2026-08-09) | Accept invitation 401 | `NONE` auth route had no Cognito claims; `getUserFromEvent` threw. Fixed by manually decoding JWT from Authorization header in `budgets/index.js`. |
 | 11 | ✅ Fixed (2026-08-09) | Accept invitation race condition | `isAuthenticated` React state stale after login; `acceptInvitationCore()` reads localStorage directly. |
 | 12 | ✅ Fixed (2026-08-09) | Budget auto-repair | Empty months (corrupted by old rollover code) auto-recreated from previous month on `GET /budget/current`. |
+| 13 | ✅ Fixed (2026-08-09) | TutorialOverlay dark screen | `BudgetPage.tsx` triggered `TutorialOverlay` for first-time users; when target elements not found, full-screen `bg-black/70 z-50` backdrop blocked all interaction. Disabled TutorialOverlay on Budget page (WelcomeTooltipChain on Overview provides same UX without blocking). Backdrop now clickable as safety net. |
 
 ### Not Deployed (frontend components exist, no backend Lambda)
 

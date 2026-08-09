@@ -63,6 +63,8 @@ interface BudgetCategory {
   frequency?: "monthly" | "biweekly" | "weekly" | "semi-monthly" | "one-time";
   frequencyAmount?: number; // Per-period amount for biweekly/weekly
   isOneTime?: boolean; // true when frequency === 'one-time'
+  // Sub-category support — optional parent grouping
+  parentId?: string; // if set, this is a sub-category under parentId
 }
 
 interface BudgetGroup {
@@ -167,11 +169,23 @@ export const BudgetPage: React.FC = () => {
     // Frequency-based income support
     frequency: "monthly" as "monthly" | "biweekly" | "weekly" | "semi-monthly" | "one-time",
     frequencyAmount: "", // Per-period amount for biweekly/weekly
+    parentId: "", // Optional parent category for sub-category grouping
   });
 
   // Inline category amount editing state (P3-T4)
   const [inlineEditId, setInlineEditId] = useState<string | null>(null);
   const [inlineEditValue, setInlineEditValue] = useState<string>('');
+
+  // Expanded category — shows transaction list inline
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
+
+  // Inline transaction editing
+  const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null);
+  const [editingTransactionForm, setEditingTransactionForm] = useState({
+    amount: '',
+    description: '',
+    date: getTodayString(),
+  });
 
   const startInlineEdit = (categoryId: string, currentAmount: number) => {
     setInlineEditId(categoryId);
@@ -195,6 +209,49 @@ export const BudgetPage: React.FC = () => {
     );
     setBudget(updatedBudget);
     setInlineEditId(null);
+    await saveBudgetToBackend(updatedBudget);
+  };
+
+  // Start inline transaction edit
+  const startEditingTransaction = (txn: Transaction) => {
+    setEditingTransactionId(txn.id);
+    setEditingTransactionForm({
+      amount: txn.amount.toString(),
+      description: txn.description,
+      date: txn.date,
+    });
+  };
+
+  // Save inline transaction edit
+  const saveEditingTransaction = async (categoryId: string) => {
+    if (!budget || !editingTransactionId) return;
+    const newAmount = parseFloat(editingTransactionForm.amount);
+    if (isNaN(newAmount) || newAmount <= 0) { setEditingTransactionId(null); return; }
+
+    const updatedBudget = { ...budget };
+    updatedBudget.groups = updatedBudget.groups.map(g => ({
+      ...g,
+      categories: g.categories.map(c => {
+        if (c.id !== categoryId) return c;
+        const oldTxn = c.transactions.find(t => t.id === editingTransactionId);
+        const oldAmount = oldTxn?.amount || 0;
+        const newTxns = c.transactions.map(t =>
+          t.id !== editingTransactionId ? t : {
+            ...t,
+            amount: newAmount,
+            description: editingTransactionForm.description || t.description,
+            date: editingTransactionForm.date || t.date,
+          }
+        );
+        return {
+          ...c,
+          transactions: newTxns,
+          spentAmount: c.spentAmount - oldAmount + newAmount,
+        };
+      }),
+    }));
+    setBudget(updatedBudget);
+    setEditingTransactionId(null);
     await saveBudgetToBackend(updatedBudget);
   };
 
@@ -926,6 +983,7 @@ export const BudgetPage: React.FC = () => {
   const openBudgetItemModal = (
     groupType: "income" | "savings" | "expense",
     category?: BudgetCategory,
+    defaultParentId?: string,
   ) => {
     setSelectedGroupType(groupType);
     if (category) {
@@ -941,6 +999,7 @@ export const BudgetPage: React.FC = () => {
         startDate: category.startDate || getTodayString(),
         frequency: category.frequency || "monthly",
         frequencyAmount: category.frequencyAmount?.toString() || "",
+        parentId: category.parentId || "",
       });
     } else {
       setEditingCategory(null);
@@ -954,6 +1013,7 @@ export const BudgetPage: React.FC = () => {
         startDate: getTodayString(),
         frequency: "monthly",
         frequencyAmount: "",
+        parentId: defaultParentId || "",
       });
     }
     setShowBudgetItemModal(true);
@@ -972,6 +1032,7 @@ export const BudgetPage: React.FC = () => {
       startDate: getTodayString(),
       frequency: "monthly",
       frequencyAmount: "",
+      parentId: "",
     });
   };
 
@@ -1095,11 +1156,7 @@ export const BudgetPage: React.FC = () => {
       : undefined;
 
     if (editingCategory) {
-      console.log(
-        "[handleBudgetItemSubmit] Editing existing category:",
-        editingCategory.id,
-      );
-      // Edit existing category
+      // Edit existing category — preserve parentId or update it
       updatedBudget.groups = updatedBudget.groups.map((group) => ({
         ...group,
         categories: group.categories.map((cat) => {
@@ -1115,6 +1172,8 @@ export const BudgetPage: React.FC = () => {
               recurringFrequency: budgetItemForm.isRecurring
                 ? budgetItemForm.recurringFrequency
                 : undefined,
+              // Update parentId — empty string means top-level
+              parentId: budgetItemForm.parentId || undefined,
               ...(isIncomeGroup && {
                 frequency: selectedFrequency,
                 frequencyAmount: frequencyAmount,
@@ -1126,10 +1185,6 @@ export const BudgetPage: React.FC = () => {
         }),
       }));
     } else {
-      console.log(
-        "[handleBudgetItemSubmit] Adding new category to group type:",
-        selectedGroupType,
-      );
       // Add new category
       const newCategory: BudgetCategory = {
         id: `category_${Date.now()}`,
@@ -1145,6 +1200,8 @@ export const BudgetPage: React.FC = () => {
         recurringFrequency: budgetItemForm.isRecurring
           ? budgetItemForm.recurringFrequency
           : undefined,
+        // Sub-category parent — empty means top-level
+        parentId: budgetItemForm.parentId || undefined,
         ...(isIncomeGroup && {
           frequency: selectedFrequency,
           frequencyAmount: frequencyAmount,
@@ -2092,150 +2149,287 @@ export const BudgetPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Categories — sorted A-Z */}
+                  {/* Categories — sorted A-Z, with sub-category grouping */}
                   <div className="space-y-2">
-                    {[...group.categories]
-                      .sort((a, b) => a.name.localeCompare(b.name))
-                      .map((category) => (
-                      <div
-                        key={category.id}
-                        className={`group/item flex flex-col md:flex-row md:items-center justify-between py-3 px-4 rounded-lg space-y-2 md:space-y-0 ${
-                          category.spentAmount > category.plannedAmount
-                            ? "bg-red-50 dark:bg-red-950/20 border-l-4 border-red-500 hover:bg-red-100 dark:hover:bg-red-950/30"
-                            : "hover:bg-[var(--color-muted)]"
-                        }`}
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <span>{category.icon}</span>
-                            <div className="font-medium text-[var(--color-foreground)]">
-                              {category.name}
-                            </div>
-                          </div>
-                          {category.isRecurring && (
-                            <div className="text-xs text-green-600 dark:text-green-400 ml-6">
-                              {category.recurringFrequency} •{" "}
-                              {category.baseAmount &&
-                                `${formatCurrency(category.baseAmount, currency, { showSymbol: false })} per occurrence`}
-                              {category.startDate &&
-                                ` • Starts: ${new Date(
-                                  category.startDate,
-                                ).toLocaleDateString()}`}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center md:space-x-4">
-                          <div className="text-left md:text-right md:w-24 flex-shrink-0">
-                            <div className="text-xs md:hidden text-[var(--color-muted-foreground)]">
-                              Planned
-                            </div>
-                            {inlineEditId === category.id ? (
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={inlineEditValue}
-                                onChange={e => setInlineEditValue(e.target.value)}
-                                onBlur={() => commitInlineEdit(category.id, group.type)}
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') commitInlineEdit(category.id, group.type);
-                                  if (e.key === 'Escape') setInlineEditId(null);
-                                }}
-                                autoFocus
-                                className="w-full text-right font-medium px-1 py-0.5 border border-[var(--color-primary)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-                                aria-label={`Edit planned amount for ${category.name}`}
-                              />
-                            ) : (
-                              <button
-                                onClick={() => startInlineEdit(category.id, category.plannedAmount)}
-                                className="font-medium hover:text-[var(--color-primary)] hover:underline cursor-pointer"
-                                title="Click to edit planned amount"
-                              >
-                                {formatCurrency(category.plannedAmount, currency)}
-                              </button>
-                            )}
-                          </div>
-                          <div className="text-right md:w-24 flex-shrink-0">
-                            <div className="text-xs md:hidden text-[var(--color-muted-foreground)]">
-                              {group.type === "income" ? "Received" : "Spent"}
-                            </div>
+                    {(() => {
+                      const sorted = [...group.categories].sort((a, b) => a.name.localeCompare(b.name));
+                      // Top-level categories (no parentId)
+                      const topLevel = sorted.filter(c => !c.parentId);
+                      // Sub-categories keyed by parentId
+                      const children: Record<string, BudgetCategory[]> = {};
+                      sorted.filter(c => c.parentId).forEach(c => {
+                        if (!children[c.parentId!]) children[c.parentId!] = [];
+                        children[c.parentId!].push(c);
+                      });
+
+                      const renderCategory = (category: BudgetCategory, isChild = false) => {
+                        const isExpanded = expandedCategoryId === category.id;
+                        const myChildren = children[category.id] || [];
+                        const isParent = myChildren.length > 0;
+
+                        // For parent categories: aggregate child totals + own totals
+                        const effectivePlanned = isParent
+                          ? category.plannedAmount + myChildren.reduce((s, c) => s + c.plannedAmount, 0)
+                          : category.plannedAmount;
+                        const effectiveSpent = isParent
+                          ? category.spentAmount + myChildren.reduce((s, c) => s + c.spentAmount, 0)
+                          : category.spentAmount;
+                        const isOverBudget = effectiveSpent > effectivePlanned;
+
+                        return (
+                          <div key={category.id}>
+                            {/* Category row */}
                             <div
-                              className={`font-medium ${
-                                category.spentAmount > category.plannedAmount
-                                  ? "text-red-600"
-                                  : category.spentAmount > 0
-                                    ? "text-green-600"
-                                    : "text-[var(--color-muted-foreground)]"
+                              className={`group/item flex flex-col md:flex-row md:items-center justify-between rounded-lg space-y-2 md:space-y-0 transition-colors cursor-pointer ${
+                                isChild ? 'py-2 px-4 pl-8 ml-2 border-l-2 border-[var(--color-border)]' : 'py-3 px-4'
+                              } ${
+                                isOverBudget
+                                  ? "bg-red-50 dark:bg-red-950/20 border-l-4 border-red-500 hover:bg-red-100 dark:hover:bg-red-950/30"
+                                  : isExpanded
+                                    ? "bg-[var(--color-muted)]"
+                                    : "hover:bg-[var(--color-muted)]"
                               }`}
-                            >
-                              {formatCurrency(category.spentAmount, currency)}
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-1 w-20 justify-end md:opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0">
-                            {/* Quick-add transaction for this category */}
-                            <button
-                              onClick={() => {
-                                const txType = group.type === "income" ? "income" : "expense";
-                                setTransactionType(txType);
-                                setTransactionForm({
-                                  amount: "",
-                                  description: "",
-                                  date: getTodayString(),
-                                  categoryId: category.id,
-                                });
-                                setShowTransactionModal(true);
+                              onClick={(e) => {
+                                // Don't expand if clicking on an action button or inline edit
+                                if ((e.target as HTMLElement).closest('button, input')) return;
+                                setExpandedCategoryId(isExpanded ? null : category.id);
+                                setEditingTransactionId(null);
                               }}
-                              className="p-1 text-[var(--color-muted-foreground)] hover:text-green-600 rounded"
-                              title="Add transaction"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() =>
-                                openBudgetItemModal(group.type, category)
-                              }
-                              className="p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] rounded"
-                              title="Edit"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCategory(category.id)}
-                              className="p-1 text-[var(--color-muted-foreground)] hover:text-red-600 rounded"
-                              title="Delete"
-                            >
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />
-                              </svg>
-                            </button>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2">
+                                  {/* Expand chevron */}
+                                  <span className={`text-[var(--color-muted-foreground)] transition-transform text-xs flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                                  <span>{category.icon}</span>
+                                  <div className="font-medium text-[var(--color-foreground)] truncate">
+                                    {category.name}
+                                  </div>
+                                  {isParent && (
+                                    <span className="text-xs text-[var(--color-muted-foreground)] bg-[var(--color-muted)] px-1.5 py-0.5 rounded-full flex-shrink-0">
+                                      {myChildren.length} items
+                                    </span>
+                                  )}
+                                  {category.transactions.length > 0 && !isParent && (
+                                    <span className="text-xs text-[var(--color-muted-foreground)] bg-[var(--color-muted)] px-1.5 py-0.5 rounded-full flex-shrink-0">
+                                      {category.transactions.length} txn{category.transactions.length > 1 ? 's' : ''}
+                                    </span>
+                                  )}
+                                </div>
+                                {category.isRecurring && (
+                                  <div className="text-xs text-green-600 dark:text-green-400 ml-6">
+                                    {category.recurringFrequency} •{" "}
+                                    {category.baseAmount &&
+                                      `${formatCurrency(category.baseAmount, currency, { showSymbol: false })} per occurrence`}
+                                    {category.startDate &&
+                                      ` • Starts: ${new Date(category.startDate).toLocaleDateString()}`}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center md:space-x-4">
+                                <div className="text-left md:text-right md:w-24 flex-shrink-0">
+                                  <div className="text-xs md:hidden text-[var(--color-muted-foreground)]">Planned</div>
+                                  {inlineEditId === category.id ? (
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={inlineEditValue}
+                                      onChange={e => setInlineEditValue(e.target.value)}
+                                      onBlur={() => commitInlineEdit(category.id, group.type)}
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter') commitInlineEdit(category.id, group.type);
+                                        if (e.key === 'Escape') setInlineEditId(null);
+                                      }}
+                                      autoFocus
+                                      onClick={e => e.stopPropagation()}
+                                      className="w-full text-right font-medium px-1 py-0.5 border border-[var(--color-primary)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                                      aria-label={`Edit planned amount for ${category.name}`}
+                                    />
+                                  ) : (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); startInlineEdit(category.id, category.plannedAmount); }}
+                                      className="font-medium hover:text-[var(--color-primary)] hover:underline cursor-pointer"
+                                      title="Click to edit planned amount"
+                                    >
+                                      {formatCurrency(effectivePlanned, currency)}
+                                    </button>
+                                  )}
+                                </div>
+                                <div className="text-right md:w-24 flex-shrink-0">
+                                  <div className="text-xs md:hidden text-[var(--color-muted-foreground)]">
+                                    {group.type === "income" ? "Received" : "Spent"}
+                                  </div>
+                                  <div className={`font-medium ${
+                                    isOverBudget ? "text-red-600" : effectiveSpent > 0 ? "text-green-600" : "text-[var(--color-muted-foreground)]"
+                                  }`}>
+                                    {formatCurrency(effectiveSpent, currency)}
+                                  </div>
+                                </div>
+                                <div className="flex items-center space-x-1 w-20 justify-end md:opacity-0 group-hover/item:opacity-100 transition-opacity flex-shrink-0">
+                                  {/* Quick-add transaction */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const txType = group.type === "income" ? "income" : "expense";
+                                      setTransactionType(txType);
+                                      setTransactionForm({ amount: "", description: "", date: getTodayString(), categoryId: category.id });
+                                      setShowTransactionModal(true);
+                                    }}
+                                    className="p-1 text-[var(--color-muted-foreground)] hover:text-green-600 rounded"
+                                    title="Add transaction"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); openBudgetItemModal(group.type, category); }}
+                                    className="p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] rounded"
+                                    title="Edit"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); handleDeleteCategory(category.id); }}
+                                    className="p-1 text-[var(--color-muted-foreground)] hover:text-red-600 rounded"
+                                    title="Delete"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Expanded: for parent → show sub-categories; for leaf → show transactions */}
+                            {isExpanded && (
+                              <div className="border-l-2 border-[var(--color-primary)]/30 ml-4 mt-1 mb-1">
+                                {isParent ? (
+                                  // Sub-categories + add sub-category button
+                                  <div className="space-y-0.5 py-1">
+                                    {myChildren.map(child => renderCategory(child, true))}
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); openBudgetItemModal(group.type, undefined, category.id); }}
+                                      className="w-full text-left py-1.5 px-4 pl-8 text-xs text-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 rounded transition-colors flex items-center gap-1 font-medium"
+                                    >
+                                      <span>+</span> Add sub-item under {category.name}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  // Transaction list for leaf categories
+                                  <div className="py-1">
+                                    {category.transactions.length === 0 ? (
+                                      <div className="px-4 py-2 text-sm text-[var(--color-muted-foreground)] italic">
+                                        No transactions yet.{' '}
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const txType = group.type === "income" ? "income" : "expense";
+                                            setTransactionType(txType);
+                                            setTransactionForm({ amount: "", description: "", date: getTodayString(), categoryId: category.id });
+                                            setShowTransactionModal(true);
+                                          }}
+                                          className="text-[var(--color-primary)] hover:underline"
+                                        >
+                                          Add one
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <div className="divide-y divide-[var(--color-border)]">
+                                        {[...category.transactions]
+                                          .sort((a, b) => b.date.localeCompare(a.date))
+                                          .map(txn => (
+                                            <div key={txn.id} className="flex items-center gap-2 px-4 py-2 hover:bg-[var(--color-muted)] group/txn">
+                                              {editingTransactionId === txn.id ? (
+                                                // Inline edit row
+                                                <div className="flex-1 flex flex-wrap gap-2 items-center">
+                                                  <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={editingTransactionForm.amount}
+                                                    onChange={e => setEditingTransactionForm(f => ({ ...f, amount: e.target.value }))}
+                                                    onClick={e => e.stopPropagation()}
+                                                    className="w-24 px-2 py-1 border border-[var(--color-primary)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded text-sm"
+                                                    placeholder="Amount"
+                                                    autoFocus
+                                                  />
+                                                  <input
+                                                    type="text"
+                                                    value={editingTransactionForm.description}
+                                                    onChange={e => setEditingTransactionForm(f => ({ ...f, description: e.target.value }))}
+                                                    onClick={e => e.stopPropagation()}
+                                                    className="flex-1 min-w-[120px] px-2 py-1 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded text-sm"
+                                                    placeholder="Description"
+                                                  />
+                                                  <input
+                                                    type="date"
+                                                    value={editingTransactionForm.date}
+                                                    onChange={e => setEditingTransactionForm(f => ({ ...f, date: e.target.value }))}
+                                                    onClick={e => e.stopPropagation()}
+                                                    className="px-2 py-1 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded text-sm"
+                                                  />
+                                                  <button
+                                                    onClick={(e) => { e.stopPropagation(); saveEditingTransaction(category.id); }}
+                                                    className="px-2 py-1 bg-[var(--color-primary)] text-white rounded text-xs font-medium"
+                                                  >Save</button>
+                                                  <button
+                                                    onClick={(e) => { e.stopPropagation(); setEditingTransactionId(null); }}
+                                                    className="px-2 py-1 bg-[var(--color-muted)] text-[var(--color-foreground)] rounded text-xs"
+                                                  >Cancel</button>
+                                                </div>
+                                              ) : (
+                                                // Read row
+                                                <>
+                                                  <div className="flex-1 min-w-0">
+                                                    <span className="text-sm text-[var(--color-foreground)] truncate block">{txn.description || '—'}</span>
+                                                    <span className="text-xs text-[var(--color-muted-foreground)]">{txn.date}</span>
+                                                  </div>
+                                                  <span className={`text-sm font-medium tabular-nums flex-shrink-0 ${group.type === 'income' ? 'text-green-600' : 'text-[var(--color-foreground)]'}`}>
+                                                    {group.type === 'income' ? '+' : '-'}{formatCurrency(txn.amount, currency)}
+                                                  </span>
+                                                  {/* Edit / Delete — visible on hover */}
+                                                  <div className="flex gap-1 opacity-0 group-hover/txn:opacity-100 transition-opacity flex-shrink-0">
+                                                    <button
+                                                      onClick={(e) => { e.stopPropagation(); startEditingTransaction(txn); }}
+                                                      className="p-1 text-[var(--color-muted-foreground)] hover:text-[var(--color-primary)] rounded"
+                                                      title="Edit transaction"
+                                                    >
+                                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                      </svg>
+                                                    </button>
+                                                    <button
+                                                      onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(txn.id, category.id); }}
+                                                      className="p-1 text-[var(--color-muted-foreground)] hover:text-red-600 rounded"
+                                                      title="Delete transaction"
+                                                    >
+                                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                      </svg>
+                                                    </button>
+                                                  </div>
+                                                </>
+                                              )}
+                                            </div>
+                                          ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Render children if NOT in expanded mode (always show sub-cats) */}
+                            {!isExpanded && !isChild && myChildren.length > 0 && null}
                           </div>
-                        </div>
-                      </div>
-                    ))}
+                        );
+                      };
+
+                      return topLevel.map(cat => renderCategory(cat));
+                    })()}
 
                     {/* Add Item Button */}
                     <button
@@ -3185,6 +3379,33 @@ export const BudgetPage: React.FC = () => {
                   required
                 />
               </div>
+
+              {/* Parent category selector — optional grouping */}
+              {selectedGroupType && budget && (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
+                    Group under <span className="font-normal text-[var(--color-muted-foreground)]">(optional — bundles items together)</span>
+                  </label>
+                  <select
+                    value={budgetItemForm.parentId}
+                    onChange={(e) => setBudgetItemForm(prev => ({ ...prev, parentId: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                  >
+                    <option value="">— Top level (no parent) —</option>
+                    {(budget.groups.find(g => g.type === selectedGroupType)?.categories || [])
+                      .filter(c => !c.parentId && c.id !== editingCategory?.id) // only top-level, not self
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map(c => (
+                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                      ))}
+                  </select>
+                  {budgetItemForm.parentId && (
+                    <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
+                      This item will appear as a sub-item under the selected category
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">
