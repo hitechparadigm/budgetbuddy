@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-08-09 (Session 159 — Inline transaction list on category click, sub-category grouping with parentId)
+**Last Updated**: 2026-08-09 (Session 159/160 — Tools page, Debt Payoff strategy UX, inline transaction list, sub-category grouping)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -223,6 +223,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ Subscriptions: list, AI detection from transactions (`POST /subscriptions/detect`), add/edit/delete, monthly/yearly cost tracking, renewal reminders, review status (Keep/Review/Cancel)
 - ✅ Notifications: device registration, preferences (GET/PUT), notification history, push delivery via Expo
 - ✅ Net worth tracking (manual + investment accounts) — `backend/functions/net-worth/` deployed to extended stack
+- ✅ **Tools page** — `/tools` with client-side Debt Payoff Calculator (5-scenario comparison table + bar chart) and Compound Interest Calculator (up to 50yr growth chart, 5 compounding frequencies)
 
 ### Frontend
 - ✅ `BudgetMembersPage` at `/budget/members` — full member management UI
@@ -537,6 +538,24 @@ Comprehensive Playwright-driven audit of the live dev environment (`https://d1ue
 4. Budget page now shows: Insurance `3 items` `$X planned` `$Y spent`
 5. Click Insurance → expands showing Life Insurance, Car Insurance, Home Insurance each with their own amounts
 6. Click Life Insurance → shows transactions for that sub-item
+
+---
+
+### Session 160 — Tools Page + Debt Payoff Strategy UX (2026-08-09)
+
+**New: Tools Page (`/tools`) — Financial Calculators:**
+- ✅ **`ToolsPage.tsx`** — new page at `/tools`, added to sidebar under Manage group with 🔧 Wrench icon
+- ✅ **Debt Payoff Calculator** — pure client-side; inputs: balance, APR, min payment; shows 5 extra-payment scenarios (+$0/50/100/200/500) in a comparison table (time to payoff, total interest, interest saved vs minimum); visual bar chart comparing payoff time; "Best" badge on highest-savings scenario; red warning when min payment < monthly interest
+- ✅ **Compound Interest Calculator** — inputs: initial amount, annual rate, years (1-50), monthly contribution; 5 compounding frequencies (annually→daily); 3 summary cards (final balance, contributions, interest earned); bar chart with year-by-year growth and hover tooltips
+- ✅ **Tab switcher** — Debt Payoff / Compound Interest; all computed client-side (no API calls, instant results)
+
+**Debt Payoff Page — Strategy UX Redesign:**
+- ✅ **Plain-English descriptions** — Snowball: "Smallest balance first → quick wins keep you motivated"; Avalanche: "Highest interest first → mathematically optimal, pays less interest"
+- ✅ **"Saves most" badge** — green pill on Avalanche when it saves more interest than Snowball
+- ✅ **"Active" badge** — primary-color pill on whichever strategy is currently selected
+- ✅ **Interest savings callout** — green banner: "Switching to Avalanche saves you $X in interest" when Avalanche is cheaper
+- ✅ **Design tokens** — removed hardcoded `border-blue-500 bg-blue-50`; now uses `border-[var(--color-primary)] bg-[var(--color-primary)]/5` and `accent-[var(--color-primary)]` for slider
+- ✅ **Slider UX** — value shown in primary-color bold text inline with label; `$0–$1,000` range labels; no more awkward side-by-side layout
 
 ---
 
@@ -933,9 +952,11 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 |---------|----------|-------------|--------|
 | Goals card grid | `GoalsPage.tsx` — SVG progress rings, drag-and-drop reorder, "Add Funds" on card | `GET /goals` | ✅ |
 | Create / edit / delete goal | `GoalFormPage.tsx` — `htmlFor`/`id` on all fields, design token inputs + button | `POST/PUT/DELETE /goals` | ✅ |
-| Debt payoff calculator | `DebtPayoffPage.tsx` — strategy selector, extra payment slider | `GET /debts/payoff-plan` | ✅ |
+| Debt payoff calculator | `DebtPayoffPage.tsx` — redesigned strategy UX: plain-English descriptions, "Saves most" badge, interest savings callout, design token cards | `GET /debts/payoff-plan` | ✅ |
 | Debt payoff timeline | `DebtPayoffPage.tsx` — horizontal timeline, color-coded by type, payment modal | `GET /debts/summary` | ✅ |
 | Add / edit debt | `DebtFormPage.tsx` — `htmlFor`/`id` on name+type, design token focus rings + inputs + submit button | `POST/PUT /debts` | ✅ |
+| Tools — Debt Payoff Calculator | `ToolsPage.tsx` — 5 extra-payment scenarios, comparison table, bar chart, client-side | — (no API) | ✅ |
+| Tools — Compound Interest | `ToolsPage.tsx` — initial amount, rate, years, monthly contribution, 5 compounding freqs, year-by-year chart | — (no API) | ✅ |
 | Mobile goals | `GoalsScreen.tsx` | Same as web | ✅ |
 
 ---
