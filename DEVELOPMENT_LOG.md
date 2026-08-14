@@ -1,6 +1,12 @@
 # Development Log
 
-## 2026-08-09 - Accept Invitation 401 Fix + Budget Auto-Repair (Session 158)
+## 2026-08-14 - Sidebar IA Redesign + Tools Public Route (Session 161)
+
+### Changes
+- Sidebar restructured: Track group (Debt/Investments/Net Worth/Credit Score), Manage group (Bills/Subscriptions/Members), Tools standalone
+- `/tools` now a public route accessible without login — shows sign-up CTA for unauthenticated users
+
+
 
 ### Fixed
 - **Accept invitation 401** — `NONE` auth route had no Cognito claims; manually decode JWT from Authorization header

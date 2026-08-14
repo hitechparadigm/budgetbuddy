@@ -77,6 +77,8 @@ const App: React.FC = () => {
                     path="/budgets/accept"
                     element={<AcceptInvitationPage />}
                   />
+                  {/* Tools — public, no auth required (calculators work without login) */}
+                  <Route path="/tools" element={<ToolsPage />} />
                   {/* Main Budget App - With Sidebar Layout */}
                   <Route
                     path="/overview"
@@ -267,15 +269,6 @@ const App: React.FC = () => {
                     element={
                       <ProtectedLayout>
                         <LearnPage />
-                      </ProtectedLayout>
-                    }
-                  />
-                  {/* Tools Page — Financial Calculators */}
-                  <Route
-                    path="/tools"
-                    element={
-                      <ProtectedLayout>
-                        <ToolsPage />
                       </ProtectedLayout>
                     }
                   />

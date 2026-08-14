@@ -1,6 +1,18 @@
 # Changelog
 
-## [1.9.168] - 2026-08-09
+## [1.9.169] - 2026-08-14
+
+### 🔧 refactor: Sidebar IA — split Manage into Track + Manage groups; Tools standalone + public
+
+- Sidebar restructured from one overloaded "Manage" group into 3 logical sections:
+  - **Track** (BarChart2 icon): Debt Payoff, Investments, Net Worth, Credit Score — monitoring assets & debts
+  - **Manage** (ListChecks icon): Bills, Subscriptions, Members — recurring obligations & account admin
+  - **Tools** — standalone item, no group (Wrench icon), public route
+- `/tools` moved to public route (no auth required) — calculators work as SEO/marketing landing page
+- ToolsPage shows "Sign up free" CTA banner when accessed without login
+- Removed redundant ProtectedLayout wrapper for tools route
+
+
 
 ### 🔧 fix: Accept invitation 401 + budget auto-repair for empty months
 
