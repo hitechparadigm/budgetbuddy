@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-08-09 (Session 159/160 — Tools page, Debt Payoff strategy UX, inline transaction list, sub-category grouping)
+**Last Updated**: 2026-08-14 (Session 161 — Sidebar IA redesign: Track + Manage groups, Tools as standalone public route)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -241,7 +241,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 - ✅ **UI Primitives** — `Button`, `Card`, `Badge`, `Skeleton` (+ Text/Card/Row variants), `PageHeader`, `StatCard`, `EmptyState` at `components/ui/`
 - ✅ **LandingPage Button migration** — all raw Tailwind CTAs replaced with `Button` component
 - ✅ **Frontend TypeScript cleanup** — 72 pre-existing TS errors fixed; `type-check:web` now blocking in validate gate
-- ✅ **Sidebar IA** — 5 primary items (Overview, Budget, Accounts, Goals, Insights) + collapsible Manage group (Bills, Subscriptions, Debt Payoff, Credit Score, Investments, Net Worth, Members)
+- ✅ **Sidebar IA** — 5 primary items (Overview, Budget, Accounts, Goals, Insights) + **Track** group (Debt Payoff, Investments, Net Worth, Credit Score) + **Manage** group (Bills, Subscriptions, Members) + **Tools** standalone + Settings (Session 161 redesign)
 
 ### Web App Polish (Phase 2 — Information Architecture)
 - ✅ **`OverviewPage`** at `/overview` — Financial Health Bar, Net Worth sparkline, Top 5 Categories, Upcoming Bills, Active Goals, AI Insight of Day, Quick Add; all sections independent + skeleton loading
@@ -556,6 +556,29 @@ Comprehensive Playwright-driven audit of the live dev environment (`https://d1ue
 - ✅ **Interest savings callout** — green banner: "Switching to Avalanche saves you $X in interest" when Avalanche is cheaper
 - ✅ **Design tokens** — removed hardcoded `border-blue-500 bg-blue-50`; now uses `border-[var(--color-primary)] bg-[var(--color-primary)]/5` and `accent-[var(--color-primary)]` for slider
 - ✅ **Slider UX** — value shown in primary-color bold text inline with label; `$0–$1,000` range labels; no more awkward side-by-side layout
+
+---
+
+### Session 161 — Sidebar IA Redesign + Tools Public Route (2026-08-14)
+
+**Problem**: The single "Manage" group had grown to 8 items (Bills, Subscriptions, Debt Payoff, Credit Score, Investments, Net Worth, Members, Tools) — an overloaded catch-all with no clear grouping logic.
+
+**Redesign — 3 logical sections replacing "Manage":**
+- ✅ **Track** group (BarChart2 icon) — `Debt Payoff`, `Investments`, `Net Worth`, `Credit Score` — things you monitor passively over time
+- ✅ **Manage** group (ListChecks icon) — `Bills`, `Subscriptions`, `Members` — recurring obligations and account admin you act on regularly
+- ✅ **Tools** — standalone item (Wrench icon), no group — doesn't belong to either category; public-facing marketing asset
+
+**Tools as public route:**
+- ✅ `/tools` moved from `ProtectedLayout` to public routes (no auth required)
+- ✅ Shows "Free calculators — no account needed. Sign up to track your real debts →" CTA banner when accessed without login
+- ✅ Shareable as standalone URL for SEO/marketing — users can try calculators before committing to sign up
+
+**Sidebar refactoring:**
+- ✅ `SectionToggle` reusable component for group headers
+- ✅ Separate `trackItems` and `manageItems` arrays replacing the monolithic `manageItems`
+- ✅ `TRACK_EXPANDED_KEY` + `MANAGE_EXPANDED_KEY` localStorage persistence for each group independently
+- ✅ Both groups default to expanded; collapse state persists per-user
+- ✅ All Lucide icons updated: `BarChart2` for Track, `ListChecks` for Manage, `Wrench` for Tools
 
 ---
 
@@ -955,8 +978,8 @@ Tested against live dev environment at `https://d1ueeugn9zcx7n.cloudfront.net` u
 | Debt payoff calculator | `DebtPayoffPage.tsx` — redesigned strategy UX: plain-English descriptions, "Saves most" badge, interest savings callout, design token cards | `GET /debts/payoff-plan` | ✅ |
 | Debt payoff timeline | `DebtPayoffPage.tsx` — horizontal timeline, color-coded by type, payment modal | `GET /debts/summary` | ✅ |
 | Add / edit debt | `DebtFormPage.tsx` — `htmlFor`/`id` on name+type, design token focus rings + inputs + submit button | `POST/PUT /debts` | ✅ |
-| Tools — Debt Payoff Calculator | `ToolsPage.tsx` — 5 extra-payment scenarios, comparison table, bar chart, client-side | — (no API) | ✅ |
-| Tools — Compound Interest | `ToolsPage.tsx` — initial amount, rate, years, monthly contribution, 5 compounding freqs, year-by-year chart | — (no API) | ✅ |
+| Tools — Debt Payoff Calculator | `ToolsPage.tsx` — 5 extra-payment scenarios, comparison table, bar chart, client-side; **public route** (no auth needed), shows sign-up CTA when logged out | — (no API) | ✅ |
+| Tools — Compound Interest | `ToolsPage.tsx` — initial amount, rate, years, monthly contribution, 5 compounding freqs, year-by-year chart; **public route** | — (no API) | ✅ |
 | Mobile goals | `GoalsScreen.tsx` | Same as web | ✅ |
 
 ---
