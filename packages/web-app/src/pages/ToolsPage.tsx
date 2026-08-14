@@ -2,11 +2,13 @@
  * Tools Page — Financial Calculators
  *
  * Pure client-side calculators — no API calls needed.
+ * PUBLIC page — accessible without login (SEO/marketing asset).
  * 1. Debt Payoff Calculator — min payment vs extra payment scenarios
  * 2. Compound Interest Calculator — growth over time with compounding
  */
 
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/ui';
 import { formatCurrency } from '@budget-buddy/shared/src/utils/currency';
 
@@ -460,12 +462,30 @@ function CompoundCalculator() {
 
 export function ToolsPage() {
   const [tab, setTab] = useState<Tab>('debt');
+  const navigate = useNavigate();
+  const isLoggedIn = !!localStorage.getItem('budgetbuddy_id_token');
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
+      {/* Public banner when not logged in */}
+      {!isLoggedIn && (
+        <div className="mb-6 p-4 bg-[var(--color-primary)]/8 border border-[var(--color-primary)]/20 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <p className="font-semibold text-[var(--color-foreground)]">Free calculators — no account needed</p>
+            <p className="text-sm text-[var(--color-muted-foreground)]">Sign up to track your real debts and savings in BudgetBuddy.</p>
+          </div>
+          <button
+            onClick={() => navigate('/auth')}
+            className="shrink-0 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] text-sm font-semibold transition-colors"
+          >
+            Get started free →
+          </button>
+        </div>
+      )}
+
       <PageHeader
         title="🔧 Tools"
-        subtitle="Financial calculators — no account needed, all computed locally"
+        subtitle="Financial calculators — all computed locally, no data sent anywhere"
       />
 
       {/* Tab switcher */}
