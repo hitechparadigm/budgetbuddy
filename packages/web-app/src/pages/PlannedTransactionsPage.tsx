@@ -9,7 +9,6 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { PageHeader, EmptyState, Skeleton } from '../components/ui';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { formatCurrency } from '@budget-buddy/shared/src/utils/currency';
@@ -21,7 +20,6 @@ import {
   type PlannedTransaction,
 } from '../services/plannedTransactionsApi';
 import {
-  CalendarClock,
   Plus,
   Trash2,
   CheckCircle2,
@@ -58,7 +56,6 @@ function daysUntil(scheduledDate: string): number {
 }
 
 export const PlannedTransactionsPage: React.FC = () => {
-  const navigate = useNavigate();
   const [plans, setPlans] = useState<PlannedTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

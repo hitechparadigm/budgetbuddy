@@ -17,6 +17,21 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
+### Recent Achievements (2026-09-23)
+
+- **Autonomous mode repaired** - hooks reduced 15 -> 4. Found two hook schemas live at once causing six
+  hooks to fire twice. Added `continue-until-done.json` on the `Stop` trigger as the actual continuation
+  mechanism; prose in steering alone never re-prompts the agent.
+- **Dead steering recovered** - all five `.kiro/steering/memory/*.md` files used `inclusion: auto` without
+  the required `name`/`description` keys, so none ever loaded. Repaired to `inclusion: always`; deleted two
+  that were near-total duplicates of `00-global.md` and `structure.md`.
+- **Specs consolidated** - 9 active -> 7. Archived the completed `test-coverage-improvement`, removed an
+  empty spec directory, and added unit (>80% coverage), integration, and E2E task sections with requirement
+  traceability to `planned-transactions`, `goals-borrow-lend`, and `mobile-app`.
+- **Test pyramid ownership** - `e2e-testing-infrastructure` now owns unit coverage, integration, and E2E;
+  added the integration layer it was missing (harness, cross-Lambda, access-control, API contract, CI gate).
+- **CI/CD green** - confirmed the Session 162 `security-check.sh` fix; Run 582 validation passed, Run 584 SUCCESS.
+
 ### Recent Achievements (2026-08-08)
 
 - 🐛 **BUDGET ROLLOVER BUG FIXED** - July→August categories now copy correctly (flat array structure fix in 5 functions)

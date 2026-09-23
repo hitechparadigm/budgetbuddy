@@ -40,10 +40,13 @@ Development system configuration for BudgetBuddy.
 
 | Spec | Status |
 |------|--------|
-| `ai-bill-reminders-budget-planning` | ⏳ Planned |
-| `e2e-testing-infrastructure` | ⏳ Planned |
-| `push-notifications-reminders` | ⏳ Planned |
-| `test-coverage-improvement` | ⏳ Planned |
+| `web-app-polish` | Complete |
+| `planned-transactions` | Complete (tests pending) |
+| `goals-borrow-lend` | Complete (tests pending) |
+| `ai-bill-reminders-budget-planning` | Mostly complete |
+| `push-notifications-reminders` | Mostly complete |
+| `e2e-testing-infrastructure` | Not started - owns full test pyramid |
+| `mobile-app` | Not started |
 
 ## Archived Specs (`.kiro/specs/archive/`)
 

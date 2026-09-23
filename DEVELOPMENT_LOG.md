@@ -1,4 +1,44 @@
 # Development Log
+
+## 2026-09-23 - Spec and Docs Consolidation, Autonomous Mode Repair (Session 163)
+
+### Problem
+Autonomous mode was not actually autonomous. `00-global.md` stated the intent in prose, but nothing
+re-prompted the agent once a turn ended. The continuation hook that was supposed to do this
+(`master-automation.kiro.hook.DISABLED`) was both disabled and written in a dead schema.
+
+### Root causes found
+1. Two hook schemas were live simultaneously - six hooks fired twice.
+2. All five `memory/*.md` steering files used `inclusion: auto` without `name`/`description`, so they
+   never registered. Confirmed by `disclose_context` reporting "Available Items: None".
+3. `matcher` had been added to a `UserPromptSubmit` hook believing it would limit firing. It does not -
+   matchers only apply to `PreToolUse`/`PostToolUse` and `PostFile*`.
+
+### Changes
+- Hooks 15 -> 4. Added `continue-until-done.json` on the `Stop` trigger as the real autonomy driver.
+- Repaired the three memory steering files to `inclusion: always`; deleted two fully-duplicated ones.
+- Specs 9 -> 7 active. Archived the completed `test-coverage-improvement`; removed empty `engagement-features`.
+- Added unit (>80%), integration, and E2E task sections to the three specs that lacked them.
+- Added an Integration Test Layer to `e2e-testing-infrastructure`, which now owns the whole pyramid.
+
+### Verified
+- Run 582 Pre-deployment Validation passed in 1m39s, confirming the `security-check.sh` fix from Session 162.
+- Run 584 SUCCESS.
+- The new `Stop` hook fired and was observed in-session, confirming the trigger name is correct.
+
+### Mistakes made and corrected
+- Pushed while a deploy was in progress, violating the no-parallel-deploy rule. No damage: the workflow
+  `concurrency` group serialized it (Run 584 queued behind 583). The rule exists so the safety net is not
+  the only thing preventing a conflict.
+- Corrupted UTF-8 in three steering files via PowerShell encoding defaults; reverted with `git checkout --`
+  and redid the edit with explicit `[System.IO.File]` + `UTF8Encoding($false)`.
+- Assumed `[regex]::Replace(s, pat, repl, 1)` replaced one occurrence. The 4th argument is `RegexOptions`,
+  so `1` meant `IgnoreCase`. Two edits silently no-matched until CRLF-aware patterns were used.
+
+### Still open
+- `/docs` cleanup: ~28 obsolete files (~160KB) identified and awaiting confirmation before deletion.
+- `AiCoachChip` is still not imported into `BudgetPage.tsx`.
+- `docs/api-endpoints.md` is 4 months stale and missing `/transaction-planning`.
 
 ## 2026-08-14 - Sidebar IA Redesign + Tools Public Route (Session 161)
 

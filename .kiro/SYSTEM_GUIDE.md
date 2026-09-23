@@ -68,10 +68,13 @@ node scripts/check-cicd-status.js
 Feature specs live in `.kiro/specs/<feature>/` with `requirements.md`, `design.md`, `tasks.md`.
 
 **Active specs** (in progress or upcoming):
-- `ai-bill-reminders-budget-planning/` — AI-powered bill reminders and budget planning
-- `e2e-testing-infrastructure/` — End-to-end test infrastructure
-- `push-notifications-reminders/` — Push notification system
-- `test-coverage-improvement/` — Increase test coverage across the codebase
+- `web-app-polish/` - Web app design, IA, AI, polish (COMPLETE)
+- `planned-transactions/` - Scheduled future income and expenses (COMPLETE, tests pending)
+- `goals-borrow-lend/` - Borrowed and Lent goal sub-types (COMPLETE, tests pending)
+- `ai-bill-reminders-budget-planning/` - AI bill pattern detection and budget suggestions
+- `push-notifications-reminders/` - Push notification and reminder system
+- `e2e-testing-infrastructure/` - Owns the full test pyramid: unit coverage, integration, E2E
+- `mobile-app/` - React Native and Expo iOS/Android app
 
 **Archived specs** (completed or superseded — in `.kiro/specs/archive/`):
 - `plan-model-redesign/` — Budget-centric data model (COMPLETED — see ADR-001)

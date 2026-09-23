@@ -462,6 +462,49 @@ This implementation plan breaks down the E2E testing infrastructure into discret
   - Update docs/development-status.md with E2E testing status
   - Update README.md with E2E testing information
 
+## Integration Test Layer
+
+This spec owns the full test pyramid. The unit-coverage baseline was delivered by the
+now-archived `test-coverage-improvement` spec (see `.kiro/specs/archive/`); the middle
+integration layer below closes the gap between those unit tests and the E2E journeys above.
+
+Coverage target: >80% statements and branches repo-wide, enforced by Jest `coverageThreshold`.
+
+- [ ] 24. Integration harness
+  - [ ] 24.1 Add `tests/integration/` with a shared setup that reads AWS profile `hitechparadigm`
+  - [ ] 24.2 Helper to mint a real dev Cognito token once per suite and reuse it
+  - [ ] 24.3 Per-suite teardown that deletes every `BUDGET#` record the run created
+  - [ ] 24.4 Hard guard: abort immediately if the resolved environment is not dev
+  - _Constraints: max 10 API calls per test, under ## Notes.10 per run, under ## Notes/day_
+
+- [ ] 25. Cross-Lambda integration tests
+  - [ ] 25.1 Onboarding creates METADATA + MEMBER + PERIOD + default Cash ACCOUNT atomically
+  - [ ] 25.2 Transaction create updates the linked category `spentAmount` in the same period
+  - [ ] 25.3 Goal contribution updates the linked savings category (regression: Session 148)
+  - [ ] 25.4 Month rollover copies categories and zeroes `spentAmount` (regression: Session 157)
+  - [ ] 25.5 Bill marked paid creates the corresponding transaction
+  - _Requirements: traceability to budget, transactions, goals, bills specs_
+
+- [ ] 26. Access-control integration tests
+  - [ ] 26.1 `BudgetAccessResolver` denies a user with no active budget (403)
+  - [ ] 26.2 viewer is read-only across every budget-scoped endpoint
+  - [ ] 26.3 Expired viewer `expiresAt` is rejected on the next request
+  - [ ] 26.4 A member of budget A cannot read budget B
+  - [ ] 26.5 Invitation token is single-use and email-bound
+  - _Requirements: RBAC and invitation security_
+
+- [ ] 27. API contract tests (all 4 gateways)
+  - [ ] 27.1 Every documented route in `docs/api-endpoints.md` returns a non-404 status
+  - [ ] 27.2 Every health endpoint returns 200
+  - [ ] 27.3 Unauthenticated calls to protected routes return 401, not 500
+  - [ ] 27.4 CORS headers present on 4xx and 5xx gateway responses
+  - [ ] 27.5 Fail the suite when a route exists in code but is missing from the docs
+
+- [ ] 28. CI wiring
+  - [ ] 28.1 Run unit + integration on every PR via `pr-check.yml`
+  - [ ] 28.2 Run E2E against dev after a successful deploy
+  - [ ] 28.3 Publish the coverage report as a CI artifact
+  - [ ] 28.4 Block merge when coverage drops below 80%
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP
