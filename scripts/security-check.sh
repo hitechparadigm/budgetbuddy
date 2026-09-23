@@ -43,6 +43,8 @@ if grep -r "eyJ[A-Za-z0-9+/=]\{100,\}" . \
     --exclude-dir=coverage \
     --exclude-dir=.github \
     --exclude-dir=.playwright-mcp \
+    --exclude-dir=cdk-out-temp \
+    --exclude-dir=cdk.out \
     --exclude="*.md" \
     --exclude="mockAuth.ts" \
     --exclude="*.test.js" \
@@ -62,6 +64,8 @@ if grep -r "AKIA[0-9A-Z_]\{16,\}" . \
     --exclude-dir=.git \
     --exclude-dir=coverage \
     --exclude-dir=.playwright-mcp \
+    --exclude-dir=cdk-out-temp \
+    --exclude-dir=cdk.out \
     --exclude="*.test.js" \
     --exclude="*.test.ts" \
     --exclude="security-check*.sh" \
@@ -79,6 +83,8 @@ if grep -r "BEGIN.*PRIVATE KEY" . \
     --exclude-dir=coverage \
     --exclude-dir=.github \
     --exclude-dir=.playwright-mcp \
+    --exclude-dir=cdk-out-temp \
+    --exclude-dir=cdk.out \
     --exclude="*.md" \
     --exclude="security-check*.sh" \
     --exclude="security-check*.ps1" \
@@ -99,6 +105,8 @@ if grep -r "password.*['\"][^'\"]*[A-Z][^'\"]*[0-9][^'\"]*[!@#$%^&*][^'\"]*['\"]
     --exclude-dir=.git \
     --exclude-dir=coverage \
     --exclude-dir=.playwright-mcp \
+    --exclude-dir=cdk-out-temp \
+    --exclude-dir=cdk.out \
     --exclude="*.md" \
     --exclude="validation.ts" \
     --exclude="*.test.js" \
@@ -222,6 +230,7 @@ echo ""
 echo "6. Checking production configuration..."
 
 # Check for HTTP URLs in infrastructure (should use HTTPS)
+# Exclude CDK synth output dirs which contain generated JSON with arbitrary content
 HTTP_IN_INFRA=$(grep -r "http://" infrastructure/ --include="*.ts" | \
     grep -v "localhost\|127.0.0.1" 2>/dev/null || true)
 
@@ -277,14 +286,8 @@ fi
 
 echo ""
 echo "8. Scanning config and infrastructure files for hardcoded secrets..."
-# NOTE: Only scan configuration, infrastructure and script files — NOT application source code
-# (application code legitimately uses tokens/auth in variable names like localStorage.getItem('...token...')
-
-config_and_infra_dirs=(
-    "infrastructure/"
-    "scripts/"
-    "backend/layers/"
-)
+# NOTE: Only scan .ts/.js source files in infra/scripts/layers — NOT generated CDK output,
+# not the security script itself (which contains the patterns as strings), and not app code.
 
 secret_patterns=(
     "password.*=.*['\"][^'\"]\{8,\}['\"]"
@@ -292,21 +295,50 @@ secret_patterns=(
     "secret.*=.*['\"][^'\"]\{16,\}['\"]"
 )
 
+# Scan infrastructure TypeScript sources only (not CDK synth output)
 for pattern in "${secret_patterns[@]}"; do
-    for dir in "${config_and_infra_dirs[@]}"; do
-        if [ -d "$dir" ]; then
-            FOUND=$(grep -r "$pattern" "$dir" \
-                --exclude-dir=node_modules \
-                --exclude="*.md" \
-                --exclude="*.test.js" \
-                --exclude="*.test.ts" 2>/dev/null || true)
-            if [ -n "$FOUND" ]; then
-                echo "$FOUND"
-                report_issue "Potential hardcoded secret in $dir matching pattern: $pattern"
-            fi
-        fi
-    done
+    FOUND=$(grep -r "$pattern" infrastructure/ \
+        --include="*.ts" \
+        --exclude-dir=node_modules \
+        --exclude-dir=cdk-out-temp \
+        --exclude-dir=cdk.out \
+        2>/dev/null || true)
+    if [ -n "$FOUND" ]; then
+        echo "$FOUND"
+        report_issue "Potential hardcoded secret in infrastructure/ matching pattern: $pattern"
+    fi
 done
+
+# Scan scripts JS files only (explicitly exclude the security check scripts)
+for pattern in "${secret_patterns[@]}"; do
+    FOUND=$(grep -r "$pattern" scripts/ \
+        --include="*.js" \
+        --exclude-dir=node_modules \
+        --exclude="security-check*.sh" \
+        --exclude="security-check*.ps1" \
+        2>/dev/null || true)
+    if [ -n "$FOUND" ]; then
+        echo "$FOUND"
+        report_issue "Potential hardcoded secret in scripts/ matching pattern: $pattern"
+    fi
+done
+
+# Scan backend layers
+for pattern in "${secret_patterns[@]}"; do
+    if [ -d "backend/layers/" ]; then
+        FOUND=$(grep -r "$pattern" backend/layers/ \
+            --exclude-dir=node_modules \
+            --exclude="*.md" \
+            --exclude="*.test.js" \
+            --exclude="*.test.ts" \
+            2>/dev/null || true)
+        if [ -n "$FOUND" ]; then
+            echo "$FOUND"
+            report_issue "Potential hardcoded secret in backend/layers/ matching pattern: $pattern"
+        fi
+    fi
+done
+
 report_success "No hardcoded secrets in infrastructure/config/scripts"
 
 # Check for database connection strings
@@ -315,6 +347,8 @@ DB_STRINGS=$(grep -r "mongodb://\|mysql://\|postgres://\|redis://" . \
     --exclude-dir=.git \
     --exclude-dir=coverage \
     --exclude-dir=.playwright-mcp \
+    --exclude-dir=cdk-out-temp \
+    --exclude-dir=cdk.out \
     --exclude="*.md" \
     --exclude="*.test.js" \
     --exclude="*.test.ts" \
