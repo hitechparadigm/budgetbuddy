@@ -236,3 +236,121 @@ The active stack for all budget collaboration features. Replaced `api-family-sta
 - Kept deployed during client migration period
 - Will be destroyed once all clients use `/budgets/*`
 - Do not add new features or fix bugs in this stack
+
+## Deployment Commands
+
+### Full Environment Deployment
+
+```bash
+cd infrastructure
+
+# Deploy independent stacks first
+npx cdk deploy budgetbuddy-dev-auth --context environment=dev
+npx cdk deploy budgetbuddy-dev-database --context environment=dev
+npx cdk deploy budgetbuddy-dev-hosting --context environment=dev
+
+# Deploy dependent stacks
+npx cdk deploy budgetbuddy-dev-api --context environment=dev
+npx cdk deploy budgetbuddy-dev-monitoring --context environment=dev
+
+# Or deploy all at once (CDK resolves dependency order automatically)
+npx cdk deploy --all --context environment=dev
+```
+
+### Individual Stack Updates
+
+```bash
+# Update only Lambda functions (API stack)
+npx cdk deploy budgetbuddy-dev-api --context environment=dev
+
+# Update only monitoring configuration
+npx cdk deploy budgetbuddy-dev-monitoring --context environment=dev
+
+# Update database schema (careful — may cause downtime)
+npx cdk deploy budgetbuddy-dev-database --context environment=dev
+```
+
+### Rollback Procedures
+
+```bash
+# View stack event history
+aws cloudformation describe-stack-events --stack-name budgetbuddy-dev-api
+
+# Cancel an in-progress failed deployment
+aws cloudformation cancel-update-stack --stack-name budgetbuddy-dev-api
+
+# Manual rollback by redeploying a previous commit
+git checkout <previous-commit>
+npx cdk deploy budgetbuddy-dev-api --context environment=dev
+```
+
+## Resource Naming and Tagging Standards
+
+All AWS resources in BudgetBuddy follow mandatory naming and tagging conventions, enforced via
+CDK code review and automated tagging in infrastructure code.
+
+### Naming Pattern
+
+**Format**: `budgetbuddy-{service}-{environment}`. All resources MUST use the `budgetbuddy-`
+prefix for AWS console identification, cost tracking, and automation.
+
+**Examples**: DynamoDB table `budgetbuddy-main`, Lambda `budgetbuddy-auth`, S3 bucket
+`budgetbuddy-web-app`, API Gateway `budgetbuddy-api`, CloudFront `budgetbuddy-web`, SNS topic
+`budgetbuddy-alerts`.
+
+**CloudFormation exports**: `budgetbuddy-{resource-type}-{descriptor}` — e.g. `budgetbuddy-table-name`,
+`budgetbuddy-api-url`, `budgetbuddy-user-pool-id`.
+
+### Mandatory Tags
+
+Every resource must include the core application tags:
+
+```json
+{
+  "Project": "BudgetBuddy",
+  "Application": "budgetbuddy",
+  "Environment": "dev|staging|prod",
+  "ManagedBy": "CDK",
+  "Owner": "BudgetBuddy-Team",
+  "CostCenter": "BudgetBuddy-{Component}",
+  "Purpose": "Family-Budgeting-Application"
+}
+```
+
+Component-specific tags (`Component`, `Service`) are added per resource type — e.g. Lambda
+functions get `Handler`/`Runtime`; DynamoDB tables get `DataType`/`BackupRequired`; S3 buckets get
+`ContentType`; CloudFront gets `PriceClass`/`CachingEnabled`; Cognito gets `UserType`/`SecurityLevel`.
+
+### Cost Center Allocation
+
+- **BudgetBuddy-Core** — database, core infrastructure
+- **BudgetBuddy-Compute** — Lambda functions, processing
+- **BudgetBuddy-Auth** — authentication services
+- **BudgetBuddy-Frontend** — web application hosting
+- **BudgetBuddy-CDN** — content delivery network
+- **BudgetBuddy-Operations** — monitoring, alerts, logging
+
+### CDK Tagging Implementation
+
+```typescript
+// Stack-level tags (apply to entire CDK app)
+cdk.Tags.of(app).add('Project', 'BudgetBuddy');
+cdk.Tags.of(app).add('Application', 'budgetbuddy');
+cdk.Tags.of(app).add('Environment', envName);
+cdk.Tags.of(app).add('ManagedBy', 'CDK');
+cdk.Tags.of(app).add('Owner', 'BudgetBuddy-Team');
+cdk.Tags.of(app).add('CostCenter', 'BudgetBuddy-Infrastructure');
+cdk.Tags.of(app).add('Purpose', 'Family-Budgeting-Application');
+
+// Resource-level tags (add to individual resources as needed)
+cdk.Tags.of(resource).add('Component', 'Database');
+cdk.Tags.of(resource).add('Service', 'DynamoDB');
+cdk.Tags.of(resource).add('DataType', 'Application-Data');
+```
+
+### Resource Descriptions
+
+Resources should include descriptions covering purpose, context, key configuration, and
+dependencies — e.g. `"BudgetBuddy main application table with single-table design for
+cost-optimized data storage"` for the DynamoDB table, or `"BudgetBuddy REST API for web and
+mobile clients with serverless Lambda backend"` for the API Gateway.

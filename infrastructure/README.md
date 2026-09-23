@@ -13,19 +13,17 @@
 - **hosting-stack.ts**: S3 buckets and CloudFront for web hosting
 - **monitoring-stack.ts**: CloudWatch dashboards and alarms
 
-### Architectural Refactoring (In Progress)
+### Architectural Refactoring (Complete)
 
-The authentication system is being refactored from a monolithic 1484-line Lambda function into separate, focused microservices:
+The authentication system's onboarding flow was split out of the monolithic auth Lambda into a
+standalone stack:
 
-**Phase 1**: ✅ Complete - Shared utilities layer
-**Phase 2**: 🔄 In Progress - Separate Lambda functions (1 of 6 complete)
+- **auth-onboarding-stack.ts**: Standalone onboarding Lambda (~300 lines), independently deployable
 
-- ✅ **auth-onboarding-stack.ts**: Standalone onboarding Lambda (~300 lines)
-- ⏳ auth-register, auth-login, auth-google, auth-profile, auth-geolocation (planned)
+Further splitting of the remaining auth endpoints (register, login, google, profile,
+geolocation) into separate stacks is not currently planned.
 
-**Benefits**: 80% code reduction, independent deployment, faster cold starts, impossible import bugs
-
-See `lib/README-auth-onboarding.md` for detailed documentation on the new architecture.
+See `lib/README-auth-onboarding.md` for detailed documentation on this architecture.
 
 ### Application Entry Point (`bin/app.ts`)
 

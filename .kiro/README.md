@@ -16,11 +16,12 @@ Development system configuration for BudgetBuddy.
 │   └── documentation-standards.md # Doc update rules (conditional)
 │
 ├── specs/             # Feature specs (requirements + design + tasks)
-│   ├── <active-feature>/
-│   │   ├── requirements.md
-│   │   ├── design.md
-│   │   └── tasks.md
-│   └── archive/       # Completed or superseded specs
+│   ├── README.md      # Spec index - every spec, its status, and category
+│   └── <feature>/
+│       ├── .config.kiro   # status: active|complete|superseded, category: feature|process|fix
+│       ├── requirements.md
+│       ├── design.md
+│       └── tasks.md
 │
 ├── hooks/             # Automation hooks
 ├── cicd-status/       # Latest CI/CD status (latest.json)
@@ -30,38 +31,35 @@ Development system configuration for BudgetBuddy.
 
 ## Key Rules
 
-- **Before every push**: `node scripts/check-cicd-status.js` — never push during deployment
+- **Before every push**: `node scripts/check-cicd-status.js` - never push during deployment
 - **Commit via**: `node scripts/safe-commit-push.js "type: description"`
 - **Architecture**: JWT carries only `userId`. Budget access resolved via `BudgetAccessResolver` on every request.
 - **Data**: All budget data under `BUDGET#<budgetId>` PK. `USER#<userId>/PROFILE` stores `defaultBudgetId`.
 - **Deprecated**: `/family/*` API returns 410. `FamilyIdResolver` removed. Do not use.
 
-## Active Specs
+## Specs
 
-| Spec | Status |
-|------|--------|
-| `web-app-polish` | Complete |
-| `planned-transactions` | Complete (tests pending) |
-| `goals-borrow-lend` | Complete (tests pending) |
-| `ai-bill-reminders-budget-planning` | Mostly complete |
-| `push-notifications-reminders` | Mostly complete |
-| `e2e-testing-infrastructure` | Not started - owns full test pyramid |
-| `mobile-app` | Not started |
+All specs are direct children of `.kiro/specs/` - there is no `archive/` subdirectory. A spec's
+lifecycle state lives in its `.config.kiro` `status` field (`active | complete | superseded`),
+never in its location. See `.kiro/specs/README.md` for the full index of all 19 specs with
+status, category, and description. When a spec finishes, update its `status` field in place and
+update `.kiro/specs/README.md` in the same commit - do not move the spec directory.
 
-## Archived Specs (`.kiro/specs/archive/`)
+**Active specs** (status: active):
+- `ai-bill-reminders-budget-planning`, `e2e-testing-infrastructure`, `goals-borrow-lend`,
+  `mobile-app`, `planned-transactions`, `push-notifications-reminders`,
+  `repo-docs-specs-consolidation`
 
-Completed or superseded. Read-only reference.
+**Complete or superseded specs** (status: complete or superseded):
+- `competitive-features`, `critical-bug-fixes`, `documentation-cleanup`,
+  `documentation-validation-fix`, `enhanced-accounts-transactions`, `hooks-optimization`,
+  `mobile-ui-polish`, `multi-currency`, `onboarding-403-fix`, `plan-model-redesign`,
+  `test-coverage-improvement`, `ui-polish-enhancements`, `web-app-polish`
 
-| Spec | Notes |
-|------|-------|
-| `plan-model-redesign` | ✅ Budget-centric architecture — see ARCHITECTURE_DECISIONS.md ADR-001 |
-| `onboarding-403-fix` | ✅ Fixed onboarding 403 bug |
-| `competitive-features` | ✅ Completed features |
-| `enhanced-accounts-transactions` | ✅ Completed |
-| `multi-currency` | ✅ Completed |
-| `mobile-ui-polish` | ✅ Completed |
-| `ui-polish-enhancements` | ✅ Completed |
-| `critical-bug-fixes` | ✅ Completed |
-| `documentation-cleanup` | ✅ Completed |
-| `hooks-optimization` | ✅ Completed |
-| `documentation-validation-fix` | ✅ Completed |
+## What's Deprecated / Removed
+
+- `/family/*` API - returns 410. `FamilyIdResolver` removed. Use `BudgetAccessResolver`.
+- `FAMILY#` partition keys - replaced by `BUDGET#`.
+- `custom:familyId` JWT claim - ignored. Only `custom:userId` is used.
+- `FamilySettings.tsx` - replaced by `BudgetMembersPage` at `/budget/members`.
+- `api-family-stack` - still deployed but deprecated. Will be destroyed after migration period.

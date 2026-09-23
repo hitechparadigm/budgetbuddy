@@ -1,5 +1,62 @@
 # Development Log
-
+
+## 2026-09-23 - Spec and Docs Flattening, Duplicate Elimination (Session 164)
+
+### Problem
+User rejected the previous session's `.kiro/specs/archive/` split as a second source-of-truth
+location for specs, and asked for a full repository document audit: every doc in the repo reviewed,
+duplicates merged, obsolete files deleted, and an index that explains what each retained document
+means. Also flagged two accidental duplicate CI/CD runs from the prior session's two pushes (working
+as designed - `concurrency: cancel-in-progress: false` queues them, doesn't conflict) and asked for
+steering fixes so the sprawl doesn't recur.
+
+### Approach
+Ran this as its own spec (`repo-docs-specs-consolidation`) rather than ad hoc file moves, given the
+blast radius (12 spec directories, ~28 doc deletions, 2 multi-file merges). Read every affected file's
+actual content before deciding its disposition rather than trusting prior labels - this caught real
+discrepancies (see below).
+
+### Findings from reading actual content (not assumptions)
+- `hooks-optimization` and `documentation-validation-fix` were labelled complete in `.kiro/README.md`
+  but their own `tasks.md` showed unchecked/inconsistent checkboxes. Corrected to `superseded`.
+- `plan-model-redesign` is a data-model migration (ADR-001), not a product feature - reclassified
+  `process`.
+- `budgetbuddy-serverless-architecture.drawio` still depicted the pre-ADR-001 `Family API`/`Family
+  Lambda` architecture when read directly as XML - deleted rather than kept as a stale diagram.
+- `backend/functions/budget-alerts/README.md` was entirely `familyId`/`FAMILY#`-based, but the
+  Lambda's actual `index.js` uses `budgetId`/`BUDGET#` throughout (explicit migration comment at
+  the top of the file). Rewrote every function signature and example in the README to match the code.
+- `packages/api-client/README.md` described `auth.ts`, `budget.ts`, and `family.ts` service
+  modules; none exist in `src/` (only `client.ts`, `transactions.ts`, commented-out exports for
+  the rest). Rewrote the package description to match what's actually there instead of compounding the
+  inaccuracy with an unverified claim about a nonexistent `budgets.ts`.
+- `localstack-guide.md`'s LocalStack tooling is still live and used, but its example commands tested
+  the deprecated `family` Lambda - corrected to `budgets`.
+
+### Changes
+- Flattened all 12 archived specs into `.kiro/specs/` directly; deleted the `archive/` directory.
+- Added `status`/`category` fields to all 20 specs' `.config.kiro` files; added
+  `.kiro/specs/README.md` as the single index.
+- Merged the architecture trio (`stack-management-guide.md`, `aws-resource-standards.md`) into
+  `aws-stack-architecture.md`; merged the user-guide group (`user-guide-notifications.md`,
+  `multi-currency-guide.md`) into `user-guide-budget-collaboration.md`; deleted
+  `push-notifications-guide.md` as a pure duplicate with nothing new to carry over.
+- Deleted 9 obsolete top-level docs and all 21 files under `docs/archive/` (session summaries,
+  resolved blockers, superseded analyses - none had ongoing reference value).
+- Rewrote `docs/README.md` as a real index; fixed stale `archive/` references in
+  `.kiro/README.md` and `.kiro/SYSTEM_GUIDE.md`.
+- Deleted two stray root PNGs and an untracked junk directory with a corrupted name.
+- Added Spec Lifecycle, Documentation Placement, and No Stray Root Artifacts rules to
+  `structure.md`; added Doc Index Maintenance to `documentation-standards.md`.
+
+### Verified
+- `.kiro/specs/` contains exactly 20 directories, no `archive`; every spec has `status`+`category`.
+- `docs/` contains exactly 12 files (11 + README), every one indexed in `docs/README.md`.
+- Grepped `docs/README.md`, `.kiro/README.md`, `.kiro/SYSTEM_GUIDE.md` for every deleted filename:
+  zero broken references.
+- Repository-wide grep for the two deleted PNGs and the junk directory name: zero remaining hits.
+
+
 ## 2026-09-23 - Spec and Docs Consolidation, Autonomous Mode Repair (Session 163)
 
 ### Problem

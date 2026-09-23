@@ -31,8 +31,8 @@ This creates:
 
 - `budgetbuddy-main` table with all GSIs
 - Test user profile
-- Test family metadata
-- Test family member record
+- Test budget metadata
+- Test budget member record
 
 ### 3. Test Lambda Functions Locally
 
@@ -46,14 +46,14 @@ node scripts/test-lambda-local.js accounts create
 node scripts/test-lambda-local.js accounts list
 ```
 
-**Test Family Lambda:**
+**Test Budgets Lambda:**
 
 ```bash
 # Send invitation
-node scripts/test-lambda-local.js family invite
+node scripts/test-lambda-local.js budgets invite
 
-# Get family members
-node scripts/test-lambda-local.js family members
+# Get budget members
+node scripts/test-lambda-local.js budgets members
 ```
 
 ## Benefits
@@ -105,13 +105,13 @@ node scripts/test-lambda-local.js accounts create
 # }
 ```
 
-## Debugging Family Invite 500 Error
+## Debugging Budget Invite 500 Error
 
-To debug the family invite issue locally:
+To debug the budget invite issue locally:
 
 ```bash
 # 1. Test with full logging
-node scripts/test-lambda-local.js family invite
+node scripts/test-lambda-local.js budgets invite
 
 # 2. Check the response
 # If it returns 500, you'll see the full error stack trace
@@ -138,8 +138,8 @@ Default test user:
 
 - **User ID**: `user_test_123`
 - **Email**: `test@example.com`
-- **Family ID**: `family_user_test_123`
-- **Role**: `primary`
+- **Budget ID**: `budget_user_test_123`
+- **Role**: `owner`
 
 ## Troubleshooting
 

@@ -1,5 +1,54 @@
 # Changelog
-
+
+## [1.10.1] - 2026-09-23
+
+### chore: flatten specs and docs, eliminate duplicate documentation, fix stale references
+
+#### Specs - archive/ subdirectory eliminated
+- Moved all 12 specs out of `.kiro/specs/archive/` to be direct children of `.kiro/specs/`, matching
+  the other 7 active specs. Deleted the now-empty `archive/` directory.
+- A spec's lifecycle is now tracked via a `status` (`active|complete|superseded`) and `category`
+  (`feature|process|fix`) field in `.config.kiro`, never by directory location.
+- Corrected two statuses during the move based on actual task-completion evidence rather than prior
+  labels: `hooks-optimization` and `documentation-validation-fix` are `superseded`, not `complete`
+  - both had unchecked/inconsistent task checkboxes despite being previously marked done.
+- Reclassified `plan-model-redesign` as category `process` (data-model migration, ADR-001), not
+  `feature`.
+- Added `.kiro/specs/README.md` as the single index of all 20 specs (status, category, description).
+
+#### Docs - merged duplicates, deleted obsolete files, rewrote the index
+- Merged `stack-management-guide.md` and `aws-resource-standards.md` into `aws-stack-architecture.md`
+  (new `Deployment Commands` and `Resource Naming and Tagging Standards` sections); deleted the sources.
+- Merged `user-guide-notifications.md` and `multi-currency-guide.md` into
+  `user-guide-budget-collaboration.md` (renamed `Budget Collaboration & Notifications User Guide`);
+  deleted `push-notifications-guide.md` outright as a near-total duplicate with nothing new to migrate.
+- Deleted `budgetbuddy-serverless-architecture.drawio` - confirmed stale by reading its XML directly,
+  it still depicted the pre-ADR-001 single `Family API`/`Family Lambda` architecture.
+- Deleted `cicd-automation-guide.md` (documents a hook file that no longer exists), `web-app-polish-plan.md`
+  (spec is complete), `MVP-SPRINT-PLAN.md` (milestone already shipped), and all 21 files under
+  `docs/archive/` (one-off session/incident summaries with no ongoing reference value).
+- Corrected `localstack-guide.md`: it told readers to test the deprecated `family` Lambda
+  (`test-lambda-local.js family invite`); now references `budgets`.
+- Rewrote `docs/README.md` as a proper index - one entry per retained document with a one-line
+  purpose, grouped by subject area, plus a section for retained documents outside `/docs`.
+- Fixed stale references in `.kiro/README.md` and `.kiro/SYSTEM_GUIDE.md` (removed all mentions of
+  `.kiro/specs/archive/` as a location).
+- Corrected package READMEs that described work as "in progress" with no corroborating evidence
+  elsewhere: `backend/README.md` and `infrastructure/README.md`'s auth-Lambda-splitting refactor
+  section (now marked complete), `backend/functions/budget-alerts/README.md` (fully `familyId`/
+  `FAMILY#`-based despite the Lambda's actual code using `budgetId`/`BUDGET#` throughout),
+  and `packages/api-client/README.md` (listed `auth.ts`/`budget.ts`/`family.ts` service modules
+  that don't exist in `src/` - only `client.ts` and `transactions.ts` are real).
+
+#### Repository hygiene
+- Deleted tracked debug screenshots `overview-error.png` and `overview-fixed.png` (zero references
+  anywhere in the repository) and an untracked junk directory with a corrupted name at the repo root.
+- Added three new rules to `.kiro/steering/structure.md`: Spec Lifecycle (specs never move to an
+  archive directory again), Documentation Placement (check `docs/README.md` before creating a new doc),
+  and No Stray Root Artifacts (no debug files committed to repo root).
+- Added a Doc Index Maintenance rule to `.kiro/steering/documentation-standards.md`.
+
+
 ## [1.10.0] - 2026-09-23
 
 ### chore: spec and documentation consolidation, autonomous-mode hook/steering fixes
