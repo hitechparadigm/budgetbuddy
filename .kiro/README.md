@@ -47,14 +47,14 @@ update `.kiro/specs/README.md` in the same commit - do not move the spec directo
 
 **Active specs** (status: active):
 - `ai-bill-reminders-budget-planning`, `e2e-testing-infrastructure`, `goals-borrow-lend`,
-  `mobile-app`, `planned-transactions`, `push-notifications-reminders`,
-  `repo-docs-specs-consolidation`
+  `mobile-app`, `planned-transactions`, `push-notifications-reminders`
 
 **Complete or superseded specs** (status: complete or superseded):
 - `competitive-features`, `critical-bug-fixes`, `documentation-cleanup`,
   `documentation-validation-fix`, `enhanced-accounts-transactions`, `hooks-optimization`,
   `mobile-ui-polish`, `multi-currency`, `onboarding-403-fix`, `plan-model-redesign`,
-  `test-coverage-improvement`, `ui-polish-enhancements`, `web-app-polish`
+  `repo-docs-specs-consolidation`, `test-coverage-improvement`, `ui-polish-enhancements`,
+  `web-app-polish`
 
 ## What's Deprecated / Removed
 

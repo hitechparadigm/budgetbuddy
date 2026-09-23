@@ -78,14 +78,13 @@ superseded`) and `category` field (`feature | process | fix`), never by its loca
 - `push-notifications-reminders/` - Push notification and reminder system
 - `e2e-testing-infrastructure/` - Owns the full test pyramid: unit coverage, integration, E2E
 - `mobile-app/` - React Native and Expo iOS/Android app
-- `repo-docs-specs-consolidation/` - Repository spec and documentation reorganization (this work)
 
 **Complete or superseded specs** (read-only reference; status recorded in `.config.kiro`, not location):
 - `plan-model-redesign/` - Budget-centric data model (complete - see ARCHITECTURE_DECISIONS.md ADR-001)
 - `onboarding-403-fix/` - Fixed onboarding 403 bug (complete)
 - `competitive-features/`, `enhanced-accounts-transactions/`, `multi-currency/`,
   `mobile-ui-polish/`, `ui-polish-enhancements/`, `critical-bug-fixes/`,
-  `documentation-cleanup/`, `test-coverage-improvement/` - complete
+  `documentation-cleanup/`, `repo-docs-specs-consolidation/`, `test-coverage-improvement/` - complete
 - `hooks-optimization/`, `documentation-validation-fix/` - superseded (plans never fully executed;
   superseded by later, differently-designed work)
 
