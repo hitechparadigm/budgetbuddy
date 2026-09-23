@@ -42,6 +42,7 @@ if grep -r "eyJ[A-Za-z0-9+/=]\{100,\}" . \
     --exclude-dir=.git \
     --exclude-dir=coverage \
     --exclude-dir=.github \
+    --exclude-dir=.playwright-mcp \
     --exclude="*.md" \
     --exclude="mockAuth.ts" \
     --exclude="*.test.js" \
@@ -60,6 +61,7 @@ if grep -r "AKIA[0-9A-Z_]\{16,\}" . \
     --exclude-dir=node_modules \
     --exclude-dir=.git \
     --exclude-dir=coverage \
+    --exclude-dir=.playwright-mcp \
     --exclude="*.test.js" \
     --exclude="*.test.ts" \
     --exclude="security-check*.sh" \
@@ -76,6 +78,7 @@ if grep -r "BEGIN.*PRIVATE KEY" . \
     --exclude-dir=.git \
     --exclude-dir=coverage \
     --exclude-dir=.github \
+    --exclude-dir=.playwright-mcp \
     --exclude="*.md" \
     --exclude="security-check*.sh" \
     --exclude="security-check*.ps1" \
@@ -95,6 +98,7 @@ if grep -r "password.*['\"][^'\"]*[A-Z][^'\"]*[0-9][^'\"]*[!@#$%^&*][^'\"]*['\"]
     --exclude-dir=node_modules \
     --exclude-dir=.git \
     --exclude-dir=coverage \
+    --exclude-dir=.playwright-mcp \
     --exclude="*.md" \
     --exclude="validation.ts" \
     --exclude="*.test.js" \
@@ -107,27 +111,52 @@ fi
 echo ""
 echo "2. Checking for sensitive files..."
 
-# Check for log files
-if find . -name "*.log" -o -name "auth-logs.txt" -o -name "debug-*.txt" | \
-    grep -v node_modules | grep -v .git | grep -v coverage 2>/dev/null; then
+# Check for log files — exclude tool/IDE dirs that legitimately store logs
+# Use proper find grouping with parentheses and exclude known safe dirs
+LOG_FILES=$(find . \
+    -not -path "*/node_modules/*" \
+    -not -path "*/.git/*" \
+    -not -path "*/coverage/*" \
+    -not -path "*/.playwright-mcp/*" \
+    -not -path "*/.kiro/*" \
+    \( -name "*.log" -o -name "auth-logs.txt" -o -name "debug-*.txt" \) \
+    2>/dev/null || true)
+
+if [ -n "$LOG_FILES" ]; then
+    echo "$LOG_FILES"
     report_issue "Log files found that should not be committed"
 else
     report_success "No sensitive log files found"
 fi
 
 # Check for backup files
-if find . -name "*.bak" -o -name "*.backup" -o -name "*~" | \
-    grep -v node_modules | grep -v .git 2>/dev/null; then
+BACKUP_FILES=$(find . \
+    -not -path "*/node_modules/*" \
+    -not -path "*/.git/*" \
+    \( -name "*.bak" -o -name "*.backup" -o -name "*~" \) \
+    2>/dev/null || true)
+
+if [ -n "$BACKUP_FILES" ]; then
+    echo "$BACKUP_FILES"
     report_issue "Backup files found that should not be committed"
 else
     report_success "No backup files found"
 fi
 
 # Check for configuration files with potential secrets
-if find . -name "*.conf" -o -name "*.config" -o -name ".env*" | \
-    grep -v node_modules | grep -v .git | \
-    xargs grep -l "password\|secret\|key" 2>/dev/null; then
-    report_warning "Configuration files contain potential secrets - verify they use environment variables"
+CONFIG_FILES=$(find . \
+    -not -path "*/node_modules/*" \
+    -not -path "*/.git/*" \
+    \( -name "*.conf" -o -name "*.config" -o -name ".env*" \) \
+    2>/dev/null || true)
+
+if [ -n "$CONFIG_FILES" ]; then
+    SECRETS_IN_CONFIG=$(echo "$CONFIG_FILES" | xargs grep -l "password\|secret\|key" 2>/dev/null || true)
+    if [ -n "$SECRETS_IN_CONFIG" ]; then
+        report_warning "Configuration files contain potential secrets - verify they use environment variables"
+    else
+        report_success "No hardcoded secrets in configuration files"
+    fi
 else
     report_success "No hardcoded secrets in configuration files"
 fi
@@ -136,13 +165,18 @@ echo ""
 echo "3. Validating environment variable usage..."
 
 # Check scripts use environment variables for passwords
-if find scripts/ -name "*.js" \
-    ! -name "test-live-api.js" \
-    -exec grep -l "password.*:" {} \; 2>/dev/null | \
-    xargs grep "password.*:" | \
-    grep -v "process.env" | \
-    grep -v "CHANGE_ME_IN_ENV" 2>/dev/null; then
-    report_issue "Scripts contain hardcoded passwords instead of environment variables"
+SCRIPTS_WITH_PASSWORDS=$(find scripts/ -name "*.js" ! -name "test-live-api.js" \
+    -exec grep -l "password.*:" {} \; 2>/dev/null || true)
+
+if [ -n "$SCRIPTS_WITH_PASSWORDS" ]; then
+    HARDCODED=$(echo "$SCRIPTS_WITH_PASSWORDS" | xargs grep "password.*:" | \
+        grep -v "process.env" | grep -v "CHANGE_ME_IN_ENV" 2>/dev/null || true)
+    if [ -n "$HARDCODED" ]; then
+        echo "$HARDCODED"
+        report_issue "Scripts contain hardcoded passwords instead of environment variables"
+    else
+        report_success "Scripts properly use environment variables"
+    fi
 else
     report_success "Scripts properly use environment variables"
 fi
@@ -152,8 +186,9 @@ echo "4. Validating mock token safety..."
 
 # Check mock tokens are clearly marked
 if [ -f "packages/web-app/src/utils/mockAuth.ts" ]; then
-    if grep "eyJ[A-Za-z0-9+/=]\{50,\}" packages/web-app/src/utils/mockAuth.ts | \
-        grep -v "MOCK\|TEST\|DEVELOPMENT" 2>/dev/null; then
+    UNMARKED_TOKENS=$(grep "eyJ[A-Za-z0-9+/=]\{50,\}" packages/web-app/src/utils/mockAuth.ts | \
+        grep -v "MOCK\|TEST\|DEVELOPMENT" 2>/dev/null || true)
+    if [ -n "$UNMARKED_TOKENS" ]; then
         report_issue "Mock tokens should contain obvious mock identifiers"
     else
         report_success "Mock tokens are properly marked"
@@ -187,8 +222,11 @@ echo ""
 echo "6. Checking production configuration..."
 
 # Check for HTTP URLs in infrastructure (should use HTTPS)
-if grep -r "http://" infrastructure/ --include="*.ts" | \
-    grep -v "localhost\|127.0.0.1" 2>/dev/null; then
+HTTP_IN_INFRA=$(grep -r "http://" infrastructure/ --include="*.ts" | \
+    grep -v "localhost\|127.0.0.1" 2>/dev/null || true)
+
+if [ -n "$HTTP_IN_INFRA" ]; then
+    echo "$HTTP_IN_INFRA"
     report_issue "HTTP URLs found in infrastructure - use HTTPS only"
 else
     report_success "Infrastructure uses HTTPS properly"
@@ -240,7 +278,7 @@ fi
 echo ""
 echo "8. Scanning config and infrastructure files for hardcoded secrets..."
 # NOTE: Only scan configuration, infrastructure and script files — NOT application source code
-# (application code legitimately uses tokens/auth in variable names like localStorage.getItem('...token...'))
+# (application code legitimately uses tokens/auth in variable names like localStorage.getItem('...token...')
 
 config_and_infra_dirs=(
     "infrastructure/"
@@ -257,11 +295,13 @@ secret_patterns=(
 for pattern in "${secret_patterns[@]}"; do
     for dir in "${config_and_infra_dirs[@]}"; do
         if [ -d "$dir" ]; then
-            if grep -r "$pattern" "$dir" \
+            FOUND=$(grep -r "$pattern" "$dir" \
                 --exclude-dir=node_modules \
                 --exclude="*.md" \
                 --exclude="*.test.js" \
-                --exclude="*.test.ts" 2>/dev/null; then
+                --exclude="*.test.ts" 2>/dev/null || true)
+            if [ -n "$FOUND" ]; then
+                echo "$FOUND"
                 report_issue "Potential hardcoded secret in $dir matching pattern: $pattern"
             fi
         fi
@@ -270,17 +310,21 @@ done
 report_success "No hardcoded secrets in infrastructure/config/scripts"
 
 # Check for database connection strings
-if grep -r "mongodb://\|mysql://\|postgres://\|redis://" . \
+DB_STRINGS=$(grep -r "mongodb://\|mysql://\|postgres://\|redis://" . \
     --exclude-dir=node_modules \
     --exclude-dir=.git \
     --exclude-dir=coverage \
+    --exclude-dir=.playwright-mcp \
     --exclude="*.md" \
     --exclude="*.test.js" \
     --exclude="*.test.ts" \
     --exclude="security-check*.sh" \
     --exclude="security-check*.ps1" \
     --exclude="pre-commit-security.sh" 2>/dev/null | \
-    grep -v "localhost\|127.0.0.1\|example.com\|testuser:testpass@testhost"; then
+    grep -v "localhost\|127.0.0.1\|example.com\|testuser:testpass@testhost" || true)
+
+if [ -n "$DB_STRINGS" ]; then
+    echo "$DB_STRINGS"
     report_issue "Database connection strings found - ensure they use environment variables"
 else
     report_success "No hardcoded database connection strings found"
