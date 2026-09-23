@@ -6,6 +6,7 @@
  * - Receipt (AI receipt scanning)
  * - Pattern Detection (AI recurring bill detection)
  * - Budget Planning (AI budget suggestions)
+ * - Transaction Planning (AI planned transactions)
  *
  * This stack was split from api-features-stack to stay under CloudFormation's
  * 500 resource limit.
@@ -354,6 +355,23 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
     }));
 
+    // Transaction Planning Lambda — AI-powered planned transactions
+    this.functions.transactionPlanningHandler = new lambda.Function(this, 'TransactionPlanningHandler', {
+      ...commonProps,
+      functionName: 'budgetbuddy-transaction-planning',
+      code: lambda.Code.fromAsset('../backend/functions/transaction-planning'),
+      handler: 'index.handler',
+      description: 'BudgetBuddy transaction planning handler for AI-powered planned transactions',
+      timeout: cdk.Duration.seconds(30),
+    });
+
+    // Grant Transaction Planning Lambda permission to invoke Bedrock
+    this.functions.transactionPlanningHandler.addToRolePolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: ['bedrock:InvokeModel'],
+      resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
+    }));
+
     // Transaction Categorization Rules Lambda
     this.functions.rulesHandler = new lambda.Function(this, 'RulesHandler', {
       ...commonProps,
@@ -379,6 +397,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
     this.setupReceiptRoutes(authorizer);
     this.setupPatternDetectionRoutes(authorizer);
     this.setupBudgetPlanningRoutes(authorizer);
+    this.setupTransactionPlanningRoutes(authorizer);
     this.setupRulesRoutes(authorizer);
     this.setupNetWorthRoutes(authorizer);
   }
@@ -528,6 +547,50 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
     budgetHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.budgetPlanningHandler), {
       methodResponses: [{ statusCode: '200' }],
       operationName: 'BudgetPlanningHealthCheck',
+    });
+  }
+
+  private setupTransactionPlanningRoutes(authorizer: apigateway.CognitoUserPoolsAuthorizer): void {
+    const txPlanResource = this.api.root.addResource('transaction-planning');
+
+    // GET /transaction-planning — list all planned transactions for the budget
+    txPlanResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.transactionPlanningHandler), {
+      authorizer,
+      operationName: 'GetPlannedTransactions',
+    });
+
+    // POST /transaction-planning — create a planned transaction
+    txPlanResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.transactionPlanningHandler), {
+      authorizer,
+      operationName: 'CreatePlannedTransaction',
+    });
+
+    const txPlanIdResource = txPlanResource.addResource('{plannedTransactionId}');
+
+    // PUT /transaction-planning/{id} — update a planned transaction
+    txPlanIdResource.addMethod('PUT', new apigateway.LambdaIntegration(this.functions.transactionPlanningHandler), {
+      authorizer,
+      operationName: 'UpdatePlannedTransaction',
+    });
+
+    // DELETE /transaction-planning/{id} — delete a planned transaction
+    txPlanIdResource.addMethod('DELETE', new apigateway.LambdaIntegration(this.functions.transactionPlanningHandler), {
+      authorizer,
+      operationName: 'DeletePlannedTransaction',
+    });
+
+    // POST /transaction-planning/{id}/mark-paid — mark as executed
+    const markPaidResource = txPlanIdResource.addResource('mark-paid');
+    markPaidResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.transactionPlanningHandler), {
+      authorizer,
+      operationName: 'MarkPlannedTransactionPaid',
+    });
+
+    // GET /transaction-planning/health
+    const txPlanHealthResource = txPlanResource.addResource('health');
+    txPlanHealthResource.addMethod('GET', new apigateway.LambdaIntegration(this.functions.transactionPlanningHandler), {
+      methodResponses: [{ statusCode: '200' }],
+      operationName: 'TransactionPlanningHealthCheck',
     });
   }
 
