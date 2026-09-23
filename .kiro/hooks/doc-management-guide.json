@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Spec Document Guide",
+      "description": "Reminds to follow spec structure when spec files are created or modified",
+      "trigger": "PostFileCreate",
+      "matcher": "\\.kiro/specs/[^/]*/(?:requirements|design|tasks)\\.md$",
+      "action": {
+        "type": "agent",
+        "prompt": "Spec file created. Ensure it follows .kiro/steering/structure.md: requirements.md = what/why (user stories + acceptance criteria), design.md = how (architecture, data model, security), tasks.md = implementation steps with [ ] checkboxes referencing requirements."
+      },
+      "enabled": true
+    }
+  ]
+}

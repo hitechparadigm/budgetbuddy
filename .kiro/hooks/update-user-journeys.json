@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Update Product Requirements on New Page",
+      "description": "Reminds to update docs/product-requirements.md when a new page or screen component is created",
+      "trigger": "PostFileCreate",
+      "matcher": "packages/(web-app|mobile)/src/(pages|screens)/[^/]+\\.tsx$",
+      "action": {
+        "type": "agent",
+        "prompt": "New page/screen created. Update docs/product-requirements.md: mark component status \u2705, add to relevant user journey table, update Known Gaps section if applicable."
+      },
+      "enabled": true
+    }
+  ]
+}
