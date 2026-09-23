@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Auto Log Cleanup",
+      "description": "Cleans up AWS temporary log downloads after analysis is complete",
+      "trigger": "PostFileCreate",
+      "matcher": "temp-logs/[^/]+$",
+      "action": {
+        "type": "agent",
+        "prompt": "Temp log file detected in temp-logs/. After completing analysis, clean up: Remove-Item -Recurse -Force temp-logs"
+      },
+      "enabled": true
+    }
+  ]
+}
