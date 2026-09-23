@@ -3,12 +3,11 @@
   "hooks": [
     {
       "name": "Autonomous Task Executor",
-      "description": "CI/CD safety check reminder. Fires when user message suggests code changes are about to be pushed.",
+      "description": "Injects CI/CD safety rules at the start of every turn. NOTE: matchers are ignored for UserPromptSubmit — Kiro only evaluates matcher for PreToolUse/PostToolUse (against tool name) and PostFile* (against file path). This hook therefore fires on every prompt by design; keep the prompt short to limit token cost.",
       "trigger": "UserPromptSubmit",
-      "matcher": "\\b(push|commit|deploy|implement|build the|add the|fix the|create the)\\b",
       "action": {
         "type": "agent",
-        "prompt": "CI/CD SAFETY: Check status before pushing: `node scripts/check-cicd-status.js`. If IN_PROGRESS or QUEUED — STOP and wait 2 min. Push only via `node scripts/safe-commit-push.js \"type: description\"`. Never push while a deployment is running (CloudFormation parallel deploys fail)."
+        "prompt": "CI/CD SAFETY: Before any push run `node scripts/check-cicd-status.js`. If IN_PROGRESS or QUEUED — do not push; wait and do non-push work. Push only via `node scripts/safe-commit-push.js \"type: description\"`. Only one session may push at a time (CloudFormation parallel deploys fail)."
       },
       "enabled": true
     }
