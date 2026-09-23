@@ -1,15 +1,15 @@
 {
-  "version": "v1",
-  "hooks": [
-    {
-      "name": "Continue Until Done",
-      "description": "Fires when an agent execution completes. Checks concrete sources of truth for incomplete work and continues if any is found. Explicitly authorizes yielding when all clear, to avoid an infinite loop.",
-      "trigger": "Stop",
-      "action": {
-        "type": "agent",
-        "prompt": "AUTONOMY CHECK \u2014 before yielding to the user, verify there is genuinely nothing left in scope.\n\nCheck these concrete sources in order:\n\n1. OPEN ITEMS \u2014 read `.kiro/steering/memory/work-log.md`, section 'Known Open Items'. Any unchecked `[ ]` item that is in the current session's scope?\n2. ACTIVE SPEC TASKS \u2014 if a spec is in progress, read its `.kiro/specs/<feature>/tasks.md`. Any unchecked `[ ]` task whose prerequisites are already met?\n3. CI/CD \u2014 run `node scripts/check-cicd-status.js`. If FAILED, that is unfinished work: diagnose and fix it (max 2 attempts, then document in DEVELOPMENT_LOG.md and move on). If IN_PROGRESS or QUEUED, do NOT push \u2014 wait, then continue with non-push work.\n4. DOCS DEBT \u2014 does CHANGELOG.md have an entry for this session's work? Does DEVELOPMENT_LOG.md? If not, that is unfinished work.\n\nIf you find actionable work: START IT NOW. Do not summarize what you just did. Do not ask permission. Do not produce a 'next steps' list \u2014 just do the next thing.\n\nYIELD TO THE USER \u2014 it is correct to stop and hand back control when ANY of these is true:\n- All four checks above are clear.\n- The only remaining work is a TRUE blocker per 00-global.md: an architectural decision needing user confirmation, an ambiguous breaking API change, validation failing after 3 different approaches, or CI/CD failing after 2 fix attempts.\n- A required tool is unavailable and there is no safe workaround (state which tool and what it blocks).\n- The remaining work is outside the scope the user actually asked for.\n\nWhen you yield, say plainly what is done and what specifically remains. Do not invent work to stay busy, and do not loop on this check."
-      },
-      "enabled": true
-    }
-  ]
+    "version":  "v1",
+    "hooks":  [
+                  {
+                      "name":  "Continue Until Done",
+                      "description":  "Fires when an agent execution completes. Checks work-log open items, active spec tasks, CI/CD status, and docs debt. Continues if work remains; explicitly authorizes yielding when clear or blocked so it cannot loop forever. This is the mechanism that implements the autonomous-execution rule in 00-global.md.",
+                      "trigger":  "Stop",
+                      "action":  {
+                                     "type":  "agent",
+                                     "prompt":  "AUTONOMY CHECK - before yielding to the user, verify there is genuinely nothing left in scope.\\n\\nCheck these concrete sources in order:\\n\\n1. OPEN ITEMS - read .kiro/steering/memory/work-log.md section \"Known Open Items\". Any unchecked [ ] item in the current scope?\\n2. SPEC TASKS - if a spec is in progress, read .kiro/specs/\u003cfeature\u003e/tasks.md. Any unchecked [ ] task whose prerequisites are already met?\\n3. CI/CD - run: node scripts/check-cicd-status.js\\n   - FAILED: that is unfinished work. Diagnose and fix (max 2 attempts, then document in DEVELOPMENT_LOG.md and move on).\\n   - IN_PROGRESS or QUEUED: do NOT push. Continue with non-push work instead.\\n   - SUCCESS: fine.\\n4. DOCS DEBT - does CHANGELOG.md have an entry for this session? Does DEVELOPMENT_LOG.md? If new or modified frontend/backend components exist, is docs/product-requirements.md updated (component status, user journey table, Known Gaps)?\\n\\nIf you find actionable work: START IT NOW. Do not summarize what you just did. Do not ask permission. Do not emit a \"next steps\" list - just do the next thing.\\n\\nYIELD TO THE USER - stopping is CORRECT when any of these is true:\\n- All four checks above are clear.\\n- Only a TRUE blocker remains per 00-global.md: architectural decision needing confirmation, ambiguous breaking API change, validation failing after 3 different approaches, or CI/CD failing after 2 fix attempts.\\n- A required tool is unavailable with no safe workaround (say which tool and what it blocks).\\n- The remaining work is outside what the user asked for.\\n\\nWhen you yield, state plainly what is done and what specifically remains. Do not invent work to stay busy. Do not loop on this check."
+                                 },
+                      "enabled":  true
+                  }
+              ]
 }

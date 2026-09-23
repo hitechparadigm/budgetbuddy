@@ -1,4 +1,46 @@
 # Changelog
+
+## [1.10.0] - 2026-09-23
+
+### chore: spec and documentation consolidation, autonomous-mode hook/steering fixes
+
+#### Hooks - 15 files reduced to 4
+- Root cause found: hooks existed in BOTH the current schema (`version: v1` + `hooks[]` + `trigger`/`action`)
+  and the legacy schema (`when`/`then`/`askAgent`). Both were being parsed, so six hooks fired twice.
+- Deleted all six legacy `*.kiro.hook` duplicates and three `*.DISABLED` legacy files.
+- Deleted `autonomous-task-executor.json`: it injected CI/CD rules on every turn that already live in
+  `00-global.md` (`inclusion: always`), so it paid a per-turn token cost to repeat known rules.
+- Added `continue-until-done.json` (`Stop` trigger) - the actual autonomy mechanism. Checks work-log open
+  items, active spec tasks, CI/CD status, and docs debt; enumerates when yielding is correct so it cannot loop.
+- Documented matcher semantics in `.kiro/hooks/README.md`: `matcher` is only evaluated for
+  `PreToolUse`/`PostToolUse` (tool name) and `PostFile*` (file path). It is ignored for all other triggers,
+  including `UserPromptSubmit` and `Stop`.
+
+#### Steering - dead memory files repaired
+- `memory/architecture.md`, `memory/gotchas.md`, `memory/work-log.md` used `inclusion: auto` without the
+  required `name`/`description` keys, so none of them ever registered or loaded. Changed to `inclusion: always`.
+  All accumulated gotchas now actually reach the agent.
+- Deleted `memory/preferences.md` (~95% duplicate of `00-global.md`) and `memory/patterns.md`
+  (~80% duplicate of `structure.md`); merged the unique content into those files.
+- `00-global.md`: added Communication Style, an explicit "Do NOT stop for" list, AWS profile, and a pointer
+  to the enforcing `Stop` hook.
+- Deleted obsolete `steering/cicd-failure-handler.md` (superseded by the Stop hook + `cicd-deployment.md`).
+
+#### Specs - 9 active reduced to 7
+- Removed empty `engagement-features/` directory.
+- Archived `test-coverage-improvement/` (29/29 complete) to `.kiro/specs/archive/`, matching the existing
+  convention for finished specs. Not merged into `e2e-testing-infrastructure`: merging a complete spec into
+  an unstarted one would permanently muddy both status signals.
+- `e2e-testing-infrastructure/` now owns the full test pyramid; added an Integration Test Layer
+  (harness, cross-Lambda, access-control, API contract, CI wiring) covering the gap it previously had.
+- Added full test sections with requirement traceability to `planned-transactions/`, `goals-borrow-lend/`,
+  and `mobile-app/`, each specifying unit tests to >80% coverage, integration tests, and E2E tests.
+- Corrected the stale active-spec lists in `.kiro/README.md` and `.kiro/SYSTEM_GUIDE.md`.
+
+#### Fixed
+- Repaired UTF-8 double-encoding introduced while patching steering front-matter. PowerShell 5.1
+  `Get-Content -Raw` decoded UTF-8 as Latin-1 and `-Encoding UTF8` re-encoded it, corrupting every em-dash
+  and emoji. All steering/spec writes now use `[System.IO.File]` with `UTF8Encoding($false)`.
 
 ## [1.9.169] - 2026-08-14
 

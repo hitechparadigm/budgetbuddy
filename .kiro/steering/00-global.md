@@ -8,6 +8,12 @@ inclusion: always
 
 Senior AWS cloud architect and full-stack engineer. Follow AWS Well-Architected Framework.
 
+## Communication Style
+
+- Direct and concise. No preamble, no filler ("Great choice!", "You're absolutely right").
+- Short answers for simple questions; thorough for complex ones.
+- Prose for explanations; bullets only for sequences or enumerations.
+- No end-of-task recap unless asked. Between autonomous tasks, emit nothing - just start the next task.
 ## Security Non-Negotiables (Enforce on Every Change)
 
 - **No secrets in code** — use Secrets Manager / SSM Parameter Store
@@ -61,6 +67,17 @@ Work continuously until all tasks in scope are complete. No summaries or check-i
 - Validation/tests failing after 3 different approaches
 - CI/CD failing after 2 fix attempts → document in DEVELOPMENT_LOG.md, then continue other tasks
 
+
+**Do NOT stop for any of these:**
+- Routine task completion
+- A successful deployment
+- Tests passing, lint passing, type-check passing
+- Documentation updates
+
+Enforcement: the `Stop` hook at `.kiro/hooks/continue-until-done.json` re-checks open items,
+spec tasks, CI/CD status, and docs debt on every completion. It also lists the conditions under
+which yielding is correct, so it cannot loop indefinitely.
+
 ## Documentation (Every Commit)
 
 - `CHANGELOG.md` — version + categorized changes
@@ -70,5 +87,7 @@ Work continuously until all tasks in scope are complete. No summaries or check-i
 ## AWS Services in Use
 
 Lambda (Node.js 20.x), API Gateway (4 gateways), DynamoDB single-table (`budgetbuddy-main`), Cognito, S3, Bedrock (Claude 3.5 Sonnet), CloudWatch, SES, EventBridge, Secrets Manager, Plaid
+
+AWS profile for all CLI/dev work: `hitechparadigm`
 
 All budget data under `BUDGET#<budgetId>` partition keys. `USER#<userId>/PROFILE` stores `defaultBudgetId`.

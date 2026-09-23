@@ -1,8 +1,34 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-08-14
+**Last Updated**: 2026-09-23
 **Current Phase**: Production Readiness — MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ✅ + Production Audit ✅
+
+## LATEST - Session 163: Spec and Documentation Consolidation (2026-09-23)
+
+**Autonomous mode**
+- Hooks 15 -> 4. Two schemas were live simultaneously; six hooks fired twice. Legacy `*.kiro.hook` and
+  `*.DISABLED` files removed.
+- `continue-until-done.json` (`Stop` trigger) added as the real continuation mechanism, verified firing.
+- `matcher` documented as applying only to `PreToolUse`/`PostToolUse` and `PostFile*` triggers.
+
+**Steering**
+- Three `memory/*.md` files were never loading (`inclusion: auto` with no `name`/`description`). Repaired.
+- `memory/preferences.md` and `memory/patterns.md` deleted as duplicates; unique content merged.
+
+**Specs: 7 active**
+- `web-app-polish` COMPLETE | `planned-transactions` COMPLETE (tests pending) |
+  `goals-borrow-lend` COMPLETE (tests pending) | `ai-bill-reminders-budget-planning` mostly complete |
+  `push-notifications-reminders` mostly complete | `e2e-testing-infrastructure` not started |
+  `mobile-app` not started
+- `test-coverage-improvement` archived (complete). `engagement-features` removed (empty).
+- Unit/integration/E2E task sections added where missing.
+
+**Open**
+- `/docs` cleanup: ~28 obsolete files (~160KB) identified, awaiting confirmation.
+- `AiCoachChip` not yet imported into `BudgetPage.tsx`.
+- `docs/api-endpoints.md` 4 months stale.
+
 
 ## ✨ LATEST - Session 156 Complete: Production Readiness Audit + UI/UX Polish (2026-06-22)
 
