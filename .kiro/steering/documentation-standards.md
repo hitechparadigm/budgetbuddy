@@ -20,3 +20,8 @@ fileMatchPattern: "{README.md,CHANGELOG.md,DEVELOPMENT_LOG.md,docs/**}"
 - JSDoc for public APIs and complex functions
 - README per Lambda function and CDK stack
 - Inline comments only for non-obvious logic
+
+## Doc Index Maintenance
+
+`docs/README.md` must be updated in the same commit whenever a document under `/docs` is added,
+deleted, or renamed.

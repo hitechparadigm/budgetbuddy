@@ -60,6 +60,25 @@ if (!canUseFeature(subscriptionTier, 'feature_key')) return errorResponse(403, '
 4. **Frontend**: component/page + service + types + tests
 5. **Docs**: CHANGELOG.md, DEVELOPMENT_LOG.md, product-requirements.md
 
+## Spec Lifecycle
+
+All specs are direct children of `.kiro/specs/` - there is no `archive/` subdirectory. A spec's
+lifecycle state lives in its `.config.kiro` `status` field (`active | complete | superseded`),
+never in its location. When a spec finishes, update its `status` field in place and update
+`.kiro/specs/README.md` in the same commit - do not move the spec directory.
+
+## Documentation Placement
+
+Before creating a new document under `/docs`, check `docs/README.md` for an existing document
+covering the same subject area and extend that document instead of creating a new one when
+substantial overlap exists.
+
+## No Stray Root Artifacts
+
+No debug screenshot, log file, or ad-hoc generated artifact may be committed to the repository
+root. Such files belong in a git-ignored directory (e.g. `.playwright-mcp/`) or must be deleted
+after use.
+
 ## Key Frontend Routes
 
 | Route | Component |

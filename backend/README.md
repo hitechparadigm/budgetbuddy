@@ -11,7 +11,7 @@
 - **budget/**: Budget CRUD operations, category management, calculations
 - **transactions/**: Transaction management with automatic budget updates
 - **ai/**: AI-powered budget generation using AWS Bedrock
-- **family/**: Family account creation, invitations, member management
+- **budgets/**: Budget collaboration, invitations, member management (replaces the deprecated `family/` Lambda, which returns 410 Gone)
 - **payment/**: Stripe integration for subscription management
 - **email/**: SES email sending for notifications and tips
 - **admin/**: Admin dashboard operations and analytics
@@ -22,31 +22,16 @@
 - **layers/common/**: Common dependencies (DynamoDB helpers, utilities)
 - **layers/shared/**: ✨ NEW - Shared authentication utilities (CORS, validation, token parsing, errors)
 
-### Architectural Refactoring (In Progress)
+### Architectural Refactoring (Complete)
 
-The monolithic `auth/` Lambda (1484 lines) is being refactored into focused microservices:
+The monolithic `auth/` Lambda (1484 lines) was refactored into focused microservices:
 
-**Phase 1**: ✅ Complete - Shared utilities layer (`layers/shared/`)
+- Shared utilities layer (`layers/shared/`): CORS handling, token parsing, validation, error formatting
+- **auth-onboarding/**: Standalone onboarding Lambda (~300 lines), independently deployable
 
-- CORS handling, token parsing, validation, error formatting
-- 60/60 unit tests passing
-
-**Phase 2**: 🔄 In Progress - Separate Lambda functions (1 of 6 complete)
-
-- ✅ **auth-onboarding/**: Standalone onboarding Lambda (~300 lines)
-  - All imports at top of file (prevents ReferenceError bugs)
-  - 12/12 unit tests passing
-  - Independent deployment
-  - Comprehensive documentation
-- ⏳ auth-register, auth-login, auth-google, auth-profile, auth-geolocation (planned)
-
-**Benefits**:
-
-- 80% code reduction per function
-- Independent deployment per endpoint
-- Faster cold starts (smaller bundles)
-- Import ordering bugs impossible
-- Better testing and maintainability
+Further splitting of `auth/` into per-endpoint Lambdas (register, login, google, profile,
+geolocation) is not currently planned; `auth-onboarding/` was split out because onboarding is
+on the critical first-run path and benefits most from independent deployment and faster cold starts.
 
 See `functions/auth-onboarding/README.md` for detailed documentation.
 

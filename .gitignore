@@ -143,3 +143,9 @@ debug-*.txt
 test-results/
 playwright-report/
 playwright/.cache/
+
+# Transient validation/debug output (never commit)
+commit-out.txt
+validate-out.txt
+v2.txt
+*.tmp.txt

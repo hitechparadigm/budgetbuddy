@@ -1,6 +1,6 @@
 # BudgetBuddy Development System Guide
 
-**Last Updated**: 2026-06-01
+**Last Updated**: 2026-09-23
 
 ---
 
@@ -8,21 +8,21 @@
 
 ```
 Auth:    Cognito User Pools + Google OAuth (PKCE)
-         JWT carries only userId — no familyId, no role
+         JWT carries only userId - no familyId, no role
 
 Access:  BudgetAccessResolver.resolveAccess(userId, dynamoHelpers)
-         → { budgetId, role, budgetType, budgetStatus, subscriptionTier }
+         -> { budgetId, role, budgetType, budgetStatus, subscriptionTier }
          Called at the top of every Lambda that touches budget data
 
 Roles:   owner | partner | household_member | viewer
          Feature gating: canUseFeature(subscriptionTier, featureKey)
 
 Data:    Single-table DynamoDB (budgetbuddy-main)
-         BUDGET#<budgetId>  — all budget data (METADATA, MEMBER#, PERIOD#, ACCOUNT#, TXN#)
-         USER#<userId>/PROFILE — stores defaultBudgetId, onboardingCompleted, currency, location
+         BUDGET#<budgetId>  - all budget data (METADATA, MEMBER#, PERIOD#, ACCOUNT#, TXN#)
+         USER#<userId>/PROFILE - stores defaultBudgetId, onboardingCompleted, currency, location
 
-Stacks:  database → auth → auth-onboarding → api → api-features
-         → api-features-extended → api-budgets → hosting → notification → monitoring
+Stacks:  database -> auth -> auth-onboarding -> api -> api-features
+         -> api-features-extended -> api-budgets -> hosting -> notification -> monitoring
          api-family: DEPRECATED (returns 410 Gone)
 ```
 
@@ -41,7 +41,7 @@ BudgetAccessResolver.assertPermission(role, action, budgetStatus);   // 3. Enfor
 ## Workflow
 
 ```bash
-# Before every push — never push during deployment
+# Before every push - never push during deployment
 node scripts/check-cicd-status.js
 
 # Commit and push
@@ -58,36 +58,44 @@ node scripts/check-cicd-status.js
 | `00-global.md` | Always | Workflow, commit rules, autonomous mode, security |
 | `product.md` | Always | Vision, users, features, success metrics |
 | `tech.md` | Always | Stack (React, Lambda, DynamoDB, Cognito, CDK) |
-| `structure.md` | Always | Repo layout, Lambda access pattern, definition of done |
+| `structure.md` | Always | Repo layout, Lambda access pattern, spec lifecycle, definition of done |
 | `cicd-deployment.md` | CI/CD files | Deployment rules, failure handling |
 | `aws-integration-testing.md` | Test files | AWS test cost limits, rules |
-| `documentation-standards.md` | Doc files | Mandatory doc update rules |
+| `documentation-standards.md` | Doc files | Mandatory doc update rules, doc index maintenance |
 
 ## Specs
 
-Feature specs live in `.kiro/specs/<feature>/` with `requirements.md`, `design.md`, `tasks.md`.
+Every spec is a direct child of `.kiro/specs/` - there is no `archive/` subdirectory. A spec's
+lifecycle state is recorded in its `.config.kiro` `status` field (`active | complete |
+superseded`) and `category` field (`feature | process | fix`), never by its location. See
+`.kiro/specs/README.md` for the full index of all 19 specs.
 
 **Active specs** (in progress or upcoming):
-- `web-app-polish/` - Web app design, IA, AI, polish (COMPLETE)
-- `planned-transactions/` - Scheduled future income and expenses (COMPLETE, tests pending)
-- `goals-borrow-lend/` - Borrowed and Lent goal sub-types (COMPLETE, tests pending)
+- `web-app-polish/` - Web app design, IA, AI, polish (status: complete)
+- `planned-transactions/` - Scheduled future income and expenses (status: active, tests pending)
+- `goals-borrow-lend/` - Borrowed and Lent goal sub-types (status: active, tests pending)
 - `ai-bill-reminders-budget-planning/` - AI bill pattern detection and budget suggestions
 - `push-notifications-reminders/` - Push notification and reminder system
 - `e2e-testing-infrastructure/` - Owns the full test pyramid: unit coverage, integration, E2E
 - `mobile-app/` - React Native and Expo iOS/Android app
+- `repo-docs-specs-consolidation/` - Repository spec and documentation reorganization (this work)
 
-**Archived specs** (completed or superseded — in `.kiro/specs/archive/`):
-- `plan-model-redesign/` — Budget-centric data model (COMPLETED — see ADR-001)
-- `onboarding-403-fix/` — Fixed onboarding 403 bug (COMPLETED)
-- `competitive-features/`, `enhanced-accounts-transactions/`, `multi-currency/`, etc.
+**Complete or superseded specs** (read-only reference; status recorded in `.config.kiro`, not location):
+- `plan-model-redesign/` - Budget-centric data model (complete - see ARCHITECTURE_DECISIONS.md ADR-001)
+- `onboarding-403-fix/` - Fixed onboarding 403 bug (complete)
+- `competitive-features/`, `enhanced-accounts-transactions/`, `multi-currency/`,
+  `mobile-ui-polish/`, `ui-polish-enhancements/`, `critical-bug-fixes/`,
+  `documentation-cleanup/`, `test-coverage-improvement/` - complete
+- `hooks-optimization/`, `documentation-validation-fix/` - superseded (plans never fully executed;
+  superseded by later, differently-designed work)
 
 Create a spec when: feature is complex (>1 week), has 10+ tasks, or can be developed independently.
 
 ## What's Deprecated / Removed
 
-- `/family/*` API — returns 410 Gone. Use `/budgets/*` instead.
-- `FamilyIdResolver` — removed. Use `BudgetAccessResolver`.
-- `FAMILY#` partition keys — replaced by `BUDGET#`.
-- `custom:familyId` JWT claim — ignored. Only `custom:userId` is used.
-- `FamilySettings.tsx` — replaced by `BudgetMembersPage` at `/budget/members`.
-- `api-family-stack` — still deployed but deprecated. Will be destroyed after migration period.
+- `/family/*` API - returns 410 Gone. Use `/budgets/*` instead.
+- `FamilyIdResolver` - removed. Use `BudgetAccessResolver`.
+- `FAMILY#` partition keys - replaced by `BUDGET#`.
+- `custom:familyId` JWT claim - ignored. Only `custom:userId` is used.
+- `FamilySettings.tsx` - replaced by `BudgetMembersPage` at `/budget/members`.
+- `api-family-stack` - still deployed but deprecated. Will be destroyed after migration period.

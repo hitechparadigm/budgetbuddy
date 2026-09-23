@@ -8,7 +8,7 @@ The Budget Alerts Service Lambda monitors budget spending and sends alerts when 
 
 - Monitor budget spending in real-time
 - Detect when spending reaches threshold levels
-- Send alerts to all family members
+- Send alerts to all budget members
 - Prevent duplicate alerts
 - Perform scheduled checks for missed alerts
 
@@ -49,38 +49,38 @@ The Budget Alerts Service Lambda monitors budget spending and sends alerts when 
 
 ## Functions
 
-### `getBudget(familyId, month)`
+### `getBudget(budgetId, month)`
 
-Gets budget data for a family and month.
+Gets budget period data for a budget and month.
 
 **Parameters**:
 
-- `familyId`: Family ID
+- `budgetId`: Budget ID
 - `month`: Budget month (YYYY-MM format)
 
 **Returns**: Budget object or null
 
 **Throws**: Error if query fails
 
-### `getFamilyUsers(familyId)`
+### `getBudgetMembers(budgetId)`
 
-Gets all users in a family.
+Gets all members of a budget via `BUDGET#<budgetId>/MEMBER#*` records.
 
 **Parameters**:
 
-- `familyId`: Family ID
+- `budgetId`: Budget ID
 
 **Returns**: Array of user objects
 
 **Throws**: Error if scan fails
 
-### `wasAlertSent(familyId, month, categoryName, threshold)`
+### `wasAlertSent(budgetId, month, categoryName, threshold)`
 
 Checks if an alert was already sent for a category and threshold.
 
 **Parameters**:
 
-- `familyId`: Family ID
+- `budgetId`: Budget ID
 - `month`: Budget month
 - `categoryName`: Category name
 - `threshold`: Alert threshold (0.8, 0.9, 1.0)
@@ -89,13 +89,13 @@ Checks if an alert was already sent for a category and threshold.
 
 **Throws**: Error if query fails
 
-### `markAlertSent(familyId, month, categoryName, threshold)`
+### `markAlertSent(budgetId, month, categoryName, threshold)`
 
 Marks an alert as sent to prevent duplicates.
 
 **Parameters**:
 
-- `familyId`: Family ID
+- `budgetId`: Budget ID
 - `month`: Budget month
 - `categoryName`: Category name
 - `threshold`: Alert threshold
@@ -121,13 +121,13 @@ Sends notification to a user via Notification Service Lambda.
 
 **Invocation Type**: Event (async)
 
-### `checkCategoryAlerts(familyId, month, category)`
+### `checkCategoryAlerts(budgetId, month, category)`
 
 Checks a category for threshold violations and returns unsent alerts.
 
 **Parameters**:
 
-- `familyId`: Family ID
+- `budgetId`: Budget ID
 - `month`: Budget month
 - `category`: Category object with plannedAmount and spentAmount
 
@@ -179,14 +179,14 @@ Processes a budget and sends alerts for all categories that exceed thresholds.
 
 - `budget`: Budget object
 
-**Returns**: `{ success: true, familyId, month }` or `{ success: false, error }`
+**Returns**: `{ success: true, budgetId, month }` or `{ success: false, error }`
 
 **Logic**:
 
 1. Extract all categories from all groups
 2. Check each category for alerts
 3. Get family users
-4. Send alerts to all family members
+4. Send alerts to all budget members
 5. Mark alerts as sent
 
 ### `checkAllBudgets()`
@@ -220,9 +220,9 @@ Scans all budgets for current month and checks for alerts.
       eventName: "INSERT",
       dynamodb: {
         NewImage: {
-          PK: { S: "FAMILY#family-123" },
+          PK: { S: "BUDGET#budget-123" },
           SK: { S: "TRANSACTION#txn-456" },
-          familyId: { S: "family-123" },
+          budgetId: { S: "budget-123" },
           budgetMonth: { S: "2024-01" },
           // ... other fields
         },
@@ -236,7 +236,7 @@ Scans all budgets for current month and checks for alerts.
 
 1. Unmarshal DynamoDB record
 2. Check if SK starts with "TRANSACTION#"
-3. Get budget for familyId and budgetMonth
+3. Get budget period for budgetId and budgetMonth
 4. Process budget for alerts
 
 ### EventBridge Scheduled Event
@@ -274,7 +274,7 @@ Scans all budgets for current month and checks for alerts.
 
 ```javascript
 {
-  PK: "FAMILY#<familyId>",
+  PK: "BUDGET#<budgetId>",
   SK: "ALERT#<month>-<categoryName>-<threshold>",
   month: string,
   categoryName: string,
@@ -348,7 +348,7 @@ return { success: false, error: error.message };
 All operations are logged to CloudWatch Logs:
 
 ```javascript
-console.log("Checking budget alerts for family", familyId, "month", month);
+console.log("Checking budget alerts for budget", budgetId, "month", month);
 console.log("Found", alerts.length, "alerts for category", category.name);
 console.log("Notification sent to user", userId);
 ```

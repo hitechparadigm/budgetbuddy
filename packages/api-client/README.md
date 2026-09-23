@@ -12,10 +12,14 @@
 - **Request Methods**: GET, POST, PUT, DELETE with proper typing
 
 ### API Methods
-- **Auth API** (`src/auth.ts`): Login, register, logout, password reset
-- **Budget API** (`src/budget.ts`): Budget CRUD, categories, AI generation
-- **Transaction API** (`src/transactions.ts`): Transaction management, filtering
-- **Family API** (`src/family.ts`): Family accounts, invitations, member management
+- **Transaction API** (`src/transactions.ts`): Transaction management, filtering — the only service module currently wired up in `src/index.ts`
+
+`auth.ts`, `budget.ts`, and `family.ts` are referenced as commented-out exports in `src/index.ts`
+but do not exist in `src/` — they were either never implemented or removed. Auth, budget, and
+budget-collaboration API calls are currently made directly from `packages/web-app/src/services/`
+(e.g. `budgetService.ts`) rather than through this package. There is no `family` service module
+to deprecate here; the backend `family` Lambda itself returns 410 Gone and budget collaboration
+goes through `/budgets/*`.
 
 ## Package.json Explanation
 
@@ -39,16 +43,12 @@ initializeApiClient({
 });
 ```
 
-Use API methods:
+Use the transaction service:
 
 ```typescript
-import { authApi, budgetApi } from '@budget-buddy/api-client';
+import { transactionService } from '@budget-buddy/api-client';
 
-// Login user
-const response = await authApi.login({ email, password });
-
-// Get current budget
-const budget = await budgetApi.getCurrentBudget();
+const transactions = await transactionService.list({ budgetId, month });
 ```
 
 ## Features

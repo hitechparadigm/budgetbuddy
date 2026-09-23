@@ -1,78 +1,48 @@
 # BudgetBuddy Documentation
 
-**Last Updated**: 2025-12-29
+**Last Updated**: 2026-09-23
 
-## 📚 Documentation Index
+Every document below is either actively maintained or a stable reference. There is no
+`docs/archive/` subdirectory - one-off session and incident summaries have been retired. Before
+creating a new document here, check this index for an existing document covering the same
+subject and extend it instead (see `.kiro/steering/structure.md`, "Documentation Placement").
 
-### Core Documentation
-- **[Development Status](./development-status.md)** - Current progress (99.5% complete), next steps, and roadmap
-- **[API Endpoints](./api-endpoints.md)** - Complete API documentation with examples
-- **[API Troubleshooting](./api-troubleshooting.md)** - Common API issues and solutions
+## Architecture & Infrastructure
+- **[AWS Stack Architecture](./aws-stack-architecture.md)** - Stack list, dependencies, DynamoDB schema, Lambda access pattern, resource naming/tagging standards, deployment commands
 
-### Architecture & Infrastructure
-- **[AWS Stack Architecture](./aws-stack-architecture.md)** - Complete overview of all AWS stacks and their responsibilities
-- **[Stack Management Guide](./stack-management-guide.md)** - How to manage, deploy, and maintain the stacks
-- **[AWS Resource Standards](./aws-resource-standards.md)** - Naming conventions and tagging standards
+## Configuration & Setup
+- **[Configuration Guide](./configuration-guide.md)** - Environment variables and frontend configuration
+- **[Deployment Guide](./deployment-guide.md)** - AWS prerequisites and CDK deployment steps
+- **[LocalStack Guide](./localstack-guide.md)** - Local AWS service emulation for faster Lambda iteration
+- **[SES Email Setup](./ses-email-setup.md)** - Verifying sender identities while SES is in sandbox mode
 
-### Configuration & Setup
-- **[Configuration Guide](./configuration-guide.md)** - Environment variables, frontend config, and AWS resource tags
-- **[GitHub Secrets Setup](./github-secrets-setup.md)** - How to configure GitHub Actions with AWS credentials
+## API Reference
+- **[API Endpoints](./api-endpoints.md)** - Complete REST API documentation with auth token usage
 
-### CI/CD & Automation
-- **[CI/CD Automation Guide](./cicd-automation-guide.md)** - Complete guide to automated monitoring and documentation enforcement
+## User Guides
+- **[Budget Collaboration & Notifications](./user-guide-budget-collaboration.md)** - Roles, invitations, member management, push notifications, and multi-currency support
 
-### Development Guidelines
-- **[Development Best Practices](./DEVELOPMENT_BEST_PRACTICES.md)** - Consolidated best practices, lessons learned, and common pitfalls
+## Product & Design
+- **[Product Requirements](./product-requirements.md)** - Living document of what is built, in progress, and planned
+- **[Mobile UX Design](./mobile-ux-design.md)** - Competitive analysis and design system for the mobile app
 
-## 🏗️ Current Infrastructure Status
+## Development Process
+- **[Development Status](./development-status.md)** - Current session progress and next priorities
+- **[Development Best Practices](./DEVELOPMENT_BEST_PRACTICES.md)** - Architecture patterns and lessons learned
 
-### Deployed Stacks (Development Environment)
-✅ **budgetbuddy-dev-auth** - Authentication & user management
-✅ **budgetbuddy-dev-database** - DynamoDB data storage
-✅ **budgetbuddy-dev-hosting** - S3 + CloudFront web hosting
-✅ **budgetbuddy-dev-api** - Lambda functions & API Gateway
-✅ **budgetbuddy-dev-monitoring** - CloudWatch dashboards & alerts
+## Outside `/docs`
+- **[Repository README](../README.md)** - Project overview, quick start, recent achievements
+- **[Architecture Decision Records](../ARCHITECTURE_DECISIONS.md)** - ADR-001 and future ADRs
+- **[Security Guidelines](../SECURITY.md)** - Secret management, incident response
+- **[.kiro/README.md](../.kiro/README.md)** - Development system configuration overview
+- **[.kiro/SYSTEM_GUIDE.md](../.kiro/SYSTEM_GUIDE.md)** - Architecture summary, workflow, deprecated items
+- **[.kiro/specs/README.md](../.kiro/specs/README.md)** - Spec index (status, category, description)
+- **[.github/workflows/README.md](../.github/workflows/README.md)** - CI/CD workflow reference
+- **[.github/BRANCH_PROTECTION.md](../.github/BRANCH_PROTECTION.md)** - Required status checks and secrets
+- **[backend/README.md](../backend/README.md)** - Lambda functions package overview
+- **[infrastructure/README.md](../infrastructure/README.md)** - CDK stacks package overview
+- **[packages/shared/README.md](../packages/shared/README.md)** - Shared types/utilities package overview
+- **[packages/api-client/README.md](../packages/api-client/README.md)** - HTTP client library overview
 
-### Key URLs & Endpoints
-- **API Gateway**: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/`
-- **Authentication**:
-  - Registration: `POST /auth/register` ✅
-  - Login: `POST /auth/login` ✅
-  - Health Check: `GET /health` ✅
-- **CloudWatch Dashboard**: AWS Console → CloudWatch → Dashboards → `budgetbuddy-dev-application-metrics`
-
-## 🚀 Quick Start
-
-### For Developers
-1. **API Integration**: Use the API Gateway URL with the `@budget-buddy/api-client` package
-2. **Authentication**: Complete backend ready - implement frontend components
-3. **Type Safety**: Use `@budget-buddy/shared` types and validation schemas
-4. **Health Monitoring**: Use health endpoints to verify service status
-
-### For DevOps
-1. **Monitor Stacks**: Check CloudFormation console for stack status
-2. **View Metrics**: Access CloudWatch dashboard for performance monitoring
-3. **Manage Deployments**: Use CDK commands for updates and rollbacks
-
-### For Project Managers
-1. **Cost Tracking**: Monitor AWS costs by stack and service tags
-2. **Service Status**: Check health endpoints and monitoring dashboards
-3. **Feature Progress**: Track development through deployed API endpoints
-
-## 📞 Support & Troubleshooting
-
-### Common Issues
-- **Health Check Failures**: Redeploy Lambda functions with health endpoints
-- **Authentication Errors**: Verify Cognito configuration and JWT tokens
-- **API Errors**: Check Lambda function logs in CloudWatch
-- **Deployment Failures**: Review CloudFormation events and stack dependencies
-
-### Getting Help
-1. Check the relevant documentation section above
-2. Review CloudWatch logs and metrics
-3. Use the deployment health check scripts
-4. Create GitHub issues for persistent problems
-
----
-
-**BudgetBuddy Infrastructure is successfully deployed and ready for development! 🎉**
+Individual Lambda function READMEs live at `backend/functions/<name>/README.md` per steering
+(`structure.md`: "README per Lambda function and CDK stack") and are not listed individually here.
