@@ -24,7 +24,7 @@ never by its location. See `.kiro/steering/structure.md` for the rule.
 | `plan-model-redesign` | complete | process | Migrated the data model from `FAMILY#`-scoped to `BUDGET#`-scoped with four roles (ADR-001) |
 | `planned-transactions` | active | feature | Scheduled future income and expense entries with full CRUD UI |
 | `push-notifications-reminders` | active | feature | Push notification and daily reminder system |
-| `repo-docs-specs-consolidation` | active | process | This spec — repository spec and documentation reorganization |
+| `repo-docs-specs-consolidation` | complete | process | Repository spec and documentation reorganization - flattened specs/archive, merged duplicate docs, fixed stale references |
 | `test-coverage-improvement` | complete | process | Test coverage improvement from 56% to 80% (Weeks 2-4 of roadmap) |
 | `ui-polish-enhancements` | complete | feature | Quick Actions FAB and other web UI polish enhancements |
 | `web-app-polish` | complete | feature | Web app design, information architecture, AI features, and polish (18 criteria) |
