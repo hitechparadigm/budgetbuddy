@@ -3,10 +3,15 @@
  *
  * Displays savings goals with progress rings, contribution tracking,
  * milestone celebrations, and drag-and-drop reordering.
+ *
+ * Three tabs (Budge/Budgety competitor pattern):
+ *   Goals — savings goals
+ *   Borrowed — money I owe someone
+ *   Lent — money someone owes me
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 import { Confetti } from "../components/Confetti";
 import { profileApi } from "../services/api";
@@ -73,7 +78,7 @@ const ProgressRing: React.FC<{
 };
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
+  import.meta.env.VITE_API_BASE_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1';
 
 interface Goal {
   goalId: string;
@@ -99,6 +104,9 @@ interface Goal {
   }>;
   completedAt: string | null;
   createdAt: string;
+  /** Extension fields for borrowed/lent tracking */
+  subType?: 'goal' | 'borrowed' | 'lent';
+  personName?: string;
 }
 
 interface GoalsSummary {
@@ -114,8 +122,11 @@ interface GoalsResponse {
   summary: GoalsSummary;
 }
 
+type GoalsTab = 'goals' | 'borrowed' | 'lent';
+
 export const GoalsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [summary, setSummary] = useState<GoalsSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -131,14 +142,27 @@ export const GoalsPage: React.FC = () => {
   const [milestoneMessage, setMilestoneMessage] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [archiving, setArchiving] = useState<string | null>(null);
-  // Controlled delete confirmation state (replaces window.confirm)
   const [goalToDelete, setGoalToDelete] = useState<Goal | null>(null);
   const [currency, setCurrency] = useState<string>("USD");
+  const [activeTab, setActiveTab] = useState<GoalsTab>(() => {
+    const t = searchParams.get('tab');
+    return (t === 'borrowed' || t === 'lent') ? t : 'goals';
+  });
   const dragCounter = useRef(0);
 
-  // Separate active and archived goals
+  // All non-archived goals
   const activeGoals = goals.filter((g) => g.status !== "archived");
   const archivedGoals = goals.filter((g) => g.status === "archived");
+
+  // Split by subType for tabs
+  const savingsGoals = activeGoals.filter(g => !g.subType || g.subType === 'goal');
+  const borrowedGoals = activeGoals.filter(g => g.subType === 'borrowed');
+  const lentGoals = activeGoals.filter(g => g.subType === 'lent');
+
+  // Goals shown on current tab
+  const tabGoals = activeTab === 'goals' ? savingsGoals
+    : activeTab === 'borrowed' ? borrowedGoals
+    : lentGoals;
 
   const loadGoals = useCallback(async () => {
     try {
@@ -181,7 +205,6 @@ export const GoalsPage: React.FC = () => {
 
   useEffect(() => {
     loadGoals();
-    // Load user's currency preference from profile
     profileApi.getProfile().then((profile) => {
       if (profile?.currency) setCurrency(profile.currency);
     }).catch(() => { /* keep default USD */ });
@@ -201,45 +224,32 @@ export const GoalsPage: React.FC = () => {
       setError(null);
 
       const token = localStorage.getItem("budgetbuddy_id_token");
-      if (!token) {
-        navigate("/auth");
-        return;
-      }
+      if (!token) { navigate("/auth"); return; }
 
       const response = await fetch(
         `${API_BASE_URL}/goals/${selectedGoal.goalId}/contribute`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
           body: JSON.stringify({ amount }),
         },
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to add contribution");
-      }
+      if (!response.ok) throw new Error("Failed to add contribution");
 
       const data = await response.json();
-
-      // Show celebration for new milestones with confetti
       if (data.data?.newMilestones?.length > 0) {
         setShowConfetti(true);
         setMilestoneMessage(`🎉 ${data.data.newMilestones[0].message}`);
       }
 
-      // Reload goals
       await loadGoals();
       setShowContributeModal(false);
       setSelectedGoal(null);
       setContributionAmount("");
     } catch (err) {
       console.error("Error adding contribution:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to add contribution",
-      );
+      setError(err instanceof Error ? err.message : "Failed to add contribution");
     } finally {
       setContributing(false);
     }
@@ -251,10 +261,7 @@ export const GoalsPage: React.FC = () => {
     setShowContributeModal(true);
   };
 
-  // Delete goal permanently — opens controlled confirmation modal
-  const handleDeleteGoal = (goal: Goal) => {
-    setGoalToDelete(goal);
-  };
+  const handleDeleteGoal = (goal: Goal) => setGoalToDelete(goal);
 
   const confirmDeleteGoal = async () => {
     if (!goalToDelete) return;
@@ -264,19 +271,11 @@ export const GoalsPage: React.FC = () => {
     try {
       setError(null);
       const token = localStorage.getItem("budgetbuddy_id_token");
-      if (!token) {
-        navigate("/auth");
-        return;
-      }
-
+      if (!token) { navigate("/auth"); return; }
       const response = await fetch(`${API_BASE_URL}/goals/${goal.goalId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
-
       if (!response.ok) throw new Error("Failed to delete goal");
       await loadGoals();
     } catch (err) {
@@ -284,66 +283,37 @@ export const GoalsPage: React.FC = () => {
     }
   };
 
-  // Archive/restore goal
   const handleArchiveGoal = async (goal: Goal, archive: boolean) => {
     try {
       setArchiving(goal.goalId);
       setError(null);
-
       const token = localStorage.getItem("budgetbuddy_id_token");
-      if (!token) {
-        navigate("/auth");
-        return;
-      }
-
+      if (!token) { navigate("/auth"); return; }
       const response = await fetch(`${API_BASE_URL}/goals/${goal.goalId}`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          status: archive
-            ? "archived"
-            : goal.progressPercent >= 100
-              ? "completed"
-              : "active",
+          status: archive ? "archived" : goal.progressPercent >= 100 ? "completed" : "active",
         }),
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to ${archive ? "archive" : "restore"} goal`);
-      }
-
-      // Reload goals
+      if (!response.ok) throw new Error(`Failed to ${archive ? "archive" : "restore"} goal`);
       await loadGoals();
     } catch (err) {
-      console.error(`Error ${archive ? "archiving" : "restoring"} goal:`, err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : `Failed to ${archive ? "archive" : "restore"} goal`,
-      );
+      setError(err instanceof Error ? err.message : `Failed to ${archive ? "archive" : "restore"} goal`);
     } finally {
       setArchiving(null);
     }
   };
 
-  // Drag and drop handlers for goal reordering
   const handleDragStart = (e: React.DragEvent, goal: Goal) => {
     setDraggedGoal(goal);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", goal.goalId);
-    // Add a slight delay to show the dragging state
-    setTimeout(() => {
-      const element = e.target as HTMLElement;
-      element.style.opacity = "0.5";
-    }, 0);
+    setTimeout(() => { (e.target as HTMLElement).style.opacity = "0.5"; }, 0);
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
-    const element = e.target as HTMLElement;
-    element.style.opacity = "1";
+    (e.target as HTMLElement).style.opacity = "1";
     setDraggedGoal(null);
     setDragOverGoalId(null);
     dragCounter.current = 0;
@@ -352,17 +322,13 @@ export const GoalsPage: React.FC = () => {
   const handleDragEnter = (e: React.DragEvent, goalId: string) => {
     e.preventDefault();
     dragCounter.current++;
-    if (draggedGoal && draggedGoal.goalId !== goalId) {
-      setDragOverGoalId(goalId);
-    }
+    if (draggedGoal && draggedGoal.goalId !== goalId) setDragOverGoalId(goalId);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     dragCounter.current--;
-    if (dragCounter.current === 0) {
-      setDragOverGoalId(null);
-    }
+    if (dragCounter.current === 0) setDragOverGoalId(null);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -375,57 +341,30 @@ export const GoalsPage: React.FC = () => {
     setDragOverGoalId(null);
     dragCounter.current = 0;
 
-    if (!draggedGoal || draggedGoal.goalId === targetGoal.goalId) {
-      return;
-    }
+    if (!draggedGoal || draggedGoal.goalId === targetGoal.goalId) return;
 
-    // Calculate new order
-    const draggedIndex = goals.findIndex(
-      (g) => g.goalId === draggedGoal.goalId,
-    );
+    const draggedIndex = goals.findIndex((g) => g.goalId === draggedGoal.goalId);
     const targetIndex = goals.findIndex((g) => g.goalId === targetGoal.goalId);
-
     if (draggedIndex === -1 || targetIndex === -1) return;
 
-    // Create new array with reordered goals
     const newGoals = [...goals];
     const [removed] = newGoals.splice(draggedIndex, 1);
     newGoals.splice(targetIndex, 0, removed);
-
-    // Update local state immediately for responsive UI
     setGoals(newGoals);
 
-    // Build the new order array for API
-    const goalOrder = newGoals.map((g, index) => ({
-      goalId: g.goalId,
-      priority: index + 1,
-    }));
+    const goalOrder = newGoals.map((g, index) => ({ goalId: g.goalId, priority: index + 1 }));
 
-    // Call API to persist the new order
     try {
       setReordering(true);
       const token = localStorage.getItem("budgetbuddy_id_token");
-      if (!token) {
-        navigate("/auth");
-        return;
-      }
-
+      if (!token) { navigate("/auth"); return; }
       const response = await fetch(`${API_BASE_URL}/goals/reorder`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ goalOrder }),
       });
-
-      if (!response.ok) {
-        // Revert on failure
-        await loadGoals();
-        throw new Error("Failed to reorder goals");
-      }
+      if (!response.ok) { await loadGoals(); throw new Error("Failed to reorder goals"); }
     } catch (err) {
-      console.error("Error reordering goals:", err);
       setError(err instanceof Error ? err.message : "Failed to reorder goals");
     } finally {
       setReordering(false);
@@ -441,13 +380,24 @@ export const GoalsPage: React.FC = () => {
     return "bg-gray-400";
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+  // Navigate to edit form — borrowed/lent use their own form
+  const handleEditGoal = (goal: Goal) => {
+    if (goal.subType === 'borrowed' || goal.subType === 'lent') {
+      navigate(`/goals/borrow-lend/${goal.goalId}/edit`);
+    } else {
+      navigate(`/goals/${goal.goalId}/edit`);
+    }
+  };
+
+  // CTA label in the contribute modal
+  const ctaLabel = (goal: Goal | null) => {
+    if (!goal) return 'Add Funds';
+    if (goal.subType === 'borrowed') return 'Record Repayment';
+    if (goal.subType === 'lent') return 'Record Return';
+    return 'Add Funds';
   };
 
   if (loading) {
@@ -473,10 +423,6 @@ export const GoalsPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="h-4 w-full rounded-full animate-pulse bg-muted mb-2" />
-                <div className="flex justify-between">
-                  <div className="h-3 w-20 rounded animate-pulse bg-muted" />
-                  <div className="h-3 w-20 rounded animate-pulse bg-muted" />
-                </div>
               </div>
             ))}
           </div>
@@ -485,15 +431,18 @@ export const GoalsPage: React.FC = () => {
     );
   }
 
+  const TAB_CONFIG: { key: GoalsTab; label: string; count: number; emptyTitle: string; emptyDesc: string; actionLabel: string; actionPath: string }[] = [
+    { key: 'goals',    label: '🎯 Goals',    count: savingsGoals.length,  emptyTitle: 'No goals yet',               emptyDesc: 'Create your first savings goal to start tracking your progress', actionLabel: 'Create Your First Goal',    actionPath: '/goals/new' },
+    { key: 'borrowed', label: '💸 Borrowed',  count: borrowedGoals.length, emptyTitle: 'Not tracking any loans',     emptyDesc: 'Track money you owe so you never forget a debt', actionLabel: 'Track Borrowed Money', actionPath: '/goals/borrow-lend/new?type=borrowed' },
+    { key: 'lent',     label: '🤝 Lent',      count: lentGoals.length,     emptyTitle: 'Not tracking any money lent', emptyDesc: 'Track money others owe you so you can follow up', actionLabel: 'Track Money You Lent',  actionPath: '/goals/borrow-lend/new?type=lent' },
+  ];
+  const currentTab = TAB_CONFIG.find(t => t.key === activeTab)!;
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Confetti Animation */}
-      <Confetti
-        active={showConfetti}
-        onComplete={() => setShowConfetti(false)}
-      />
+      <Confetti active={showConfetti} onComplete={() => setShowConfetti(false)} />
 
-      {/* Milestone celebration notification (replaces window.alert) */}
+      {/* Milestone toast */}
       {milestoneMessage && (
         <div
           role="status"
@@ -502,13 +451,7 @@ export const GoalsPage: React.FC = () => {
         >
           <span className="text-2xl" aria-hidden="true">🎉</span>
           <p className="text-green-800 dark:text-green-300 font-medium text-sm flex-1">{milestoneMessage}</p>
-          <button
-            onClick={() => setMilestoneMessage(null)}
-            className="text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 rounded"
-            aria-label="Dismiss milestone notification"
-          >
-            ✕
-          </button>
+          <button onClick={() => setMilestoneMessage(null)} className="text-muted-foreground hover:text-foreground rounded" aria-label="Dismiss">✕</button>
         </div>
       )}
 
@@ -523,95 +466,106 @@ export const GoalsPage: React.FC = () => {
             ← Back
           </button>
           <PageHeader
-            title="🎯 Savings Goals"
+            title="Savings Goals"
             action={
               <button
-                onClick={() => navigate("/goals/new")}
-                className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors"
+                onClick={() => navigate(currentTab.actionPath)}
+                className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors text-sm font-medium"
               >
-                + New Goal
+                + {currentTab.key === 'goals' ? 'New Goal' : currentTab.key === 'borrowed' ? 'Track Borrowed' : 'Track Lent'}
               </button>
             }
           />
         </div>
+
+        {/* Tab row */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-1" role="tablist">
+            {TAB_CONFIG.map(tab => (
+              <button
+                key={tab.key}
+                role="tab"
+                aria-selected={activeTab === tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.key
+                    ? 'border-[var(--color-primary)] text-[var(--color-primary)]'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tab.label}
+                {tab.count > 0 && (
+                  <span className="ml-1.5 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full tabular-nums">
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
       </header>
 
-      {/* Summary Cards */}
-      {summary && (
+      {/* Summary Cards — only show for Goals tab */}
+      {summary && activeTab === 'goals' && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-surface rounded-lg shadow border border-border p-4">
               <div className="text-sm text-muted-foreground">Active Goals</div>
-              <div className="text-2xl font-bold text-foreground">
-                {summary.activeGoals}
-              </div>
+              <div className="text-2xl font-bold text-foreground">{summary.activeGoals}</div>
             </div>
             <div className="bg-surface rounded-lg shadow border border-border p-4">
               <div className="text-sm text-muted-foreground">Total Target</div>
-              <div className="text-2xl font-bold text-foreground">
-                {formatCurrency(summary.totalTarget, currency)}
-              </div>
+              <div className="text-2xl font-bold text-foreground">{formatCurrency(summary.totalTarget, currency)}</div>
             </div>
             <div className="bg-surface rounded-lg shadow border border-border p-4">
               <div className="text-sm text-muted-foreground">Total Saved</div>
-              <div className="text-2xl font-bold text-green-600">
-                {formatCurrency(summary.totalSaved, currency)}
-              </div>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(summary.totalSaved, currency)}</div>
             </div>
             <div className="bg-surface rounded-lg shadow border border-border p-4">
               <div className="text-sm text-muted-foreground">Overall Progress</div>
-              <div className="text-2xl font-bold text-blue-600">
-                {summary.overallProgress}%
-              </div>
+              <div className="text-2xl font-bold text-blue-600">{summary.overallProgress}%</div>
               <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${getProgressColor(summary.overallProgress)} transition-all`}
-                  style={{ width: `${summary.overallProgress}%` }}
-                />
+                <div className={`h-full ${getProgressColor(summary.overallProgress)} transition-all`} style={{ width: `${summary.overallProgress}%` }} />
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Error Message */}
+      {/* Error */}
       {error && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300">
             {error}
-            <button
-              onClick={() => setError(null)}
-              className="ml-4 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-200"
-            >
-              ✕
-            </button>
+            <button onClick={() => setError(null)} className="ml-4 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-200">✕</button>
           </div>
         </div>
       )}
 
-      {/* Goals Card Grid */}
+      {/* Goals Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        {activeGoals.length === 0 && archivedGoals.length === 0 ? (
+        {tabGoals.length === 0 && (activeTab !== 'goals' || archivedGoals.length === 0) ? (
           <EmptyState
-            icon="🎯"
-            title="No goals yet"
-            description="Create your first savings goal to start tracking your progress"
-            actionLabel="Create Your First Goal"
-            onAction={() => navigate('/goals/new')}
+            icon={activeTab === 'goals' ? '🎯' : activeTab === 'borrowed' ? '💸' : '🤝'}
+            title={currentTab.emptyTitle}
+            description={currentTab.emptyDesc}
+            actionLabel={currentTab.actionLabel}
+            onAction={() => navigate(currentTab.actionPath)}
           />
         ) : (
           <>
-            {activeGoals.length > 1 && reordering && (
+            {tabGoals.length > 1 && reordering && (
               <p className="text-sm text-muted-foreground mb-4">
                 <span className="ml-2 text-[var(--color-primary)]">Saving order...</span>
               </p>
             )}
+
             {/* Card grid — 1 col mobile, 2 col tablet, 3 col desktop */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {activeGoals.map((goal) => (
+              {tabGoals.map((goal) => (
                 <div
                   key={goal.goalId}
-                  draggable={goal.status === "active"}
+                  draggable={goal.status === "active" && activeTab === 'goals'}
                   onDragStart={(e) => handleDragStart(e, goal)}
                   onDragEnd={handleDragEnd}
                   onDragEnter={(e) => handleDragEnter(e, goal.goalId)}
@@ -624,24 +578,24 @@ export const GoalsPage: React.FC = () => {
                     dragOverGoalId === goal.goalId
                       ? "border-[var(--color-primary)] border-dashed bg-[var(--color-primary)]/5"
                       : ""
-                  } ${draggedGoal?.goalId === goal.goalId ? "opacity-50 cursor-grabbing" : goal.status === "active" ? "cursor-grab" : ""}`}
+                  } ${draggedGoal?.goalId === goal.goalId ? "opacity-50 cursor-grabbing" : goal.status === "active" && activeTab === 'goals' ? "cursor-grab" : ""}`}
                 >
-                  {/* Card header — icon + name + action buttons */}
+                  {/* Card header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-2xl shrink-0" aria-hidden="true">{goal.icon}</span>
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-foreground text-sm truncate">
-                          {goal.name}
-                        </h3>
+                        <h3 className="font-semibold text-foreground text-sm truncate">{goal.name}</h3>
+                        {goal.personName && (
+                          <p className="text-xs text-[var(--color-primary)] font-medium">
+                            {goal.subType === 'borrowed' ? 'from' : 'to'} {goal.personName}
+                          </p>
+                        )}
                         {goal.targetDate && (
                           <p className="text-xs text-muted-foreground">
                             {goal.daysRemaining !== null && goal.daysRemaining > 0
                               ? `${goal.daysRemaining}d left`
-                              : goal.daysRemaining === 0
-                              ? 'Due today'
-                              : 'Past due'
-                            }
+                              : goal.daysRemaining === 0 ? 'Due today' : 'Past due'}
                           </p>
                         )}
                       </div>
@@ -650,7 +604,7 @@ export const GoalsPage: React.FC = () => {
                       {goal.status === "active" && (
                         <>
                           <button
-                            onClick={() => navigate(`/goals/${goal.goalId}/edit`)}
+                            onClick={() => handleEditGoal(goal)}
                             className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
                             aria-label={`Edit ${goal.name}`}
                           >
@@ -678,23 +632,16 @@ export const GoalsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Progress ring + amounts — centered */}
+                  {/* Progress ring */}
                   <div className="flex flex-col items-center my-2">
                     <div className="relative">
                       <ProgressRing
                         percent={goal.progressPercent}
                         size={88}
                         stroke={8}
-                        aria-label={`${goal.name} progress: ${goal.progressPercent}%`}
                       />
-                      {/* Percent label in center */}
-                      <div
-                        className="absolute inset-0 flex items-center justify-center"
-                        aria-hidden="true"
-                      >
-                        <span className="text-sm font-bold text-foreground tabular-nums">
-                          {goal.progressPercent}%
-                        </span>
+                      <div className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                        <span className="text-sm font-bold text-foreground tabular-nums">{goal.progressPercent}%</span>
                       </div>
                     </div>
                     <div
@@ -713,94 +660,73 @@ export const GoalsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Milestones row */}
-                  <div className="flex gap-1 my-3">
-                    {[25, 50, 75, 100].map((milestone) => {
-                      const reached = goal.milestones?.[String(milestone)]?.reached;
-                      return (
-                        <div
-                          key={milestone}
-                          className={`flex-1 text-center py-0.5 rounded text-xs font-medium ${
-                            reached
-                              ? "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300"
-                              : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {reached ? '✓' : ''} {milestone}%
-                        </div>
-                      );
-                    })}
-                  </div>
+                  {/* Milestones row — only for savings goals */}
+                  {(!goal.subType || goal.subType === 'goal') && (
+                    <div className="flex gap-1 my-3">
+                      {[25, 50, 75, 100].map((milestone) => {
+                        const reached = goal.milestones?.[String(milestone)]?.reached;
+                        return (
+                          <div
+                            key={milestone}
+                            className={`flex-1 text-center py-0.5 rounded text-xs font-medium ${
+                              reached ? "bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300" : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {reached ? '✓' : ''} {milestone}%
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
 
-                  {/* Monthly required tip */}
-                  {goal.monthlyRequired && goal.status === "active" && (
+                  {goal.monthlyRequired && goal.status === "active" && !goal.subType && (
                     <p className="text-xs text-[var(--color-primary)] mb-3">
                       Save {formatCurrency(goal.monthlyRequired, currency)}/mo to hit target
                     </p>
                   )}
 
-                  {/* Completed badge */}
                   {goal.status === "completed" && goal.completedAt && (
-                    <p className="text-xs text-green-600 font-medium mb-3">
-                      🏆 Completed {formatDate(goal.completedAt)}
-                    </p>
+                    <p className="text-xs text-green-600 font-medium mb-3">🏆 Completed {formatDate(goal.completedAt)}</p>
                   )}
 
-                  {/* Add funds CTA — pushed to bottom */}
                   {goal.status === "active" && (
                     <button
                       onClick={() => openContributeModal(goal)}
                       className="mt-auto w-full py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)] transition-colors text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                     >
                       <Plus className="w-4 h-4 inline mr-1" aria-hidden="true" />
-                      Add Funds
+                      {ctaLabel(goal)}
                     </button>
                   )}
-
                 </div>
               ))}
             </div>
 
-            {/* Archived Goals Section */}
-            {archivedGoals.length > 0 && (
+            {/* Archived Goals Section — only on Goals tab */}
+            {activeTab === 'goals' && archivedGoals.length > 0 && (
               <div className="mt-8">
                 <button
                   onClick={() => setShowArchived(!showArchived)}
                   className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4"
                 >
-                  <span
-                    className={`transition-transform ${showArchived ? "rotate-90" : ""}`}
-                  >
-                    ▶
-                  </span>
-                  <span className="text-sm font-medium">
-                    Archived Goals ({archivedGoals.length})
-                  </span>
+                  <span className={`transition-transform ${showArchived ? "rotate-90" : ""}`}>▶</span>
+                  <span className="text-sm font-medium">Archived Goals ({archivedGoals.length})</span>
                 </button>
 
                 {showArchived && (
                   <div className="space-y-4">
                     {archivedGoals.map((goal) => (
-                      <div
-                        key={goal.goalId}
-                        className="bg-muted rounded-lg shadow border border-border p-6 opacity-75"
-                      >
+                      <div key={goal.goalId} className="bg-muted rounded-lg shadow border border-border p-6 opacity-75">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
-                            <span className="text-3xl grayscale">
-                              {goal.icon}
-                            </span>
+                            <span className="text-3xl grayscale">{goal.icon}</span>
                             <div>
                               <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                                 {goal.name}
-                                <span className="text-sm text-muted-foreground">
-                                  📦 Archived
-                                </span>
+                                <span className="text-sm text-muted-foreground">📦 Archived</span>
                               </h3>
                               {goal.completedAt && (
-                                <p className="text-sm text-muted-foreground">
-                                  Completed: {formatDate(goal.completedAt)}
-                                </p>
+                                <p className="text-sm text-muted-foreground">Completed: {formatDate(goal.completedAt)}</p>
                               )}
                             </div>
                           </div>
@@ -809,32 +735,17 @@ export const GoalsPage: React.FC = () => {
                             disabled={archiving === goal.goalId}
                             className="p-1.5 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 rounded-lg transition-colors"
                             aria-label={`Restore ${goal.name}`}
-                            title="Restore goal"
                           >
-                            {archiving === goal.goalId ? (
-                              <span className="animate-spin inline-block">⏳</span>
-                            ) : (
-                              <ArchiveRestore className="w-4 h-4" />
-                            )}
+                            {archiving === goal.goalId ? <span className="animate-spin inline-block">⏳</span> : <ArchiveRestore className="w-4 h-4" />}
                           </button>
                         </div>
-
-                        {/* Progress Bar */}
                         <div className="mb-2">
                           <div className="flex justify-between text-sm mb-1">
-                            <span className="text-sm text-muted-foreground">
-                              {formatCurrency(goal.currentAmount, currency)} of{" "}
-                              {formatCurrency(goal.targetAmount, currency)}
-                            </span>
-                            <span className="font-semibold text-muted-foreground">
-                              {goal.progressPercent}%
-                            </span>
+                            <span className="text-sm text-muted-foreground">{formatCurrency(goal.currentAmount, currency)} of {formatCurrency(goal.targetAmount, currency)}</span>
+                            <span className="font-semibold text-muted-foreground">{goal.progressPercent}%</span>
                           </div>
                           <div className="h-3 bg-border rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gray-500 transition-all duration-500"
-                              style={{ width: `${goal.progressPercent}%` }}
-                            />
+                            <div className="h-full bg-gray-500 transition-all duration-500" style={{ width: `${goal.progressPercent}%` }} />
                           </div>
                         </div>
                       </div>
@@ -849,94 +760,62 @@ export const GoalsPage: React.FC = () => {
 
       {/* Contribute Modal */}
       {showContributeModal && selectedGoal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="contribute-modal-title"
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        >
+        <div role="dialog" aria-modal="true" aria-labelledby="contribute-modal-title" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-surface rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
             <h3 id="contribute-modal-title" className="text-lg font-semibold text-foreground mb-4">
-              Add Funds to "{selectedGoal.name}"
+              {ctaLabel(selectedGoal)} — "{selectedGoal.name}"
             </h3>
             <div className="mb-4">
-              <label htmlFor="contribution-amount" className="block text-sm font-medium text-foreground mb-2">
-                Amount
-              </label>
+              <label htmlFor="contribution-amount" className="block text-sm font-medium text-foreground mb-2">Amount</label>
               <div className="relative">
                 <span className="absolute left-4 top-2 text-muted-foreground" aria-hidden="true">$</span>
                 <input
                   id="contribution-amount"
-                  type="number"
-                  step="0.01"
-                  min="0.01"
+                  type="number" step="0.01" min="0.01"
                   value={contributionAmount}
                   onChange={(e) => setContributionAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full pl-8 pr-4 py-2 border border-border bg-surface text-foreground rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-[var(--color-primary)]"
+                  className="w-full pl-8 pr-4 py-2 border border-border bg-surface text-foreground rounded-lg focus:ring-2 focus:ring-[var(--color-primary)]"
                   autoFocus
                 />
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Current: {formatCurrency(selectedGoal.currentAmount, currency)}{" "}
-                / Target: {formatCurrency(selectedGoal.targetAmount, currency)}
+                {selectedGoal.subType === 'borrowed' ? 'Repaid' : selectedGoal.subType === 'lent' ? 'Returned' : 'Current'}:
+                {' '}{formatCurrency(selectedGoal.currentAmount, currency)} / {formatCurrency(selectedGoal.targetAmount, currency)}
               </p>
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => {
-                  setShowContributeModal(false);
-                  setSelectedGoal(null);
-                }}
-                className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                onClick={() => { setShowContributeModal(false); setSelectedGoal(null); }}
+                className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted"
               >
                 Cancel
               </button>
               <button
                 onClick={handleContribute}
                 disabled={contributing || !contributionAmount}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 ${
+                className={`flex-1 px-4 py-2 rounded-lg font-medium ${
                   contributing || !contributionAmount
                     ? "bg-gray-300 text-[var(--color-muted-foreground)] cursor-not-allowed"
                     : "bg-green-600 text-white hover:bg-green-700"
                 }`}
               >
-                {contributing ? "Adding..." : "Add Funds"}
+                {contributing ? "Saving..." : ctaLabel(selectedGoal)}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal — replaces window.confirm */}
+      {/* Delete Confirmation Modal */}
       {goalToDelete && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-goal-title"
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        >
+        <div role="dialog" aria-modal="true" aria-labelledby="delete-goal-title" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-surface rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-            <h3 id="delete-goal-title" className="text-lg font-semibold text-foreground mb-2">
-              Delete "{goalToDelete.name}"?
-            </h3>
-            <p className="text-muted-foreground mb-6 text-sm">
-              This will permanently delete the goal and all its contribution history. This cannot be undone.
-            </p>
+            <h3 id="delete-goal-title" className="text-lg font-semibold text-foreground mb-2">Delete "{goalToDelete.name}"?</h3>
+            <p className="text-muted-foreground mb-6 text-sm">This will permanently delete the entry and all its history.</p>
             <div className="flex gap-3">
-              <button
-                onClick={() => setGoalToDelete(null)}
-                className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
-                autoFocus
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteGoal}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-              >
-                Delete Goal
-              </button>
+              <button onClick={() => setGoalToDelete(null)} className="flex-1 px-4 py-2 border border-border text-foreground rounded-lg hover:bg-muted" autoFocus>Cancel</button>
+              <button onClick={confirmDeleteGoal} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
             </div>
           </div>
         </div>

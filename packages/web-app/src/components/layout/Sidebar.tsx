@@ -4,7 +4,7 @@
  * IA redesign — three clear sections replacing the single overloaded "Manage" group:
  *   1. Primary nav (daily use): Overview, Budget, Accounts, Goals, Insights
  *   2. Track (asset/liability monitoring): Debt Payoff, Investments, Net Worth, Credit Score
- *   3. Manage (recurring obligations + admin): Bills, Subscriptions, Members
+ *   3. Manage (recurring obligations + admin): Bills, Subscriptions, Members, Planned
  *   4. Tools — standalone, no group, links to public calculators page
  */
 
@@ -32,6 +32,7 @@ import {
   Wrench,
   BarChart2,
   ListChecks,
+  CalendarClock,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -70,9 +71,10 @@ export const trackItems: NavItem[] = [
 
 /** Manage group — recurring obligations and account admin */
 export const manageItems: NavItem[] = [
-  { id: 'bills',         label: 'Bills',         icon: FileText,   path: '/bills' },
-  { id: 'subscriptions', label: 'Subscriptions', icon: RefreshCw,  path: '/subscriptions' },
-  { id: 'members',       label: 'Members',       icon: Users,      path: '/budget/members' },
+  { id: 'bills',         label: 'Bills',         icon: FileText,      path: '/bills' },
+  { id: 'subscriptions', label: 'Subscriptions', icon: RefreshCw,     path: '/subscriptions' },
+  { id: 'members',       label: 'Members',       icon: Users,         path: '/budget/members' },
+  { id: 'planned',       label: 'Planned',       icon: CalendarClock, path: '/planned-transactions' },
 ];
 
 /** Bottom secondary nav */
@@ -144,7 +146,6 @@ const NavButton: React.FC<NavButtonProps> = ({ item, collapsed, isMobile, active
   );
 };
 
-/** Reusable collapsible section header */
 interface SectionToggleProps {
   label: string;
   icon: LucideIcon;
