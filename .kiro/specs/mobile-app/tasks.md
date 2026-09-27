@@ -1,4 +1,4 @@
-﻿# Implementation Plan: Mobile App
+# Implementation Plan: Mobile App
 
 ## Overview
 

@@ -27,6 +27,8 @@ import {
   type TransactionTemplate,
 } from "../components/TransactionTemplateModal";
 import MarkRecurringModal from "../components/MarkRecurringModal";
+import { AiCoachChip } from "../components/AiCoachChip";
+import { calculateOverBudgetInfo } from "../utils/overBudgetInfo";
 import {
   getCurrentMonthString,
   getTodayString,
@@ -714,7 +716,7 @@ export const BudgetPage: React.FC = () => {
   };
 
   const calculateTotals = () => {
-    if (!budget) return { income: 0, planned: 0, spent: 0, remaining: 0 };
+    if (!budget) return { income: 0, planned: 0, spent: 0, remaining: 0, overBudgetCount: 0 };
 
     // Safety check: ensure groups is an array
     if (!Array.isArray(budget.groups)) {
@@ -722,7 +724,7 @@ export const BudgetPage: React.FC = () => {
         "[calculateTotals] budget.groups is not an array:",
         budget.groups,
       );
-      return { income: 0, planned: 0, spent: 0, remaining: 0 };
+      return { income: 0, planned: 0, spent: 0, remaining: 0, overBudgetCount: 0 };
     }
 
     const incomeGroup = budget.groups.find((g) => g.type === "income");
@@ -751,11 +753,17 @@ export const BudgetPage: React.FC = () => {
     // This shows how much income hasn't been allocated to categories yet
     const remaining = income - planned;
 
+    const { overBudgetCount, topOverBudgetCategory } = calculateOverBudgetInfo(
+      nonIncomeGroups.flatMap((group) => group.categories),
+    );
+
     return {
       income,
       planned,
       spent,
       remaining,
+      overBudgetCount,
+      topOverBudgetCategory,
     };
   };
 
@@ -1854,7 +1862,7 @@ export const BudgetPage: React.FC = () => {
   // The "Start Planning" empty state is rendered in the center column below
   const totals = budget
     ? calculateTotals()
-    : { income: 0, planned: 0, spent: 0, remaining: 0 };
+    : { income: 0, planned: 0, spent: 0, remaining: 0, overBudgetCount: 0, topOverBudgetCategory: undefined as string | undefined };
 
   return (
     <div className="h-full bg-background flex">
@@ -3717,6 +3725,19 @@ export const BudgetPage: React.FC = () => {
           // Optionally reload data or show success message
         }}
         currency={currency}
+      />
+
+      <AiCoachChip
+        summary={{
+          income: totals.income,
+          planned: totals.planned,
+          spent: totals.spent,
+          remaining: totals.remaining,
+          overBudgetCount: totals.overBudgetCount,
+          topOverBudgetCategory: totals.topOverBudgetCategory,
+          currency,
+        }}
+        hasBudget={budget !== null}
       />
     </div>
   );

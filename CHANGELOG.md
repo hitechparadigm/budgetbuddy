@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.10.3] - 2026-09-27
+
+### feat: wire AiCoachChip into BudgetPage, delete dead api-client package
+
+#### AiCoachChip integration
+- `BudgetPage.tsx`'s `calculateTotals()` now also computes `overBudgetCount`/`topOverBudgetCategory`
+  via a new, independently-tested `calculateOverBudgetInfo()` utility
+  (`packages/web-app/src/utils/overBudgetInfo.ts`). All three fallback sites (two internal
+  early-returns plus the external ternary fallback) updated in sync.
+- `<AiCoachChip />` now mounted on `BudgetPage.tsx` (previously built but never rendered
+  anywhere) as the last sibling before the page's outer closing `</div>`.
+- Added `BudgetPage.test.tsx` covering chip visibility (with/without a budget) and its
+  navigation to `/insights` on click. Fixed a repo-wide pre-existing jest infrastructure gap
+  in `packages/web-app` blocking this: no test had ever rendered a page using Vite's
+  `import.meta.env` syntax under Jest's CommonJS loader. Added a source-rewrite transformer
+  (`scripts/import-meta-env-jest-transformer.js`) plus a `moduleNameMapper` entry for
+  `@budget-buddy/shared/dist/*` subpath imports.
+
+#### Dead code removal
+- Deleted `packages/api-client` entirely - confirmed zero consumers in `web-app` or `mobile`,
+  and its own lockfile entry was already marked `extraneous: true`. Removed the
+  `@budget-buddy/api-client/*` path mapping from root `tsconfig.json`, the `packages/api-client`
+  workspace entry from root `package-lock.json`, and its link from `docs/README.md`.
 ## [1.10.2] - 2026-09-27
 
 ### feat: wire mobile navigation, fix MFA gap, clear all typecheck errors

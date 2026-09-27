@@ -16,8 +16,7 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@budget-buddy/shared/*": ["./packages/shared/src/*"],
-      "@budget-buddy/api-client/*": ["./packages/api-client/src/*"]
+      "@budget-buddy/shared/*": ["./packages/shared/src/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],

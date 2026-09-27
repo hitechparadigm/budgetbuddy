@@ -17,6 +17,13 @@
 - See `.kiro/specs/mobile-app/tasks.md` for full detail; next blocker is 5 failing suites' actual
   test-content bugs (not typecheck), which block task 22.1's coverage gate.
 
+**Web app (`packages/web-app`)**
+- `AiCoachChip` now mounted on `BudgetPage.tsx` (was built, never rendered) - see
+  `web-app-followups` spec.
+- `packages/api-client` (confirmed dead code) deleted along with its tsconfig/lockfile/docs
+  references.
+- Fixed a repo-wide jest gap blocking page-render tests that use Vite's `import.meta.env` syntax.
+  use `import.meta.env`.
 ## LATEST - Session 163: Spec and Documentation Consolidation (2026-09-23)
 
 **Autonomous mode**
