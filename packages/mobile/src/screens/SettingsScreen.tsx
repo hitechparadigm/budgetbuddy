@@ -14,9 +14,7 @@ import { ExportModal } from "../components/ExportModal";
 import { BackupModal } from "../components/BackupModal";
 import NotificationSettings from "../components/NotificationSettings";
 import FamilySettings from "../components/FamilySettings";
-import CurrencySelector, {
-  CurrencyDisplay,
-} from "../components/CurrencySelector";
+import { CurrencySelector } from "../components/CurrencySelector";
 import TwoFactorSetup from "../components/TwoFactorSetup";
 import TwoFactorVerify from "../components/TwoFactorVerify";
 import { useTheme } from "../hooks/useTheme";
@@ -25,6 +23,8 @@ import { useCurrency } from "../contexts/CurrencyContext";
 import { useBudgets } from "../services/budget";
 import { useTransactions } from "../services/transaction";
 import { backupService } from "../services/backup";
+import { Budget as ExportBudget, Transaction as ExportTransaction } from "../types";
+import { getSupportedCurrencies } from "@budget-buddy/shared/src/utils/currency";
 import * as Haptics from "expo-haptics";
 
 interface SettingsItem {
@@ -49,8 +49,16 @@ export default function SettingsScreen() {
     getBackupCodes,
   } = useAuth();
   const { selectedCurrency, setSelectedCurrency } = useCurrency();
-  const { data: budgets = [] } = useBudgets();
-  const { data: transactions = [] } = useTransactions();
+  // NOTE: useBudgets()/useTransactions() below return the recurring-budget-item
+  // shape (types/budget.ts), but ExportModal/BackupModal/backupService expect
+  // the monthly-budget-document shape (types/index.ts). There is currently no
+  // hook in this codebase that fetches the monthly-document shape, so export
+  // and backup/pre-deletion-backup are wired to empty arrays for now rather
+  // than passing mismatched data. See mobile-app spec task 1.7 notes.
+  useBudgets();
+  useTransactions();
+  const exportBudgets: ExportBudget[] = [];
+  const exportTransactions: ExportTransaction[] = [];
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
@@ -121,9 +129,9 @@ export default function SettingsScreen() {
           onPress: async () => {
             try {
               const result = await backupService.createPreDeletionBackup(
-                budgets,
-                transactions,
-                user?.userId || "unknown",
+                exportBudgets,
+                exportTransactions,
+                user?.id || "unknown",
               );
 
               if (result.success) {
@@ -434,8 +442,8 @@ export default function SettingsScreen() {
               {item.type === "navigation" && (
                 <Button
                   title=">"
-                  onPress={item.onPress}
-                  variant="ghost"
+                  onPress={item.onPress ?? (() => {})}
+                  variant="outline"
                   style={styles.navigationButton}
                 />
               )}
@@ -448,7 +456,7 @@ export default function SettingsScreen() {
                         ? "Backup"
                         : "Action"
                   }
-                  onPress={item.onPress}
+                  onPress={item.onPress ?? (() => {})}
                   variant="outline"
                   style={styles.actionButton}
                 />
@@ -517,17 +525,17 @@ export default function SettingsScreen() {
       <ExportModal
         visible={exportModalVisible}
         onClose={() => setExportModalVisible(false)}
-        budgets={budgets}
-        transactions={transactions}
+        budgets={exportBudgets}
+        transactions={exportTransactions}
         type={exportType}
       />
 
       <BackupModal
         visible={backupModalVisible}
         onClose={() => setBackupModalVisible(false)}
-        budgets={budgets}
-        transactions={transactions}
-        userId={user?.userId || "unknown"}
+        budgets={exportBudgets}
+        transactions={exportTransactions}
+        userId={user?.id || "unknown"}
         mode={backupMode}
       />
       {notificationSettingsVisible && (
@@ -541,16 +549,34 @@ export default function SettingsScreen() {
             backgroundColor: colors.background,
           }}
         >
-          <NotificationSettings userId={user?.userId || ""} />
+          <NotificationSettings userId={user?.id || ""} />
         </View>
       )}
 
-      <CurrencySelector
+      <Modal
         visible={currencySelectorVisible}
-        onClose={() => setCurrencySelectorVisible(false)}
-        onCurrencySelect={handleCurrencyChange}
-        selectedCurrency={selectedCurrency}
-      />
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setCurrencySelectorVisible(false)}
+      >
+        <SafeAreaView style={styles.container}>
+          <CurrencySelector
+            value={selectedCurrency.code}
+            onChange={(currencyCode) => {
+              const currency = getSupportedCurrencies().find((c) => c.code === currencyCode);
+              if (currency) {
+                handleCurrencyChange(currency);
+              }
+              setCurrencySelectorVisible(false);
+            }}
+          />
+          <Button
+            title="Close"
+            onPress={() => setCurrencySelectorVisible(false)}
+            variant="outline"
+          />
+        </SafeAreaView>
+      </Modal>
 
       {familySettingsVisible && (
         <View
@@ -567,18 +593,12 @@ export default function SettingsScreen() {
         </View>
       )}
 
-      {/* Two-Factor Authentication Setup Modal */}
-      <Modal
+      {/* Two-Factor Authentication Setup Modal (renders its own Modal internally) */}
+      <TwoFactorSetup
         visible={twoFactorSetupVisible}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setTwoFactorSetupVisible(false)}
-      >
-        <TwoFactorSetup
-          onComplete={handle2FASetupComplete}
-          onCancel={() => setTwoFactorSetupVisible(false)}
-        />
-      </Modal>
+        onClose={() => setTwoFactorSetupVisible(false)}
+        onComplete={handle2FASetupComplete}
+      />
 
       {/* Backup Codes Modal */}
       <Modal
@@ -589,7 +609,7 @@ export default function SettingsScreen() {
       >
         <View style={styles.modalOverlay}>
           <View
-            style={[styles.backupCodesModal, { backgroundColor: colors.card }]}
+            style={[styles.backupCodesModal, { backgroundColor: colors.surface }]}
           >
             <Text style={[styles.modalTitle, { color: colors.text }]}>
               Backup Codes

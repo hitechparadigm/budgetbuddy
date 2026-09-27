@@ -85,9 +85,50 @@ inclusion: always
 - [ ] Security posture ~80%
 
 ### Mobile
-- [ ] React Native + Expo app - not started; design in docs/mobile-ux-design.md
-- [ ] See `.kiro/specs/mobile-app/tasks.md` for Tier 1 priorities
-
+- [x] React Native + Expo app is SUBSTANTIALLY BUILT, not "not started" - corrected a stale
+      assumption carried in this file and in `.kiro/specs/mobile-app/tasks.md` for many
+      sessions (Session 164 audit). Real source exists for auth, budget, transactions, offline
+      SQLite sync, notifications, receipts, exports, 2FA, currency, backup/restore, with a
+      16-file property-based test suite. See `.kiro/specs/mobile-app/tasks.md` for the
+      corrected, evidence-based task list.
+- [x] Navigation wiring (task 6.4) done: `RootNavigator.tsx` now has 5 tabs (Budget/
+      Transactions/Goals/Summary/More); the 11 previously-orphaned screens (Bills, Insights,
+      BankSync, CreditScore, DebtPayoff, Investments, NetWorth, Subscriptions, Tips,
+      SyncSettings, OfflineSettings) plus Settings are reachable via a new `MoreScreen.tsx` hub
+      under a `MoreStackNavigator`. Onboarding routing fixed too (`AuthContext.tsx`
+      `needsOnboarding` flag, `App.tsx` renders `OnboardingScreen` before `RootNavigator`).
+- [x] MFA/AuthContext-AuthService mismatch (task 2.6) fixed by scoping to reality, not by
+      building real MFA: confirmed zero backend MFA support exists anywhere in the product (no
+      `/auth/mfa/*` API routes, no `mfa` config on the Cognito User Pool in
+      `infrastructure/lib/auth-stack.ts`, web app's `TwoFactorSetup.tsx` calls the same
+      nonexistent endpoints). Added the 6 missing `AuthService` methods as real methods that
+      reject with a clear error instead of silently no-op'ing; extended `signInUser`'s return
+      type with optional `challengeName`/`session` (always `undefined` today). Real Cognito MFA
+      (enabling it on the User Pool, implementing challenge/response) is future work, not done.
+- [x] `npm run typecheck` in `packages/mobile` now reports **0 errors**, down from 127. Fixed in
+      stages: installed 5 declared-but-missing/never-declared packages
+      (`@react-native-picker/picker`, `expo-clipboard` added to `package.json`;
+      `@react-native-community/datetimepicker`/`expo-camera`/`expo-image-picker` were declared
+      but not installed) via `npm install --legacy-peer-deps` (flag required - unrelated
+      pre-existing peer conflict: `react-native-get-random-values@^2.0.0` wants
+      `react-native@>=0.81`, project pins `0.72.6`); reconciled duplicate `Budget`/`Transaction`
+      types to `src/types/index.ts` as canonical; fixed ~15 files of component/style-prop type
+      mismatches; fixed 45 test-file-only errors (fast-check `fc.option()` needs
+      `{ nil: undefined }` since these types use `T | undefined` not `T | null`; missing
+      `isPaused` field on category generators; unions from `fc.constantFrom()` need an
+      `as fc.Arbitrary<...>` cast or TS widens to `string`).
+- [x] `npx jest` in `packages/mobile` now passes 241/259 (up from 238/259 baseline). 5 suites
+      still fail, but for a different reason than before: `notifications.test.ts` and
+      `data-export.test.ts` now compile and run (previously failed before even executing) and
+      fail on real test-content bugs - assertions that don't match actual service behavior, not
+      typos. Same for `currency.test.ts`/`quietHours.test.ts`. `TwoFactorSetup.test.tsx`/
+      `quick-actions.test.ts` are order-dependent flaky (pass standalone, intermittently fail in
+      the full suite run).
+- [ ] `packages/mobile` not wired into root workspace (`package.json`) or CI (`pr-check.yml`) -
+      task 1.6, not yet done.
+- [ ] Next highest-leverage item: fix the 5 failing jest suites' actual test-content bugs so
+      task 22.1's coverage gate can produce a trustworthy number. See
+      `.kiro/specs/mobile-app/tasks.md` for the corrected priority order.
 ## Deprecated / Removed
 - `FamilyIdResolver` - deleted
 - `FAMILY#` partition keys - replaced by `BUDGET#`

@@ -55,19 +55,82 @@ jest.mock('../screens/SettingsScreen', () => {
   };
 });
 
+jest.mock('../screens/GoalsScreen', () => {
+  const { View, Text } = require('react-native');
+  return function MockGoalsScreen() {
+    return (
+      <View testID="goals-screen">
+        <Text>Goals Screen</Text>
+      </View>
+    );
+  };
+});
+
+jest.mock('../screens/MoreScreen', () => {
+  const { View, Text } = require('react-native');
+  return function MockMoreScreen() {
+    return (
+      <View testID="more-screen">
+        <Text>More Screen</Text>
+      </View>
+    );
+  };
+});
+
+// The More tab's stack navigator imports every screen it can push to
+// (see RootNavigator.tsx MoreStackNavigator) even though only MoreMenu
+// renders by default. Several of these screens import AuthContext, which
+// transitively pulls in native Expo/Amplify modules unavailable in Jest,
+// so each needs a lightweight mock here too.
+function mockScreen(testId: string, label: string) {
+  const { View, Text } = require('react-native');
+  return function MockScreen() {
+    return (
+      <View testID={testId}>
+        <Text>{label}</Text>
+      </View>
+    );
+  };
+}
+
+jest.mock('../screens/BillsScreen', () => mockScreen('bills-screen', 'Bills Screen'));
+jest.mock('../screens/InsightsScreen', () => ({
+  InsightsScreen: mockScreen('insights-screen', 'Insights Screen'),
+}));
+jest.mock('../screens/BankSyncScreen', () => ({
+  BankSyncScreen: mockScreen('banksync-screen', 'BankSync Screen'),
+}));
+jest.mock('../screens/CreditScoreScreen', () => ({
+  CreditScoreScreen: mockScreen('creditscore-screen', 'CreditScore Screen'),
+}));
+jest.mock('../screens/DebtPayoffScreen', () => mockScreen('debtpayoff-screen', 'DebtPayoff Screen'));
+jest.mock('../screens/InvestmentsScreen', () => ({
+  InvestmentsScreen: mockScreen('investments-screen', 'Investments Screen'),
+}));
+jest.mock('../screens/NetWorthScreen', () => ({
+  NetWorthScreen: mockScreen('networth-screen', 'NetWorth Screen'),
+}));
+jest.mock('../screens/SubscriptionsScreen', () => mockScreen('subscriptions-screen', 'Subscriptions Screen'));
+jest.mock('../screens/TipsScreen', () => mockScreen('tips-screen', 'Tips Screen'));
+jest.mock('../screens/SyncSettingsScreen', () => mockScreen('syncsettings-screen', 'SyncSettings Screen'));
+jest.mock('../screens/OfflineSettingsScreen', () => mockScreen('offlinesettings-screen', 'OfflineSettings Screen'));
+
 describe('Navigation Structure', () => {
   it('should render bottom tab navigator with all tabs', () => {
-    const { getByText } = render(
+    const { getAllByText, getByText } = render(
       <NavigationContainer>
         <RootNavigator />
       </NavigationContainer>
     );
 
-    // Check that tab labels are present
-    expect(getByText('Budget')).toBeTruthy();
-    expect(getByText('Transactions')).toBeTruthy();
+    // "Budget" and "Transactions" each render twice: once as the tab bar
+    // label, once as the stack navigator's header title (BudgetStackNavigator/
+    // TransactionStackNavigator set their own header via stackHeaderOptions).
+    expect(getAllByText('Budget').length).toBeGreaterThan(0);
+    expect(getAllByText('Transactions').length).toBeGreaterThan(0);
+    expect(getByText('Goals')).toBeTruthy();
     expect(getByText('Summary')).toBeTruthy();
-    expect(getByText('Settings')).toBeTruthy();
+    expect(getByText('More')).toBeTruthy();
   });
 
   it('should render the default screen (Budget)', () => {

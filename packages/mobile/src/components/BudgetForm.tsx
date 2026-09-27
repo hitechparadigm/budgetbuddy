@@ -179,7 +179,7 @@ export default function BudgetForm({
     onClose();
   };
 
-  const updateFormData = (field: keyof FormData, value: string) => {
+  const updateFormData = <K extends keyof FormData>(field: K, value: FormData[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {

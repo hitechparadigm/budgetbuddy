@@ -19,6 +19,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 import * as Haptics from "expo-haptics";
 import { Card, Button } from "./ui";
 import { useTheme } from "../hooks/useTheme";
@@ -75,7 +76,6 @@ export const FamilySettings: React.FC<FamilySettingsProps> = ({ onClose }) => {
     try {
       // Use id_token for API Gateway Cognito authorizer
       // Try SecureStore first (preferred), then AsyncStorage as fallback
-      const { default: SecureStore } = await import("expo-secure-store");
       const token = await SecureStore.getItemAsync("auth_id_token");
       if (token) return token;
       // Fallback to AsyncStorage for backwards compatibility

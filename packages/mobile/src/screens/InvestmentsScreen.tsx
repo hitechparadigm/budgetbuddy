@@ -472,7 +472,7 @@ export const InvestmentsScreen: React.FC = () => {
             <TextInput
               style={styles.input}
               placeholder="Current Price"
-              value={holdingForm.currentPrice.toString()}
+              value={(holdingForm.currentPrice ?? 0).toString()}
               onChangeText={(text) =>
                 setHoldingForm({
                   ...holdingForm,

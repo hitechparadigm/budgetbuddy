@@ -184,8 +184,20 @@ class AuthService {
   }
   /**
    * Sign in user with email and password
+   *
+   * The Cognito User Pool backing this app does not have MFA enabled
+   * (see infrastructure/lib/auth-stack.ts), so `nextStep` here is never an
+   * MFA challenge in practice. `challengeName`/`session` are included on the
+   * return type only so callers (AuthContext) can check for a challenge
+   * without a type error if MFA is ever enabled on the pool later - they
+   * will always be `undefined` today.
    */
-  async signInUser(credentials: LoginCredentials): Promise<{ user: User; tokens: AuthTokens }> {
+  async signInUser(credentials: LoginCredentials): Promise<{
+    user: User;
+    tokens: AuthTokens;
+    challengeName?: 'SOFTWARE_TOKEN_MFA' | 'SMS_MFA';
+    session?: string;
+  }> {
     try {
       const { isSignedIn, nextStep } = await signIn({
         username: credentials.email,
@@ -193,6 +205,15 @@ class AuthService {
       });
 
       if (!isSignedIn) {
+        if (
+          nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_TOTP_CODE' ||
+          nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE'
+        ) {
+          // The User Pool has no MFA methods configured, so Amplify should
+          // never return these steps - but if it ever does, surface a clear
+          // error instead of silently mismapping fields the UI can't act on.
+          throw new Error('MFA sign-in is not supported yet');
+        }
         throw new Error('Sign in failed');
       }
 
@@ -366,6 +387,48 @@ class AuthService {
     } catch (error: any) {
       throw this.handleAuthError(error);
     }
+  }
+
+  /**
+   * MFA methods
+   *
+   * The Cognito User Pool backing this app has no MFA configuration
+   * (see infrastructure/lib/auth-stack.ts - `mfa` is never set, so it
+   * defaults to OFF), and there is no `/auth/mfa/*` backend route. These
+   * methods exist so AuthContext.tsx and the Settings/Login screens that
+   * already have 2FA UI (TwoFactorSetup, TwoFactorVerify) compile against a
+   * real API shape, but they intentionally reject rather than pretend to
+   * succeed. Enabling MFA for real requires a CDK change to the live User
+   * Pool plus a real challenge/response implementation - tracked as future
+   * work, not part of this fix.
+   */
+  async getMFAStatus(): Promise<{ enabled: boolean }> {
+    return { enabled: false };
+  }
+
+  async respondToMFAChallenge(
+    _email: string,
+    _code: string,
+    _session: string,
+    _challengeType: 'SOFTWARE_TOKEN_MFA' | 'SMS_MFA',
+  ): Promise<{ user: User; tokens: AuthTokens } | null> {
+    throw new Error('MFA is not enabled for this account');
+  }
+
+  async setupMFA(): Promise<{ secretCode: string; qrCodeUrl: string }> {
+    throw new Error('MFA setup is not supported yet');
+  }
+
+  async confirmMFASetup(_code: string): Promise<void> {
+    throw new Error('MFA setup is not supported yet');
+  }
+
+  async disableMFA(): Promise<void> {
+    throw new Error('MFA is not enabled for this account');
+  }
+
+  async getBackupCodes(): Promise<string[]> {
+    throw new Error('MFA is not enabled for this account');
   }
 
   /**

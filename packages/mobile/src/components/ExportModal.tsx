@@ -38,7 +38,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
   // Get unique categories from transactions
   const availableCategories = Array.from(
-    new Set(transactions.map(t => t.category))
+    new Set(transactions.map(t => t.categoryId))
   ).sort();
 
   const handleExport = async () => {

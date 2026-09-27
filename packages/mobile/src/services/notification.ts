@@ -9,6 +9,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform, Alert } from 'react-native';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -16,8 +17,33 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
+
+/**
+ * Budget usage alert (e.g. 80%/90%/100% of budget spent)
+ */
+export interface BudgetAlert {
+  budgetId: string;
+  budgetName: string;
+  threshold: number;
+  currentAmount: number;
+  budgetAmount: number;
+  percentage: number;
+}
+
+/**
+ * Upcoming/due recurring budget (bill) reminder
+ */
+export interface BillReminder {
+  budgetId: string;
+  budgetName: string;
+  amount: number;
+  dueDate: string;
+  daysUntilDue: number;
+}
 
 /**
  * NotificationService Class
@@ -161,7 +187,7 @@ export class NotificationService {
 
     // Mark notification as read
     if (data?.notificationId) {
-      this.markNotificationAsRead(data.notificationId);
+      this.markNotificationAsRead(String(data.notificationId));
     }
   }
 
@@ -445,3 +471,202 @@ export async function updateNotificationPreferences(
     return false;
   }
 }
+
+/**
+ * Local preferences shape used by the daily/weekly/monthly reminder helpers
+ * below. This is intentionally simpler than the backend
+ * NotificationPreferences (server-synced alerts); it only covers
+ * locally-scheduled reminder behavior.
+ */
+export interface LocalNotificationPreferences {
+  budgetAlerts: boolean;
+  billReminders: boolean;
+  weeklyReports: boolean;
+  monthlyReports: boolean;
+  dailyExpenseReminder: boolean;
+  dailyReminderTime: string; // "HH:mm"
+  quietHoursEnabled: boolean;
+  quietHoursStart: string; // "HH:mm"
+  quietHoursEnd: string; // "HH:mm"
+}
+
+const DEFAULT_LOCAL_PREFERENCES: LocalNotificationPreferences = {
+  budgetAlerts: true,
+  billReminders: true,
+  weeklyReports: true,
+  monthlyReports: true,
+  dailyExpenseReminder: false,
+  dailyReminderTime: '20:00',
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '08:00',
+}
+
+const LOCAL_PREFERENCES_STORAGE_KEY = 'budgetbuddy_local_notification_preferences';
+
+/**
+ * Local, on-device notification helper singleton.
+ *
+ * This is distinct from the `NotificationService` class above (which handles
+ * device registration and inbound push notification listeners). This
+ * singleton schedules local notifications directly on the device for
+ * budget alerts, bill reminders, and periodic spending summaries - used by
+ * `budgetMonitoringService`.
+ */
+export class LocalNotificationService {
+  private preferences: LocalNotificationPreferences = { ...DEFAULT_LOCAL_PREFERENCES };
+  private initialized = false;
+
+  async initialize(): Promise<void> {
+    await this.loadPreferences();
+    this.initialized = true;
+  }
+
+  async loadPreferences(): Promise<LocalNotificationPreferences> {
+    try {
+      const stored = await AsyncStorage.getItem(LOCAL_PREFERENCES_STORAGE_KEY);
+      if (stored) {
+        this.preferences = { ...DEFAULT_LOCAL_PREFERENCES, ...JSON.parse(stored) };
+      }
+    } catch (error) {
+      console.error('Error loading local notification preferences:', error);
+    }
+    return this.preferences;
+  }
+
+  async savePreferences(preferences: Partial<LocalNotificationPreferences>): Promise<void> {
+    this.preferences = { ...this.preferences, ...preferences };
+    try {
+      await AsyncStorage.setItem(
+        LOCAL_PREFERENCES_STORAGE_KEY,
+        JSON.stringify(this.preferences)
+      );
+    } catch (error) {
+      console.error('Error saving local notification preferences:', error);
+    }
+  }
+
+  getPreferences(): LocalNotificationPreferences {
+    return this.preferences;
+  }
+
+  /**
+   * Returns true if the given time (defaults to now) falls within the
+   * configured quiet hours window. Handles windows that wrap past midnight
+   * (e.g. 22:00 -> 08:00).
+   */
+  private isQuietTime(date: Date = new Date()): boolean {
+    if (!this.preferences.quietHoursEnabled) {
+      return false;
+    }
+
+    const toMinutes = (time: string) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    const nowMinutes = date.getHours() * 60 + date.getMinutes();
+    const startMinutes = toMinutes(this.preferences.quietHoursStart);
+    const endMinutes = toMinutes(this.preferences.quietHoursEnd);
+
+    if (startMinutes === endMinutes) {
+      return false;
+    }
+
+    if (startMinutes < endMinutes) {
+      return nowMinutes >= startMinutes && nowMinutes < endMinutes;
+    }
+
+    // Window wraps past midnight (e.g. 22:00 -> 08:00)
+    return nowMinutes >= startMinutes || nowMinutes < endMinutes;
+  }
+
+  private shouldSendNotification(): boolean {
+    return !this.isQuietTime();
+  }
+
+  async sendBudgetAlert(alert: BudgetAlert): Promise<void> {
+    if (!this.preferences.budgetAlerts || !this.shouldSendNotification()) {
+      return;
+    }
+
+    await scheduleLocalNotification(
+      `Budget Alert: ${alert.budgetName}`,
+      `You've reached ${alert.threshold}% of your ${alert.budgetName} budget ($${alert.currentAmount.toFixed(2)} of $${alert.budgetAmount.toFixed(2)}).`,
+      null
+    );
+  }
+
+  async sendBillReminder(reminder: BillReminder): Promise<void> {
+    if (!this.preferences.billReminders || !this.shouldSendNotification()) {
+      return;
+    }
+
+    const dueText =
+      reminder.daysUntilDue === 0
+        ? 'due today'
+        : `due in ${reminder.daysUntilDue} day${reminder.daysUntilDue === 1 ? '' : 's'}`;
+
+    await scheduleLocalNotification(
+      `Bill Reminder: ${reminder.budgetName}`,
+      `${reminder.budgetName} ($${reminder.amount.toFixed(2)}) is ${dueText}.`,
+      null
+    );
+  }
+
+  async sendWeeklySummary(
+    totalSpent: number,
+    budgetTotal: number,
+    topCategories: Array<{ name: string; amount: number }>
+  ): Promise<void> {
+    if (!this.preferences.weeklyReports || !this.shouldSendNotification()) {
+      return;
+    }
+
+    const topCategoryText = topCategories.length > 0
+      ? ` Top category: ${topCategories[0].name}.`
+      : '';
+
+    await scheduleLocalNotification(
+      'Weekly Spending Summary',
+      `You spent $${totalSpent.toFixed(2)} of $${budgetTotal.toFixed(2)} this week.${topCategoryText}`,
+      null
+    );
+  }
+
+  async sendMonthlySummary(
+    totalSpent: number,
+    budgetTotal: number,
+    savings: number,
+    topCategories: Array<{ name: string; amount: number }>
+  ): Promise<void> {
+    if (!this.preferences.monthlyReports || !this.shouldSendNotification()) {
+      return;
+    }
+
+    const topCategoryText = topCategories.length > 0
+      ? ` Top category: ${topCategories[0].name}.`
+      : '';
+
+    await scheduleLocalNotification(
+      'Monthly Spending Summary',
+      `You spent $${totalSpent.toFixed(2)} of $${budgetTotal.toFixed(2)} this month and saved $${savings.toFixed(2)}.${topCategoryText}`,
+      null
+    );
+  }
+
+  async sendDailyExpenseReminder(): Promise<void> {
+    if (!this.preferences.dailyExpenseReminder || !this.shouldSendNotification()) {
+      return;
+    }
+
+    await scheduleLocalNotification(
+      'Daily Expense Reminder',
+      "Don't forget to log today's transactions!",
+      null
+    );
+  }
+}
+
+// Export singleton instance used by budgetMonitoringService
+export const notificationService = new LocalNotificationService();

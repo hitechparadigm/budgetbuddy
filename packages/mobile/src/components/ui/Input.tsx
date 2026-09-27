@@ -7,6 +7,7 @@ import {
   TextInputProps,
   ViewStyle,
   TextStyle,
+  StyleProp,
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,10 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
   leftIcon?: keyof typeof Ionicons.glyphMap;
   rightIcon?: keyof typeof Ionicons.glyphMap;
   onRightIconPress?: () => void;
+  // `style` targets the outer container (matching how most callers use it),
+  // matching the convention on Button/Card. Use `inputStyle` to style the
+  // underlying TextInput specifically.
+  style?: StyleProp<ViewStyle>;
   containerStyle?: ViewStyle;
   inputStyle?: TextStyle;
   labelStyle?: TextStyle;
@@ -31,6 +36,7 @@ export default function Input({
   leftIcon,
   rightIcon,
   onRightIconPress,
+  style,
   containerStyle,
   inputStyle,
   labelStyle,
@@ -50,20 +56,21 @@ export default function Input({
     setIsSecureTextVisible(!isSecureTextVisible);
   };
 
-  const inputContainerStyle = [
+  const inputContainerStyle: StyleProp<ViewStyle> = [
     styles.inputContainer,
     styles[variant],
     styles[size],
-    isFocused && styles.focused,
-    error && styles.error,
-    props.editable === false && styles.disabled,
+    isFocused ? styles.focused : undefined,
+    error ? styles.error : undefined,
+    props.editable === false ? styles.disabled : undefined,
+    style,
   ];
 
-  const textInputStyle = [
+  const textInputStyle: StyleProp<TextStyle> = [
     styles.input,
     styles[`${size}Input`],
-    leftIcon && styles.inputWithLeftIcon,
-    (rightIcon || isPasswordField) && styles.inputWithRightIcon,
+    leftIcon ? styles.inputWithLeftIcon : undefined,
+    (rightIcon || isPasswordField) ? styles.inputWithRightIcon : undefined,
     inputStyle,
   ];
 

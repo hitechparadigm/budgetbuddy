@@ -10,11 +10,21 @@ import {
   OnboardingSuggestions,
   CategorySuggestion,
 } from "@budget-buddy/shared/src/services/categorySuggestionService";
-import { useNavigation } from "@react-navigation/native";
 
-export const OnboardingScreen: React.FC = () => {
-  const navigation = useNavigation();
+interface OnboardingScreenProps {
+  /**
+   * Called when the user finishes (or skips) onboarding. The caller
+   * (App.tsx) is responsible for transitioning away from this screen -
+   * this component does not navigate itself, since it is rendered as a
+   * top-level branch alongside AuthNavigator/RootNavigator, not as a
+   * route inside either of them.
+   */
+  onFinished: () => void;
+}
 
+export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
+  onFinished,
+}) => {
   const handleComplete = async (
     suggestions: OnboardingSuggestions,
     selectedCategories: CategorySuggestion[]
@@ -33,16 +43,15 @@ export const OnboardingScreen: React.FC = () => {
       });
 
       // TODO: Create initial budget categories based on selections
-      // For now, navigate to main app
-      navigation.navigate("Main" as never);
     } catch (error) {
       console.error("Error completing onboarding:", error);
+    } finally {
+      onFinished();
     }
   };
 
   const handleSkip = () => {
-    // Skip onboarding and go to main app
-    navigation.navigate("Main" as never);
+    onFinished();
   };
 
   return (

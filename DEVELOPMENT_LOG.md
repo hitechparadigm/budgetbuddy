@@ -1,5 +1,73 @@
 # Development Log
 
+## 2026-09-27 - Mobile Navigation Wiring, MFA Gap Fix, Full Typecheck Clean (Session 165)
+
+### Problem
+Continuing autonomous work on the mobile-app spec's corrected task list (see Session 164 audit).
+Task 6.4 (navigation wiring) was the highest-leverage remaining gap: 11 of 16 screens plus
+onboarding existed as real code but had zero navigator routes. Tasks 2.6 (MFA/AuthContext-
+AuthService mismatch) and 1.7 (127 typecheck errors) blocked a clean coverage gate at task 22.1.
+
+### Approach
+- Task 6.4: added Goals and More tabs to `RootNavigator.tsx`; the More tab hosts a new
+  `MoreStackNavigator` with a `MoreScreen.tsx` hub menu linking to all 11 previously-orphaned
+  screens. Fixed onboarding routing (`needsOnboarding` flag in `AuthContext.tsx`, rewrote
+  `OnboardingScreen.tsx` to use a callback prop instead of navigating to a nonexistent route).
+- Verification surfaced a real regression risk: pulling `GoalsScreen` into the always-mounted tab
+  set transitively required native modules (`react-native-worklets` via reanimated, Expo
+  auth/linking via the auth chain) that aren't installed and aren't needed for `navigation.test.tsx`'s
+  render-only assertions. Fixed by adding proper mocks to `src/test/setup.ts` and mocking each
+  newly-reachable screen in the test file, following the existing pattern for the original 4 tabs.
+  Also fixed a pre-existing failure in the same test (duplicate "Budget" text from stack header vs.
+  tab label) using `getAllByText` instead of `getByText`.
+- Task 2.6: before writing any MFA code, checked whether MFA is real anywhere in the product.
+  Found zero backend support - no `/auth/mfa/*` API Gateway routes, no `mfa` configuration on the
+  Cognito User Pool in `infrastructure/lib/auth-stack.ts`, and the web app's own
+  `TwoFactorSetup.tsx`/`TwoFactorVerify.tsx` call the same nonexistent endpoints. Rather than build
+  real Cognito MFA (a live-infrastructure change out of scope for a navigation task), added the 6
+  missing `AuthService` methods as real methods that throw a clear "not supported" error, and
+  extended `signInUser`'s return type with optional `challengeName`/`session` fields that are
+  honestly always `undefined` today.
+- Task 1.7: delegated the bulk of the 104 remaining errors (after 6.4/2.6 fixes) to a sub-agent,
+  then finished the last 45 (all confined to test files) directly. Root causes: fast-check's
+  `fc.option()` defaults to `T | null`, but the real types use `T | undefined` - needed
+  `{ nil: undefined }` on every `fc.option()` call across `backup-restore.test.ts`,
+  `data-export.test.ts`, and `mobile-search-filtering.pbt.test.ts`; a required `isPaused` field
+  was missing from `BudgetCategory` generators; `fc.constantFrom(...)` widens to `string` without
+  an explicit `as fc.Arbitrary<'a' | 'b'>` cast; `notifications.test.ts` imported a
+  `NotificationPreferences` type and a nested-groups `Budget` shape that don't exist - fixed to
+  `LocalNotificationPreferences` and the standalone `src/types/budget.ts` `Budget` that
+  `budgetMonitoringService` actually consumes.
+- Also installed 2 packages used in source but never declared in `package.json`
+  (`@react-native-picker/picker`, `expo-clipboard`) plus 3 declared-but-never-installed ones
+  (`@react-native-community/datetimepicker`, `expo-camera`, `expo-image-picker`) via
+  `npm install --legacy-peer-deps` - the flag is required because of a pre-existing, unrelated
+  peer conflict (`react-native-get-random-values@^2.0.0` wants `react-native@>=0.81`, project
+  pins `0.72.6`).
+
+### Verification
+- `npm run typecheck` in `packages/mobile`: 127 -> 0 errors, confirmed via repeated full runs after
+  every fix batch (no regressions introduced at any stage).
+- `npx jest` in `packages/mobile`: 238/259 -> 241/259 passing. `notifications.test.ts` and
+  `data-export.test.ts` now compile and execute (previously failed before running) and fail on
+  genuine test-content bugs unrelated to typecheck - a distinct, larger scope not addressed here.
+  `TwoFactorSetup.test.tsx`/`quick-actions.test.ts` confirmed order-dependent flaky (pass in
+  isolation, intermittent in the full suite) via repeated runs - pre-existing, not introduced.
+
+### Changes
+- `packages/mobile/src/navigation/RootNavigator.tsx`, `App.tsx`, `src/screens/auth/OnboardingScreen.tsx`,
+  `src/contexts/AuthContext.tsx`, `src/types/index.ts` - navigation wiring + onboarding routing.
+- `packages/mobile/src/screens/MoreScreen.tsx` (new) - hub menu for the More tab.
+- `packages/mobile/src/services/auth.ts` - 6 new MFA methods, extended `signInUser` return type.
+- `packages/mobile/package.json`, `package-lock.json` - added `@react-native-picker/picker`,
+  `expo-clipboard`; synced the 3 already-declared-but-uninstalled packages.
+- ~15 component/service files fixed for type mismatches (Input/Card props, ViewStyle arrays,
+  TwoFactorSetup/Verify prop names, budgetMonitoring.ts imports).
+- `packages/mobile/src/test/setup.ts`, `test/navigation.test.tsx`, and 6 property test files -
+  reanimated/amplify mocks, fast-check generator fixes.
+- `.kiro/specs/mobile-app/tasks.md` - tasks 1.7, 2.6, 5.4, 6.4 marked done with evidence; overview
+  paragraph rewritten to point at the next real blocker (5 failing jest suites' content bugs).
+- `.kiro/steering/memory/work-log.md` - Mobile section updated with this session's real progress.
 ## 2026-09-23 - Spec and Docs Flattening, Duplicate Elimination (Session 164)
 
 ### Problem

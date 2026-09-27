@@ -346,3 +346,28 @@ export const cleanupApiClient = () => {
   queryClient.clear();
   console.log('API client cleaned up');
 };
+
+/**
+ * Get the shared API client object (get/post/put/patch/delete helpers).
+ * Services that need an object with HTTP-verb methods (rather than the
+ * `apiRequest`/`apiCall` functions) should use this.
+ */
+export const getApiClient = () => api;
+
+/**
+ * Generic fetch-style API call helper for services that build their own
+ * RequestInit-like options (method/body) rather than using `api.get/post/...`.
+ */
+export const apiCall = async <T = any>(
+  endpoint: string,
+  options: { method?: ApiRequest['method']; body?: string; headers?: Record<string, string> } = {}
+): Promise<T> => {
+  const { method = 'GET', body, headers } = options;
+  const response = await apiRequest<T>({
+    endpoint,
+    method,
+    data: body ? JSON.parse(body) : undefined,
+    headers,
+  });
+  return response.data;
+};

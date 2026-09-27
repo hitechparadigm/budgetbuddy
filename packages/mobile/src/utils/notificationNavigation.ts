@@ -5,7 +5,7 @@
  * Routes users to appropriate screens based on notification type.
  */
 
-import { NavigationProp } from '@react-navigation/native';
+import { NavigationContainerRef } from '@react-navigation/native';
 
 export type NotificationData = {
   type: 'budget_alert' | 'daily_reminder' | 'general';
@@ -21,7 +21,7 @@ export type NotificationData = {
  * Routes to appropriate screen based on notification type
  */
 export function handleNotificationNavigation(
-  navigation: NavigationProp<any>,
+  navigation: NavigationContainerRef<any>,
   data: NotificationData
 ): void {
   console.log('Handling notification navigation:', data);
@@ -50,7 +50,7 @@ export function handleNotificationNavigation(
  * Optionally highlights specific budget or category
  */
 function navigateToBudget(
-  navigation: NavigationProp<any>,
+  navigation: NavigationContainerRef<any>,
   data: NotificationData
 ): void {
   try {
@@ -75,7 +75,7 @@ function navigateToBudget(
  * Optionally filters by budget or category
  */
 function navigateToTransactions(
-  navigation: NavigationProp<any>,
+  navigation: NavigationContainerRef<any>,
   data: NotificationData
 ): void {
   try {

@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ViewStyle,
   TextStyle,
+  StyleProp,
   ActivityIndicator,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -16,8 +17,8 @@ interface ButtonProps {
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   hapticFeedback?: boolean;
 }
 
@@ -42,19 +43,19 @@ export default function Button({
     onPress();
   };
 
-  const buttonStyle = [
+  const buttonStyle: StyleProp<ViewStyle> = [
     styles.base,
     styles[size],
     styles[variant],
-    disabled && styles.disabled,
+    disabled ? styles.disabled : undefined,
     style,
   ];
 
-  const textStyleCombined = [
+  const textStyleCombined: StyleProp<TextStyle> = [
     styles.text,
     styles[`${size}Text`],
     styles[`${variant}Text`],
-    disabled && styles.disabledText,
+    disabled ? styles.disabledText : undefined,
     textStyle,
   ];
 

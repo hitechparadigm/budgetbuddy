@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.10.2] - 2026-09-27
+
+### feat: wire mobile navigation, fix MFA gap, clear all typecheck errors
+
+#### Mobile - navigation wiring (task 6.4)
+- `RootNavigator.tsx` now has 5 tabs: Budget / Transactions / Goals / Summary / More. The 11
+  previously-orphaned screens (Bills, Insights, BankSync, CreditScore, DebtPayoff, Investments,
+  NetWorth, Subscriptions, Tips, SyncSettings, OfflineSettings) plus Settings are reachable via a
+  new `MoreScreen.tsx` hub under a `MoreStackNavigator`.
+- Onboarding routing fixed: `AuthContext.tsx` tracks a `needsOnboarding` flag via a module-level
+  `pendingOnboardingEmails` set populated at sign-up and consumed at first sign-in; `App.tsx`
+  renders `OnboardingScreen` (rewritten to take an `onFinished` callback instead of navigating to
+  a nonexistent `"Main"` route) before `RootNavigator` when true.
+- Fixed `navigation.test.tsx`'s pre-existing "duplicate Budget text" failure (stack header title
+  vs. tab bar label) using `getAllByText`; added a manual `react-native-reanimated` jest mock and
+  an `aws-amplify/auth` subpath mock to `src/test/setup.ts`.
+
+#### Mobile - MFA/AuthContext-AuthService mismatch (task 2.6)
+- Confirmed MFA has zero backend support anywhere in the product (no `/auth/mfa/*` API routes, no
+  `mfa` config on the Cognito User Pool, web app's `TwoFactorSetup.tsx` calls the same nonexistent
+  endpoints). Added the 6 missing `AuthService` methods (`getMFAStatus`, `respondToMFAChallenge`,
+  `setupMFA`, `confirmMFASetup`, `disableMFA`, `getBackupCodes`) as real methods that reject with a
+  clear error instead of silently no-op'ing. Real Cognito MFA is tracked as future work.
+
+#### Mobile - TypeScript cleanup (task 1.7)
+- `npm run typecheck` in `packages/mobile` now reports 0 errors, down from 127. Installed 5
+  declared-but-missing/never-declared packages (`@react-native-picker/picker`, `expo-clipboard`
+  added to `package.json`; `datetimepicker`/`expo-camera`/`expo-image-picker` were declared but not
+  installed). Reconciled duplicate `Budget`/`Transaction` types to `src/types/index.ts` as
+  canonical. Fixed ~15 files of component/style-prop type mismatches and 45 test-file-only fast-check
+  generator errors (missing `{ nil: undefined }`, missing `isPaused` field, un-narrowed string
+  literal unions).
+- `npx jest` now passes 241/259 (up from 238/259). `notifications.test.ts`/`data-export.test.ts`
+  now compile and run instead of failing before execution.
 ## [1.10.1] - 2026-09-23
 
 ### chore: flatten specs and docs, eliminate duplicate documentation, fix stale references

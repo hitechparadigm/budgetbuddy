@@ -5,6 +5,46 @@
 
 import 'react-native-gesture-handler/jestSetup';
 
+// Mock Reanimated (react-native-reanimated v4 depends on the native
+// react-native-worklets package, which is not installed in this repo, and
+// the library's own jest mock still imports its real entry point that
+// requires that native module. A minimal manual mock avoids the dependency
+// entirely for tests that only need Reanimated's components to render.)
+jest.mock('react-native-reanimated', () => {
+  const View = require('react-native').View;
+  return {
+    __esModule: true,
+    default: {
+      View,
+      Text: require('react-native').Text,
+      Image: require('react-native').Image,
+      ScrollView: require('react-native').ScrollView,
+      createAnimatedComponent: (Component: unknown) => Component,
+    },
+    View,
+    useSharedValue: (initial: unknown) => ({ value: initial }),
+    useAnimatedStyle: (factory: () => unknown) => factory(),
+    useAnimatedGestureHandler: () => ({}),
+    useDerivedValue: (factory: () => unknown) => ({ value: factory() }),
+    withSpring: (value: unknown) => value,
+    withTiming: (value: unknown) => value,
+    withDelay: (_delay: unknown, value: unknown) => value,
+    withSequence: (...values: unknown[]) => values[values.length - 1],
+    withRepeat: (value: unknown) => value,
+    runOnJS: (fn: (...args: unknown[]) => unknown) => fn,
+    runOnUI: (fn: (...args: unknown[]) => unknown) => fn,
+    cancelAnimation: jest.fn(),
+    Easing: {
+      linear: (t: number) => t,
+      ease: (t: number) => t,
+      bezier: () => (t: number) => t,
+      inOut: (fn: (t: number) => number) => fn,
+    },
+    Extrapolate: { CLAMP: 'clamp', EXTEND: 'extend', IDENTITY: 'identity' },
+    interpolate: (value: number) => value,
+  };
+});
+
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: jest.fn(() => Promise.resolve(null)),
@@ -195,6 +235,18 @@ jest.mock('aws-amplify', () => ({
     getCurrentUser: jest.fn(),
     fetchAuthSession: jest.fn(),
   },
+}));
+
+// Mock AWS Amplify Auth subpath (used directly by src/services/auth.ts;
+// the real module is ESM-only and fails Jest's CJS transform otherwise)
+jest.mock('aws-amplify/auth', () => ({
+  signIn: jest.fn(),
+  signUp: jest.fn(),
+  confirmSignUp: jest.fn(),
+  resendSignUpCode: jest.fn(),
+  signOut: jest.fn(),
+  getCurrentUser: jest.fn(),
+  fetchAuthSession: jest.fn(),
 }));
 
 // Mock React Query
