@@ -42,7 +42,6 @@ subject and extend it instead (see `.kiro/steering/structure.md`, "Documentation
 - **[backend/README.md](../backend/README.md)** - Lambda functions package overview
 - **[infrastructure/README.md](../infrastructure/README.md)** - CDK stacks package overview
 - **[packages/shared/README.md](../packages/shared/README.md)** - Shared types/utilities package overview
-- **[packages/api-client/README.md](../packages/api-client/README.md)** - HTTP client library overview
 
 Individual Lambda function READMEs live at `backend/functions/<name>/README.md` per steering
 (`structure.md`: "README per Lambda function and CDK stack") and are not listed individually here.

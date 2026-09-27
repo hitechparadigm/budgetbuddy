@@ -1,5 +1,60 @@
 # Development Log
 
+## 2026-09-27 - AiCoachChip Wiring, api-client Deletion, Jest import.meta.env Fix (Session 165)
+
+### Problem
+Continuing the backlog sweep from Session 165's mobile work: `web-app-followups` spec covers two
+independent tracks - wiring the already-built-but-never-rendered `AiCoachChip` component into
+`BudgetPage.tsx`, and deleting the confirmed-dead `packages/api-client` package.
+
+### Approach
+- Extracted `calculateOverBudgetInfo()` as a standalone, testable utility rather than inlining
+  the over-budget logic directly into `calculateTotals()` - matches the spec's design and gives
+  property/unit test coverage independent of the page component's fetch/render lifecycle.
+- Writing `BudgetPage.test.tsx` (a full component render test, not just a logic-extraction test
+  like the existing `AccountsPage.test.tsx`/`InvestmentsPage.test.tsx`) surfaced a real,
+  repo-wide gap: no test in `packages/web-app` had ever rendered a page using
+  `import.meta.env` (Vite-only syntax) under Jest, because ts-jest compiles it as-is and Node's
+  CommonJS loader throws `Cannot use 'import.meta' outside a module` at require() time. Fixed
+  with a custom Jest transformer that rewrites `import.meta.env` to a global shim
+  (`globalThis.__viteEnv`) before ts-jest compiles - a source-text rewrite scoped to the Jest
+  run only, production Vite builds are untouched. Also needed `esModuleInterop`/
+  `allowSyntheticDefaultImports` overrides for the Jest-only compile (the real tsconfig omits
+  them since Vite handles interop itself) and a `moduleNameMapper` entry for
+  `@budget-buddy/shared/dist/*` subpath imports (only the bare package import was mapped
+  before).
+- Deleted `packages/api-client` per the design doc's confirmed-dead-code finding (zero
+  consumers, `extraneous: true` in its own lockfile entry). Removed the tsconfig path mapping,
+  ran `npm install` to prune the lockfile workspace entry (didn't fully prune on its own -
+  removed the remaining `"packages/api-client"` block manually as the design's documented
+  fallback), and removed the docs/README.md link.
+
+### Verification
+- `npx jest` in `packages/web-app`: full suite before and after compared directly (via
+  `git stash` on `jest.config.js` to get a true baseline) - same 2 pre-existing failing suites
+  (`TransactionPlanningModal.test.tsx`, `Sidebar.pbt.test.tsx`), same 26 failed test count, no
+  regressions. New tests (`overBudgetInfo.test.ts`, `overBudgetInfo.pbt.test.ts`,
+  `BudgetPage.test.tsx`) all pass.
+- `npx tsc --noEmit` in `packages/web-app`: 0 errors. Root-level `npx tsc --noEmit` reports 25
+  pre-existing errors (mobile files swept in by the root tsconfig's broad `include`, and an
+  unrelated `infrastructure/lib/monitoring-stack.ts` strictness issue) - confirmed via
+  `git stash` on `tsconfig.json` that this count is identical before and after the api-client
+  path-mapping removal.
+- Repo-wide search for `api-client` after all changes: only the accepted historical-narrative
+  mentions remain (`CHANGELOG.md`, `work-log.md`, `mobile-app/tasks.md`,
+  `repo-docs-specs-consolidation/{design,tasks}.md`, and this spec's own requirements/design).
+
+### Changes
+- `packages/web-app/src/utils/overBudgetInfo.ts` (new), `overBudgetInfo.test.ts` (new),
+  `overBudgetInfo.pbt.test.ts` (new).
+- `packages/web-app/src/pages/BudgetPage.tsx` - extended `calculateTotals()`, mounted
+  `AiCoachChip`.
+- `packages/web-app/src/pages/BudgetPage.test.tsx` (new).
+- `packages/web-app/jest.config.js`, `scripts/import-meta-env-jest-transformer.js` (new),
+  `scripts/jest.setup.ts` (new).
+- Deleted `packages/api-client/` entirely.
+- `tsconfig.json` (root), `package-lock.json` (root), `docs/README.md`.
+- `.kiro/specs/web-app-followups/tasks.md` - all 10 tasks marked done.
 ## 2026-09-27 - Mobile Navigation Wiring, MFA Gap Fix, Full Typecheck Clean (Session 165)
 
 ### Problem
