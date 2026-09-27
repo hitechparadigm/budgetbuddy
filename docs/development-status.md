@@ -4,6 +4,18 @@
 **Current Phase**: Production Readiness — MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ✅ + Production Audit ✅
 
+## LATEST - Session 166: Feature Entitlements Enforcement + Object.prototype Bug Fix (2026-09-27)
+
+**Backend (`backend/functions/export`, `backend/functions/insights`, `backend/functions/budgets`)**
+- `canUseFeature()` now enforced in Export_Handler and all 5 Advanced_Reports_Handler functions;
+  `budget.export`/`reports.advanced` reclassified to `tier: 'free'` (every user is on the same
+  $0/month plan today; Phase 2 re-gates by flipping only the `tier` field).
+- Removed a dead `canUseFeature` import from `budgets/index.js` (no gateable action there).
+- Fixed a genuine bug caught by the new property-based tests: `canUseFeature` used plain bracket
+  access on `FEATURE_CATALOG`, which fell through to `Object.prototype` for keys like `toString`/
+  `valueOf`/`__proto__`, letting those specific unknown feature keys skip the fail-closed deny path.
+  Fixed with `hasOwnProperty`; verified 10/10 clean property-test runs after the fix.
+- 30/30 backend tests passing across 4 suites (entitlements pbt, export, insights, budgets).
 ## LATEST - Session 165: Mobile Navigation Wiring, MFA Gap Fix, Full Typecheck Clean (2026-09-27)
 
 **Mobile app (`packages/mobile`)**

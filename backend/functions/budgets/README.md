@@ -96,4 +96,6 @@ User profile:     PK = USER#<userId>      SK = PROFILE
 ## Layer Dependencies
 
 - `/opt/nodejs/utils` — `BudgetAccessResolver`, `dynamoHelpers`, `generateId`, `getUserFromEvent`, response helpers
-- `/opt/nodejs/entitlements` — `canUseFeature`
+
+Every action in this file is gated by RBAC only (`assertPermission`); none corresponds to a
+`FEATURE_CATALOG` key, so this Lambda does not import `/opt/nodejs/entitlements`.

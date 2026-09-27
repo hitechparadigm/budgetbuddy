@@ -10,6 +10,7 @@ const {
   dynamoHelpers,
   BudgetAccessResolver,
 } = require('/opt/nodejs/utils');
+const { canUseFeature } = require('/opt/nodejs/entitlements');
 
 /**
  * Get CORS headers for API responses
@@ -201,11 +202,22 @@ exports.handler = async (event) => {
     }
 
     // Resolve budgetId via BudgetAccessResolver
-    const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(
+    const { budgetId, role, budgetStatus, subscriptionTier } = await BudgetAccessResolver.resolveAccess(
       user.userId,
       dynamoHelpers,
     );
     BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
+
+    if (!canUseFeature(subscriptionTier, 'budget.export')) {
+      return {
+        statusCode: 403,
+        headers: getCorsHeaders(),
+        body: JSON.stringify({
+          error: 'Upgrade required',
+          message: 'Exporting budget data requires a premium subscription.',
+        }),
+      };
+    }
 
     // Parse query parameters
     const queryParams = event.queryStringParameters || {};

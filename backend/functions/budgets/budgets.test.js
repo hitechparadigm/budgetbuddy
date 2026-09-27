@@ -5,7 +5,6 @@
  *
  * Mocks:
  *  - /opt/nodejs/utils  (Lambda layer)
- *  - /opt/nodejs/entitlements  (Lambda layer)
  *  - @aws-sdk/client-dynamodb
  *  - @aws-sdk/lib-dynamodb
  */

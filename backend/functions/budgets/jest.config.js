@@ -17,7 +17,6 @@ module.exports = {
   },
   moduleNameMapper: {
     '^/opt/nodejs/utils$': '<rootDir>/__mocks__/utils.js',
-    '^/opt/nodejs/entitlements$': '<rootDir>/__mocks__/entitlements.js',
   },
   verbose: true,
 };

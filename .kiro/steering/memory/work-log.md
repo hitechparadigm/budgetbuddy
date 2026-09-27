@@ -81,7 +81,6 @@ inclusion: always
 - [ ] SES still in sandbox - production access not yet requested
 
 ### Security
-- [ ] `canUseFeature()` not yet called in Lambda handlers - Phase 2: gate `reports.advanced`, `budget.export`
 - [ ] Security posture ~80%
 
 ### Mobile
