@@ -26,9 +26,6 @@ const {
   logger,
   BudgetAccessResolver,
 } = require('/opt/nodejs/utils');
-// canUseFeature is imported for future entitlement checks (Phase 2)
-// eslint-disable-next-line no-unused-vars
-const { canUseFeature } = require('/opt/nodejs/entitlements');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const {
   DynamoDBDocumentClient,

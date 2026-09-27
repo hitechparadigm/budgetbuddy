@@ -1,15 +1,19 @@
 /**
  * Feature entitlement catalog and access check utility.
  *
- * Phase 1 intent: All features are available on the free tier. This module
+ * Current state: every feature in FEATURE_CATALOG, including 'reports.advanced'
+ * and 'budget.export', is classified tier: 'free' because every current user is
+ * on the same $0/month plan — there is no billing integration and no code path
+ * anywhere in the backend ever writes subscriptionTier: 'premium'. This module
  * establishes the check pattern so no Lambda ever hard-codes a tier comparison
- * directly. When Phase 2 wires entitlements to Stripe billing, only this file
- * needs to change — no Lambda business logic is touched.
+ * directly. canUseFeature() is already called from export/index.js
+ * ('budget.export') and every handler in insights/index.js ('reports.advanced'),
+ * so the call-sites are structurally ready for Phase 2.
  *
- * Phase 2 will move selected features (e.g. 'reports.advanced', 'budget.export')
- * to tier: 'premium' and introduce a SubscriptionGroup entity. Until then,
- * every feature listed here is accessible to all users regardless of their
- * subscriptionTier.
+ * Phase 2 will re-gate 'reports.advanced' and 'budget.export' by changing only
+ * their tier field back to 'premium' in FEATURE_CATALOG below, once real billing
+ * introduces a subscriptionTier: 'premium' user. No Lambda handler code changes
+ * are needed at that time — only this file needs to change.
  *
  * Usage:
  *   const { canUseFeature } = require('./entitlements');
@@ -37,8 +41,8 @@ const FEATURE_CATALOG = {
   'budget.shared':      { tier: 'free',    description: 'Shared budget' },
   'member.invite':      { tier: 'free',    description: 'Invite budget members' },
   'budget.ai.generate': { tier: 'free',    description: 'AI budget generation' },
-  'reports.advanced':   { tier: 'premium', description: 'Advanced reports' },
-  'budget.export':      { tier: 'premium', description: 'Export budget data' },
+  'reports.advanced':   { tier: 'free',    description: 'Advanced reports' },
+  'budget.export':      { tier: 'free',    description: 'Export budget data' },
 };
 
 /**
@@ -54,8 +58,18 @@ const FEATURE_CATALOG = {
  * @returns {boolean} true if the user may use the feature, false otherwise.
  */
 function canUseFeature(subscriptionTier, featureKey) {
+  // Use hasOwnProperty rather than a plain FEATURE_CATALOG[featureKey] lookup.
+  // FEATURE_CATALOG is an object literal, so bracket access falls through to
+  // Object.prototype for keys like 'toString', 'constructor', '__proto__',
+  // 'valueOf', or 'hasOwnProperty' itself - these resolve to inherited
+  // functions (truthy) instead of undefined, which would let an unknown
+  // featureKey skip the fail-closed branch below and fall through to the
+  // premium-tier comparison. hasOwnProperty guarantees only real catalog
+  // entries are ever treated as known.
+  if (!Object.prototype.hasOwnProperty.call(FEATURE_CATALOG, featureKey)) {
+    return false;
+  }
   const feature = FEATURE_CATALOG[featureKey];
-  if (!feature) return false;
   if (feature.tier === 'free') return true;
   return subscriptionTier === 'premium';
 }

@@ -1,5 +1,58 @@
 # Changelog
 
+## [1.10.4] - 2026-09-27
+
+### feat: enforce canUseFeature entitlement gate in export and insights, reclassify catalog to free tier
+
+#### Catalog reclassification
+- `backend/layers/common/nodejs/entitlements.js`: `FEATURE_CATALOG` entries for `budget.export` and
+  `reports.advanced` changed from `tier: 'premium'` to `tier: 'free'`, matching the actual current
+  product state (every user is on the same $0/month plan; no billing integration exists). JSDoc
+  updated to describe the shipped state and the Phase 2 re-gating path (flip only the `tier` field
+  back to `'premium'` — no Lambda code changes needed at that time).
+
+#### Entitlement enforcement wiring
+- `backend/functions/export/index.js`: added `canUseFeature(subscriptionTier, 'budget.export')` check
+  after the existing `assertPermission` call, before the `csv`/`json`/`pdf` dispatch. Denies with a
+  403 `Upgrade_Prompt_Response`, distinguishable from the existing RBAC-denial 403 shape.
+- `backend/functions/insights/index.js`: added an identical
+  `canUseFeature(subscriptionTier, 'reports.advanced')` check to all five handlers
+  (`getWeeklyInsights`, `getMonthlyInsights`, `getSpendingTrends`, `getSpendingPatterns`,
+  `askAboutSpending`), immediately after each handler's own `assertPermission` call and before any
+  DynamoDB query or Bedrock invocation.
+- `backend/functions/budgets/index.js`: removed the dead `canUseFeature` import (no action in this
+  file maps to a `FEATURE_CATALOG` key — every gated action here is RBAC-only). Deleted
+  `__mocks__/entitlements.js` and its `jest.config.js` `moduleNameMapper` entry as dead configuration.
+
+#### Test coverage
+- New `backend/layers/common/nodejs/entitlements.pbt.test.js` — 3 property-based tests
+  (`fast-check`, 100 runs each) covering unknown-key deny, free-tier always-allow, and
+  premium-tier allow-iff-subscriptionTier-is-premium.
+- New `backend/functions/export/` test scaffolding (`jest.config.js`, `__mocks__/utils.js`,
+  `__mocks__/entitlements.js`, `export.test.js`) — 5 tests covering csv/json/pdf allow paths, the
+  `canUseFeature`-false deny path (403, no DynamoDB call), and the pre-existing invalid-type 400.
+- Extended `backend/functions/insights/` test scaffolding the same way; swapped `insights.test.js`'s
+  inline `jest.mock('/opt/nodejs/utils', ..., { virtual: true })` for a `moduleNameMapper`-resolved
+  mock (mechanism swap only, no existing test body changed) and added one new deny-path test.
+
+#### Documentation
+- `docs/product-requirements.md`: corrected the Feature Gating table (`budget.export`/
+  `reports.advanced` now `free`), replaced the stale "Phase 1: all features free" note with the
+  shipped-state description, corrected `subscriptionTier`'s documented source from a Cognito JWT
+  claim to the `USER#<userId>/PROFILE` DynamoDB record, and marked the corresponding Known Gaps item
+  resolved.
+
+#### fix: canUseFeature fail-open on Object.prototype-colliding keys
+- `backend/layers/common/nodejs/entitlements.js`: `canUseFeature` used plain
+  `FEATURE_CATALOG[featureKey]` bracket access, which falls through to `Object.prototype` for keys
+  like `toString`, `valueOf`, `constructor`, `__proto__` - those resolve to inherited, truthy
+  functions instead of `undefined`, letting an unknown `featureKey` skip the fail-closed check and
+  fall through to the `subscriptionTier === 'premium'` comparison. Caught by running the new
+  Property 1 test 10 times in a row post-implementation (it failed intermittently with
+  counterexamples like `["toString", "premium"]`). Fixed with
+  `Object.prototype.hasOwnProperty.call(FEATURE_CATALOG, featureKey)`. Re-verified 10/10 clean runs
+  after the fix.
+
 ## [1.10.3] - 2026-09-27
 
 ### feat: wire AiCoachChip into BudgetPage, delete dead api-client package

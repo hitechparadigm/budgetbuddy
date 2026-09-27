@@ -136,10 +136,15 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 | `member.invite` | free | Invite budget members |
 | `viewer.invite` | free | Invite read-only viewers |
 | `viewer.expiry` | free | Set viewer expiration dates |
-| `reports.advanced` | premium | Advanced reports |
-| `budget.export` | premium | Export budget data |
+| `reports.advanced` | free | Advanced reports |
+| `budget.export` | free | Export budget data |
 
-**Phase 1**: All features are free. The `canUseFeature()` pattern is wired but not enforced yet — this allows Phase 2 to gate features without touching Lambda business logic.
+**Current state**: `canUseFeature()` is enforced in `export/index.js` (`budget.export`) and all five
+spending-insights handlers in `insights/index.js` (`reports.advanced`). Both features are currently
+classified `tier: 'free'` in `FEATURE_CATALOG`, because every user today is on the same $0/month
+plan — there is no billing integration and no code path writes `subscriptionTier: 'premium'`. Phase 2
+re-gates these two features by changing only their `tier` field back to `'premium'` in
+`entitlements.js`; no Lambda handler changes are needed at that time.
 
 ---
 
@@ -153,7 +158,7 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 **Key rule**: Subscription sharing ≠ budget sharing. A family member covered by your subscription gets premium features but does NOT automatically see your budget. Budget access requires an explicit invitation.
 
-**Not yet implemented**: Subscription as a first-class DynamoDB entity. Currently `subscriptionTier` comes from the Cognito JWT claim `custom:subscriptionTier`.
+**Not yet implemented**: Subscription as a first-class DynamoDB entity. Currently `subscriptionTier` is read from the `USER#<userId>/PROFILE` DynamoDB record (`profile.subscriptionTier || 'free'`) via `BudgetAccessResolver.resolveAccess` — it is not a JWT claim; the JWT carries only `userId`, per this project's auth model.
 
 ---
 
@@ -316,11 +321,11 @@ if (!canUseFeature(subscriptionTier, 'budget.export')) {
 
 1. ~~**Family budget transparency not enforced at category level**~~ ✅ **Fixed (Session 148)**
 
-2. **`canUseFeature()` not called in Lambda handlers** — the entitlement pattern is wired but Phase 1 intentionally leaves all features open. Phase 2 will add actual gating for `reports.advanced` and `budget.export`.
+2. ~~**`canUseFeature()` not called in Lambda handlers**~~ ✅ **Fixed (feature-entitlements-enforcement spec)** — `canUseFeature()` is now called from `export/index.js` and every `insights/index.js` handler; `reports.advanced`/`budget.export` are classified `tier: 'free'` to match the actual product state, structurally ready for Phase 2 to re-gate by flipping only the `tier` field.
 
 ### Medium Priority
 
-3. **Subscription as a DynamoDB entity** — currently `subscriptionTier` comes from the Cognito JWT claim. Phase 2 needs a `SUBSCRIPTION#<userId>/METADATA` record and a `SubscriptionGroup` entity for family subscription sharing.
+3. **Subscription as a DynamoDB entity** — currently `subscriptionTier` is read from the `USER#<userId>/PROFILE` DynamoDB record via `BudgetAccessResolver.resolveAccess`. Phase 2 needs a `SUBSCRIPTION#<userId>/METADATA` record and a `SubscriptionGroup` entity for family subscription sharing.
 
 4. **Invitation token lookup uses Scan** — `handleAcceptInvitation` scans the table for the hashed token. Works at current scale; needs a GSI on `tokenHash` for production scale.
 

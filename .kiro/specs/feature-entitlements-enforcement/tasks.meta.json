@@ -1,0 +1,17 @@
+{
+  "pbtResults": {
+    "2.2 Write Property 1: unknown feature keys always deny": {
+      "status": "passed",
+      "lastRunTimestamp": 1790476639428
+    },
+    "2.3 Write Property 2: free-tier features are always allowed": {
+      "status": "passed",
+      "lastRunTimestamp": 1790476640485
+    },
+    "2.4 Write Property 3: premium-tier features allowed iff caller tier is premium": {
+      "status": "passed",
+      "lastRunTimestamp": 1790476641301
+    }
+  },
+  "executionHistory": {}
+}

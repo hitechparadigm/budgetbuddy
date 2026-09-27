@@ -3,87 +3,14 @@
  * Tests for spending analytics and AI insights
  */
 
-// Mock the Lambda layers
-jest.mock(
-  "/opt/nodejs/utils",
-  () => ({
-    successResponse: (data, message) => ({
-      statusCode: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({ success: true, message, data }),
-    }),
-    errorResponse: {
-      badRequest: (message) => ({
-        statusCode: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({ success: false, message }),
-      }),
-      notFound: (message) => ({
-        statusCode: 404,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({ success: false, message }),
-      }),
-      unauthorized: (message) => ({
-        statusCode: 401,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({ success: false, message }),
-      }),
-      internalError: (message) => ({
-        statusCode: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({ success: false, message }),
-      }),
-    },
-    parseRequestBody: (body) => (body ? JSON.parse(body) : {}),
-    getUserFromEvent: jest.fn(() => ({
-      userId: "test-user-123",
-      familyId: "test-family-123",
-    })),
-    dynamoHelpers: {
-      getItem: jest.fn().mockResolvedValue(null),
-      queryByPK: jest.fn().mockResolvedValue([]),
-    },
-    logger: {
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-    },
-    BudgetAccessResolver: {
-      resolveAccess: jest.fn().mockResolvedValue({
-        budgetId: 'budget_test_123',
-        role: 'owner',
-        budgetType: 'personal',
-        budgetStatus: 'active',
-        subscriptionTier: 'free',
-      }),
-      assertPermission: jest.fn(),
-    },
-  }),
-  { virtual: true },
-);
-
-
 const { handler } = require("./index");
-const { dynamoHelpers } = require("/opt/nodejs/utils");
+const { dynamoHelpers } = require("/opt/nodejs/utils"); // resolves via moduleNameMapper (__mocks__/utils.js)
+const { canUseFeature } = require("/opt/nodejs/entitlements"); // resolves via moduleNameMapper (__mocks__/entitlements.js)
 
 describe("Insights Lambda Handler", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    canUseFeature.mockReturnValue(true);
   });
 
   describe("Health Check", () => {
@@ -308,6 +235,26 @@ describe("Insights Lambda Handler", () => {
 
       const result = await handler(event, { awsRequestId: "test-123" });
       expect(result.statusCode).toBe(400);
+    });
+  });
+
+  describe("Entitlement gating (reports.advanced)", () => {
+    it("GET /insights/weekly returns 403 Upgrade_Prompt_Response when canUseFeature denies, without querying DynamoDB", async () => {
+      canUseFeature.mockReturnValueOnce(false);
+
+      const event = {
+        httpMethod: "GET",
+        path: "/insights/weekly",
+        headers: { Authorization: "Bearer test-token" },
+      };
+
+      const result = await handler(event, { awsRequestId: "test-123" });
+      const body = JSON.parse(result.body);
+
+      expect(result.statusCode).toBe(403);
+      expect(body.error).toBe("Upgrade required");
+      expect(body.message).toContain("premium subscription");
+      expect(dynamoHelpers.queryByPK).not.toHaveBeenCalled();
     });
   });
 });

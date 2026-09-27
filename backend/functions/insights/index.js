@@ -16,6 +16,7 @@ const {
   logger,
   BudgetAccessResolver,
 } = require("/opt/nodejs/utils");
+const { canUseFeature } = require("/opt/nodejs/entitlements");
 
 
 // AWS Bedrock client for AI insights
@@ -117,8 +118,18 @@ exports.handler = async (event, context) => {
  * GET /insights/weekly
  */
 async function getWeeklyInsights(event, user) {
-  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  const { budgetId, role, budgetStatus, subscriptionTier } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
   BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
+  if (!canUseFeature(subscriptionTier, 'reports.advanced')) {
+    return {
+      statusCode: 403,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: 'Upgrade required',
+        message: 'Advanced spending reports require a premium subscription.',
+      }),
+    };
+  }
 
   logger.info("Getting weekly insights", { budgetId });
 
@@ -190,8 +201,18 @@ async function getWeeklyInsights(event, user) {
  * GET /insights/monthly
  */
 async function getMonthlyInsights(event, user) {
-  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  const { budgetId, role, budgetStatus, subscriptionTier } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
   BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
+  if (!canUseFeature(subscriptionTier, 'reports.advanced')) {
+    return {
+      statusCode: 403,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: 'Upgrade required',
+        message: 'Advanced spending reports require a premium subscription.',
+      }),
+    };
+  }
 
   const queryParams = event.queryStringParameters || {};
   const month = queryParams.month || new Date().toISOString().substring(0, 7);
@@ -273,8 +294,18 @@ async function getMonthlyInsights(event, user) {
  * GET /insights/trends
  */
 async function getSpendingTrends(event, user) {
-  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  const { budgetId, role, budgetStatus, subscriptionTier } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
   BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
+  if (!canUseFeature(subscriptionTier, 'reports.advanced')) {
+    return {
+      statusCode: 403,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: 'Upgrade required',
+        message: 'Advanced spending reports require a premium subscription.',
+      }),
+    };
+  }
 
   const queryParams = event.queryStringParameters || {};
   const months = parseInt(queryParams.months, 10) || 6;
@@ -345,8 +376,18 @@ async function getSpendingTrends(event, user) {
  * GET /insights/patterns
  */
 async function getSpendingPatterns(event, user) {
-  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  const { budgetId, role, budgetStatus, subscriptionTier } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
   BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
+  if (!canUseFeature(subscriptionTier, 'reports.advanced')) {
+    return {
+      statusCode: 403,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: 'Upgrade required',
+        message: 'Advanced spending reports require a premium subscription.',
+      }),
+    };
+  }
 
   logger.info("Getting spending patterns", { budgetId });
 
@@ -387,8 +428,18 @@ async function getSpendingPatterns(event, user) {
  * POST /insights/ask
  */
 async function askAboutSpending(event, user) {
-  const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
+  const { budgetId, role, budgetStatus, subscriptionTier } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
   BudgetAccessResolver.assertPermission(role, 'budget.read', budgetStatus);
+  if (!canUseFeature(subscriptionTier, 'reports.advanced')) {
+    return {
+      statusCode: 403,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        error: 'Upgrade required',
+        message: 'Advanced spending reports require a premium subscription.',
+      }),
+    };
+  }
 
   const body = parseRequestBody(event.body);
 

@@ -1,5 +1,74 @@
 # Development Log
 
+## 2026-09-27 - Feature Entitlements Enforcement: canUseFeature Wired into export/insights (Session 166)
+
+### Problem
+`canUseFeature(subscriptionTier, featureKey)` and `FEATURE_CATALOG` were fully implemented in
+`backend/layers/common/nodejs/entitlements.js`, but no Lambda handler ever called `canUseFeature` to
+make an allow/deny decision. `backend/functions/budgets/index.js` imported it behind an
+eslint-disable comment marked "Phase 2," and that was the only Lambda referencing the module at all.
+Investigation (carried into `.kiro/specs/feature-entitlements-enforcement/requirements.md`) confirmed
+every current user is genuinely on a single $0/month tier — not a placeholder awaiting billing, the
+actual current state — since no code path anywhere writes `subscriptionTier: 'premium'`.
+
+### Approach
+- Reclassified `reports.advanced` and `budget.export` from `tier: 'premium'` to `tier: 'free'` in
+  `FEATURE_CATALOG` first (task 1), since `canUseFeature`'s free-tier branch returns `true`
+  unconditionally — this makes the reclassification a no-op for every real user today while making
+  Property 2/allow-path tests assert against the true catalog state.
+- Wired `canUseFeature` into `export/index.js` (one check, upstream of the `csv`/`json`/`pdf`
+  dispatch) and all five `insights/index.js` handlers (one identical check per handler, right after
+  each one's own `assertPermission` call), both reading `subscriptionTier` from the
+  `BudgetAccessResolver.resolveAccess` result already in scope — no extra DynamoDB read.
+- Removed the dead `canUseFeature` import from `budgets/index.js` after confirming via direct grep
+  that every gated action in that file (`member.invite`, `member.remove`, `budget.archive`,
+  `budget.delete`, `budget.read`) is RBAC-only; none maps to a `FEATURE_CATALOG` key.
+- Built export/insights Jest scaffolding from scratch (`jest.config.js`, `__mocks__/utils.js`,
+  `__mocks__/entitlements.js`) modeled directly on `backend/functions/budgets/`'s existing pattern.
+  Swapped `insights.test.js`'s inline `jest.mock('/opt/nodejs/utils', ..., { virtual: true })` for
+  the same `moduleNameMapper` mechanism, so the module has exactly one mocking mechanism instead of
+  two competing ones.
+- Property 3 (premium-tier allow-iff-premium) needed a deviation from design.md's suggested
+  mechanism: `jest.isolateModules` + `jest.doMock` returning a spread copy of `FEATURE_CATALOG` with
+  a synthetic key failed in practice, because `canUseFeature`'s closure binds to `entitlements.js`'s
+  own internal `FEATURE_CATALOG` variable, not whatever object a mock factory returns under that
+  module name — the injected key was invisible to the real function. Switched to directly mutating
+  the live `FEATURE_CATALOG` object (add the fixture key, run the property, delete it in a `finally`
+  block) — object references are shared, so this reaches the exact object `canUseFeature` reads.
+
+### Verification
+- `npx jest entitlements.pbt.test.js` in `backend/layers/common/nodejs`: single-pass 3/3 passed
+  (100 runs each), but a follow-up 10x repeated run surfaced Property 1 failing intermittently
+  (~1 in 5 runs) with counterexamples like `["toString", "premium"]` - a genuine bug, not flaky
+  test infrastructure: `canUseFeature` used plain `FEATURE_CATALOG[featureKey]` bracket access,
+  which falls through to `Object.prototype` for keys colliding with inherited method names
+  (`toString`, `valueOf`, `constructor`, `__proto__`), letting those specific unknown keys skip the
+  fail-closed branch. Fixed with `Object.prototype.hasOwnProperty.call(FEATURE_CATALOG, featureKey)`;
+  re-ran 10 consecutive times after the fix, 10/10 clean.
+- `npx jest` in `backend/functions/export`: 5/5 passed (csv/json/pdf allow-path 200s, `canUseFeature`
+  -false deny-path 403 with `dynamoHelpers.queryByPK` asserted not called, invalid-type 400
+  independent of the gate).
+- `npx jest` in `backend/functions/insights`: 10/10 passed (9 pre-existing + 1 new deny-path test;
+  the 9 pre-existing tests already exercise all 5 handlers' allow paths under the default free-tier
+  mock, so no duplicate allow-path tests were added).
+- `npx jest` in `backend/functions/budgets`: 12/12 passed, confirming the import/mock/config removal
+  broke nothing.
+- Repo-wide grep for `canUseFeature` in `backend/functions/budgets/`: zero remaining references.
+
+### Changes
+- `backend/layers/common/nodejs/entitlements.js` — 2 catalog values + JSDoc.
+- `backend/layers/common/nodejs/entitlements.pbt.test.js` — new.
+- `backend/functions/export/index.js`, `package.json` — modified; `jest.config.js`,
+  `__mocks__/utils.js`, `__mocks__/entitlements.js`, `export.test.js` — new.
+- `backend/functions/insights/index.js`, `package.json`, `insights.test.js` — modified;
+  `jest.config.js`, `__mocks__/utils.js`, `__mocks__/entitlements.js` — new.
+- `backend/functions/budgets/index.js`, `jest.config.js`, `README.md` — modified;
+  `__mocks__/entitlements.js` — deleted.
+- `docs/product-requirements.md` — 4 corrections (catalog table, Phase 1 note, `subscriptionTier`
+  source, Known Gaps item).
+- `.kiro/steering/memory/work-log.md` — removed the resolved Known Open Items > Security line.
+- `CHANGELOG.md`, `DEVELOPMENT_LOG.md` — this entry.
+
 ## 2026-09-27 - AiCoachChip Wiring, api-client Deletion, Jest import.meta.env Fix (Session 165)
 
 ### Problem
