@@ -6,12 +6,20 @@
 
 ### CDK Stacks (`lib/`)
 
-- **database-stack.ts**: DynamoDB table with single-table design and GSI indexes
-- **auth-stack.ts**: Cognito User Pools for authentication and shared Lambda layers
-- **auth-onboarding-stack.ts**: ✨ NEW - Standalone Lambda for user onboarding (architectural refactoring)
-- **api-stack.ts**: API Gateway and Lambda functions
-- **hosting-stack.ts**: S3 buckets and CloudFront for web hosting
+- **database-stack.ts**: DynamoDB single-table design with 4 GSIs
+- **auth-stack.ts**: Cognito User Pools + Google OAuth for authentication, and shared Lambda layers
+- **auth-onboarding-stack.ts**: Standalone Lambda for user onboarding (independently deployable)
+- **notification-stack.ts**: Push notifications and daily reminder Lambdas
+- **api-stack.ts**: Core API Gateway and Lambdas (auth, budget, transactions, AI, admin)
+- **api-features-stack.ts**: Plaid, reconciliation, export, bills, subscriptions, debts, goals, accounts
+- **api-features-extended-stack.ts**: Insights, receipt, transaction planning, net worth, credit score, learn, tips
+- **api-family-stack.ts**: **Deprecated** - returns 410 Gone for all routes. Replaced by `api-budgets-stack.ts`.
+- **api-budgets-stack.ts**: Budget collaboration, members, and invitations (replaces `api-family-stack`)
+- **hosting-stack.ts**: S3 + CloudFront for the web app
 - **monitoring-stack.ts**: CloudWatch dashboards and alarms
+
+`admin-stack.ts` and `auth-register-stack.ts` exist in `lib/` but are not currently instantiated
+in `bin/app.ts` - they are not part of the deployed stack set.
 
 ### Architectural Refactoring (Complete)
 

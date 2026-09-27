@@ -43,7 +43,7 @@ const budgetGenerator = fc.record({
   groups: fc.array(fc.record({
     id: fc.string({ minLength: 1, maxLength: 50 }),
     name: fc.string({ minLength: 1, maxLength: 100 }),
-    type: fc.constantFrom('income', 'savings', 'expense'),
+    type: fc.constantFrom('income', 'savings', 'expense') as fc.Arbitrary<'income' | 'savings' | 'expense'>,
     icon: fc.string({ minLength: 1, maxLength: 10 }),
     categories: fc.array(fc.record({
       id: fc.string({ minLength: 1, maxLength: 50 }),
@@ -54,11 +54,12 @@ const budgetGenerator = fc.record({
       plannedMonthlyAmount: fc.float({ min: Math.fround(0), max: Math.fround(10000), noNaN: true }).map(Math.fround),
       actualAmount: fc.float({ min: Math.fround(0), max: Math.fround(10000), noNaN: true }).map(Math.fround),
       variance: fc.float({ min: Math.fround(-5000), max: Math.fround(5000), noNaN: true }).map(Math.fround),
-      transactions: fc.array(fc.record({}), { maxLength: 0 }), // Empty for simplicity
+      transactions: fc.constant([] as Transaction[]), // Empty for simplicity
       order: fc.integer({ min: 0, max: 100 }),
       isCustom: fc.boolean(),
       isArchived: fc.boolean(),
       usageCount: fc.integer({ min: 0, max: 1000 }),
+      isPaused: fc.boolean(),
     }), { maxLength: 10 }),
     isCollapsed: fc.boolean(),
     order: fc.integer({ min: 0, max: 100 }),
@@ -73,19 +74,19 @@ const transactionGenerator = fc.record({
   categoryId: fc.string({ minLength: 1, maxLength: 50 }),
   amount: fc.float({ min: Math.fround(0.01), max: Math.fround(10000), noNaN: true }).map(Math.fround),
   description: fc.string({ minLength: 1, maxLength: 200 }),
-  merchant: fc.option(fc.string({ minLength: 1, maxLength: 100 })),
+  merchant: fc.option(fc.string({ minLength: 1, maxLength: 100 }), { nil: undefined }),
   date: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }).map(d => d.toISOString().split('T')[0]),
-  currency: fc.option(fc.constantFrom('USD', 'EUR', 'GBP', 'CAD')),
-  tags: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 50 }), { maxLength: 5 })),
-  syncStatus: fc.constantFrom('synced', 'pending', 'failed'),
+  currency: fc.option(fc.constantFrom('USD', 'EUR', 'GBP', 'CAD'), { nil: undefined }),
+  tags: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 50 }), { maxLength: 5 }), { nil: undefined }),
+  syncStatus: fc.constantFrom('synced', 'pending', 'failed') as fc.Arbitrary<'synced' | 'pending' | 'failed'>,
   createdAt: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }).map(d => d.toISOString()),
-  updatedAt: fc.option(fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }).map(d => d.toISOString())),
+  updatedAt: fc.option(fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }).map(d => d.toISOString()), { nil: undefined }),
 });
 
 const exportOptionsGenerator = fc.record({
-  startDate: fc.option(fc.date({ min: new Date('2020-01-01'), max: new Date('2024-12-31') })),
-  endDate: fc.option(fc.date({ min: new Date('2021-01-01'), max: new Date('2025-12-31') })),
-  categories: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 50 }), { maxLength: 10 })),
+  startDate: fc.option(fc.date({ min: new Date('2020-01-01'), max: new Date('2024-12-31') }), { nil: undefined }),
+  endDate: fc.option(fc.date({ min: new Date('2021-01-01'), max: new Date('2025-12-31') }), { nil: undefined }),
+  categories: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 50 }), { maxLength: 10 }), { nil: undefined }),
 });
 
 describe('Data Export Property Tests', () => {

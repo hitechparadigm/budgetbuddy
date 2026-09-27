@@ -3,20 +3,38 @@ import {
   View,
   StyleSheet,
   ViewStyle,
+  StyleProp,
   TouchableOpacity,
   TouchableOpacityProps,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
-interface CardProps extends TouchableOpacityProps {
+type CardPadding = 'none' | 'small' | 'medium' | 'large';
+type CardMargin = 'none' | 'small' | 'medium' | 'large';
+
+interface CardProps extends Omit<TouchableOpacityProps, 'style'> {
   children: React.ReactNode;
   variant?: 'default' | 'elevated' | 'outlined';
-  padding?: 'none' | 'small' | 'medium' | 'large';
-  margin?: 'none' | 'small' | 'medium' | 'large';
-  style?: ViewStyle;
+  padding?: CardPadding;
+  margin?: CardMargin;
+  style?: StyleProp<ViewStyle>;
   hapticFeedback?: boolean;
   pressable?: boolean;
 }
+
+const paddingStyles: Record<CardPadding, ViewStyle> = {
+  none: { padding: 0 },
+  small: { padding: 12 },
+  medium: { padding: 16 },
+  large: { padding: 24 },
+};
+
+const marginStyles: Record<CardMargin, ViewStyle> = {
+  none: { margin: 0 },
+  small: { margin: 8 },
+  medium: { margin: 16 },
+  large: { margin: 24 },
+};
 
 export default function Card({
   children,
@@ -29,18 +47,18 @@ export default function Card({
   onPress,
   ...props
 }: CardProps) {
-  const handlePress = () => {
+  const handlePress = (event: Parameters<NonNullable<TouchableOpacityProps['onPress']>>[0]) => {
     if (hapticFeedback) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    onPress?.();
+    onPress?.(event);
   };
 
-  const cardStyle = [
+  const cardStyle: StyleProp<ViewStyle> = [
     styles.base,
     styles[variant],
-    styles[`padding${padding.charAt(0).toUpperCase() + padding.slice(1)}`],
-    styles[`margin${margin.charAt(0).toUpperCase() + margin.slice(1)}`],
+    paddingStyles[padding],
+    marginStyles[margin],
     style,
   ];
 
@@ -91,33 +109,5 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#d1d5db',
-  },
-
-  // Padding
-  paddingNone: {
-    padding: 0,
-  },
-  paddingSmall: {
-    padding: 12,
-  },
-  paddingMedium: {
-    padding: 16,
-  },
-  paddingLarge: {
-    padding: 24,
-  },
-
-  // Margin
-  marginNone: {
-    margin: 0,
-  },
-  marginSmall: {
-    margin: 8,
-  },
-  marginMedium: {
-    margin: 16,
-  },
-  marginLarge: {
-    margin: 24,
   },
 });

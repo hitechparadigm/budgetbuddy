@@ -114,8 +114,9 @@ export interface Transaction {
 export type RootTabParamList = {
   Budget: undefined;
   Transactions: undefined;
+  Goals: undefined;
   Summary: undefined;
-  Settings: undefined;
+  More: undefined;
 };
 
 export type BudgetStackParamList = {

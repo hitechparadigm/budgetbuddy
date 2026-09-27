@@ -177,7 +177,7 @@ function createDebouncedSearch(
 const transactionArbitrary = fc.record({
   id: fc.uuid(),
   description: fc.string({ minLength: 1, maxLength: 100 }),
-  merchant: fc.option(fc.string({ minLength: 1, maxLength: 50 })),
+  merchant: fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: undefined }),
   amount: fc.float({ min: Math.fround(0.01), max: Math.fround(10000), noNaN: true }),
   categoryId: fc.string({ minLength: 1, maxLength: 20 }),
   categoryName: fc.string({ minLength: 1, maxLength: 30 }),

@@ -227,7 +227,7 @@ describe('Quick Actions System Properties', () => {
             categoryId: fc.string({ minLength: 1 }),
             categoryName: fc.string({ minLength: 1, maxLength: 30 }),
             isRecurring: fc.boolean(),
-            recurringFrequency: fc.constantFrom('daily', 'weekly', 'monthly'),
+            recurringFrequency: fc.constantFrom('daily', 'weekly', 'monthly') as fc.Arbitrary<'daily' | 'weekly' | 'monthly'>,
           }),
           async (templateData) => {
             // Reset and initialize service

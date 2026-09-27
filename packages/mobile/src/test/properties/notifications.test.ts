@@ -7,9 +7,10 @@ import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals
 import fc from 'fast-check';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
-import { notificationService, NotificationPreferences, BudgetAlert, BillReminder } from '../../services/notification';
+import { notificationService, LocalNotificationPreferences, BudgetAlert, BillReminder } from '../../services/notification';
 import { budgetMonitoringService, BudgetUsage } from '../../services/budgetMonitoring';
-import { Budget, Transaction } from '../../types';
+import { Transaction } from '../../types';
+import { Budget } from '../../types/budget';
 
 // Mock external dependencies
 jest.mock('@react-native-async-storage/async-storage');
@@ -28,15 +29,11 @@ describe('Notification System Properties', () => {
     (notificationService as any).pushToken = null;
     (notificationService as any).preferences = {
       budgetAlerts: true,
-      overspendingAlerts: true,
       billReminders: true,
       dailyExpenseReminder: true,
       dailyReminderTime: '19:00',
-      weeklySummary: true,
-      monthlySummary: true,
-      pushNotifications: true,
-      soundEnabled: true,
-      vibrationEnabled: true,
+      weeklyReports: true,
+      monthlyReports: true,
       quietHoursEnabled: false,
       quietHoursStart: '22:00',
       quietHoursEnd: '08:00',
@@ -54,7 +51,7 @@ describe('Notification System Properties', () => {
     mockNotifications.setNotificationHandler.mockImplementation(() => { });
     mockNotifications.addNotificationReceivedListener.mockReturnValue({ remove: jest.fn() } as any);
     mockNotifications.addNotificationResponseReceivedListener.mockReturnValue({ remove: jest.fn() } as any);
-    mockNotifications.setNotificationChannelAsync.mockResolvedValue();
+    mockNotifications.setNotificationChannelAsync.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -168,18 +165,16 @@ describe('Notification System Properties', () => {
         fc.asyncProperty(
           fc.record({
             budgetAlerts: fc.boolean(),
-            overspendingAlerts: fc.boolean(),
             billReminders: fc.boolean(),
-            weeklySummary: fc.boolean(),
-            monthlySummary: fc.boolean(),
-            pushNotifications: fc.boolean(),
-            soundEnabled: fc.boolean(),
-            vibrationEnabled: fc.boolean(),
+            weeklyReports: fc.boolean(),
+            monthlyReports: fc.boolean(),
+            dailyExpenseReminder: fc.boolean(),
+            dailyReminderTime: fc.constantFrom('08:00', '19:00', '20:00'),
             quietHoursEnabled: fc.boolean(),
             quietHoursStart: fc.constantFrom('22:00', '23:00', '00:00'),
             quietHoursEnd: fc.constantFrom('06:00', '07:00', '08:00'),
           }),
-          async (preferences) => {
+          async (preferences: LocalNotificationPreferences) => {
             // Mock storage to return the preferences
             mockAsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(preferences));
 
@@ -188,13 +183,11 @@ describe('Notification System Properties', () => {
 
             // Verify all preferences match
             expect(loadedPreferences.budgetAlerts).toBe(preferences.budgetAlerts);
-            expect(loadedPreferences.overspendingAlerts).toBe(preferences.overspendingAlerts);
             expect(loadedPreferences.billReminders).toBe(preferences.billReminders);
-            expect(loadedPreferences.weeklySummary).toBe(preferences.weeklySummary);
-            expect(loadedPreferences.monthlySummary).toBe(preferences.monthlySummary);
-            expect(loadedPreferences.pushNotifications).toBe(preferences.pushNotifications);
-            expect(loadedPreferences.soundEnabled).toBe(preferences.soundEnabled);
-            expect(loadedPreferences.vibrationEnabled).toBe(preferences.vibrationEnabled);
+            expect(loadedPreferences.weeklyReports).toBe(preferences.weeklyReports);
+            expect(loadedPreferences.monthlyReports).toBe(preferences.monthlyReports);
+            expect(loadedPreferences.dailyExpenseReminder).toBe(preferences.dailyExpenseReminder);
+            expect(loadedPreferences.dailyReminderTime).toBe(preferences.dailyReminderTime);
             expect(loadedPreferences.quietHoursEnabled).toBe(preferences.quietHoursEnabled);
             expect(loadedPreferences.quietHoursStart).toBe(preferences.quietHoursStart);
             expect(loadedPreferences.quietHoursEnd).toBe(preferences.quietHoursEnd);
@@ -238,21 +231,24 @@ describe('Notification System Properties', () => {
               transactions: [],
             };
 
-            // Create a budget and transactions
+            // Create a budget and transactions (Budget here is the standalone
+            // src/types/budget.ts model that budgetMonitoringService actually
+            // consumes, not the src/types/index.ts nested-groups model)
             const budget: Budget = {
               id: 'test-budget',
-              userId: 'test-user',
               name: 'Test Budget',
               amount: budgetAmount,
-              type: 'expense',
+              category: 'Other Expenses',
               frequency: 'monthly',
+              startDate: new Date().toISOString(),
+              type: 'expense',
+              isActive: true,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             };
 
             const transactions: Transaction[] = [{
               id: 'test-transaction',
-              userId: 'test-user',
               categoryId: 'test-budget',
               amount: currentAmount,
               description: 'Test transaction',
@@ -316,6 +312,21 @@ describe('Notification System Properties', () => {
             mockDate.setHours(currentHour, 0, 0, 0);
             jest.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
 
+            // Determine if current time is in quiet hours (computed before the
+            // mock below so it can be used as the mocked return value)
+            const currentTime = `${currentHour.toString().padStart(2, '0')}:00`;
+            let isQuietTime = false;
+
+            if (quietHoursEnabled) {
+              if (quietHoursStart > quietHoursEnd) {
+                // Quiet hours span midnight
+                isQuietTime = currentTime >= quietHoursStart || currentTime < quietHoursEnd;
+              } else {
+                // Normal quiet hours
+                isQuietTime = currentTime >= quietHoursStart && currentTime < quietHoursEnd;
+              }
+            }
+
             // Mock the shouldSendNotification method to respect quiet hours
             const mockShouldSendNotification = jest.spyOn(notificationService as any, 'shouldSendNotification');
             mockShouldSendNotification.mockReturnValue(!isQuietTime || !quietHoursEnabled);
@@ -332,20 +343,6 @@ describe('Notification System Properties', () => {
 
             // Send alert
             await notificationService.sendBudgetAlert(alert);
-
-            // Determine if current time is in quiet hours
-            const currentTime = `${currentHour.toString().padStart(2, '0')}:00`;
-            let isQuietTime = false;
-
-            if (quietHoursEnabled) {
-              if (quietHoursStart > quietHoursEnd) {
-                // Quiet hours span midnight
-                isQuietTime = currentTime >= quietHoursStart || currentTime < quietHoursEnd;
-              } else {
-                // Normal quiet hours
-                isQuietTime = currentTime >= quietHoursStart && currentTime < quietHoursEnd;
-              }
-            }
 
             // Verify notification behavior
             if (quietHoursEnabled && isQuietTime) {
@@ -484,17 +481,13 @@ describe('Notification System Properties', () => {
           fc.integer({ min: 0, max: 59 }), // reminder minute
           async (reminderEnabled, hour, minute) => {
             // Setup preferences
-            const preferences: NotificationPreferences = {
+            const preferences: LocalNotificationPreferences = {
               budgetAlerts: true,
-              overspendingAlerts: true,
               billReminders: true,
               dailyExpenseReminder: reminderEnabled,
               dailyReminderTime: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`,
-              weeklySummary: true,
-              monthlySummary: true,
-              pushNotifications: true,
-              soundEnabled: true,
-              vibrationEnabled: true,
+              weeklyReports: true,
+              monthlyReports: true,
               quietHoursEnabled: false,
               quietHoursStart: '22:00',
               quietHoursEnd: '08:00',
@@ -541,17 +534,13 @@ describe('Notification System Properties', () => {
           fc.integer({ min: 0, max: 23 }), // quiet end hour
           async (quietStart, quietEnd) => {
             // Setup preferences with quiet hours enabled
-            const preferences: NotificationPreferences = {
+            const preferences: LocalNotificationPreferences = {
               budgetAlerts: true,
-              overspendingAlerts: true,
               billReminders: true,
               dailyExpenseReminder: true,
               dailyReminderTime: '19:00',
-              weeklySummary: true,
-              monthlySummary: true,
-              pushNotifications: true,
-              soundEnabled: true,
-              vibrationEnabled: true,
+              weeklyReports: true,
+              monthlyReports: true,
               quietHoursEnabled: true,
               quietHoursStart: `${quietStart.toString().padStart(2, '0')}:00`,
               quietHoursEnd: `${quietEnd.toString().padStart(2, '0')}:00`,

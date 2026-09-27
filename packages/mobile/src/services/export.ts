@@ -390,14 +390,14 @@ class ExportService {
                 </tr>
             </thead>
             <tbody>
-                ${budgets.map(budget => {
-      const variance = budget.actualAmount - budget.plannedAmount;
-      const percentage = budget.plannedAmount > 0 ? (budget.actualAmount / budget.plannedAmount * 100) : 0;
+                ${budgetCategories.map(category => {
+      const variance = category.actual - category.planned;
+      const percentage = category.planned > 0 ? (category.actual / category.planned * 100) : 0;
       return `
                     <tr>
-                        <td>${budget.name}</td>
-                        <td class="amount">$${budget.plannedAmount.toFixed(2)}</td>
-                        <td class="amount">$${budget.actualAmount.toFixed(2)}</td>
+                        <td>${category.name}</td>
+                        <td class="amount">$${category.planned.toFixed(2)}</td>
+                        <td class="amount">$${category.actual.toFixed(2)}</td>
                         <td class="amount ${variance >= 0 ? 'negative' : 'positive'}">
                             ${variance >= 0 ? '+' : ''}$${variance.toFixed(2)}
                         </td>

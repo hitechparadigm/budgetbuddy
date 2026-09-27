@@ -34,7 +34,7 @@ export const CurrencySelector: React.FC<CurrencySelectorProps> = ({
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
 
-      <View style={[styles.pickerContainer, error && styles.pickerError]}>
+      <View style={[styles.pickerContainer, error ? styles.pickerError : undefined]}>
         <Picker
           selectedValue={value}
           onValueChange={onChange}

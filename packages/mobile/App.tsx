@@ -9,6 +9,7 @@ import {
 import { StyleSheet, View, ActivityIndicator } from "react-native";
 
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
+import { OnboardingScreen } from "./src/screens/auth/OnboardingScreen";
 import { CurrencyProvider } from "./src/contexts/CurrencyContext";
 import { AuthNavigator } from "./src/navigation/AuthNavigator";
 import RootNavigator from "@/navigation/RootNavigator";
@@ -38,7 +39,7 @@ const queryClient = new QueryClient({
  * Handles authentication state and renders appropriate navigator
  */
 const AppNavigator: React.FC = () => {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, needsOnboarding, completeOnboarding } = useAuth();
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
   const notificationServiceRef = useRef<NotificationService | null>(null);
 
@@ -61,7 +62,7 @@ const AppNavigator: React.FC = () => {
 
           // Register device for push notifications
           const result = await notificationServiceRef.current.registerDevice(
-            user.userId,
+            user.id,
           );
 
           if (result.success) {
@@ -104,7 +105,13 @@ const AppNavigator: React.FC = () => {
   // Render appropriate navigator based on authentication state
   return (
     <NavigationContainer ref={navigationRef}>
-      {isAuthenticated ? <RootNavigator /> : <AuthNavigator />}
+      {!isAuthenticated ? (
+        <AuthNavigator />
+      ) : needsOnboarding ? (
+        <OnboardingScreen onFinished={completeOnboarding} />
+      ) : (
+        <RootNavigator />
+      )}
     </NavigationContainer>
   );
 };

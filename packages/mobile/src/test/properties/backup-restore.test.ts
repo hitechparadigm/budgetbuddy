@@ -58,7 +58,7 @@ const budgetGenerator = fc.record({
   groups: fc.array(fc.record({
     id: fc.string({ minLength: 1, maxLength: 50 }),
     name: fc.string({ minLength: 1, maxLength: 100 }),
-    type: fc.constantFrom('income', 'savings', 'expense'),
+    type: fc.constantFrom('income', 'savings', 'expense') as fc.Arbitrary<'income' | 'savings' | 'expense'>,
     icon: fc.string({ minLength: 1, maxLength: 10 }),
     categories: fc.array(fc.record({
       id: fc.string({ minLength: 1, maxLength: 50 }),
@@ -69,11 +69,12 @@ const budgetGenerator = fc.record({
       plannedMonthlyAmount: fc.float({ min: Math.fround(0), max: Math.fround(10000), noNaN: true }).map(Math.fround),
       actualAmount: fc.float({ min: Math.fround(0), max: Math.fround(10000), noNaN: true }).map(Math.fround),
       variance: fc.float({ min: Math.fround(-5000), max: Math.fround(5000), noNaN: true }).map(Math.fround),
-      transactions: fc.array(fc.record({}), { maxLength: 0 }), // Empty for simplicity
+      transactions: fc.constant([] as Transaction[]), // Empty for simplicity
       order: fc.integer({ min: 0, max: 100 }),
       isCustom: fc.boolean(),
       isArchived: fc.boolean(),
       usageCount: fc.integer({ min: 0, max: 1000 }),
+      isPaused: fc.boolean(),
     }), { maxLength: 10 }),
     isCollapsed: fc.boolean(),
     order: fc.integer({ min: 0, max: 100 }),
@@ -88,22 +89,22 @@ const transactionGenerator = fc.record({
   categoryId: fc.string({ minLength: 1, maxLength: 50 }),
   amount: fc.float({ min: Math.fround(0.01), max: Math.fround(10000), noNaN: true }).map(Math.fround),
   description: fc.string({ minLength: 1, maxLength: 200 }),
-  merchant: fc.option(fc.string({ minLength: 1, maxLength: 100 })),
+  merchant: fc.option(fc.string({ minLength: 1, maxLength: 100 }), { nil: undefined }),
   date: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }).map(d => d.toISOString().split('T')[0]),
-  currency: fc.option(fc.constantFrom('USD', 'EUR', 'GBP', 'CAD')),
-  tags: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 50 }), { maxLength: 5 })),
-  syncStatus: fc.constantFrom('synced', 'pending', 'failed'),
+  currency: fc.option(fc.constantFrom('USD', 'EUR', 'GBP', 'CAD'), { nil: undefined }),
+  tags: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 50 }), { maxLength: 5 }), { nil: undefined }),
+  syncStatus: fc.constantFrom('synced', 'pending', 'failed') as fc.Arbitrary<'synced' | 'pending' | 'failed'>,
   createdAt: fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }).map(d => d.toISOString()),
-  updatedAt: fc.option(fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }).map(d => d.toISOString())),
+  updatedAt: fc.option(fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }).map(d => d.toISOString()), { nil: undefined }),
 });
 
 const backupOptionsGenerator = fc.record({
-  includeSettings: fc.option(fc.boolean()),
+  includeSettings: fc.option(fc.boolean(), { nil: undefined }),
   dateRange: fc.option(fc.record({
     startDate: fc.date({ min: new Date('2020-01-01'), max: new Date('2024-12-31') }),
     endDate: fc.date({ min: new Date('2021-01-01'), max: new Date('2025-12-31') }),
-  })),
-  categories: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 50 }), { maxLength: 10 })),
+  }), { nil: undefined }),
+  categories: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 50 }), { maxLength: 10 }), { nil: undefined }),
 });
 
 describe('Backup and Restore Property Tests', () => {
@@ -180,25 +181,30 @@ describe('Backup and Restore Property Tests', () => {
           expect(result.success).toBe(true);
           expect(capturedBackupData).not.toBeNull();
 
-          if (capturedBackupData) {
-            // Verify metadata accuracy
-            expect(capturedBackupData.metadata.totalBudgets).toBe(budgets.length);
-            expect(capturedBackupData.metadata.totalTransactions).toBe(transactions.length);
-            expect(capturedBackupData.userId).toBe(userId);
-            expect(capturedBackupData.version).toBe('1.0.0');
+          // Type assertion instead of an `if (x)` narrowing guard: TS's
+          // control-flow analysis follows `capturedBackupData` through the
+          // `let` declaration above and treats it as always `null` at this
+          // point (it can't see that the jest.fn() mock closure runs before
+          // this line), so an `if` narrows the type to `never`. The
+          // `expect(...).not.toBeNull()` above is the real runtime guarantee.
+          const data = capturedBackupData as unknown as BackupData;
+          // Verify metadata accuracy
+          expect(data.metadata.totalBudgets).toBe(budgets.length);
+          expect(data.metadata.totalTransactions).toBe(transactions.length);
+          expect(data.userId).toBe(userId);
+          expect(data.version).toBe('1.0.0');
 
-            // Verify data integrity
-            expect(capturedBackupData.budgets).toHaveLength(budgets.length);
-            expect(capturedBackupData.transactions).toHaveLength(transactions.length);
+          // Verify data integrity
+          expect(data.budgets).toHaveLength(budgets.length);
+          expect(data.transactions).toHaveLength(transactions.length);
 
-            // Verify categories are extracted correctly
-            const expectedCategories = Array.from(new Set([
-              ...budgets.flatMap(b => b.groups.flatMap(g => g.categories.map(c => c.name))),
-              ...transactions.map(t => t.categoryId),
-            ])).sort();
+          // Verify categories are extracted correctly
+          const expectedCategories = Array.from(new Set([
+            ...budgets.flatMap(b => b.groups.flatMap(g => g.categories.map(c => c.name))),
+            ...transactions.map(t => t.categoryId),
+          ])).sort();
 
-            expect(capturedBackupData.metadata.categories).toEqual(expectedCategories);
-          }
+          expect(data.metadata.categories).toEqual(expectedCategories);
         }
       ),
       { numRuns: 100 }
@@ -242,23 +248,22 @@ describe('Backup and Restore Property Tests', () => {
           expect(result.success).toBe(true);
           expect(capturedBackupData).not.toBeNull();
 
-          if (capturedBackupData) {
-            // Verify date range filtering for transactions
-            const filteredTransactions = capturedBackupData.transactions;
-            for (const transaction of filteredTransactions) {
-              const transactionDate = new Date(transaction.date);
-              expect(transactionDate >= options.dateRange.startDate).toBe(true);
-              expect(transactionDate <= options.dateRange.endDate).toBe(true);
-            }
-
-            // Verify category filtering for transactions
-            for (const transaction of filteredTransactions) {
-              expect(options.categories.includes(transaction.categoryId)).toBe(true);
-            }
-
-            // Metadata should reflect filtered data
-            expect(capturedBackupData.metadata.totalTransactions).toBe(filteredTransactions.length);
+          const data = capturedBackupData as unknown as BackupData;
+          // Verify date range filtering for transactions
+          const filteredTransactions = data.transactions;
+          for (const transaction of filteredTransactions) {
+            const transactionDate = new Date(transaction.date);
+            expect(transactionDate >= options.dateRange.startDate).toBe(true);
+            expect(transactionDate <= options.dateRange.endDate).toBe(true);
           }
+
+          // Verify category filtering for transactions
+          for (const transaction of filteredTransactions) {
+            expect(options.categories.includes(transaction.categoryId)).toBe(true);
+          }
+
+          // Metadata should reflect filtered data
+          expect(data.metadata.totalTransactions).toBe(filteredTransactions.length);
         }
       ),
       { numRuns: 50 }
@@ -326,7 +331,7 @@ describe('Backup and Restore Property Tests', () => {
   test('Property 22: Backup schedule management maintains consistency', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.constantFrom('daily', 'weekly', 'monthly'),
+        fc.constantFrom('daily', 'weekly', 'monthly') as fc.Arbitrary<'daily' | 'weekly' | 'monthly'>,
         async (frequency) => {
           // Schedule automatic backup
           await backupService.scheduleAutomaticBackup(frequency);

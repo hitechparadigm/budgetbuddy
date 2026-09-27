@@ -240,7 +240,7 @@ describe('Mobile UX Properties', () => {
   it('should apply dark mode theming consistently across all components', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom('light', 'dark'),
+        fc.constantFrom('light', 'dark') as fc.Arbitrary<'light' | 'dark'>,
         fc.constantFrom('primary', 'secondary', 'background', 'surface', 'text', 'border'),
         (colorScheme, colorType) => {
           const colors = Colors[colorScheme];
@@ -315,7 +315,7 @@ describe('Mobile UX Properties', () => {
     fc.assert(
       fc.property(
         fc.record({
-          interactionType: fc.constantFrom('tap', 'success', 'error', 'warning', 'selection', 'impact'),
+          interactionType: fc.constantFrom('tap', 'success', 'error', 'warning', 'selection', 'impact') as fc.Arbitrary<'tap' | 'success' | 'error' | 'warning' | 'selection' | 'impact'>,
           intensity: fc.constantFrom('light', 'medium', 'heavy'),
           context: fc.constantFrom('button', 'toggle', 'picker', 'alert', 'navigation'),
         }),

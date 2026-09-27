@@ -1,8 +1,21 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-09-23
+**Last Updated**: 2026-09-27
 **Current Phase**: Production Readiness — MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ✅ + Production Audit ✅
+
+## LATEST - Session 165: Mobile Navigation Wiring, MFA Gap Fix, Full Typecheck Clean (2026-09-27)
+
+**Mobile app (`packages/mobile`)**
+- Task 6.4 (navigation wiring): Goals + More tabs added; 11 previously-orphaned screens + Settings
+  now reachable via a new `MoreScreen.tsx` hub. Onboarding routing fixed.
+- Task 2.6 (MFA gap): confirmed MFA has zero backend support anywhere in the product; scoped
+  `AuthService`'s 6 missing MFA methods to reject clearly instead of building real Cognito MFA.
+- Task 1.7 (typecheck): 127 -> 0 errors. Installed 5 missing packages, reconciled duplicate
+  `Budget`/`Transaction` types, fixed ~15 component files + 45 test-generator errors.
+- `npx jest`: 238/259 -> 241/259 passing.
+- See `.kiro/specs/mobile-app/tasks.md` for full detail; next blocker is 5 failing suites' actual
+  test-content bugs (not typecheck), which block task 22.1's coverage gate.
 
 ## LATEST - Session 163: Spec and Documentation Consolidation (2026-09-23)
 

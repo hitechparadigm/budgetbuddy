@@ -3,7 +3,8 @@
  * Monitors budget usage and triggers notifications for alerts and reminders
  */
 
-import { Budget, Transaction } from '../types';
+import { Budget } from '../types/budget';
+import { Transaction } from '../types';
 import { notificationService, BudgetAlert, BillReminder } from './notification';
 
 export interface BudgetUsage {

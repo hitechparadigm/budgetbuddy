@@ -36,6 +36,10 @@ interface AuthContextType {
   isAuthenticated: boolean;
   mfaChallenge: MFAChallenge | null;
   mfaEnabled: boolean;
+  // True once for a freshly-registered account between its first successful
+  // sign-in and completeOnboarding() being called. Not persisted server-side -
+  // this only covers the single registration->first-login session.
+  needsOnboarding: boolean;
 
   // Actions
   signIn: (credentials: LoginCredentials) => Promise<void>;
@@ -46,6 +50,7 @@ interface AuthContextType {
   resendConfirmationCode: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshTokens: () => Promise<void>;
+  completeOnboarding: () => void;
 
   // MFA Actions
   verifyMFA: (code: string) => Promise<void>;
@@ -56,6 +61,12 @@ interface AuthContextType {
   getBackupCodes: () => Promise<string[]>;
   cancelMFAChallenge: () => void;
 }
+
+// Emails that just completed signUp() in this app session and have not yet
+// finished onboarding. Populated by handleSignUp, consumed by handleSignIn.
+// Not persisted - this intentionally only covers the immediate
+// registration -> first-login flow within a single app session.
+const pendingOnboardingEmails = new Set<string>();
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -70,6 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [mfaChallenge, setMfaChallenge] = useState<MFAChallenge | null>(null);
   const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   // Initialize authentication state on app start
   useEffect(() => {
@@ -120,7 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           // Check if MFA is enabled for this user
           try {
-            const mfaStatus = await authService.getMFAStatus?.();
+            const mfaStatus = await authService.getMFAStatus();
             setMfaEnabled(mfaStatus?.enabled || false);
           } catch {
             // MFA status check failed, assume disabled
@@ -165,6 +177,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setTokens(result.tokens);
       setIsAuthenticated(true);
       setMfaChallenge(null);
+      if (pendingOnboardingEmails.has(credentials.email)) {
+        pendingOnboardingEmails.delete(credentials.email);
+        setNeedsOnboarding(true);
+      }
     } catch (error) {
       throw error;
     } finally {
@@ -182,7 +198,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       setIsLoading(true);
-      const result = await authService.respondToMFAChallenge?.(
+      const result = await authService.respondToMFAChallenge(
         mfaChallenge.email,
         code,
         mfaChallenge.session,
@@ -215,7 +231,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       // Backup codes are typically handled the same way as TOTP codes
       // but may have different validation on the backend
-      const result = await authService.respondToMFAChallenge?.(
+      const result = await authService.respondToMFAChallenge(
         mfaChallenge.email,
         code.replace(/-/g, ""), // Remove dashes from backup code
         mfaChallenge.session,
@@ -245,6 +261,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   /**
+   * Mark onboarding as complete for the current session.
+   */
+  const handleCompleteOnboarding = (): void => {
+    setNeedsOnboarding(false);
+  };
+
+  /**
    * Set up MFA for the current user
    */
   const handleSetupMFA = async (): Promise<{
@@ -256,7 +279,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const result = await authService.setupMFA?.();
+      const result = await authService.setupMFA();
       if (!result) {
         throw new Error("MFA setup not supported");
       }
@@ -272,7 +295,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleConfirmMFASetup = async (code: string): Promise<void> => {
     try {
       setIsLoading(true);
-      await authService.confirmMFASetup?.(code);
+      await authService.confirmMFASetup(code);
       setMfaEnabled(true);
     } catch (error) {
       throw error;
@@ -287,7 +310,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const handleDisableMFA = async (): Promise<void> => {
     try {
       setIsLoading(true);
-      await authService.disableMFA?.();
+      await authService.disableMFA();
       setMfaEnabled(false);
     } catch (error) {
       throw error;
@@ -301,7 +324,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const handleGetBackupCodes = async (): Promise<string[]> => {
     try {
-      const codes = await authService.getBackupCodes?.();
+      const codes = await authService.getBackupCodes();
       return codes || [];
     } catch (error) {
       throw error;
@@ -317,6 +340,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const result = await authService.signUpUser(credentials);
+
+      // Mark this email as pending onboarding - consumed by the next
+      // successful handleSignIn() for the same email (see handleSignIn above).
+      pendingOnboardingEmails.add(credentials.email);
 
       // Don't set user as authenticated until email is verified
       return result;
@@ -398,6 +425,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated,
     mfaChallenge,
     mfaEnabled,
+    needsOnboarding,
 
     // Actions
     signIn: handleSignIn,
@@ -406,6 +434,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     resendConfirmationCode: handleResendConfirmationCode,
     signOut: handleSignOut,
     refreshTokens: handleRefreshTokens,
+    completeOnboarding: handleCompleteOnboarding,
 
     // MFA Actions
     verifyMFA: handleVerifyMFA,

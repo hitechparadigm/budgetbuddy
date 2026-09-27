@@ -334,8 +334,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <TwoFactorVerify
               onVerify={handleMFAVerify}
               onCancel={handleMFACancel}
-              isLoading={isLoading}
-              isBackupCode={useBackupCode}
+              loading={isLoading}
             />
 
             <TouchableOpacity
