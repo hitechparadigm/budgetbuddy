@@ -97,6 +97,3 @@ config.extendedFeaturesApiUrl  // insights, receipt, patterns, budget-planning, 
 ### Only one deployment at a time
 - Check: `node scripts/check-cicd-status.js`
 - Push via: `node scripts/safe-commit-push.js "type: description"`
-
-### api-family-stack still deployed (returns 410)
-- Do NOT destroy without confirming zero traffic

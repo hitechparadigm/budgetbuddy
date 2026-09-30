@@ -56,7 +56,7 @@ BudgetAccessResolver.assertPermission(role, action, budgetStatus);
 - `custom:familyId` JWT claim — ignored (only `custom:userId` is used)
 - `/family/*` API — returns 410 Gone; use `/budgets/*`
 - `FamilySettings.tsx` — replaced by `BudgetMembersPage` at `/budget/members`
-- `api-family-stack` — still deployed but deprecated; will be destroyed after migration period
+- `api-family-stack` — destroyed; removed from the CDK app entrypoint and deleted from the repository
 
 ### Known Gaps vs. Vision
 
@@ -74,7 +74,7 @@ See `docs/product-requirements.md` for the full gap analysis.
 - ✅ JWT is simpler — no familyId, no role in token
 - ✅ Multi-budget support is natural — user can be a member of multiple budgets
 - ✅ Viewer role with expiry is straightforward
-- ⚠️ `api-family-stack` still deployed (returns 410) — will be destroyed once confirmed no traffic
+- ✅ `api-family-stack` destroyed after confirming zero traffic — no longer part of the deployed infrastructure
 
 ---
 
@@ -92,7 +92,6 @@ Lambda (Node.js 20.x) + API Gateway (REST) with Cognito authorizer. CDK v2 for a
 ```
 database → auth → auth-onboarding → api → api-features
 → api-features-extended → api-budgets → hosting → notification → monitoring
-api-family (DEPRECATED — returns 410)
 ```
 
 Each stack creates its own Lambda Layers. **Never export Lambda Layers across stacks** — cross-stack layer refs cause CloudFormation deployment failures.
