@@ -1,5 +1,56 @@
 # Development Log
 
+## 2026-09-30 - Mobile Property Test Fixes: 4 Failing Suites Resolved (Session 168)
+
+### Problem
+Session 164's mobile-app audit flagged 5 failing jest suites blocking task 22.1's coverage
+gate: `currency.test.ts`, `notifications.test.ts`, `quietHours.test.ts`, and
+`data-export.test.ts` (plus known order-dependent-flaky `TwoFactorSetup.test.tsx`/
+`quick-actions.test.ts`, left out of scope). All 4 non-flaky suites now compiled and ran
+(after Session 164's typecheck fixes) but failed on real assertion/generator mismatches
+against actual service behavior.
+
+### Root Causes Found
+- **notifications.test.ts**: asserted a `data` field on scheduled notification content that
+  the real `LocalNotificationService` never sets (content is only `{title, body, sound}`);
+  asserted the wrong AsyncStorage key (`notification_preferences` vs. the real
+  `budgetbuddy_local_notification_preferences`); asserted wrong literal title/body strings;
+  and - the most impactful bug class - `fc.assert` loops a property function many times with
+  no intervening `beforeEach`, so `scheduleNotificationAsync`'s mock call history was
+  accumulating across iterations, making `not.toHaveBeenCalled()` checks fail on iterations
+  where an earlier iteration had legitimately called it. Fixed with `mockClear()` at the top
+  of each affected property iteration.
+- **currency.test.ts**: round-trip (A->B->A) test asserted a 0.1% tolerance, but the real
+  `fetchExchangeRate` intentionally applies independent +/-2% random variation per leg -
+  fixed by stubbing `Math.random` to isolate the intended mathematical invariant, with
+  tolerance widened to 1% to account for `DEFAULT_EXCHANGE_RATES`'s fallback table not
+  being a perfectly reciprocal matrix. Symbol-format tests assumed the app's own
+  `Currency.symbol` field always matches `Intl.NumberFormat`'s locale rendering; verified
+  Node/ICU renders AUD and CAD with a bare `$` (not `A$`/`C$`) and JPY with a different yen
+  glyph than the app's own constant - fixed by deriving the expected symbol from
+  `Intl.NumberFormat(...).formatToParts()` per currency/locale instead of assuming a match.
+- **data-export.test.ts**: CSV row-count expectation didn't apply the same
+  `filterBudgetsByDateRange` logic the service applies before generating rows; PDF test had
+  the same mock-accumulation bug as notifications.test.ts (`printToFileAsync.mock.calls[0]`
+  was grabbing the first call across all prior iterations, not the current one); round-trip
+  test used an unconstrained `fc.string()` id generator that could produce CSV-unsafe
+  characters or duplicate short ids across array elements (real ids are
+  `generateId.transaction()`-produced UUIDs, never containing quotes/commas, and always
+  unique) - fixed with a realistic alphanumeric id pattern, `fc.uniqueArray` keyed by id,
+  and a quote-aware CSV row parser.
+- **quietHours.test.ts**: overnight-hours test's evening probe capped `startHour+1` at 23:00
+  minute 0, which could land before a start time like 23:30 - fixed by testing the start
+  instant directly.
+
+### Verification
+No implementation bugs were found this session - every failure traced to test code. No file
+under `packages/mobile/src/services/` was modified; confirmed via `git diff`. Each fixed file
+run individually 5+ times, all 4 files together 3 times, and the full suite 3 times - all
+runs clean at 25/25 suites, 257/259 tests passing, 2 skipped, 0 failed (up from the 241/259
+baseline going into this session). Updated `.kiro/specs/mobile-app/tasks.md` (tasks 19.4 and
+22.1, Overview, Status summary, Phase 3 measured-state) to reflect the fix.
+
+
 ## 2026-09-30 - CI/CD Fix: Stale api-family Health Check (Session 168)
 
 ### Problem

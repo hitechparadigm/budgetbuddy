@@ -70,7 +70,15 @@ const budgetGenerator = fc.record({
 });
 
 const transactionGenerator = fc.record({
-  id: fc.string({ minLength: 1, maxLength: 50 }),
+  // Real transaction IDs come from generateId.transaction() /
+  // generateId.custom() in backend/layers/common, which always produce
+  // `${prefix}_${uuidv4()}` - alphanumeric, hyphens, and underscores only,
+  // never commas or quotes. An unconstrained fc.string() here allows
+  // Unicode/CSV-unsafe characters (quotes, commas, newlines) that real IDs
+  // never contain, which corrupts the naive `row.split(',')` parsing used
+  // by round-trip tests below - not a bug in the export service's
+  // escaping, just an unrealistic id shape from the generator.
+  id: fc.stringMatching(/^[a-zA-Z0-9_-]{1,50}$/),
   categoryId: fc.string({ minLength: 1, maxLength: 50 }),
   amount: fc.float({ min: Math.fround(0.01), max: Math.fround(10000), noNaN: true }).map(Math.fround),
   description: fc.string({ minLength: 1, maxLength: 200 }),
@@ -88,6 +96,49 @@ const exportOptionsGenerator = fc.record({
   endDate: fc.option(fc.date({ min: new Date('2021-01-01'), max: new Date('2025-12-31') }), { nil: undefined }),
   categories: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 50 }), { maxLength: 10 }), { nil: undefined }),
 });
+
+/**
+ * Quote-aware CSV row parser. The real escapeCsvField wraps fields
+ * containing commas, quotes, or newlines in double quotes (doubling any
+ * internal quotes), which is valid CSV but means a naive `row.split(',')`
+ * corrupts field alignment whenever a quoted field contains an internal
+ * comma (e.g. a merchant name like "Acme, Inc"). This parser respects
+ * quoting so tests that round-trip exported CSV data reflect the real CSV
+ * format instead of a simplified comma-split assumption.
+ */
+function parseCsvRow(row: string): string[] {
+  const fields: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < row.length; i++) {
+    const char = row[i];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (row[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ',') {
+        fields.push(current);
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+  }
+  fields.push(current);
+  return fields;
+}
 
 describe('Data Export Property Tests', () => {
   beforeEach(() => {
@@ -138,9 +189,21 @@ describe('Data Export Property Tests', () => {
           expect(header).toContain('Planned Amount');
           expect(header).toContain('Actual Amount');
 
-          // Verify data rows match budget count (only if budgets exist)
+          // Verify data rows match budget count (only if budgets exist).
+          // exportBudgetsToCSV applies filterBudgetsByDateRange BEFORE
+          // generating CSV rows (excluding budgets whose createdAt falls
+          // outside [startDate, endDate]), so the expected row count must
+          // apply the same filter - matching filterBudgetsByDateRange's
+          // exact semantics - rather than summing categories across every
+          // generated budget regardless of date.
           const dataRows = lines.slice(1);
-          const expectedRows = budgets.reduce((total, budget) =>
+          const filteredBudgets = budgets.filter(budget => {
+            const budgetDate = new Date(budget.createdAt);
+            if (options.startDate && budgetDate < options.startDate) return false;
+            if (options.endDate && budgetDate > options.endDate) return false;
+            return true;
+          });
+          const expectedRows = filteredBudgets.reduce((total, budget) =>
             total + budget.groups.reduce((groupTotal, group) =>
               groupTotal + group.categories.length, 0), 0);
 
@@ -243,13 +306,20 @@ describe('Data Export Property Tests', () => {
         fc.array(transactionGenerator, { maxLength: 30 }),
         fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') }),
         async (budgets, transactions, month) => {
+          // fc.assert loops this property function many times inside a
+          // single test() invocation, with no intervening beforeEach -
+          // clear printToFileAsync's call history at the start of every
+          // iteration so `.mock.calls[0][0]` below reflects THIS
+          // iteration's call, not the first call across ALL prior
+          // iterations of this fc.assert run.
+          const { printToFileAsync } = require('expo-print');
+          printToFileAsync.mockClear();
+
           // Mock expo-print
           const mockPrintResult = {
             uri: 'file:///mock/report.pdf',
             numberOfPages: Math.max(1, Math.ceil(budgets.length / 10)),
           };
-
-          const { printToFileAsync } = require('expo-print');
           printToFileAsync.mockResolvedValue(mockPrintResult);
 
           // Generate PDF report
@@ -272,12 +342,16 @@ describe('Data Export Property Tests', () => {
           const htmlContent = printToFileAsync.mock.calls[0][0].html;
           const monthStr = month.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
           expect(htmlContent).toContain(monthStr);
-          expect(htmlContent).toContain('Monthly Budget Report');
+          // Real generateBudgetReportHTML renders <h1>Budget Report</h1>,
+          // not "Monthly Budget Report" (that string doesn't appear
+          // anywhere in the template).
+          expect(htmlContent).toContain('Budget Report');
 
-          // Should contain budget information if budgets exist
-          if (budgets.length > 0) {
-            expect(htmlContent).toContain('Budget Summary');
-          }
+          // The real template always renders a "Summary" section
+          // (<h3>Summary</h3>) regardless of whether any budgets were
+          // passed in - "Budget Summary" as a literal string doesn't
+          // appear in the template.
+          expect(htmlContent).toContain('<h3>Summary</h3>');
         }
       ),
       { numRuns: 100 }
@@ -364,7 +438,18 @@ describe('Data Export Property Tests', () => {
   test('Property 27: Export maintains basic data integrity', async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.array(transactionGenerator, { maxLength: 20 }),
+        // Real transaction IDs are generateId.transaction()-produced UUIDs
+        // and are effectively always unique. A plain fc.array() of
+        // transactionGenerator can draw the same short id string (e.g. "_")
+        // for two different transactions, since the constrained id pattern
+        // has a small search space at short lengths. When ids collide, the
+        // round-trip lookup `parsedTransactions.find(p => p.id ===
+        // original.id)` matches the FIRST row with that id for every
+        // transaction sharing it, which is a test artifact of the
+        // duplicate-id collision - not a real export bug. Use
+        // fc.uniqueArray keyed by id so every generated transaction has a
+        // distinct id, matching the real-world invariant.
+        fc.uniqueArray(transactionGenerator, { maxLength: 20, selector: t => t.id }),
         async (transactions) => {
           // Mock file operations to capture and return CSV data
           let capturedCsvData = '';
@@ -384,14 +469,18 @@ describe('Data Export Property Tests', () => {
           const exportResult = await exportService.exportTransactionsToCSV(transactions, { format: 'csv' });
           expect(exportResult.success).toBe(true);
 
-          // Parse the CSV data back
+          // Parse the CSV data back. Use the quote-aware parseCsvRow rather
+          // than a naive comma-split: escapeCsvField quotes description/
+          // merchant/categoryId/etc. whenever they contain a comma, and a
+          // naive split(',') would misalign every subsequent column on
+          // such a row regardless of id shape.
           const lines = capturedCsvData.split('\n').filter(line => line.trim());
-          const header = lines[0].split(',').map(h => h.replace(/"/g, ''));
+          const header = parseCsvRow(lines[0]);
           const dataRows = lines.slice(1);
 
           // Verify we can reconstruct transaction data
           const parsedTransactions = dataRows.map(row => {
-            const fields = row.split(',').map(f => f.replace(/"/g, ''));
+            const fields = parseCsvRow(row);
             const transaction: any = {};
 
             header.forEach((headerField, index) => {
