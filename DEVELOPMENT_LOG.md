@@ -1,5 +1,41 @@
 # Development Log
 
+## 2026-09-30 - Mobile Workspace/CI Wiring: Tasks 1.6 and 22.2 (Session 168)
+
+### Problem
+With the mobile jest suite now clean (257/259), the next mobile-app spec gaps were tasks
+1.6 (packages/mobile not in the root workspace) and 22.2 (mobile suite not wired into
+pr-check.yml).
+
+### What Was Done
+- Root has no real npm workspaces field for ANY package - web-app and shared already
+  install independently via cd-and-run root scripts, not npm workspaces. Followed that
+  same pattern for mobile rather than introducing real workspaces as a separate, riskier
+  change: added lint:check:mobile, type-check:mobile, test:mobile root scripts.
+- Added a mobile-tests job to pr-check.yml (type-check + npm run test:mobile, installed
+  with --legacy-peer-deps for the pre-existing react-native-get-random-values peer
+  conflict); wired into pr-summary needs list, status table, and pass/fail gate.
+
+### Two Real Bugs Found and Fixed Along the Way
+- packages/mobile/.eslintrc.js extended '@typescript-eslint/recommended' without the
+  required plugin: prefix - ESLint could not actually load that config, meaning mobile's
+  own `npm run lint` script had silently never worked.
+- Added cross-env (pinned exact, 10.1.0) as a root devDependency. It was already
+  referenced by the existing lint:check:web script but was never installed - that script
+  had been silently broken too, masked because safe-commit-push.js treats frontend lint
+  failures as non-blocking warnings rather than hard failures.
+- With the config fixed, lint:check:mobile now runs (previously impossible) and surfaces
+  151 real pre-existing lint errors. Deliberately did NOT chain it into lint:check:all -
+  fixing 151 errors is a separate, larger cleanup, not part of this task; tracked as its
+  own follow-up in tasks.md.
+
+### Verification
+type-check:mobile: 0 errors. test:mobile: 257/259 passing, 2 skipped, 0 failed (confirmed
+on a clean run; a separate run intermittently failed only on the already-documented
+order-dependent-flaky quick-actions.test.ts, consistent with pre-existing behavior, not a
+regression). package.json and pr-check.yml validated as well-formed JSON/YAML.
+
+
 ## 2026-09-30 - Mobile Property Test Fixes: 4 Failing Suites Resolved (Session 168)
 
 ### Problem
@@ -13094,3 +13130,4 @@ Created `infrastructure/lib/api-family-stack.ts`:
 - `docs/aws-stack-architecture.md` - Should be updated with new stack architecture
 
 ---
+

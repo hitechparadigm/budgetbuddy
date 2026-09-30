@@ -208,7 +208,7 @@ describe('Notification System Properties', () => {
               call => call[0] === 'budgetbuddy_local_notification_preferences'
             );
             const lastPersisted = JSON.parse(setItemCalls[setItemCalls.length - 1][1] as string);
-            expect(lastPersisted).toEqual(expect.objectContaining(preferences));
+            expect(lastPersisted).toEqual(expect.objectContaining({ ...preferences }));
           }
         ),
         { numRuns: 100 }

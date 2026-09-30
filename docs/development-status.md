@@ -4,6 +4,15 @@
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 
+## LATEST - Session 168: Mobile Workspace/CI Wiring - Tasks 1.6, 22.2 (2026-09-30)
+
+Added `lint:check:mobile`/`type-check:mobile`/`test:mobile` root scripts and a new
+`mobile-tests` job in `pr-check.yml` (task 1.6/22.2). Found and fixed two real,
+previously-silent bugs along the way: mobile's `.eslintrc.js` had a malformed `extends`
+entry (ESLint could never load it) and `lint:check:web` had depended on `cross-env`
+without it being installed (now added, pinned exact). `type-check:mobile`: 0 errors;
+`test:mobile`: 257/259 passing.
+
 ## LATEST - Session 168: Mobile Property Test Fixes - 4 Failing Suites Resolved (2026-09-30)
 
 `packages/mobile`'s `currency.test.ts`, `notifications.test.ts`, `quietHours.test.ts`, and
