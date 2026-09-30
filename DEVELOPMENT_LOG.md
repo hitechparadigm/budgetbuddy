@@ -1,5 +1,34 @@
 # Development Log
 
+## 2026-09-30 - infrastructure/bin/app.js Drift Fix (Session 168)
+
+### Problem
+A prior session (infra-cleanup spec) hand-editing app.ts and app.js to remove
+ApiFamilyStack noticed, but explicitly deferred, that app.js was ALREADY drifted from
+app.ts before that cleanup - missing ApiBudgetsStack entirely and not passing
+notificationFunction into ApiStack. Flagged in work-log.md as needing its own pass.
+
+### What Was Done
+Confirmed via cdk.json ("app": "npx ts-node --prefer-ts-exts bin/app.ts") that app.ts
+is CDKs actual deploy entrypoint - app.js has zero effect on any deployment, but is a
+real, checked-in file worth keeping accurate. Regenerated it via `npm run build` in
+infrastructure/ rather than hand-editing (unlike the prior session, which chose hand-
+editing specifically because no confirmed automatic regeneration step existed - running
+the projects own tsc build IS that step, just not wired into a pre-commit hook).
+
+The build also regenerated several unrelated compiled lib/*.js files, revealing they
+had accumulated their own drift from their .ts sources (Stripe secret handling, SES
+FROM_EMAIL config, an IAM permission signature change). Reverted all of those - fixing
+that drift is a separate, larger, riskier change than this narrow app.js task intended.
+Kept only app.js. Also stripped the inline sourcemap comment tsc appended, since the
+original file never had one and it would have bloated the diff for no benefit.
+
+### Verification
+node --check bin/app.js: valid syntax. git status confirmed only app.js changed (no
+other tracked file touched). Did not run cdk synth/diff against this file since it is
+not part of any deploy path; app.ts (the real entrypoint) was not modified.
+
+
 ## 2026-09-30 - Mobile Workspace/CI Wiring: Tasks 1.6 and 22.2 (Session 168)
 
 ### Problem

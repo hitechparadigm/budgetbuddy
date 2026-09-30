@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.10.9] - 2026-09-30
+
+### fix: regenerate infrastructure/bin/app.js to close drift from app.ts
+
+- Fixed a documented, deliberately-deferred gap from the `infra-cleanup` spec:
+  `infrastructure/bin/app.js` (a checked-in compiled artifact) was missing `ApiBudgetsStack`
+  entirely and did not pass `notificationFunction` into `ApiStack`, both present in
+  `app.ts`. Confirmed via `cdk.json` that `bin/app.ts` (run through `ts-node`) is CDK's
+  actual deploy entrypoint - `app.js` has no effect on deployments, but is a real file in
+  the repo worth keeping accurate.
+- Regenerated via `npm run build` in `infrastructure/` rather than hand-editing, since the
+  project's own `tsc` build step reproduces the file exactly. The build also regenerated
+  several unrelated compiled `lib/*.js` files reflecting Stripe/SES/IAM drift accumulated
+  in the `.ts` sources since those `.js` files were last regenerated - reverted those,
+  keeping only `app.js`, since fixing that unrelated drift is a separate, larger change.
+  Stripped the build's added inline sourcemap comment to keep the diff minimal.
+- Verified: `node --check bin/app.js` passes; diff is isolated to `app.js` only.
+
+
 ## [1.10.8] - 2026-09-30
 
 ### feat: wire packages/mobile into root workspace scripts and pr-check.yml
