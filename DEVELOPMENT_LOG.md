@@ -1,5 +1,16 @@
 # Development Log
 
+## 2026-09-30 - Specs Index Consistency Fix (Session 168)
+
+While reviewing open work, noticed .kiro/specs/README.md was missing 4 of the 21 spec
+directories entirely: feature-entitlements-enforcement, infra-cleanup, web-app-followups
+(all fully complete per their tasks.md checkboxes, verified directly rather than assumed)
+and modular-architecture (active, requirements.md only so far). This violates the Doc
+Index Maintenance steering rule. Added all four in alphabetical order with accurate
+status/category/description; also caught and fixed web-app-followups being placed after
+ui-polish-enhancements alphabetically in the first draft of this fix.
+
+
 ## 2026-09-30 - infrastructure/bin/app.js Drift Fix (Session 168)
 
 ### Problem
