@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.10.11] - 2026-09-30
+
+### docs: mobile-app spec - fix 10 stale reachability claims; new modular-architecture spec
+
+- `.kiro/specs/mobile-app/tasks.md` had multiple stale entries left over from before task
+  6.4's navigation fix and this session's jest fixes, discovered during an autonomy-check
+  sweep: task 3 (onboarding) and task 3.3 were still marked unreachable/not-done despite
+  task 6.4's own notes already describing the fix; task 6 (Goals) header still said
+  "completely unreachable"; tasks 9, 11, 14 claimed no navigator route despite the
+  `MoreScreen.tsx` hub (built in task 6.4) actually linking to them; task 9 additionally
+  claimed `notifications.test.ts`/`quietHours.test.ts` still failed (fixed earlier this
+  session) and that `NotificationSettings.tsx` had no entry point (it does - a modal from
+  `SettingsScreen.tsx`); task 24's "blocked by unreachable onboarding/Goals" note and task
+  20.5's justification were both stale for the same reason. Every correction was verified
+  by reading the actual current source (`App.tsx`, `AuthContext.tsx`, `RootNavigator.tsx`,
+  `MoreScreen.tsx`, `SettingsScreen.tsx`) before editing, not assumed from prior notes.
+- Created the `modular-architecture` spec's `design.md` and `tasks.md` (requirements.md was
+  created in an earlier session): four read-only consistency-check scripts, a stack
+  manifest, a gateway routing map, a feature-module scaffold generator, and their CI/doc
+  wiring - all additive guardrails within the existing architecture, no changes to the API
+  Gateway count, DynamoDB design, or CDK stack boundaries.
+
+
 ## [1.10.10] - 2026-09-30
 
 ### docs: fix stale .kiro/specs/README.md index missing 4 specs

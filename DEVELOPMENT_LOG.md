@@ -1,5 +1,53 @@
 # Development Log
 
+## 2026-09-30 - mobile-app Staleness Sweep + modular-architecture design/tasks (Session 168)
+
+### Problem
+An autonomy-check pass (re-reading tasks.md against actual current source rather than
+trusting prior task notes) found mobile-app/tasks.md had drifted from reality: task 6.4's
+navigation fix (adding the Goals tab, the More tab hub, and onboarding routing) had
+already resolved several other tasks' blocking conditions, but those tasks' own
+checkboxes and prose were never updated to reflect it.
+
+### What Was Found and Fixed (each verified by reading real source first)
+- Task 3 (Onboarding) and 3.3: marked unreachable/not-done. Read `App.tsx` -
+  `AppNavigator` renders `<OnboardingScreen onFinished={completeOnboarding} />` when
+  `AuthContext.tsx`'s `needsOnboarding` is true. Marked both done.
+- Task 6 (Goals) header: said "completely unreachable." `RootNavigator.tsx` has a Goals
+  tab. Marked reachable; left 6.2 (tab content) unverified since that's a narrower,
+  still-open claim.
+- Tasks 9, 11, 14: claimed Bills/Insights/NotificationSettings had no navigator route.
+  Read `MoreScreen.tsx` - it lists Bills, Insights, BankSync (Accounts), CreditScore,
+  DebtPayoff, Investments, NetWorth, Subscriptions, Tips, SyncSettings, OfflineSettings,
+  and Settings as menu items with real `navigation.navigate()` calls, built in task 6.4.
+  Marked all reachable via that hub; task 10 (Accounts) marked partially - reachable, but
+  still no dedicated `AccountsScreen.tsx` per the task's original title.
+- Task 9 additionally claimed `notifications.test.ts`/`quietHours.test.ts` still failed -
+  both were fixed earlier this same session (see the mobile property test fixes work) -
+  and that `NotificationSettings.tsx` had no entry point. Read `SettingsScreen.tsx`: it
+  imports and renders `NotificationSettings` as a modal from a settings-list button.
+  Both claims corrected.
+- Task 24's "blocked by Task 3/6.4 unreachability" note and task 20.5's test-coverage
+  justification both cited the same now-resolved unreachability; updated both to state
+  the real remaining blocker (24.1: Detox not set up; 20.5: no test file, unrelated to
+  reachability).
+
+### Also Completed
+Generated `design.md` and `tasks.md` for the `modular-architecture` spec (created earlier
+this session, requirements-only until now). Design.md required three format-validator
+fix rounds (empty Correctness Properties section, then a Property N heading with no real
+content, then a Validates line using unparsed requirement ranges) before passing clean -
+resolved by adding one genuine property (check-function determinism/no-side-effects)
+rather than an invented one, and expanding range notation to individual comma-separated
+requirement IDs.
+
+### Verification
+`validate_spec_format` clean on both files after every edit. Multiple leftover duplicate
+lines from imprecise `RemoveRange`/line-index edits were caught by full-file re-reads and
+removed - a recurring risk noted again this session with the PowerShell-based editing
+approach used throughout.
+
+
 ## 2026-09-30 - Specs Index Consistency Fix (Session 168)
 
 While reviewing open work, noticed .kiro/specs/README.md was missing 4 of the 21 spec

@@ -26,20 +26,24 @@ routes, not on file presence alone.
 **Reality in one paragraph:** most individual features (auth, budget, transactions, offline
 SQLite, notifications, receipts, exports, 2FA, currency, backup/restore) have real
 implementations and a real property-based test suite (25 test files, 257/259 tests passing).
-But the app is only reachable through 4 tabs — Budget, Transactions, Summary, Settings — and
-11 of the 16 screen files under `src/screens/` (Goals, Bills, Insights, BankSync/Accounts,
+The app is now reachable through 5 tabs - Budget, Transactions, Goals, Summary, More - after
+task 6.4's navigation fix; onboarding is also reachable (task 3.3, same fix pass). The
+`More` tab hosts 11 of the remaining screen files (Bills, Insights, BankSync/Accounts,
 CreditScore, DebtPayoff, Investments, NetWorth, Subscriptions, Tips, OfflineSettings,
-SyncSettings) plus the entire onboarding flow (`OnboardingScreen`/`OnboardingFlow`) are dead
-code: built, but never registered in `AuthNavigator` or `RootNavigator`, and not linked from
-`SettingsScreen` either. `packages/mobile` is now wired into the root workspace scripts
-and `pr-check.yml` (see Task 1.6/22.2).
+SyncSettings) plus Settings via a `MoreScreen.tsx` hub - reachable, but one level deeper than
+the tab bar. `packages/mobile` is now wired into the root workspace scripts and
+`pr-check.yml` (see Task 1.6/22.2).
 
-- **Phase 1 (Foundation/Tier 1):** mostly built, but Goals screen/tabs and onboarding are
-  unreachable. Workspace/CI wiring (1.6) is now done. Architecture uses React Context
+- **Phase 1 (Foundation/Tier 1):** built and reachable - Goals tab and onboarding routing
+  fixed in task 6.4's pass. Workspace/CI wiring (1.6) is now done. Architecture uses
+  React Context (`AuthContext`, `CurrencyContext`), not Zustand - despite design.md and
+  task 1.3 assuming Zustand; no Zustand dependency exists in `package.json` and no
+  `stores/` directory exists.
 - **Phase 2 (Extended/Tier 2):** screens exist for most items (8, 9, 10-variant, 11, 13, 14,
-  10's Accounts is `BankSyncScreen` instead) but are unreachable dead code per above. Biometric
-  auth (15) has a real screen (`BiometricSetupScreen.tsx`) but is also not wired in. App store
-  submission prep (16) not started.
+  10's Accounts is `BankSyncScreen` instead) and are now reachable via the `More` tab hub
+  (task 6.4) - see tasks 10/11/13/14. Biometric auth (15) has a real screen
+  (`BiometricSetupScreen.tsx`) but remains the one screen with no route at all, in
+  `MoreScreen.tsx` or elsewhere. App store submission prep (16) not started.
 - **Phase 3 (Testing):** harness is real and configured (17 done). Substantial existing
   coverage across stores/services/offline/components (18-21 largely covered, though written
   against a different task structure — property tests exist per-feature, not per the
@@ -154,7 +158,7 @@ and `pr-check.yml` (see Task 1.6/22.2).
         work, not part of this fix.
 
 
-- [ ] 3. Onboarding — **built but completely unreachable**
+- [x] 3. Onboarding - **built and now reachable** (routing fixed in task 6.4's pass)
   - [~] 3.1 BudgetTypeScreen — personal/family/shared selection — not implemented as a discrete
         screen. `OnboardingFlow.tsx` (rendered via `OnboardingScreen.tsx`) instead covers
         location → currency → family-size → category-suggestion steps, which is a different
@@ -163,11 +167,14 @@ and `pr-check.yml` (see Task 1.6/22.2).
   - [~] 3.2 AIGenerationScreen — progress animation during Bedrock call — no separate screen;
         `OnboardingFlow.tsx` shows a step progress bar and calls a suggestions API
         (`getBudgetSuggestions`-style flow), not a dedicated Bedrock-generation waiting screen.
-  - [ ] 3.3 Complete flow → navigate to BudgetScreen — **not done**. Neither `OnboardingScreen`
-        nor `OnboardingFlow` is imported by `AuthNavigator.tsx` or `RootNavigator.tsx`, or by
-        any other screen. A new user today lands directly on `LoginScreen` → `RootNavigator`
-        with no onboarding step in between. This is the single biggest gap in Task 3: the code
-        exists, the route doesn't.
+  - [x] 3.3 Complete flow -> navigate to BudgetScreen - **done**, fixed as part of task 6.4's
+        pass even though this checkbox was not updated at the time. Verified directly by
+        reading `App.tsx` and `AuthContext.tsx`: `AppNavigator` renders
+        `<OnboardingScreen onFinished={completeOnboarding} />` when `needsOnboarding` is
+        true (set via `AuthContext.tsx`'s `pendingOnboardingEmails` set, populated at
+        sign-up and consumed on the next successful sign-in for that email), falling
+        through to `RootNavigator` once `onFinished`/`completeOnboarding` fires. A new user
+        today does reach onboarding before the Budget screen.
 
 - [x] 4. Budget Screen
   - [x] 4.1 Income / Savings / Expense group sections
@@ -189,7 +196,8 @@ and `pr-check.yml` (see Task 1.6/22.2).
         declarations now resolve cleanly (see 1.7).
   - [x] 5.5 Submit with optimistic update to SQLite + API sync
 
-- [ ] 6. Goals Screen — **built but completely unreachable, and tab bar mismatch**
+- [~] 6. Goals Screen - **built and reachable** via the tab bar (task 6.4); tab content
+      (6.2) not yet independently re-verified.
   - [x] 6.1 Goals list with SVG progress rings — `GoalsScreen.tsx`,
         `DraggableGoalList.tsx`, `useGoalReorder.ts` (has a passing test,
         `GoalReorder.test.tsx`)
@@ -229,34 +237,42 @@ and `pr-check.yml` (see Task 1.6/22.2).
 
 ### Phase 2 — Extended Features (Tier 2)
 
-Screens for nearly every Tier 2 item already exist as files. **None of them are registered in
-either navigator**, so treat "screen file exists" and "feature is reachable" as two separate
-facts below.
+Screens for nearly every Tier 2 item already exist as files. Task 6.4's `MoreScreen.tsx`
+hub now registers most of them one level deep under the `More` tab - reachable, though not
+surfaced at the top level. Treat "screen file exists," "registered in `MoreStackParamList`,"
+and "linked from `MoreScreen.tsx`'s menu" as three separate facts below, since a screen can
+satisfy the first two without the third (unlikely here, but not assumed).
 
 - [~] 8. Transactions screen with search + filter — `TransactionsScreen.tsx` is wired into the
       tab bar (reachable) and has `SearchBar.tsx`/`FilterSheet.tsx`/`src/services/search.ts`
       with a passing property suite (`mobile-search-filtering.pbt.test.ts`). This is the one
       Tier 2 item that is both built and reachable.
-- [~] 9. Push notifications (Expo Notifications + existing notification Lambda) — service layer
-      is real and substantially tested (`src/services/notification.ts` +
-      `notification.test.ts`, plus property tests `notifications.test.ts`, `quietHours.test.ts`,
-      `timeWindowMatching.test.ts`), registration wired in `App.tsx`. However
-      `src/test/properties/notifications.test.ts` and `quietHours.test.ts` currently **fail** —
-      the test file imports `notificationService`/`NotificationPreferences`/`BudgetAlert`/
-      `BillReminder` members that the real `src/services/notification.ts` does not export, plus
-      a "used before declaration" bug on `isQuietTime`. `NotificationSettings.tsx` (the settings
-      UI for this) is also not reachable from any screen — not linked from `SettingsScreen.tsx`.
-- [ ] 10. Accounts screen — no `AccountsScreen.tsx` exists. `BankSyncScreen.tsx` +
-      `src/services/plaid.ts` cover equivalent ground but are unreachable (see 6.4).
-- [ ] 11. Bills screen with AI pattern badges — `BillsScreen.tsx` exists, unreachable.
-- [ ] 12. Planned Transactions screen — no screen or route found under `packages/mobile/src`
+- [x] 9. Push notifications (Expo Notifications + existing notification Lambda) - service
+      layer is real and tested (`src/services/notification.ts` + `notification.test.ts`,
+      plus property tests `notifications.test.ts`, `quietHours.test.ts`,
+      `timeWindowMatching.test.ts`), registration wired in `App.tsx`.
+      `src/test/properties/notifications.test.ts` and `quietHours.test.ts` now pass (fixed
+      this session - were test-content bugs in the test files themselves, not the real
+      service). `NotificationSettings.tsx` is reachable: `SettingsScreen.tsx` imports it
+      and renders it as a modal via a settings-list button (`notificationSettingsVisible`
+      state), contrary to this task's earlier claim that it had no entry point.
+- [~] 10. Accounts screen - no `AccountsScreen.tsx` exists. `BankSyncScreen.tsx` +
+      `src/services/plaid.ts` cover equivalent ground and are now reachable via the
+      `More` tab's "Accounts" menu item (task 6.4). A dedicated `AccountsScreen.tsx` per
+      the original task title still does not exist.
+- [x] 11. Bills screen with AI pattern badges - `BillsScreen.tsx` exists and is now
+      reachable via the `More` tab (task 6.4).
+- [ ] 12. Planned Transactions screen - no screen or route found under `packages/mobile/src`
       at all (unlike the web app's `PlannedTransactionsPage`). Not started on mobile.
-- [~] 13. Settings screen — `SettingsScreen.tsx` is reachable via the tab bar, but several
-      typecheck errors live here (`userId` doesn't exist on `User` type, `Budget` type mismatch
-      between `types/index.ts` and `types/budget.ts`, missing `TwoFactorSetup` props), and it
-      does not link out to Bills/Insights/Accounts/Goals/Sync/Offline settings screens that
-      otherwise have no other entry point.
-- [ ] 14. Insights / AI Coach chat screen — `InsightsScreen.tsx` exists, unreachable.
+- [~] 13. Settings screen - `SettingsScreen.tsx` is reachable via the `More` tab (task 6.4)
+      and previously via the tab bar; several typecheck errors live here (`userId` doesn't
+      exist on `User` type, `Budget` type mismatch between `types/index.ts` and
+      `types/budget.ts`, missing `TwoFactorSetup` props). It does not itself link out to
+      Bills/Insights/Accounts/Goals/Sync/Offline - but those are all now reachable as
+      `MoreScreen.tsx` sibling menu items instead, so the original concern (no entry point
+      anywhere) is resolved even though Settings itself doesn't provide the links.
+- [x] 14. Insights / AI Coach chat screen - `InsightsScreen.tsx` exists and is now reachable
+      via the `More` tab (task 6.4).
 - [~] 15. Biometric auth (optional, expo-local-authentication) — `BiometricSetupScreen.tsx`
       exists and `expo-local-authentication` is a dependency, but the screen has no navigator
       route.
@@ -321,7 +337,8 @@ to reflect what's actually covered and passing today, not what the original task
   - [ ] 20.4 `LoginScreen` - error states for wrong password and network failure — no test file
         found targeting `LoginScreen.tsx` directly.
   - [ ] 20.5 Onboarding - budget type selection advances to AI generation step — no test file
-        found; consistent with onboarding being unreachable/unfinished (Task 3).
+        found; onboarding is now reachable (Task 3.3) but still lacks component test
+        coverage.
   - _Requirements: 2.1, 2.4, 3.1, 5.1, 5.3, 6.1_
 
 - [~] 21. Accessibility tests
@@ -363,8 +380,8 @@ to reflect what's actually covered and passing today, not what the original task
   - [ ] 24.5 Offline: kill network, add transaction, restore network, verify single sync
   - [ ] 24.6 Run both platforms in CI on the release candidate branch
   - _Requirements: 2.1, 3.1, 4.2, 5.2, 6.1_
-  - Not started. Blocked in practice by Task 3 (onboarding unreachable) and Task 6.4
-    (Goals unreachable) — 24.2 and 24.4 can't be written against the app as it stands today.
+  - Not started. No longer blocked by onboarding/Goals unreachability (both fixed in task
+    6.4's pass) - only blocked by 24.1 (Detox not yet set up).
 
 ## Notes
 
