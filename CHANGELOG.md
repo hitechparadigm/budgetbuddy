@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.10] - 2026-09-30
+
+### docs: fix stale .kiro/specs/README.md index missing 4 specs
+
+- `feature-entitlements-enforcement`, `infra-cleanup`, `web-app-followups` (all completed)
+  and `modular-architecture` (active, requirements-only so far) were missing from the specs
+  index table entirely, violating the Doc Index Maintenance steering rule. Added all four
+  in alphabetical order with accurate status/category/description, verified against each
+  spec's actual `tasks.md` checkbox state rather than assumed.
+- Also fixed `web-app-followups` being listed after `ui-polish-enhancements` alphabetically
+  in an earlier draft of this fix before catching it.
+
+
 ## [1.10.9] - 2026-09-30
 
 ### fix: regenerate infrastructure/bin/app.js to close drift from app.ts

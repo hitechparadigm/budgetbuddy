@@ -4,6 +4,12 @@
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 
+## LATEST - Session 168: Specs Index Consistency Fix (2026-09-30)
+
+Fixed `.kiro/specs/README.md` missing 4 of 21 specs (`feature-entitlements-enforcement`,
+`infra-cleanup`, `web-app-followups`, `modular-architecture`) - violated the Doc Index
+Maintenance steering rule. All statuses verified against actual `tasks.md` state.
+
 ## LATEST - Session 168: infrastructure/bin/app.js Drift Fixed (2026-09-30)
 
 Regenerated `infrastructure/bin/app.js` (via `npm run build`) to close drift from
