@@ -4,6 +4,15 @@
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 
+## LATEST - Session 168: infrastructure/bin/app.js Drift Fixed (2026-09-30)
+
+Regenerated `infrastructure/bin/app.js` (via `npm run build`) to close drift from
+`app.ts` flagged by the `infra-cleanup` spec - it was missing `ApiBudgetsStack` and
+`notificationFunction` wiring. `app.ts` (run via `ts-node`) is CDK's real deploy
+entrypoint per `cdk.json`, so this has no deployment effect but keeps the checked-in
+file accurate. Reverted unrelated drift the same build surfaced in other compiled
+`lib/*.js` files - out of scope for this fix.
+
 ## LATEST - Session 168: Mobile Workspace/CI Wiring - Tasks 1.6, 22.2 (2026-09-30)
 
 Added `lint:check:mobile`/`type-check:mobile`/`test:mobile` root scripts and a new

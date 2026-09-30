@@ -1,4 +1,4 @@
-﻿---
+---
 inclusion: always
 ---
 
@@ -10,7 +10,7 @@ inclusion: always
 **Date**: 2026-09-23
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Current Session**: ~167 (destroyed api-family-stack Session 167 - see Infrastructure section)
+**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed - see Mobile/Infrastructure sections)
 
 ## What's Live and Working
 
@@ -125,18 +125,34 @@ inclusion: always
       `{ nil: undefined }` since these types use `T | undefined` not `T | null`; missing
       `isPaused` field on category generators; unions from `fc.constantFrom()` need an
       `as fc.Arbitrary<...>` cast or TS widens to `string`).
-- [x] `npx jest` in `packages/mobile` now passes 241/259 (up from 238/259 baseline). 5 suites
-      still fail, but for a different reason than before: `notifications.test.ts` and
-      `data-export.test.ts` now compile and run (previously failed before even executing) and
-      fail on real test-content bugs - assertions that don't match actual service behavior, not
-      typos. Same for `currency.test.ts`/`quietHours.test.ts`. `TwoFactorSetup.test.tsx`/
-      `quick-actions.test.ts` are order-dependent flaky (pass standalone, intermittently fail in
-      the full suite run).
-- [ ] `packages/mobile` not wired into root workspace (`package.json`) or CI (`pr-check.yml`) -
-      task 1.6, not yet done.
-- [ ] Next highest-leverage item: fix the 5 failing jest suites' actual test-content bugs so
-      task 22.1's coverage gate can produce a trustworthy number. See
-      `.kiro/specs/mobile-app/tasks.md` for the corrected priority order.
+- [x] `npx jest` in `packages/mobile` now passes 257/259 (2 skipped, 0 failed) - up from the
+      241/259 baseline. Fixed the 4 previously-failing suites' real test-content bugs
+      (`currency.test.ts`, `notifications.test.ts`, `quietHours.test.ts`,
+      `data-export.test.ts`): a nonexistent `data` field on scheduled notifications, a
+      stale storage key, a fast-check mock-accumulation bug across property iterations, an
+      unrealistic id generator, and `Intl.NumberFormat` locale-symbol assumptions - no file
+      under `src/services/` was changed. `TwoFactorSetup.test.tsx`/`quick-actions.test.ts`
+      remain order-dependent flaky (pass standalone, intermittently fail in the full suite
+      run), unchanged and out of scope.
+- [x] `packages/mobile` now wired into root workspace scripts (`lint:check:mobile`,
+      `type-check:mobile`, `test:mobile`) and CI (`pr-check.yml`'s new `mobile-tests` job) -
+      task 1.6/22.2. Found and fixed two real, previously-silent bugs along the way:
+      `packages/mobile/.eslintrc.js` had a malformed `extends` entry (missing the required
+      `plugin:` prefix, so ESLint could never load it), and `lint:check:web` had silently
+      depended on `cross-env` without it being installed (now added, pinned exact,
+      `10.1.0`). `lint:check:mobile` now runs and surfaces 151 real pre-existing lint
+      errors - deliberately not chained into `lint:check:all`; tracked as its own
+      follow-up, not fixed in this pass.
+- [x] `infrastructure/bin/app.js` drift from `app.ts` (missing `api-budgets`/
+      `notificationFunction` wiring) fixed by regenerating via `npm run build` in
+      `infrastructure/` (confirmed via `cdk.json` that `bin/app.ts` via `ts-node` is CDK's
+      actual deploy entrypoint, so `app.js` is dead weight for deployment purposes but is
+      still a checked-in file worth keeping accurate). The build also touched several
+      unrelated compiled `lib/*.js` files (Stripe/SES/IAM changes reflecting drift the
+      `.ts` sources have accumulated since `.js` was last regenerated) - those were
+      reverted and left untouched, out of scope for this fix; only `app.js` itself was
+      kept. Stripped the build's added inline sourcemap comment to keep the diff minimal.
+
 ## Deprecated / Removed
 - `FamilyIdResolver` - deleted
 - `FAMILY#` partition keys - replaced by `BUDGET#`

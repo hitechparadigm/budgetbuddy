@@ -55,6 +55,7 @@ const auth_onboarding_stack_1 = require("../lib/auth-onboarding-stack");
 const api_stack_1 = require("../lib/api-stack");
 const api_features_stack_1 = require("../lib/api-features-stack");
 const api_features_extended_stack_1 = require("../lib/api-features-extended-stack");
+const api_budgets_stack_1 = require("../lib/api-budgets-stack");
 const hosting_stack_1 = require("../lib/hosting-stack");
 const monitoring_stack_1 = require("../lib/monitoring-stack");
 const notification_stack_1 = require("../lib/notification-stack");
@@ -95,6 +96,19 @@ const authOnboardingStack = new auth_onboarding_stack_1.AuthOnboardingStack(app,
     table: databaseStack.table,
 });
 /**
+ * Notification Stack - Push notifications and daily reminders
+ * Handles device registration, budget alerts, and daily reminders
+ * Creates its own CommonLayer and SharedLayer to avoid cross-stack dependency issues
+ * Must be declared before ApiStack so notificationFunction can be passed as a prop.
+ */
+const notificationStack = new notification_stack_1.NotificationStack(app, `${stackPrefix}-notification`, {
+    env,
+    description: 'BudgetBuddy notification infrastructure with Lambda functions for push notifications and reminders',
+    table: databaseStack.table,
+    // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
+    expoAccessToken: process.env.EXPO_ACCESS_TOKEN || 'placeholder-token-configure-in-aws',
+});
+/**
  * API Stack - API Gateway and Lambda functions
  * Contains core backend business logic and API endpoints
  * Depends on database and auth stacks
@@ -107,6 +121,7 @@ const apiStack = new api_stack_1.ApiStack(app, `${stackPrefix}-api`, {
     userPool: authStack.userPool,
     userPoolClient: authStack.userPoolClient,
     authOnboardingFunction: authOnboardingStack.onboardingFunction,
+    notificationFunction: notificationStack.notificationFunction,
 });
 /**
  * API Features Stack - Additional Lambda functions for competitive features
@@ -135,6 +150,19 @@ const apiFeaturesExtendedStack = new api_features_extended_stack_1.ApiFeaturesEx
     // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
 });
 /**
+ * API Budgets Stack - Budget collaboration features (replaces api-family-stack)
+ * Part of the Budget Model Redesign. This is the active stack for all budget
+ * collaboration, member management, and invitation features.
+ * Contains: Budget management, member management, invitations, email notifications
+ * Creates its own CommonLayer and SharedLayer to avoid CloudFormation export dependency issues
+ */
+const apiBudgetsStack = new api_budgets_stack_1.ApiBudgetsStack(app, `${stackPrefix}-api-budgets`, {
+    env,
+    description: 'BudgetBuddy Budgets API stack for budget collaboration and member management',
+    table: databaseStack.table,
+    userPool: authStack.userPool,
+});
+/**
  * Hosting Stack - S3 and CloudFront
  * Hosts the web application and admin dashboard
  */
@@ -142,18 +170,6 @@ const hostingStack = new hosting_stack_1.HostingStack(app, `${stackPrefix}-hosti
     env,
     description: 'BudgetBuddy hosting infrastructure with S3 static hosting and CloudFront CDN for global performance',
     environment: envName,
-});
-/**
- * Notification Stack - Push notifications and daily reminders
- * Handles device registration, budget alerts, and daily reminders
- * Creates its own CommonLayer and SharedLayer to avoid cross-stack dependency issues
- */
-const notificationStack = new notification_stack_1.NotificationStack(app, `${stackPrefix}-notification`, {
-    env,
-    description: 'BudgetBuddy notification infrastructure with Lambda functions for push notifications and reminders',
-    table: databaseStack.table,
-    // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
-    expoAccessToken: process.env.EXPO_ACCESS_TOKEN || 'placeholder-token-configure-in-aws',
 });
 /**
  * Monitoring Stack - CloudWatch dashboards and alarms
@@ -175,12 +191,15 @@ authOnboardingStack.addDependency(databaseStack);
 apiStack.addDependency(databaseStack);
 apiStack.addDependency(authStack);
 apiStack.addDependency(authOnboardingStack);
+apiStack.addDependency(notificationStack);
 apiFeaturesStack.addDependency(databaseStack);
 apiFeaturesStack.addDependency(authStack);
 // Temporarily removed dependency on apiStack to allow independent deployment
 apiFeaturesExtendedStack.addDependency(databaseStack);
 apiFeaturesExtendedStack.addDependency(authStack);
 // Temporarily removed dependency on apiStack to allow independent deployment
+apiBudgetsStack.addDependency(databaseStack);
+apiBudgetsStack.addDependency(authStack);
 notificationStack.addDependency(databaseStack);
 // Temporarily removed dependency on apiStack to allow independent deployment
 monitoringStack.addDependency(databaseStack);
@@ -188,6 +207,7 @@ monitoringStack.addDependency(authStack);
 monitoringStack.addDependency(apiStack);
 monitoringStack.addDependency(apiFeaturesStack);
 monitoringStack.addDependency(apiFeaturesExtendedStack);
+monitoringStack.addDependency(apiBudgetsStack);
 monitoringStack.addDependency(notificationStack);
 // Add comprehensive tags to all resources for cost tracking and organization
 cdk.Tags.of(app).add('Project', 'BudgetBuddy');
