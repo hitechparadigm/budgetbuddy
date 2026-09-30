@@ -46,7 +46,6 @@ BUDGET#<budgetId>
 database → auth → auth-onboarding → api → api-features
 → api-features-extended → api-budgets → hosting → notification → monitoring
 ```
-`api-family` stack is DEPRECATED — returns 410.
 
 ## Lambda Layer Strategy (ADR-004)
 - Two layers per stack: **common** and **shared**

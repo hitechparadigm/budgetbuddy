@@ -1,4 +1,4 @@
----
+﻿---
 inclusion: always
 ---
 
@@ -10,7 +10,7 @@ inclusion: always
 **Date**: 2026-09-23
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Current Session**: ~164
+**Current Session**: ~167 (destroyed api-family-stack Session 167 - see Infrastructure section)
 
 ## What's Live and Working
 
@@ -67,18 +67,27 @@ inclusion: always
 ## Known Open Items
 
 ### Immediate
-- [ ] Wire AiCoachChip import into BudgetPage.tsx or AppLayout.tsx (component created, still not imported
-      anywhere - confirmed via repo-wide search during Session 164)
-- [ ] `packages/api-client` package is stale relative to actual usage - only `client.ts`/`transactions.ts`
-      are real; auth/budget/family API calls happen directly from `packages/web-app/src/services/` instead.
-      Consider either deleting the unused package surface or actually wiring it up - not yet decided.
-- [ ] `infrastructure/README.md` lists only `api-stack.ts` in its CDK Stacks section, missing
-      `api-features`, `api-features-extended`, `api-budgets`, `notification` - noticed but out of scope
-      for the Session 164 consolidation (not in its disposition list); needs its own correction pass.
+- [x] AiCoachChip wired into `BudgetPage.tsx` (Session 165, `web-app-followups` spec) - mounted as the
+      last sibling before the page's outer closing div, fed by an extended `calculateTotals()`.
+- [x] `packages/api-client` deleted entirely (Session 165, `web-app-followups` spec) - confirmed zero
+      consumers in web-app or mobile; removed the tsconfig path mapping, lockfile workspace entry, and
+      docs/README.md link.
+- [x] `infrastructure/README.md`'s CDK Stacks section already lists all stacks (`api-features`,
+      `api-features-extended`, `api-budgets`, `notification-stack` all present) - re-verified Session 165,
+      this item was resolved as part of the mobile-app spec's work and this note was stale.
 
 ### Infrastructure
-- [ ] `api-family-stack` still deployed (returns 410) - destroy after confirming no traffic
+- [x] `api-family-stack` destroyed and removed from CDK app entrypoint (infra-cleanup spec)
 - [ ] SES still in sandbox - production access not yet requested
+- [ ] `infrastructure/bin/app.js` was already drifted from `app.ts` before this cleanup
+      (missing `api-budgets`/`notificationFunction` wiring present in .ts) - noticed during
+      infra-cleanup's app.js edit, not fixed here since out of this spec's scope; needs its own
+      correction pass.
+- [ ] cdk synth/cdk diff cannot run in this dev environment - Docker Desktop is installed
+      but its engine is not running, and pi-features-stack.ts's PlaidHandler Lambda uses
+      Docker-based asset bundling unconditionally for every synth/diff (pp.ts constructs
+      all stacks regardless of target). The infra-cleanup spec's pp.ts/pp.js edits were
+      verified via 	sc --noEmit + grep instead; full synth against live AWS is unverified.
 
 ### Security
 - [ ] Security posture ~80%

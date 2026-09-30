@@ -97,4 +97,4 @@ Create a spec when: feature is complex (>1 week), has 10+ tasks, or can be devel
 - `FAMILY#` partition keys - replaced by `BUDGET#`.
 - `custom:familyId` JWT claim - ignored. Only `custom:userId` is used.
 - `FamilySettings.tsx` - replaced by `BudgetMembersPage` at `/budget/members`.
-- `api-family-stack` - still deployed but deprecated. Will be destroyed after migration period.
+- `api-family-stack` - destroyed. Replaced entirely by `api-budgets-stack`.

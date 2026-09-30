@@ -23,7 +23,6 @@ BudgetBuddy is deployed using AWS CDK v2 (TypeScript) with a modular stack archi
 | `budgetbuddy-dev-hosting` | Active | S3 + CloudFront for web app |
 | `budgetbuddy-dev-notification` | Active | Push notifications + daily reminders |
 | `budgetbuddy-dev-monitoring` | Active | CloudWatch dashboards + alarms |
-| `budgetbuddy-dev-api-family` | **Deprecated** | Returns 410 Gone — replaced by api-budgets |
 
 ### Stack Dependencies
 
@@ -231,11 +230,11 @@ The active stack for all budget collaboration features. Replaced `api-family-sta
 
 ## Deprecated
 
-### `budgetbuddy-dev-api-family`
-- Returns **410 Gone** for all requests
-- Kept deployed during client migration period
-- Will be destroyed once all clients use `/budgets/*`
-- Do not add new features or fix bugs in this stack
+### `budgetbuddy-dev-api-family` (destroyed)
+- Historically served `/family/*` routes; all routes returned **410 Gone** after the
+  budget-model migration
+- Destroyed 2026-09-29 after confirming zero real traffic (infra-cleanup spec)
+- Replaced entirely by `budgetbuddy-dev-api-budgets` - use `/budgets/*`
 
 ## Deployment Commands
 

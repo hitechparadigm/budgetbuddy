@@ -630,4 +630,4 @@ New endpoints added during web app polish, verified live:
 | `FAMILY#` partition keys | `BUDGET#` partition keys |
 | `custom:familyId` JWT claim | Not used — only `custom:userId` |
 | `FamilySettings.tsx` | `BudgetMembersPage` at `/budget/members` |
-| `api-family-stack` | `api-budgets-stack` (family stack still deployed, returns 410) |
+| `api-family-stack` | `api-budgets-stack` (family stack destroyed) |

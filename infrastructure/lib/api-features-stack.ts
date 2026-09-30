@@ -310,7 +310,7 @@ export class ApiFeaturesStack extends cdk.Stack {
       resources: ['*'],
     }));
 
-    // Note: Family Lambda moved to ApiFamilyStack (standalone stack) to avoid circular dependency
+    // Note: Family Lambda removed - ApiFamilyStack was destroyed (see ARCHITECTURE_DECISIONS.md ADR-001)
 
     // Investments Lambda — portfolio tracking + Alpha Vantage market news/signals
     this.functions.investmentsHandler = new lambda.Function(this, 'InvestmentsHandler', {
@@ -383,7 +383,7 @@ export class ApiFeaturesStack extends cdk.Stack {
     // Investments routes
     this.setupInvestmentsRoutes(authorizer);
 
-    // Note: Family routes moved to ApiFamilyStack (standalone stack) to avoid circular dependency
+    // Note: Family routes removed - ApiFamilyStack was destroyed; use /budgets/* via ApiBudgetsStack
 
     // Note: Insights, Receipt, Pattern Detection, and Budget Planning routes
     // have been moved to ApiFeaturesExtendedStack

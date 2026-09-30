@@ -6,27 +6,27 @@ Development system configuration for BudgetBuddy.
 
 ```
 .kiro/
-├── steering/          # Rules and standards (always active)
-│   ├── 00-global.md   # Workflow, commit rules, autonomous mode
-│   ├── product.md     # Product vision, users, features
-│   ├── tech.md        # Technology stack
-│   ├── structure.md   # Code organization, Lambda access pattern
-│   ├── cicd-deployment.md          # CI/CD rules (conditional)
-│   ├── aws-integration-testing.md  # AWS test rules (conditional)
-│   └── documentation-standards.md # Doc update rules (conditional)
-│
-├── specs/             # Feature specs (requirements + design + tasks)
-│   ├── README.md      # Spec index - every spec, its status, and category
-│   └── <feature>/
-│       ├── .config.kiro   # status: active|complete|superseded, category: feature|process|fix
-│       ├── requirements.md
-│       ├── design.md
-│       └── tasks.md
-│
-├── hooks/             # Automation hooks
-├── cicd-status/       # Latest CI/CD status (latest.json)
-├── SYSTEM_GUIDE.md    # Architecture, workflow, what's deprecated
-└── README.md          # This file
+â”œâ”€â”€ steering/          # Rules and standards (always active)
+â”‚   â”œâ”€â”€ 00-global.md   # Workflow, commit rules, autonomous mode
+â”‚   â”œâ”€â”€ product.md     # Product vision, users, features
+â”‚   â”œâ”€â”€ tech.md        # Technology stack
+â”‚   â”œâ”€â”€ structure.md   # Code organization, Lambda access pattern
+â”‚   â”œâ”€â”€ cicd-deployment.md          # CI/CD rules (conditional)
+â”‚   â”œâ”€â”€ aws-integration-testing.md  # AWS test rules (conditional)
+â”‚   â””â”€â”€ documentation-standards.md # Doc update rules (conditional)
+â”‚
+â”œâ”€â”€ specs/             # Feature specs (requirements + design + tasks)
+â”‚   â”œâ”€â”€ README.md      # Spec index - every spec, its status, and category
+â”‚   â””â”€â”€ <feature>/
+â”‚       â”œâ”€â”€ .config.kiro   # status: active|complete|superseded, category: feature|process|fix
+â”‚       â”œâ”€â”€ requirements.md
+â”‚       â”œâ”€â”€ design.md
+â”‚       â””â”€â”€ tasks.md
+â”‚
+â”œâ”€â”€ hooks/             # Automation hooks
+â”œâ”€â”€ cicd-status/       # Latest CI/CD status (latest.json)
+â”œâ”€â”€ SYSTEM_GUIDE.md    # Architecture, workflow, what's deprecated
+â””â”€â”€ README.md          # This file
 ```
 
 ## Key Rules
@@ -62,4 +62,4 @@ update `.kiro/specs/README.md` in the same commit - do not move the spec directo
 - `FAMILY#` partition keys - replaced by `BUDGET#`.
 - `custom:familyId` JWT claim - ignored. Only `custom:userId` is used.
 - `FamilySettings.tsx` - replaced by `BudgetMembersPage` at `/budget/members`.
-- `api-family-stack` - still deployed but deprecated. Will be destroyed after migration period.
+- `api-family-stack` - destroyed. Replaced entirely by `api-budgets-stack`.

@@ -2,7 +2,7 @@
 
 ## Problem
 
-Family invitations are not being sent because AWS SES is in **sandbox mode** with no verified email addresses.
+Budget invitations are not being sent because AWS SES is in **sandbox mode** with no verified email addresses.
 
 ## Current Status
 
@@ -48,7 +48,7 @@ Then update the email Lambda to use this email:
 After both emails are verified:
 
 1. Wait 2-3 minutes for verification to complete
-2. Try sending the family invitation again
+2. Try sending the budget invitation again
 3. The email should now be delivered
 
 ## Long-Term Solution (Production)
@@ -60,12 +60,33 @@ To send emails to ANY address (not just verified ones):
 1. Go to AWS Console → Amazon SES → Account dashboard
 2. Click **"Request production access"**
 3. Fill out the form:
-   - **Use case**: Transactional emails (family invitations, notifications)
+   - **Use case**: Transactional emails (budget invitations, notifications)
    - **Website URL**: https://app.budgetbuddy.com
    - **Expected volume**: Start with 100 emails/day
-   - **Bounce handling**: Describe your bounce handling process
+   - **Bounce handling**: see "Bounce, Complaint, and Unsubscribe Handling (current state)" below
 4. Submit the request
 5. AWS typically approves within 24 hours
+
+### Bounce, Complaint, and Unsubscribe Handling (current state)
+
+There is no automated bounce/complaint/unsubscribe pipeline today - confirmed by direct read of
+`infrastructure/lib/*.ts`: no SES-specific SNS topic, no SES configuration set, and no bounce/
+complaint event destination exist anywhere in the CDK stacks (the one SNS topic that does exist,
+`AlertTopic` in `monitoring-stack.ts`, is a generic infrastructure-alarm topic unrelated to email
+delivery events).
+
+**Current process is manual**:
+- Check bounce/complaint counts via the SES console (Reputation dashboard) or
+  `node scripts/setup-ses-email.js list`
+- Remove a bouncing/complaining address from the verified-identity list by hand if it becomes a
+  problem
+- No unsubscribe link is included in outbound emails today (all current email types are
+  transactional - invitations, budget alerts - not marketing sends)
+
+**Future automation** (not yet built): an SNS topic subscribed to SES bounce/complaint/delivery
+notifications, wired to a Lambda that suppresses future sends to bouncing addresses and logs
+complaints for review. Tracked as follow-up work, not part of the current production-access
+request.
 
 ### Benefits of Production Mode
 
@@ -99,22 +120,20 @@ This shows:
    ```
 3. **Check CloudWatch logs** for the email Lambda:
    ```bash
-   aws logs tail /aws/lambda/budgetbuddy-email-family --follow --profile hitechparadigm
+   aws logs tail /aws/lambda/budgetbuddy-email-budgets --follow --profile hitechparadigm
    ```
 
 ### 409 Conflict Error
 
 If you get a 409 error when sending invitations:
 
-1. **Check for pending invitations**:
+1. **Revoke stuck invitations** via the Budget Members page (/budget/members)
 
-   ```bash
-   node scripts/debug-family-invitation.js <your-user-id>
-   ```
-
-2. **Revoke stuck invitations** via the Family Settings UI
-
-3. **Or clean up manually** using AWS Console → DynamoDB
+2. **Or clean up manually** using AWS Console -> DynamoDB (query `BUDGET#<budgetId>` for
+   `INVITATION#*` sort keys). Note: `scripts/debug-family-invitation.js` still exists but
+   queries the pre-migration `FAMILY#`/`familyId` schema and will not return useful data
+   against the current `BUDGET#` model - do not use it; it needs its own fix or removal
+   (tracked as a new open item).
 
 ### Verification Email Not Received
 

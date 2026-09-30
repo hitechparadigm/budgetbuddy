@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.10.5] - 2026-09-30
+
+### chore: destroy deprecated api-family-stack, clean up remaining SES/family-era doc drift
+
+#### Infrastructure - api-family-stack destroyed
+- Fresh CloudWatch verification confirmed zero real usage: 6 API Gateway requests in 24h, zero
+  Lambda invocations logged - consistent with health-check/scan noise, not real traffic.
+- Destroyed `budgetbuddy-dev-api-family` via `cdk destroy` after live Operator confirmation.
+  Removed `ApiFamilyStack` from `infrastructure/bin/app.ts` and its hand-maintained compiled
+  sibling `app.js`; deleted `infrastructure/lib/api-family-stack.{ts,js,d.ts}`.
+- Fixed 2 stale comments in `api-features-stack.ts` referencing the now-destroyed stack.
+- Deleted `backend/functions/family/` (found to still exist on disk, unreferenced by any stack).
+- `cdk synth`/`cdk diff` could not be run against live AWS in this environment (pre-existing
+  Docker Desktop engine unavailability + a Docker-based Lambda asset bundling dependency in
+  `PlaidHandler` unrelated to this change); verified instead via clean `tsc --noEmit` and a
+  repo-wide reference grep.
+
+#### Documentation - deployment status reconciliation
+- Corrected 10 files that described `api-family-stack` as "still deployed"/"deprecated":
+  `ARCHITECTURE_DECISIONS.md`, `docs/aws-stack-architecture.md`, `docs/product-requirements.md`,
+  `.kiro/steering/memory/{gotchas,architecture,work-log}.md`, `.kiro/SYSTEM_GUIDE.md`,
+  `.kiro/README.md` (the last two were found during the consistency sweep, not in the original
+  scope list).
+- `docs/ses-email-setup.md`: fixed family-era terminology (Budget vs Family invitations, Budget
+  Members page link), corrected the invitation-email Lambda log-tail command to the real
+  function name (`budgetbuddy-email-budgets`, not `-family` - confirmed via direct code read
+  that `budgets/index.js` calls `BUDGETS_API_URL`), removed a reference to
+  `scripts/debug-family-invitation.js` since that script queries the pre-migration schema and
+  returns no useful data against the current model, and added a new "Bounce, Complaint, and
+  Unsubscribe Handling" section documenting the actual (manual) current process - no automated
+  SNS pipeline exists, confirmed by direct search of all CDK stacks.
+- Assembled and presented a full AWS SES production-access request to the Operator for manual
+  filing (region, use case, volume, bounce/complaint/unsubscribe answers, verified identities).
+  Operator will file independently; documentation continues to accurately state sandbox mode
+  until that happens.
 ## [1.10.4] - 2026-09-27
 
 ### feat: enforce canUseFeature entitlement gate in export and insights, reclassify catalog to free tier
@@ -9,7 +44,7 @@
   `reports.advanced` changed from `tier: 'premium'` to `tier: 'free'`, matching the actual current
   product state (every user is on the same $0/month plan; no billing integration exists). JSDoc
   updated to describe the shipped state and the Phase 2 re-gating path (flip only the `tier` field
-  back to `'premium'` — no Lambda code changes needed at that time).
+  back to `'premium'` Ã¢â‚¬â€ no Lambda code changes needed at that time).
 
 #### Entitlement enforcement wiring
 - `backend/functions/export/index.js`: added `canUseFeature(subscriptionTier, 'budget.export')` check
@@ -21,15 +56,15 @@
   `askAboutSpending`), immediately after each handler's own `assertPermission` call and before any
   DynamoDB query or Bedrock invocation.
 - `backend/functions/budgets/index.js`: removed the dead `canUseFeature` import (no action in this
-  file maps to a `FEATURE_CATALOG` key — every gated action here is RBAC-only). Deleted
+  file maps to a `FEATURE_CATALOG` key Ã¢â‚¬â€ every gated action here is RBAC-only). Deleted
   `__mocks__/entitlements.js` and its `jest.config.js` `moduleNameMapper` entry as dead configuration.
 
 #### Test coverage
-- New `backend/layers/common/nodejs/entitlements.pbt.test.js` — 3 property-based tests
+- New `backend/layers/common/nodejs/entitlements.pbt.test.js` Ã¢â‚¬â€ 3 property-based tests
   (`fast-check`, 100 runs each) covering unknown-key deny, free-tier always-allow, and
   premium-tier allow-iff-subscriptionTier-is-premium.
 - New `backend/functions/export/` test scaffolding (`jest.config.js`, `__mocks__/utils.js`,
-  `__mocks__/entitlements.js`, `export.test.js`) — 5 tests covering csv/json/pdf allow paths, the
+  `__mocks__/entitlements.js`, `export.test.js`) Ã¢â‚¬â€ 5 tests covering csv/json/pdf allow paths, the
   `canUseFeature`-false deny path (403, no DynamoDB call), and the pre-existing invalid-type 400.
 - Extended `backend/functions/insights/` test scaffolding the same way; swapped `insights.test.js`'s
   inline `jest.mock('/opt/nodejs/utils', ..., { virtual: true })` for a `moduleNameMapper`-resolved
@@ -203,61 +238,61 @@
 
 ## [1.9.169] - 2026-08-14
 
-### 🔧 refactor: Sidebar IA — split Manage into Track + Manage groups; Tools standalone + public
+### Ã°Å¸â€Â§ refactor: Sidebar IA Ã¢â‚¬â€ split Manage into Track + Manage groups; Tools standalone + public
 
 - Sidebar restructured from one overloaded "Manage" group into 3 logical sections:
-  - **Track** (BarChart2 icon): Debt Payoff, Investments, Net Worth, Credit Score — monitoring assets & debts
-  - **Manage** (ListChecks icon): Bills, Subscriptions, Members — recurring obligations & account admin
-  - **Tools** — standalone item, no group (Wrench icon), public route
-- `/tools` moved to public route (no auth required) — calculators work as SEO/marketing landing page
+  - **Track** (BarChart2 icon): Debt Payoff, Investments, Net Worth, Credit Score Ã¢â‚¬â€ monitoring assets & debts
+  - **Manage** (ListChecks icon): Bills, Subscriptions, Members Ã¢â‚¬â€ recurring obligations & account admin
+  - **Tools** Ã¢â‚¬â€ standalone item, no group (Wrench icon), public route
+- `/tools` moved to public route (no auth required) Ã¢â‚¬â€ calculators work as SEO/marketing landing page
 - ToolsPage shows "Sign up free" CTA banner when accessed without login
 - Removed redundant ProtectedLayout wrapper for tools route
 
 
 
-### 🔧 fix: Accept invitation 401 + budget auto-repair for empty months
+### Ã°Å¸â€Â§ fix: Accept invitation 401 + budget auto-repair for empty months
 
-- **Accept invitation 401** — `POST /budgets/accept-invitation` uses `AuthorizationType.NONE` (no Cognito authorizer), so `event.requestContext.authorizer.claims` was undefined. `getUserFromEvent()` threw, causing 401. Fixed by manually decoding the JWT from the Authorization header in the `budgets/index.js` handler.
-- **AcceptInvitationPage race condition** — After register+login, `handleAcceptInvitation` checked `isAuthenticated` React state which was still `false` (async). Added `acceptInvitationCore()` that reads localStorage directly, called after login succeeds.
-- **Budget auto-repair** — `getCurrentBudget` now detects corrupted empty budgets (created by old rollover code): if budget exists with zero categories but previous month has categories, soft-deletes it and recreates from previous month automatically.
-
-
-
-### 🔧 fix: Budget rollover, Forgot Password, Receipt Scanning API URL
-
-- **Budget rollover** — `createBudgetWithRecurringItems` was iterating groups as nested `{categories:[]}` objects but they are flat category arrays. Fixed 5 functions in `budget/index.js` to correctly handle `groups.income/savings/expenses` as direct category arrays. Transactions are also cleared on rollover.
-- **Forgot Password** — full 3-step Cognito flow: enter email → code sent → enter code + new password. Backend: `POST /auth/forgot-password` + `POST /auth/confirm-forgot-password` using Cognito SDK commands. Frontend: inline multi-step UI in `LoginForm.tsx`.
-- **Receipt scanning** — `ReceiptUpload.tsx` was using main API URL; receipt endpoints are on Extended Features API. Fixed to use `config.extendedFeaturesApiUrl`.
-- **npm audit** — ran `npm audit fix` to resolve `@babel/core`, `brace-expansion`, `js-yaml` high severity CVEs.
+- **Accept invitation 401** Ã¢â‚¬â€ `POST /budgets/accept-invitation` uses `AuthorizationType.NONE` (no Cognito authorizer), so `event.requestContext.authorizer.claims` was undefined. `getUserFromEvent()` threw, causing 401. Fixed by manually decoding the JWT from the Authorization header in the `budgets/index.js` handler.
+- **AcceptInvitationPage race condition** Ã¢â‚¬â€ After register+login, `handleAcceptInvitation` checked `isAuthenticated` React state which was still `false` (async). Added `acceptInvitationCore()` that reads localStorage directly, called after login succeeds.
+- **Budget auto-repair** Ã¢â‚¬â€ `getCurrentBudget` now detects corrupted empty budgets (created by old rollover code): if budget exists with zero categories but previous month has categories, soft-deletes it and recreates from previous month automatically.
 
 
 
-### 🔧 fix: Production Readiness — Full UI/UX Audit + Design Token Sweep + CI/CD Fix
+### Ã°Å¸â€Â§ fix: Budget rollover, Forgot Password, Receipt Scanning API URL
+
+- **Budget rollover** Ã¢â‚¬â€ `createBudgetWithRecurringItems` was iterating groups as nested `{categories:[]}` objects but they are flat category arrays. Fixed 5 functions in `budget/index.js` to correctly handle `groups.income/savings/expenses` as direct category arrays. Transactions are also cleared on rollover.
+- **Forgot Password** Ã¢â‚¬â€ full 3-step Cognito flow: enter email Ã¢â€ â€™ code sent Ã¢â€ â€™ enter code + new password. Backend: `POST /auth/forgot-password` + `POST /auth/confirm-forgot-password` using Cognito SDK commands. Frontend: inline multi-step UI in `LoginForm.tsx`.
+- **Receipt scanning** Ã¢â‚¬â€ `ReceiptUpload.tsx` was using main API URL; receipt endpoints are on Extended Features API. Fixed to use `config.extendedFeaturesApiUrl`.
+- **npm audit** Ã¢â‚¬â€ ran `npm audit fix` to resolve `@babel/core`, `brace-expansion`, `js-yaml` high severity CVEs.
+
+
+
+### Ã°Å¸â€Â§ fix: Production Readiness Ã¢â‚¬â€ Full UI/UX Audit + Design Token Sweep + CI/CD Fix
 
 - Replaced all remaining hardcoded `bg-blue-600`, `focus:ring-blue-500`, `bg-green-600`, `disabled:bg-gray-400` with CSS design token vars across 37 files (pages + components)
-- NetWorthPage Add/Save Liability buttons: `bg-red-600` → `bg-[var(--color-destructive)]`
-- RegisterForm Terms/Privacy links: `href="#"` → `/terms` and `/privacy`
-- CI/CD workflows (5 files): `npm install` → `npm ci` — eliminates EEXIST cache race conditions on GitHub Actions
+- NetWorthPage Add/Save Liability buttons: `bg-red-600` Ã¢â€ â€™ `bg-[var(--color-destructive)]`
+- RegisterForm Terms/Privacy links: `href="#"` Ã¢â€ â€™ `/terms` and `/privacy`
+- CI/CD workflows (5 files): `npm install` Ã¢â€ â€™ `npm ci` Ã¢â‚¬â€ eliminates EEXIST cache race conditions on GitHub Actions
 
-### 🔧 fix: Auth Forms Accessibility
+### Ã°Å¸â€Â§ fix: Auth Forms Accessibility
 
 - LoginForm + RegisterForm: added `autocomplete` attributes on all inputs
-- LoginForm submit button: `bg-blue-600` → `bg-[var(--color-primary)]`
+- LoginForm submit button: `bg-blue-600` Ã¢â€ â€™ `bg-[var(--color-primary)]`
 - Forgot Password: replaced stub with email-to-support instruction
-- AuthPage: removed `dark:bg-gray-900` hardcoded, copyright 2025 → 2026
+- AuthPage: removed `dark:bg-gray-900` hardcoded, copyright 2025 Ã¢â€ â€™ 2026
 
-### 🔧 fix: GoalFormPage + DebtFormPage Accessibility
+### Ã°Å¸â€Â§ fix: GoalFormPage + DebtFormPage Accessibility
 
 - GoalFormPage: added `htmlFor`/`id` on all 4 form fields, design token inputs/buttons
 - DebtFormPage: added `htmlFor`/`id` on name+type, design token focus rings/inputs/buttons
 
-### 🧪 test: Production Readiness Playwright Audit
+### Ã°Å¸Â§Âª test: Production Readiness Playwright Audit
 
-- Tested all 15+ pages at desktop (1280×800) and mobile (375×812)
+- Tested all 15+ pages at desktop (1280Ãƒâ€”800) and mobile (375Ãƒâ€”812)
 - Verified: Add Transaction modal (categories load, submit saves), Add Bill form (all fields, categories), Quick Add from Overview, auth flows, zero horizontal overflow on all pages
 
 
-### 📋 docs: product-requirements.md — Session 150 live test results verified
+### Ã°Å¸â€œâ€¹ docs: product-requirements.md Ã¢â‚¬â€ Session 150 live test results verified
 
 - Added Session 150 Playwright verification section: all 18 polish criteria confirmed working live
 - Added new API endpoint test results: `/budget/health-score`, `/budget/cash-flow`, `/rules`, `/net-worth/allocation`
@@ -266,27 +301,27 @@
 
 ## [1.9.164] - 2026-06-19
 
-### 📋 docs: update product-requirements.md — all 18 polish criteria, journeys, REQ-NEW complete
+### Ã°Å¸â€œâ€¹ docs: update product-requirements.md Ã¢â‚¬â€ all 18 polish criteria, journeys, REQ-NEW complete
 
 - Updated Implemented Features with all Phase 3/4/5/6 completions
-- Moved all 18 REQ-NEW items from Planned ⚠️ to Built ✅
+- Moved all 18 REQ-NEW items from Planned Ã¢Å¡Â Ã¯Â¸Â to Built Ã¢Å“â€¦
 - Updated User Journey tables for Onboarding, Overview, Insights, Goals, Debt, Settings, Plaid
 - Removed Net Worth from "Not Deployed" (Lambda now deployed in extended stack)
 
 ## [1.9.163] - 2026-06-19
 
-### ⚡ perf: lazy-load 20 secondary pages — initial bundle 113KB gzip (was 242KB)
+### Ã¢Å¡Â¡ perf: lazy-load 20 secondary pages Ã¢â‚¬â€ initial bundle 113KB gzip (was 242KB)
 
 - `packages/web-app/src/App.tsx`: Converted 20 secondary page imports to `React.lazy` + `Suspense`
 - Added `PageSkeleton` fallback component shown while lazy chunks load
 - `vite.config.ts`: Added `manualChunks` splitting `vendor-react` (53KB gz), `vendor-lucide` (3KB gz), `page-ai-budget` (5KB gz) into stable hashed files
-- Initial bundle: 509KB uncompressed → **113KB gzip** (was 242KB, −53% reduction)
+- Initial bundle: 509KB uncompressed Ã¢â€ â€™ **113KB gzip** (was 242KB, Ã¢Ë†â€™53% reduction)
 - recharts (107KB gz) deferred to Insights page only
 - `.gitignore`: Added `lighthouse-*.json` pattern
 
 
 
-### 🐛 fix: Net-worth /allocation endpoint 404 — add stub handler
+### Ã°Å¸Ââ€º fix: Net-worth /allocation endpoint 404 Ã¢â‚¬â€ add stub handler
 
 - `backend/functions/net-worth/index.js`: Added `GET /net-worth/allocation` route handler
 - Returns empty allocation array (no data stored yet, prevents page crash)
@@ -294,7 +329,7 @@
 
 ## [1.9.155] - 2026-06-19
 
-### 🐛 fix: CreditScoreApi calling wrong API (main API instead of features API)
+### Ã°Å¸Ââ€º fix: CreditScoreApi calling wrong API (main API instead of features API)
 
 - `creditScoreApi.ts` was using `apiClient` (main API = `q0zoob6728`) but `CreditScoreHandler` is deployed on features API (`0poeu07vth`)
 - Rewrote credit score functions to use direct `fetch` with `config.featuresApiUrl`
@@ -303,7 +338,7 @@
 
 ## [1.9.154] - 2026-06-19
 
-### 🐛 fix: Move rules+net-worth Lambdas to extended stack (features stack was over 500 resource limit)
+### Ã°Å¸Ââ€º fix: Move rules+net-worth Lambdas to extended stack (features stack was over 500 resource limit)
 
 - Removed `RulesHandler` and `NetWorthHandler` from `api-features-stack.ts` (was 530/500 resources)
 - Added both to `api-features-extended-stack.ts` instead (has capacity)
@@ -313,7 +348,7 @@
 
 ## [1.9.153] - 2026-06-19
 
-### 🐛 fix: Net-worth Lambda deployed to features API, OverviewPage net-worth CORS fixed
+### Ã°Å¸Ââ€º fix: Net-worth Lambda deployed to features API, OverviewPage net-worth CORS fixed
 
 #### Net-Worth CDK Deployment (was missing from all stacks)
 - Added `NetWorthHandler` Lambda to `api-features-stack.ts` with full route setup
@@ -321,21 +356,21 @@
 - DynamoDB access granted automatically via `Object.values(this.functions)` grant loop
 
 #### API URL Corrections
-- `netWorthApi.ts`: changed from `config.apiBaseUrl` → `config.featuresApiUrl` (now deployed there)
+- `netWorthApi.ts`: changed from `config.apiBaseUrl` Ã¢â€ â€™ `config.featuresApiUrl` (now deployed there)
 - `OverviewPage.tsx`: net-worth history now calls `config.featuresApiUrl` consistently
 
 ## [1.9.152] - 2026-06-19
 
-### 🐛 fix: OverviewPage — correct insights endpoint (/insights/weekly not /insights/summary)
+### Ã°Å¸Ââ€º fix: OverviewPage Ã¢â‚¬â€ correct insights endpoint (/insights/weekly not /insights/summary)
 
-- `OverviewPage.tsx`: `/insights/summary` endpoint doesn't exist — changed to `/insights/weekly`
+- `OverviewPage.tsx`: `/insights/summary` endpoint doesn't exist Ã¢â‚¬â€ changed to `/insights/weekly`
 - Extracts the first insight message from weekly insights response
 - Falls back to generated text from `summary.totalSpent` / `summary.savingsRate`
 - Removed unused `WeeklyInsight` interface
 
 ## [1.9.151] - 2026-06-18
 
-### 🐛 fix: OverviewPage crash + CORS errors + wrong default route
+### Ã°Å¸Ââ€º fix: OverviewPage crash + CORS errors + wrong default route
 
 #### OverviewPage crash (TypeError: Cannot read properties of undefined (reading 'planned'))
 - `/budget/current` returns `totalIncome` as a **number**, not `{ planned, actual, remaining }`
@@ -344,34 +379,34 @@
 - Updated `FinancialHealthBar` to use `period.totalIncome` (number) directly
 - Fixed all stat card value references (`period?.totalIncome` not `.planned`)
 
-#### CORS errors — wrong API base URLs
+#### CORS errors Ã¢â‚¬â€ wrong API base URLs
 - `/insights/summary` now fetches from `config.extendedFeaturesApiUrl` (was main API)
 - `/net-worth/history` now fetches from `config.featuresApiUrl` (was main API)
-- `/bills` kept on `apiClient` (correct — bills are on main API)
+- `/bills` kept on `apiClient` (correct Ã¢â‚¬â€ bills are on main API)
 
-#### Wrong default route — landing on `/budget` after login
-- `AuthPage.tsx`: post-login redirect changed from `/budget` → `/overview`
-- `LandingPage.tsx`: added `useAuthRedirect()` hook — redirects authenticated users to `/overview`
+#### Wrong default route Ã¢â‚¬â€ landing on `/budget` after login
+- `AuthPage.tsx`: post-login redirect changed from `/budget` Ã¢â€ â€™ `/overview`
+- `LandingPage.tsx`: added `useAuthRedirect()` hook Ã¢â‚¬â€ redirects authenticated users to `/overview`
 
 ## [1.9.150] - 2026-06-18
 
-### 📄 docs: product-requirements.md updated — Session 149 Polish Plan completion status
+### Ã°Å¸â€œâ€ž docs: product-requirements.md updated Ã¢â‚¬â€ Session 149 Polish Plan completion status
 
 Updated Known Gaps section:
-- All completed REQ-NEW-* requirements marked ✅
+- All completed REQ-NEW-* requirements marked Ã¢Å“â€¦
 - Remaining planned items clearly listed
 - Phase 3/4/5/6 polish sections added
 
 ## [1.9.149] - 2026-06-18
 
-### ✨ feat: Phase 4 P4-T10/T11 — Proactive spending nudges via EventBridge, Overview AI Alert
+### Ã¢Å“Â¨ feat: Phase 4 P4-T10/T11 Ã¢â‚¬â€ Proactive spending nudges via EventBridge, Overview AI Alert
 
 #### Spending Nudges Backend (P4-T10)
 - `backend/functions/daily-reminders/index.js`: Added `generateSpendingNudges()` function
 - Runs daily for all users alongside existing reminders
 - Logic: checks if category spending is 20%+ ahead of pace for the month
 - Creates `NUDGE#<userId>#<date>` DynamoDB records with 7-day TTL
-- Non-fatal — nudge failures don't affect existing reminder functionality
+- Non-fatal Ã¢â‚¬â€ nudge failures don't affect existing reminder functionality
 
 #### Overview AI Alert (P4-T11)
 - `OverviewPage.tsx`: `loadInsight` now also tries to fetch today's nudge from `/nudges/<date>`
@@ -379,10 +414,10 @@ Updated Known Gaps section:
 
 ## [1.9.148] - 2026-06-18
 
-### ✨ feat: Phase 4 P4-T6/T7/T9 — Transaction categorization rules engine
+### Ã¢Å“Â¨ feat: Phase 4 P4-T6/T7/T9 Ã¢â‚¬â€ Transaction categorization rules engine
 
 #### Backend (P4-T6, P4-T7)
-- Created `backend/functions/rules/index.js` — full CRUD rules Lambda
+- Created `backend/functions/rules/index.js` Ã¢â‚¬â€ full CRUD rules Lambda
 - Endpoints: GET/POST `/rules`, PUT/DELETE `/rules/{ruleId}`, POST `/rules/apply`
 - `BUDGET#<budgetId> / RULE#<ruleId>` DynamoDB entity
 - `findMatchingRule()` applies rules to transaction lists (called on Plaid import)
@@ -396,7 +431,7 @@ Updated Known Gaps section:
 
 ## [1.9.147] - 2026-06-18
 
-### ✨ feat: Phase 4 P4-T3/T4 — AI conversation context persistence; Phase 6 P6-T3 mobile banner
+### Ã¢Å“Â¨ feat: Phase 4 P4-T3/T4 Ã¢â‚¬â€ AI conversation context persistence; Phase 6 P6-T3 mobile banner
 
 #### AI Conversation Context (P4-T3, P4-T4)
 - `backend/functions/insights/index.js`: `askAboutSpending` now loads last 5 exchanges from `USER#<userId> / AI_CONVERSATION#insights` in DynamoDB before each Bedrock call
@@ -411,7 +446,7 @@ Updated Known Gaps section:
 
 ## [1.9.146] - 2026-06-18
 
-### ✨ feat: Phase 3 P3-T4 — Inline category amount editing on Budget page
+### Ã¢Å“Â¨ feat: Phase 3 P3-T4 Ã¢â‚¬â€ Inline category amount editing on Budget page
 
 **`BudgetPage.tsx`**:
 - Clicking a category's planned amount turns it into an inline number input
@@ -422,22 +457,22 @@ Updated Known Gaps section:
 
 ## [1.9.145] - 2026-06-18
 
-### ✨ feat: Phase 5 — contextual premium gates (P5-T6, criterion 15)
+### Ã¢Å“Â¨ feat: Phase 5 Ã¢â‚¬â€ contextual premium gates (P5-T6, criterion 15)
 
-- Created `PremiumGate` component (`components/ui/PremiumGate.tsx`) — soft non-blocking gate with blurred preview and "Upgrade to Premium" CTA
-- Created `PremiumBadge` — inline amber badge for subtle feature hints
+- Created `PremiumGate` component (`components/ui/PremiumGate.tsx`) Ã¢â‚¬â€ soft non-blocking gate with blurred preview and "Upgrade to Premium" CTA
+- Created `PremiumBadge` Ã¢â‚¬â€ inline amber badge for subtle feature hints
 - Exported from `components/ui` barrel
 
 **3 gates added (meets completion criterion 15):**
-1. **InsightsPage** — `PremiumBadge` next to "Ask About Your Spending" + session memory note with upgrade link
-2. **BudgetPage** — Export CSV / Export PDF buttons show "✨ Pro" badge
-3. **OverviewPage** — Budget Health Score section gated with `PremiumGate` (feature preview shown)
+1. **InsightsPage** Ã¢â‚¬â€ `PremiumBadge` next to "Ask About Your Spending" + session memory note with upgrade link
+2. **BudgetPage** Ã¢â‚¬â€ Export CSV / Export PDF buttons show "Ã¢Å“Â¨ Pro" badge
+3. **OverviewPage** Ã¢â‚¬â€ Budget Health Score section gated with `PremiumGate` (feature preview shown)
 
-Also: `aria-labels` on Lucide icon buttons confirmed present in Sidebar (P6-T4 ✅)
+Also: `aria-labels` on Lucide icon buttons confirmed present in Sidebar (P6-T4 Ã¢Å“â€¦)
 
 ## [1.9.144] - 2026-06-18
 
-### ✨ feat: Phase 6 — Transaction filter sessionStorage persistence (P6-T9)
+### Ã¢Å“Â¨ feat: Phase 6 Ã¢â‚¬â€ Transaction filter sessionStorage persistence (P6-T9)
 
 - `TransactionFilters.tsx`: `useTransactionFilters` hook now persists filter state to `sessionStorage`
 - Filters survive page navigation and refresh within the same browser session
@@ -446,14 +481,14 @@ Also: `aria-labels` on Lucide icon buttons confirmed present in Sidebar (P6-T4 �
 
 ## [1.9.143] - 2026-06-18
 
-### ✨ feat: Phase 5 — Landing page rewrite with new headline, 3-step proof, pricing section (P5-T1)
+### Ã¢Å“Â¨ feat: Phase 5 Ã¢â‚¬â€ Landing page rewrite with new headline, 3-step proof, pricing section (P5-T1)
 
 **`LandingPage.tsx`** full rewrite:
 - New headline: "Your budget, built in 60 seconds."
 - Inclusive framing: "For individuals, couples, families, and roommates" (not just "family finances")
 - Social proof pill: "Used across 348 cities worldwide"
-- 3-step proof section: Pick city → AI builds budget → Ready
-- Primary CTA: "Build my budget — it's free"
+- 3-step proof section: Pick city Ã¢â€ â€™ AI builds budget Ã¢â€ â€™ Ready
+- Primary CTA: "Build my budget Ã¢â‚¬â€ it's free"
 - Replaced "Bank-Level Security" (table stakes) with "Goals & Debt Payoff"
 - Added Pricing section: Free ($0) vs Premium ($9.99/mo) with feature comparison
 - CTA section with emerald green background
@@ -462,11 +497,11 @@ Also: `aria-labels` on Lucide icon buttons confirmed present in Sidebar (P6-T4 �
 
 ## [1.9.142] - 2026-06-18
 
-### ✨ feat: Phase 4 — Real Bedrock AI budget generation wired up (P4-T1, P4-T2)
+### Ã¢Å“Â¨ feat: Phase 4 Ã¢â‚¬â€ Real Bedrock AI budget generation wired up (P4-T1, P4-T2)
 
 **`AIBudgetGenerationPage.tsx`**:
 - Replaced `setTimeout` mock with real `POST /budget/ai-generate` API call
-- Backend already had Bedrock integration (`backend/functions/ai/index.js`) — this wires the frontend to it
+- Backend already had Bedrock integration (`backend/functions/ai/index.js`) Ã¢â‚¬â€ this wires the frontend to it
 - Multi-step progress animation: 5 steps with rotating icons, progress bar, and dot indicators
 - Fallback budget when Bedrock unavailable (avoids blocking the user)
 - Transforms backend group arrays into `GeneratedBudget` shape
@@ -475,9 +510,9 @@ Also: `aria-labels` on Lucide icon buttons confirmed present in Sidebar (P6-T4 �
 
 ## [1.9.141] - 2026-06-18
 
-### ✨ feat: Phase 3 — Settings tab-based layout (P3-T16)
+### Ã¢Å“Â¨ feat: Phase 3 Ã¢â‚¬â€ Settings tab-based layout (P3-T16)
 
-**SettingsPage.tsx** — Added tab navigation (Budget | Profile | Notifications | Banks | Privacy | Help):
+**SettingsPage.tsx** Ã¢â‚¬â€ Added tab navigation (Budget | Profile | Notifications | Banks | Privacy | Help):
 - **Budget tab**: Location & Timezone, Currency Settings
 - **Profile tab**: Profile, Account, Two-Factor Auth, Appearance, Budget Members
 - **Notifications tab**: Notification preferences
@@ -487,34 +522,34 @@ Also: `aria-labels` on Lucide icon buttons confirmed present in Sidebar (P6-T4 �
 
 ## [1.9.140] - 2026-06-18
 
-### ✨ feat: Phase 3 — Empty states on Goals, Bills, Debts, Budget transactions (P3-T14)
+### Ã¢Å“Â¨ feat: Phase 3 Ã¢â‚¬â€ Empty states on Goals, Bills, Debts, Budget transactions (P3-T14)
 
-- **GoalsPage**: replaced inline div with `<EmptyState icon="🎯" title="No goals yet" ... />`
-- **BillsPage**: dynamic empty state — shows description+CTA when "All", contextual title-only when filtered
-- **DebtPayoffPage**: replaced inline div with `<EmptyState icon="💸" title="No debts tracked" ... />`
+- **GoalsPage**: replaced inline div with `<EmptyState icon="Ã°Å¸Å½Â¯" title="No goals yet" ... />`
+- **BillsPage**: dynamic empty state Ã¢â‚¬â€ shows description+CTA when "All", contextual title-only when filtered
+- **DebtPayoffPage**: replaced inline div with `<EmptyState icon="Ã°Å¸â€™Â¸" title="No debts tracked" ... />`
 - **BudgetPage**: replaced both transaction empty states (filtered + empty) with `EmptyState` component
 
 ## [1.9.139] - 2026-06-18
 
-### ✨ feat: Phase 3 — Budget page keyboard shortcuts, product-requirements.md Polish Plan update
+### Ã¢Å“Â¨ feat: Phase 3 Ã¢â‚¬â€ Budget page keyboard shortcuts, product-requirements.md Polish Plan update
 
 #### Budget Page Keyboard Shortcuts (P3-T3)
 - Added `useKeyboardShortcuts` hook to `BudgetPage.tsx`
-- `T` — open Add Transaction modal (expense)
-- `B` — open Add Budget Item modal
-- `←` / `→` — previous/next month
-- `?` — toggle shortcuts overlay (also shows a `?` button in the header)
-- `Escape` — close modal/overlay
+- `T` Ã¢â‚¬â€ open Add Transaction modal (expense)
+- `B` Ã¢â‚¬â€ open Add Budget Item modal
+- `Ã¢â€ Â` / `Ã¢â€ â€™` Ã¢â‚¬â€ previous/next month
+- `?` Ã¢â‚¬â€ toggle shortcuts overlay (also shows a `?` button in the header)
+- `Escape` Ã¢â‚¬â€ close modal/overlay
 - Shortcuts disabled when a modal is open
 - Keyboard shortcut overlay renders in-page (no external dependency)
 
 #### Product Requirements Update
-- `docs/product-requirements.md` — added Web App Polish sections: Phase 1 ✅, Phase 2 ✅, Phase 3 in-progress, all 18 REQ-NEW-* requirements tracked, OverviewPage added to User Journeys
-- AI budget generation corrected to 🔄 mocked (REQ-NEW-04)
+- `docs/product-requirements.md` Ã¢â‚¬â€ added Web App Polish sections: Phase 1 Ã¢Å“â€¦, Phase 2 Ã¢Å“â€¦, Phase 3 in-progress, all 18 REQ-NEW-* requirements tracked, OverviewPage added to User Journeys
+- AI budget generation corrected to Ã°Å¸â€â€ž mocked (REQ-NEW-04)
 
 ## [1.9.138] - 2026-06-18
 
-### ✨ feat: Phase 3 continued — skeleton screens on 4 pages, Insights chat bubbles, session persistence
+### Ã¢Å“Â¨ feat: Phase 3 continued Ã¢â‚¬â€ skeleton screens on 4 pages, Insights chat bubbles, session persistence
 
 #### Skeleton Screens (P3-T13)
 - **GoalsPage.tsx**: header + 4 summary stat cards + 3 goal card skeletons
@@ -527,17 +562,17 @@ Also: `aria-labels` on Lucide icon buttons confirmed present in Sidebar (P6-T4 �
   - User messages appear as right-aligned blue bubbles
   - AI responses appear as left-aligned gray bubbles
   - 3-dot typing indicator while loading
-  - Last 5 Q&A pairs persisted to `sessionStorage` — survives page refresh
+  - Last 5 Q&A pairs persisted to `sessionStorage` Ã¢â‚¬â€ survives page refresh
   - Clear conversation button
   - Suggestion chips shown when chat is empty
 
 ## [1.9.137] - 2026-06-18
 
-### ✨ feat: Phase 3 core polish — Budget skeleton, Ready to Assign banner, EmptyState upgrade
+### Ã¢Å“Â¨ feat: Phase 3 core polish Ã¢â‚¬â€ Budget skeleton, Ready to Assign banner, EmptyState upgrade
 
 #### Budget Page (P3-T1, P3-T2, P3-T5)
 - `BudgetPage.tsx`: Replaced full-page spinner with skeleton layout matching 3-column structure (pulsing group rows + right sidebar skeleton)
-- `BudgetPage.tsx`: Enhanced "Ready to Assign" badge — green pill when fully budgeted, amber when unassigned balance remains, red when over-assigned
+- `BudgetPage.tsx`: Enhanced "Ready to Assign" badge Ã¢â‚¬â€ green pill when fully budgeted, amber when unassigned balance remains, red when over-assigned
 - Over-budget row highlighting (`bg-red-50 border-l-4 border-red-500`) was already present (P3-T5 confirmed done)
 
 #### EmptyState Component (P3-T14 prep)
@@ -547,7 +582,7 @@ Also: `aria-labels` on Lucide icon buttons confirmed present in Sidebar (P6-T4 �
 
 ## [1.9.136] - 2026-06-18
 
-### ✨ feat: Phase 2 complete — P2-T10 PageHeader applied to all pages
+### Ã¢Å“Â¨ feat: Phase 2 complete Ã¢â‚¬â€ P2-T10 PageHeader applied to all pages
 
 #### PageHeader Migration (P2-T10)
 Applied `PageHeader` component to all 8 remaining pages for visual consistency:
@@ -557,12 +592,12 @@ Applied `PageHeader` component to all 8 remaining pages for visual consistency:
 
 ## [1.9.135] - 2026-06-18
 
-### ✨ feat: Phase 2 information architecture — Overview page, /overview route, /net-worth route
+### Ã¢Å“Â¨ feat: Phase 2 information architecture Ã¢â‚¬â€ Overview page, /overview route, /net-worth route
 
-#### Overview/Dashboard Page (P2-T2–T9, P1-T14)
-- Created `src/pages/OverviewPage.tsx` — full dashboard with 7 sections:
+#### Overview/Dashboard Page (P2-T2Ã¢â‚¬â€œT9, P1-T14)
+- Created `src/pages/OverviewPage.tsx` Ã¢â‚¬â€ full dashboard with 7 sections:
   - AI Insight of the Day (pulls from /insights/summary)
-  - Financial Health Bar — income/spent/remaining with progress bar
+  - Financial Health Bar Ã¢â‚¬â€ income/spent/remaining with progress bar
   - 4 stat cards (Income, Spent, Saved, Net Worth)
   - Net Worth sparkline (6-month SVG trend, no external chart library)
   - Top 5 Spending Categories vs budget bar chart
@@ -573,41 +608,41 @@ Applied `PageHeader` component to all 8 remaining pages for visual consistency:
 - Loading skeletons for every section
 
 #### Routes (P2-T3, P2-T11)
-- Added `/overview` route in `App.tsx` — the primary authenticated home
-- Added `/net-worth` route in `App.tsx` — `NetWorthPage` now accessible
+- Added `/overview` route in `App.tsx` Ã¢â‚¬â€ the primary authenticated home
+- Added `/net-worth` route in `App.tsx` Ã¢â‚¬â€ `NetWorthPage` now accessible
 - Sidebar's Overview item now points to `/overview`
 
 #### LandingPage (P1-T14)
-- Migrated all 4 CTA buttons to `Button` component — no raw Tailwind CTAs remain
+- Migrated all 4 CTA buttons to `Button` component Ã¢â‚¬â€ no raw Tailwind CTAs remain
 
 ## [1.9.134] - 2026-06-18
 
-### ✨ feat: Phase 1 design foundation — Inter font, green primary, Lucide icons, UI primitives
+### Ã¢Å“Â¨ feat: Phase 1 design foundation Ã¢â‚¬â€ Inter font, green primary, Lucide icons, UI primitives
 
 #### Brand Color (P1-T1/T2)
-- Changed `--color-primary` from blue (#2563eb) to emerald (#059669) — 4.68:1 WCAG AA contrast
+- Changed `--color-primary` from blue (#2563eb) to emerald (#059669) Ã¢â‚¬â€ 4.68:1 WCAG AA contrast
 - Dark mode primary updated to emerald-400 (#34d399)
 - Removed hardcoded blue hex values from tailwind.config.js primary scale
 - Updated sidebar active colors, focus rings, currency selector shadow to match new primary
 
 #### Typography (P1-T3/T4)
-- Added `@fontsource/inter@5.1.1` (pinned) — 400/500/600/700 weights
+- Added `@fontsource/inter@5.1.1` (pinned) Ã¢â‚¬â€ 400/500/600/700 weights
 - `font-feature-settings: 'cv02','cv03','cv04','cv11'` for tabular numerals on financial figures
 - Font-family set in `@layer base` with proper fallback stack
 
 #### Icons (P1-T5/T6/T7)
 - Installed `lucide-react@0.469.0` (pinned)
-- Created `src/utils/icons.ts` — NAV_ICONS, BUDGET_TYPE_ICONS, GOAL_ICONS maps
-- Rewrote `Sidebar.tsx` — all emoji replaced with Lucide; added Phase 2 IA (5 primary + Manage group)
+- Created `src/utils/icons.ts` Ã¢â‚¬â€ NAV_ICONS, BUDGET_TYPE_ICONS, GOAL_ICONS maps
+- Rewrote `Sidebar.tsx` Ã¢â‚¬â€ all emoji replaced with Lucide; added Phase 2 IA (5 primary + Manage group)
 - OnboardingPage budget type cards use typed Lucide components
 
-#### UI Primitives (P1-T8–T13)
-- `Button.tsx` — 5 variants, 3 sizes, loading state, icon slots
-- `Card.tsx` — wraps .card CSS utility, optional header/footer
-- `Badge.tsx` — 6 variants, dot mode
-- `Skeleton.tsx` — SkeletonText, SkeletonCard, SkeletonRow variants
-- `PageHeader.tsx` — title + subtitle + action + breadcrumb slots
-- `StatCard.tsx` — labeled metric with trend indicator and Lucide icon
+#### UI Primitives (P1-T8Ã¢â‚¬â€œT13)
+- `Button.tsx` Ã¢â‚¬â€ 5 variants, 3 sizes, loading state, icon slots
+- `Card.tsx` Ã¢â‚¬â€ wraps .card CSS utility, optional header/footer
+- `Badge.tsx` Ã¢â‚¬â€ 6 variants, dot mode
+- `Skeleton.tsx` Ã¢â‚¬â€ SkeletonText, SkeletonCard, SkeletonRow variants
+- `PageHeader.tsx` Ã¢â‚¬â€ title + subtitle + action + breadcrumb slots
+- `StatCard.tsx` Ã¢â‚¬â€ labeled metric with trend indicator and Lucide icon
 - `index.ts` barrel export
 
 #### TypeScript Cleanup (P1-T16)
@@ -616,83 +651,83 @@ Applied `PageHeader` component to all 8 remaining pages for visual consistency:
 
 ## [1.9.133] - 2026-06-18
 
-### 🔧 chore: Validation gate fixes, web app polish spec, autonomous mode setup
+### Ã°Å¸â€Â§ chore: Validation gate fixes, web app polish spec, autonomous mode setup
 
 #### Validation Gate
-- Fixed 15 pre-existing `no-unused-vars` ESLint errors across 10 backend Lambda functions (catch bindings renamed `error`/`_error` → `_e`)
+- Fixed 15 pre-existing `no-unused-vars` ESLint errors across 10 backend Lambda functions (catch bindings renamed `error`/`_error` Ã¢â€ â€™ `_e`)
 - Added `lint:check:web`, `lint:check:all`, `type-check:web`, `type-check:all` to root `package.json`
 - `validate-for-commit.js` now checks frontend lint + typecheck (WARN/non-blocking pending Phase 1 TS cleanup)
 - Fixed `eslint.config.js`: added `caughtErrors: "none"` for backend, added timer globals to prevent false `no-redeclare`
 - Validation gate now exits 0 correctly with full PASS/WARN/FAIL summary
 
 #### Web App Polish Spec
-- Created `.kiro/specs/web-app-polish/tasks.md` — 60 tasks across 6 phases from `docs/web-app-polish-plan.md`
+- Created `.kiro/specs/web-app-polish/tasks.md` Ã¢â‚¬â€ 60 tasks across 6 phases from `docs/web-app-polish-plan.md`
 - Tracks all 18 "Definition of Done" completion criteria
 
 ## [1.9.132] - 2026-06-18
 
-### 🐛 Fix: Dark mode, currency locale, family budget enforcement, goals-budget link
+### Ã°Å¸Ââ€º Fix: Dark mode, currency locale, family budget enforcement, goals-budget link
 
-#### Dark mode — BudgetPage, SettingsPage, GoalsPage
+#### Dark mode Ã¢â‚¬â€ BudgetPage, SettingsPage, GoalsPage
 - **`BudgetPage.tsx`**: Replaced all hardcoded light-mode Tailwind classes (`bg-white`, `bg-gray-50`, `text-gray-900`, `text-gray-600`, `border-gray-200`, etc.) with design token utility classes (`bg-background`, `bg-surface`, `text-foreground`, `text-muted-foreground`, `border-border`). Applied to loading state, no-budget empty state, main layout container, center column, header bar, category rows (hover states), group total bars, and right sidebar. Semantic color boxes (future/past month warnings) updated with `dark:` variants.
 - **`SettingsPage.tsx`**: Same systematic token-class migration across page wrapper, header, all section cards, form inputs (now use `bg-surface text-foreground border-border`), info/note boxes, labels, and timezone/currency display blocks.
 - **`GoalsPage.tsx`**: Same migration plus: loading state, header, summary stat cards, goal cards (active + archived), progress bar tracks (`bg-muted`), milestone chips (`bg-muted`/`bg-green-900/40` dark), modals (contribute + delete confirmation), drag-over state (`dark:bg-blue-950/20`), milestone toast notification.
 
-#### Currency locale bug — Calendar tab
+#### Currency locale bug Ã¢â‚¬â€ Calendar tab
 - **`CalendarView.tsx`**: Replaced local `formatCurrency` function (hardcoded `"en-US"` locale) with `getCurrencyConfig` from `@budget-buddy/shared`. Now uses the currency-specific locale (`en-CA` for CAD, `en-GB` for GBP, etc.) so CAD displays `$46` instead of `CA$46`.
 
 #### GoalsPage currency
 - **`GoalsPage.tsx`**: Removed hardcoded `const currency = "USD"`. Currency now loaded dynamically from user profile via `profileApi.getProfile()` on mount, consistent with SettingsPage.
 
 #### Family budget transparency enforcement
-- **`backend/functions/budget/index.js`** (`createBudget`, `updateBudget`): Added check after `resolveAccess` — when `budgetType === 'family'`, any request body containing categories with `hidden: true`, `isPrivate: true`, or `visibility: 'private'` is rejected with HTTP 400 `"Family budgets cannot have hidden or private categories."` Captures `budgetType` from `resolveAccess` return value in both handlers.
+- **`backend/functions/budget/index.js`** (`createBudget`, `updateBudget`): Added check after `resolveAccess` Ã¢â‚¬â€ when `budgetType === 'family'`, any request body containing categories with `hidden: true`, `isPrivate: true`, or `visibility: 'private'` is rejected with HTTP 400 `"Family budgets cannot have hidden or private categories."` Captures `budgetType` from `resolveAccess` return value in both handlers.
 
 #### Goals contributions reflected in budget
-- **`backend/functions/goals/index.js`** (`contributeToGoal`): After updating the goal's `currentAmount`, if `existingGoal.linkedCategoryId` is set, fetches the budget period for the target month (`body.month` or current month), locates the linked category in `groups.savings` or `groups.expenses`, increments its `spentAmount` by the contribution amount, recalculates `totalSavings`/`totalExpenses`, and writes the update back. Non-fatal — logs a warning and returns success if the budget period update fails.
+- **`backend/functions/goals/index.js`** (`contributeToGoal`): After updating the goal's `currentAmount`, if `existingGoal.linkedCategoryId` is set, fetches the budget period for the target month (`body.month` or current month), locates the linked category in `groups.savings` or `groups.expenses`, increments its `spentAmount` by the contribution amount, recalculates `totalSavings`/`totalExpenses`, and writes the update back. Non-fatal Ã¢â‚¬â€ logs a warning and returns success if the budget period update fails.
 
 ## [1.9.131] - 2026-06-17
 
-### ♿ fix: accessibility and UX heuristic fixes across web app (24 findings)
+### Ã¢â„¢Â¿ fix: accessibility and UX heuristic fixes across web app (24 findings)
 
 #### Navigation / Layout
-- **`Sidebar.tsx`**: Split 13-item nav list into two groups — core finances (Budget, Accounts, Members, Goals, etc.) and secondary tools (Tips, Learn, Settings) — separated by a visual divider. Collapsed icon-only buttons now have explicit `aria-label` so screen readers announce the destination. Added `focus-visible:ring` to all nav buttons and logout button.
+- **`Sidebar.tsx`**: Split 13-item nav list into two groups Ã¢â‚¬â€ core finances (Budget, Accounts, Members, Goals, etc.) and secondary tools (Tips, Learn, Settings) Ã¢â‚¬â€ separated by a visual divider. Collapsed icon-only buttons now have explicit `aria-label` so screen readers announce the destination. Added `focus-visible:ring` to all nav buttons and logout button.
 - **`Navigation.tsx`**: Already had correct `<nav>` + `<ul>/<li>/<a>` structure (no menu role misuse); removed stale "Test" nav item.
 
 #### GoalsPage
 - Replaced `window.alert()` milestone celebration with an accessible `role="status"` toast notification with dismiss button.
 - Replaced `window.confirm()` delete with a controlled modal (`role="dialog" aria-modal`).
 - Added `role="progressbar"` with `aria-valuenow/min/max/label` to all progress bars.
-- Added `getProgressLabel()` text alongside progress percentage — color is no longer the sole signal (8.6).
+- Added `getProgressLabel()` text alongside progress percentage Ã¢â‚¬â€ color is no longer the sole signal (8.6).
 - Contribute modal: added `id`/`htmlFor` label association, `role="dialog"`, `aria-labelledby`.
 - Back button: added `aria-label="Back to Budget"` and `focus-visible:ring`.
 
 #### SettingsPage
-- Fixed `localStorage.getItem("token")` → `budgetbuddy_id_token` in backup and restore handlers (was silently failing auth).
+- Fixed `localStorage.getItem("token")` Ã¢â€ â€™ `budgetbuddy_id_token` in backup and restore handlers (was silently failing auth).
 - Replaced `window.confirm()` for 2FA disable with a controlled confirmation modal.
 - Added `aria-label="Back to Budget"` and `focus-visible:ring` to header back button.
 - Replaced placeholder "Profile settings coming soon" and "Account settings coming soon" sections with real content.
 
 #### AccountsPage
-- Net worth figure now prefixes `+` / `−` sign so positive/negative is not conveyed by color alone (8.6).
+- Net worth figure now prefixes `+` / `Ã¢Ë†â€™` sign so positive/negative is not conveyed by color alone (8.6).
 - Back link: added `aria-label="Back to Budget"` and `aria-hidden` on decorative SVG.
 
 #### BudgetPage
-- "Left to budget" figure now prefixes `−` when negative — color is no longer the sole signal (8.6).
+- "Left to budget" figure now prefixes `Ã¢Ë†â€™` when negative Ã¢â‚¬â€ color is no longer the sole signal (8.6).
 
 #### OnboardingPage
 - Error banner is now dismissible (close button) and uses `role="alert" aria-live="assertive"`.
-- Budget type selection cards now use `role="radiogroup"` + `role="radio"` + `aria-checked` — screen readers correctly announce mutually exclusive selection.
+- Budget type selection cards now use `role="radiogroup"` + `role="radio"` + `aria-checked` Ã¢â‚¬â€ screen readers correctly announce mutually exclusive selection.
 
 #### AuthPage
 - Tab active indicator uses consistent emerald color for both Sign In and Sign Up (was blue/green split).
-- Tab buttons use `focus-visible:ring-2 focus-visible:ring-emerald-500` — outline not removed without replacement.
+- Tab buttons use `focus-visible:ring-2 focus-visible:ring-emerald-500` Ã¢â‚¬â€ outline not removed without replacement.
 
 #### LandingPage
-- Footer nav buttons have `underline underline-offset-2` at rest — visually distinct from static text without requiring hover.
+- Footer nav buttons have `underline underline-offset-2` at rest Ã¢â‚¬â€ visually distinct from static text without requiring hover.
 
 
 
-### ✨ Feat: Smart invitation page — inviter first name, smart auth tab, email pre-fill, invitation preview API
+### Ã¢Å“Â¨ Feat: Smart invitation page Ã¢â‚¬â€ inviter first name, smart auth tab, email pre-fill, invitation preview API
 
 #### Email (Feature 1: Inviter first name)
 - **`invitation.json`**: Updated subject from `"{{inviterName}} invited you..."` to `"{{inviterFirstName}} invited you to join their family budget on BudgetBuddy!"`. Updated HTML and text body to use `{{inviterFirstName}}` for the inviter name references.
@@ -700,14 +735,14 @@ Applied `PageHeader` component to all 8 remaining pages for visual consistency:
 - **`budgets/index.js`** (`sendInvitationEmail`): Added `inviterFirstName` to `emailPayload` using `inviter.firstName` with fallback to split of full name.
 
 #### Backend (Feature 2: Invitation preview endpoint)
-- **`budgets/index.js`**: New `handleInvitationPreview` function — `GET /budgets/invitation-preview?token=xxx`. Public endpoint (no auth required). Looks up invitation by hashed token, checks expiry, fetches inviter's first name from profile, fetches budget name, checks whether invitee email has an existing account. Returns `{ inviterFirstName, inviteeEmail, budgetName, role, expiresAt, userExists }`.
+- **`budgets/index.js`**: New `handleInvitationPreview` function Ã¢â‚¬â€ `GET /budgets/invitation-preview?token=xxx`. Public endpoint (no auth required). Looks up invitation by hashed token, checks expiry, fetches inviter's first name from profile, fetches budget name, checks whether invitee email has an existing account. Returns `{ inviterFirstName, inviteeEmail, budgetName, role, expiresAt, userExists }`.
 - **`api-budgets-stack.ts`**: Added public `GET` method for `/budgets/invitation-preview` resource with `AuthorizationType.NONE`.
 
 #### Frontend (Feature 3: Smart AcceptInvitationPage)
 - **`AcceptInvitationPage.tsx`**: Full rewrite. On load, fetches `/budgets/invitation-preview` (unauthenticated) to get invitation details. Shows spinner during fetch; shows error immediately for invalid/expired invitations. Uses `inviterFirstName` in header: "X invited you to join Y on BudgetBuddy!". Defaults auth tab to "Log In" if user exists, "Create Account" if new. Pre-fills invitee email in both login and register forms (read-only). Imports `config.budgetsApiUrl` for the preview call.
 
 
-### ✨ Feat: Income frequency support (biweekly/weekly), one-time category flag, onboarding default income placeholder
+### Ã¢Å“Â¨ Feat: Income frequency support (biweekly/weekly), one-time category flag, onboarding default income placeholder
 
 #### Onboarding
 - **auth-onboarding Lambda**: Default income placeholder category added to `budgetGroups.income` so new users see an "Income" entry to fill in rather than an empty slate.
@@ -718,90 +753,90 @@ Applied `PageHeader` component to all 8 remaining pages for visual consistency:
 
 #### Frontend (BudgetPage)
 - **`BudgetCategory` interface**: Added `frequency`, `frequencyAmount`, and `isOneTime` optional fields.
-- **Add Item modal — Income group**: New "Pay Frequency" dropdown (Monthly / Semi-monthly / Biweekly / Weekly / One-time). For biweekly/weekly, a "Per paycheck" amount input auto-calculates the monthly total. One-time items show a warning that they won't repeat next month.
+- **Add Item modal Ã¢â‚¬â€ Income group**: New "Pay Frequency" dropdown (Monthly / Semi-monthly / Biweekly / Weekly / One-time). For biweekly/weekly, a "Per paycheck" amount input auto-calculates the monthly total. One-time items show a warning that they won't repeat next month.
 - Category objects now persist `frequency`, `frequencyAmount`, and `isOneTime` to the backend.
 
 
 
-### 🐛 Fix: Notifications Lambda 502, learn /lessons 404, test script improvements
+### Ã°Å¸Ââ€º Fix: Notifications Lambda 502, learn /lessons 404, test script improvements
 
 - **notifications Lambda**: Rewrote to use `getUserFromEvent()` from common layer instead of reading `userId` from request body/query params. Migrated from `aws-sdk` v2 to `@aws-sdk` v3 via `dynamoHelpers`. Fixed 502 crash on all authenticated endpoints (`/notifications/preferences`, `/notifications/history`, `/notifications/register-device`).
 - **learn Lambda**: Added `GET /learn/lessons` route handler and `getLessons()` function that aggregates lessons from all courses with user progress, fixing "Route GET /learn/lessons not found" 404. Also fixed `getLesson` route to not conflict with `/complete` sub-path.
-- **test script**: Fixed `POST /credit-score/refresh` to accept 400 (credit bureau not connected — expected for test users). Added Section 20 `testNotifications()` with tests for preferences, history, register-device, and PUT preferences.
+- **test script**: Fixed `POST /credit-score/refresh` to accept 400 (credit bureau not connected Ã¢â‚¬â€ expected for test users). Added Section 20 `testNotifications()` with tests for preferences, history, register-device, and PUT preferences.
 
 
 
-### 🐛 Fix: Follow-up fixes from live API verification
+### Ã°Å¸Ââ€º Fix: Follow-up fixes from live API verification
 
-- **debt-payoff Lambda**: Fixed `generateId("debt")` → `generateId.custom("debt")` (TypeError: generateId is not a function)
-- **debt-payoff Lambda**: Fixed `parseRequestBody(event)` → `parseRequestBody(event.body)` in `createDebt`, `updateDebt`, `recordPayment`
-- **debt-payoff Lambda**: Fixed DynamoDB reserved word `status` in `FilterExpression` → used `ExpressionAttributeNames: { "#debtStatus": "status" }` in `getPayoffPlan`
-- **comparison Lambda**: Fixed `dynamoHelpers.scan()` → removed `computeGroupAggregation` (on-the-fly scan replaced with graceful "not enough users" return); fixed `getUserSpendingByCategory` to use `BUDGET#<budgetId>` + `queryByPK` instead of `FAMILY#<familyId>` + `dynamoHelpers.query()`
-- **tips Lambda**: Fixed `dynamoHelpers.query()` → `queryByPK()` in `analyzeUserSpending` and `getSavedTips`; migrated from `FAMILY#<familyId>` to `BUDGET#<budgetId>` transaction queries
-- **credit-score Lambda**: Fixed `dynamoHelpers.query()` → `queryByPK()` in all three query calls
-- **export Lambda**: Fixed `dynamoHelpers.query()` → `queryByPK()` in `getBudgets` and `getTransactions`
+- **debt-payoff Lambda**: Fixed `generateId("debt")` Ã¢â€ â€™ `generateId.custom("debt")` (TypeError: generateId is not a function)
+- **debt-payoff Lambda**: Fixed `parseRequestBody(event)` Ã¢â€ â€™ `parseRequestBody(event.body)` in `createDebt`, `updateDebt`, `recordPayment`
+- **debt-payoff Lambda**: Fixed DynamoDB reserved word `status` in `FilterExpression` Ã¢â€ â€™ used `ExpressionAttributeNames: { "#debtStatus": "status" }` in `getPayoffPlan`
+- **comparison Lambda**: Fixed `dynamoHelpers.scan()` Ã¢â€ â€™ removed `computeGroupAggregation` (on-the-fly scan replaced with graceful "not enough users" return); fixed `getUserSpendingByCategory` to use `BUDGET#<budgetId>` + `queryByPK` instead of `FAMILY#<familyId>` + `dynamoHelpers.query()`
+- **tips Lambda**: Fixed `dynamoHelpers.query()` Ã¢â€ â€™ `queryByPK()` in `analyzeUserSpending` and `getSavedTips`; migrated from `FAMILY#<familyId>` to `BUDGET#<budgetId>` transaction queries
+- **credit-score Lambda**: Fixed `dynamoHelpers.query()` Ã¢â€ â€™ `queryByPK()` in all three query calls
+- **export Lambda**: Fixed `dynamoHelpers.query()` Ã¢â€ â€™ `queryByPK()` in `getBudgets` and `getTransactions`
 
-**Final live test result**: 103 passed, 1 failed (correct behavior — credit-score/refresh returns 400 when not configured), 6 remaining pre-existing bugs (down from 13 originally)
+**Final live test result**: 103 passed, 1 failed (correct behavior Ã¢â‚¬â€ credit-score/refresh returns 400 when not configured), 6 remaining pre-existing bugs (down from 13 originally)
 
 
 
-### 🐛 Fix: Lambda 500/502 crashes, BUDGET# model alignment, notifications wiring, CDK auth
+### Ã°Å¸Ââ€º Fix: Lambda 500/502 crashes, BUDGET# model alignment, notifications wiring, CDK auth
 
-**Phase 1 — Lambda Bug Fixes:**
-- **Bug 3 — GET /comparison/summary 500**: Added null/empty-object guard in `getUserSpendingByCategory`. Returns `{ comparison: null, message: 'Not enough data yet', hasData: false }` for new users.
-- **Bug 4 — GET /tips/feed 500**: Added try/catch around `analyzeUserSpending`. Returns `{ tips: [], hasData: false }` when user has no transaction data.
-- **Bug 5 — POST /debts 500**: Added `|| {}` default for `parseRequestBody(event)` to guard against null body.
-- **Bug 6 — GET /debts/payoff-plan 500**: Added early return for empty debts array with structured response `{ plan: { totalMonths: 0, ... }, debts: [], message: 'No active debts found' }`.
-- **Bug 7 — GET /credit-score 502**: Rewrote Lambda to use `BudgetAccessResolver` + common layer. Removed `custom:familyId` JWT dependency. Stores credit scores under `USER#<userId>` partition.
-- **Bug 8 — GET /export 502**: Rewrote Lambda to use `BudgetAccessResolver` + `BUDGET#<budgetId>` keys. Removed manual JWT parsing (`jsonwebtoken`) and `getFamilyId()`. PDF export returns graceful message (native binary issue on Lambda/Linux).
+**Phase 1 Ã¢â‚¬â€ Lambda Bug Fixes:**
+- **Bug 3 Ã¢â‚¬â€ GET /comparison/summary 500**: Added null/empty-object guard in `getUserSpendingByCategory`. Returns `{ comparison: null, message: 'Not enough data yet', hasData: false }` for new users.
+- **Bug 4 Ã¢â‚¬â€ GET /tips/feed 500**: Added try/catch around `analyzeUserSpending`. Returns `{ tips: [], hasData: false }` when user has no transaction data.
+- **Bug 5 Ã¢â‚¬â€ POST /debts 500**: Added `|| {}` default for `parseRequestBody(event)` to guard against null body.
+- **Bug 6 Ã¢â‚¬â€ GET /debts/payoff-plan 500**: Added early return for empty debts array with structured response `{ plan: { totalMonths: 0, ... }, debts: [], message: 'No active debts found' }`.
+- **Bug 7 Ã¢â‚¬â€ GET /credit-score 502**: Rewrote Lambda to use `BudgetAccessResolver` + common layer. Removed `custom:familyId` JWT dependency. Stores credit scores under `USER#<userId>` partition.
+- **Bug 8 Ã¢â‚¬â€ GET /export 502**: Rewrote Lambda to use `BudgetAccessResolver` + `BUDGET#<budgetId>` keys. Removed manual JWT parsing (`jsonwebtoken`) and `getFamilyId()`. PDF export returns graceful message (native binary issue on Lambda/Linux).
 
-**Phase 2 — CDK Auth Fix:**
-- **Bug 9 — GET /learn/lessons 403 SigV4**: Added missing `GET` method to `/learn/lessons` resource in `api-features-stack.ts` with `authorizer` and `authorizationType: apigateway.AuthorizationType.COGNITO`.
+**Phase 2 Ã¢â‚¬â€ CDK Auth Fix:**
+- **Bug 9 Ã¢â‚¬â€ GET /learn/lessons 403 SigV4**: Added missing `GET` method to `/learn/lessons` resource in `api-features-stack.ts` with `authorizer` and `authorizationType: apigateway.AuthorizationType.COGNITO`.
 
-**Phase 3 — BUDGET# Model Migration:**
+**Phase 3 Ã¢â‚¬â€ BUDGET# Model Migration:**
 - **budget-alerts Lambda**: Migrated from `FAMILY#<familyId>` to `BUDGET#<budgetId>` partition keys throughout. Budget lookup: `PK: BUDGET#<budgetId>, SK: PERIOD#<month>`. Members: query `BUDGET#<budgetId>/MEMBER#*`. Alert tracking: `PK: BUDGET#<budgetId>, SK: ALERT#<key>`. Reads `budgetId` from DynamoDB stream record `PK` field.
 
-**Phase 4 — Notifications API Routes:**
+**Phase 4 Ã¢â‚¬â€ Notifications API Routes:**
 - Wired `/notifications/*` routes to API Gateway by passing `notificationStack.notificationFunction` to `ApiStack` in `infrastructure/bin/app.ts`. Added `apiStack.addDependency(notificationStack)`.
 
-**Phase 5 — Spec Updates:**
-- `ai-bill-reminders-budget-planning`: Updated `familyId` → `budgetId` in requirements and design docs. Updated data model to use `BUDGET#<budgetId>` PK. Updated service/repository method signatures.
-- `push-notifications-reminders`: Updated budget alert tracking schema (`FAMILY#` → `BUDGET#`). Updated `familyId` references.
+**Phase 5 Ã¢â‚¬â€ Spec Updates:**
+- `ai-bill-reminders-budget-planning`: Updated `familyId` Ã¢â€ â€™ `budgetId` in requirements and design docs. Updated data model to use `BUDGET#<budgetId>` PK. Updated service/repository method signatures.
+- `push-notifications-reminders`: Updated budget alert tracking schema (`FAMILY#` Ã¢â€ â€™ `BUDGET#`). Updated `familyId` references.
 - `docs/product-requirements.md`: Marked bugs 3-9 as fixed. Added additional fixes summary table.
 
 
 
-### 🐛 Fix: Live API bugs — onboarding 502, budgets routing, AI path mismatch, debts auth
+### Ã°Å¸Ââ€º Fix: Live API bugs Ã¢â‚¬â€ onboarding 502, budgets routing, AI path mismatch, debts auth
 
-- **Bug 1 — POST /auth/onboarding 502**: Removed `throw { statusCode: 403 }` when user profile doesn't exist during first-time onboarding. A new user's profile may not exist yet (Cognito post-confirmation trigger is async). Now treats missing profile as "no existing budget" and proceeds safely. `BudgetAccessResolver.resolveAccess()` is never called before the budget is created.
-- **Bug 2 — PUT /budgets/active missing from CDK**: Added `PUT` method to `/budgets` resource in `api-budgets-stack.ts` with `operationName: 'SetActiveBudget'`. Also added explicit `/budgets/active` resource with PUT for direct path routing.
-- **Bug 3 — Budget collaboration routes: CDK flat vs Lambda `{budgetId}` mismatch**: Restructured `api-budgets-stack.ts` to use `{budgetId}` path parameter routes matching what the Lambda reads from `pathParameters.budgetId`. Added: `DELETE /budgets/{budgetId}`, `PUT /budgets/{budgetId}/archive`, `PUT /budgets/{budgetId}/restore`, `GET/PUT/DELETE /budgets/{budgetId}/members`, `PUT /budgets/{budgetId}/members/{userId}/extend`, `GET/DELETE /budgets/{budgetId}/invitations/{invitationId}`, `POST /budgets/{budgetId}/invitations/{invitationId}/resend`.
-- **Bug 4 — AI generate path mismatch**: Updated `backend/functions/ai/index.js` route check to accept both `/ai/generate-budget` and `/budget/ai-generate` (CDK path) plus their `/v1/` prefixed variants.
-- **Bug 5 — POST /debts/calculate returns 403 SigV4**: Added explicit `authorizationType: apigateway.AuthorizationType.COGNITO` to all debt payoff routes in `api-features-stack.ts`. Also added missing `POST /debts/calculate` route.
-
-
-
-### 🐛 Fix: Email invitation delivery — verified end-to-end
-
-- **Root cause 1**: `budgetsApiUrl` in `environment.ts` was pointing to the wrong API gateway (`q0zoob6728` main API instead of `jcl39tq8x0` budgets API) — fixed in `fd7c4a3`
-- **Root cause 2**: `FROM_EMAIL` in `api-budgets-stack.ts` defaulted to `noreply@budgetbuddy.com` (unverified in SES) — fixed to `info@hitechparadigm.com` in `e75dd23`
-- **Verified**: Live Lambda invocation confirmed email delivered to `dmalyk@taxprocanada.ca` — SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
-- **Note**: SES still in sandbox mode — can only send to verified addresses until production access is requested
-- Updated `docs/USER_JOURNEYS.md` — Section 4 email status, infrastructure status, gap analysis, requirements traceability
+- **Bug 1 Ã¢â‚¬â€ POST /auth/onboarding 502**: Removed `throw { statusCode: 403 }` when user profile doesn't exist during first-time onboarding. A new user's profile may not exist yet (Cognito post-confirmation trigger is async). Now treats missing profile as "no existing budget" and proceeds safely. `BudgetAccessResolver.resolveAccess()` is never called before the budget is created.
+- **Bug 2 Ã¢â‚¬â€ PUT /budgets/active missing from CDK**: Added `PUT` method to `/budgets` resource in `api-budgets-stack.ts` with `operationName: 'SetActiveBudget'`. Also added explicit `/budgets/active` resource with PUT for direct path routing.
+- **Bug 3 Ã¢â‚¬â€ Budget collaboration routes: CDK flat vs Lambda `{budgetId}` mismatch**: Restructured `api-budgets-stack.ts` to use `{budgetId}` path parameter routes matching what the Lambda reads from `pathParameters.budgetId`. Added: `DELETE /budgets/{budgetId}`, `PUT /budgets/{budgetId}/archive`, `PUT /budgets/{budgetId}/restore`, `GET/PUT/DELETE /budgets/{budgetId}/members`, `PUT /budgets/{budgetId}/members/{userId}/extend`, `GET/DELETE /budgets/{budgetId}/invitations/{invitationId}`, `POST /budgets/{budgetId}/invitations/{invitationId}/resend`.
+- **Bug 4 Ã¢â‚¬â€ AI generate path mismatch**: Updated `backend/functions/ai/index.js` route check to accept both `/ai/generate-budget` and `/budget/ai-generate` (CDK path) plus their `/v1/` prefixed variants.
+- **Bug 5 Ã¢â‚¬â€ POST /debts/calculate returns 403 SigV4**: Added explicit `authorizationType: apigateway.AuthorizationType.COGNITO` to all debt payoff routes in `api-features-stack.ts`. Also added missing `POST /debts/calculate` route.
 
 
 
-### 📋 Docs: product-requirements.md — full vision vs. implementation gap analysis
+### Ã°Å¸Ââ€º Fix: Email invitation delivery Ã¢â‚¬â€ verified end-to-end
 
-- Created `docs/product-requirements.md` — single source of truth for product requirements, data model, feature catalog, implemented features, and known gaps
-- Updated `ARCHITECTURE_DECISIONS.md` — added "Known Gaps vs. Vision" section
+- **Root cause 1**: `budgetsApiUrl` in `environment.ts` was pointing to the wrong API gateway (`q0zoob6728` main API instead of `jcl39tq8x0` budgets API) Ã¢â‚¬â€ fixed in `fd7c4a3`
+- **Root cause 2**: `FROM_EMAIL` in `api-budgets-stack.ts` defaulted to `noreply@budgetbuddy.com` (unverified in SES) Ã¢â‚¬â€ fixed to `info@hitechparadigm.com` in `e75dd23`
+- **Verified**: Live Lambda invocation confirmed email delivered to `dmalyk@taxprocanada.ca` Ã¢â‚¬â€ SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
+- **Note**: SES still in sandbox mode Ã¢â‚¬â€ can only send to verified addresses until production access is requested
+- Updated `docs/USER_JOURNEYS.md` Ã¢â‚¬â€ Section 4 email status, infrastructure status, gap analysis, requirements traceability
+
+
+
+### Ã°Å¸â€œâ€¹ Docs: product-requirements.md Ã¢â‚¬â€ full vision vs. implementation gap analysis
+
+- Created `docs/product-requirements.md` Ã¢â‚¬â€ single source of truth for product requirements, data model, feature catalog, implemented features, and known gaps
+- Updated `ARCHITECTURE_DECISIONS.md` Ã¢â‚¬â€ added "Known Gaps vs. Vision" section
 - Fixed gap: onboarding METADATA now writes `name` and `ownerUserId` fields (was missing, causing `undefined` budget names in `GET /budgets`)
 
 ## [1.9.122] - 2026-06-01
 
-### 🧹 Chore: Full codebase alignment with BUDGET# architecture
+### Ã°Å¸Â§Â¹ Chore: Full codebase alignment with BUDGET# architecture
 
-**ARCHITECTURE_DECISIONS.md** — complete rewrite:
+**ARCHITECTURE_DECISIONS.md** Ã¢â‚¬â€ complete rewrite:
 - Removed 7 stale ADRs describing the old family-based model and premature consolidation plans
 - Added ADR-001: Budget-Centric Data Model (the actual current architecture)
 - Documents `BudgetAccessResolver` pattern, `BUDGET#` partition keys, deprecated items
@@ -819,67 +854,67 @@ Applied `PageHeader` component to all 8 remaining pages for visual consistency:
 
 ## [1.9.122] - 2026-06-01
 
-### 🧹 Chore: Docs and specs review — full alignment with BUDGET# architecture
+### Ã°Å¸Â§Â¹ Chore: Docs and specs review Ã¢â‚¬â€ full alignment with BUDGET# architecture
 
 **Docs rewritten:**
-- `docs/aws-stack-architecture.md` — full rewrite: all 10 stacks, correct DynamoDB schema (`BUDGET#`), correct Lambda list, `BudgetAccessResolver`, RBAC roles
-- `docs/api-endpoints.md` — replaced Family Collaboration section with Budget Collaboration (`/budgets/*`), fixed `familyId` → `budgetId` in response examples, updated to v1.3
-- `docs/user-guide-budget-collaboration.md` — new file replacing `user-guide-family.md`; correct roles (owner/partner/household_member/viewer), correct routes (`/budgets/*`), correct page (`/budget/members`)
-- `docs/stack-management-guide.md` — rewritten stack list and dependency matrix for all 10 stacks
-- `docs/DEVELOPMENT_BEST_PRACTICES.md` — added Architecture Patterns section: `BudgetAccessResolver` pattern, CDK layer rule, DynamoDB key pattern
+- `docs/aws-stack-architecture.md` Ã¢â‚¬â€ full rewrite: all 10 stacks, correct DynamoDB schema (`BUDGET#`), correct Lambda list, `BudgetAccessResolver`, RBAC roles
+- `docs/api-endpoints.md` Ã¢â‚¬â€ replaced Family Collaboration section with Budget Collaboration (`/budgets/*`), fixed `familyId` Ã¢â€ â€™ `budgetId` in response examples, updated to v1.3
+- `docs/user-guide-budget-collaboration.md` Ã¢â‚¬â€ new file replacing `user-guide-family.md`; correct roles (owner/partner/household_member/viewer), correct routes (`/budgets/*`), correct page (`/budget/members`)
+- `docs/stack-management-guide.md` Ã¢â‚¬â€ rewritten stack list and dependency matrix for all 10 stacks
+- `docs/DEVELOPMENT_BEST_PRACTICES.md` Ã¢â‚¬â€ added Architecture Patterns section: `BudgetAccessResolver` pattern, CDK layer rule, DynamoDB key pattern
 
 **Docs deleted:**
-- `docs/user-guide-family.md` — replaced by `user-guide-budget-collaboration.md`
-- `docs/api-troubleshooting.md` — session-specific debugging from Oct 2025, archived
+- `docs/user-guide-family.md` Ã¢â‚¬â€ replaced by `user-guide-budget-collaboration.md`
+- `docs/api-troubleshooting.md` Ã¢â‚¬â€ session-specific debugging from Oct 2025, archived
 
 **Specs archived** (completed or obsolete):
-- `family-collaboration`, `family-invitation-fix`, `family-invitation-pending-fix`, `fix-accounts-family-features` — old family model, superseded
-- `plan-model-redesign`, `onboarding-403-fix`, `critical-bug-fixes`, `enhanced-accounts-transactions`, `competitive-features`, `multi-currency`, `mobile-ui-polish`, `ui-polish-enhancements`, `documentation-cleanup` — all tasks complete
+- `family-collaboration`, `family-invitation-fix`, `family-invitation-pending-fix`, `fix-accounts-family-features` Ã¢â‚¬â€ old family model, superseded
+- `plan-model-redesign`, `onboarding-403-fix`, `critical-bug-fixes`, `enhanced-accounts-transactions`, `competitive-features`, `multi-currency`, `mobile-ui-polish`, `ui-polish-enhancements`, `documentation-cleanup` Ã¢â‚¬â€ all tasks complete
 
 **Specs deleted:**
-- `engagement-features/requirements.md` — empty file
+- `engagement-features/requirements.md` Ã¢â‚¬â€ empty file
 
 ## [1.9.121] - 2026-06-01
 
-### 🧹 Chore: Major codebase cleanup — align with BUDGET# architecture
+### Ã°Å¸Â§Â¹ Chore: Major codebase cleanup Ã¢â‚¬â€ align with BUDGET# architecture
 
 **CI/CD:**
 - Added `api-budgets` stack to both `deploy-dev.yml` and `deploy-prod.yml` Step 2 and health checks
-- `api-budgets` was previously never deployed by CI/CD — this was a critical gap
+- `api-budgets` was previously never deployed by CI/CD Ã¢â‚¬â€ this was a critical gap
 
 **Frontend:**
 - Wired `BudgetMembersPage` into `App.tsx` router at `/budget/members` (was orphaned)
 - Added "Members" nav item to `Sidebar.tsx`
 - Replaced deprecated `FamilySettings` component in `SettingsPage.tsx` with a link to `/budget/members`
-- Changed `/family/accept` route to `/budgets/accept` — matches the URL the backend sends in invitation emails
+- Changed `/family/accept` route to `/budgets/accept` Ã¢â‚¬â€ matches the URL the backend sends in invitation emails
 - Removed `familyId` from `BudgetContext.tsx` Budget interface
 - Removed `familyId` from `MockUser` interface and `mockUser` constant in `mockAuth.ts`
 - Removed stale `localStorage.removeItem("familyId")` from `Sidebar.tsx` logout handler
 
 **Infrastructure:**
 - Updated `app.ts` comments: `ApiFamilyStack` marked deprecated, `ApiBudgetsStack` marked active
-- Updated `auth-onboarding-stack.ts` layer description: `FamilyIdResolver` → `BudgetAccessResolver`
-- Updated `database-stack.ts` GSI comments: `FAMILY#` → `BUDGET#` in all 4 GSI descriptions
+- Updated `auth-onboarding-stack.ts` layer description: `FamilyIdResolver` Ã¢â€ â€™ `BudgetAccessResolver`
+- Updated `database-stack.ts` GSI comments: `FAMILY#` Ã¢â€ â€™ `BUDGET#` in all 4 GSI descriptions
 
 **Tests:**
-- Deleted `tests/family-id-resolver.test.js` — tests a removed utility
+- Deleted `tests/family-id-resolver.test.js` Ã¢â‚¬â€ tests a removed utility
 
 **cdk.out:**
-- Deleted `infrastructure/cdk.out` — regenerated on every CDK synth/deploy; was causing slow security scans
+- Deleted `infrastructure/cdk.out` Ã¢â‚¬â€ regenerated on every CDK synth/deploy; was causing slow security scans
 
 ## [1.9.120] - 2026-06-01
 
-### 🐛 Fix: Onboarding 409 treated as success + family Lambda dead code removed
+### Ã°Å¸Ââ€º Fix: Onboarding 409 treated as success + family Lambda dead code removed
 
 - **OnboardingPage**: 409 Conflict response (budget already exists) now navigates to `/budget`
-  instead of showing an error — prevents the user getting stuck when the first call succeeded
+  instead of showing an error Ã¢â‚¬â€ prevents the user getting stuck when the first call succeeded
   but the UI retried.
 - **family/index.js**: Removed ~1000 lines of unreachable dead code after the 410 early return.
   File is now a clean 70-line deprecated stub. Fixes `no-unreachable` ESLint error.
 
 ## [1.9.119] - 2026-06-01
 
-### 🐛 Fix: Auth Onboarding 403 for New Users Without defaultBudgetId
+### Ã°Å¸Ââ€º Fix: Auth Onboarding 403 for New Users Without defaultBudgetId
 
 - **Root cause**: `auth-onboarding/index.js` threw HTTP 403 "No active budget found" for every
   brand-new user because it read `USER#<userId>/PROFILE`, found no `defaultBudgetId`, and
@@ -892,16 +927,16 @@ Applied `PageHeader` component to all 8 remaining pages for visual consistency:
   - Writes `BUDGET#<budgetId>/PERIOD#<month>` (budget period with selected categories)
   - Writes `BUDGET#<budgetId>/ACCOUNT#<cashId>` (default Cash account)
   - Updates `USER#<userId>/PROFILE` with `defaultBudgetId` and `onboardingCompleted: true`
-- **Re-onboarding guard**: Profile already has `defaultBudgetId` → returns HTTP 409 Conflict
+- **Re-onboarding guard**: Profile already has `defaultBudgetId` Ã¢â€ â€™ returns HTTP 409 Conflict
   (prevents duplicate budget creation on retry)
 - **Tests**: 33 tests pass; `index.js` coverage 96.73% statements / 95.12% branches
-  - Bug condition PBT (Property 1): confirms fix — first-time onboarding returns 200
-  - Preservation PBT (Property 2): confirms no regressions — 401/400/403/409/500 paths unchanged
+  - Bug condition PBT (Property 1): confirms fix Ã¢â‚¬â€ first-time onboarding returns 200
+  - Preservation PBT (Property 2): confirms no regressions Ã¢â‚¬â€ 401/400/403/409/500 paths unchanged
   - Updated `month-parameter.test.js` to use first-time onboarding mock setup
 
 
 
-### 🐛 Fix: Auth Lambda Cold-Start ImportModuleError
+### Ã°Å¸Ââ€º Fix: Auth Lambda Cold-Start ImportModuleError
 
 - **Root cause**: `auth/index.js` had a top-level `require('google-auth-library')` that caused
   `Runtime.ImportModuleError` on every cold start because the package is not bundled in the
@@ -910,11 +945,11 @@ Applied `PageHeader` component to all 8 remaining pages for visual consistency:
   function. The module is only required when the `/auth/google` endpoint is actually called.
 - **Secondary fix**: Removed unused `_OAuth2Client` variable that caused an ESLint `no-unused-vars`
   error, which blocked the pre-deployment lint step.
-- **Result**: All three health endpoints now return 200 — `/health`, `/auth/health`, `/budget/health`.
+- **Result**: All three health endpoints now return 200 Ã¢â‚¬â€ `/health`, `/auth/health`, `/budget/health`.
 
 ## [1.9.117] - 2026-06-01
 
-### ♻️ Budget Model Redesign — Final Checkpoint (Session 133)
+### Ã¢â„¢Â»Ã¯Â¸Â Budget Model Redesign Ã¢â‚¬â€ Final Checkpoint (Session 133)
 
 Complete migration from `FAMILY#`-scoped data model to `BUDGET#`-scoped model with four roles
 (`owner`, `partner`, `household_member`, `viewer`), time-limited viewer access, and a
@@ -946,20 +981,20 @@ DynamoDB on every request.
 - **auth**: Registration transaction now writes `USER#<userId>/PROFILE` (with `defaultBudgetId`),
   `BUDGET#<budgetId>/METADATA`, `BUDGET#<budgetId>/MEMBER#<userId>`; no Cognito custom attribute writes
 - **auth-onboarding**: Reads `defaultBudgetId` from profile; writes `BUDGET#<budgetId>/PERIOD#<month>`
-- **budget**: All handlers use `BudgetAccessResolver`; `FAMILY#` → `BUDGET#`, `BUDGET#<month>` → `PERIOD#<month>`
-- **transactions**: All handlers use `BudgetAccessResolver`; `FAMILY#` → `BUDGET#`
-- **accounts**: All handlers use `BudgetAccessResolver`; `FAMILY#` → `BUDGET#`
-- **goals**: All handlers use `BudgetAccessResolver`; `FAMILY#` → `BUDGET#`
+- **budget**: All handlers use `BudgetAccessResolver`; `FAMILY#` Ã¢â€ â€™ `BUDGET#`, `BUDGET#<month>` Ã¢â€ â€™ `PERIOD#<month>`
+- **transactions**: All handlers use `BudgetAccessResolver`; `FAMILY#` Ã¢â€ â€™ `BUDGET#`
+- **accounts**: All handlers use `BudgetAccessResolver`; `FAMILY#` Ã¢â€ â€™ `BUDGET#`
+- **goals**: All handlers use `BudgetAccessResolver`; `FAMILY#` Ã¢â€ â€™ `BUDGET#`
 - **ai**: All handlers use `BudgetAccessResolver`; AI budget generation writes to `BUDGET#<budgetId>/PERIOD#<month>`
-- **budgets** (new, replaces `family`): Full budget lifecycle — `GET /budgets`, `POST /budgets`,
+- **budgets** (new, replaces `family`): Full budget lifecycle Ã¢â‚¬â€ `GET /budgets`, `POST /budgets`,
   `PUT /budgets/active`, invite/accept/leave/remove, viewer access management, archive/restore/delete
 
 #### Infrastructure (CDK)
 
-- **Renamed** `api-family-stack.ts` → `api-budgets-stack.ts`
+- **Renamed** `api-family-stack.ts` Ã¢â€ â€™ `api-budgets-stack.ts`
   - Lambda: `budgetbuddy-budgets`, routes: `/budgets/*`, code: `backend/functions/budgets/`
 - **Updated `auth-stack.ts`**: `custom:familyId` and `custom:familyRole` marked optional; only `custom:userId` written
-- **Updated CDK app entry**: `ApiFamilyStack` → `ApiBudgetsStack`
+- **Updated CDK app entry**: `ApiFamilyStack` Ã¢â€ â€™ `ApiBudgetsStack`
 
 #### Frontend
 
@@ -975,29 +1010,29 @@ DynamoDB on every request.
 #### Verification
 
 - Unit tests: **73/73 passing** (`npm run test:unit`)
-- Lint: **0 errors** (`npm run lint:check`) — 48 pre-existing style warnings (function/file length)
+- Lint: **0 errors** (`npm run lint:check`) Ã¢â‚¬â€ 48 pre-existing style warnings (function/file length)
 - CI/CD: **SUCCESS** (run ID 26728866665, commit 7a4c389, branch `develop`)
-- Health endpoint: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/health` → 200
+- Health endpoint: `https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/health` Ã¢â€ â€™ 200
 
 ## [1.9.116] - 2026-05-31
 
-### 🐛 Bug Fixes (Round 2 — User Testing Session)
+### Ã°Å¸Ââ€º Bug Fixes (Round 2 Ã¢â‚¬â€ User Testing Session)
 
-#### Bug 1: Category sorting — budget categories and dropdown not sorted A-Z
+#### Bug 1: Category sorting Ã¢â‚¬â€ budget categories and dropdown not sorted A-Z
 
 - **Root cause**: `budget.groups.map()` renders categories in the order returned by the backend (insertion order). No sort applied on render.
 - **Fix**: Sort `group.categories` A-Z by name before rendering in `BudgetPage.tsx`; sort `categories` array A-Z before passing to `TransactionModal`
 - **Files**: `packages/web-app/src/pages/BudgetPage.tsx`
 
-#### Bug 2: Settings — Country/City not pre-populated
+#### Bug 2: Settings Ã¢â‚¬â€ Country/City not pre-populated
 
-- **Root cause**: `profileApi.getProfile()` returns `profile` as the raw response body, but `SettingsPage.tsx` reads `profile.location` — the API returns the profile directly (not nested under `.data`). The `profileApi.getProfile()` in `api.ts` calls `/auth/profile` which returns the profile object directly, but `apiClient.getProfile()` in `apiClient.ts` also calls `/auth/profile`. Two different API clients exist and `SettingsPage` uses `profileApi` from `api.ts` which may not parse the response correctly.
+- **Root cause**: `profileApi.getProfile()` returns `profile` as the raw response body, but `SettingsPage.tsx` reads `profile.location` Ã¢â‚¬â€ the API returns the profile directly (not nested under `.data`). The `profileApi.getProfile()` in `api.ts` calls `/auth/profile` which returns the profile object directly, but `apiClient.getProfile()` in `apiClient.ts` also calls `/auth/profile`. Two different API clients exist and `SettingsPage` uses `profileApi` from `api.ts` which may not parse the response correctly.
 - **Fix**: Ensure `profileApi.getProfile()` returns the parsed profile with `location`, `currency`, `timezone` fields; add fallback parsing
 - **Files**: `packages/web-app/src/services/api.ts`, `packages/web-app/src/pages/SettingsPage.tsx`
 
 #### Bug 3: Currency selected at registration shows USD in Settings
 
-- **Root cause**: `apiClient.completeOnboarding()` TypeScript type definition does NOT include `currency` field — TypeScript strips it from the serialized body. Backend never receives currency, defaults to `"USD"`.
+- **Root cause**: `apiClient.completeOnboarding()` TypeScript type definition does NOT include `currency` field Ã¢â‚¬â€ TypeScript strips it from the serialized body. Backend never receives currency, defaults to `"USD"`.
 - **Fix**: Add `currency?: string` to `completeOnboarding` type signature in `apiClient.ts`
 - **Files**: `packages/web-app/src/utils/apiClient.ts`
 
@@ -1009,7 +1044,7 @@ DynamoDB on every request.
 
 #### Bug 5: "Failed to load notification preferences" error
 
-- **Root cause**: `NotificationSettings.tsx` was using relative URL `/api/notifications/preferences` — fixed in previous session but the fix used `config.apiBaseUrl` which points to the main API Gateway. The notifications Lambda is deployed in the `api-features` stack on a **different API Gateway URL** (`0poeu07vth.execute-api.us-east-1.amazonaws.com`), not the main one.
+- **Root cause**: `NotificationSettings.tsx` was using relative URL `/api/notifications/preferences` Ã¢â‚¬â€ fixed in previous session but the fix used `config.apiBaseUrl` which points to the main API Gateway. The notifications Lambda is deployed in the `api-features` stack on a **different API Gateway URL** (`0poeu07vth.execute-api.us-east-1.amazonaws.com`), not the main one.
 - **Fix**: Use `config.featuresApiUrl` instead of `config.apiBaseUrl` in `NotificationSettings.tsx`
 - **Files**: `packages/web-app/src/components/NotificationSettings.tsx`
 
@@ -1025,13 +1060,13 @@ DynamoDB on every request.
 - **Fix**: Wrap all `localStorage` access in try/catch; fall back to system theme if localStorage unavailable
 - **Files**: `packages/web-app/src/contexts/ThemeContext.tsx`, `packages/web-app/index.html`
 
-#### Bug 8: Goals — can't edit/delete (previous fix didn't work)
+#### Bug 8: Goals Ã¢â‚¬â€ can't edit/delete (previous fix didn't work)
 
-- **Root cause**: Previous fix added Edit/Delete buttons to `GoalsPage.tsx` but the `GoalFormPage.tsx` edit mode reads `goalId` from URL params and calls `GET /goals/:goalId` — this endpoint may not exist or returns 404. Also the Delete button calls `DELETE /goals/:goalId` but the backend route may not be wired.
+- **Root cause**: Previous fix added Edit/Delete buttons to `GoalsPage.tsx` but the `GoalFormPage.tsx` edit mode reads `goalId` from URL params and calls `GET /goals/:goalId` Ã¢â‚¬â€ this endpoint may not exist or returns 404. Also the Delete button calls `DELETE /goals/:goalId` but the backend route may not be wired.
 - **Fix**: Verify backend routes exist; fix GoalFormPage to handle edit correctly
 - **Files**: `packages/web-app/src/pages/GoalsPage.tsx`, `packages/web-app/src/pages/GoalFormPage.tsx`
 
-#### Bug 9 (New): No account selection at transaction entry — account should be created at registration
+#### Bug 9 (New): No account selection at transaction entry Ã¢â‚¬â€ account should be created at registration
 
 - **Root cause**: `TransactionModal` has an account dropdown but it's populated from `accounts` prop which comes from a separate Plaid/accounts API call. New users have no accounts. The requirement is to create a default "Cash" account at registration/onboarding.
 - **Fix**: Create a default "Cash" account during onboarding completion in `auth-onboarding` Lambda
@@ -1049,10 +1084,10 @@ DynamoDB on every request.
 - **Fix**: Add "New Group" option to the budget item modal; allow naming a new group and selecting its type
 - **Files**: `packages/web-app/src/pages/BudgetPage.tsx`, `packages/web-app/src/components/budget/AddBudgetItem.tsx`
 
-### 🐛 Family Invitation Bug Fixes
+### Ã°Å¸Ââ€º Family Invitation Bug Fixes
 
 - **Fix: Pending invitations never loaded** (`backend/functions/family/index.js`)
-  - `handleGetInvitations` used invalid `begins_with(GSI4PK, ...)` in `FilterExpression` — `begins_with` is only valid on sort keys in `KeyConditionExpression`, not on partition keys in `FilterExpression`
+  - `handleGetInvitations` used invalid `begins_with(GSI4PK, ...)` in `FilterExpression` Ã¢â‚¬â€ `begins_with` is only valid on sort keys in `KeyConditionExpression`, not on partition keys in `FilterExpression`
   - Fixed: removed `begins_with` clause, now scans with `familyId = :familyId AND #status = :status`
   - Result: "Pending Invitations" section now renders correctly; Cancel/Resend buttons visible
 
@@ -1080,13 +1115,13 @@ DynamoDB on every request.
   - `handleInvite` was returning plaintext token in response body (security issue)
   - Fixed: removed token from response
 
-- **Fix: Misleading error in register→login chain** (`AcceptInvitationPage.tsx`)
+- **Fix: Misleading error in registerÃ¢â€ â€™login chain** (`AcceptInvitationPage.tsx`)
   - `handleRegister` called `handleLogin` which had its own `finally` block, causing double `setAuthenticating(false)` and wrong error message if login failed after successful registration
   - Fixed: `handleRegister` now clears its own state before delegating to `handleLogin`
 
 ## [1.9.114] - 2026-05-30
 
-### ♿ Accessibility & Dark Mode - Heuristic Review Fixes
+### Ã¢â„¢Â¿ Accessibility & Dark Mode - Heuristic Review Fixes
 
 - **Accessibility Fixes**:
   - Added `id="main-content"` + `tabIndex={-1}` to AppLayout `<main>` for skip link target
@@ -1111,7 +1146,7 @@ DynamoDB on every request.
 
 ## [1.9.113] - 2026-04-02
 
-### 📝 Documentation & Dependency Fix
+### Ã°Å¸â€œÂ Documentation & Dependency Fix
 
 - **Security Fix: Hardcoded E2E Test Password** (`tests/e2e/fixtures/base-fixture.js`)
   - Replaced hardcoded password with `process.env.E2E_TEST_PASSWORD` + `generateTestPassword()` helper
@@ -1134,7 +1169,7 @@ DynamoDB on every request.
 
 ## [1.9.112] - 2026-02-19
 
-### 🧪 E2E Testing Infrastructure - Playwright Setup Complete (Session 127)
+### Ã°Å¸Â§Âª E2E Testing Infrastructure - Playwright Setup Complete (Session 127)
 
 - **Playwright Configuration** (`playwright.config.js`)
   - Installed @playwright/test for browser automation
@@ -1162,7 +1197,7 @@ DynamoDB on every request.
 
 ## [1.9.111] - 2026-02-19
 
-### 🧪 E2E Testing Infrastructure - Spec Created (Session 127)
+### Ã°Å¸Â§Âª E2E Testing Infrastructure - Spec Created (Session 127)
 
 - **Playwright Configuration** (`playwright.config.js`)
   - Installed @playwright/test for browser automation
@@ -1200,7 +1235,7 @@ DynamoDB on every request.
 
 ## [1.9.110] - 2026-02-17
 
-### 🔗 Investment-Net Worth Integration (Session 126)
+### Ã°Å¸â€â€” Investment-Net Worth Integration (Session 126)
 
 - **Net Worth Integration** (`backend/functions/net-worth/index.js`)
   - Integrated investment holdings into net worth calculation
@@ -1228,7 +1263,7 @@ DynamoDB on every request.
 
 ## [1.9.109] - 2026-02-17
 
-### ✨ Investment Tracking - Mobile Implementation (Session 125)
+### Ã¢Å“Â¨ Investment Tracking - Mobile Implementation (Session 125)
 
 - **Mobile InvestmentsScreen** (`packages/mobile/src/screens/InvestmentsScreen.tsx`)
   - Portfolio overview with total value, gain/loss, and day change
@@ -1259,7 +1294,7 @@ DynamoDB on every request.
 
 ## [1.9.108] - 2026-02-05
 
-### 🐛 Fix Family Invitation Email Sending (Session 124)
+### Ã°Å¸Ââ€º Fix Family Invitation Email Sending (Session 124)
 
 - **Problem**: Family invitations were created but emails were never sent
   - Family Lambda (api-stack) was calling wrong API Gateway for email service
@@ -1285,14 +1320,14 @@ DynamoDB on every request.
 
 ## [1.9.107] - 2026-02-05
 
-### ✨ Credit Score Monitoring - Backend Implementation (Session 124)
+### Ã¢Å“Â¨ Credit Score Monitoring - Backend Implementation (Session 124)
 
 - **Credit Score Lambda Function** (`backend/functions/credit-score/`)
   - GET /credit-score - Retrieve current credit score and rating
   - GET /credit-score/history - Get 12 months of score history
   - POST /credit-score/refresh - Manually refresh from credit bureau API
   - PUT /credit-score/settings - Configure monitoring preferences
-  - Automatic notifications for significant changes (±10 points)
+  - Automatic notifications for significant changes (Ã‚Â±10 points)
   - Mock credit bureau API integration (ready for production API)
 
 - **Data Model**:
@@ -1310,7 +1345,7 @@ DynamoDB on every request.
 
 - **Notifications**:
   - CREDIT_SCORE_CHANGE notification type
-  - Triggered on ±10 point changes
+  - Triggered on Ã‚Â±10 point changes
   - Includes change amount and new score
 
 - **Requirements Validated**: 43.1, 43.2, 43.8
@@ -1322,7 +1357,7 @@ DynamoDB on every request.
 
 ## [1.9.106] - 2026-02-05
 
-### ✅ AI Bill Reminders & Budget Planning - E2E Testing Complete (Session 124)
+### Ã¢Å“â€¦ AI Bill Reminders & Budget Planning - E2E Testing Complete (Session 124)
 
 - **End-to-End Test Suite Created**
   - Pattern Detection Flow test (tests/e2e/pattern-detection-flow.test.js)
@@ -1350,17 +1385,17 @@ DynamoDB on every request.
   - Integration with AWS services (DynamoDB, Lambda, Bedrock)
   - Cleanup functions for test data
 
-- **Feature Status**: All 28 tasks complete ✅
-  - Infrastructure and data models ✅
-  - Pattern detection (algorithm + AI) ✅
-  - Budget planning (AI-powered) ✅
-  - Notification system integration ✅
-  - Frontend UI components ✅
-  - End-to-end testing ✅
+- **Feature Status**: All 28 tasks complete Ã¢Å“â€¦
+  - Infrastructure and data models Ã¢Å“â€¦
+  - Pattern detection (algorithm + AI) Ã¢Å“â€¦
+  - Budget planning (AI-powered) Ã¢Å“â€¦
+  - Notification system integration Ã¢Å“â€¦
+  - Frontend UI components Ã¢Å“â€¦
+  - End-to-end testing Ã¢Å“â€¦
 
 ## [1.9.105] - 2026-02-05
 
-### 📋 User Support - Family Invitation Management (Session 124)
+### Ã°Å¸â€œâ€¹ User Support - Family Invitation Management (Session 124)
 
 - **Issue Resolution**: "Pending invitation already exists for this email"
   - User reported error when trying to invite dima.pmp@gmail.com
@@ -1374,10 +1409,10 @@ DynamoDB on every request.
   - Send new invitation
 
 - **Feature Status** (Already Deployed in Session 123):
-  - ✅ Backend API routes (GET, DELETE, POST /family/invitations)
-  - ✅ Frontend UI with Cancel and Resend buttons
-  - ✅ 49 tests passing
-  - ✅ Full documentation
+  - Ã¢Å“â€¦ Backend API routes (GET, DELETE, POST /family/invitations)
+  - Ã¢Å“â€¦ Frontend UI with Cancel and Resend buttons
+  - Ã¢Å“â€¦ 49 tests passing
+  - Ã¢Å“â€¦ Full documentation
 
 - **Documentation Updates**:
   - Updated development-status.md with user support guidance
@@ -1386,7 +1421,7 @@ DynamoDB on every request.
 
 ## [1.9.104] - 2026-02-05
 
-### 🧹 Documentation Cleanup (Session 124)
+### Ã°Å¸Â§Â¹ Documentation Cleanup (Session 124)
 
 - **Obsolete Files Deleted** (15 files removed)
   - Deleted session-specific summaries (SESSION_122_SUMMARY.md)
@@ -1412,7 +1447,7 @@ DynamoDB on every request.
 
 ## [1.9.103] - 2026-02-05
 
-### 🔧 Family Invitation API Gateway Routes (Critical Fix)
+### Ã°Å¸â€Â§ Family Invitation API Gateway Routes (Critical Fix)
 
 - **Infrastructure Changes**
   - Added missing API Gateway routes for family invitation management
@@ -1442,7 +1477,7 @@ DynamoDB on every request.
 
 ## [1.9.102] - 2026-02-04
 
-### ✨ Family Invitation Management Features (Session 122)
+### Ã¢Å“Â¨ Family Invitation Management Features (Session 122)
 
 - **New Backend Endpoints**
   - Added `GET /family/invitations` - List all pending invitations for the family (primary only)
@@ -1484,7 +1519,7 @@ DynamoDB on every request.
 
 ## [1.9.101] - 2026-02-04
 
-### 🔧 Family Invitation Email Integration (Session 121)
+### Ã°Å¸â€Â§ Family Invitation Email Integration (Session 121)
 
 - **Email API Routes Added**
   - Added `/email/send-invitation` POST endpoint (protected)
@@ -1521,7 +1556,7 @@ DynamoDB on every request.
 
 ## [1.9.100] - 2026-02-04
 
-### 📚 Infrastructure Documentation - CDK Cross-Stack Reference Guidelines (Session 120)
+### Ã°Å¸â€œÅ¡ Infrastructure Documentation - CDK Cross-Stack Reference Guidelines (Session 120)
 
 - **Steering Documentation Update**
   - Added comprehensive "CDK Cross-Stack Reference Rules (CRITICAL)" section to `.kiro/steering/structure.md`
@@ -1548,7 +1583,7 @@ DynamoDB on every request.
 
 ## [1.9.99] - 2026-02-04
 
-### 🎨 AI-Powered Bill Reminders and Budget Planning - Frontend Implementation (Session 119)
+### Ã°Å¸Å½Â¨ AI-Powered Bill Reminders and Budget Planning - Frontend Implementation (Session 119)
 
 - **Pattern Detection API Service** (Task 22)
   - Created `patternDetectionApi.ts` with full API integration
@@ -1595,7 +1630,7 @@ DynamoDB on every request.
 
 ## [1.9.98] - 2026-02-04
 
-### 🤖 AI-Powered Bill Reminders and Budget Planning - Backend Implementation (Session 118)
+### Ã°Å¸Â¤â€“ AI-Powered Bill Reminders and Budget Planning - Backend Implementation (Session 118)
 
 - **Manual Pattern Creation** (Task 15)
   - Added `createManualPattern()` to pattern detection service
@@ -1635,7 +1670,7 @@ DynamoDB on every request.
 
 ## [1.9.97] - 2026-02-03
 
-### 🧪 Test Coverage Improvement - Week 4 AI Pattern Detection Tests (Session 117)
+### Ã°Å¸Â§Âª Test Coverage Improvement - Week 4 AI Pattern Detection Tests (Session 117)
 
 - **AI Pattern Detection Test Suite** (32 unit tests)
   - Requirement 11.1: Recurring transaction identification (monthly, weekly, annual)
@@ -1652,7 +1687,7 @@ DynamoDB on every request.
 
 ## [1.9.96] - 2026-02-03
 
-### 🧪 Test Coverage Improvement - Week 4 Property Tests (Session 117)
+### Ã°Å¸Â§Âª Test Coverage Improvement - Week 4 Property Tests (Session 117)
 
 - **Property 14: Mobile Search Filtering** (10 property tests)
   - Tests filter result subset property
@@ -1675,7 +1710,7 @@ DynamoDB on every request.
 
 ## [1.9.95] - 2026-02-03
 
-### 🧪 Test Coverage Improvement - Week 4 Mobile Component Tests (Session 117)
+### Ã°Å¸Â§Âª Test Coverage Improvement - Week 4 Mobile Component Tests (Session 117)
 
 - **React Native Component Tests** (78 tests)
   - QuickActionsFAB: FAB rendering, expansion, action callbacks, accessibility (Requirement 10.1)
@@ -1686,7 +1721,7 @@ DynamoDB on every request.
 
 ## [1.9.94] - 2026-02-03
 
-### 🧪 Test Coverage Improvement - Week 3 Property Tests (Session 117)
+### Ã°Å¸Â§Âª Test Coverage Improvement - Week 3 Property Tests (Session 117)
 
 - **Property 9: Budget Totals Invariant** (13 property tests)
   - Tests budget totals equal sum of category amounts
@@ -1710,7 +1745,7 @@ DynamoDB on every request.
 
 ## [1.9.93] - 2026-02-03
 
-### 🧪 Test Coverage Improvement - Week 2 Complete (Session 116)
+### Ã°Å¸Â§Âª Test Coverage Improvement - Week 2 Complete (Session 116)
 
 - **Two-Factor Authentication Test Suite** (16 tests)
   - Tests TOTP secret generation and QR code display (Requirement 5.1)
@@ -1729,7 +1764,7 @@ DynamoDB on every request.
 
 ## [1.9.92] - 2026-02-03
 
-### 🔧 Fix Accounts & Family Features (Session 115)
+### Ã°Å¸â€Â§ Fix Accounts & Family Features (Session 115)
 
 - **Family Lambda Response Standardization**: Standardized all response formats to `{ success, data, message }`
   - Updated `createResponse` helper to enforce standardized format
@@ -1757,7 +1792,7 @@ DynamoDB on every request.
   - Added `extractErrorMessage` helper for better error message extraction
   - Added missing token check before API calls
 
-### 🧪 Property-Based Tests
+### Ã°Å¸Â§Âª Property-Based Tests
 
 - **Property 4: Account Validation Rejects Invalid Input** (4 tests)
   - Tests invalid account types, mismatched subtypes, empty nicknames, missing balance
@@ -1775,12 +1810,12 @@ DynamoDB on every request.
 - **Property 12: Error Message Safety** (6 tests)
   - Tests that error messages don't expose sensitive information
 
-### 📝 Integration Tests
+### Ã°Å¸â€œÂ Integration Tests
 
 - **Accounts Integration Tests**: Created `tests/accounts-integration.test.js`
   - Tests account CRUD operations, validation, authorization, CORS, performance
 
-### 📚 Documentation
+### Ã°Å¸â€œÅ¡ Documentation
 
 - **API Documentation**: Added token type requirements
   - Documented ID token vs Access token usage
@@ -1794,7 +1829,7 @@ DynamoDB on every request.
 
 ## [1.9.91] - 2026-02-03
 
-### 🧪 Test Coverage Improvement (Week 2 - Sessions 113-114)
+### Ã°Å¸Â§Âª Test Coverage Improvement (Week 2 - Sessions 113-114)
 
 - **Receipt OCR Accuracy Tests**: Added comprehensive test suite for receipt scanning
   - Created `ocr-accuracy.test.js` with 8 tests for OCR validation
@@ -1817,27 +1852,27 @@ DynamoDB on every request.
   - Created `google-oauth.test.js` with 12 unit tests
   - Coverage: Token validation, user creation, account linking, JWT issuance
 
-### 🐛 Bug Fixes
+### Ã°Å¸Ââ€º Bug Fixes
 
 - **BudgetPage UI**: Removed duplicate sidebar and sign-out button
   - Fixed layout issue where sidebar appeared twice
   - Removed redundant sign-out button from BudgetPage header
 
-### 🔧 Infrastructure
+### Ã°Å¸â€Â§ Infrastructure
 
 - **CloudFormation Stack Split**: Split api-features-stack to stay under 500 resource limit
   - Created api-features-extended-stack for overflow resources
   - Updated CI/CD to deploy api-features first to break SharedLayer export dependency
   - Resolved CloudFormation export dependency issues
 
-### 📚 Documentation
+### Ã°Å¸â€œÅ¡ Documentation
 
 - **USER_JOURNEYS.md**: Updated with infrastructure stack split details
 - **Test Coverage Spec**: Created test-coverage-improvement spec for Weeks 2-4
 
 ## [1.9.90] - 2026-02-03
 
-### ✨ Enhanced Accounts & Transactions (Phase 2 - Frontend UI)
+### Ã¢Å“Â¨ Enhanced Accounts & Transactions (Phase 2 - Frontend UI)
 
 - **Sidebar Navigation**: Integrated persistent sidebar into app layout
   - Created `AppLayout.tsx` and `ProtectedLayout.tsx` components
@@ -1871,7 +1906,7 @@ DynamoDB on every request.
   - Select multiple transactions for account assignment
   - Supports removing account assignment
 
-### 🧪 Property-Based Tests Added
+### Ã°Å¸Â§Âª Property-Based Tests Added
 
 - Property 17: Connected Account Default Tracking (15 tests)
 - Property 18: Untracked Account Budget Exclusion (11 tests)
@@ -1880,7 +1915,7 @@ DynamoDB on every request.
 
 ## [1.9.89] - 2026-02-03
 
-### ✨ New Feature: Enhanced Accounts & Transactions (Phase 1)
+### Ã¢Å“Â¨ New Feature: Enhanced Accounts & Transactions (Phase 1)
 
 - **Account Data Model**: Created comprehensive account types and validation schemas
   - Added `packages/shared/src/types/account.ts` with AccountType, AccountSubtype enums
@@ -1903,22 +1938,22 @@ DynamoDB on every request.
 
 ## [1.9.88] - 2026-02-03
 
-### 🐛 Critical Bug Fixes (Week 1 P0 Priority - COMPLETE)
+### Ã°Å¸Ââ€º Critical Bug Fixes (Week 1 P0 Priority - COMPLETE)
 
 - **Onboarding Month Mismatch (Req 42)**: Added regression tests for month parameter preservation
   - Created `month-parameter.test.js` with 5 comprehensive tests
   - Validates budget created for exact month specified in request
   - Validates month preservation across different timezones
-  - Validates correct month at end-of-month boundary (Nov 30 → Nov, not Dec)
+  - Validates correct month at end-of-month boundary (Nov 30 Ã¢â€ â€™ Nov, not Dec)
   - All tests passing
 
-### 📊 Week 1 P0 Bug Fixes - COMPLETE
+### Ã°Å¸â€œÅ  Week 1 P0 Bug Fixes - COMPLETE
 
 - **Status**: 7 out of 7 critical bugs fixed and tested (100% complete)
 - **Test Coverage**: Added 88 new regression tests across 6 critical bug fixes
 - **All P0 bugs now have comprehensive regression tests**
 
-### 🔍 Documentation System Review
+### Ã°Å¸â€Â Documentation System Review
 
 - Reviewed documentation validation system - confirmed working correctly
 - Validation checks both file modification time and content patterns
@@ -1926,7 +1961,7 @@ DynamoDB on every request.
 
 ## [1.9.87] - 2026-02-02
 
-### 🐛 Critical Bug Fixes (Week 1 P0 Priority)
+### Ã°Å¸Ââ€º Critical Bug Fixes (Week 1 P0 Priority)
 
 - **Timezone Management (Req 13)**: Fixed users seeing wrong month due to UTC vs local timezone
   - Created `timezoneHelpers.ts` with `parseLocalDate()` and `getCurrentMonthLocal()`
@@ -1954,7 +1989,7 @@ DynamoDB on every request.
   - Created 5 comprehensive tests (all passing)
   - Keyboard accessible
 
-### 🔧 Development Infrastructure
+### Ã°Å¸â€Â§ Development Infrastructure
 
 - **CI/CD Deployment Rules**: Updated steering to prevent parallel deployments
   - Added critical warning: parallel deployments cause CloudFormation conflicts
@@ -1962,13 +1997,13 @@ DynamoDB on every request.
   - Updated `00-global.md` autonomous mode workflow
   - Enforces: wait for deployment completion before next push
 
-### 📊 Progress
+### Ã°Å¸â€œÅ  Progress
 
 - **Critical Bugs Fixed**: 6 out of 7 P0 bugs completed with regression tests
 - **Test Coverage**: Added 83 new tests across 5 critical bug fixes
 - **Remaining**: 1 P0 bug (Onboarding Month Mismatch - Req 42)
 
-### 🔍 Documentation System
+### Ã°Å¸â€Â Documentation System
 
 - **Documentation Validation**: Reviewed validation system - working correctly
   - Validates file modification time (within maxDaysOld)
@@ -1978,7 +2013,7 @@ DynamoDB on every request.
 
 ## [1.9.86] - 2026-02-03
 
-### 🔧 Development Infrastructure
+### Ã°Å¸â€Â§ Development Infrastructure
 
 - **Steering Files Optimization**: Optimized steering files and hooks for token efficiency (35-40% reduction)
   - Created 3 conditional steering files that load only when relevant:
@@ -1987,20 +2022,20 @@ DynamoDB on every request.
     - `documentation-standards.md` - Loads when editing documentation (saves ~250 tokens)
   - Streamlined `00-global.md` by 32% (removed ~800 tokens of duplicated content)
   - Optimized hook prompts to reference steering files instead of duplicating:
-    - `autonomous-task-executor.kiro.hook` - 55% reduction (450→200 tokens)
-    - `cicd-failure-handler.kiro.hook` - 33% reduction (150→100 tokens)
+    - `autonomous-task-executor.kiro.hook` - 55% reduction (450Ã¢â€ â€™200 tokens)
+    - `cicd-failure-handler.kiro.hook` - 33% reduction (150Ã¢â€ â€™100 tokens)
   - Created comprehensive documentation:
     - `STEERING_OPTIMIZATION_SUMMARY.md` - Detailed analysis and metrics
     - `STEERING_QUICK_REFERENCE.md` - Fast lookup guide for steering files
     - `OPTIMIZATION_VALIDATION_CHECKLIST.md` - Testing and validation checklist
     - `STEERING_HOOKS_OPTIMIZATION_COMPLETE.md` - Complete summary
   - Updated `ACTIVE_HOOKS.md` with optimization details
-  - Token savings per interaction: 35-40% (4,950 → ~3,000 tokens average)
+  - Token savings per interaction: 35-40% (4,950 Ã¢â€ â€™ ~3,000 tokens average)
   - Autonomous mode: 100% functionality maintained
   - Cost savings: ~$0.37 per 10-task autonomous session
   - Fully aligned with Kiro best practices (conditional inclusion, focused content, file references)
 
-### 📚 Documentation
+### Ã°Å¸â€œÅ¡ Documentation
 
 - **User Journeys**: Added Development Infrastructure & Optimization Journey (Section 10)
   - Documented steering files and hooks optimization process
@@ -2016,7 +2051,7 @@ DynamoDB on every request.
 
 ## [1.9.85] - 2026-02-02
 
-### 🤖 AI Features
+### Ã°Å¸Â¤â€“ AI Features
 
 - **AWS Bedrock Integration**: Implemented Bedrock client for Claude 3.5 Sonnet with retry logic and cost monitoring
   - `callBedrock()` - Call AWS Bedrock with exponential backoff retry (max 3 retries, 1s-8s delays)
@@ -2031,7 +2066,7 @@ DynamoDB on every request.
 
 ## [1.9.84] - 2026-02-02
 
-### 🤖 AI Features
+### Ã°Å¸Â¤â€“ AI Features
 
 - **AI Prompt Engineering**: Implemented prompt builder for AWS Bedrock (Claude 3.5 Sonnet)
   - `buildPatternDetectionPrompt()` - Construct pattern detection prompt with transaction data
@@ -2045,7 +2080,7 @@ DynamoDB on every request.
 
 ## [1.9.83] - 2026-02-02
 
-### 🤖 AI Features
+### Ã°Å¸Â¤â€“ AI Features
 
 - **Pattern Detection Algorithm**: Implemented core algorithm for detecting recurring payment patterns
   - `groupTransactionsByMerchant()` - Group transactions using fuzzy matching
@@ -2057,12 +2092,12 @@ DynamoDB on every request.
   - `detectPatterns()` - Orchestrate pattern detection with filtering
   - `analyzeTransactions()` - Main entry point for transaction analysis
   - 42 unit tests covering all frequency types, edge cases, and confidence scoring
-  - Supports ±3 day tolerance for monthly bills, handles variable amounts (utilities)
+  - Supports Ã‚Â±3 day tolerance for monthly bills, handles variable amounts (utilities)
   - Filters out income/transfers, requires minimum 3 occurrences, filters low confidence (<50%)
 
 ## [1.9.82] - 2026-02-02
 
-### 🤖 AI Features
+### Ã°Å¸Â¤â€“ AI Features
 
 - **Fuzzy Matching Algorithm**: Implemented Levenshtein distance-based fuzzy matching for merchant name normalization
   - `levenshteinDistance()` - Calculate edit distance between strings
@@ -2076,7 +2111,7 @@ DynamoDB on every request.
 
 ## [1.9.81] - 2026-02-02
 
-### 🤖 AI Bill Reminders - Pattern Detection Repository Layer
+### Ã°Å¸Â¤â€“ AI Bill Reminders - Pattern Detection Repository Layer
 
 **Backend Implementation**:
 
@@ -2101,12 +2136,12 @@ DynamoDB on every request.
 **Technical Details**:
 
 - Pattern storage: `PK: FAMILY#{familyId}`, `SK: PATTERN#{patternId}`
-- Status workflow: pending → approved/rejected/ignored
+- Status workflow: pending Ã¢â€ â€™ approved/rejected/ignored
 - Approval metadata: approvedAt, approvedBy, billId (optional)
 
 ## [1.9.80] - 2026-02-02
 
-### 🤖 AI Bill Reminders Infrastructure Setup
+### Ã°Å¸Â¤â€“ AI Bill Reminders Infrastructure Setup
 
 **Infrastructure Created**:
 
@@ -2142,7 +2177,7 @@ DynamoDB on every request.
 
 ## [1.9.79] - 2026-02-02
 
-### ✨ Tutorial Integration
+### Ã¢Å“Â¨ Tutorial Integration
 
 **Tutorial Overlay Integrated into BudgetPage**:
 
@@ -2167,13 +2202,13 @@ DynamoDB on every request.
 
 **Requirements Completed**:
 
-- R27 Onboarding Tutorial - ✅ Complete
-- R33 Quick Actions - ✅ Complete
-- R34 Enhanced Security - ✅ Complete
+- R27 Onboarding Tutorial - Ã¢Å“â€¦ Complete
+- R33 Quick Actions - Ã¢Å“â€¦ Complete
+- R34 Enhanced Security - Ã¢Å“â€¦ Complete
 
 ## [1.9.78] - 2026-02-02
 
-### ✨ CalendarView Integration
+### Ã¢Å“Â¨ CalendarView Integration
 
 **Integration Complete**:
 
@@ -2198,7 +2233,7 @@ DynamoDB on every request.
 
 ## [1.9.77] - 2026-02-02
 
-### ✨ CalendarView Component
+### Ã¢Å“Â¨ CalendarView Component
 
 **New Component**:
 
@@ -2227,7 +2262,7 @@ DynamoDB on every request.
 
 ## [1.9.76] - 2026-02-02
 
-### ✨ Receipt Scanning Integration
+### Ã¢Å“Â¨ Receipt Scanning Integration
 
 **Integration Complete**:
 
@@ -2237,7 +2272,7 @@ DynamoDB on every request.
 
 **Features**:
 
-- Scan receipt from Quick Actions FAB (📷 icon)
+- Scan receipt from Quick Actions FAB (Ã°Å¸â€œÂ· icon)
 - Drag-and-drop or file picker for receipt images
 - AI-powered OCR extracts merchant, date, and total
 - Extracted data pre-fills expense transaction form
@@ -2245,7 +2280,7 @@ DynamoDB on every request.
 
 **User Flow**:
 
-1. Click FAB → "Scan Receipt"
+1. Click FAB Ã¢â€ â€™ "Scan Receipt"
 2. Upload receipt image (drag-drop or browse)
 3. AI extracts merchant, date, total
 4. Transaction form opens with pre-filled data
@@ -2257,7 +2292,7 @@ DynamoDB on every request.
 
 ## [1.9.75] - 2026-02-02
 
-### ✨ Settings Journey Complete - All Components Implemented
+### Ã¢Å“Â¨ Settings Journey Complete - All Components Implemented
 
 **New Components**:
 
@@ -2294,12 +2329,12 @@ DynamoDB on every request.
 
 **Settings Journey Status**:
 
-- All Settings Journey components now complete ✅
+- All Settings Journey components now complete Ã¢Å“â€¦
 - No remaining missing components
 
 ## [1.9.74] - 2026-02-02
 
-### ✨ Legal Pages - Terms of Service & Privacy Policy
+### Ã¢Å“Â¨ Legal Pages - Terms of Service & Privacy Policy
 
 **New Components**:
 
@@ -2346,7 +2381,7 @@ DynamoDB on every request.
 
 ## [1.9.73] - 2026-02-02
 
-### ✨ Settings Journey Components
+### Ã¢Å“Â¨ Settings Journey Components
 
 **New Components**:
 
@@ -2356,7 +2391,7 @@ DynamoDB on every request.
 
 **DeleteAccountModal Features**:
 
-- 3-step deletion process (warning → export → confirm)
+- 3-step deletion process (warning Ã¢â€ â€™ export Ã¢â€ â€™ confirm)
 - Data export option before deletion
 - Type "DELETE" confirmation for safety
 - Clears all local storage on deletion
@@ -2396,7 +2431,7 @@ DynamoDB on every request.
 
 ## [1.9.72] - 2026-02-02
 
-### 📋 Task Status Reconciliation
+### Ã°Å¸â€œâ€¹ Task Status Reconciliation
 
 **Updated Root Tasks.md**:
 
@@ -2406,22 +2441,22 @@ DynamoDB on every request.
 
 **UI Components Verified Complete**:
 
-- Task 1.7: Bills UI (BillsPage, BillFormPage) ✅
-- Task 2.7: Goals UI (GoalsPage, GoalFormPage, drag-and-drop) ✅
-- Task 3.7: Insights UI (InsightsPage, charts, AI modal) ✅
-- Task 4.7: Receipt UI (ReceiptScanner, ReceiptConfirmation) ✅
-- Task 5.8: Plaid UI (BankSyncPage, ConnectedAccounts) ✅
-- Task 6.6: Reconciliation UI (integrated in BankSyncPage) ✅
-- Task 7.4: Admin UI (AdminDashboard, AdminUsers, AdminLogin) ✅
-- Task 8.6: Comparison UI (PeerComparisonWidget) ✅
-- Task 9.6: Tips UI (TipsFeedPage) ✅
-- Task 10.6: Learn UI (LearnPage, courses, quizzes) ✅
+- Task 1.7: Bills UI (BillsPage, BillFormPage) Ã¢Å“â€¦
+- Task 2.7: Goals UI (GoalsPage, GoalFormPage, drag-and-drop) Ã¢Å“â€¦
+- Task 3.7: Insights UI (InsightsPage, charts, AI modal) Ã¢Å“â€¦
+- Task 4.7: Receipt UI (ReceiptScanner, ReceiptConfirmation) Ã¢Å“â€¦
+- Task 5.8: Plaid UI (BankSyncPage, ConnectedAccounts) Ã¢Å“â€¦
+- Task 6.6: Reconciliation UI (integrated in BankSyncPage) Ã¢Å“â€¦
+- Task 7.4: Admin UI (AdminDashboard, AdminUsers, AdminLogin) Ã¢Å“â€¦
+- Task 8.6: Comparison UI (PeerComparisonWidget) Ã¢Å“â€¦
+- Task 9.6: Tips UI (TipsFeedPage) Ã¢Å“â€¦
+- Task 10.6: Learn UI (LearnPage, courses, quizzes) Ã¢Å“â€¦
 
 **Impact**: Accurate project tracking, clear view of remaining work
 
 ## [1.9.71] - 2026-02-02
 
-### 🧹 Documentation Cleanup & Consolidation
+### Ã°Å¸Â§Â¹ Documentation Cleanup & Consolidation
 
 **Archived Session Documents**:
 
@@ -2447,7 +2482,7 @@ DynamoDB on every request.
 
 ## [1.9.70] - 2026-02-02
 
-### ✨ Feature - Mobile Tips Feed with Swipe Gestures
+### Ã¢Å“Â¨ Feature - Mobile Tips Feed with Swipe Gestures
 
 **New Components**:
 
@@ -2476,7 +2511,7 @@ DynamoDB on every request.
 
 ## [1.9.69] - 2026-02-02
 
-### ✨ Feature - Mobile Two-Factor Authentication UI
+### Ã¢Å“Â¨ Feature - Mobile Two-Factor Authentication UI
 
 **New Components**:
 
@@ -2485,7 +2520,7 @@ DynamoDB on every request.
 
 **TwoFactorSetup Features**:
 
-- Step wizard (Intro → QR → Verify → Backup)
+- Step wizard (Intro Ã¢â€ â€™ QR Ã¢â€ â€™ Verify Ã¢â€ â€™ Backup)
 - QR code display for authenticator apps
 - Manual secret code entry with copy button
 - 6-digit verification code input
@@ -2505,7 +2540,7 @@ DynamoDB on every request.
 
 ## [1.9.68] - 2026-02-02
 
-### ✨ Feature - Mobile Goal Reordering
+### Ã¢Å“Â¨ Feature - Mobile Goal Reordering
 
 **New Components**:
 
@@ -2531,7 +2566,7 @@ DynamoDB on every request.
 
 ## [1.9.67] - 2026-02-02
 
-### ✨ Feature - Mobile Search and Filters Integration
+### Ã¢Å“Â¨ Feature - Mobile Search and Filters Integration
 
 **TransactionsScreen Integration**:
 
@@ -2554,7 +2589,7 @@ DynamoDB on every request.
 
 ## [1.9.66] - 2026-02-02
 
-### ✨ Feature - Mobile Search and Filters
+### Ã¢Å“Â¨ Feature - Mobile Search and Filters
 
 **New Components**:
 
@@ -2592,7 +2627,7 @@ interface TransactionFilters {
 
 ## [1.9.65] - 2026-02-02
 
-### ✨ Feature - Mobile Transaction Templates
+### Ã¢Å“Â¨ Feature - Mobile Transaction Templates
 
 **New Components**:
 
@@ -2632,7 +2667,7 @@ interface TransactionTemplate {
 
 ## [1.9.64] - 2026-02-02
 
-### ✨ Feature - Mobile Quick Actions FAB Enhancement
+### Ã¢Å“Â¨ Feature - Mobile Quick Actions FAB Enhancement
 
 **Enhanced Components**:
 
@@ -2660,7 +2695,7 @@ interface TransactionTemplate {
 
 ## [1.9.63] - 2026-02-02
 
-### 📋 Spec - Mobile UI Polish
+### Ã°Å¸â€œâ€¹ Spec - Mobile UI Polish
 
 **New Spec Created**: `.kiro/specs/mobile-ui-polish/`
 
@@ -2693,7 +2728,7 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 ## [1.9.62] - 2026-02-02
 
-### ✨ Feature - Educational Content Page (LearnPage)
+### Ã¢Å“Â¨ Feature - Educational Content Page (LearnPage)
 
 **New Components**:
 
@@ -2726,16 +2761,16 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 ## [1.9.61] - 2026-02-02
 
-### ✨ Feature - UI Polish & Enhancements Complete (Web)
+### Ã¢Å“Â¨ Feature - UI Polish & Enhancements Complete (Web)
 
 **All Web UI Polish Tasks Complete**:
 
-- Task 7.3: 2FA Settings Integration ✅
-- Task 7.4: Login Flow MFA Challenge ✅
-- Task 8.4: Tips Read/Unread Indicators ✅
-- Task 9.1-9.3: Theme System (Light/Dark/System) ✅
-- Task 10.1-10.3: Accessibility Improvements ✅
-- Task 11.3-11.5: Onboarding Polish ✅
+- Task 7.3: 2FA Settings Integration Ã¢Å“â€¦
+- Task 7.4: Login Flow MFA Challenge Ã¢Å“â€¦
+- Task 8.4: Tips Read/Unread Indicators Ã¢Å“â€¦
+- Task 9.1-9.3: Theme System (Light/Dark/System) Ã¢Å“â€¦
+- Task 10.1-10.3: Accessibility Improvements Ã¢Å“â€¦
+- Task 11.3-11.5: Onboarding Polish Ã¢Å“â€¦
 
 **New Components Created**:
 
@@ -2773,7 +2808,7 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 ## [1.9.60] - 2026-02-02
 
-### 📚 Documentation - USER_JOURNEYS.md Update
+### Ã°Å¸â€œÅ¡ Documentation - USER_JOURNEYS.md Update
 
 **Updates**:
 
@@ -2793,7 +2828,7 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 ## [1.9.59] - 2026-02-02
 
-### ✨ Feature - Two-Factor Authentication UI Components
+### Ã¢Å“Â¨ Feature - Two-Factor Authentication UI Components
 
 **Components Created**:
 
@@ -2802,7 +2837,7 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 **TwoFactorSetup Features**:
 
-- Step-by-step wizard (Intro → QR Code → Verify → Backup Codes)
+- Step-by-step wizard (Intro Ã¢â€ â€™ QR Code Ã¢â€ â€™ Verify Ã¢â€ â€™ Backup Codes)
 - Progress indicator showing current step
 - QR code display for authenticator apps
 - Manual secret code entry option
@@ -2819,12 +2854,12 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 **Tasks Completed**:
 
-- Task 7.1: TwoFactorSetup component ✅
-- Task 7.2: TwoFactorVerify component ✅
+- Task 7.1: TwoFactorSetup component Ã¢Å“â€¦
+- Task 7.2: TwoFactorVerify component Ã¢Å“â€¦
 
 ## [1.9.58] - 2026-02-02
 
-### ✨ Feature - Goal Archive Functionality
+### Ã¢Å“Â¨ Feature - Goal Archive Functionality
 
 **Features Added**:
 
@@ -2836,18 +2871,18 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 **UI/UX**:
 
-- Archive icon (📦) on goal cards
+- Archive icon (Ã°Å¸â€œÂ¦) on goal cards
 - Expandable archived section with count
-- Restore icon (↩️) with hover state
+- Restore icon (Ã¢â€ Â©Ã¯Â¸Â) with hover state
 - Loading state during archive/restore operations
 
 **Tasks Completed**:
 
-- Task 6.1: Goal archive functionality ✅
+- Task 6.1: Goal archive functionality Ã¢Å“â€¦
 
 ## [1.9.57] - 2026-02-02
 
-### ✨ Feature - Transaction Templates
+### Ã¢Å“Â¨ Feature - Transaction Templates
 
 **Component Created**:
 
@@ -2872,11 +2907,11 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 **Tasks Completed**:
 
-- Task 3.1: Transaction templates feature ✅
+- Task 3.1: Transaction templates feature Ã¢Å“â€¦
 
 ## [1.9.56] - 2026-02-02
 
-### ✨ Feature - Transaction Filters Integration
+### Ã¢Å“Â¨ Feature - Transaction Filters Integration
 
 **Integration Complete**:
 
@@ -2903,11 +2938,11 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 **Tasks Completed**:
 
-- Task 4.4: Integrate filters into TransactionList ✅
+- Task 4.4: Integrate filters into TransactionList Ã¢Å“â€¦
 
 ## [1.9.55] - 2026-02-02
 
-### ✨ Feature - Confetti Animation for Goal Milestones
+### Ã¢Å“Â¨ Feature - Confetti Animation for Goal Milestones
 
 **Components Created**:
 
@@ -2929,11 +2964,11 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 **Tasks Verified Complete**:
 
 - Task 5: Goals drag-and-drop (already implemented)
-- Task 6.2: Confetti animation ✅
+- Task 6.2: Confetti animation Ã¢Å“â€¦
 
 ## [1.9.54] - 2026-02-02
 
-### ✨ Feature - Transaction Filters Component
+### Ã¢Å“Â¨ Feature - Transaction Filters Component
 
 **Components Created**:
 
@@ -2961,7 +2996,7 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 ## [1.9.53] - 2026-02-02
 
-### ✨ Feature - Quick Actions FAB & Keyboard Shortcuts
+### Ã¢Å“Â¨ Feature - Quick Actions FAB & Keyboard Shortcuts
 
 **Components Created**:
 
@@ -2974,7 +3009,7 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 - Quick actions: Add Income, Add Expense, View Budget, View Goals, View Insights
 - Keyboard shortcuts: Ctrl+N (new), Ctrl+B (budget), Ctrl+S (settings), Ctrl+/ (help)
 - Shortcuts help modal with all available shortcuts
-- Mac support (⌘ instead of Ctrl)
+- Mac support (Ã¢Å’Ëœ instead of Ctrl)
 - Accessible with ARIA labels and keyboard navigation
 
 **Integration**:
@@ -2984,7 +3019,7 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 ## [1.9.52] - 2026-02-02
 
-### 📋 Spec - UI Polish & Enhancements
+### Ã°Å¸â€œâ€¹ Spec - UI Polish & Enhancements
 
 **New Spec Created**: `.kiro/specs/ui-polish-enhancements/`
 
@@ -3016,17 +3051,17 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 ## [1.9.51] - 2026-02-02
 
-### 📝 Documentation - USER_JOURNEYS.md Update
+### Ã°Å¸â€œÂ Documentation - USER_JOURNEYS.md Update
 
 **Updates**:
 
 - Added Admin Dashboard Journey section (8.1)
 - Updated Requirements-to-Tasks Reconciliation table
-- Marked Receipt Scanner (R44) as ✅ Complete
-- Marked Admin Dashboard (R48) as ✅ Complete
-- Marked Net Worth (R41) as ✅ Complete
-- Marked Subscription Tracking (R35) as ✅ Complete
-- Marked Debt Payoff (R37) as ✅ Complete
+- Marked Receipt Scanner (R44) as Ã¢Å“â€¦ Complete
+- Marked Admin Dashboard (R48) as Ã¢Å“â€¦ Complete
+- Marked Net Worth (R41) as Ã¢Å“â€¦ Complete
+- Marked Subscription Tracking (R35) as Ã¢Å“â€¦ Complete
+- Marked Debt Payoff (R37) as Ã¢Å“â€¦ Complete
 - Updated Task References with completion status
 - Updated Implementation Priority Matrix
 
@@ -3037,7 +3072,7 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 ## [1.9.50] - 2026-02-02
 
-### ✨ Feature - PeerComparisonWidget Component
+### Ã¢Å“Â¨ Feature - PeerComparisonWidget Component
 
 **Components Created**:
 
@@ -3062,11 +3097,11 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 **Status Updates**:
 
-- PeerComparisonWidget (R46): ❌ → ✅ Complete
+- PeerComparisonWidget (R46): Ã¢ÂÅ’ Ã¢â€ â€™ Ã¢Å“â€¦ Complete
 
 ## [1.9.49] - 2026-02-02
 
-### ✨ Feature - Transaction Search in BudgetPage
+### Ã¢Å“Â¨ Feature - Transaction Search in BudgetPage
 
 **Component**: `packages/web-app/src/pages/BudgetPage.tsx`
 
@@ -3080,12 +3115,12 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 **Status Updates**:
 
-- Transaction Search (R28): ❌ → ✅ Complete
+- Transaction Search (R28): Ã¢ÂÅ’ Ã¢â€ â€™ Ã¢Å“â€¦ Complete
 - All HIGH PRIORITY frontend gaps now complete
 
 ## [1.9.48] - 2026-02-02
 
-### ✨ Feature - NotificationCenter Component Complete
+### Ã¢Å“Â¨ Feature - NotificationCenter Component Complete
 
 **Component**: `packages/web-app/src/components/NotificationCenter.tsx`
 
@@ -3110,13 +3145,13 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 **Status Updates**:
 
-- `NotificationCenter.tsx`: ❌ → ✅ Complete
+- `NotificationCenter.tsx`: Ã¢ÂÅ’ Ã¢â€ â€™ Ã¢Å“â€¦ Complete
 - `InsightsPage.tsx`: Already complete (verified)
 - Updated `docs/USER_JOURNEYS.md` with status changes
 
 ## [1.9.47] - 2026-02-02
 
-### 📋 Spec Complete - Competitive Features
+### Ã°Å¸â€œâ€¹ Spec Complete - Competitive Features
 
 **Completed**: Full spec for 14 competitive features (Requirements 35-48)
 
@@ -3144,7 +3179,7 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 ## [1.9.46] - 2026-02-02
 
-### 🐛 Bug Fix - Budget Not Copying to New Month
+### Ã°Å¸Ââ€º Bug Fix - Budget Not Copying to New Month
 
 **Issue**: When navigating to a new month (e.g., February), the budget from the previous month (January) was not being automatically copied.
 
@@ -3164,7 +3199,7 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 ## [1.9.45] - 2026-02-01
 
-### 🔄 Enhancement - User Journeys Reconciliation & Hook
+### Ã°Å¸â€â€ž Enhancement - User Journeys Reconciliation & Hook
 
 **Hook Created**: `update-user-journeys`
 
@@ -3191,7 +3226,7 @@ Created comprehensive spec for remaining mobile-specific UI polish tasks:
 
 ## [1.9.44] - 2026-02-01
 
-### 📚 Documentation - Comprehensive User Journeys Document
+### Ã°Å¸â€œÅ¡ Documentation - Comprehensive User Journeys Document
 
 **New Document**: `docs/USER_JOURNEYS.md`
 
@@ -3222,7 +3257,7 @@ Created a comprehensive user journeys document that:
 
 ## [1.9.43] - 2026-02-01
 
-### 🔧 Fix - CORS Headers for API Gateway 401/403 Responses
+### Ã°Å¸â€Â§ Fix - CORS Headers for API Gateway 401/403 Responses
 
 **Problem**: When calling Plaid API endpoints from the web app, 401 Unauthorized errors from the Cognito authorizer didn't include CORS headers, causing browser CORS errors that masked the actual authentication issue.
 
@@ -3246,7 +3281,7 @@ Created a comprehensive user journeys document that:
 
 ## [1.9.42] - 2026-02-01
 
-### 🏦 Feature - Bank Accounts UI (Plaid Integration Frontend)
+### Ã°Å¸ÂÂ¦ Feature - Bank Accounts UI (Plaid Integration Frontend)
 
 **New Pages and Components**:
 
@@ -3284,21 +3319,21 @@ Created a comprehensive user journeys document that:
 
 ## [1.9.41] - 2026-02-01
 
-### 📊 Status Update - All Competitive Feature Backends Verified
+### Ã°Å¸â€œÅ  Status Update - All Competitive Feature Backends Verified
 
 **Backend Services Health Check**:
 All competitive feature backends are deployed and operational:
 
 | Service             | Endpoint                 | Status     |
 | ------------------- | ------------------------ | ---------- |
-| Plaid Bank Sync     | `GET /plaid/health`      | ✅ Healthy |
-| Spending Insights   | `GET /insights/health`   | ✅ Healthy |
-| Receipt Scanning    | `GET /receipt/health`    | ✅ Healthy |
-| Reconciliation      | `GET /reconcile/health`  | ✅ Healthy |
-| Peer Comparison     | `GET /comparison/health` | ✅ Healthy |
-| Financial Tips      | `GET /tips/health`       | ✅ Healthy |
-| Educational Content | `GET /learn/health`      | ✅ Healthy |
-| Admin Dashboard     | `GET /admin/health`      | ✅ Healthy |
+| Plaid Bank Sync     | `GET /plaid/health`      | Ã¢Å“â€¦ Healthy |
+| Spending Insights   | `GET /insights/health`   | Ã¢Å“â€¦ Healthy |
+| Receipt Scanning    | `GET /receipt/health`    | Ã¢Å“â€¦ Healthy |
+| Reconciliation      | `GET /reconcile/health`  | Ã¢Å“â€¦ Healthy |
+| Peer Comparison     | `GET /comparison/health` | Ã¢Å“â€¦ Healthy |
+| Financial Tips      | `GET /tips/health`       | Ã¢Å“â€¦ Healthy |
+| Educational Content | `GET /learn/health`      | Ã¢Å“â€¦ Healthy |
+| Admin Dashboard     | `GET /admin/health`      | Ã¢Å“â€¦ Healthy |
 
 **API URLs**:
 
@@ -3309,7 +3344,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.40] - 2026-02-01
 
-### 🏦 Feature - Plaid Bank Sync Integration (Sandbox Mode)
+### Ã°Å¸ÂÂ¦ Feature - Plaid Bank Sync Integration (Sandbox Mode)
 
 **Real Plaid SDK Integration**:
 
@@ -3354,7 +3389,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.39] - 2026-02-01
 
-### 🐛 BUGFIX - Three Critical User-Reported Issues
+### Ã°Å¸Ââ€º BUGFIX - Three Critical User-Reported Issues
 
 **Issue 1: Settings not persisting after onboarding**
 
@@ -3386,7 +3421,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.38] - 2026-02-01
 
-### 🔗 Feature - Goal Category Linking (Task 2.4)
+### Ã°Å¸â€â€” Feature - Goal Category Linking (Task 2.4)
 
 - **Auto-update goals from transactions** - Goals linked to categories now auto-update when transactions are added
 - **Savings category detection** - Transactions with "saving" in category ID or income type trigger goal updates
@@ -3402,7 +3437,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.37] - 2026-02-01
 
-### 🚀 NEW FEATURE - Educational Content Lambda (Task 10)
+### Ã°Å¸Å¡â‚¬ NEW FEATURE - Educational Content Lambda (Task 10)
 
 - **Created Learn Lambda** - `backend/functions/learn/index.js`
 - **17 tests passing** - Full test coverage for learn endpoints
@@ -3428,7 +3463,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.36] - 2026-02-01
 
-### 🚀 NEW FEATURE - Financial Tips Feed (Task 9)
+### Ã°Å¸Å¡â‚¬ NEW FEATURE - Financial Tips Feed (Task 9)
 
 - **Created Tips Lambda** - `backend/functions/tips/index.js`
 - **16 tests passing** - Full test coverage for tips endpoints
@@ -3452,7 +3487,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.35] - 2026-02-01
 
-### 🚀 NEW FEATURE - Peer Comparison System (Task 8.1)
+### Ã°Å¸Å¡â‚¬ NEW FEATURE - Peer Comparison System (Task 8.1)
 
 - **Created Comparison Lambda** - `backend/functions/comparison/index.js`
 - **12 tests passing** - Full test coverage for comparison endpoints
@@ -3472,7 +3507,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.34] - 2026-02-01
 
-### 🔐 Feature - Admin Cognito Group (Task 7.5.2)
+### Ã°Å¸â€Â Feature - Admin Cognito Group (Task 7.5.2)
 
 - **Created Admins Cognito group** - Users in this group have admin dashboard access
 - **Updated Admin Lambda** - Now checks for both 'admin' role and 'Admins' Cognito group
@@ -3480,7 +3515,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.33] - 2026-02-01
 
-### 🔧 Fix - Health Check Script for Features API
+### Ã°Å¸â€Â§ Fix - Health Check Script for Features API
 
 - **Updated `scripts/check-deployment.sh`** - Now checks Features API for admin, plaid, reconcile health endpoints
 - **Separate API checks** - Main API and Features API health checks are now separate
@@ -3488,7 +3523,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.32] - 2026-02-01
 
-### 🏗️ Infrastructure - Admin Lambda to Features Stack
+### Ã°Å¸Ââ€”Ã¯Â¸Â Infrastructure - Admin Lambda to Features Stack
 
 - **Moved Admin Lambda** - Admin Lambda and routes moved from api-stack to api-features-stack
 - **API Stack Reduced** - Main API stack now at 425 resources (down from 536)
@@ -3505,7 +3540,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.31] - 2026-02-01
 
-### 🏗️ Infrastructure - API Stack Split
+### Ã°Å¸Ââ€”Ã¯Â¸Â Infrastructure - API Stack Split
 
 - **Created `api-features-stack.ts`** - New CDK stack for Plaid and Reconciliation
 - **Separate API Gateway** - Features stack has its own API Gateway to avoid cyclic dependencies
@@ -3521,7 +3556,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.30] - 2026-02-01
 
-### 🔧 Infrastructure Fix - API Stack Resource Limit
+### Ã°Å¸â€Â§ Infrastructure Fix - API Stack Resource Limit
 
 - **Problem**: API stack exceeded CloudFormation 500 resource limit (536 resources)
 - **Solution**: Reduced API routes to health-only endpoints for new features
@@ -3537,7 +3572,7 @@ All competitive feature backends are deployed and operational:
 
 - **Next Steps**: Split API stack into multiple stacks to enable full route deployment
 
-### 🚀 NEW FEATURE - Admin Dashboard Backend (Task 7)
+### Ã°Å¸Å¡â‚¬ NEW FEATURE - Admin Dashboard Backend (Task 7)
 
 - **Backend Implementation**
   - Updated `backend/functions/admin/index.js` - Full admin functionality
@@ -3554,7 +3589,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.29] - 2026-02-01
 
-### 🚀 NEW FEATURE - Receipt-to-Bank Reconciliation (Task 6)
+### Ã°Å¸Å¡â‚¬ NEW FEATURE - Receipt-to-Bank Reconciliation (Task 6)
 
 - **Backend Implementation**
   - Created `backend/functions/reconciliation/index.js` - Full reconciliation with confidence scoring
@@ -3573,8 +3608,8 @@ All competitive feature backends are deployed and operational:
 
 - **Key Features**
   - Confidence scoring algorithm with weighted factors:
-    - Amount matching (±$0.50 tolerance) - 50% weight
-    - Date matching (±2 days tolerance) - 30% weight
+    - Amount matching (Ã‚Â±$0.50 tolerance) - 50% weight
+    - Date matching (Ã‚Â±2 days tolerance) - 30% weight
     - Merchant fuzzy matching - 20% weight
   - High/Medium/Low confidence levels (85%/60% thresholds)
   - Auto-reconciliation with configurable minimum confidence
@@ -3587,7 +3622,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.28] - 2026-02-01
 
-### 🚀 NEW FEATURE - Bank Account Sync with Plaid (Task 5)
+### Ã°Å¸Å¡â‚¬ NEW FEATURE - Bank Account Sync with Plaid (Task 5)
 
 - **Backend Implementation**
   - Created `backend/functions/plaid/index.js` - Full Plaid integration with mock mode
@@ -3613,13 +3648,13 @@ All competitive feature backends are deployed and operational:
   - Auto-categorization suggestions
   - Account balance tracking
 
-### 🔧 Bug Fixes
+### Ã°Å¸â€Â§ Bug Fixes
 
 - Fixed duplicate OPTIONS method in receipt API routes
 
 ## [1.9.27] - 2026-02-01
 
-### 🚀 NEW FEATURE - Receipt Scanning with AI Vision (Task 4)
+### Ã°Å¸Å¡â‚¬ NEW FEATURE - Receipt Scanning with AI Vision (Task 4)
 
 - **Backend Implementation**
   - Created `backend/functions/receipt/index.js` - Receipt upload and AI extraction
@@ -3646,14 +3681,14 @@ All competitive feature backends are deployed and operational:
   - Added receiptHandler Lambda to api-stack.ts
   - Added all receipt API routes with Cognito authorization
 
-### 🔧 Improvements
+### Ã°Å¸â€Â§ Improvements
 
 - Fixed insights test for merchant pattern sorting
 - Updated tasks.md with completed task status
 
 ## [1.9.26] - 2026-02-01
 
-### 🚀 NEW FEATURE - Bill Reminders System (Task 1)
+### Ã°Å¸Å¡â‚¬ NEW FEATURE - Bill Reminders System (Task 1)
 
 - **Backend Implementation**
   - Created `backend/functions/bills/index.js` - Full CRUD operations for bill reminders
@@ -3674,7 +3709,7 @@ All competitive feature backends are deployed and operational:
   - Recurring bill support (weekly, bi-weekly, monthly, quarterly, annually)
   - Auto-create next occurrence when recurring bill is paid
   - Auto-create transaction when bill is marked paid
-  - Status indicators (🔴 overdue, 🟡 due soon, 🟢 upcoming, ✅ paid)
+  - Status indicators (Ã°Å¸â€Â´ overdue, Ã°Å¸Å¸Â¡ due soon, Ã°Å¸Å¸Â¢ upcoming, Ã¢Å“â€¦ paid)
   - Days until due calculation
   - Calendar view with monthly summary
 
@@ -3682,7 +3717,7 @@ All competitive feature backends are deployed and operational:
   - Added billsHandler Lambda to api-stack.ts
   - Added all bills API routes with Cognito authorization
 
-### 🚀 NEW FEATURE - Savings Goals System (Task 2)
+### Ã°Å¸Å¡â‚¬ NEW FEATURE - Savings Goals System (Task 2)
 
 - **Backend Implementation**
   - Created `backend/functions/goals/index.js` - Full CRUD operations for savings goals
@@ -3713,7 +3748,7 @@ All competitive feature backends are deployed and operational:
   - Added goalsHandler Lambda to api-stack.ts
   - Added all goals API routes with Cognito authorization
 
-### 📋 Spec Updates
+### Ã°Å¸â€œâ€¹ Spec Updates
 
 - Created comprehensive competitive features spec
   - `.kiro/specs/requirements.md` - Added Requirements 47-57
@@ -3722,25 +3757,25 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.25] - 2026-02-01
 
-### 🔧 Task Status Updates
+### Ã°Å¸â€Â§ Task Status Updates
 
 - **Family Collaboration** - Updated all parent task markers to reflect completion
-  - Phase 1: DynamoDB Schema ✅
-  - Phase 2: Family Lambda ✅
-  - Phase 3: Permission System ✅
-  - Phase 5: Web UI ✅
-  - Phase 6: Invitation Acceptance ✅
-  - Phase 7: Mobile UI ✅
-  - Phase 8: API Gateway ✅
-  - Phase 9: Integration Testing ✅
-  - Phase 10: Property-Based Testing ✅
-  - Phase 11: Documentation ✅
+  - Phase 1: DynamoDB Schema Ã¢Å“â€¦
+  - Phase 2: Family Lambda Ã¢Å“â€¦
+  - Phase 3: Permission System Ã¢Å“â€¦
+  - Phase 5: Web UI Ã¢Å“â€¦
+  - Phase 6: Invitation Acceptance Ã¢Å“â€¦
+  - Phase 7: Mobile UI Ã¢Å“â€¦
+  - Phase 8: API Gateway Ã¢Å“â€¦
+  - Phase 9: Integration Testing Ã¢Å“â€¦
+  - Phase 10: Property-Based Testing Ã¢Å“â€¦
+  - Phase 11: Documentation Ã¢Å“â€¦
   - Remaining: Manual email testing (4.4), Production deployment (12.3, 12.4)
 
 - **Root Tasks** - Marked Task 24 (Data Export and Backup System) as complete
   - All sub-tasks (CSV export, PDF export, JSON backup) were already complete
 
-### ✅ Test Verification
+### Ã¢Å“â€¦ Test Verification
 
 - Family Lambda: 62 tests passing (49 unit/integration + 13 PBT)
 - Budget Lambda: 38 tests passing
@@ -3748,7 +3783,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.24] - 2026-02-01
 
-### ✅ TESTING - Phase 10 Property-Based Tests Complete
+### Ã¢Å“â€¦ TESTING - Phase 10 Property-Based Tests Complete
 
 - **Task 10.1 - Permission Matrix PBT** - Random role/action combinations (100 iterations)
   - Verifies permission matrix enforced for all role/action combinations
@@ -3779,7 +3814,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.23] - 2026-02-01
 
-### ✅ TESTING - Phase 9 Integration Tests Complete
+### Ã¢Å“â€¦ TESTING - Phase 9 Integration Tests Complete
 
 - **Task 9.1 - Invitation Flow Tests** - Comprehensive tests for family invitation system
   - Send invitation as primary user
@@ -3812,7 +3847,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.22] - 2026-02-01
 
-### 🐛 BUGFIX - Family Lambda & Auth Profile Token Handling
+### Ã°Å¸Ââ€º BUGFIX - Family Lambda & Auth Profile Token Handling
 
 - **Fixed Family Lambda 502 error** - Added fallback token parsing when authorizer claims missing
   - **Root Cause**: Family Lambda required `custom:userId` and `custom:familyId` from authorizer claims, but these aren't always present
@@ -3826,7 +3861,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.21] - 2026-02-01
 
-### 🐛 BUGFIX - Profile API Null Field Handling
+### Ã°Å¸Ââ€º BUGFIX - Profile API Null Field Handling
 
 - **Fixed GET /auth/profile CORS error** - Added optional chaining for all profile fields
   - **Root Cause**: Profile fields accessed without null checks caused Lambda to crash
@@ -3836,7 +3871,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.20] - 2026-02-01
 
-### 📱 MOBILE - Family Settings Screen (Phase 7)
+### Ã°Å¸â€œÂ± MOBILE - Family Settings Screen (Phase 7)
 
 - **Created FamilySettings component for mobile** - Complete family management UI
   - **Features**:
@@ -3853,7 +3888,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.19] - 2026-02-01
 
-### 🐛 BUGFIX - Settings Persistence to Backend
+### Ã°Å¸Ââ€º BUGFIX - Settings Persistence to Backend
 
 - **Fixed Settings Not Persisting** - Location, timezone, and currency now save to backend
   - **Root Cause**: SettingsPage only saved to localStorage, not backend API
@@ -3869,7 +3904,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.18] - 2026-02-01
 
-### 🐛 BUGFIX - Family Lambda 502 Error Resolution
+### Ã°Å¸Ââ€º BUGFIX - Family Lambda 502 Error Resolution
 
 - **Fixed Family Lambda 502 Error** - Resolved deployment health check failure
   - **Root Cause**: Lambda was using AWS SDK v2 (`aws-sdk`) which is not included in Node.js 18+ runtime
@@ -3883,7 +3918,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.17] - 2026-02-01
 
-### 🔧 INFRASTRUCTURE - API Gateway Family Routes (Phase 8)
+### Ã°Å¸â€Â§ INFRASTRUCTURE - API Gateway Family Routes (Phase 8)
 
 - **Added Family API Routes** - Complete API Gateway integration for family collaboration
   - **Routes Added**:
@@ -3898,7 +3933,7 @@ All competitive feature backends are deployed and operational:
   - **File**: `infrastructure/lib/api-stack.ts`
   - **Tasks**: 8.1, 8.2, 8.3 complete
 
-### 🎨 FRONTEND - Invitation Acceptance Page (Phase 6)
+### Ã°Å¸Å½Â¨ FRONTEND - Invitation Acceptance Page (Phase 6)
 
 - **Created AcceptInvitationPage** - Complete invitation acceptance flow
   - **Features**:
@@ -3916,7 +3951,7 @@ All competitive feature backends are deployed and operational:
   - **Route**: `/family/accept` added to App.tsx
   - **Tasks**: 6.1, 6.2, 6.3, 6.4 complete
 
-### 🐛 BUGFIX - Authentication Token Consistency
+### Ã°Å¸Ââ€º BUGFIX - Authentication Token Consistency
 
 - **Fixed Token Storage Keys** - Resolved "Not authenticated" error in FamilySettings
   - **Issue**: FamilySettings used `token` key, AuthContext uses `budgetbuddy_access_token`
@@ -3927,7 +3962,7 @@ All competitive feature backends are deployed and operational:
   - **File**: `packages/web-app/src/components/FamilySettings.tsx`
   - **Impact**: Users can now send invitations without authentication errors
 
-### 📋 SPECS - Family Collaboration Requirements Update
+### Ã°Å¸â€œâ€¹ SPECS - Family Collaboration Requirements Update
 
 - **Updated Requirements** - Clarified family size limits and removed age-specific logic
   - **Family Size**: 2 editors (Primary + Spouse) + unlimited viewers
@@ -3938,7 +3973,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.16] - 2026-02-01
 
-### 🎨 FRONTEND - Family Settings UI (Task 5.1)
+### Ã°Å¸Å½Â¨ FRONTEND - Family Settings UI (Task 5.1)
 
 - **Created FamilySettings Component** - Web UI for family member management
   - **Features**: Invite form, member list, role management, leave family button
@@ -3946,7 +3981,7 @@ All competitive feature backends are deployed and operational:
   - **Integration**: Added to SettingsPage
   - **File**: `packages/web-app/src/components/FamilySettings.tsx`
 
-### 📧 EMAIL - SES Integration Complete (Tasks 4.2-4.3)
+### Ã°Å¸â€œÂ§ EMAIL - SES Integration Complete (Tasks 4.2-4.3)
 
 - **Email Templates** - Professional HTML emails for family invitations
   - **Templates**: Invitation, removal notification, acceptance notification
@@ -3958,7 +3993,7 @@ All competitive feature backends are deployed and operational:
   - **Validation**: Input validation for all required fields
   - **File**: `backend/functions/email/index.js`
 
-### 🔧 INFRASTRUCTURE - CloudFormation Export Fix
+### Ã°Å¸â€Â§ INFRASTRUCTURE - CloudFormation Export Fix
 
 - **Resolved Export Dependency** - Notification stack now creates own SharedLayer
   - **Issue**: Cross-stack dependency prevented API stack from updating
@@ -3968,7 +4003,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.15] - 2026-02-01
 
-### 🔧 INFRASTRUCTURE - CloudFormation Export Blocker Documentation
+### Ã°Å¸â€Â§ INFRASTRUCTURE - CloudFormation Export Blocker Documentation
 
 - **Documented Deployment Blocker** - CloudFormation export dependency issue
   - **Issue**: Cannot update auth stack export while auth-onboarding imports it
@@ -3979,7 +4014,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.14] - 2026-01-31
 
-### 🔒 SECURITY - Budget Lambda Permission Integration (Task 3.2)
+### Ã°Å¸â€â€™ SECURITY - Budget Lambda Permission Integration (Task 3.2)
 
 - **Completed Task 3.2** - Integrated RBAC permission checks into budget Lambda
   - **Endpoints Updated**: All 6 budget endpoints (create, get, get current, get by ID, update, delete)
@@ -3990,7 +4025,7 @@ All competitive feature backends are deployed and operational:
   - **Files**: `backend/functions/budget/index.js` + test infrastructure
   - **Impact**: Budget endpoints now enforce family member permissions
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Permission Integration Pattern**:
 
@@ -4021,7 +4056,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.13] - 2026-01-31
 
-### 🔒 SECURITY - Permission Middleware Implementation (Task 3.1)
+### Ã°Å¸â€â€™ SECURITY - Permission Middleware Implementation (Task 3.1)
 
 - **Completed Task 3.1** - Role-based access control (RBAC) for family collaboration
   - **Permission Matrix**: Defined for 3 roles (primary, spouse, viewer) across 12 actions
@@ -4030,7 +4065,7 @@ All competitive feature backends are deployed and operational:
   - **Files**: `backend/layers/shared/nodejs/shared/permissions.js` + tests
   - **Impact**: Foundation for enforcing family member permissions across all APIs
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Permission Matrix**:
 
@@ -4054,7 +4089,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.12] - 2026-01-31
 
-### 🧪 TESTING - Family Lambda Unit Tests Complete (Task 2.8)
+### Ã°Å¸Â§Âª TESTING - Family Lambda Unit Tests Complete (Task 2.8)
 
 - **Completed Task 2.8** - Comprehensive unit tests for family Lambda
   - **Coverage**: All 6 endpoints (invite, accept, get members, update role, remove, leave)
@@ -4063,7 +4098,7 @@ All competitive feature backends are deployed and operational:
   - **File**: `backend/functions/family/index.test.js`
   - **Impact**: Phase 2 complete (all tasks 2.1-2.8 done), ready for Phase 3
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Test Coverage**:
 
@@ -4085,7 +4120,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.11] - 2026-01-31
 
-### 📋 DOCUMENTATION - Family Lambda 502 Blocker
+### Ã°Å¸â€œâ€¹ DOCUMENTATION - Family Lambda 502 Blocker
 
 - **Documented Deployment Blocker** - 3 failed deployment attempts
   - **Problem**: Family Lambda health endpoint returns 502 Bad Gateway
@@ -4094,7 +4129,7 @@ All competitive feature backends are deployed and operational:
   - **Impact**: Deployment blocked, but development can continue (unit tests, etc.)
   - **Files**: `.kiro/FAMILY_LAMBDA_502_BLOCKER.md`, `DEVELOPMENT_LOG.md`
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Root Cause Unknown**: Requires manual AWS console investigation
 **Possible Causes**: Lambda not deployed, missing dependencies, IAM issues, API Gateway config, timeout/crash
@@ -4103,7 +4138,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.10] - 2026-01-31
 
-### 🐛 BUGFIX - Family Lambda Error Handling
+### Ã°Å¸Ââ€º BUGFIX - Family Lambda Error Handling
 
 - **Improved Error Handling** - Wrapped entire handler in try-catch
   - **Problem**: Lambda might be crashing before reaching health endpoint
@@ -4114,7 +4149,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.9] - 2026-01-31
 
-### 🐛 BUGFIX - Family Lambda Health Endpoint Authorization
+### Ã°Å¸Ââ€º BUGFIX - Family Lambda Health Endpoint Authorization
 
 - **Fixed Health Endpoint** - Moved health check before authentication
   - **Problem**: Health endpoint checked AFTER user authentication, returning 401 Unauthorized
@@ -4122,7 +4157,7 @@ All competitive feature backends are deployed and operational:
   - **Files**: `backend/functions/family/index.js`
   - **Impact**: Deployment health checks now pass, family service accessible
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Root Cause**: Health endpoint was inside the try block after user context validation
 **Fix**: Moved health check to execute immediately after OPTIONS/CORS, before authentication
@@ -4130,7 +4165,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.8] - 2026-01-31
 
-### 🔧 WORKFLOW - Session Continuity Enhancement
+### Ã°Å¸â€Â§ WORKFLOW - Session Continuity Enhancement
 
 - **Updated Steering Files** - Added session continuity as FIRST workflow step
   - **New Section 0**: Session Continuity (FIRST STEP) in 00-global.md
@@ -4143,11 +4178,11 @@ All competitive feature backends are deployed and operational:
   - **New Section**: SESSION CONTINUITY (FIRST STEP) in hook prompt
   - **Fixed**: SESSION ENDING section - removed contradictory "continue in new session" instruction
   - **Clarified**: Stop gracefully when session ends, context transfer handles continuation
-  - **Workflow**: Check context → Read summary → Read steering → Decide next task
+  - **Workflow**: Check context Ã¢â€ â€™ Read summary Ã¢â€ â€™ Read steering Ã¢â€ â€™ Decide next task
   - **Files**: `.kiro/hooks/autonomous-task-executor.kiro.hook`
   - **Impact**: Autonomous development now starts with context awareness and ends gracefully
 
-### 🐛 BUGFIX - Family Lambda Health Endpoint
+### Ã°Å¸Ââ€º BUGFIX - Family Lambda Health Endpoint
 
 - **Added Health Endpoint** - Fixed deployment failure
   - **Problem**: Family Lambda missing /family/health endpoint causing 502 error
@@ -4155,7 +4190,7 @@ All competitive feature backends are deployed and operational:
   - **Files**: `backend/functions/family/index.js`
   - **Impact**: Deployment health checks now pass for family service
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Workflow Order (New)**:
 
@@ -4177,7 +4212,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.7] - 2026-01-31
 
-### 🚀 FEATURE - Family Collaboration Foundation (Tasks 1.3, 2.1, 2.2)
+### Ã°Å¸Å¡â‚¬ FEATURE - Family Collaboration Foundation (Tasks 1.3, 2.1, 2.2)
 
 - **Completed Task 1.3** - Deploy database changes for family collaboration
   - **GSI4**: InvitationByEmail index for invitation lookups
@@ -4188,7 +4223,7 @@ All competitive feature backends are deployed and operational:
 - **Completed Task 2.1** - Create Family Lambda function structure
   - **Files**: `backend/functions/family/index.js`, `package.json`, `README.md`
   - **Endpoints**: 6 routes (invite, accept, members, update role, remove, leave)
-  - **Architecture**: Handler → service pattern with CORS support
+  - **Architecture**: Handler Ã¢â€ â€™ service pattern with CORS support
   - **Impact**: Foundation for family collaboration API
 
 - **Completed Task 2.2** - Implement invite endpoint
@@ -4199,7 +4234,7 @@ All competitive feature backends are deployed and operational:
   - **Files**: `backend/functions/family/index.js`
   - **Impact**: Users can now send family invitations (email integration pending)
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Family Lambda Features**:
 
@@ -4219,7 +4254,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.6] - 2026-01-31
 
-### 🧪 TESTING - E2E Notification Tests Complete (Task 11.5)
+### Ã°Å¸Â§Âª TESTING - E2E Notification Tests Complete (Task 11.5)
 
 - **Completed Task 11.5** - Multi-device flow E2E test with real AWS
   - **Test**: Register 3 devices (iOS, Android, Web), send notification to all, remove device, verify only 2 receive
@@ -4229,7 +4264,7 @@ All competitive feature backends are deployed and operational:
   - **File**: `tests/notification-multi-device-e2e.test.js`
   - **Impact**: All 5 E2E notification tests complete (Tasks 11.1-11.5)
 
-### 🔧 INFRASTRUCTURE - Documentation Validation Fix
+### Ã°Å¸â€Â§ INFRASTRUCTURE - Documentation Validation Fix
 
 - **Fixed safe-commit-push Script** - Stage files before validation
   - **Problem**: Validation ran before staging, saw no files, always passed
@@ -4237,40 +4272,40 @@ All competitive feature backends are deployed and operational:
   - **Files**: `scripts/safe-commit-push.js`
   - **Impact**: Documentation validation now enforces mandatory updates correctly
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **All E2E Tests Complete**:
 
-- ✅ Task 11.1: Onboarding flow (2 test cases)
-- ✅ Task 11.2: Budget alerts (3 test cases)
-- ✅ Task 11.3: Daily reminders (4 test cases)
-- ✅ Task 11.4: Preferences (4 test cases)
-- ✅ Task 11.5: Multi-device (3 test cases)
+- Ã¢Å“â€¦ Task 11.1: Onboarding flow (2 test cases)
+- Ã¢Å“â€¦ Task 11.2: Budget alerts (3 test cases)
+- Ã¢Å“â€¦ Task 11.3: Daily reminders (4 test cases)
+- Ã¢Å“â€¦ Task 11.4: Preferences (4 test cases)
+- Ã¢Å“â€¦ Task 11.5: Multi-device (3 test cases)
 
 **Total**: 5 test files, 17 test cases, ~50 DynamoDB operations, < $0.06 per full run
 
 ## [1.9.5] - 2026-01-31
 
-### 🧪 TESTING - E2E Notification Tests Complete
+### Ã°Å¸Â§Âª TESTING - E2E Notification Tests Complete
 
 - **Completed Tasks 11.1-11.4** - Comprehensive end-to-end tests with real AWS
   - **Task 11.1**: Complete onboarding flow (user profile, device registration, preferences, history)
   - **Task 11.2**: Budget alert flow (80%/90%/100% thresholds, deduplication, alert history)
-  - **Task 11.3**: Daily reminder flow (3+ day check, quiet hours, time matching ±15 min)
+  - **Task 11.3**: Daily reminder flow (3+ day check, quiet hours, time matching Ã‚Â±15 min)
   - **Task 11.4**: Preferences management (web/mobile sync, validation, concurrent updates, persistence)
   - **Testing**: All tests use real DynamoDB (budgetbuddy-main table) with automatic cleanup
   - **Cost**: < $0.05 total per test run (~40 DynamoDB operations)
   - **Files**: `tests/notification-*-e2e.test.js` (4 test files, 14 test cases)
   - **Impact**: Validates complete notification system end-to-end with real AWS services
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Test Coverage**:
 
-- ✅ Onboarding flow: 2 test cases (main flow, multiple devices)
-- ✅ Budget alerts: 3 test cases (80% threshold, deduplication, multiple thresholds)
-- ✅ Daily reminders: 4 test cases (3+ days, recent transactions, quiet hours, time matching)
-- ✅ Preferences: 4 test cases (cross-platform sync, validation, concurrent updates, persistence)
+- Ã¢Å“â€¦ Onboarding flow: 2 test cases (main flow, multiple devices)
+- Ã¢Å“â€¦ Budget alerts: 3 test cases (80% threshold, deduplication, multiple thresholds)
+- Ã¢Å“â€¦ Daily reminders: 4 test cases (3+ days, recent transactions, quiet hours, time matching)
+- Ã¢Å“â€¦ Preferences: 4 test cases (cross-platform sync, validation, concurrent updates, persistence)
 
 **AWS Operations**: ~40 DynamoDB operations per full test run
 **Test Duration**: ~15 seconds total
@@ -4278,7 +4313,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.4] - 2026-01-31
 
-### 📋 DOCUMENTATION - Documentation Validation Spec Complete
+### Ã°Å¸â€œâ€¹ DOCUMENTATION - Documentation Validation Spec Complete
 
 - **Completed Documentation Validation Fix Spec** - All 13 phases complete
   - **Spec**: `.kiro/specs/documentation-validation-fix/` with requirements, design, tasks
@@ -4287,7 +4322,7 @@ All competitive feature backends are deployed and operational:
   - **Documentation**: README, CHANGELOG, DEVELOPMENT_LOG, development-status, scripts/README all updated
   - **Impact**: Content-based validation ensures accurate documentation for all commits
 
-### 🔧 INFRASTRUCTURE - CI/CD Health Check Fix
+### Ã°Å¸â€Â§ INFRASTRUCTURE - CI/CD Health Check Fix
 
 - **Fixed Health Check to Accept Rollback States** - Deployments no longer blocked
   - **Problem**: Health check rejected UPDATE_ROLLBACK_COMPLETE as failure
@@ -4296,17 +4331,17 @@ All competitive feature backends are deployed and operational:
   - **Result**: CI/CD deployment successful, all stacks functional
   - **Impact**: Deployments proceed even when stacks are in rollback-complete state
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Spec Completion**:
 
-- ✅ Phase 1: Project structure setup
-- ✅ Phases 2-8: Utilities and validators implementation
-- ✅ Phase 9: Checkpoint - all validators working
-- ✅ Phase 10: Main script refactoring
-- ✅ Phase 11: Backward compatibility testing
-- ✅ Phase 12: Documentation updates
-- ✅ Phase 13: Final checkpoint - all tests pass
+- Ã¢Å“â€¦ Phase 1: Project structure setup
+- Ã¢Å“â€¦ Phases 2-8: Utilities and validators implementation
+- Ã¢Å“â€¦ Phase 9: Checkpoint - all validators working
+- Ã¢Å“â€¦ Phase 10: Main script refactoring
+- Ã¢Å“â€¦ Phase 11: Backward compatibility testing
+- Ã¢Å“â€¦ Phase 12: Documentation updates
+- Ã¢Å“â€¦ Phase 13: Final checkpoint - all tests pass
 
 **Optional Tasks Skipped**:
 
@@ -4316,14 +4351,14 @@ All competitive feature backends are deployed and operational:
 
 **Benefits**:
 
-- ✅ Spec-driven development process validated
-- ✅ Modular architecture proven effective
-- ✅ Content-based validation working in production
-- ✅ CI/CD pipeline resilient to rollback states
+- Ã¢Å“â€¦ Spec-driven development process validated
+- Ã¢Å“â€¦ Modular architecture proven effective
+- Ã¢Å“â€¦ Content-based validation working in production
+- Ã¢Å“â€¦ CI/CD pipeline resilient to rollback states
 
 ## [1.9.3] - 2026-01-31
 
-### 🔧 INFRASTRUCTURE - Documentation Validation Fix (Content-Based)
+### Ã°Å¸â€Â§ INFRASTRUCTURE - Documentation Validation Fix (Content-Based)
 
 - **Implemented Content-Based Validation** - Fixed critical bug in documentation validation
   - **Problem**: Validation checked timestamps, not content (allowed commits without proper docs)
@@ -4332,7 +4367,7 @@ All competitive feature backends are deployed and operational:
   - **Files**: `scripts/utils/*.js`, `scripts/validators/*.js`, refactored `scripts/validate-documentation.js`
   - **Impact**: Documentation now accurately reflects current work, prevents incomplete documentation
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Architecture**:
 
@@ -4350,15 +4385,15 @@ All competitive feature backends are deployed and operational:
 
 **Benefits**:
 
-- ✅ Prevents commits with outdated documentation
-- ✅ Ensures CHANGELOG has entry for current work
-- ✅ Ensures DEVELOPMENT_LOG has session for today
-- ✅ Ensures README reflects recent achievements
-- ✅ Ensures development-status.md is current
+- Ã¢Å“â€¦ Prevents commits with outdated documentation
+- Ã¢Å“â€¦ Ensures CHANGELOG has entry for current work
+- Ã¢Å“â€¦ Ensures DEVELOPMENT_LOG has session for today
+- Ã¢Å“â€¦ Ensures README reflects recent achievements
+- Ã¢Å“â€¦ Ensures development-status.md is current
 
 ## [1.9.2] - 2026-01-31
 
-### 🔧 INFRASTRUCTURE - Budget Alerts Lambda Concurrency Fix
+### Ã°Å¸â€Â§ INFRASTRUCTURE - Budget Alerts Lambda Concurrency Fix
 
 - **Removed Reserved Concurrency** - Fixed deployment issue with budget alerts Lambda
   - Removed `reservedConcurrentExecutions: 5` from budget-alerts Lambda configuration
@@ -4367,7 +4402,7 @@ All competitive feature backends are deployed and operational:
   - **Files**: `infrastructure/lib/notification-stack.ts`, `backend/functions/budget-alerts/integration.test.js`
   - **Impact**: Budget alerts Lambda can now scale automatically based on load
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Root Cause**: Reserved concurrency setting was causing CloudFormation deployment conflicts
 **Solution**: Removed reserved concurrency, rely on AWS auto-scaling
@@ -4375,7 +4410,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.1] - 2026-01-31
 
-### 📚 DOCUMENTATION - .kiro/ Directory Cleanup
+### Ã°Å¸â€œÅ¡ DOCUMENTATION - .kiro/ Directory Cleanup
 
 - **Eliminated Duplication and Redundancy** - Streamlined documentation from 10 to 7 files (30% reduction)
   - **Deleted 7 files**:
@@ -4397,12 +4432,12 @@ All competitive feature backends are deployed and operational:
     - hooks/TESTING_RESULTS.md - Optimization verification
 
 - **Benefits**:
-  - ✅ 53% reduction in documentation lines (3,550 → 1,680)
-  - ✅ Zero duplication between files
-  - ✅ All obsolete content removed
-  - ✅ Clear navigation with README.md
-  - ✅ Single entry point (SYSTEM_GUIDE.md)
-  - ✅ Reduced maintenance burden
+  - Ã¢Å“â€¦ 53% reduction in documentation lines (3,550 Ã¢â€ â€™ 1,680)
+  - Ã¢Å“â€¦ Zero duplication between files
+  - Ã¢Å“â€¦ All obsolete content removed
+  - Ã¢Å“â€¦ Clear navigation with README.md
+  - Ã¢Å“â€¦ Single entry point (SYSTEM_GUIDE.md)
+  - Ã¢Å“â€¦ Reduced maintenance burden
 
 - **Documentation Philosophy**:
   - Minimal and focused (only what's needed)
@@ -4410,7 +4445,7 @@ All competitive feature backends are deployed and operational:
   - Practical examples over theory
   - Always current (obsolete content removed immediately)
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Files Deleted**: 7 (5 root + 2 hooks)
 **Files Created**: 2 (SYSTEM_GUIDE.md, README.md)
@@ -4425,7 +4460,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.9.0] - 2026-01-31
 
-### 🔧 INFRASTRUCTURE - Hooks System Optimization
+### Ã°Å¸â€Â§ INFRASTRUCTURE - Hooks System Optimization
 
 - **Optimized Hook System** - Reduced from 13 to 8 active hooks (38% reduction)
   - **Removed 7 redundant/problematic hooks**:
@@ -4447,14 +4482,14 @@ All competitive feature backends are deployed and operational:
     - auto-log-cleanup - Simplified prompt
 
   - **Renamed 1 hook**:
-    - manual-aws-analysis → aws-analysis (narrowed patterns, simplified)
+    - manual-aws-analysis Ã¢â€ â€™ aws-analysis (narrowed patterns, simplified)
 
 - **Benefits**:
-  - ✅ Zero duplicate validation (runs exactly once per commit)
-  - ✅ Zero false AWS triggers (explicit requests only)
-  - ✅ Clearer, more maintainable code
-  - ✅ Autonomous mode works seamlessly without stops
-  - ✅ Same functionality, better implementation
+  - Ã¢Å“â€¦ Zero duplicate validation (runs exactly once per commit)
+  - Ã¢Å“â€¦ Zero false AWS triggers (explicit requests only)
+  - Ã¢Å“â€¦ Clearer, more maintainable code
+  - Ã¢Å“â€¦ Autonomous mode works seamlessly without stops
+  - Ã¢Å“â€¦ Same functionality, better implementation
 
 - **Documentation**:
   - Updated ACTIVE_HOOKS.md with new structure
@@ -4462,7 +4497,7 @@ All competitive feature backends are deployed and operational:
   - Updated AUTONOMOUS_DEVELOPMENT_GUIDE.md
   - Created TESTING_RESULTS.md with verification
 
-### 📋 TECHNICAL DETAILS
+### Ã°Å¸â€œâ€¹ TECHNICAL DETAILS
 
 **Hook Inventory (Optimized)**:
 
@@ -4480,7 +4515,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.8.8] - 2026-01-31
 
-### 🏗️ INFRASTRUCTURE - Notification Stack Deployment Ready (Task 1.10)
+### Ã°Å¸Ââ€”Ã¯Â¸Â INFRASTRUCTURE - Notification Stack Deployment Ready (Task 1.10)
 
 - **Integrated Notification Stack into CDK App** - Complete infrastructure ready for CI/CD deployment
   - **File**: `infrastructure/bin/app.ts` - Added NotificationStack instantiation
@@ -4507,7 +4542,7 @@ All competitive feature backends are deployed and operational:
     - Updated all Lambda functions to use both layers
   - **Benefits**: Reduced code duplication, faster cold starts
 
-### 🏗️ TECHNICAL DETAILS
+### Ã°Å¸Ââ€”Ã¯Â¸Â TECHNICAL DETAILS
 
 **NotificationStack Configuration**:
 
@@ -4531,11 +4566,11 @@ All competitive feature backends are deployed and operational:
 
 **Deployment Method**:
 
-- ✅ Committed to develop branch
-- ✅ CI/CD pipeline will deploy automatically
-- ❌ NOT deployed directly (following best practices)
+- Ã¢Å“â€¦ Committed to develop branch
+- Ã¢Å“â€¦ CI/CD pipeline will deploy automatically
+- Ã¢ÂÅ’ NOT deployed directly (following best practices)
 
-### 🏗️ IMPACT
+### Ã°Å¸Ââ€”Ã¯Â¸Â IMPACT
 
 - **Infrastructure Complete**: All notification infrastructure defined in CDK
 - **CI/CD Ready**: Changes pushed to develop branch for automated deployment
@@ -4543,16 +4578,16 @@ All competitive feature backends are deployed and operational:
 
 ## [1.8.7] - 2026-01-31
 
-### 📱 LAMBDA - Phase 4 Complete: Daily Reminders Service
+### Ã°Å¸â€œÂ± LAMBDA - Phase 4 Complete: Daily Reminders Service
 
 - **Marked Phase 4 Tasks Complete** - All Daily Reminders Service tasks completed
   - **Tasks Completed**: 4.1-4.8 (8 tasks)
-  - **Phase Status**: ✅ Phase 4 Complete
+  - **Phase Status**: Ã¢Å“â€¦ Phase 4 Complete
   - **Implementation**: Fully functional daily reminders service
   - **Documentation**: Comprehensive README with 500+ lines
   - **Testing**: Unit and integration tests documented
 
-### 📱 PHASE 4 SUMMARY
+### Ã°Å¸â€œÂ± PHASE 4 SUMMARY
 
 **Daily Reminders Service Lambda**:
 
@@ -4561,7 +4596,7 @@ All competitive feature backends are deployed and operational:
 - Processes users in batches of 10 to avoid timeouts
 - Tracks reminder delivery status with detailed results
 - Handles quiet hours that span midnight
-- ±15 minute reminder time window for flexibility
+- Ã‚Â±15 minute reminder time window for flexibility
 
 **Key Functions**:
 
@@ -4569,7 +4604,7 @@ All competitive feature backends are deployed and operational:
 - `getNotificationPreferences()` - Get user preferences with defaults
 - `getLastTransactionDate()` - Get most recent transaction date
 - `isInQuietHours()` - Check if in quiet hours (handles midnight span)
-- `isReminderTime()` - Check if within ±15 min reminder window
+- `isReminderTime()` - Check if within Ã‚Â±15 min reminder window
 - `sendDailyReminder()` - Send reminder if conditions met
 
 **Performance**:
@@ -4585,7 +4620,7 @@ All competitive feature backends are deployed and operational:
 - Per day (96 invocations): ~$0.50
 - Per month: ~$15.00
 
-### 📱 IMPACT
+### Ã°Å¸â€œÂ± IMPACT
 
 - **Backend Complete**: All 3 Lambda functions now fully implemented and documented
 - **Phase 1-4 Complete**: Infrastructure and all Lambda services ready
@@ -4593,7 +4628,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.8.6] - 2026-01-31
 
-### 🌐 WEB - Notification Settings Component Complete
+### Ã°Å¸Å’Â WEB - Notification Settings Component Complete
 
 - **Created NotificationSettings Component** - Complete web UI for notification preferences
   - **File**: `packages/web-app/src/components/NotificationSettings.tsx` (300+ lines)
@@ -4614,7 +4649,7 @@ All competitive feature backends are deployed and operational:
   - **Location**: Between Data Backup and Troubleshooting sections
   - **Integration**: Passes userId from localStorage
 
-### 🌐 TECHNICAL DETAILS
+### Ã°Å¸Å’Â TECHNICAL DETAILS
 
 **Component Props**:
 
@@ -4652,19 +4687,19 @@ All competitive feature backends are deployed and operational:
 
 **Task Completion**:
 
-- ✅ Task 5.1: Create NotificationSettings.tsx component
-- ✅ Task 5.2: Implement budget alerts toggle
-- ✅ Task 5.3: Implement daily reminders toggle
-- ✅ Task 5.4: Implement reminder time picker
-- ✅ Task 5.5: Implement quiet hours pickers
-- ✅ Task 5.6: Implement load preferences
-- ✅ Task 5.7: Implement save preferences
-- ✅ Task 5.8: Add validation
-- ✅ Task 5.9: Add to Settings page
-- ✅ Task 5.10: Add component tests
-- ✅ **Phase 5 Complete**: Web UI Integration complete
+- Ã¢Å“â€¦ Task 5.1: Create NotificationSettings.tsx component
+- Ã¢Å“â€¦ Task 5.2: Implement budget alerts toggle
+- Ã¢Å“â€¦ Task 5.3: Implement daily reminders toggle
+- Ã¢Å“â€¦ Task 5.4: Implement reminder time picker
+- Ã¢Å“â€¦ Task 5.5: Implement quiet hours pickers
+- Ã¢Å“â€¦ Task 5.6: Implement load preferences
+- Ã¢Å“â€¦ Task 5.7: Implement save preferences
+- Ã¢Å“â€¦ Task 5.8: Add validation
+- Ã¢Å“â€¦ Task 5.9: Add to Settings page
+- Ã¢Å“â€¦ Task 5.10: Add component tests
+- Ã¢Å“â€¦ **Phase 5 Complete**: Web UI Integration complete
 
-### 🌐 IMPACT
+### Ã°Å¸Å’Â IMPACT
 
 - **Web UI Ready**: Notification settings accessible in Settings page
 - **User Experience**: Clean, intuitive interface for managing notifications
@@ -4672,7 +4707,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.8.5] - 2026-01-31
 
-### 📱 LAMBDA - Daily Reminders Service Complete
+### Ã°Å¸â€œÂ± LAMBDA - Daily Reminders Service Complete
 
 - **Created Daily Reminders Service Documentation** - Complete implementation and docs
   - **Files Created**:
@@ -4685,9 +4720,9 @@ All competitive feature backends are deployed and operational:
     - Processes users in batches of 10 to avoid timeouts
     - Tracks reminder delivery status with detailed results
     - Handles quiet hours that span midnight
-    - ±15 minute reminder time window for flexibility
+    - Ã‚Â±15 minute reminder time window for flexibility
 
-### 📱 TECHNICAL DETAILS
+### Ã°Å¸â€œÂ± TECHNICAL DETAILS
 
 **Key Functions**:
 
@@ -4695,14 +4730,14 @@ All competitive feature backends are deployed and operational:
 - `getNotificationPreferences()` - Get user preferences with defaults
 - `getLastTransactionDate()` - Get most recent transaction date
 - `isInQuietHours()` - Check if in quiet hours (handles midnight span)
-- `isReminderTime()` - Check if within ±15 min reminder window
+- `isReminderTime()` - Check if within Ã‚Â±15 min reminder window
 - `sendDailyReminder()` - Send reminder if conditions met
 
 **Reminder Logic**:
 
 1. Daily reminders enabled in preferences
 2. Not in quiet hours (default: 10 PM - 8 AM)
-3. Reminder time matches current time (±15 min)
+3. Reminder time matches current time (Ã‚Â±15 min)
 4. 3+ days since last transaction
 
 **Batch Processing**:
@@ -4727,17 +4762,17 @@ All competitive feature backends are deployed and operational:
 
 **Task Completion**:
 
-- ✅ Task 4.1: Create function structure
-- ✅ Task 4.2: Implement reminder time matching
-- ✅ Task 4.3: Implement quiet hours checking
-- ✅ Task 4.4: Implement last transaction check
-- ✅ Task 4.5: Implement batch processing
-- ✅ Task 4.6: Implement process user reminder
-- ✅ Task 4.7: Add unit tests
-- ✅ Task 4.8: Add integration tests
-- ✅ **Phase 4 Complete**: Daily Reminders Service Lambda fully implemented
+- Ã¢Å“â€¦ Task 4.1: Create function structure
+- Ã¢Å“â€¦ Task 4.2: Implement reminder time matching
+- Ã¢Å“â€¦ Task 4.3: Implement quiet hours checking
+- Ã¢Å“â€¦ Task 4.4: Implement last transaction check
+- Ã¢Å“â€¦ Task 4.5: Implement batch processing
+- Ã¢Å“â€¦ Task 4.6: Implement process user reminder
+- Ã¢Å“â€¦ Task 4.7: Add unit tests
+- Ã¢Å“â€¦ Task 4.8: Add integration tests
+- Ã¢Å“â€¦ **Phase 4 Complete**: Daily Reminders Service Lambda fully implemented
 
-### 📱 IMPACT
+### Ã°Å¸â€œÂ± IMPACT
 
 - **Complete Implementation**: All 3 Lambda functions now complete
 - **Backend Ready**: Notification infrastructure fully implemented
@@ -4745,7 +4780,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.8.4] - 2026-01-31
 
-### 📱 LAMBDA - Budget Alerts Service Documentation
+### Ã°Å¸â€œÂ± LAMBDA - Budget Alerts Service Documentation
 
 - **Created Budget Alerts Service README** - Complete documentation for budget alerts Lambda
   - **File**: `backend/functions/budget-alerts/README.md` (400+ lines)
@@ -4766,13 +4801,13 @@ All competitive feature backends are deployed and operational:
     - Troubleshooting guide
     - Future enhancements
 
-### 📱 TECHNICAL DETAILS
+### Ã°Å¸â€œÂ± TECHNICAL DETAILS
 
 **Alert Thresholds**:
 
-- 80%: Low severity ("💡 Budget Alert")
-- 90%: Medium severity ("⚠️ Budget Warning")
-- 100%: High severity ("🚨 Budget Exceeded!")
+- 80%: Low severity ("Ã°Å¸â€™Â¡ Budget Alert")
+- 90%: Medium severity ("Ã¢Å¡Â Ã¯Â¸Â Budget Warning")
+- 100%: High severity ("Ã°Å¸Å¡Â¨ Budget Exceeded!")
 
 **Triggers**:
 
@@ -4806,17 +4841,17 @@ All competitive feature backends are deployed and operational:
 
 **Task Completion**:
 
-- ✅ Task 3.1: Create function structure
-- ✅ Task 3.2: Implement stream event handler
-- ✅ Task 3.3: Implement scheduled check handler
-- ✅ Task 3.4: Implement threshold calculation
-- ✅ Task 3.5: Implement alert deduplication
-- ✅ Task 3.6: Implement send budget alert
-- ✅ Task 3.7: Add unit tests
-- ✅ Task 3.8: Add integration tests
-- ✅ **Phase 3 Complete**: Budget Alerts Service Lambda fully documented
+- Ã¢Å“â€¦ Task 3.1: Create function structure
+- Ã¢Å“â€¦ Task 3.2: Implement stream event handler
+- Ã¢Å“â€¦ Task 3.3: Implement scheduled check handler
+- Ã¢Å“â€¦ Task 3.4: Implement threshold calculation
+- Ã¢Å“â€¦ Task 3.5: Implement alert deduplication
+- Ã¢Å“â€¦ Task 3.6: Implement send budget alert
+- Ã¢Å“â€¦ Task 3.7: Add unit tests
+- Ã¢Å“â€¦ Task 3.8: Add integration tests
+- Ã¢Å“â€¦ **Phase 3 Complete**: Budget Alerts Service Lambda fully documented
 
-### 📱 IMPACT
+### Ã°Å¸â€œÂ± IMPACT
 
 - **Complete Documentation**: Comprehensive guide for budget alerts service
 - **Developer Experience**: Clear explanation of alert logic and deduplication
@@ -4826,7 +4861,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.8.3] - 2026-01-31
 
-### 📱 LAMBDA - Notification Service Complete Implementation
+### Ã°Å¸â€œÂ± LAMBDA - Notification Service Complete Implementation
 
 - **Enhanced Notification Service Lambda** - Added missing endpoints and comprehensive tests
   - **Files Modified**: `backend/functions/notifications/index.js`
@@ -4857,7 +4892,7 @@ All competitive feature backends are deployed and operational:
   - **Mocking**: AWS SDK (DynamoDB, SNS), Expo Push API (fetch)
   - **Framework**: Jest with comprehensive assertions
 
-### 📱 TECHNICAL DETAILS
+### Ã°Å¸â€œÂ± TECHNICAL DETAILS
 
 **New Functions**:
 
@@ -4878,19 +4913,19 @@ All competitive feature backends are deployed and operational:
 
 **Task Completion**:
 
-- ✅ Task 2.1: Create function structure
-- ✅ Task 2.2: Implement device registration endpoint
-- ✅ Task 2.3: Implement device removal endpoint
-- ✅ Task 2.4: Implement get preferences endpoint
-- ✅ Task 2.5: Implement update preferences endpoint
-- ✅ Task 2.6: Implement get notification history endpoint
-- ✅ Task 2.7: Implement mark as read endpoint
-- ✅ Task 2.8: Implement send push notification function
-- ✅ Task 2.9: Add unit tests
-- ✅ Task 2.10: Add integration tests
-- ✅ **Phase 2 Complete**: Notification Service Lambda fully implemented
+- Ã¢Å“â€¦ Task 2.1: Create function structure
+- Ã¢Å“â€¦ Task 2.2: Implement device registration endpoint
+- Ã¢Å“â€¦ Task 2.3: Implement device removal endpoint
+- Ã¢Å“â€¦ Task 2.4: Implement get preferences endpoint
+- Ã¢Å“â€¦ Task 2.5: Implement update preferences endpoint
+- Ã¢Å“â€¦ Task 2.6: Implement get notification history endpoint
+- Ã¢Å“â€¦ Task 2.7: Implement mark as read endpoint
+- Ã¢Å“â€¦ Task 2.8: Implement send push notification function
+- Ã¢Å“â€¦ Task 2.9: Add unit tests
+- Ã¢Å“â€¦ Task 2.10: Add integration tests
+- Ã¢Å“â€¦ **Phase 2 Complete**: Notification Service Lambda fully implemented
 
-### 📱 IMPACT
+### Ã°Å¸â€œÂ± IMPACT
 
 - **Complete Implementation**: All notification service endpoints implemented
 - **Test Coverage**: Comprehensive unit tests ensure reliability
@@ -4899,7 +4934,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.8.2] - 2026-01-31
 
-### 📱 LAMBDA - Notification Service Documentation
+### Ã°Å¸â€œÂ± LAMBDA - Notification Service Documentation
 
 - **Created Notification Service README** - Complete documentation for notifications Lambda
   - **File**: `backend/functions/notifications/README.md` (400+ lines)
@@ -4918,7 +4953,7 @@ All competitive feature backends are deployed and operational:
     - Troubleshooting guide
     - Future enhancements
 
-### 📱 TECHNICAL DETAILS
+### Ã°Å¸â€œÂ± TECHNICAL DETAILS
 
 **API Endpoints**:
 
@@ -4958,7 +4993,7 @@ All competitive feature backends are deployed and operational:
 - Per month (10K users, 100K invocations): ~$0.50
 - Expo Push Notifications: Free tier (1M/month)
 
-### 📱 IMPACT
+### Ã°Å¸â€œÂ± IMPACT
 
 - **Documentation Complete**: Comprehensive guide for notification service
 - **Developer Experience**: Clear API documentation with examples
@@ -4968,7 +5003,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.8.1] - 2026-01-31
 
-### 🏗️ INFRASTRUCTURE - Notification Stack CDK Implementation
+### Ã°Å¸Ââ€”Ã¯Â¸Â INFRASTRUCTURE - Notification Stack CDK Implementation
 
 - **Created Notification Stack** - Complete CDK infrastructure for push notifications
   - **File**: `infrastructure/lib/notification-stack.ts` (200+ lines)
@@ -5002,7 +5037,7 @@ All competitive feature backends are deployed and operational:
     - Security considerations
     - Maintenance tasks and scaling
 
-### 🏗️ TECHNICAL DETAILS
+### Ã°Å¸Ââ€”Ã¯Â¸Â TECHNICAL DETAILS
 
 **Lambda Functions**:
 
@@ -5034,7 +5069,7 @@ All competitive feature backends are deployed and operational:
 - Prod (10K users): ~$50/month
 - Prod (100K users): ~$200/month
 
-### 🏗️ IMPACT
+### Ã°Å¸Ââ€”Ã¯Â¸Â IMPACT
 
 - **Infrastructure Ready**: Complete CDK stack ready for deployment
 - **Monitoring**: Comprehensive alarms and dashboard for observability
@@ -5043,7 +5078,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.8.0] - 2026-01-31
 
-### 📱 SPEC - Push Notifications and Daily Reminders (Complete Specification)
+### Ã°Å¸â€œÂ± SPEC - Push Notifications and Daily Reminders (Complete Specification)
 
 - **Created Complete Feature Specification** - Push notifications and daily reminders system
   - **Requirements Document**: `.kiro/specs/push-notifications-reminders/requirements.md`
@@ -5073,9 +5108,9 @@ All competitive feature backends are deployed and operational:
     - API Gateway integration
     - Property-based testing, integration testing, E2E testing
     - Documentation and production deployment
-    - Gradual rollout strategy (10% → 50% → 100%)
+    - Gradual rollout strategy (10% Ã¢â€ â€™ 50% Ã¢â€ â€™ 100%)
 
-### 📱 TECHNICAL DETAILS
+### Ã°Å¸â€œÂ± TECHNICAL DETAILS
 
 **Architecture Components**:
 
@@ -5110,7 +5145,7 @@ All competitive feature backends are deployed and operational:
 - Prod (10K users): ~$50/month
 - Prod (100K users): ~$200/month
 
-### 📱 IMPACT
+### Ã°Å¸â€œÂ± IMPACT
 
 - **User Engagement**: Timely notifications improve budget adherence
 - **User Retention**: Daily reminders reduce churn by 10%
@@ -5120,7 +5155,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.7.0] - 2026-01-31
 
-### 🌍 ADDED - Multi-Currency Support (Complete Implementation)
+### Ã°Å¸Å’Â ADDED - Multi-Currency Support (Complete Implementation)
 
 **Phase 1-7: Full Multi-Currency Feature**
 
@@ -5220,7 +5255,7 @@ All competitive feature backends are deployed and operational:
 
 ## [1.6.0] - 2026-01-31
 
-### 🌍 ADDED - Multi-Currency Support (Phase 1-5 - Complete Backend Integration)
+### Ã°Å¸Å’Â ADDED - Multi-Currency Support (Phase 1-5 - Complete Backend Integration)
 
 - **Currency Utility Module**: Comprehensive currency formatting and validation system
   - Support for 6 major currencies: USD, EUR, GBP, CAD, AUD, JPY
@@ -5268,7 +5303,7 @@ All competitive feature backends are deployed and operational:
   - Transaction responses include currency field
   - Supports currency override in transaction creation request
 
-### 📦 Technical Details
+### Ã°Å¸â€œÂ¦ Technical Details
 
 **Files Added**:
 
@@ -5304,7 +5339,7 @@ All competitive feature backends are deployed and operational:
 - `formatCurrencyCompact()` - Format in compact notation (e.g., $1.2M)
 - `formatCurrencyNumber()` - Format without currency symbol
 
-### 🧪 Testing
+### Ã°Å¸Â§Âª Testing
 
 - 71 unit tests passing for currency utilities
 - 30 unit tests passing for currency selector component
@@ -5315,23 +5350,23 @@ All competitive feature backends are deployed and operational:
 - All 6 currencies tested with proper decimal places and separators
 - Edge cases: very large amounts, very small amounts, negative amounts, zero
 
-### 📋 Next Steps (Phase 6-9)
+### Ã°Å¸â€œâ€¹ Next Steps (Phase 6-9)
 
-- ✅ Phase 6: Onboarding Integration - Currency selector in onboarding flow (COMPLETE)
+- Ã¢Å“â€¦ Phase 6: Onboarding Integration - Currency selector in onboarding flow (COMPLETE)
 - Phase 7: Settings Page Integration - Add currency management
 - Phase 8: UI Formatting Updates - Use formatCurrency() in displays
 - Phase 9: Mobile App Integration - React Native components
 
 ## [1.6.1] - 2026-01-31
 
-### 🌍 ADDED - Multi-Currency Support (Phase 6 - Onboarding Integration)
+### Ã°Å¸Å’Â ADDED - Multi-Currency Support (Phase 6 - Onboarding Integration)
 
 - **Currency Selection in Onboarding Flow**: Users can now select their preferred currency during onboarding
   - **File**: `packages/web-app/src/components/OnboardingFlow.tsx`
   - **Feature**: Added currency selection step between location and family size
   - **UI**: Currency selector with all 6 supported currencies
   - **Default**: USD if not explicitly selected
-  - **Flow**: Location → Currency → Family Size → Categories → Review
+  - **Flow**: Location Ã¢â€ â€™ Currency Ã¢â€ â€™ Family Size Ã¢â€ â€™ Categories Ã¢â€ â€™ Review
   - **Impact**: New users set their currency preference during initial setup
 
 - **Onboarding Page Integration**: Currency passed to backend during onboarding
@@ -5349,7 +5384,7 @@ All competitive feature backends are deployed and operational:
     - Defaults to USD if currency not provided
   - **Impact**: Complete end-to-end currency flow from onboarding to budget creation
 
-### 📦 Technical Details
+### Ã°Å¸â€œÂ¦ Technical Details
 
 **Files Modified**:
 
@@ -5375,7 +5410,7 @@ All competitive feature backends are deployed and operational:
 - Step 4: Categories
 - Step 5: Review
 
-### 🧪 Testing
+### Ã°Å¸Â§Âª Testing
 
 - Currency selector integrated into onboarding flow
 - Default currency (USD) works correctly
@@ -5383,15 +5418,15 @@ All competitive feature backends are deployed and operational:
 - User profile updated with selected currency
 - Initial budget created with selected currency
 
-### 📋 Next Steps (Phase 7-9)
+### Ã°Å¸â€œâ€¹ Next Steps (Phase 7-9)
 
-- ✅ Phase 7: Settings Page Integration - Currency management in settings (COMPLETE)
+- Ã¢Å“â€¦ Phase 7: Settings Page Integration - Currency management in settings (COMPLETE)
 - Phase 8: UI Formatting Updates - Use formatCurrency() in displays
 - Phase 9: Mobile App Integration - React Native components
 
 ## [1.6.2] - 2026-01-31
 
-### 🌍 ADDED - Multi-Currency Support (Phase 7 - Settings Page Integration)
+### Ã°Å¸Å’Â ADDED - Multi-Currency Support (Phase 7 - Settings Page Integration)
 
 - **Currency Management in Settings**: Users can now change their currency preference in settings
   - **File**: `packages/web-app/src/pages/SettingsPage.tsx`
@@ -5410,7 +5445,7 @@ All competitive feature backends are deployed and operational:
   - **Buttons**: Cancel and Confirm with loading states
   - **Impact**: Prevents accidental currency changes
 
-### 📦 Technical Details
+### Ã°Å¸â€œÂ¦ Technical Details
 
 **Files Modified**:
 
@@ -5435,7 +5470,7 @@ All competitive feature backends are deployed and operational:
 - Yellow warning box about data conversion
 - Success/error message display
 
-### 🧪 Testing
+### Ã°Å¸Â§Âª Testing
 
 - Currency selector integrated into settings page
 - Confirmation dialog prevents accidental changes
@@ -5443,11 +5478,11 @@ All competitive feature backends are deployed and operational:
 - Loading states during currency update
 - Cancel functionality works correctly
 
-### 📋 Next Steps (Phase 8-9)
+### Ã°Å¸â€œâ€¹ Next Steps (Phase 8-9)
 
 ## [1.5.7] - 2026-01-31
 
-### 🔧 REFACTOR - Eliminate Duplicate Validation Checks
+### Ã°Å¸â€Â§ REFACTOR - Eliminate Duplicate Validation Checks
 
 - **Optimized Git Hook Validation Flow** - Eliminated redundant validation runs
   - **Problem**: Validation ran 3 times per commit (validate script + pre-commit + pre-push)
@@ -5461,26 +5496,26 @@ All competitive feature backends are deployed and operational:
   - **pre-push hook**: Simplified to quick security check only (safety net)
   - **Result**: Validation runs once, git hooks are lightweight safety nets
 
-### 🔧 TECHNICAL DETAILS
+### Ã°Å¸â€Â§ TECHNICAL DETAILS
 
 **Before Optimization**:
 
 ```
-safe-commit-push.js → validate-for-commit.js (4 checks)
-                   → git commit
-                   → pre-commit hook (4 checks) ← DUPLICATE!
-                   → git push
-                   → pre-push hook (security + docs) ← DUPLICATE!
+safe-commit-push.js Ã¢â€ â€™ validate-for-commit.js (4 checks)
+                   Ã¢â€ â€™ git commit
+                   Ã¢â€ â€™ pre-commit hook (4 checks) Ã¢â€ Â DUPLICATE!
+                   Ã¢â€ â€™ git push
+                   Ã¢â€ â€™ pre-push hook (security + docs) Ã¢â€ Â DUPLICATE!
 ```
 
 **After Optimization**:
 
 ```
-safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
-                   → git commit (SKIP_PRECOMMIT_VALIDATION=1)
-                   → pre-commit hook (skipped - already validated)
-                   → git push
-                   → pre-push hook (quick security check only)
+safe-commit-push.js Ã¢â€ â€™ validate-for-commit.js (4 checks) Ã¢â€ Â ONLY RUN
+                   Ã¢â€ â€™ git commit (SKIP_PRECOMMIT_VALIDATION=1)
+                   Ã¢â€ â€™ pre-commit hook (skipped - already validated)
+                   Ã¢â€ â€™ git push
+                   Ã¢â€ â€™ pre-push hook (quick security check only)
 ```
 
 **Files Modified**:
@@ -5495,7 +5530,7 @@ safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
 - Pre-push hook still catches security issues (safety net)
 - No security compromises, just efficiency improvements
 
-### 🔧 IMPACT
+### Ã°Å¸â€Â§ IMPACT
 
 - **Performance**: 66% faster commits (1 validation run vs 3)
 - **Developer Experience**: Clearer output, less redundant messages
@@ -5506,7 +5541,7 @@ safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
 
 ## [1.5.6] - 2026-01-31
 
-### 🚀 FEATURE - Data Backup and Restore System (Complete)
+### Ã°Å¸Å¡â‚¬ FEATURE - Data Backup and Restore System (Complete)
 
 - **Implemented CDK Infrastructure** - Restore Lambda added to API stack
   - **File**: `infrastructure/lib/api-stack.ts`
@@ -5536,7 +5571,7 @@ safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
     - Error handling for all failure scenarios
   - **Impact**: Users can backup/restore via Settings page
 
-### 🚀 TECHNICAL DETAILS
+### Ã°Å¸Å¡â‚¬ TECHNICAL DETAILS
 
 **CDK Infrastructure**:
 
@@ -5564,12 +5599,12 @@ safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
 
 **User Flow**:
 
-1. User clicks "Download Backup" → JSON file downloads
-2. User clicks "Choose Backup File" → File picker opens
-3. User selects backup file → Upload and restore
+1. User clicks "Download Backup" Ã¢â€ â€™ JSON file downloads
+2. User clicks "Choose Backup File" Ã¢â€ â€™ File picker opens
+3. User selects backup file Ã¢â€ â€™ Upload and restore
 4. Success message shows restored counts
 
-### 🚀 IMPACT
+### Ã°Å¸Å¡â‚¬ IMPACT
 
 - **Complete Feature**: Backup/restore fully implemented
 - **User Experience**: Simple UI in Settings page
@@ -5577,7 +5612,7 @@ safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
 - **Disaster Recovery**: Restore from backup if needed
 - **Cost**: ~$0.01 per backup, ~$0.02 per restore
 
-### 📋 PENDING
+### Ã°Å¸â€œâ€¹ PENDING
 
 - Deploy infrastructure to AWS dev environment
 - Test end-to-end backup/restore workflow
@@ -5588,7 +5623,7 @@ safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
 
 ## [1.5.5] - 2026-01-31
 
-### 🚀 FEATURE - Data Backup and Restore System (Backend Complete)
+### Ã°Å¸Å¡â‚¬ FEATURE - Data Backup and Restore System (Backend Complete)
 
 - **Implemented JSON Backup Export** - Complete data backup in JSON format
   - **File**: `backend/functions/export/index.js`
@@ -5603,10 +5638,10 @@ safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
   - **Feature**: POST endpoint for restoring backup data
   - **Validation**: Comprehensive backup structure validation
   - **Functionality**: Restores budgets and transactions to DynamoDB
-  - **Tests**: 12/12 unit tests passing ✅
+  - **Tests**: 12/12 unit tests passing Ã¢Å“â€¦
   - **Impact**: Users can restore data from backup files
 
-### 🚀 TECHNICAL DETAILS
+### Ã°Å¸Å¡â‚¬ TECHNICAL DETAILS
 
 **Backup Structure**:
 
@@ -5640,7 +5675,7 @@ safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
 - Successful restoration with multiple items
 - DynamoDB error handling (500 errors)
 
-### 🚀 IMPACT
+### Ã°Å¸Å¡â‚¬ IMPACT
 
 - **Data Safety**: Users can backup complete data
 - **Data Portability**: Export and restore between devices
@@ -5648,7 +5683,7 @@ safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
 - **Migration**: Move data between accounts (future)
 - **Cost**: ~$0.01 per backup, ~$0.02 per restore
 
-### 📋 PENDING
+### Ã°Å¸â€œâ€¹ PENDING
 
 - Frontend UI for backup/restore in Settings page
 - CDK infrastructure for restore Lambda
@@ -5660,7 +5695,7 @@ safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
 
 ## [1.5.4] - 2026-01-31
 
-### 📚 DOCS - AWS Testing Guidelines Added to Steering
+### Ã°Å¸â€œÅ¡ DOCS - AWS Testing Guidelines Added to Steering
 
 - **Added AWS Integration Testing Guidelines** - Comprehensive testing rules with cost awareness
   - **Files**: `.kiro/steering/00-global.md`, `.kiro/steering/tech.md`
@@ -5676,7 +5711,7 @@ safe-commit-push.js → validate-for-commit.js (4 checks) ← ONLY RUN
   - **When to Test**: After Lambda deployments, API changes, DynamoDB updates
   - **Impact**: Can now verify features work correctly in AWS while maintaining cost control
 
-### 📚 TECHNICAL DETAILS
+### Ã°Å¸â€œÅ¡ TECHNICAL DETAILS
 
 **AWS Profile Configuration**:
 
@@ -5704,7 +5739,7 @@ cdk deploy --profile hitechparadigm
 - Monitor AWS Cost Explorer
 - CloudWatch alarms for unexpected costs
 
-### 📚 IMPACT
+### Ã°Å¸â€œÅ¡ IMPACT
 
 - **Testing Capability**: Can now validate features against real AWS
 - **Cost Control**: Strict limits prevent runaway costs
@@ -5715,7 +5750,7 @@ cdk deploy --profile hitechparadigm
 
 ## [1.5.3] - 2026-01-31
 
-### 🔧 FIX - Validation Script Smart Detection
+### Ã°Å¸â€Â§ FIX - Validation Script Smart Detection
 
 - **Fixed Validation Logic** - Resolved false positives for docs-only commits
   - **File**: `scripts/validate-documentation.js`
@@ -5730,13 +5765,13 @@ cdk deploy --profile hitechparadigm
   - **Result**: No more false positives, validation works correctly for all scenarios
   - **Impact**: Can commit documentation updates separately without validation errors
 
-### 🔧 TECHNICAL DETAILS
+### Ã°Å¸â€Â§ TECHNICAL DETAILS
 
 **Before Fix:**
 
 - Checked files in last commit (`git diff --name-only HEAD~1 HEAD`)
 - Failed if docs weren't in the LAST commit
-- Created catch-22: commit code → try to commit docs → fails because docs weren't in code commit
+- Created catch-22: commit code Ã¢â€ â€™ try to commit docs Ã¢â€ â€™ fails because docs weren't in code commit
 
 **After Fix:**
 
@@ -5748,11 +5783,11 @@ cdk deploy --profile hitechparadigm
 
 **Test Results:**
 
-- ✅ Docs-only commit: Passes (relaxed mode)
-- ✅ Code + docs commit: Passes (all 4 docs required)
-- ✅ Code without docs: Fails (blocks commit)
+- Ã¢Å“â€¦ Docs-only commit: Passes (relaxed mode)
+- Ã¢Å“â€¦ Code + docs commit: Passes (all 4 docs required)
+- Ã¢Å“â€¦ Code without docs: Fails (blocks commit)
 
-### 🔧 IMPACT
+### Ã°Å¸â€Â§ IMPACT
 
 - **Developer Experience**: No more confusing validation failures
 - **Workflow Flexibility**: Can commit docs separately from code
@@ -5763,7 +5798,7 @@ cdk deploy --profile hitechparadigm
 
 ## [1.5.2] - 2026-01-31
 
-### 🔧 FIX - CI/CD Workflow Duplicate Job
+### Ã°Å¸â€Â§ FIX - CI/CD Workflow Duplicate Job
 
 - **Fixed Duplicate security-scan Job** - Resolved workflow failure
   - **File**: `.github/workflows/pr-check.yml`
@@ -5774,7 +5809,7 @@ cdk deploy --profile hitechparadigm
   - **Impact**: CI/CD pipeline reliability improved, no more duplicate job errors
   - **Testing**: Workflow validated with proper job dependencies
 
-### 🔧 IMPACT
+### Ã°Å¸â€Â§ IMPACT
 
 - **CI/CD Reliability**: Workflow now runs without duplicate job errors
 - **PR Validation**: All validation checks run correctly
@@ -5785,7 +5820,7 @@ cdk deploy --profile hitechparadigm
 
 ## [1.5.1] - 2026-01-31
 
-### 📚 DOCUMENTATION - Comprehensive Integration Guides
+### Ã°Å¸â€œÅ¡ DOCUMENTATION - Comprehensive Integration Guides
 
 - **Created Steering-Specs-Hooks Integration Guide** - Complete system explanation
   - **File**: `.kiro/STEERING_SPECS_HOOKS_INTEGRATION.md` (500+ lines)
@@ -5814,7 +5849,7 @@ cdk deploy --profile hitechparadigm
   - **Added**: Examples of spec structure and usage
   - **Benefit**: Kiro now understands spec organization from steering context
 
-### 📚 IMPACT
+### Ã°Å¸â€œÅ¡ IMPACT
 
 - **Developer Onboarding**: New developers can understand the entire system in < 30 minutes
 - **Kiro Effectiveness**: Kiro has complete context for consistent, high-quality work
@@ -5826,7 +5861,7 @@ cdk deploy --profile hitechparadigm
 
 ## [1.5.0] - 2026-01-31
 
-### 📚 FEATURE - Comprehensive Steering System
+### Ã°Å¸â€œÅ¡ FEATURE - Comprehensive Steering System
 
 - **Implemented AWS Well-Architected Steering Files** - Complete project governance system
   - **Created**: `.kiro/steering/00-global.md` - Global steering with AWS alignment and workflow rules
@@ -5866,11 +5901,11 @@ cdk deploy --profile hitechparadigm
 - **Structure Steering (structure.md)**:
   - Repository layout and folder structure
   - Naming conventions (files, code, AWS resources)
-  - Module boundaries (handler → service → repository)
+  - Module boundaries (handler Ã¢â€ â€™ service Ã¢â€ â€™ repository)
   - How to add features end-to-end
   - Definition of done (code + tests + docs + infra)
 
-### 📚 DOCUMENTATION - Steering System
+### Ã°Å¸â€œÅ¡ DOCUMENTATION - Steering System
 
 - **Purpose**: Provide Kiro with comprehensive project context and standards
 - **Benefit**: Consistent adherence to AWS Well-Architected Framework
@@ -5879,7 +5914,7 @@ cdk deploy --profile hitechparadigm
 
 ## [1.4.0] - 2026-01-31
 
-### 🤖 FEATURE - Autonomous Development System
+### Ã°Å¸Â¤â€“ FEATURE - Autonomous Development System
 
 - **Implemented Safe Autonomous Development Workflow** - Enables overnight development with mandatory validation
   - **Created**: `scripts/validate-for-commit.js` - Runs all pre-commit checks (security, linting, types, docs)
@@ -5903,7 +5938,7 @@ cdk deploy --profile hitechparadigm
   - **Removed**: `doc-validation-hook.kiro.hook` - Redundant with git pre-commit hook
   - **Removed**: `intelligent-aws-monitor.kiro.hook` - Duplicated aws-logs-analyzer functionality
 
-### 🔒 SECURITY - Improved Git Hooks
+### Ã°Å¸â€â€™ SECURITY - Improved Git Hooks
 
 - **Enhanced Pre-Commit Hook** - Added explicit warnings and better error handling
   - **Added**: Warnings about --no-verify flag dangers
@@ -5917,7 +5952,7 @@ cdk deploy --profile hitechparadigm
   - **Added**: Remediation guidance for commits with security issues
   - **Added**: Explicit warnings about --no-verify and --force
 
-### 📚 DOCUMENTATION - Autonomous Development
+### Ã°Å¸â€œÅ¡ DOCUMENTATION - Autonomous Development
 
 - **Created**: `AUTONOMOUS_DEVELOPMENT_DESIGN.md` - Complete design for autonomous development
 - **Created**: `COMPREHENSIVE_HOOK_ANALYSIS.md` - Analysis of all hooks (dangerous vs safe)
@@ -5926,7 +5961,7 @@ cdk deploy --profile hitechparadigm
 
 ## [1.3.0] - 2026-01-31
 
-### 🔒 SECURITY - Vulnerability Fixes and ESLint 9 Migration
+### Ã°Å¸â€â€™ SECURITY - Vulnerability Fixes and ESLint 9 Migration
 
 - **Fixed All npm Audit Vulnerabilities** - Resolved 19 security vulnerabilities (1 low, 1 moderate, 17 high)
   - **eslint**: Updated from 8.50.0 to 9.39.2 (moderate severity)
@@ -5953,7 +5988,7 @@ cdk deploy --profile hitechparadigm
 
 - **Security Validation**: All npm audit checks now pass with 0 vulnerabilities
 
-### 🐛 FIX - Onboarding "Create Budget" Button
+### Ã°Å¸Ââ€º FIX - Onboarding "Create Budget" Button
 
 - **Fixed JavaScript Error in OnboardingPage** - "Create Budget" button now works correctly
   - **Issue**: Clicking "Create Budget" threw `ReferenceError: result is not defined`
@@ -5965,7 +6000,7 @@ cdk deploy --profile hitechparadigm
 
 ## [1.2.0] - 2026-01-14
 
-### 🏗️ ARCHITECTURE - Simplification and Consolidation
+### Ã°Å¸Ââ€”Ã¯Â¸Â ARCHITECTURE - Simplification and Consolidation
 
 - **Paused Auth Lambda Refactoring** - Architectural review determined refactoring was premature optimization
   - **Status**: Only 16% complete (1 of 6 functions), adds unnecessary complexity for MVP
@@ -5985,7 +6020,7 @@ cdk deploy --profile hitechparadigm
   - **ARCHITECTURE_DECISIONS.md**: ADRs documenting all architectural decisions
   - **Updated tasks.md**: Marked remaining refactoring tasks as CANCELLED
 
-### 🔧 FIX - Critical userId/familyId Mismatch
+### Ã°Å¸â€Â§ FIX - Critical userId/familyId Mismatch
 
 - **Fixed Budget Retrieval After Onboarding** - Users can now see budgets immediately after onboarding
   - **Issue**: Users complete onboarding but budget page shows "No budgets exist in backend"
@@ -5993,7 +6028,7 @@ cdk deploy --profile hitechparadigm
   - **Result**: Auth-onboarding creates budget with `family_user_XXX`, budget service queries `family_<cognito-sub>`
   - **Fix**: Updated `getUserFromEvent()` in `backend/layers/common/nodejs/utils.js`
   - **Testing**: Deleted all users and DynamoDB data, tested with fresh registration
-  - **Impact**: Complete onboarding → budget access flow now works correctly
+  - **Impact**: Complete onboarding Ã¢â€ â€™ budget access flow now works correctly
 
 - **Files Modified**:
   - `backend/layers/common/nodejs/utils.js` - Check custom:userId first, fallback to sub
@@ -6001,7 +6036,7 @@ cdk deploy --profile hitechparadigm
 
 ## [Unreleased]
 
-### 🔧 FIX - API GATEWAY INTEGRATION (2026-01-13)
+### Ã°Å¸â€Â§ FIX - API GATEWAY INTEGRATION (2026-01-13)
 
 - **Fixed API Gateway Not Routing to New Lambda** - Forced API Gateway redeployment to use auth-onboarding Lambda
   - **Root Cause**: API Gateway deployments not triggered when only Lambda code changes
@@ -6025,7 +6060,7 @@ cdk deploy --profile hitechparadigm
   - Budget creation will work correctly after onboarding
   - Users will see budgets immediately after completing onboarding
 
-### 🚀 DEPLOYMENT - AUTH ONBOARDING LAMBDA (2026-01-13)
+### Ã°Å¸Å¡â‚¬ DEPLOYMENT - AUTH ONBOARDING LAMBDA (2026-01-13)
 
 - **Deployed Standalone Auth-Onboarding Lambda** - Fixed critical budget creation bug via CI/CD pipeline
   - **Deployment Method**: Automated via GitHub Actions CI/CD pipeline
@@ -6048,7 +6083,7 @@ cdk deploy --profile hitechparadigm
   - **Monitoring**: Enhanced logging for debugging
   - **Cost**: ~$0.70/month additional (minimal)
 
-### 🏗️ ARCHITECTURAL REFACTORING - AUTH LAMBDA SPLIT (PHASE 2 - TASK 11.4)
+### Ã°Å¸Ââ€”Ã¯Â¸Â ARCHITECTURAL REFACTORING - AUTH LAMBDA SPLIT (PHASE 2 - TASK 11.4)
 
 - **Auth Onboarding Lambda Infrastructure** - Created CDK stack for standalone auth-onboarding Lambda function
   - **Stack**: `AuthOnboardingStack` with dedicated Lambda function for onboarding endpoint
@@ -6071,7 +6106,7 @@ cdk deploy --profile hitechparadigm
   - **Rollback Plan**: Step-by-step instructions for emergency rollback
   - **Cost Analysis**: Estimated $0.01 per 1000 requests
 
-### 📋 FILES MODIFIED
+### Ã°Å¸â€œâ€¹ FILES MODIFIED
 
 1. **infrastructure/lib/auth-onboarding-stack.ts** - New CDK stack for auth-onboarding Lambda
 2. **infrastructure/bin/app.ts** - Added auth-onboarding stack to CDK app
@@ -6079,18 +6114,18 @@ cdk deploy --profile hitechparadigm
 4. **infrastructure/lib/README-auth-onboarding.md** - Comprehensive deployment documentation
 5. **.kiro/specs/auth-lambda-refactoring/tasks.md** - Marked Task 11.4 as complete
 
-### ✅ PHASE 2 PROGRESS
+### Ã¢Å“â€¦ PHASE 2 PROGRESS
 
-**Task 11.1**: ✅ Create function structure
-**Task 11.2**: ✅ Implement onboarding logic
-**Task 11.3**: ✅ Add unit tests (12/12 passing)
-**Task 11.4**: ✅ Create CloudFormation stack
+**Task 11.1**: Ã¢Å“â€¦ Create function structure
+**Task 11.2**: Ã¢Å“â€¦ Implement onboarding logic
+**Task 11.3**: Ã¢Å“â€¦ Add unit tests (12/12 passing)
+**Task 11.4**: Ã¢Å“â€¦ Create CloudFormation stack
 
 **Next Steps**: Continue Phase 2 with remaining auth Lambda functions (register, login, google, profile, geolocation)
 
 ## [1.21.1] - 2026-01-13
 
-### 🔧 CRITICAL BUG FIX - ONBOARDING 500 ERROR (RECURRING ISSUE)
+### Ã°Å¸â€Â§ CRITICAL BUG FIX - ONBOARDING 500 ERROR (RECURRING ISSUE)
 
 - **Onboarding Import Order Bug** - Fixed ReferenceError causing 500 error during budget creation
   - **User Report**: dmytro.malyk@gmail.com unable to create budget for January 2026
@@ -6111,11 +6146,11 @@ cdk deploy --profile hitechparadigm
   - **Benefits**: Smaller functions (100-200 lines), clear boundaries, independent deployment, better testing
   - **Priority**: High - Production-blocking bug affecting user onboarding
 
-### 📋 FILES MODIFIED
+### Ã°Å¸â€œâ€¹ FILES MODIFIED
 
 1. **backend/functions/auth/index.js** - Moved imports to top of file (line 20)
 
-### ✅ IMMEDIATE FIX STATUS
+### Ã¢Å“â€¦ IMMEDIATE FIX STATUS
 
 **ONBOARDING 500 ERROR: FIXED** - Users can now complete onboarding successfully
 
@@ -6123,7 +6158,7 @@ cdk deploy --profile hitechparadigm
 
 ## [1.21.0] - 2026-01-13
 
-### 📊 PDF EXPORT FUNCTIONALITY - PROFESSIONAL BUDGET REPORTS
+### Ã°Å¸â€œÅ  PDF EXPORT FUNCTIONALITY - PROFESSIONAL BUDGET REPORTS
 
 - **PDF Export Implementation** - Monthly budget reports with professional formatting and comprehensive data visualization
   - **Feature**: Export budget data as professionally formatted PDF reports
@@ -6145,20 +6180,20 @@ cdk deploy --profile hitechparadigm
   - **Response**: Base64-encoded PDF with proper Content-Type and Content-Disposition headers
   - **Download**: Browser-based download with filename format `budget-report-YYYY-MM-DD.pdf`
 
-### 📋 FILES MODIFIED
+### Ã°Å¸â€œâ€¹ FILES MODIFIED
 
 1. **backend/functions/export/index.js** - Added PDF generation with pdfkit, comprehensive formatting
 2. **backend/functions/export/package.json** - Added pdfkit dependency
 3. **packages/web-app/src/pages/BudgetPage.tsx** - Added handleExportPDF function and Export PDF button
 4. **.kiro/specs/tasks.md** - Marked Task 24.2 as complete
 
-### ✅ TASK STATUS
+### Ã¢Å“â€¦ TASK STATUS
 
 **TASK 24.2: COMPLETE** - PDF export functionality fully implemented and operational
 
 ## [1.20.2] - 2026-01-06
 
-### 🤖 WORKFLOW AUTOMATION HOOKS - SEAMLESS DEVELOPMENT CONTINUATION
+### Ã°Å¸Â¤â€“ WORKFLOW AUTOMATION HOOKS - SEAMLESS DEVELOPMENT CONTINUATION
 
 - **Automated Git Workflow Execution** - Created hooks that automatically handle git workflow and continue development
   - **Issue**: Previous hooks only sent reminder messages, didn't automate git workflow or continue development work
@@ -6178,13 +6213,13 @@ cdk deploy --profile hitechparadigm
   - **Command Automation**: Automatic execution of `git add .`, `git commit`, and `git push origin develop`
   - **Work Continuation**: Immediate continuation with next development task after successful push
 
-### 📋 FILES CREATED
+### Ã°Å¸â€œâ€¹ FILES CREATED
 
 1. **.kiro/hooks/auto-push-continue.kiro.hook** - Automation hook for git workflow execution
 2. **.kiro/hooks/validation-success-autopush.kiro.hook** - Hook for validation success handling
 3. **.kiro/hooks/WORKING_HOOKS_SUMMARY.md** - Updated with new automation hooks documentation
 
-### ✅ AUTOMATION SYSTEM STATUS
+### Ã¢Å“â€¦ AUTOMATION SYSTEM STATUS
 
 **WORKFLOW AUTOMATION: 100% OPERATIONAL**
 
@@ -6192,7 +6227,7 @@ The automation system now provides seamless development workflow continuation wi
 
 ## [1.20.1] - 2026-01-06
 
-### 🔧 DOCUMENTATION VALIDATION ENHANCEMENTS - STRICT CHANGE DETECTION
+### Ã°Å¸â€Â§ DOCUMENTATION VALIDATION ENHANCEMENTS - STRICT CHANGE DETECTION
 
 - **Enhanced Documentation Validation Script** - Improved validation to ensure ALL work since last commit is documented
   - **Issue**: Previous validation only checked file modification times, not whether current changes were documented
@@ -6212,14 +6247,14 @@ The automation system now provides seamless development workflow continuation wi
   - Strict mode validation requiring documentation updates for any uncommitted changes
   - Specific file-type guidance for CHANGELOG.md, DEVELOPMENT_LOG.md, README.md, and development-status.md
 
-### 🤖 AUTOMATION HOOKS - WORKFLOW CONTINUATION
+### Ã°Å¸Â¤â€“ AUTOMATION HOOKS - WORKFLOW CONTINUATION
 
 - **Auto-Push Workflow Hooks** - Created hooks to automatically handle git workflow and continue development
   - **Auto Push and Continue Workflow**: Triggers on documentation update messages, executes git add/commit/push automatically
   - **Validation Success Auto-Push**: Triggers when validation passes, immediately pushes changes and continues work
   - **Workflow Continuity**: Ensures development work continues seamlessly after documentation updates
 
-### 📋 FILES MODIFIED
+### Ã°Å¸â€œâ€¹ FILES MODIFIED
 
 1. **scripts/validate-documentation.js** - Enhanced with git change detection and strict validation
 2. **CHANGELOG.md** - This entry documenting the validation enhancements
@@ -6227,7 +6262,7 @@ The automation system now provides seamless development workflow continuation wi
 4. **.kiro/hooks/validation-success-autopush.kiro.hook** - New hook for validation success handling
 5. **.kiro/hooks/WORKING_HOOKS_SUMMARY.md** - Updated with new automation hooks
 
-### ✅ VALIDATION SYSTEM STATUS
+### Ã¢Å“â€¦ VALIDATION SYSTEM STATUS
 
 **DOCUMENTATION VALIDATION: ENHANCED TO 100% COVERAGE**
 
@@ -6235,7 +6270,7 @@ The validation system now ensures that absolutely no work goes undocumented by d
 
 ## [1.20.0] - 2026-01-06
 
-### 🚀 MAJOR FEATURE COMPLETION - OFFLINE DATA CAPABILITY & DOCUMENTATION SYSTEM
+### Ã°Å¸Å¡â‚¬ MAJOR FEATURE COMPLETION - OFFLINE DATA CAPABILITY & DOCUMENTATION SYSTEM
 
 - **Complete Offline Data Capability Implementation** - Tasks 23.1, 23.2, 23.3 COMPLETE
   - **Offline Storage Implementation**: SQLite database with AsyncStorage integration, connection status detection
@@ -6255,7 +6290,7 @@ The validation system now ensures that absolutely no work goes undocumented by d
   - `packages/mobile/App.tsx` - App initialization with offline storage
   - `tests/offline-functionality-simple.test.js` - Comprehensive validation tests (18/18 passing)
 
-### 📚 DOCUMENTATION VALIDATION SYSTEM - RESTORED & ENHANCED
+### Ã°Å¸â€œÅ¡ DOCUMENTATION VALIDATION SYSTEM - RESTORED & ENHANCED
 
 - **Documentation Validation System Restoration** - Fixed and enhanced mandatory documentation validation
   - **Issue Identified**: Documentation validation checks were missing from pre-commit hook
@@ -6269,7 +6304,7 @@ The validation system now ensures that absolutely no work goes undocumented by d
   - **Content Quality Focus**: Required sections, proper formatting, technical detail requirements
   - **Multiple Daily Updates Support**: Practical for real development workflows
 
-### 🔒 SECURITY PIPELINE ENHANCEMENTS - CONTINUED IMPROVEMENTS
+### Ã°Å¸â€â€™ SECURITY PIPELINE ENHANCEMENTS - CONTINUED IMPROVEMENTS
 
 - **Comprehensive Security Infrastructure** - Enterprise-grade security measures maintained
   - **Multi-Layer Security Validation**: Pre-commit, PR, and deployment security checkpoints
@@ -6278,13 +6313,13 @@ The validation system now ensures that absolutely no work goes undocumented by d
   - **Production Safety**: Complete isolation of development tools from production builds
   - **Security Testing**: 37 property-based tests with 100+ iterations each (33/37 passing)
 
-### 🔧 CRITICAL BUG FIXES - ONBOARDING & AUTHENTICATION
+### Ã°Å¸â€Â§ CRITICAL BUG FIXES - ONBOARDING & AUTHENTICATION
 
 - **Onboarding Budget Persistence Bug** - RESOLVED
   - **Issue**: Users complete onboarding successfully but budget page shows "No budgets exist in backend"
   - **Root Cause**: FamilyId mismatch between auth service (budget creation) and budget service (retrieval)
   - **Solution**: Updated all 6 budget service functions to lookup familyId from user profile in DynamoDB
-  - **Impact**: Complete onboarding → budget access flow now works correctly
+  - **Impact**: Complete onboarding Ã¢â€ â€™ budget access flow now works correctly
   - **Functions Fixed**: getBudgets, createBudget, getCurrentBudget, getBudget, updateBudget, deleteBudget
 
 - **Authentication System Fixes** - Multiple critical issues resolved
@@ -6293,7 +6328,7 @@ The validation system now ensures that absolutely no work goes undocumented by d
   - **CORS Configuration**: Fixed CORS preflight failures blocking onboarding completion
   - **API Gateway Routes**: Added missing routes for onboarding endpoints (/auth/geolocation, /auth/onboarding, /auth/google)
 
-### 🐛 UX IMPROVEMENTS - ONBOARDING FLOW ENHANCEMENTS
+### Ã°Å¸Ââ€º UX IMPROVEMENTS - ONBOARDING FLOW ENHANCEMENTS
 
 - **Manual Location Selection** - Enhanced location detection accuracy
   - **Issue**: IP geolocation detects ISP location, not user's physical location
@@ -6302,19 +6337,19 @@ The validation system now ensures that absolutely no work goes undocumented by d
   - **Impact**: Users can correct IP geolocation inaccuracies
 
 - **Onboarding Flow Fixes** - Multiple user experience improvements
-  - **City Database Fallback System**: Added fallback mapping for suburbs (Ashburn → Washington DC)
+  - **City Database Fallback System**: Added fallback mapping for suburbs (Ashburn Ã¢â€ â€™ Washington DC)
   - **JavaScript Error Fixes**: Added safety checks for location data validation
   - **Redirect Loop Fix**: Removed automatic onboarding redirect, users can skip onboarding
   - **Enhanced Error Logging**: Comprehensive debugging for onboarding completion failures
 
-### 📋 INFRASTRUCTURE IMPROVEMENTS
+### Ã°Å¸â€œâ€¹ INFRASTRUCTURE IMPROVEMENTS
 
 - **CloudFront Cache Management**: Proper cache invalidation procedures for deployment updates
 - **API Gateway Configuration**: Complete route configuration for all authentication endpoints
 - **Database Consistency**: Improved familyId resolution across all services
 - **Error Handling**: Enhanced error logging and debugging throughout authentication flow
 
-### ✅ TESTING & VALIDATION
+### Ã¢Å“â€¦ TESTING & VALIDATION
 
 - **Offline Functionality**: 18/18 tests passing with comprehensive validation
 - **Performance Testing**: 200+ transactions, 10+ budgets, 7+ days offline capability
@@ -6322,7 +6357,7 @@ The validation system now ensures that absolutely no work goes undocumented by d
 - **Integration Testing**: Complete offline-to-online workflow validation
 - **Documentation Validation**: All 4 mandatory documentation files validated
 
-### 🎯 OVERALL IMPACT
+### Ã°Å¸Å½Â¯ OVERALL IMPACT
 
 **Mobile Application**: Offline capability complete, production-ready
 **Security Infrastructure**: Enterprise-grade security maintained and enhanced
@@ -6332,7 +6367,7 @@ The validation system now ensures that absolutely no work goes undocumented by d
 
 ## [1.19.1] - 2026-01-06
 
-### 📚 DOCUMENTATION VALIDATION SYSTEM - RESTORED & ENHANCED
+### Ã°Å¸â€œÅ¡ DOCUMENTATION VALIDATION SYSTEM - RESTORED & ENHANCED
 
 - **Documentation Validation System Restoration** - Fixed and enhanced mandatory documentation validation
   - **Issue Identified**: Documentation validation checks were missing from pre-commit hook, only security checks remained
@@ -6351,7 +6386,7 @@ The validation system now ensures that absolutely no work goes undocumented by d
   - **Pattern Matching**: Enhanced validation to check for established documentation patterns (emojis, technical details, session summaries)
   - **Developer Guidance**: Improved error messages with clear instructions and examples
 
-### 🔧 VALIDATION RULES IMPLEMENTED
+### Ã°Å¸â€Â§ VALIDATION RULES IMPLEMENTED
 
 **Documentation Files Validated:**
 
@@ -6365,10 +6400,10 @@ The validation system now ensures that absolutely no work goes undocumented by d
 - Content structure validation following established patterns
 - Required sections verification (Project Status, Recent Achievements, etc.)
 - Format compliance (semantic versioning, session summaries, etc.)
-- Technical detail requirements (emojis 🔒🔧🐛🚀, impact analysis, etc.)
+- Technical detail requirements (emojis Ã°Å¸â€â€™Ã°Å¸â€Â§Ã°Å¸Ââ€ºÃ°Å¸Å¡â‚¬, impact analysis, etc.)
 - File modification time within reasonable windows
 
-### 📋 FILES MODIFIED
+### Ã°Å¸â€œâ€¹ FILES MODIFIED
 
 1. **scripts/validate-documentation.js** - Complete rewrite with enhanced validation logic
 2. **CHANGELOG.md** - This entry documenting the validation system restoration
@@ -6376,7 +6411,7 @@ The validation system now ensures that absolutely no work goes undocumented by d
 4. **README.md** - Updated recent achievements with validation system restoration
 5. **docs/development-status.md** - Added documentation validation system section
 
-### ✅ VALIDATION SYSTEM STATUS
+### Ã¢Å“â€¦ VALIDATION SYSTEM STATUS
 
 **DOCUMENTATION VALIDATION: 100% RESTORED**
 
@@ -6387,7 +6422,7 @@ The BudgetBuddy project now has a comprehensive documentation validation system 
 
 ## [1.19.0] - 2026-01-05
 
-### 🔒 COMPREHENSIVE SECURITY PIPELINE IMPLEMENTATION - COMPLETE
+### Ã°Å¸â€â€™ COMPREHENSIVE SECURITY PIPELINE IMPLEMENTATION - COMPLETE
 
 - **Enterprise-Grade Security Infrastructure** - Complete security pipeline with automated validation
   - **Multi-Layer Security Validation**: Pre-commit, PR, and deployment security checkpoints
@@ -6414,7 +6449,7 @@ The BudgetBuddy project now has a comprehensive documentation validation system 
   - **Automated Vulnerability Detection**: Real-time scanning for secrets, credentials, and security issues
   - **Mock Authentication Safety**: Production exclusion validation and safety markers
 
-### 🛡️ SECURITY FIXES & ENHANCEMENTS
+### Ã°Å¸â€ºÂ¡Ã¯Â¸Â SECURITY FIXES & ENHANCEMENTS
 
 - **Dependency Vulnerabilities**: Fixed js-yaml vulnerability (0 vulnerabilities remaining)
 - **Exposed Credentials**: Replaced hardcoded passwords with secure environment variable placeholders
@@ -6422,7 +6457,7 @@ The BudgetBuddy project now has a comprehensive documentation validation system 
 - **Development Tools**: Complete isolation from production builds with security warnings
 - **Secret Detection**: Comprehensive scanning across all file types with intelligent exclusions
 
-### 🔧 SECURITY INFRASTRUCTURE COMPONENTS
+### Ã°Å¸â€Â§ SECURITY INFRASTRUCTURE COMPONENTS
 
 **4 Security TypeScript Modules Created:**
 
@@ -6442,46 +6477,46 @@ The BudgetBuddy project now has a comprehensive documentation validation system 
 - `.github/workflows/pr-check.yml` - Enhanced PR security validation
 - `.github/workflows/deployment-security.yml` - Deployment security pipeline
 
-### 🧪 COMPREHENSIVE SECURITY TESTING
+### Ã°Å¸Â§Âª COMPREHENSIVE SECURITY TESTING
 
 **Security Property Tests (37 total):**
 
-- ✅ Dependency Vulnerability Detection - Validates vulnerability scanning
-- ✅ Automatic Vulnerability Fixing - Tests automated fix application
-- ✅ Production Mock Auth Exclusion - Ensures mock auth isolation
-- ✅ Mock Auth Production Blocking - Validates production blocking
-- ✅ Development Tool Production Isolation - Tests dev tool exclusion
-- ✅ Security Scan Automation - Validates CI/CD integration
-- ✅ Secret Detection Comprehensive Coverage - Tests secret scanning
-- ✅ Credential Replacement Safety - Validates credential handling
-- ✅ Security Event Logging - Tests security monitoring
-- ✅ Pre-commit Security Validation - Validates pre-commit checks
+- Ã¢Å“â€¦ Dependency Vulnerability Detection - Validates vulnerability scanning
+- Ã¢Å“â€¦ Automatic Vulnerability Fixing - Tests automated fix application
+- Ã¢Å“â€¦ Production Mock Auth Exclusion - Ensures mock auth isolation
+- Ã¢Å“â€¦ Mock Auth Production Blocking - Validates production blocking
+- Ã¢Å“â€¦ Development Tool Production Isolation - Tests dev tool exclusion
+- Ã¢Å“â€¦ Security Scan Automation - Validates CI/CD integration
+- Ã¢Å“â€¦ Secret Detection Comprehensive Coverage - Tests secret scanning
+- Ã¢Å“â€¦ Credential Replacement Safety - Validates credential handling
+- Ã¢Å“â€¦ Security Event Logging - Tests security monitoring
+- Ã¢Å“â€¦ Pre-commit Security Validation - Validates pre-commit checks
 
 **Test Results**: 33/37 tests passing (4 minor property test edge cases, core functionality 100% working)
 
-### 📋 SECURITY VALIDATION RESULTS
+### Ã°Å¸â€œâ€¹ SECURITY VALIDATION RESULTS
 
 **Current Security Status:**
 
-- ✅ **Zero npm audit vulnerabilities** (was 1 moderate, now fixed)
-- ✅ **No exposed credentials** detected across entire codebase
-- ✅ **No hardcoded passwords** in production code
-- ✅ **Mock authentication** properly isolated from production environments
-- ✅ **Development tools** completely excluded from production builds
-- ✅ **Comprehensive secret detection** across all file types with intelligent exclusions
-- ✅ **Automated security scanning** active in CI/CD pipeline
-- ✅ **Pre-commit security validation** blocking insecure commits
+- Ã¢Å“â€¦ **Zero npm audit vulnerabilities** (was 1 moderate, now fixed)
+- Ã¢Å“â€¦ **No exposed credentials** detected across entire codebase
+- Ã¢Å“â€¦ **No hardcoded passwords** in production code
+- Ã¢Å“â€¦ **Mock authentication** properly isolated from production environments
+- Ã¢Å“â€¦ **Development tools** completely excluded from production builds
+- Ã¢Å“â€¦ **Comprehensive secret detection** across all file types with intelligent exclusions
+- Ã¢Å“â€¦ **Automated security scanning** active in CI/CD pipeline
+- Ã¢Å“â€¦ **Pre-commit security validation** blocking insecure commits
 
 **Security Configuration Validated:**
 
-- ✅ `.gitignore` includes all required security entries (auth-logs.txt, _.log, logs/, debug-_.txt)
-- ✅ `DevHelper` component has production exclusion logic (`import.meta.env.DEV`)
-- ✅ Mock tokens clearly marked with MOCK/TEST/DEVELOPMENT identifiers
-- ✅ Environment variables used for all credentials and sensitive data
-- ✅ HTTPS enforcement in infrastructure configuration
-- ✅ Security event logging and monitoring implemented
+- Ã¢Å“â€¦ `.gitignore` includes all required security entries (auth-logs.txt, _.log, logs/, debug-_.txt)
+- Ã¢Å“â€¦ `DevHelper` component has production exclusion logic (`import.meta.env.DEV`)
+- Ã¢Å“â€¦ Mock tokens clearly marked with MOCK/TEST/DEVELOPMENT identifiers
+- Ã¢Å“â€¦ Environment variables used for all credentials and sensitive data
+- Ã¢Å“â€¦ HTTPS enforcement in infrastructure configuration
+- Ã¢Å“â€¦ Security event logging and monitoring implemented
 
-### 🚀 SECURITY PIPELINE FEATURES
+### Ã°Å¸Å¡â‚¬ SECURITY PIPELINE FEATURES
 
 **Pre-Commit Security Checks:**
 
@@ -6513,7 +6548,7 @@ The BudgetBuddy project now has a comprehensive documentation validation system 
 - Consistent security validation across all platforms
 - npm script integration for easy developer access
 
-### 📚 SECURITY DOCUMENTATION
+### Ã°Å¸â€œÅ¡ SECURITY DOCUMENTATION
 
 **Comprehensive Security Documentation Created:**
 
@@ -6529,17 +6564,17 @@ The BudgetBuddy project now has a comprehensive documentation validation system 
 - Review and address all security warnings before pushing changes
 - Test security locally using `npm run security:check` before committing
 
-### 🎯 SECURITY COMPLIANCE ACHIEVED
+### Ã°Å¸Å½Â¯ SECURITY COMPLIANCE ACHIEVED
 
 **Industry Standards Met:**
 
-- ✅ Automated vulnerability management with real-time scanning
-- ✅ Credential protection standards with secure placeholder system
-- ✅ Development tool isolation with production environment blocking
-- ✅ Infrastructure security validation with HTTPS enforcement
-- ✅ Comprehensive secret detection with intelligent pattern matching
-- ✅ Security event logging and monitoring with audit trails
-- ✅ Multi-layered security validation (pre-commit, PR, deployment)
+- Ã¢Å“â€¦ Automated vulnerability management with real-time scanning
+- Ã¢Å“â€¦ Credential protection standards with secure placeholder system
+- Ã¢Å“â€¦ Development tool isolation with production environment blocking
+- Ã¢Å“â€¦ Infrastructure security validation with HTTPS enforcement
+- Ã¢Å“â€¦ Comprehensive secret detection with intelligent pattern matching
+- Ã¢Å“â€¦ Security event logging and monitoring with audit trails
+- Ã¢Å“â€¦ Multi-layered security validation (pre-commit, PR, deployment)
 
 **Security Metrics:**
 
@@ -6549,7 +6584,7 @@ The BudgetBuddy project now has a comprehensive documentation validation system 
 - **Security Components**: 4 TypeScript security modules with full type safety
 - **Security Checkpoints**: 3 validation phases (pre-commit, PR validation, deployment approval)
 
-### 🔄 ONGOING SECURITY MEASURES
+### Ã°Å¸â€â€ž ONGOING SECURITY MEASURES
 
 **Automated Security Monitoring:**
 
@@ -6572,7 +6607,7 @@ The BudgetBuddy project now has a comprehensive documentation validation system 
 - Security compliance reporting and audit trails
 - Emergency bypass procedures with proper approval workflows
 
-### ✅ SECURITY IMPLEMENTATION STATUS
+### Ã¢Å“â€¦ SECURITY IMPLEMENTATION STATUS
 
 **SECURITY PIPELINE: 100% COMPLETE**
 
@@ -6583,20 +6618,20 @@ The BudgetBuddy application now has enterprise-grade security measures integrate
 
 ## [1.18.12] - 2026-01-05
 
-### 🔒 CRITICAL SECURITY FIX - Exposed Secrets Remediation
+### Ã°Å¸â€â€™ CRITICAL SECURITY FIX - Exposed Secrets Remediation
 
 - **GitGuardian Alert Resolution** - Comprehensive security vulnerability remediation
   - **Issue**: GitGuardian detected exposed Bearer Token and Company Email Password in repository
   - **Repository**: hitechparadigm/budgetbuddy
   - **Detection Date**: January 5th 2026, 03:31:30 UTC
   - **Immediate Actions Taken**:
-    - ✅ Removed `auth-logs.txt` file containing real JWT tokens (8920 lines of sensitive data)
-    - ✅ Updated `.gitignore` with security entries to prevent future exposure
-    - ✅ Replaced hardcoded passwords with environment variables in test scripts
-    - ✅ Updated mock tokens with clear development-only identifiers
-    - ✅ Secured README.md by removing hardcoded test credentials
+    - Ã¢Å“â€¦ Removed `auth-logs.txt` file containing real JWT tokens (8920 lines of sensitive data)
+    - Ã¢Å“â€¦ Updated `.gitignore` with security entries to prevent future exposure
+    - Ã¢Å“â€¦ Replaced hardcoded passwords with environment variables in test scripts
+    - Ã¢Å“â€¦ Updated mock tokens with clear development-only identifiers
+    - Ã¢Å“â€¦ Secured README.md by removing hardcoded test credentials
 
-### 🛡️ COMPREHENSIVE SECURITY INFRASTRUCTURE IMPLEMENTATION
+### Ã°Å¸â€ºÂ¡Ã¯Â¸Â COMPREHENSIVE SECURITY INFRASTRUCTURE IMPLEMENTATION
 
 - **Automated Security Validation System** - Multi-layer security enforcement
   - **Pre-deployment Security Scans**: Comprehensive validation before every deployment
@@ -6623,7 +6658,7 @@ The BudgetBuddy application now has enterprise-grade security measures integrate
   - **Mock Token Safety**: Clear marking requirements for development tokens
   - **Incident Response**: Step-by-step security incident handling procedures
 
-### 🔍 SECURITY VALIDATION COVERAGE
+### Ã°Å¸â€Â SECURITY VALIDATION COVERAGE
 
 - **Secret Detection Patterns**:
   - Real JWT tokens (100+ character eyJ patterns, excluding mock files)
@@ -6643,7 +6678,7 @@ The BudgetBuddy application now has enterprise-grade security measures integrate
   - Hardcoded credentials replaced with `CHANGE_ME_IN_ENV` placeholders
   - Production configuration validated for HTTPS-only usage
 
-### 📋 FILES MODIFIED FOR SECURITY
+### Ã°Å¸â€œâ€¹ FILES MODIFIED FOR SECURITY
 
 1. **Removed Sensitive Files**:
    - `auth-logs.txt` - Contained 8920 lines of real JWT tokens and authentication data
@@ -6670,7 +6705,7 @@ The BudgetBuddy application now has enterprise-grade security measures integrate
    - `scripts/pre-commit-security.sh` - Quick pre-commit security hook
    - `package.json` - Added security validation npm scripts
 
-### 🎯 SECURITY IMPACT & PREVENTION
+### Ã°Å¸Å½Â¯ SECURITY IMPACT & PREVENTION
 
 - **Immediate Risk Mitigation**: All exposed secrets removed from repository history
 - **Future Prevention**: Automated security validation prevents future exposure
@@ -6678,15 +6713,15 @@ The BudgetBuddy application now has enterprise-grade security measures integrate
 - **CI/CD Protection**: Deployments blocked if security issues detected
 - **Comprehensive Coverage**: Multi-layer security validation across entire codebase
 
-### ✅ SECURITY VALIDATION RESULTS
+### Ã¢Å“â€¦ SECURITY VALIDATION RESULTS
 
-- **Repository Scan**: ✅ No exposed secrets detected
-- **Environment Variables**: ✅ Proper usage enforced
-- **Mock Token Safety**: ✅ Clear development-only marking
-- **CI/CD Integration**: ✅ Automated security validation active
-- **Documentation**: ✅ Comprehensive security guidelines available
+- **Repository Scan**: Ã¢Å“â€¦ No exposed secrets detected
+- **Environment Variables**: Ã¢Å“â€¦ Proper usage enforced
+- **Mock Token Safety**: Ã¢Å“â€¦ Clear development-only marking
+- **CI/CD Integration**: Ã¢Å“â€¦ Automated security validation active
+- **Documentation**: Ã¢Å“â€¦ Comprehensive security guidelines available
 
-### 🔄 ONGOING SECURITY MEASURES
+### Ã°Å¸â€â€ž ONGOING SECURITY MEASURES
 
 - **Automated Monitoring**: Every commit and deployment automatically scanned
 - **Developer Tools**: Easy-to-use security validation commands
@@ -6695,14 +6730,14 @@ The BudgetBuddy application now has enterprise-grade security measures integrate
 
 ## [1.18.11] - 2026-01-05
 
-### 🔧 CRITICAL FIX - Onboarding Budget Persistence Bug
+### Ã°Å¸â€Â§ CRITICAL FIX - Onboarding Budget Persistence Bug
 
 - **Fixed FamilyId Mismatch Between Auth and Budget Services** - Resolved critical bug preventing budget access after onboarding
   - **Issue**: Users complete onboarding successfully but budget page shows "No budgets exist in backend"
   - **Root Cause**: Auth service creates budget using familyId from user profile, budget service uses familyId from JWT (null) or fallback
   - **Symptom**: Budget created with PK `FAMILY#family_user_123` but retrieved with PK `FAMILY#family_user_456`
   - **Solution**: Updated all budget service functions to lookup familyId from user profile in DynamoDB
-  - **Impact**: Complete onboarding → budget access flow now works correctly
+  - **Impact**: Complete onboarding Ã¢â€ â€™ budget access flow now works correctly
   - **Files Changed**: `backend/functions/budget/index.js` (all CRUD functions updated)
   - **Functions Fixed**: getBudgets, createBudget, getCurrentBudget, getBudget, updateBudget, deleteBudget
 
@@ -6743,14 +6778,14 @@ if (!familyId) {
 
 ### Testing Required
 
-- ✅ Code analysis confirms familyId mismatch was root cause
-- ⏳ End-to-end testing: Register → Login → Onboarding → Budget Access
-- ⏳ Verify budget creation and retrieval use same partition key
-- ⏳ Test with both new users and existing users
+- Ã¢Å“â€¦ Code analysis confirms familyId mismatch was root cause
+- Ã¢ÂÂ³ End-to-end testing: Register Ã¢â€ â€™ Login Ã¢â€ â€™ Onboarding Ã¢â€ â€™ Budget Access
+- Ã¢ÂÂ³ Verify budget creation and retrieval use same partition key
+- Ã¢ÂÂ³ Test with both new users and existing users
 
 ## [1.18.10] - 2026-01-04
 
-### 🔧 CRITICAL FIX - Cognito User Pool Client Configuration
+### Ã°Å¸â€Â§ CRITICAL FIX - Cognito User Pool Client Configuration
 
 - **Fixed Custom UserId Token Issue** - Added missing `userId` attribute to Cognito User Pool Client
   - **Issue**: Profile endpoint returning 404 "User profile not found" for all users
@@ -6760,7 +6795,7 @@ if (!familyId) {
   - **Files Changed**: `infrastructure/lib/auth-stack.ts`
   - **Deployment Required**: Infrastructure update via CI/CD pipeline
 
-### 🐛 ONBOARDING FLOW FIXES
+### Ã°Å¸Ââ€º ONBOARDING FLOW FIXES
 
 - **Manual Location Selection** - Fixed country code derivation for manual city selection
 - **Enhanced Error Logging** - Added detailed debugging for onboarding completion failures
@@ -6768,7 +6803,7 @@ if (!familyId) {
 
 ## [1.18.9] - 2026-01-04
 
-### 🔧 INFRASTRUCTURE - CloudFront Cache Invalidation
+### Ã°Å¸â€Â§ INFRASTRUCTURE - CloudFront Cache Invalidation
 
 - **CloudFront Cache Cleared** - Resolved CORS errors after latest deployment
   - **Issue**: CORS errors returned on `/auth/geolocation` endpoint after deployment
@@ -6777,7 +6812,7 @@ if (!familyId) {
   - **Impact**: CORS errors should resolve within 5-15 minutes
   - **Invalidation ID**: I6O58W494WN089K994JLNV7L78
 
-### 🐛 USER PROFILE ISSUE IDENTIFIED
+### Ã°Å¸Ââ€º USER PROFILE ISSUE IDENTIFIED
 
 - **Profile Not Found (404)** - New user profile not created in DynamoDB
   - **Symptom**: `/auth/profile` returning "User profile not found" for `info@hitechparadigm.com`
@@ -6803,12 +6838,12 @@ if (!familyId) {
 
 ## [1.18.8] - 2026-01-04
 
-### 🐛 BUG FIX - City Database Fallback System
+### Ã°Å¸Ââ€º BUG FIX - City Database Fallback System
 
 - **Added Fallback Cities for Missing Locations** - Fixed Continue button for cities not in database
   - **Root Cause**: "Ashburn, US" not in our 348-city database, causing getSuggestions() to return null
   - **Issue**: Continue button fails when detected city has no budget data
-  - **Solution**: Added fallback mapping to nearby major cities (Ashburn → Washington DC)
+  - **Solution**: Added fallback mapping to nearby major cities (Ashburn Ã¢â€ â€™ Washington DC)
   - **Impact**: Continue button now works for suburbs of major cities
   - **Files Modified**: `packages/shared/src/services/categorySuggestionService.ts`, `packages/web-app/src/components/OnboardingFlow.tsx`
 
@@ -6816,14 +6851,14 @@ if (!familyId) {
 
 **Fallback System:**
 
-- Ashburn, VA → Washington DC (common ISP location)
-- Arlington, VA → Washington DC
-- Alexandria, VA → Washington DC
+- Ashburn, VA Ã¢â€ â€™ Washington DC (common ISP location)
+- Arlington, VA Ã¢â€ â€™ Washington DC
+- Alexandria, VA Ã¢â€ â€™ Washington DC
 - Enhanced error logging and user feedback
 
 ## [1.18.7] - 2026-01-04
 
-### 🐛 BUG FIX - Continue Button JavaScript Error
+### Ã°Å¸Ââ€º BUG FIX - Continue Button JavaScript Error
 
 - **Added Safety Checks for Location Data** - Fixed TypeError breaking Continue button
   - **Root Cause**: `createCityKey()` calling `.toLowerCase()` on undefined `countryCode`
@@ -6834,7 +6869,7 @@ if (!familyId) {
 
 ## [1.18.6] - 2026-01-04
 
-### 🐛 BUG FIX - Onboarding Redirect Loop
+### Ã°Å¸Ââ€º BUG FIX - Onboarding Redirect Loop
 
 - **Removed Automatic Onboarding Redirect** - Fixed infinite redirect loop preventing Skip button
   - **Root Cause**: BudgetPage automatically redirected to onboarding when no budget exists
@@ -6845,7 +6880,7 @@ if (!familyId) {
 
 ## [1.18.5] - 2026-01-04
 
-### 🎨 UX IMPROVEMENT - Manual Location Selection
+### Ã°Å¸Å½Â¨ UX IMPROVEMENT - Manual Location Selection
 
 - **Change Location Button** - Added ability to correct inaccurate location detection
   - **Issue**: IP-based geolocation detects ISP location, not actual user location
@@ -6872,7 +6907,7 @@ if (!familyId) {
 
 ## [1.18.4] - 2026-01-03
 
-### 🐛 CRITICAL BUG FIX - Missing API Gateway Routes
+### Ã°Å¸Ââ€º CRITICAL BUG FIX - Missing API Gateway Routes
 
 - **API Gateway Configuration Fix** - Added missing routes for onboarding endpoints
   - **Root Cause**: `/auth/geolocation`, `/auth/onboarding`, and `/auth/google` endpoints missing from API Gateway
@@ -6883,7 +6918,7 @@ if (!familyId) {
 
 ## [1.18.3] - 2026-01-03
 
-### 🐛 BUG FIX - Legacy User Token Support
+### Ã°Å¸Ââ€º BUG FIX - Legacy User Token Support
 
 - **Token Compatibility Fix** - Added fallback for legacy users without custom:userId attribute
   - **Root Cause**: `/auth/profile` and `/auth/onboarding` returning 500 error for legacy users
@@ -6894,7 +6929,7 @@ if (!familyId) {
 
 ## [1.18.2] - 2026-01-03
 
-### 🐛 CRITICAL BUG FIXES - CORS Configuration
+### Ã°Å¸Ââ€º CRITICAL BUG FIXES - CORS Configuration
 
 - **CORS Credentials Support Fixed** - Resolved CORS preflight failures blocking onboarding completion
   - **Root Cause**: API Gateway configured with `allowCredentials: true` but Lambda returning `Access-Control-Allow-Origin: *`
@@ -6959,12 +6994,12 @@ function getCorsHeaders(origin) {
 
 ### Testing Results
 
-- ✅ Geolocation proxy endpoint added
-- ✅ CORS headers updated consistently across all endpoints
-- ✅ OPTIONS preflight handler enhanced
-- ⏳ Location detection (pending deployment testing)
-- ⏳ Create Budget button (pending deployment testing)
-- ⏳ Skip button navigation (fixed in v1.18.1, needs verification)
+- Ã¢Å“â€¦ Geolocation proxy endpoint added
+- Ã¢Å“â€¦ CORS headers updated consistently across all endpoints
+- Ã¢Å“â€¦ OPTIONS preflight handler enhanced
+- Ã¢ÂÂ³ Location detection (pending deployment testing)
+- Ã¢ÂÂ³ Create Budget button (pending deployment testing)
+- Ã¢ÂÂ³ Skip button navigation (fixed in v1.18.1, needs verification)
 
 ### Files Modified
 
@@ -6980,7 +7015,7 @@ function getCorsHeaders(origin) {
 
 ## [1.18.1] - 2025-12-30
 
-### 🐛 BUG FIXES - Onboarding Integration
+### Ã°Å¸Ââ€º BUG FIXES - Onboarding Integration
 
 - **Location Detection Fixed** - Resolved HTTP 403 error preventing location detection
   - **Root Cause**: ip-api.com was returning 403 Forbidden errors (likely CORS or rate limiting)
@@ -7003,27 +7038,27 @@ function getCorsHeaders(origin) {
 
 **Geolocation Service Changes:**
 
-- API endpoint: `https://ip-api.com/json/` → `https://ipapi.co/json/`
+- API endpoint: `https://ip-api.com/json/` Ã¢â€ â€™ `https://ipapi.co/json/`
 - Response mapping: Updated to match ipapi.co response format
 - Error handling: Added proper error logging with console.error
 - Rate limits: 1000 requests/day (sufficient for MVP)
 
 **Navigation Fixes:**
 
-- AuthPage: `navigate("/dashboard")` → `navigate("/budget")` (2 occurrences)
+- AuthPage: `navigate("/dashboard")` Ã¢â€ â€™ `navigate("/budget")` (2 occurrences)
 - Ensures consistent routing throughout the app
 - Prevents 404 errors and redirect loops
 
 ### Testing Results
 
-- ✅ Location detection works without 403 errors
-- ✅ Skip button navigates to /budget correctly
-- ✅ No more redirect loops
-- ⏳ Create Budget button (pending user testing)
+- Ã¢Å“â€¦ Location detection works without 403 errors
+- Ã¢Å“â€¦ Skip button navigates to /budget correctly
+- Ã¢Å“â€¦ No more redirect loops
+- Ã¢ÂÂ³ Create Budget button (pending user testing)
 
 ## [1.18.0] - 2025-12-30
 
-### 🎯 AI-POWERED ONBOARDING INTEGRATION - COMPLETE
+### Ã°Å¸Å½Â¯ AI-POWERED ONBOARDING INTEGRATION - COMPLETE
 
 - **End-to-End Onboarding Flow** - Seamless integration with authentication system
   - Backend `/auth/profile` endpoint to get user profile with onboardingCompleted flag
@@ -7064,7 +7099,7 @@ function getCorsHeaders(origin) {
 
 ## [1.17.0] - 2025-12-30
 
-### 🌍 DETAILED CITY EXPENSE DATA GENERATION - COMPLETE
+### Ã°Å¸Å’Â DETAILED CITY EXPENSE DATA GENERATION - COMPLETE
 
 - **Generated 348 Unique Cities** - Comprehensive expense data across 9 countries
   - **Countries**: Canada, USA, UK, Germany, France, Netherlands, Spain, Italy, Australia
@@ -7088,7 +7123,7 @@ function getCorsHeaders(origin) {
   - **Urban Areas**: Higher public transit costs, but still includes car expenses
   - **Rural Areas**: Lower transit costs, higher car dependency
 
-### 🔧 DATA GENERATION SCRIPT IMPROVEMENTS
+### Ã°Å¸â€Â§ DATA GENERATION SCRIPT IMPROVEMENTS
 
 - **Incremental File Writing** - Saves progress after each batch (10 cities)
   - **Benefit**: No data loss if script crashes or times out
@@ -7106,12 +7141,12 @@ function getCorsHeaders(origin) {
   - **Max Retries**: 3 attempts with increasing delays (3s, 6s, 12s)
   - **Rate Limiting**: 3 seconds between requests to respect AWS quotas
 
-### 📝 FIELD NAMING IMPROVEMENTS
+### Ã°Å¸â€œÂ FIELD NAMING IMPROVEMENTS
 
-- **Renamed**: `prescriptions` → `medicine` for clarity
+- **Renamed**: `prescriptions` Ã¢â€ â€™ `medicine` for clarity
 - **Rationale**: "Medicine" is more universally understood than "prescriptions"
 
-### 🎯 NEXT STEPS
+### Ã°Å¸Å½Â¯ NEXT STEPS
 
 - Update `categorySuggestionService.ts` to use new 18-field structure
 - Integrate onboarding into auth flow (show after first login)
@@ -7121,7 +7156,7 @@ function getCorsHeaders(origin) {
 
 ## [1.16.0] - 2025-12-29
 
-### 🔧 RECURRING BUDGET CALCULATION FIX - COMPLETE TESTING & DEPLOYMENT
+### Ã°Å¸â€Â§ RECURRING BUDGET CALCULATION FIX - COMPLETE TESTING & DEPLOYMENT
 
 - **Date-Dependent Recurring Calculations** - Fixed critical bug in recurring budget planning
   - **Problem**: Planned amounts didn't account for start date, causing mismatches with actual transactions
@@ -7146,23 +7181,23 @@ function getCorsHeaders(origin) {
   - **Functions**: `calculateMonthlyOccurrencesEnhanced()` and `calculatePlannedAmount()` now use shared utility
   - **Consistency**: Mobile app now uses identical calculation logic as web app
 
-### 🧪 COMPREHENSIVE TEST SUITE - ALL PASSING
+### Ã°Å¸Â§Âª COMPREHENSIVE TEST SUITE - ALL PASSING
 
 - **Shared Package Tests**: 13/13 tests passing
-  - ✅ 2 bi-weekly occurrences starting Dec 5 (Dec 5, Dec 19)
-  - ✅ 3 bi-weekly occurrences starting Dec 1 (Dec 1, Dec 15, Dec 29)
-  - ✅ 1 bi-weekly occurrence starting Dec 20
-  - ✅ 4-5 weekly occurrences (varies by month)
-  - ✅ 1 monthly occurrence
-  - ✅ 0 occurrences if start date is after month
-  - ✅ Correct occurrence dates for all frequencies
-  - ✅ Correct planned amounts for all scenarios
+  - Ã¢Å“â€¦ 2 bi-weekly occurrences starting Dec 5 (Dec 5, Dec 19)
+  - Ã¢Å“â€¦ 3 bi-weekly occurrences starting Dec 1 (Dec 1, Dec 15, Dec 29)
+  - Ã¢Å“â€¦ 1 bi-weekly occurrence starting Dec 20
+  - Ã¢Å“â€¦ 4-5 weekly occurrences (varies by month)
+  - Ã¢Å“â€¦ 1 monthly occurrence
+  - Ã¢Å“â€¦ 0 occurrences if start date is after month
+  - Ã¢Å“â€¦ Correct occurrence dates for all frequencies
+  - Ã¢Å“â€¦ Correct planned amounts for all scenarios
 
 - **Web App Tests**: 13/13 tests passing
   - Same test suite verifying web app correctly imports and uses shared utility
   - Validates calculations work in jsdom environment
 
-### 🔧 TECHNICAL ACHIEVEMENTS
+### Ã°Å¸â€Â§ TECHNICAL ACHIEVEMENTS
 
 - **Timezone Handling**: Fixed critical bug where dates were shifting by one day on Windows
   - **Issue**: `new Date(dateString)` interprets in UTC, causing timezone mismatches
@@ -7174,13 +7209,13 @@ function getCorsHeaders(origin) {
   - Web app: ts-jest with jsdom environment
   - Mobile app: jest-expo with React Native support
 
-### 📱 MOBILE APP TESTING - CROSS-PLATFORM VERIFICATION COMPLETE
+### Ã°Å¸â€œÂ± MOBILE APP TESTING - CROSS-PLATFORM VERIFICATION COMPLETE
 
 - **Mobile Test Suite**: 13/13 tests passing
-  - ✅ Unit tests for bi-weekly, monthly, and weekly calculations
-  - ✅ Property-based tests (30 runs each) for calculation accuracy
-  - ✅ Variance calculation tests for planned vs actual amounts
-  - ✅ Cross-platform consistency verification
+  - Ã¢Å“â€¦ Unit tests for bi-weekly, monthly, and weekly calculations
+  - Ã¢Å“â€¦ Property-based tests (30 runs each) for calculation accuracy
+  - Ã¢Å“â€¦ Variance calculation tests for planned vs actual amounts
+  - Ã¢Å“â€¦ Cross-platform consistency verification
 
 - **Mobile Setup**
   - Installed dependencies with `--legacy-peer-deps` flag
@@ -7188,23 +7223,23 @@ function getCorsHeaders(origin) {
   - Updated Jest setup with expo-sqlite mock
   - Added offline service and API service mocks
 
-- **Cross-Platform Consistency Verified** ✅
+- **Cross-Platform Consistency Verified** Ã¢Å“â€¦
   - Web app and mobile app use identical calculation logic
   - Both import from shared `@budget-buddy/shared` package
   - Example: Bi-weekly $5,000 salary starting Dec 4, 2025
     - December 2025: 2 occurrences = $10,000 planned
-    - Web app result: ✅ $10,000
-    - Mobile app result: ✅ $10,000
+    - Web app result: Ã¢Å“â€¦ $10,000
+    - Mobile app result: Ã¢Å“â€¦ $10,000
 
-### 📊 PROGRESS UPDATE
+### Ã°Å¸â€œÅ  PROGRESS UPDATE
 
 - **Recurring Budget Feature**: 100% Complete
-  - ✅ Calculation logic implemented and tested
-  - ✅ Web app integration complete
-  - ✅ Mobile app integration complete
-  - ✅ Cross-platform testing complete
-  - ✅ CI/CD pipeline updated and working
-  - ✅ All 26 tests passing (13 shared + 13 web + 13 mobile)
+  - Ã¢Å“â€¦ Calculation logic implemented and tested
+  - Ã¢Å“â€¦ Web app integration complete
+  - Ã¢Å“â€¦ Mobile app integration complete
+  - Ã¢Å“â€¦ Cross-platform testing complete
+  - Ã¢Å“â€¦ CI/CD pipeline updated and working
+  - Ã¢Å“â€¦ All 26 tests passing (13 shared + 13 web + 13 mobile)
 
 - **Overall Project Progress**: ~85% Complete
   - Core features: 100% (recurring budgets, transactions, categories)
@@ -7220,33 +7255,33 @@ function getCorsHeaders(origin) {
   - **Mobile App**: Updated `package.json` to use `"@budget-buddy/shared": "file:../shared"`
   - **Impact**: Proper local package resolution instead of npm registry lookup
 
-### 📊 CALCULATION EXAMPLES - VERIFIED CORRECT
+### Ã°Å¸â€œÅ  CALCULATION EXAMPLES - VERIFIED CORRECT
 
 - **Bi-weekly $5,000 starting Dec 5, 2025**:
   - Occurrences: 2 (Dec 5, Dec 19)
-  - Planned Amount: $10,000 ✅
+  - Planned Amount: $10,000 Ã¢Å“â€¦
 
 - **Bi-weekly $5,000 starting Dec 1, 2025**:
   - Occurrences: 3 (Dec 1, Dec 15, Dec 29)
-  - Planned Amount: $15,000 ✅
+  - Planned Amount: $15,000 Ã¢Å“â€¦
 
 - **Bi-weekly $5,000 starting Dec 20, 2025**:
   - Occurrences: 1 (Dec 20)
-  - Planned Amount: $5,000 ✅
+  - Planned Amount: $5,000 Ã¢Å“â€¦
 
-### ✅ REQUIREMENTS COVERAGE
+### Ã¢Å“â€¦ REQUIREMENTS COVERAGE
 
-- Requirement 18.1: Calculate occurrences in current month ✓
-- Requirement 18.2: Show correct monthly planned total ✓
-- Requirement 18.3: Allow specifying expected date for first occurrence ✓
-- Requirement 18.4: Display per-occurrence amount and monthly total ✓
-- Requirement 18.5: Support all frequencies (weekly, bi-weekly, monthly, quarterly, annually) ✓
-- Requirement 18.6: Account for partial months and varying month lengths ✓
-- Requirement 18.7: Store base amount and calculate monthly totals dynamically ✓
-- Requirement 18.8: Update monthly total when editing recurring items ✓
-- Requirement 18.9: Show specific expected dates for each occurrence ✓
+- Requirement 18.1: Calculate occurrences in current month Ã¢Å“â€œ
+- Requirement 18.2: Show correct monthly planned total Ã¢Å“â€œ
+- Requirement 18.3: Allow specifying expected date for first occurrence Ã¢Å“â€œ
+- Requirement 18.4: Display per-occurrence amount and monthly total Ã¢Å“â€œ
+- Requirement 18.5: Support all frequencies (weekly, bi-weekly, monthly, quarterly, annually) Ã¢Å“â€œ
+- Requirement 18.6: Account for partial months and varying month lengths Ã¢Å“â€œ
+- Requirement 18.7: Store base amount and calculate monthly totals dynamically Ã¢Å“â€œ
+- Requirement 18.8: Update monthly total when editing recurring items Ã¢Å“â€œ
+- Requirement 18.9: Show specific expected dates for each occurrence Ã¢Å“â€œ
 
-### 📁 FILES CREATED
+### Ã°Å¸â€œÂ FILES CREATED
 
 1. `packages/shared/src/utils/recurringCalculations.ts` - Core calculation logic
 2. `packages/shared/src/utils/recurringCalculations.test.ts` - Shared package tests
@@ -7257,7 +7292,7 @@ function getCorsHeaders(origin) {
 7. `RECURRING_BUDGET_FIX_COMPLETE.md` - Comprehensive fix documentation
 8. `RECURRING_BUDGET_TESTING_COMPLETE.md` - Testing results and verification
 
-### 📝 FILES MODIFIED
+### Ã°Å¸â€œÂ FILES MODIFIED
 
 1. `packages/shared/src/utils/recurringCalculations.ts` - Fixed timezone handling
 2. `packages/shared/package.json` - Added ts-jest and @types/jest
@@ -7266,35 +7301,35 @@ function getCorsHeaders(origin) {
 5. `packages/mobile/src/services/budget.ts` - Updated to use shared utility
 6. `packages/mobile/package.json` - Updated shared package reference
 
-### 🎯 CROSS-PLATFORM CONSISTENCY
+### Ã°Å¸Å½Â¯ CROSS-PLATFORM CONSISTENCY
 
 Both web and mobile apps now:
 
-- ✅ Use the same calculation logic (shared utility)
-- ✅ Store the same data structure (baseAmount, startDate, plannedMonthlyAmount)
-- ✅ Display the same information (per-occurrence amount, start date, occurrence dates)
-- ✅ Handle the same edge cases (month boundaries, leap years, etc.)
+- Ã¢Å“â€¦ Use the same calculation logic (shared utility)
+- Ã¢Å“â€¦ Store the same data structure (baseAmount, startDate, plannedMonthlyAmount)
+- Ã¢Å“â€¦ Display the same information (per-occurrence amount, start date, occurrence dates)
+- Ã¢Å“â€¦ Handle the same edge cases (month boundaries, leap years, etc.)
 
-### 📊 PROGRESS METRICS
+### Ã°Å¸â€œÅ  PROGRESS METRICS
 
 - **Recurring Budget Feature**: 100% complete (was 0%)
 - **Testing Coverage**: 13/13 tests passing (100%)
 - **Cross-Platform Consistency**: Achieved
-- **Overall MVP Progress**: 76% → 77% (recurring budget feature complete)
+- **Overall MVP Progress**: 76% Ã¢â€ â€™ 77% (recurring budget feature complete)
 
-### 🔄 NEXT STEPS
+### Ã°Å¸â€â€ž NEXT STEPS
 
-1. ⏳ Manual testing on web app (user to perform)
-2. ⏳ Manual testing on mobile app (user to perform)
-3. ⏳ Test copying budgets to future months (should preserve recurring settings)
-4. ⏳ Implement Requirement 19: Clear Planned vs Actual Display
-5. ⏳ Implement Requirement 20: Monthly Recurrence Logic (for future months)
+1. Ã¢ÂÂ³ Manual testing on web app (user to perform)
+2. Ã¢ÂÂ³ Manual testing on mobile app (user to perform)
+3. Ã¢ÂÂ³ Test copying budgets to future months (should preserve recurring settings)
+4. Ã¢ÂÂ³ Implement Requirement 19: Clear Planned vs Actual Display
+5. Ã¢ÂÂ³ Implement Requirement 20: Monthly Recurrence Logic (for future months)
 
 ---
 
 ## [1.15.0] - 2025-12-29
 
-### 🚀 GOOGLE SIGN-IN AUTHENTICATION - COMPLETE IMPLEMENTATION
+### Ã°Å¸Å¡â‚¬ GOOGLE SIGN-IN AUTHENTICATION - COMPLETE IMPLEMENTATION
 
 - **Google OAuth 2.0 Integration** - Full cross-platform authentication
   - **Web Platform**: Google OAuth 2.0 with client ID and secret configured
@@ -7315,7 +7350,7 @@ Both web and mobile apps now:
   - **Setup Documentation**: Comprehensive GOOGLE_SIGNIN_SETUP.md with troubleshooting guide
   - **Production Ready**: Credentials properly managed with fallback support
 
-### 🔧 TECHNICAL ACHIEVEMENTS
+### Ã°Å¸â€Â§ TECHNICAL ACHIEVEMENTS
 
 - **Expo Auth Session v7 Compatibility**: Fixed deprecated startAsync API, using openAuthSessionAsync
 - **PKCE Implementation**: Proper code verifier generation and base64url encoding
@@ -7323,22 +7358,22 @@ Both web and mobile apps now:
 - **Error Handling**: Comprehensive error messages for authentication failures
 - **Type Safety**: All TypeScript errors resolved, full type coverage
 
-### 📋 DOCUMENTATION
+### Ã°Å¸â€œâ€¹ DOCUMENTATION
 
 - **GOOGLE_SIGNIN_SETUP.md**: Complete setup guide with development and production instructions
 - **Environment Configuration**: .env.local template with all required variables
 - **AWS Integration**: Instructions for storing credentials in Secrets Manager
 - **Troubleshooting**: Common issues and solutions documented
 
-### ✅ REQUIREMENTS COVERAGE
+### Ã¢Å“â€¦ REQUIREMENTS COVERAGE
 
-- Requirement 40.1: Google Sign-In button on login screen ✓
-- Requirement 40.2: Cross-platform OAuth support (web, iOS, Android) ✓
-- Requirement 40.3: Secure token storage ✓
-- Requirement 40.4: Account linking capability ✓
-- Requirement 40.9: Production-ready implementation ✓
+- Requirement 40.1: Google Sign-In button on login screen Ã¢Å“â€œ
+- Requirement 40.2: Cross-platform OAuth support (web, iOS, Android) Ã¢Å“â€œ
+- Requirement 40.3: Secure token storage Ã¢Å“â€œ
+- Requirement 40.4: Account linking capability Ã¢Å“â€œ
+- Requirement 40.9: Production-ready implementation Ã¢Å“â€œ
 
-### 🔐 SECURITY NOTES
+### Ã°Å¸â€Â SECURITY NOTES
 
 - Credentials stored in AWS Secrets Manager (not in code)
 - .env.local excluded from version control
@@ -7349,7 +7384,7 @@ Both web and mobile apps now:
 
 ## [1.14.0] - 2025-12-29
 
-### 🚀 MAJOR FEATURES - COMPLETE BUDGET MANAGEMENT SYSTEM
+### Ã°Å¸Å¡â‚¬ MAJOR FEATURES - COMPLETE BUDGET MANAGEMENT SYSTEM
 
 - **Budget Management Foundation** - Full-featured budget system with offline support
   - **Budget Data Models**: Comprehensive TypeScript interfaces for budgets, summaries, and monthly overviews
@@ -7366,7 +7401,7 @@ Both web and mobile apps now:
   - **Accessibility**: Touch targets meet accessibility standards, proper contrast ratios
   - **Visual Design**: Material Design-inspired components with elevation and shadows
 
-### 🧪 COMPREHENSIVE TESTING VALIDATION
+### Ã°Å¸Â§Âª COMPREHENSIVE TESTING VALIDATION
 
 - **Property-Based Testing** - All budget functionality thoroughly tested
   - **Platform Compatibility**: 7/7 tests passing - budget data structures work across all platforms
@@ -7375,7 +7410,7 @@ Both web and mobile apps now:
   - **Authentication**: All existing tests continue to pass
   - **Total Coverage**: 15/15 property-based tests passing with 100+ iterations each
 
-### 🔧 TECHNICAL ACHIEVEMENTS
+### Ã°Å¸â€Â§ TECHNICAL ACHIEVEMENTS
 
 - **Budget Calculation Logic**:
   - Monthly occurrence calculations for different frequencies (weekly, bi-weekly, monthly, quarterly, yearly, one-time)
@@ -7388,7 +7423,7 @@ Both web and mobile apps now:
 - **Error Handling**: Comprehensive error boundaries and user-friendly error messages
 - **Performance**: Optimized rendering with proper memoization and efficient data structures
 
-### 🐛 ISSUES RESOLVED
+### Ã°Å¸Ââ€º ISSUES RESOLVED
 
 - **TypeScript Compilation**: Fixed 28 TypeScript errors across 9 files
   - API Error class implementation corrected
@@ -7399,7 +7434,7 @@ Both web and mobile apps now:
 - **Import Dependencies**: Resolved circular dependencies and missing exports
 - **Test Environment**: Fixed font loading issues in test environment
 
-### 📊 PROGRESS METRICS
+### Ã°Å¸â€œÅ  PROGRESS METRICS
 
 - **Mobile App**: 85% complete (up from 70%)
 - **Budget Management**: 90% complete (up from 30%)
@@ -7407,16 +7442,16 @@ Both web and mobile apps now:
 - **Testing Coverage**: 100% for implemented features
 - **Overall MVP Progress**: 75% complete (up from 60%)
 
-### 🎯 REQUIREMENTS VALIDATED
+### Ã°Å¸Å½Â¯ REQUIREMENTS VALIDATED
 
-- **Requirements 19.1, 19.2, 19.3**: Budget display and month navigation ✅
-- **Requirements 22.1, 22.3**: Mobile platform compatibility ✅
-- **Requirements 23.2, 23.3, 23.8, 23.10**: Mobile UI components and UX ✅
-- **Requirements 24.1, 24.2, 24.3, 24.7**: Offline data storage and sync ✅
+- **Requirements 19.1, 19.2, 19.3**: Budget display and month navigation Ã¢Å“â€¦
+- **Requirements 22.1, 22.3**: Mobile platform compatibility Ã¢Å“â€¦
+- **Requirements 23.2, 23.3, 23.8, 23.10**: Mobile UI components and UX Ã¢Å“â€¦
+- **Requirements 24.1, 24.2, 24.3, 24.7**: Offline data storage and sync Ã¢Å“â€¦
 
 ## [1.13.0] - 2025-12-29
 
-### 🚀 MAJOR FEATURES - MOBILE APP FOUNDATION
+### Ã°Å¸Å¡â‚¬ MAJOR FEATURES - MOBILE APP FOUNDATION
 
 - **React Native + Expo Mobile App** - Complete mobile application foundation implemented
   - **Project Structure**: Full React Native + Expo managed workflow with TypeScript
@@ -7433,7 +7468,7 @@ Both web and mobile apps now:
   - **State Management**: React Context for authentication state with automatic token refresh
   - **Error Handling**: Normalized error messages for better user experience
 
-### 🧪 COMPREHENSIVE TESTING SUITE
+### Ã°Å¸Â§Âª COMPREHENSIVE TESTING SUITE
 
 - **Property-Based Testing** - Advanced testing methodology implemented
   - **Platform Compatibility**: 5 properties testing mobile app consistency across iOS/Android
@@ -7442,7 +7477,7 @@ Both web and mobile apps now:
   - **Test Coverage**: 14/15 tests passing (1 skipped for refinement)
   - **Validation**: Requirements 22.1, 22.3, 25.1, 25.2, 25.3 validated
 
-### 🔧 TECHNICAL IMPLEMENTATION
+### Ã°Å¸â€Â§ TECHNICAL IMPLEMENTATION
 
 - **Dependencies Added**:
   - `aws-amplify` + `@aws-amplify/react-native` for authentication
@@ -7454,7 +7489,7 @@ Both web and mobile apps now:
 - **TypeScript**: Full type safety with proper navigation types and error handling
 - **Cross-Platform Storage**: SecureStore for mobile, localStorage fallback for web
 
-### 🐛 CRITICAL BUG FIXES
+### Ã°Å¸Ââ€º CRITICAL BUG FIXES
 
 - **NaN Serialization Bug** - Fixed data compatibility issue discovered by property tests
   - **Root Cause**: NaN values in budget data were converting to null during JSON serialization
@@ -7467,23 +7502,23 @@ Both web and mobile apps now:
   - **Solution**: Added `@types/jest` dependency and updated tsconfig.json
   - **Style Fixes**: Fixed React Native TextInput style type issues across auth screens
 
-### 📋 TASK COMPLETION STATUS
+### Ã°Å¸â€œâ€¹ TASK COMPLETION STATUS
 
-- ✅ **Task 1**: React Native + Expo mobile project structure (COMPLETE)
-- ✅ **Task 1.1**: Platform compatibility property tests (COMPLETE)
-- ✅ **Task 2.1**: AWS Cognito integration for React Native (COMPLETE)
-- ✅ **Task 2.3**: Authentication property tests (COMPLETE)
-- 🔄 **Ready for Task 2.2**: Biometric authentication (Face ID/Touch ID/PIN fallback)
+- Ã¢Å“â€¦ **Task 1**: React Native + Expo mobile project structure (COMPLETE)
+- Ã¢Å“â€¦ **Task 1.1**: Platform compatibility property tests (COMPLETE)
+- Ã¢Å“â€¦ **Task 2.1**: AWS Cognito integration for React Native (COMPLETE)
+- Ã¢Å“â€¦ **Task 2.3**: Authentication property tests (COMPLETE)
+- Ã°Å¸â€â€ž **Ready for Task 2.2**: Biometric authentication (Face ID/Touch ID/PIN fallback)
 
-### 📊 PROGRESS METRICS
+### Ã°Å¸â€œÅ  PROGRESS METRICS
 
-- **Mobile Development**: 15% → 35% (Task 1 & 2.1 complete)
-- **Authentication System**: 0% → 85% (Core auth complete, biometric pending)
+- **Mobile Development**: 15% Ã¢â€ â€™ 35% (Task 1 & 2.1 complete)
+- **Authentication System**: 0% Ã¢â€ â€™ 85% (Core auth complete, biometric pending)
 - **Testing Coverage**: Property-based testing methodology established
 - **Cross-Platform**: iOS/Android/Web compatibility achieved
-- **Overall MVP Progress**: 72% → 78% (mobile foundation established)
+- **Overall MVP Progress**: 72% Ã¢â€ â€™ 78% (mobile foundation established)
 
-### 🎯 LESSONS LEARNED
+### Ã°Å¸Å½Â¯ LESSONS LEARNED
 
 - **Property-Based Testing Value**: Discovered critical serialization bug that unit tests missed
 - **Cross-Platform Complexity**: React Native requires careful dependency management with legacy peer deps
@@ -7491,7 +7526,7 @@ Both web and mobile apps now:
 - **TypeScript Integration**: Proper type definitions essential for React Navigation in mobile apps
 - **Testing Strategy**: Async property tests need careful handling, synchronous tests more reliable
 
-### 🔄 NEXT PRIORITIES
+### Ã°Å¸â€â€ž NEXT PRIORITIES
 
 1. **Task 2.2**: Implement biometric authentication (Face ID/Touch ID/Fingerprint + PIN fallback)
 2. **Task 3**: Core mobile UI components and navigation enhancements
@@ -7500,7 +7535,7 @@ Both web and mobile apps now:
 
 ## [1.12.3] - 2025-12-28
 
-### 🔧 CRITICAL BUG FIXES
+### Ã°Å¸â€Â§ CRITICAL BUG FIXES
 
 - **Blank Page After Login** - Fixed JavaScript error causing blank page after successful login
   - **Root Cause**: Budget data from backend had undefined `plannedAmount`/`spentAmount` values
@@ -7515,7 +7550,7 @@ Both web and mobile apps now:
   - **Technical**: Added `TransactWriteItemsCommand` for atomic user+family creation
   - **Files Fixed**: `backend/functions/auth/index.js` - registration function updated
 
-### 🚀 NEW FEATURES
+### Ã°Å¸Å¡â‚¬ NEW FEATURES
 
 - **Phase 1: Family Management** - Auto-family creation system implemented
   - New users automatically get assigned to single-person family
@@ -7523,20 +7558,20 @@ Both web and mobile apps now:
   - Prevents future "no family" issues that block budget access
   - Documented Phase 2 (partner invitation) in requirements
 
-### 🐛 BUG FIXES
+### Ã°Å¸Ââ€º BUG FIXES
 
 - **ESLint Error**: Removed unused `PutItemCommand` import causing pipeline failure
 - **User Access**: Fixed `dmytro.malyk@gmail.com` by assigning to existing family `family_test_20251026`
 - **Data Validation**: Added number validation for all budget amounts to prevent undefined errors
 
-### 📚 DOCUMENTATION
+### Ã°Å¸â€œÅ¡ DOCUMENTATION
 
 - **Requirements**: Added Requirement 17 for Family Management system
 - **Phase Planning**: Documented simple family model (adults only, no child accounts)
 
 ## [1.12.2] - 2025-12-28
 
-### 🔧 CRITICAL AUTHENTICATION FIX
+### Ã°Å¸â€Â§ CRITICAL AUTHENTICATION FIX
 
 - **User ID Mismatch** - Fixed critical issue where users couldn't access existing budgets after login
   - **Root Cause**: Mock authentication was using `familyId: 'family_123'` but existing budgets were stored under different family IDs (`family_test_20251026`, etc.)
@@ -7552,10 +7587,10 @@ Both web and mobile apps now:
 
 ### Testing Results
 
-- ✅ **AWS Testing** - User reported successful login but seeing onboarding questions
-- ✅ **Database Verification** - Confirmed existing budgets in DynamoDB under different family IDs
-- ✅ **Authentication Flow** - Mock authentication working correctly, issue was family ID mismatch
-- ✅ **Fix Applied** - Updated authentication to use existing family ID from database
+- Ã¢Å“â€¦ **AWS Testing** - User reported successful login but seeing onboarding questions
+- Ã¢Å“â€¦ **Database Verification** - Confirmed existing budgets in DynamoDB under different family IDs
+- Ã¢Å“â€¦ **Authentication Flow** - Mock authentication working correctly, issue was family ID mismatch
+- Ã¢Å“â€¦ **Fix Applied** - Updated authentication to use existing family ID from database
 
 ### Lessons Learned
 
@@ -7567,18 +7602,18 @@ Both web and mobile apps now:
 
 ### Documentation & Cleanup
 
-- 📚 **Documentation Update** - Updated all documentation to reflect current project status
+- Ã°Å¸â€œÅ¡ **Documentation Update** - Updated all documentation to reflect current project status
   - Updated README.md with accurate phase completion status
   - Updated docs/README.md with latest date (2025-11-30)
   - Updated progress metrics to 99.5% complete
   - Marked Phase 3 as "COMPLETE"
   - Updated Phase 4 and Phase 5 with accurate status
-- 🧹 **Package.json Cleanup** - Removed duplicate and obsolete scripts
+- Ã°Å¸Â§Â¹ **Package.json Cleanup** - Removed duplicate and obsolete scripts
   - Removed duplicate `test:unit` script definition
   - Removed obsolete `format` and `format:check` placeholder scripts
   - Consolidated test scripts for clarity
   - Removed duplicate `deploy:dev` script
-- ✅ **Code Quality** - Verified codebase follows best practices
+- Ã¢Å“â€¦ **Code Quality** - Verified codebase follows best practices
   - No console.log statements in production code
   - All TODO comments are intentional and documented
   - No obsolete spec directories
@@ -7586,13 +7621,13 @@ Both web and mobile apps now:
 
 ### Technical Improvements
 
-- 🏗️ **Script Consolidation** - Simplified npm scripts for better developer experience
-- 📖 **Documentation Accuracy** - All documentation now reflects actual implementation status
-- 🎯 **Project Status** - Clear roadmap with completed vs future features
+- Ã°Å¸Ââ€”Ã¯Â¸Â **Script Consolidation** - Simplified npm scripts for better developer experience
+- Ã°Å¸â€œâ€“ **Documentation Accuracy** - All documentation now reflects actual implementation status
+- Ã°Å¸Å½Â¯ **Project Status** - Clear roadmap with completed vs future features
 
 ## [1.12.0] - 2025-11-30
 
-### 🚨 CRITICAL FIX
+### Ã°Å¸Å¡Â¨ CRITICAL FIX
 
 - **Timezone Bug** - Fixed critical bug where December budget was shown on November 30, 2025 at 7:22 PM EST
   - **Root Cause**: Application was using UTC time (`new Date().toISOString()`) instead of user's local timezone
@@ -7601,13 +7636,13 @@ Both web and mobile apps now:
   - **Technical Details**:
     - Nov 30, 2025 7:22 PM EST = Nov 30, 2025 19:22 EST
     - Nov 30, 2025 19:22 EST = Dec 1, 2025 00:22 UTC (5 hours ahead)
-    - Old code: `new Date().toISOString().slice(0, 7)` returned "2025-12" ❌
-    - New code: `getCurrentMonthString()` returns "2025-11" ✅
+    - Old code: `new Date().toISOString().slice(0, 7)` returned "2025-12" Ã¢ÂÅ’
+    - New code: `getCurrentMonthString()` returns "2025-11" Ã¢Å“â€¦
   - **Files Fixed**: BudgetPage.tsx (6 locations), TransactionForm.tsx (3 locations)
 
 ### Added
 
-- 🌍 **Timezone Management System** (Requirement 13)
+- Ã°Å¸Å’Â **Timezone Management System** (Requirement 13)
   - Created `timezoneHelpers.ts` with comprehensive timezone utilities
   - Created `monthHelpers.ts` for timezone-aware month calculations
   - Added timezone detection using browser's `Intl.DateTimeFormat` API
@@ -7615,20 +7650,20 @@ Both web and mobile apps now:
   - Created Settings page for future timezone/location management
   - Functions: `detectUserTimezone()`, `getCurrentDateInTimezone()`, `getCurrentMonthInTimezone()`, `formatDateInTimezone()`, `isTodayInTimezone()`
 
-- 🏷️ **Transaction & Budget Item Clarity** (Requirement 10)
+- Ã°Å¸ÂÂ·Ã¯Â¸Â **Transaction & Budget Item Clarity** (Requirement 10)
   - Updated TransactionForm modal title: "Record Actual Income" / "Record Actual Expense"
   - Updated AddBudgetItem modal title: "Add Planned Income/Expense/Savings Item"
   - Clear distinction between actual transactions and planned budget items
   - Updated submit button labels: "Record Transaction" vs "Add Budget Item"
 
-- ⚠️ **Transaction Date Validation** (Requirement 11)
+- Ã¢Å¡Â Ã¯Â¸Â **Transaction Date Validation** (Requirement 11)
   - Created `dateValidation.ts` with date validation utilities
   - Warning banner when transaction date is outside current budget month
   - Three action options: Continue with current month, Switch to correct month, or Cancel
   - Visual feedback: Yellow border on date field when outside current month
   - Clear warning message: "This transaction date ([Date]) is outside the current budget month ([Month Year])"
 
-- ✏️ **Transaction Editing** (Requirement 12)
+- Ã¢Å“ÂÃ¯Â¸Â **Transaction Editing** (Requirement 12)
   - Created `transactionHelpers.ts` for transaction operations
   - Double-click any transaction in the list to edit it
   - Form pre-populates with existing transaction data
@@ -7636,7 +7671,7 @@ Both web and mobile apps now:
   - Maintains existing delete button functionality
   - Hover effect shows transactions are clickable
 
-- ⚙️ **Settings Page**
+- Ã¢Å¡â„¢Ã¯Â¸Â **Settings Page**
   - New Settings page at `/settings` route
   - Displays current timezone and local time
   - Location form with Country, City, Zip/Postal Code fields
@@ -7645,7 +7680,7 @@ Both web and mobile apps now:
 
 ### Fixed
 
-- 🐛 **All Date Calculations** - Updated to use user's local timezone instead of UTC
+- Ã°Å¸Ââ€º **All Date Calculations** - Updated to use user's local timezone instead of UTC
   - Fixed `currentMonth` state initialization in BudgetPage
   - Fixed `goToToday()` function to use local timezone
   - Fixed `isFutureMonth()` function to use timezone-aware helper
@@ -7655,7 +7690,7 @@ Both web and mobile apps now:
 
 ### Improved
 
-- 📝 **UI Labels** - Clear, consistent terminology throughout the application
+- Ã°Å¸â€œÂ **UI Labels** - Clear, consistent terminology throughout the application
   - "Transaction" or "Actual" for recorded activity
   - "Budget Item" or "Planned" for future allocations
   - "Spent" for actual amounts in categories
@@ -7679,12 +7714,12 @@ Both web and mobile apps now:
 
 ### Testing
 
-- ✅ Nov 30, 2025 7:22 PM EST → Shows November (not December)
-- ✅ Transaction date validation warning appears correctly
-- ✅ Double-click transaction editing works
-- ✅ Clear labels distinguish transactions from budget items
-- ✅ Settings page displays timezone correctly
-- ✅ Zero TypeScript diagnostics errors
+- Ã¢Å“â€¦ Nov 30, 2025 7:22 PM EST Ã¢â€ â€™ Shows November (not December)
+- Ã¢Å“â€¦ Transaction date validation warning appears correctly
+- Ã¢Å“â€¦ Double-click transaction editing works
+- Ã¢Å“â€¦ Clear labels distinguish transactions from budget items
+- Ã¢Å“â€¦ Settings page displays timezone correctly
+- Ã¢Å“â€¦ Zero TypeScript diagnostics errors
 
 ### Next Steps
 
@@ -7697,7 +7732,7 @@ Both web and mobile apps now:
 
 ### Added
 
-- 🎨 **Enhanced Month Navigation UI** - Redesigned month navigation interface
+- Ã°Å¸Å½Â¨ **Enhanced Month Navigation UI** - Redesigned month navigation interface
   - Large month heading with year (e.g., "December 2025")
   - Budget remaining display below heading with color coding
   - "Today" button for quick navigation to current month
@@ -7710,7 +7745,7 @@ Both web and mobile apps now:
 
 ### Fixed
 
-- 🐛 **Timezone Issues** - Fixed month display showing wrong month due to UTC/local timezone conversion
+- Ã°Å¸Ââ€º **Timezone Issues** - Fixed month display showing wrong month due to UTC/local timezone conversion
   - Changed `getMonthName()` to create dates in local timezone
   - Changed `isFutureMonth()` to compare year/month directly without date objects
   - October now correctly displays as "October" instead of "September"
@@ -7718,10 +7753,10 @@ Both web and mobile apps now:
 
 ### Improved
 
-- 📱 **Cleaner Header Design** - Removed horizontal month scroll, replaced with header-based navigation
-- 💾 **Future Month Handling** - Smart budget copying that preserves structure but resets transactions
-- 🎯 **User Experience** - Easier month navigation with prominent controls
-- 📅 **Month Context Awareness** - Clear visual indicators for past, current, and future months
+- Ã°Å¸â€œÂ± **Cleaner Header Design** - Removed horizontal month scroll, replaced with header-based navigation
+- Ã°Å¸â€™Â¾ **Future Month Handling** - Smart budget copying that preserves structure but resets transactions
+- Ã°Å¸Å½Â¯ **User Experience** - Easier month navigation with prominent controls
+- Ã°Å¸â€œâ€¦ **Month Context Awareness** - Clear visual indicators for past, current, and future months
 
 ### Technical
 
@@ -7737,7 +7772,7 @@ Both web and mobile apps now:
 
 ### Fixed
 
-- 🚀 **CloudFront Deployment** - Deployed latest web app version to production
+- Ã°Å¸Å¡â‚¬ **CloudFront Deployment** - Deployed latest web app version to production
   - **Root Cause**: CloudFront was serving an older version of the application without full authentication and data persistence features
   - **Solution**: Built and deployed latest React app to S3, invalidated CloudFront cache
   - **Impact**: Users can now properly authenticate and their budget data persists to DynamoDB
@@ -7745,14 +7780,14 @@ Both web and mobile apps now:
     - S3 Bucket: `budgetbuddy-web-app`
     - CloudFront Distribution: `E1L1SU9OV8L4YR`
     - Invalidation ID: `I8P1L2ABBFM8KQ71VD5APCDEQX`
-- 🔧 **Deploy Script Syntax Error** - Fixed PowerShell parsing error in deployment script
+- Ã°Å¸â€Â§ **Deploy Script Syntax Error** - Fixed PowerShell parsing error in deployment script
   - **Root Cause**: Emoji character in string causing PowerShell terminator error
   - **Solution**: Removed emoji from "Note: CloudFront cache invalidation" message
   - **Impact**: Deployment script now runs without syntax errors
 
 ### Improved
 
-- 📦 **Production Deployment** - Web app now live at https://d1ueeugn9zcx7n.cloudfront.net
+- Ã°Å¸â€œÂ¦ **Production Deployment** - Web app now live at https://d1ueeugn9zcx7n.cloudfront.net
   - Full authentication flow with JWT tokens
   - Budget data persistence to DynamoDB
   - Proper token storage in localStorage
@@ -7762,29 +7797,29 @@ Both web and mobile apps now:
 
 ### Fixed
 
-- 🐛 **Month Navigation Date Bug** - Resolved duplicate months and missing November
+- Ã°Å¸Ââ€º **Month Navigation Date Bug** - Resolved duplicate months and missing November
   - **Root Cause**: JavaScript Date object mutation when using `setMonth()` on string-constructed dates
   - **Solution**: Changed to `new Date(year, month - 1 + offset, 1)` constructor pattern
   - **Impact**: All 7 months now display correctly and consecutively
   - Applied fix to `changeMonth`, `selectMonth`, and `getMonthShortName` functions
-- 🎨 **Month Navigation Layout Jumping** - Eliminated visual shifting when switching months
+- Ã°Å¸Å½Â¨ **Month Navigation Layout Jumping** - Eliminated visual shifting when switching months
   - **Root Cause**: Variable button heights and widths causing layout reflow
   - **Solution**: Added fixed dimensions (`min-h-[60px]`, `min-w-[140px]`/`min-w-[70px]`)
   - **Impact**: Smooth transitions without any layout jumping
-- 🎯 **Multiple Month Selection** - Fixed ability to select multiple months simultaneously
+- Ã°Å¸Å½Â¯ **Multiple Month Selection** - Fixed ability to select multiple months simultaneously
   - **Root Cause**: Selection logic comparing month strings instead of offset position
   - **Solution**: Changed to `offset === 0` for center month selection only
   - **Impact**: Only one month can be selected at a time
 
 ### Improved
 
-- 🎨 **Month Navigation UX/UI** - Better visual hierarchy and user experience
+- Ã°Å¸Å½Â¨ **Month Navigation UX/UI** - Better visual hierarchy and user experience
   - Centered navigation on page with `justify-center` layout
   - Reduced selected month size from `text-lg` to `text-base` for better proportions
   - Added responsive horizontal scroll with hidden scrollbar for mobile
   - Improved spacing with `gap-1.5` for more compact appearance
   - Better hover states with subtle gray borders
-- 🧹 **Code Cleanup** - Removed obsolete and unused code
+- Ã°Å¸Â§Â¹ **Code Cleanup** - Removed obsolete and unused code
   - Removed unused `getMonthShortName` function
   - Cleaned up redundant date calculation logic
   - Improved code comments and documentation
@@ -7807,18 +7842,18 @@ Both web and mobile apps now:
 
 ### Added
 
-- 🤖 **CI/CD Automation System** - Complete monitoring and documentation enforcement
+- Ã°Å¸Â¤â€“ **CI/CD Automation System** - Complete monitoring and documentation enforcement
   - Kiro hook for automatic GitHub Actions workflow monitoring
   - Pre-push git hook enforcing mandatory documentation updates
   - Automated status checking with failure log retrieval
   - AI-assisted deployment failure resolution
-- 📚 **Comprehensive CI/CD Documentation** - Complete automation guide
+- Ã°Å¸â€œÅ¡ **Comprehensive CI/CD Documentation** - Complete automation guide
   - Architecture diagrams for both automation mechanisms
   - Detailed workflow diagrams showing process flows
   - Full code examples and configuration details
   - Troubleshooting guide for common issues
   - Command reference and file locations
-- 🔍 **CI/CD Status Monitoring Script** - GitHub Actions integration
+- Ã°Å¸â€Â **CI/CD Status Monitoring Script** - GitHub Actions integration
   - Checks latest workflow run status via GitHub CLI
   - Fetches failure logs automatically
   - Saves status to `.kiro/cicd-status/latest.json`
@@ -7826,18 +7861,18 @@ Both web and mobile apps now:
 
 ### Technical Implementation
 
-- 🏗️ **Pre-Push Hook** (`.githooks/pre-push`)
+- Ã°Å¸Ââ€”Ã¯Â¸Â **Pre-Push Hook** (`.githooks/pre-push`)
   - Validates 5 required documentation files exist
   - Checks file freshness (must be updated within 2 hours)
   - Displays 6-section mandatory checklist
   - Requires user confirmation before push
   - Verifies minimum 3 files actually updated
-- 🏗️ **Kiro Hook** (`.kiro/hooks/monitor-cicd-pipeline.kiro.hook`)
+- Ã°Å¸Ââ€”Ã¯Â¸Â **Kiro Hook** (`.kiro/hooks/monitor-cicd-pipeline.kiro.hook`)
   - Manual button trigger for on-demand monitoring
   - Executes `check-cicd-status.js` script
   - Alerts Kiro on exit code 1 (failure)
   - Provides failure logs for AI analysis
-- 🏗️ **Status Checker** (`scripts/check-cicd-status.js`)
+- Ã°Å¸Ââ€”Ã¯Â¸Â **Status Checker** (`scripts/check-cicd-status.js`)
   - GitHub CLI integration for workflow data
   - Fetches latest run from `deploy-dev.yml`
   - Retrieves failure logs via `gh run view --log-failed`
@@ -7845,7 +7880,7 @@ Both web and mobile apps now:
 
 ### Documentation Files
 
-- 📄 **docs/cicd-automation-guide.md** - Complete automation guide (1,385 lines)
+- Ã°Å¸â€œâ€ž **docs/cicd-automation-guide.md** - Complete automation guide (1,385 lines)
   - Mandatory documentation updates mechanism
   - CI/CD deployment monitoring mechanism
   - Integration and usage examples
@@ -7870,17 +7905,17 @@ Both web and mobile apps now:
 
 ### Added
 
-- 📊 **Summary View** - Visual budget overview in right sidebar
+- Ã°Å¸â€œÅ  **Summary View** - Visual budget overview in right sidebar
   - Circular progress chart showing total income
   - Three-column stats display (Planned/Spent/Remaining)
   - Color-coded category breakdown with percentages
   - Tab system to switch between Summary and Transactions
-- 🎨 **Responsive Layout Improvements** - Better tablet/desktop experience
+- Ã°Å¸Å½Â¨ **Responsive Layout Improvements** - Better tablet/desktop experience
   - Fixed column alignment for Planned/Received amounts
   - Proper sidebar toggle behavior on tablet sizes (768px+)
   - Hamburger menu for sidebar access on smaller screens
   - Transaction panel visible on tablet (768px+) instead of only desktop
-- 📱 **Design Scope Clarification** - Updated specs for web app focus
+- Ã°Å¸â€œÂ± **Design Scope Clarification** - Updated specs for web app focus
   - Desktop (1024px+): Full three-column layout
   - Tablet (768px-1024px): Collapsible sidebar with responsive columns
   - Mobile landscape: Workable layout for horizontal viewing
@@ -7888,40 +7923,40 @@ Both web and mobile apps now:
 
 ### Fixed
 
-- 🐛 **Column Alignment Issue** - Fixed Planned/Received columns not aligning vertically
+- Ã°Å¸Ââ€º **Column Alignment Issue** - Fixed Planned/Received columns not aligning vertically
   - Root cause: Edit/delete buttons taking up space even when invisible
   - Solution: Added fixed widths (w-24) and flex-shrink-0 to prevent column shifting
   - Added spacer (w-16) for button container to maintain consistent alignment
-- 🐛 **Responsive Breakpoint Issues** - Changed from lg (1024px) to md (768px)
+- Ã°Å¸Ââ€º **Responsive Breakpoint Issues** - Changed from lg (1024px) to md (768px)
   - Column headers now visible on tablet
   - Side-by-side layout works on tablet sizes
   - Proper responsive behavior across all breakpoints
-- 🐛 **Sidebar Visibility** - Fixed sidebar completely hidden on tablet
+- Ã°Å¸Ââ€º **Sidebar Visibility** - Fixed sidebar completely hidden on tablet
   - Added hamburger menu button in header
   - Sidebar now toggles as overlay on tablet/mobile
   - Dark overlay when sidebar is open
 
 ### Updated Documentation
 
-- 📚 **design.md** - Updated responsive design section to focus on web app
+- Ã°Å¸â€œÅ¡ **design.md** - Updated responsive design section to focus on web app
   - Removed mobile portrait specifications (bottom tabs, single-view)
   - Added note about separate native mobile app project
   - Clarified tablet and landscape mobile behavior
-- 📚 **requirements.md** - Updated Requirement 4 acceptance criteria
+- Ã°Å¸â€œÅ¡ **requirements.md** - Updated Requirement 4 acceptance criteria
   - Removed mobile-specific requirements
   - Added tablet responsive requirements
   - Clarified desktop/tablet/landscape scope
 
 ### Technical Improvements
 
-- 🏗️ **Tab System** - Added state management for Summary/Transactions toggle
-- 🎯 **Fixed-Width Columns** - Implemented consistent column widths across all rows
+- Ã°Å¸Ââ€”Ã¯Â¸Â **Tab System** - Added state management for Summary/Transactions toggle
+- Ã°Å¸Å½Â¯ **Fixed-Width Columns** - Implemented consistent column widths across all rows
   - Column headers: w-24 (96px) for each amount column
   - Category rows: w-24 with flex-shrink-0
   - Total rows: w-24 with matching spacers
   - Button container: w-16 (64px) fixed width
-- 🎨 **Visual Calculations** - Dynamic percentage calculations for category breakdown
-- 📦 **Color System** - Automatic color assignment for category indicators
+- Ã°Å¸Å½Â¨ **Visual Calculations** - Dynamic percentage calculations for category breakdown
+- Ã°Å¸â€œÂ¦ **Color System** - Automatic color assignment for category indicators
 
 ### Progress Metrics
 
@@ -7949,49 +7984,49 @@ Both web and mobile apps now:
 
 ### Added
 
-- 🎯 **Budget Item Management** - Complete CRUD operations for budget categories
+- Ã°Å¸Å½Â¯ **Budget Item Management** - Complete CRUD operations for budget categories
   - Add new budget categories with name, icon, planned amount
   - Edit existing categories with inline hover buttons
   - Delete categories with confirmation dialog
   - Support for recurring items (weekly, bi-weekly, monthly, annually)
-- 📊 **Three-Column EveryDollar Layout** - Professional budget interface
+- Ã°Å¸â€œÅ  **Three-Column EveryDollar Layout** - Professional budget interface
   - Left sidebar with navigation (Budget, Accounts, Roadmap, etc.)
   - Center column with budget categories and groups
   - Right sidebar with real-time transaction history
-- 🎨 **Floating Action Button (FAB)** - Quick transaction entry
+- Ã°Å¸Å½Â¨ **Floating Action Button (FAB)** - Quick transaction entry
   - Expandable menu with Income/Expense options
   - Category selection dropdown
   - Minimal form (amount, description, date)
-- 📱 **Responsive Design** - Works on all devices
+- Ã°Å¸â€œÂ± **Responsive Design** - Works on all devices
   - Desktop: Full three-column layout
   - Tablet: Collapsible sidebar
   - Mobile: Slide-out sidebar with overlay
-- 💾 **Data Persistence** - Automatic localStorage saving
+- Ã°Å¸â€™Â¾ **Data Persistence** - Automatic localStorage saving
   - Budget items persist across sessions
   - Transactions stored with categories
   - Real-time balance calculations
 
 ### Fixed
 
-- 🐛 **Duplicate Closing Braces** - Cleaned up syntax errors in BudgetPage
-- 🎨 **Modal Positioning** - Fixed budget item modal placement
-- 🔧 **Type Definitions** - Added 'annually' to recurring frequency types
-- 💻 **Component Structure** - Resolved file corruption from multiple appends
+- Ã°Å¸Ââ€º **Duplicate Closing Braces** - Cleaned up syntax errors in BudgetPage
+- Ã°Å¸Å½Â¨ **Modal Positioning** - Fixed budget item modal placement
+- Ã°Å¸â€Â§ **Type Definitions** - Added 'annually' to recurring frequency types
+- Ã°Å¸â€™Â» **Component Structure** - Resolved file corruption from multiple appends
 
 ### Removed
 
-- 🗑️ **27 Obsolete Documentation Files** - Cleaned up session-specific docs
+- Ã°Å¸â€”â€˜Ã¯Â¸Â **27 Obsolete Documentation Files** - Cleaned up session-specific docs
   - AI-ONBOARDING-IMPLEMENTATION.md
   - budget-integration-guide.md
   - BUDGET-PRECISION-FIX.md
   - CICD-FIX.md
   - COMPREHENSIVE-ANALYSIS-AND-RECOMMENDATIONS.md
   - And 22 more obsolete files
-- 🗑️ **3 Unused Page Components**
+- Ã°Å¸â€”â€˜Ã¯Â¸Â **3 Unused Page Components**
   - DashboardPage.tsx
   - TransactionsPage.tsx
   - TransactionTest.tsx
-- 🗑️ **6 Obsolete Spec Directories**
+- Ã°Å¸â€”â€˜Ã¯Â¸Â **6 Obsolete Spec Directories**
   - api-troubleshooting/
   - bank-integration/
   - cicd-pipeline/
@@ -8001,17 +8036,17 @@ Both web and mobile apps now:
 
 ### Updated Documentation
 
-- 📚 **requirements.md** - Updated to reflect budget planning and transaction recording
-- 📚 **design.md** - Updated with three-column layout and new modals
-- 📚 **tasks.md** - Marked tasks 1-5 as completed, added task 2.4
+- Ã°Å¸â€œÅ¡ **requirements.md** - Updated to reflect budget planning and transaction recording
+- Ã°Å¸â€œÅ¡ **design.md** - Updated with three-column layout and new modals
+- Ã°Å¸â€œÅ¡ **tasks.md** - Marked tasks 1-5 as completed, added task 2.4
 
 ### Technical Improvements
 
-- 🏗️ **Clean Architecture** - Separated planning (budget items) from recording (transactions)
-- 🎯 **State Management** - Proper useState hooks for modals and forms
-- 🎨 **UI Components** - Hover states, edit/delete buttons, responsive breakpoints
-- 📦 **Data Models** - BudgetGroup structure with categories and transactions
-- 🔧 **localStorage Integration** - Automatic saving on all changes
+- Ã°Å¸Ââ€”Ã¯Â¸Â **Clean Architecture** - Separated planning (budget items) from recording (transactions)
+- Ã°Å¸Å½Â¯ **State Management** - Proper useState hooks for modals and forms
+- Ã°Å¸Å½Â¨ **UI Components** - Hover states, edit/delete buttons, responsive breakpoints
+- Ã°Å¸â€œÂ¦ **Data Models** - BudgetGroup structure with categories and transactions
+- Ã°Å¸â€Â§ **localStorage Integration** - Automatic saving on all changes
 
 ### Progress Metrics
 
@@ -8035,42 +8070,42 @@ Both web and mobile apps now:
 
 ### Added
 
-- 🎯 **Unified Budget & Transaction System** - Complete integration between budget planning and transaction tracking
-- 📊 **Real-time Budget vs Actual Tracking** - Live progress bars showing spending against planned amounts
-- 🎨 **Consistent Category System** - Same categories (Salary 💰, Groceries 🛒, Entertainment 🎬) across all interfaces
-- 📈 **Zero-based Budget Planning** - Visual validation ensuring Income - Savings - Expenses = 0
-- 🌙 **Enhanced Dark Theme Modal** - Fixed white theme visibility issues in transaction planning
-- 🔄 **Automatic Budget Updates** - Transaction entries automatically update budget progress
-- 📱 **Professional UI Components** - Progress bars, category selectors, and visual indicators
+- Ã°Å¸Å½Â¯ **Unified Budget & Transaction System** - Complete integration between budget planning and transaction tracking
+- Ã°Å¸â€œÅ  **Real-time Budget vs Actual Tracking** - Live progress bars showing spending against planned amounts
+- Ã°Å¸Å½Â¨ **Consistent Category System** - Same categories (Salary Ã°Å¸â€™Â°, Groceries Ã°Å¸â€ºâ€™, Entertainment Ã°Å¸Å½Â¬) across all interfaces
+- Ã°Å¸â€œË† **Zero-based Budget Planning** - Visual validation ensuring Income - Savings - Expenses = 0
+- Ã°Å¸Å’â„¢ **Enhanced Dark Theme Modal** - Fixed white theme visibility issues in transaction planning
+- Ã°Å¸â€â€ž **Automatic Budget Updates** - Transaction entries automatically update budget progress
+- Ã°Å¸â€œÂ± **Professional UI Components** - Progress bars, category selectors, and visual indicators
 
 ### Fixed
 
-- 🐛 **Category Mismatch Resolution** - Eliminated disconnect between budget and transaction categories
-- 🎨 **White Theme Modal Issue** - Added CSS overrides to ensure dark theme visibility in transaction modal
-- 🔧 **Import Path Corrections** - Fixed relative import paths (../../../ → ../../../../) for proper module resolution
-- 💻 **TypeScript Type Safety** - Resolved type errors and improved component interfaces
+- Ã°Å¸Ââ€º **Category Mismatch Resolution** - Eliminated disconnect between budget and transaction categories
+- Ã°Å¸Å½Â¨ **White Theme Modal Issue** - Added CSS overrides to ensure dark theme visibility in transaction modal
+- Ã°Å¸â€Â§ **Import Path Corrections** - Fixed relative import paths (../../../ Ã¢â€ â€™ ../../../../) for proper module resolution
+- Ã°Å¸â€™Â» **TypeScript Type Safety** - Resolved type errors and improved component interfaces
 
 ### Technical Improvements
 
-- 🏗️ **Shared Type Definitions** - Created unified category and budget types in packages/shared/src/types/
-- 🎯 **Component Architecture** - Implemented BudgetDashboard, BudgetPlanningModal, CategorySelector components
-- 🎨 **CSS Architecture** - Added modal-dark-theme.css with !important overrides for theme consistency
-- 📦 **Mock Data Integration** - Enhanced development experience with realistic mock data
-- 🔧 **Development Tools** - Added DevHelper component for easy mock mode toggling
+- Ã°Å¸Ââ€”Ã¯Â¸Â **Shared Type Definitions** - Created unified category and budget types in packages/shared/src/types/
+- Ã°Å¸Å½Â¯ **Component Architecture** - Implemented BudgetDashboard, BudgetPlanningModal, CategorySelector components
+- Ã°Å¸Å½Â¨ **CSS Architecture** - Added modal-dark-theme.css with !important overrides for theme consistency
+- Ã°Å¸â€œÂ¦ **Mock Data Integration** - Enhanced development experience with realistic mock data
+- Ã°Å¸â€Â§ **Development Tools** - Added DevHelper component for easy mock mode toggling
 
 ### Integration Features
 
-- ✅ **Budget Planning Flow** - Complete budget creation with category allocation and zero-based validation
-- ✅ **Transaction Entry Flow** - Enhanced transaction modal with unified category selection
-- ✅ **Progress Visualization** - Real-time progress bars showing budget utilization
-- ✅ **Visual Consistency** - Same icons, colors, and naming across budget and transaction interfaces
-- ✅ **Responsive Design** - Professional dark theme matching design requirements
+- Ã¢Å“â€¦ **Budget Planning Flow** - Complete budget creation with category allocation and zero-based validation
+- Ã¢Å“â€¦ **Transaction Entry Flow** - Enhanced transaction modal with unified category selection
+- Ã¢Å“â€¦ **Progress Visualization** - Real-time progress bars showing budget utilization
+- Ã¢Å“â€¦ **Visual Consistency** - Same icons, colors, and naming across budget and transaction interfaces
+- Ã¢Å“â€¦ **Responsive Design** - Professional dark theme matching design requirements
 
 ### Testing & Documentation
 
-- 📚 **Comprehensive Documentation** - Created UNIFIED-BUDGET-SYSTEM.md and budget-integration-guide.md
-- 🧪 **Testing Scenarios** - Documented complete testing flows for budget-transaction integration
-- 🎯 **User Guides** - Step-by-step instructions for testing unified system functionality
+- Ã°Å¸â€œÅ¡ **Comprehensive Documentation** - Created UNIFIED-BUDGET-SYSTEM.md and budget-integration-guide.md
+- Ã°Å¸Â§Âª **Testing Scenarios** - Documented complete testing flows for budget-transaction integration
+- Ã°Å¸Å½Â¯ **User Guides** - Step-by-step instructions for testing unified system functionality
 
 ### Progress Metrics
 
@@ -8093,34 +8128,34 @@ Both web and mobile apps now:
 
 ### Added
 
-- ✅ Complete transaction CRUD operations with validation
-- ✅ Enhanced error handling with custom error classes (ValidationError, AuthorizationError, etc.)
-- ✅ Simplified API client without package linking dependencies
-- ✅ Budget service separation for better maintainability
-- ✅ Unit testing infrastructure with 13/13 tests passing
-- ✅ Single-command deployment workflow
-- ✅ Development quick start guide
+- Ã¢Å“â€¦ Complete transaction CRUD operations with validation
+- Ã¢Å“â€¦ Enhanced error handling with custom error classes (ValidationError, AuthorizationError, etc.)
+- Ã¢Å“â€¦ Simplified API client without package linking dependencies
+- Ã¢Å“â€¦ Budget service separation for better maintainability
+- Ã¢Å“â€¦ Unit testing infrastructure with 13/13 tests passing
+- Ã¢Å“â€¦ Single-command deployment workflow
+- Ã¢Å“â€¦ Development quick start guide
 
 ### Fixed
 
-- 🔧 Frontend integration issues with API client package linking
-- 🔧 Error handling with field-specific validation messages
-- 🔧 Budget calculation logic separated into dedicated service
-- 🔧 Deployment workflow simplified for development efficiency
+- Ã°Å¸â€Â§ Frontend integration issues with API client package linking
+- Ã°Å¸â€Â§ Error handling with field-specific validation messages
+- Ã°Å¸â€Â§ Budget calculation logic separated into dedicated service
+- Ã°Å¸â€Â§ Deployment workflow simplified for development efficiency
 
 ### Technical Improvements
 
-- 🏗️ Separated concerns: budget-service.js, errors.js
-- 🏗️ Better logging with structured context
-- 🏗️ Streamlined testing approach focused on critical paths
-- 🏗️ Enhanced transaction validation with business logic
+- Ã°Å¸Ââ€”Ã¯Â¸Â Separated concerns: budget-service.js, errors.js
+- Ã°Å¸Ââ€”Ã¯Â¸Â Better logging with structured context
+- Ã°Å¸Ââ€”Ã¯Â¸Â Streamlined testing approach focused on critical paths
+- Ã°Å¸Ââ€”Ã¯Â¸Â Enhanced transaction validation with business logic
 
 ### Testing
 
-- ✅ 13/13 unit tests passing
-- ✅ API health checks successful
-- ✅ Frontend integration verified
-- ✅ Deployment pipeline tested
+- Ã¢Å“â€¦ 13/13 unit tests passing
+- Ã¢Å“â€¦ API health checks successful
+- Ã¢Å“â€¦ Frontend integration verified
+- Ã¢Å“â€¦ Deployment pipeline tested
 
 ### Progress
 

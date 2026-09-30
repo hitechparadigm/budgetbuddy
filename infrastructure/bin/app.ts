@@ -24,7 +24,6 @@ import { AuthOnboardingStack } from '../lib/auth-onboarding-stack';
 import { ApiStack } from '../lib/api-stack';
 import { ApiFeaturesStack } from '../lib/api-features-stack';
 import { ApiFeaturesExtendedStack } from '../lib/api-features-extended-stack';
-import { ApiFamilyStack } from '../lib/api-family-stack';
 import { ApiBudgetsStack } from '../lib/api-budgets-stack';
 import { HostingStack } from '../lib/hosting-stack';
 import { MonitoringStack } from '../lib/monitoring-stack';
@@ -130,18 +129,6 @@ const apiFeaturesExtendedStack = new ApiFeaturesExtendedStack(app, `${stackPrefi
   // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
 });
 
-/**
- * API Family Stack - Family collaboration features (DEPRECATED)
- * Returns 410 Gone for all requests. Kept deployed during transition period.
- * Will be removed once all clients have migrated to /budgets/* endpoints.
- * @deprecated Use ApiBudgetsStack instead.
- */
-const apiFamilyStack = new ApiFamilyStack(app, `${stackPrefix}-api-family`, {
-  env,
-  description: 'BudgetBuddy Family API stack for family collaboration and member management',
-  table: databaseStack.table,
-  userPool: authStack.userPool,
-});
 
 /**
  * API Budgets Stack - Budget collaboration features (replaces api-family-stack)
@@ -195,8 +182,6 @@ apiFeaturesStack.addDependency(authStack);
 apiFeaturesExtendedStack.addDependency(databaseStack);
 apiFeaturesExtendedStack.addDependency(authStack);
 // Temporarily removed dependency on apiStack to allow independent deployment
-apiFamilyStack.addDependency(databaseStack);
-apiFamilyStack.addDependency(authStack);
 apiBudgetsStack.addDependency(databaseStack);
 apiBudgetsStack.addDependency(authStack);
 notificationStack.addDependency(databaseStack);
@@ -206,7 +191,6 @@ monitoringStack.addDependency(authStack);
 monitoringStack.addDependency(apiStack);
 monitoringStack.addDependency(apiFeaturesStack);
 monitoringStack.addDependency(apiFeaturesExtendedStack);
-monitoringStack.addDependency(apiFamilyStack);
 monitoringStack.addDependency(apiBudgetsStack);
 monitoringStack.addDependency(notificationStack);
 
