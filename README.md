@@ -17,6 +17,22 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
+### Recent Achievements (2026-09-30)
+
+- **Mobile test suite fully green** - fixed 4 failing property-based test suites in
+  `packages/mobile` (`currency.test.ts`, `notifications.test.ts`, `quietHours.test.ts`,
+  `data-export.test.ts`). All were test-content bugs (stale assertions, unrealistic
+  generators, a fast-check mock-accumulation issue) - no service code changed. Full suite:
+  257/259 passing, 2 skipped, 0 failed (up from 241/259).
+- **Mobile wired into the workspace and CI** - added `lint:check:mobile`/`type-check:mobile`/
+  `test:mobile` root scripts and a `mobile-tests` job in `pr-check.yml`. Found and fixed two
+  real, previously-silent bugs along the way: a malformed ESLint `extends` entry in
+  `packages/mobile/.eslintrc.js`, and a missing `cross-env` dependency that had silently
+  broken `lint:check:web` too.
+- **api-family-stack fully removed** - destroyed the deprecated stack after confirming zero
+  real traffic; cleaned up two CI/CD workflows that still hardcoded it in their
+  post-deployment health checks.
+
 ### Recent Achievements (2026-09-23)
 
 - **Autonomous mode repaired** - hooks reduced 15 -> 4. Found two hook schemas live at once causing six

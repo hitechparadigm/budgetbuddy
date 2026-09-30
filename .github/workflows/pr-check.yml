@@ -271,6 +271,29 @@ jobs:
       - name: Run Lambda function tests
         run: npm run test:lambda
 
+  mobile-tests:
+    name: Mobile Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install mobile dependencies
+        working-directory: packages/mobile
+        run: npm install --legacy-peer-deps
+
+      - name: Type check mobile
+        run: npm run type-check:mobile
+
+      - name: Run mobile test suite
+        run: npm run test:mobile
+
   build-validation:
     name: Build Validation
     runs-on: ubuntu-latest
@@ -306,6 +329,7 @@ jobs:
         unit-tests,
         security-scan,
         lambda-function-tests,
+        mobile-tests,
         build-validation,
       ]
     if: always()
@@ -322,12 +346,14 @@ jobs:
           echo "| Unit Tests | ${{ needs.unit-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Security Scan | ${{ needs.security-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Lambda Tests | ${{ needs.lambda-function-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mobile Tests | ${{ needs.mobile-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Build | ${{ needs.build-validation.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [[ "${{ needs.code-quality.result }}" == "success" &&
                 "${{ needs.infrastructure-validation.result }}" == "success" &&
                 "${{ needs.unit-tests.result }}" == "success" &&
+                "${{ needs.mobile-tests.result }}" == "success" &&
                 "${{ needs.build-validation.result }}" == "success" ]]; then
             echo "🎉 **All validation checks passed!** This PR is ready for review." >> $GITHUB_STEP_SUMMARY
           else

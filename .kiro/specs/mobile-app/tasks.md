@@ -31,12 +31,11 @@ But the app is only reachable through 4 tabs — Budget, Transactions, Summary, 
 CreditScore, DebtPayoff, Investments, NetWorth, Subscriptions, Tips, OfflineSettings,
 SyncSettings) plus the entire onboarding flow (`OnboardingScreen`/`OnboardingFlow`) are dead
 code: built, but never registered in `AuthNavigator` or `RootNavigator`, and not linked from
-`SettingsScreen` either. `packages/mobile` is also not wired into the root workspace or CI.
+`SettingsScreen` either. `packages/mobile` is now wired into the root workspace scripts
+and `pr-check.yml` (see Task 1.6/22.2).
 
 - **Phase 1 (Foundation/Tier 1):** mostly built, but Goals screen/tabs and onboarding are
-  unreachable, and workspace/CI wiring (1.6) is not done. Architecture uses React Context
-  (`AuthContext`, `CurrencyContext`), not Zustand — despite design.md and task 1.3 assuming
-  Zustand; no Zustand dependency exists in `package.json` and no `stores/` directory exists.
+  unreachable. Workspace/CI wiring (1.6) is now done. Architecture uses React Context
 - **Phase 2 (Extended/Tier 2):** screens exist for most items (8, 9, 10-variant, 11, 13, 14,
   10's Accounts is `BankSyncScreen` instead) but are unreachable dead code per above. Biometric
   auth (15) has a real screen (`BiometricSetupScreen.tsx`) but is also not wired in. App store
@@ -45,8 +44,8 @@ code: built, but never registered in `AuthNavigator` or `RootNavigator`, and not
   coverage across stores/services/offline/components (18-21 largely covered, though written
   against a different task structure — property tests exist per-feature, not per the
   authStore/budgetStore split the tasks assumed, since those stores don't exist). Coverage gate
-  script exists (22.1) but is **not wired into `pr-check.yml`** (22.2 not done). The suite now
-  passes clean at 257/259 (2 skipped, 0 failed) after fixing the 4 previously-failing property
+  script exists (22.1, done) and is now wired into `pr-check.yml` (22.2, done). The suite
+  passes clean at 257/259 (2 skipped, 0 failed) after fixing 4 previously-failing property
   test files' test-content bugs (see Task 19.4). Integration tests (23) and Detox E2E (24)
   not started.
 
@@ -70,10 +69,22 @@ code: built, but never registered in `AuthNavigator` or `RootNavigator`, and not
         `QueryClientProvider` configured in `App.tsx`; `src/services/api.ts` present.
   - [x] 1.5 Configure Expo SecureStore for token management — `src/services/auth.ts` stores
         access/refresh/id tokens via `expo-secure-store` (with localStorage fallback on web).
-  - [ ] 1.6 Add `packages/mobile` to root workspace in package.json — **not done**. Root
-        `package.json` has no `workspaces` field at all, and no root script references
-        `packages/mobile`. `tsconfig.json` path aliases only cover `@budget-buddy/shared/*` and
-        `@budget-buddy/api-client/*`, not mobile.
+  - [x] 1.6 Add `packages/mobile` to root workspace in package.json - done, but not via a
+        real npm `workspaces` field (root has none for any package - web-app and shared
+        also install independently via `cd <dir> && npm ci/install` in root scripts, not
+        npm workspaces). Followed that same existing pattern rather than introducing real
+        workspaces as a separate, riskier change: added `lint:check:mobile`,
+        `type-check:mobile`, and `test:mobile` root scripts. Also fixed two real bugs this
+        surfaced: `.eslintrc.js` had `'@typescript-eslint/recommended'` (missing the
+        required `plugin:` prefix, so ESLint silently failed to extend the config) and no
+        script could invoke mobile's ESLint at all without it; and `lint:check:mobile`
+        needed `cross-env` (added as a pinned root devDependency, `10.1.0`) since it wasn't
+        installed despite `lint:check:web` already depending on it - `lint:check:web` was
+        silently broken the same way before this fix. `lint:check:mobile` now surfaces 151
+        real pre-existing lint errors once the config actually runs; NOT chained into
+        `lint:check:all` (would break that aggregate command) - fixing those 151 errors is
+        a separate, larger cleanup, tracked as its own follow-up, not part of this task.
+        `type-check:mobile` and `test:mobile` verified clean (0 errors; 257/259 passing).
   - [x] 1.7 Configure TypeScript and ESLint (same rules as web) - **done**. `npm run
         typecheck` went from the original 127 errors down to 0 across the full mobile package,
         fixed in stages across this session and a delegated sub-agent pass:
@@ -329,9 +340,12 @@ to reflect what's actually covered and passing today, not what the original task
         runs; the suite now completes clean (257/259 passing, 2 skipped, 0 failed) after
         fixing the 4 previously-failing property test files. Coverage percentage from this
         run not yet independently re-confirmed against the 80% target in this pass.
-  - [ ] 22.2 Wire the mobile suite into `pr-check.yml` — **not done**. `pr-check.yml` has no
-        job referencing `packages/mobile`; its `unit-tests` job only runs the root-level
-        `npm run test:unit` (backend Lambda tests).
+  - [x] 22.2 Wire the mobile suite into `pr-check.yml` - done. Added a new `mobile-tests`
+        job (type-check + `npm run test:mobile`, `npm install --legacy-peer-deps` since the
+        project pins `react-native@0.72.6` while `react-native-get-random-values@^2.0.0`
+        wants `>=0.81` - a pre-existing, unrelated peer conflict, same flag used locally all
+        session); included in `pr-summary`'s `needs` list, its status table row, and the
+        final pass/fail gate condition.
 
 - [ ] 23. Integration tests (dev only, AWS profile `hitechparadigm`)
   - [ ] 23.1 Sign in against dev Cognito, token persists across app restart
