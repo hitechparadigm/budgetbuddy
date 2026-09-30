@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.10.7] - 2026-09-30
+
+### fix: mobile-app - resolve 4 failing property-based test suites (test-content bugs)
+
+- `packages/mobile`'s `quietHours.test.ts`, `notifications.test.ts`, `currency.test.ts`, and
+  `data-export.test.ts` were failing on real test-content bugs (assertions/generators that
+  did not match actual service behavior), not on implementation bugs. No file under
+  `packages/mobile/src/services/` was changed.
+- Root causes: assertions on a nonexistent `data` field on scheduled notifications; a stale
+  AsyncStorage key string; a fast-check mock-accumulation bug where `scheduleNotificationAsync`
+  /`printToFileAsync` call counts leaked across property iterations inside a single `fc.assert`
+  (no intervening `beforeEach` between iterations); an unconstrained id generator that could
+  produce CSV-unsafe characters or duplicate short ids; a CSV date-filter expectation that did
+  not apply the same `filterBudgetsByDateRange` logic the service actually applies; and a
+  currency round-trip test asserting a 0.1% tolerance against a service that intentionally
+  applies independent +/-2% randomized variation per conversion leg, plus symbol assertions
+  that assumed the app's own `Currency.symbol` field always matches `Intl.NumberFormat`'s
+  locale-specific rendering (it does not, for AUD/CAD/JPY).
+- `quietHours.test.ts`'s remaining flaky case (overnight quiet-hours evening probe) was fixed
+  by testing the start instant directly instead of a capped `startHour+1` probe that could
+  land before a start time like 23:30.
+- Full `packages/mobile` suite: 25/25 suites passing, 257/259 tests passing, 2 skipped, 0
+  failed (up from 241/259 baseline at session start). Verified stable across 5+ repeated runs
+  of each fixed file and 3 repeated full-suite runs.
+- `TwoFactorSetup.test.tsx`/`quick-actions.test.ts` remain order-dependent flaky; explicitly
+  out of scope for this fix.
+
+
 ## [1.10.6] - 2026-09-30
 
 ### fix: remove stale api-family references from CI/CD workflows

@@ -98,20 +98,33 @@ describe('Property-Based Tests: Quiet Hours', () => {
           fc.integer({ min: 0, max: 10 }), // endHour (morning)
           fc.integer({ min: 0, max: 59 }), // endMinute
           (startHour, startMinute, endHour, endMinute) => {
-            // Test time in evening (should be in quiet hours)
+            const endTotal = endHour * 60 + endMinute;
+            // If quiet hours end exactly at midnight (endTotal === 0), the morning
+            // portion of the overnight window is empty - there is no time before
+            // midnight that is still "morning" and within [0, end). Skip this
+            // degenerate case rather than asserting a morning window that cannot
+            // exist.
+            fc.pre(endTotal > 0);
+            // Test time in evening (should be in quiet hours) - the start
+            // instant itself is always inside the overnight window
+            // (currentMinutes >= startMinutes holds when current === start),
+            // avoiding the earlier bug where capping startHour+1 at 23:00
+            // could land before a start time like 23:30.
             const eveningResult = isInQuietHours(
-              startHour + 1 > 23 ? 23 : startHour + 1,
-              0,
+              startHour,
+              startMinute,
               startHour,
               startMinute,
               endHour,
               endMinute
             );
 
-            // Test time in morning (should be in quiet hours)
+            // Test time in morning (should be in quiet hours) - one minute before
+            // the end boundary, guaranteed to exist since endTotal > 0.
+            const morningTotal = endTotal - 1;
             const morningResult = isInQuietHours(
-              endHour - 1 < 0 ? 0 : endHour - 1,
-              0,
+              Math.floor(morningTotal / 60),
+              morningTotal % 60,
               startHour,
               startMinute,
               endHour,
@@ -143,10 +156,17 @@ describe('Property-Based Tests: Quiet Hours', () => {
           fc.integer({ min: 16, max: 20 }), // endHour (later same day)
           fc.integer({ min: 0, max: 59 }), // endMinute
           (startHour, startMinute, endHour, endMinute) => {
+            const startTotal = startHour * 60 + startMinute;
+            const endTotal = endHour * 60 + endMinute;
+            // The generators guarantee endHour > startHour (16-20 vs 10-15), so
+            // startTotal < endTotal always holds and this midpoint is always
+            // strictly inside (startTotal, endTotal).
+            const duringTotal = Math.floor((startTotal + endTotal) / 2);
+
             // Test time during quiet hours
             const duringResult = isInQuietHours(
-              startHour + 1,
-              0,
+              Math.floor(duringTotal / 60),
+              duringTotal % 60,
               startHour,
               startMinute,
               endHour,

@@ -38,32 +38,70 @@ describe('Currency System Properties', () => {
     it('should maintain conversion consistency (A->B->A = A)', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.float({ min: Math.fround(0.01), max: Math.fround(100000) }),
+          // noNaN is required: fast-check's default float generator can
+          // occasionally draw NaN even with min/max bounds set (it's one of
+          // the special edge values it explores), and NaN is not a valid
+          // currency amount for this property.
+          fc.float({ min: Math.fround(0.01), max: Math.fround(100000), noNaN: true }),
           fc.constantFrom(...SUPPORTED_CURRENCIES.map(c => c.code)),
           fc.constantFrom(...SUPPORTED_CURRENCIES.map(c => c.code)),
           async (amount, fromCurrency, toCurrency) => {
             // Skip if same currency
             if (fromCurrency === toCurrency) return;
 
-            // Convert A -> B
-            const conversion1 = await currencyService.convertAmount(amount, fromCurrency, toCurrency);
+            // The real service's fetchExchangeRate (invoked internally by
+            // getExchangeRate/convertAmount whenever no fresh cached rate
+            // exists - true here, since exchangeRates is reset to an empty
+            // Map in beforeEach) applies an independent random +/-2%
+            // variation on top of the fallback rate for EACH leg of the
+            // round trip:
+            //   const variation = (Math.random() - 0.5) * 0.04;
+            //   const adjustedRate = rate.rate * (1 + variation);
+            // Two independently-randomized legs mean a round trip is not
+            // guaranteed to return anywhere near the original amount at a
+            // 0.1% tolerance - that tolerance only holds if the randomness
+            // is removed. Stub Math.random to always return 0.5 so
+            // variation is exactly 0 on both legs, which makes the two
+            // legs mathematically reciprocal (rate * (1/rate) = 1) and lets
+            // this test verify the INTENDED round-trip invariant in
+            // isolation from the fetch layer's simulated noise.
+            const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
 
-            // Convert B -> A
-            const conversion2 = await currencyService.convertAmount(
-              conversion1.convertedAmount,
-              toCurrency,
-              fromCurrency
-            );
+            try {
+              // Convert A -> B
+              const conversion1 = await currencyService.convertAmount(amount, fromCurrency, toCurrency);
 
-            // The final amount should be close to the original (within 0.1% due to rounding)
-            const tolerance = amount * 0.001; // 0.1% tolerance
-            const difference = Math.abs(conversion2.convertedAmount - amount);
+              // Convert B -> A
+              const conversion2 = await currencyService.convertAmount(
+                conversion1.convertedAmount,
+                toCurrency,
+                fromCurrency
+              );
 
-            expect(difference).toBeLessThanOrEqual(tolerance);
-            expect(conversion1.originalCurrency).toBe(fromCurrency);
-            expect(conversion1.convertedCurrency).toBe(toCurrency);
-            expect(conversion2.originalCurrency).toBe(toCurrency);
-            expect(conversion2.convertedCurrency).toBe(fromCurrency);
+              // With randomization pinned to 0, each leg's rate comes from
+              // getFallbackExchangeRate's static DEFAULT_EXCHANGE_RATES
+              // table. That table stores independently-chosen real-world
+              // approximations for each direction (e.g. USD->EUR: 0.85,
+              // EUR->USD: 1.18), so it is NOT a perfectly reciprocal matrix
+              // (0.85 * 1.18 = 1.003, a ~0.3% deviation from 1) - a round
+              // trip through the fallback table alone won't return exactly
+              // to the original amount. Cross-currency conversions (routed
+              // through USD when there's no direct table entry) compound
+              // two such approximations and can drift further. 0.1% is
+              // tighter than the table's own precision allows; 1% covers
+              // the worst-case reciprocal mismatch across all supported
+              // currency pairs with room to spare.
+              const tolerance = amount * 0.01; // 1% tolerance
+              const difference = Math.abs(conversion2.convertedAmount - amount);
+
+              expect(difference).toBeLessThanOrEqual(tolerance);
+              expect(conversion1.originalCurrency).toBe(fromCurrency);
+              expect(conversion1.convertedCurrency).toBe(toCurrency);
+              expect(conversion2.originalCurrency).toBe(toCurrency);
+              expect(conversion2.convertedCurrency).toBe(fromCurrency);
+            } finally {
+              randomSpy.mockRestore();
+            }
           }
         ),
         { numRuns: 50 }
@@ -98,17 +136,36 @@ describe('Currency System Properties', () => {
     it('should format amounts correctly for each supported currency', async () => {
       await fc.assert(
         fc.property(
-          fc.float({ min: 0, max: Math.fround(1000000) }),
+          // noNaN is required here too - fast-check's default float
+          // generator can draw NaN as one of its special edge values even
+          // with min/max set, and NaN is not a valid currency amount.
+          fc.float({ min: 0, max: Math.fround(1000000), noNaN: true }),
           fc.constantFrom(...SUPPORTED_CURRENCIES),
           (amount, currency) => {
             const formatted = currencyService.formatAmount(amount, currency.code);
 
-            // Should contain the currency symbol or code (but be flexible for zero amounts)
-            if (amount > 0) {
-              const containsSymbol = formatted.includes(currency.symbol) ||
-                formatted.includes(currency.code);
-              expect(containsSymbol).toBe(true);
-            }
+            // formatAmount's real implementation delegates to
+            // Intl.NumberFormat(currency.locale, { style: 'currency', ... }).
+            // Node/ICU's locale-specific currency symbol does not always
+            // match the app's own Currency.symbol field (e.g. en-AU renders
+            // AUD with a bare "$", not the app's "A$"; en-CA renders CAD
+            // with a bare "$" too). Derive the symbol Intl will actually
+            // render for this currency/locale instead of assuming it
+            // matches SUPPORTED_CURRENCIES' symbol field.
+            const intlParts = new Intl.NumberFormat(currency.locale, {
+              style: 'currency',
+              currency: currency.code,
+            }).formatToParts(1);
+            const intlSymbol = intlParts.find(p => p.type === 'currency')?.value ?? currency.symbol;
+
+            // Amounts that round to exactly 0 at the currency's decimal
+            // precision (including subnormal floats like 1e-45) still
+            // render the currency symbol/code (e.g. "$0.00", "￥0") - so the
+            // symbol/code check applies for any amount, not just amount > 0.
+            const containsSymbol = formatted.includes(intlSymbol) ||
+              formatted.includes(currency.symbol) ||
+              formatted.includes(currency.code);
+            expect(containsSymbol).toBe(true);
 
             // Should contain the amount (allowing for formatting differences)
             const numericPart = formatted.replace(/[^\d.,]/g, '');
@@ -146,11 +203,26 @@ describe('Currency System Properties', () => {
             // Should contain the formatted amount
             expect(formatted.length).toBeGreaterThan(0);
 
-            // Should contain the currency code in parentheses
+            // Should contain the currency code in parentheses - this is
+            // always guaranteed since formatAmountWithCurrency explicitly
+            // appends `(${currency.code})` regardless of locale.
             expect(formatted).toMatch(new RegExp(`\\(${currency.code}\\)`));
 
-            // Should contain the currency symbol
-            expect(formatted).toContain(currency.symbol);
+            // The symbol portion is produced by formatAmount's call to
+            // Intl.NumberFormat, whose locale-specific rendering does not
+            // always match the app's own Currency.symbol field (e.g. AUD's
+            // app symbol is "A$" but en-AU renders it as bare "$"; JPY's
+            // Intl rendering uses U+FFE5 FULLWIDTH YEN SIGN, not the app's
+            // U+00A5 YEN SIGN). Check for whatever symbol Intl actually
+            // renders instead of assuming it matches currency.symbol.
+            const intlParts = new Intl.NumberFormat(currency.locale, {
+              style: 'currency',
+              currency: currency.code,
+            }).formatToParts(1);
+            const intlSymbol = intlParts.find(p => p.type === 'currency')?.value ?? currency.symbol;
+            expect(
+              formatted.includes(intlSymbol) || formatted.includes(currency.symbol)
+            ).toBe(true);
           }
         ),
         { numRuns: 100 }

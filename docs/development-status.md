@@ -4,6 +4,14 @@
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 
+## LATEST - Session 168: Mobile Property Test Fixes - 4 Failing Suites Resolved (2026-09-30)
+
+`packages/mobile`'s `currency.test.ts`, `notifications.test.ts`, `quietHours.test.ts`, and
+`data-export.test.ts` were failing on test-content bugs (mock-accumulation across fast-check
+property iterations, stale expected strings/keys, unrealistic generators) - not implementation
+bugs; no file under `src/services/` changed. Full mobile suite now 25/25 suites, 257/259
+passing, 2 skipped, 0 failed (up from 241/259), verified stable across repeated runs.
+
 ## LATEST - Session 168: CI/CD Fix - Stale api-family Health Check (2026-09-30)
 
 Session 167's `api-family-stack` destruction deployed successfully (all real stacks
