@@ -161,7 +161,6 @@ jobs:
           npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api-features \
             budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended \
             budgetbuddy-${{ env.ENVIRONMENT }}-api-budgets \
-            budgetbuddy-${{ env.ENVIRONMENT }}-api-family \
             budgetbuddy-${{ env.ENVIRONMENT }}-notification \
             --require-approval never \
             --context environment=${{ env.ENVIRONMENT }} || echo "Dependent stacks deployment may have failed, continuing..."
@@ -308,7 +307,6 @@ jobs:
             "budgetbuddy-${{ env.ENVIRONMENT }}-api-features"
             "budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended"
             "budgetbuddy-${{ env.ENVIRONMENT }}-api-budgets"
-            "budgetbuddy-${{ env.ENVIRONMENT }}-api-family"
             "budgetbuddy-${{ env.ENVIRONMENT }}-hosting"
             "budgetbuddy-${{ env.ENVIRONMENT }}-monitoring"
           )
