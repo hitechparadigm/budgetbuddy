@@ -1,5 +1,18 @@
 # Development Log
 
+## 2026-10-12 - work-log.md Stale Duplicate Fix (Session 168)
+
+An autonomy-check sweep (re-reading work-log.md's Known Open Items section as required
+before yielding) found the Infrastructure section still listed
+`infrastructure/bin/app.js` drift as unchecked `[ ]`, even though the Mobile section of
+the same file already correctly recorded it as `[x]` (fixed in commit c560443 earlier
+this session). Fixed the stale duplicate to `[x]` with a cross-reference to the Mobile
+section's full note, rather than leaving two sections disagree about the same fact.
+Also fixed pre-existing mojibake corruption directly adjacent to it in the cdk
+synth/diff item (`pi-features-stack.ts`/`pp.ts`/a literal tab character, now
+`api-features-stack.ts`/`app.ts`/`tsc`).
+
+
 ## 2026-09-30 - mobile-app Staleness Sweep + modular-architecture design/tasks (Session 168)
 
 ### Problem

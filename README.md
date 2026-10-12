@@ -17,6 +17,16 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
+### Recent Achievements (2026-10-12)
+
+- **work-log.md stale duplicate fixed** - the Infrastructure section still listed
+  `infrastructure/bin/app.js` drift as an unchecked open item, even though it was already
+  fixed and recorded `[x]` in the Mobile section earlier the same session. Also corrected
+  adjacent pre-existing mojibake corruption in the cdk synth/diff item.
+- **Session dating corrected** - several CHANGELOG/DEVELOPMENT_LOG/development-status
+  entries from this session had used the wrong date (2026-09-30 instead of the actual
+  2026-10-12); corrected before committing.
+
 ### Recent Achievements (2026-09-30)
 
 - **Mobile test suite fully green** - fixed 4 failing property-based test suites in

@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.12] - 2026-10-12
+
+### docs: fix stale duplicate open item in work-log.md
+
+- Found during an autonomy-check sweep: the Infrastructure section still listed
+  `infrastructure/bin/app.js` drift as an unchecked open item, even though it was already
+  fixed and correctly recorded as `[x]` in the Mobile section earlier the same session.
+  Marked the Infrastructure copy `[x]` with a cross-reference instead of leaving a stale
+  duplicate. Also fixed adjacent pre-existing mojibake corruption in the cdk synth/diff
+  item (`pi-features-stack.ts` -> `api-features-stack.ts`, `pp.ts` -> `app.ts`, a literal
+  tab character -> `tsc`).
+
+
 ## [1.10.11] - 2026-09-30
 
 ### docs: mobile-app spec - fix 10 stale reachability claims; new modular-architecture spec
