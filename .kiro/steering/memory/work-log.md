@@ -79,15 +79,13 @@ inclusion: always
 ### Infrastructure
 - [x] `api-family-stack` destroyed and removed from CDK app entrypoint (infra-cleanup spec)
 - [ ] SES still in sandbox - production access not yet requested
-- [ ] `infrastructure/bin/app.js` was already drifted from `app.ts` before this cleanup
-      (missing `api-budgets`/`notificationFunction` wiring present in .ts) - noticed during
-      infra-cleanup's app.js edit, not fixed here since out of this spec's scope; needs its own
-      correction pass.
+- [x] `infrastructure/bin/app.js` drift from `app.ts` - fixed (see Mobile section below
+      for the full fix note; this item was a stale duplicate of that one).
 - [ ] cdk synth/cdk diff cannot run in this dev environment - Docker Desktop is installed
-      but its engine is not running, and pi-features-stack.ts's PlaidHandler Lambda uses
-      Docker-based asset bundling unconditionally for every synth/diff (pp.ts constructs
-      all stacks regardless of target). The infra-cleanup spec's pp.ts/pp.js edits were
-      verified via 	sc --noEmit + grep instead; full synth against live AWS is unverified.
+      but its engine is not running, and api-features-stack.ts's PlaidHandler Lambda uses
+      Docker-based asset bundling unconditionally for every synth/diff (app.ts constructs
+      all stacks regardless of target). The infra-cleanup spec's app.ts/app.js edits were
+      verified via tsc --noEmit + grep instead; full synth against live AWS is unverified.
 
 ### Security
 - [ ] Security posture ~80%
