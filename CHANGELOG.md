@@ -1,4 +1,29 @@
 # Changelog
+## [1.10.15] - 2026-10-12
+
+### fix: regenerate package-lock.json from scratch to resolve audit-vs-ci conflict
+
+- Root cause of the apparent "critical CVE fix always breaks npm ci" conflict (session
+  168, commits bc42d55/4efef12): the lockfile was corrupted, not fundamentally
+  incompatible with the audit fix. `@unrs/resolver-binding-wasm32-wasi` declared
+  dependencies on `@emnapi/core@1.10.0`/`@emnapi/runtime@1.10.0`, but neither package
+  had a top-level entry in the lockfile - every attempt to patch on top of this via
+  `npm install`/`npm audit fix` just re-shuffled the same inconsistency.
+- Fix: deleted `package-lock.json` entirely and ran `npm install` from scratch (not
+  `npm audit fix` on top of the existing file). The regenerated lockfile has 502
+  packages, passes a real `npm ci` from a deleted `node_modules` (exit 0), and passes
+  `npm audit --audit-level=critical` (exit 0, 0 critical findings - handlebars is
+  already at 4.7.10, the patched version, 22 moderate findings remain, all
+  `jest`/`aws-sdk` devDependency-only transitive deps).
+  Also ran the real `scripts/security-check.sh` locally via Git Bash to simulate the
+  CI gate directly: step 7 (`npm audit --audit-level=critical`) now passes. One
+  unrelated local-only finding remains (the script's HTTP-URL check lacks a
+  `node_modules` exclusion and matches license text in
+  `infrastructure/node_modules/typescript/lib/*.d.ts`) - confirmed this cannot
+  reproduce in CI since `pre-deployment-checks` never runs `npm ci` inside
+  `infrastructure/`, only the deploy job does, with its own fresh checkout.
+- Verified lint:check, type-check, and docs:validate all pass on the new lockfile.
+
 ## [1.10.14] - 2026-10-12
 
 ### fix: revert package-lock.json to the last CI-verified version

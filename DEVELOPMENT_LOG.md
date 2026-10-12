@@ -1,4 +1,51 @@
 # Development Log
+## 2026-10-12 - CI/CD Fix: package-lock.json Regenerated From Scratch (Session 168)
+
+### Problem
+After reverting to the last CI-SUCCESS lockfile (commit 4efef12), CI failed a third
+way: scripts/security-check.sh step 7 (npm audit --audit-level=critical) failed
+because that reverted lockfile still had the old unfixed handlebars critical CVE.
+Re-running npm audit fix on top of it fixed the critical CVE again but reintroduced
+the exact same npm ci EUSAGE failure on @emnapi/* packages - confirmed reproducible
+even from a from-scratch node_modules deletion, not just stale cache.
+
+### Root Cause
+The lockfile itself was corrupted, independent of the audit fix. Inspecting it
+directly: @unrs/resolver-binding-wasm32-wasi declared dependencies on
+@emnapi/core@1.10.0 and @emnapi/runtime@1.10.0, but neither package had a
+corresponding top-level node_modules/@emnapi/core or node_modules/@emnapi/runtime
+entry anywhere in the lockfile - only a standalone, differently-versioned
+@emnapi/wasi-threads@1.2.1 entry existed. Every prior fix attempt was patching
+(npm install / npm audit fix) on top of an already-inconsistent file, which just
+reshuffled the same gap instead of resolving it.
+
+### Fix
+Deleted package-lock.json entirely and ran npm install from scratch (not npm audit
+fix). The regenerated lockfile: 502 packages, passes a real npm ci from a deleted
+node_modules (exit 0), and passes npm audit --audit-level=critical (exit 0 - 0
+critical, 22 moderate findings remain, all jest/aws-sdk devDependency-only). Ran the
+actual scripts/security-check.sh locally via Git Bash to simulate the CI gate
+directly - step 7 passes. Also ran lint:check, type-check, and docs:validate, all
+passing.
+
+### Residual Finding (Local-Only, Not a CI Risk)
+security-check.sh's HTTP-URL-in-infrastructure check (step 6) has no node_modules
+exclusion, unlike every other check in the script, so it matches Apache license
+boilerplate text inside infrastructure/node_modules/typescript/lib/*.d.ts files.
+Confirmed via deploy-dev.yml that this cannot reproduce in CI: the
+pre-deployment-checks job (which runs security-check.sh) only runs root npm ci, never
+cd infrastructure && npm ci - that only happens in the separate Deploy AWS
+Infrastructure job, with its own fresh checkout, after security-check.sh has already
+passed. infrastructure/node_modules is gitignored and untracked. Not fixing the
+script itself in this pass since it's out of scope and not a live gate failure;
+flagging as a minor latent script bug for a future pass.
+
+### Lesson
+When "the same patch keeps breaking something else", check whether the base artifact
+being patched is itself already corrupted before concluding the two things are in
+genuine conflict. A full regeneration from scratch resolved what three successive
+local-fix attempts on the existing file could not.
+
 ## 2026-10-12 - CI/CD Fix: Lockfile Platform Mismatch (Session 168)
 
 ### Problem

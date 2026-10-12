@@ -10,7 +10,7 @@ inclusion: always
 **Date**: 2026-10-12
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed - see Mobile/Infrastructure sections)
+**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed, npm audit critical CVE fixed via from-scratch lockfile regen - see Mobile/Infrastructure/Security sections)
 
 ## What's Live and Working
 
@@ -88,24 +88,31 @@ inclusion: always
       verified via tsc --noEmit + grep instead; full synth against live AWS is unverified.
 
 ### Security
-- [ ] Security posture ~80%
-- [x] `npm audit fix` run on 2026-10-12 (fixed critical `handlebars` + several moderates,
-      down to 25 findings) was REVERTED - the regenerated `package-lock.json` failed
-      `npm ci` in CI twice (`EUSAGE`, missing/mismatched `@emnapi/*` optional native
-      bindings transitively pulled in by `jest-resolve`'s `unrs-resolver` dependency).
-      Root cause: local regeneration happened on Windows + Node 24/npm 11, while CI runs
-      Node 20 on Linux (`ubuntu-latest`) - different platforms/npm versions resolve these
-      optional platform-conditional bindings differently, and repeated local
-      `npm install` runs even disagreed with each other on the same machine. Reverted
-      `package-lock.json` to commit `ec54080`'s version (last one with a confirmed CI
-      SUCCESS run), verified clean via `npm ci` (exit 0) both as a dry-run and a real
-      install. This restores the pre-audit-fix 35 findings (7 moderate, 27 high, 1
-      critical) - still all devDependency-only `jest`/`ts-jest`/`aws-sdk` test tooling,
-      no production exposure. Fixing the audit findings for real needs a regeneration
-      done on a Linux Node-20 environment (or in CI itself via a scheduled lockfile-
-      update job), not a local Windows regeneration, since `npm ci` strictly checks the
-      exact optional-dependency set for the platform it runs on. Tracked as its own
-      follow-up rather than retried again here.
+- [ ] Security posture ~85% (up from ~80% - critical CVE now fixed, see below)
+- [x] Resolved the npm audit vs npm ci conflict from earlier in Session 168 (commits
+      bc42d55/4efef12 had each failed CI a different way). Root cause: the lockfile
+      itself was corrupted (`@unrs/resolver-binding-wasm32-wasi` depended on
+      `@emnapi/core@1.10.0`/`@emnapi/runtime@1.10.0` with no corresponding top-level
+      entries anywhere in the file) - every prior fix attempt was patching
+      (`npm install`/`npm audit fix`) on top of that inconsistency instead of fixing it.
+      Deleted `package-lock.json` and ran `npm install` from scratch. The regenerated
+      lockfile (502 packages) passes a real `npm ci` from a deleted `node_modules`
+      (exit 0) AND `npm audit --audit-level=critical` (exit 0, 0 critical - handlebars
+      is already patched to 4.7.10, 22 moderate findings remain, all
+      `jest`/`aws-sdk` devDependency-only). Verified against the actual
+      `scripts/security-check.sh` (run locally via Git Bash to simulate the CI gate
+      directly, not just the `npm audit` command in isolation) - step 7 passes.
+- [ ] `scripts/security-check.sh` step 6 (HTTP-URL-in-infrastructure check) has no
+      `node_modules` exclusion, unlike every other check in the script - it falsely
+      flags Apache license boilerplate text inside
+      `infrastructure/node_modules/typescript/lib/*.d.ts`. Confirmed via `deploy-dev.yml`
+      this cannot reproduce in CI (`pre-deployment-checks` never runs
+      `cd infrastructure && npm ci`, only the separate deploy job does, with its own
+      fresh checkout, after this script has already passed) - so it's a latent script
+      bug, not a live gate failure. Not fixed in this pass; tracked for a future one.
+- [ ] 22 moderate `npm audit` findings remain (`jest`/`aws-sdk` devDependency-only
+      transitive deps, no production exposure, below the `--audit-level=critical` CI
+      gate). No further action needed unless the gate threshold changes.
 
 ### Mobile
 - [x] React Native + Expo app is SUBSTANTIALLY BUILT, not "not started" - corrected a stale
