@@ -231,7 +231,10 @@ echo "6. Checking production configuration..."
 
 # Check for HTTP URLs in infrastructure (should use HTTPS)
 # Exclude CDK synth output dirs which contain generated JSON with arbitrary content
-HTTP_IN_INFRA=$(grep -r "http://" infrastructure/ --include="*.ts" | \
+HTTP_IN_INFRA=$(grep -r "http://" infrastructure/ --include="*.ts" \
+    --exclude-dir=node_modules \
+    --exclude-dir=cdk.out \
+    --exclude-dir=cdk-out-temp | \
     grep -v "localhost\|127.0.0.1" 2>/dev/null || true)
 
 if [ -n "$HTTP_IN_INFRA" ]; then

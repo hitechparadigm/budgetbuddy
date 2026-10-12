@@ -1,4 +1,23 @@
 # Changelog
+## [1.10.16] - 2026-10-12
+
+### fix: exclude node_modules from security-check.sh HTTP-URL scan
+
+- Step 6 of `scripts/security-check.sh` (HTTP-URL-in-infrastructure check) used
+  `grep -r "http://" infrastructure/ --include="*.ts"`, which also matches `*.d.ts`
+  files - unlike every other check in the script, it had no `node_modules` exclusion.
+  This caused a false positive locally: Apache license boilerplate text inside
+  `infrastructure/node_modules/typescript/lib/*.d.ts` was flagged as a security issue.
+  Confirmed via `deploy-dev.yml` this specific false positive could never reproduce in
+  CI (the `pre-deployment-checks` job that runs this script never runs
+  `cd infrastructure && npm ci`), but fixed it anyway since it is a real latent script
+  bug matching an inconsistent pattern across the file.
+- Added `--exclude-dir=node_modules`, `--exclude-dir=cdk.out`, and
+  `--exclude-dir=cdk-out-temp` to the grep, matching the exclusions already used by
+  every other check in the script. Verified by running the full script locally via
+  Git Bash with `infrastructure/node_modules` present - now exits 0 with "All
+  security checks passed."
+
 ## [1.10.15] - 2026-10-12
 
 ### fix: regenerate package-lock.json from scratch to resolve audit-vs-ci conflict

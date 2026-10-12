@@ -88,7 +88,7 @@ inclusion: always
       verified via tsc --noEmit + grep instead; full synth against live AWS is unverified.
 
 ### Security
-- [ ] Security posture ~85% (up from ~80% - critical CVE now fixed, see below)
+- [ ] Security posture ~85% (up from ~80% - critical CVE fixed, security-check.sh now exits 0 clean, see below)
 - [x] Resolved the npm audit vs npm ci conflict from earlier in Session 168 (commits
       bc42d55/4efef12 had each failed CI a different way). Root cause: the lockfile
       itself was corrupted (`@unrs/resolver-binding-wasm32-wasi` depended on
@@ -102,14 +102,12 @@ inclusion: always
       `jest`/`aws-sdk` devDependency-only). Verified against the actual
       `scripts/security-check.sh` (run locally via Git Bash to simulate the CI gate
       directly, not just the `npm audit` command in isolation) - step 7 passes.
-- [ ] `scripts/security-check.sh` step 6 (HTTP-URL-in-infrastructure check) has no
-      `node_modules` exclusion, unlike every other check in the script - it falsely
-      flags Apache license boilerplate text inside
-      `infrastructure/node_modules/typescript/lib/*.d.ts`. Confirmed via `deploy-dev.yml`
-      this cannot reproduce in CI (`pre-deployment-checks` never runs
-      `cd infrastructure && npm ci`, only the separate deploy job does, with its own
-      fresh checkout, after this script has already passed) - so it's a latent script
-      bug, not a live gate failure. Not fixed in this pass; tracked for a future one.
+- [x] `scripts/security-check.sh` step 6 (HTTP-URL-in-infrastructure check) fixed - it
+      had no `node_modules` exclusion, unlike every other check in the script, so it
+      falsely flagged Apache license boilerplate text inside
+      `infrastructure/node_modules/typescript/lib/*.d.ts`. Added `--exclude-dir=node_modules`,
+      `--exclude-dir=cdk.out`, `--exclude-dir=cdk-out-temp` to match the rest of the script.
+      Verified with `infrastructure/node_modules` present locally - full script now exits 0.
 - [ ] 22 moderate `npm audit` findings remain (`jest`/`aws-sdk` devDependency-only
       transitive deps, no production exposure, below the `--audit-level=critical` CI
       gate). No further action needed unless the gate threshold changes.
