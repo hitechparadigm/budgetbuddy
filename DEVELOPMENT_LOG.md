@@ -1,4 +1,28 @@
 # Development Log
+## 2026-10-12 - Fix: security-check.sh False Positive on node_modules (Session 168)
+
+### Problem
+While verifying the lockfile fix against the real scripts/security-check.sh (not just
+npm audit in isolation), step 6 (HTTP-URL-in-infrastructure check) flagged a false
+"security issue": Apache license header text inside
+infrastructure/node_modules/typescript/lib/*.d.ts files, because
+--include="*.ts" also matches *.d.ts, and this one check - unlike every other check
+in the script - had no --exclude-dir=node_modules.
+
+### Fix
+Added --exclude-dir=node_modules, --exclude-dir=cdk.out, and
+--exclude-dir=cdk-out-temp to the grep in step 6, matching the pattern already used
+elsewhere in the script. Verified with infrastructure/node_modules present locally -
+the full script now exits 0 with "All security checks passed! Repository is secure
+for deployment."
+
+### Note
+This specific false positive could never have failed CI even before the fix - traced
+through deploy-dev.yml and confirmed pre-deployment-checks (the job that runs this
+script) never runs cd infrastructure && npm ci, so infrastructure/node_modules never
+exists in that job's environment. Fixed anyway as a real latent script bug, not
+because it was blocking anything live.
+
 ## 2026-10-12 - CI/CD Fix: package-lock.json Regenerated From Scratch (Session 168)
 
 ### Problem
