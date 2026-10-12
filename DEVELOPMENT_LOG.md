@@ -1,4 +1,26 @@
 # Development Log
+## 2026-10-12 - CI/CD Fix: Out-of-Sync package-lock.json (Session 168)
+
+### Problem
+Autonomy-check CI/CD status check after pushing commit a9f0dda found the deploy run
+FAILED at the Install dependencies step: `npm ci` reported `EUSAGE` because
+package-lock.json was internally inconsistent with package.json (missing/mismatched
+@emnapi/* transitive entries). Root cause: an earlier `npm audit fix` and a later
+`npm install` in the same session likely raced or left the lockfile mid-write before
+it was committed.
+
+### Fix
+Reproduced the exact failure locally with `npm ci --dry-run`. Regenerated
+package-lock.json cleanly via `npm install`, re-ran `npm ci --dry-run` to confirm exit
+0, then re-verified lint/type-check/docs validations all still pass before
+recommitting.
+
+### Also Tracked
+Added a dated work-log.md Security entry for the 25 remaining `npm audit` findings
+(21 moderate, 4 high - all jest/ts-jest transitive deps, devDependency-only, no
+non-breaking fix available) rather than letting this recur silently on each future
+commit's security gate.
+
 
 ## 2026-10-12 - work-log.md Stale Duplicate Fix (Session 168)
 

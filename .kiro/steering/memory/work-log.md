@@ -7,7 +7,7 @@ inclusion: always
 ## Current Status
 
 **Version**: 1.10.x
-**Date**: 2026-09-23
+**Date**: 2026-10-12
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
 **Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed - see Mobile/Infrastructure sections)
@@ -89,6 +89,16 @@ inclusion: always
 
 ### Security
 - [ ] Security posture ~80%
+- [ ] `npm audit` reports 25 vulnerabilities (21 moderate, 4 high) as of 2026-10-12, all in
+      `jest`/`ts-jest`'s transitive deps (`braces`/`micromatch`/`jest-haste-map`,
+      `aws-sdk`/`uuid`). Confirmed devDependency-only (test tooling, never shipped to
+      production). The 1 critical finding (`handlebars`) and several moderates were fixed
+      via non-breaking `npm audit fix`; the remaining 4 high findings have no non-breaking
+      fix - npm's only offered path downgrades `jest` from 30.5.2 to 25.0.0, a 5-major
+      regression, rejected as unacceptable. Commit `a9f0dda` was pushed with the security
+      gate explicitly bypassed (user-approved) for this reason; needs its own resolution
+      pass (upstream `braces` patch, or an accepted risk exception) rather than recurring
+      silently on every future commit.
 
 ### Mobile
 - [x] React Native + Expo app is SUBSTANTIALLY BUILT, not "not started" - corrected a stale
