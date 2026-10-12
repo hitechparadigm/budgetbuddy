@@ -1,4 +1,17 @@
 # Changelog
+## [1.10.13] - 2026-10-12
+
+### fix: regenerate out-of-sync package-lock.json; track npm audit gap
+
+- Commit `a9f0dda` pushed a `package-lock.json` that was internally inconsistent with
+  `package.json` (likely from overlapping `npm audit fix`/`npm install` runs during the
+  session) - CI/CD run 38286521688 failed at `npm ci` with `EUSAGE`. Reproduced locally,
+  regenerated via `npm install`, verified `npm ci --dry-run` succeeds.
+- Added a tracked, dated open item to `work-log.md`'s Security section for the 25
+  remaining `npm audit` findings (21 moderate, 4 high, all `jest`/`ts-jest`
+  devDependency-only transitive deps with no non-breaking fix available) instead of
+  letting the gap recur silently on future commits.
+
 
 ## [1.10.12] - 2026-10-12
 
