@@ -1,4 +1,40 @@
 # Development Log
+## 2026-10-12 - CI/CD Fix: Lockfile Platform Mismatch (Session 168)
+
+### Problem
+Commit bc42d55 regenerated package-lock.json via npm install to fix an earlier
+out-of-sync lockfile, but the new lockfile failed npm ci in CI with EUSAGE - twice,
+across two separate pushes. The error named missing/mismatched @emnapi/core,
+@emnapi/runtime, and @emnapi/wasi-threads entries.
+
+### Investigation
+Traced these packages to jest-resolves unrs-resolver dependency, which ships ~20
+optional, platform-conditional native binding packages (one per OS/arch). Confirmed
+the actual root cause: local machine runs Node v24.10.0 / npm 11.6.1 on Windows, while
+deploy-dev.yml runs Node 20 on ubuntu-latest. Reproduced the instability directly -
+three separate npm install runs on the same local machine produced three different
+optional-dependency resolutions, none of which matched what CI needed. This is a
+known class of npm non-determinism with optional platform-conditional deps; no amount
+of additional local npm install attempts was going to converge on a lockfile valid
+for CIs actual Linux/Node-20 environment.
+
+### Fix
+Per the 2-failed-attempts rule, stopped retrying regeneration and instead reverted
+package-lock.json to the exact version from commit ec54080 - the last version with a
+confirmed CI SUCCESS run earlier this same session. Verified with a REAL npm ci (not
+just --dry-run) completing with exit 0 and reinstalling 612 packages matching the
+lockfile exactly; re-ran lint:check, type-check, type-check:web, and docs:validate,
+all passing.
+
+### Tradeoff Accepted
+This also reverts the earlier npm audit fix in this session (handlebars critical +
+several moderates), returning to 35 findings (7 moderate, 27 high, 1 critical) from
+25. All are devDependency-only jest/ts-jest/aws-sdk test tooling with zero production
+exposure - already verified earlier in the session before the user approved bypassing
+the security gate for the same reason. A real fix requires regenerating the lockfile
+on a Linux Node-20 environment matching CI, not locally on Windows; documented as its
+own follow-up in work-log.mds Security section rather than attempted again here.
+
 ## 2026-10-12 - CI/CD Fix: Out-of-Sync package-lock.json (Session 168)
 
 ### Problem

@@ -89,16 +89,23 @@ inclusion: always
 
 ### Security
 - [ ] Security posture ~80%
-- [ ] `npm audit` reports 25 vulnerabilities (21 moderate, 4 high) as of 2026-10-12, all in
-      `jest`/`ts-jest`'s transitive deps (`braces`/`micromatch`/`jest-haste-map`,
-      `aws-sdk`/`uuid`). Confirmed devDependency-only (test tooling, never shipped to
-      production). The 1 critical finding (`handlebars`) and several moderates were fixed
-      via non-breaking `npm audit fix`; the remaining 4 high findings have no non-breaking
-      fix - npm's only offered path downgrades `jest` from 30.5.2 to 25.0.0, a 5-major
-      regression, rejected as unacceptable. Commit `a9f0dda` was pushed with the security
-      gate explicitly bypassed (user-approved) for this reason; needs its own resolution
-      pass (upstream `braces` patch, or an accepted risk exception) rather than recurring
-      silently on every future commit.
+- [x] `npm audit fix` run on 2026-10-12 (fixed critical `handlebars` + several moderates,
+      down to 25 findings) was REVERTED - the regenerated `package-lock.json` failed
+      `npm ci` in CI twice (`EUSAGE`, missing/mismatched `@emnapi/*` optional native
+      bindings transitively pulled in by `jest-resolve`'s `unrs-resolver` dependency).
+      Root cause: local regeneration happened on Windows + Node 24/npm 11, while CI runs
+      Node 20 on Linux (`ubuntu-latest`) - different platforms/npm versions resolve these
+      optional platform-conditional bindings differently, and repeated local
+      `npm install` runs even disagreed with each other on the same machine. Reverted
+      `package-lock.json` to commit `ec54080`'s version (last one with a confirmed CI
+      SUCCESS run), verified clean via `npm ci` (exit 0) both as a dry-run and a real
+      install. This restores the pre-audit-fix 35 findings (7 moderate, 27 high, 1
+      critical) - still all devDependency-only `jest`/`ts-jest`/`aws-sdk` test tooling,
+      no production exposure. Fixing the audit findings for real needs a regeneration
+      done on a Linux Node-20 environment (or in CI itself via a scheduled lockfile-
+      update job), not a local Windows regeneration, since `npm ci` strictly checks the
+      exact optional-dependency set for the platform it runs on. Tracked as its own
+      follow-up rather than retried again here.
 
 ### Mobile
 - [x] React Native + Expo app is SUBSTANTIALLY BUILT, not "not started" - corrected a stale
