@@ -1,4 +1,25 @@
 # Changelog
+## [1.10.14] - 2026-10-12
+
+### fix: revert package-lock.json to the last CI-verified version
+
+- Commit `bc42d55`'s regenerated `package-lock.json` failed `npm ci` in CI twice in a
+  row (`EUSAGE`: missing/mismatched `@emnapi/*` optional native bindings, transitively
+  pulled in by `jest-resolve`'s `unrs-resolver` dependency).
+- Root cause: the lockfile was regenerated locally on Windows with Node 24/npm 11, while
+  CI runs Node 20 on `ubuntu-latest`. Different platforms/npm versions resolve optional
+  platform-conditional native bindings differently - confirmed by observing repeated
+  local `npm install` runs on the same machine disagree with each other on the same
+  package set.
+- Reverted `package-lock.json` to the exact version from commit `ec54080` (the last one
+  with a confirmed CI SUCCESS run). Verified clean via `npm ci` locally (not just
+  `npm install`) with exit 0, and re-ran lint/type-check/docs validation, all passing.
+- This also reverts this session's `npm audit fix` (back from 25 to 35 findings: 7
+  moderate, 27 high, 1 critical) - all confirmed devDependency-only `jest`/`ts-jest`/
+  `aws-sdk` test tooling with no production exposure. Fixing the audit findings for
+  real needs a lockfile regenerated on a Linux Node-20 environment (or via a CI job),
+  not locally on Windows; tracked as its own follow-up in `work-log.md`.
+
 ## [1.10.13] - 2026-10-12
 
 ### fix: regenerate out-of-sync package-lock.json; track npm audit gap
