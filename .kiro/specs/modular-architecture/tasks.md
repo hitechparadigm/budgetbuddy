@@ -40,7 +40,7 @@ edits an existing workflow YAML file's steps in place.
       confirm it prints the `✅` success line (the repo's shared package docs are presently
       consistent per design.md)
     - _Requirements: 1.1, 1.2, 1.3, 1.6_
-  - [ ]* 2.2 Write unit tests for `checkSharedDocs`
+  - [x]* 2.2 Write unit tests for `checkSharedDocs`
     - Fixture pair 1: README documents a directory with no corresponding `export * from` in
       `index.ts`, and `index.ts` exports a directory not mentioned in the README - assert both
       mismatch categories are reported
@@ -49,7 +49,7 @@ edits an existing workflow YAML file's steps in place.
     - _Requirements: 1.2, 1.3_
 
 - [ ] 3. Implement and verify `checkAppDrift` (Requirement 2)
-  - [ ] 3.1 Implement `checkAppDrift()` in `scripts/consistency-check.js`
+  - [x] 3.1 Implement `checkAppDrift()` in `scripts/consistency-check.js`
     - Read `infrastructure/bin/app.ts` and `infrastructure/bin/app.js`, extract each file's stack
       slug set via the shared `extractStackSlugs()` helper
     - Report any slug present in one file's set and absent from the other's, labeled "only in
@@ -171,7 +171,7 @@ edits an existing workflow YAML file's steps in place.
       stub with a TODO for the UI)
     - Include these two paths in the same pre-write `fs.existsSync` conflict check as task 11.1
     - _Requirements: 5.2, 5.6_
-  - [ ] 11.3 Implement the generated `TODO-<name>.md` checklist in `scripts/scaffold-feature.js`
+  - [x] 11.3 Implement the generated `TODO-<name>.md` checklist in `scripts/scaffold-feature.js`
     - Write `backend/functions/<name>/TODO-<name>.md` with the checklist from design.md's
       Components section: choose the target gateway using `docs/gateway-routing-map.md`, wire the
       Lambda into the chosen CDK stack, update `infrastructure/bin/app.ts` AND

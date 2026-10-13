@@ -1,4 +1,25 @@
 # Changelog
+## [1.11.1] - 2026-10-13
+
+### feat: modular-architecture guardrails wave 2 (checkAppDrift, unit tests, TODO checklist)
+
+- Implemented `checkAppDrift()` in `scripts/consistency-check.js` (task 3.1) - verified it
+  passes against the real repository (`app.ts` and `app.js` currently instantiate the same
+  10 stacks).
+- Added `scripts/consistency-check.test.js` with unit tests for `checkSharedDocs()` and
+  `checkAppDrift()`/`extractStackSlugs()` (task 2.2), using `jest.spyOn(fs, 'readFileSync')`
+  fixtures that fall back to the real implementation for any unrelated path (needed because
+  globally mocking `fs.readFileSync` without a fallback breaks Jest's own internal file
+  reads, e.g. sourcemap resolution during `console.error` stack traces).
+- Added `scripts` to root `jest.config.js`'s `roots` array (part of task 8.1, pulled forward
+  since task 2.2's tests need it to be discoverable) - verified via a stash-based A/B
+  comparison that the pre-existing 4 failing / 2 passing test suites under
+  `backend/functions/transactions` are unchanged before and after this addition.
+- Added the `TODO-<name>.md` checklist generator to `scripts/scaffold-feature.js` (task
+  11.3) and included it in the combined 7-path conflict check. Smoke-tested with a scratch
+  `sample-feature` name; the generated checklist content matches design.md's spec exactly.
+  All scratch files deleted after verification.
+
 ## [1.11.0] - 2026-10-13
 
 ### feat: modular-architecture guardrails (wave 0+1 tasks)

@@ -48,6 +48,7 @@ function backendTargets(name) {
     repositoryJs: path.join(dir, 'repository.js'),
     testJs: path.join(dir, `${name}.test.js`),
     packageJson: path.join(dir, 'package.json'),
+    todoMd: path.join(dir, `TODO-${name}.md`),
   };
 }
 
@@ -209,6 +210,22 @@ function packageJsonTemplate(name) {
   return JSON.stringify(pkg, null, 2) + '\n';
 }
 
+function todoMdTemplate(name) {
+  return `# Feature Module Checklist: ${name}
+
+- [ ] Choose the target API Gateway using docs/gateway-routing-map.md and add a row for your
+      new route prefix(es) there.
+- [ ] Wire the Lambda into the chosen CDK stack (one of api-stack.ts, api-features-stack.ts,
+      api-features-extended-stack.ts, api-budgets-stack.ts) following the setup<Name>Routes()
+      pattern used by existing routes in that file.
+- [ ] If this feature requires a brand-new CDK stack (not just a new Lambda in an existing
+      stack), add it to infrastructure/bin/app.ts AND to infrastructure/stack-manifest.json in
+      the same commit.
+- [ ] Fill in service.js / repository.js business logic and the frontend page UI.
+- [ ] Run \`node scripts/consistency-check.js\` before committing.
+`;
+}
+
 /**
  * Scaffolds the backend Lambda function files for <name>.
  * Aborts with no writes if any target path already exists.
@@ -217,7 +234,14 @@ function packageJsonTemplate(name) {
  */
 function scaffoldBackend(name) {
   const targets = backendTargets(name);
-  const checkPaths = [targets.indexJs, targets.serviceJs, targets.repositoryJs, targets.testJs, targets.packageJson];
+  const checkPaths = [
+    targets.indexJs,
+    targets.serviceJs,
+    targets.repositoryJs,
+    targets.testJs,
+    targets.packageJson,
+    targets.todoMd,
+  ];
 
   fs.mkdirSync(targets.dir, { recursive: true });
   fs.writeFileSync(targets.indexJs, indexJsTemplate(name));
@@ -225,6 +249,7 @@ function scaffoldBackend(name) {
   fs.writeFileSync(targets.repositoryJs, repositoryJsTemplate(name));
   fs.writeFileSync(targets.testJs, testJsTemplate(name));
   fs.writeFileSync(targets.packageJson, packageJsonTemplate(name));
+  fs.writeFileSync(targets.todoMd, todoMdTemplate(name));
 
   return checkPaths;
 }
@@ -348,6 +373,7 @@ function scaffoldFeature(name) {
     backend.repositoryJs,
     backend.testJs,
     backend.packageJson,
+    backend.todoMd,
     frontend.apiService,
     frontend.page,
   ];

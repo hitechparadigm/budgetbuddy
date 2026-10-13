@@ -1,4 +1,40 @@
 # Development Log
+## 2026-10-13 - modular-architecture Spec: Wave 2 Tasks (Session 168)
+
+### Summary
+Continued the modular-architecture spec while waiting on a CI run for the wave 0+1 commit.
+Completed tasks 3.1, 2.2, and 11.3 (wave 2 of the Task Dependency Graph).
+
+### Work Completed
+- Task 3.1: Implemented checkAppDrift() in scripts/consistency-check.js exactly per
+  design.md. Verified against the real repo - app.ts and app.js currently instantiate the
+  same 10 stacks, so the check passes legitimately.
+- Task 2.2: Added scripts/consistency-check.test.js with unit tests for checkSharedDocs()
+  and checkAppDrift()/extractStackSlugs(). Hit and fixed a real test-authoring bug along
+  the way: an unscoped jest.spyOn(fs, 'readFileSync') mock that throws on any
+  unrecognized path breaks Jest's own internals (sourcemap resolution during
+  console.error's stack-trace printing calls fs.readFileSync too) - fixed by having the
+  mock fall back to the real implementation for any path it doesn't recognize, and
+  scoping the fs.existsSync mock the same way.
+- Added "scripts" to root jest.config.js's roots array - this is part of task 8.1's scope,
+  pulled forward because task 2.2's new test file needs it to be discovered at all
+  (confirmed via a stash-based A/B test: ran npx jest backend/functions/transactions with
+  and without the jest.config.js change and got the identical 4-failed/2-passed result
+  both times, confirming the roots addition introduces no regression).
+- Task 11.3: Added the TODO-<name>.md checklist generator to scripts/scaffold-feature.js,
+  wired into the combined conflict check across all 7 generated paths. Smoke-tested with a
+  scratch sample-feature name - generated checklist content matches design.md's spec
+  verbatim. All scratch files deleted after.
+
+### Verification
+node -c on both touched scripts, npx jest scripts/consistency-check.test.js (5/5 passing),
+and the stash-based regression check on backend/functions/transactions all passed.
+
+### Remaining in modular-architecture spec
+Tasks 5.1 (checkStackManifest), 7.1 (checkGatewayRouting), optional tasks
+3.2/5.2/7.2/8.1(remaining smoke-test portion)/11.4, task 12
+(module-scaffold-guide.md), task 13 (pr-check.yml wiring), checkpoints 9/14/15.
+
 ## 2026-10-13 - modular-architecture Spec: Wave 0+1 Tasks (Session 168)
 
 ### Summary
