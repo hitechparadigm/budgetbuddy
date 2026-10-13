@@ -226,6 +226,7 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 - ✅ Receipt scanning (OCR via AWS Textract, web upload + mobile camera)
 - ✅ Credit score monitoring
 - ✅ Investment tracking — `backend/functions/investments/` deployed to `api-features-stack`; holdings CRUD, portfolio summary, performance history
+- ✅ **Canadian investment account types** — TFSA, RRSP, FHSA, RESP added alongside existing US types (401k, IRA, Roth IRA, HSA) on both web `InvestmentsPage.tsx` and mobile `InvestmentsScreen.tsx` (Session 168)
 - ✅ **Investment market news** — Alpha Vantage `NEWS_SENTIMENT` API; articles with sentiment (Bullish/Bearish/Neutral), source, related tickers
 - ✅ **Investment market signals** — Alpha Vantage `TOP_GAINERS_LOSERS` API; top gainers, losers, most active with price/change%
 - ✅ Subscriptions: list, AI detection from transactions (`POST /subscriptions/detect`), add/edit/delete, monthly/yearly cost tracking, renewal reminders, review status (Keep/Review/Cancel)
@@ -341,7 +342,7 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 
 ### Mobile (New)
 
-10. **React Native + Expo mobile app** — design complete (`docs/mobile-ux-design.md`), spec created (`.kiro/specs/mobile-app/`), implementation not yet started. Tier 1 priorities: Budget screen, Transaction entry, Goals screen, Onboarding.
+10. **React Native + Expo mobile app** — substantially built, not "not yet started" (corrected stale claim, Session 168). Real implementations exist for auth, budget, transactions, offline SQLite sync, notifications, receipts, exports, 2FA-stub, currency, backup/restore, biometric unlock, and planned transactions, with a 25-file property-based test suite (257/259 passing). `npm run typecheck` reports 0 errors. 5-tab navigation (Budget/Transactions/Goals/Summary/More) covers all screens. Remaining gap: App Store/Play Store submission prep (not started) and Detox E2E (not started). See `.kiro/specs/mobile-app/tasks.md` for the full audited task list.
 
 ---
 
