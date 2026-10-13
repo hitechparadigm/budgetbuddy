@@ -1,0 +1,15 @@
+{
+  "description": "Source of truth for the currently deployed CDK stack set. Consistency-checked against infrastructure/bin/app.ts. Update this file in the same commit as any stack addition/removal in app.ts.",
+  "stacks": [
+    { "slug": "database", "class": "DatabaseStack", "file": "database-stack.ts" },
+    { "slug": "auth", "class": "AuthStack", "file": "auth-stack.ts" },
+    { "slug": "auth-onboarding", "class": "AuthOnboardingStack", "file": "auth-onboarding-stack.ts" },
+    { "slug": "notification", "class": "NotificationStack", "file": "notification-stack.ts" },
+    { "slug": "api", "class": "ApiStack", "file": "api-stack.ts" },
+    { "slug": "api-features", "class": "ApiFeaturesStack", "file": "api-features-stack.ts" },
+    { "slug": "api-features-extended", "class": "ApiFeaturesExtendedStack", "file": "api-features-extended-stack.ts" },
+    { "slug": "api-budgets", "class": "ApiBudgetsStack", "file": "api-budgets-stack.ts" },
+    { "slug": "hosting", "class": "HostingStack", "file": "hosting-stack.ts" },
+    { "slug": "monitoring", "class": "MonitoringStack", "file": "monitoring-stack.ts" }
+  ]
+}

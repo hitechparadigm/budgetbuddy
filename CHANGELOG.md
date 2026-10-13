@@ -1,4 +1,36 @@
 # Changelog
+## [1.11.0] - 2026-10-13
+
+### feat: modular-architecture guardrails (wave 0+1 tasks)
+
+- Added `scripts/consistency-check.js` CLI with the `checkSharedDocs()` check implemented
+  and wired into the `CHECKS` registry (`--check=shared-docs`, `--check=app-drift`,
+  `--check=stack-manifest`, `--check=gateway-routing`); the other three checks are
+  currently empty stubs, implemented in later tasks of the `modular-architecture` spec.
+- Added `infrastructure/stack-manifest.json` - the source-of-truth list of all 10
+  currently-deployed CDK stacks, consistency-checked against `infrastructure/bin/app.ts`
+  in a later task.
+- Added `docs/gateway-routing-map.md` - documents every route prefix across the four CDK
+  API stacks and which gateway owns it, including a `health` prefix on the main API stack
+  that an earlier design draft had missed. Indexed in `docs/README.md`.
+- Fixed a real, previously-undocumented gap found by running `checkSharedDocs()` against
+  the actual repository: `packages/shared/README.md` was missing sections for the
+  `validation`, `data`, and `services` directories, even though `src/index.ts` has
+  exported all three for some time. Added the three missing sections.
+- Replaced the hardcoded CloudFormation stack-name arrays in both `deploy-dev.yml` and
+  `deploy-prod.yml`'s `health-checks` jobs with a `jq` read of
+  `infrastructure/stack-manifest.json` - this is the exact fix for the failure mode this
+  spec exists to prevent (the hardcoded list in `deploy-dev.yml` was already missing
+  `auth-onboarding` and `notification`, two real deployed stacks).
+- Added `scripts/scaffold-feature.js` - generates a new feature module's starter files
+  (`backend/functions/<name>/{index.js,service.js,repository.js,<name>.test.js,package.json}`
+  plus `packages/web-app/src/services/<name>Api.ts` and
+  `packages/web-app/src/pages/<Name>Page.tsx`) in one combined pre-write conflict check
+  across both halves. Smoke-tested with a scratch `sample-feature` name: generated
+  `index.js` passes `node -c`, generated `.ts`/`.tsx` pass `npx tsc --noEmit` in
+  `packages/web-app`, and the conflict check correctly refuses to overwrite on a second
+  run. All scratch files deleted after verification.
+
 ## [1.10.16] - 2026-10-12
 
 ### fix: exclude node_modules from security-check.sh HTTP-URL scan

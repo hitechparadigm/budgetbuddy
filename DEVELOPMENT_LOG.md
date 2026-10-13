@@ -1,4 +1,58 @@
 # Development Log
+## 2026-10-13 - modular-architecture Spec: Wave 0+1 Tasks (Session 168)
+
+### Summary
+Resumed the modular-architecture spec (active, 15 tasks, none previously started) per the
+autonomy-check hook finding it as the only genuinely actionable open item once CI/CD was
+green and docs debt was clear. Completed all of wave 0 (tasks 1.1, 4.1, 6.1/6.2, 11.1) and
+wave 1 (tasks 2.1, 10.1, 10.2, 11.2) from the Task Dependency Graph.
+
+### Work Completed
+- Task 1.1: `scripts/consistency-check.js` CLI skeleton (shebang, ROOT constant, four
+  check-function stubs, CHECKS registry, main() with --check= arg parsing, shared
+  extractStackSlugs() helper). Verified via node -c and a direct run against
+  --check=shared-docs and an unknown check name.
+- Task 4.1: `infrastructure/stack-manifest.json` - verified its 10 stack slugs/classes
+  against a live grep of app.ts's `new X(app, \`${stackPrefix}-<slug>\`` constructions
+  before writing, not just copied from design.md's draft.
+- Task 6.1/6.2: `docs/gateway-routing-map.md` - verified every route prefix in all four
+  CDK API stacks via grep before writing the table, and found one real omission in
+  design.md's draft (api-stack.ts's top-level `health` resource) that the design draft
+  had missed; included it. Indexed in docs/README.md.
+- Task 2.1: Implemented `checkSharedDocs()` for real. Running it against the actual repo
+  surfaced a genuine, previously-undetected gap: packages/shared/README.md was missing
+  sections for the `validation`, `data`, and `services` directories that
+  src/index.ts has long exported. Fixed the README (added the three missing sections)
+  rather than deviate from the task's explicit "confirm it prints the checkmark success
+  line" completion criterion - the check now passes legitimately, not by weakening it.
+- Task 10.1/10.2: Replaced the hardcoded CloudFormation stack-name arrays in both
+  deploy-dev.yml and deploy-prod.yml's health-checks jobs with a jq read of
+  stack-manifest.json. Confirmed this is the exact live bug the spec exists to prevent:
+  deploy-dev.yml's hardcoded list was already missing auth-onboarding and notification,
+  two stacks that are actually deployed. Validated both files' YAML with js-yaml after
+  the edit.
+- Task 11.1/11.2: `scripts/scaffold-feature.js` - backend Lambda generator (index.js with
+  the real CORS/health/BudgetAccessResolver boilerplate, service.js, repository.js, test
+  stub, package.json) plus frontend generator (API service + page stub), combined into one
+  scaffoldFeature() that checks all 7 target paths for conflicts before writing anything.
+  Smoke-tested twice: once per generator in isolation, once combined with a scratch
+  `sample-feature` name - generated index.js passed node -c, generated .ts/.tsx passed
+  `npx tsc --noEmit` in packages/web-app with zero errors referencing the generated files,
+  and a second run correctly refused to overwrite. All scratch files deleted after each
+  test, confirmed via git status --short.
+
+### Verification
+- node -c on both new scripts, docs:validate, and js-yaml parsing of all three touched
+  workflow files all pass. No change in this session touches a CDK stack, API Gateway, or
+  DynamoDB table (every edit was additive tooling, documentation, or a workflow step that
+  reads a new reference file instead of a hardcoded array), consistent with the spec's
+  explicit scope boundary (Requirement 6).
+
+### Remaining in modular-architecture spec
+Tasks 3.1 (checkAppDrift), 5.1 (checkStackManifest), 7.1 (checkGatewayRouting), the
+optional unit-test tasks (2.2/3.2/5.2/7.2/8.1/11.4), task 12 (module-scaffold-guide.md),
+task 13 (pr-check.yml wiring), and checkpoints 9/14/15 are not yet started.
+
 ## 2026-10-12 - Fix: security-check.sh False Positive on node_modules (Session 168)
 
 ### Problem

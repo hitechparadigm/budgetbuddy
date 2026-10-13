@@ -22,6 +22,21 @@ This package contains common code that needs to be consistent across all platfor
 - **Categories**: Default budget categories by region (Canada vs US specific)
 - **Regions**: Cost of living data for 50+ cities, regional configurations
 
+### Validation (`src/validation/`)
+- **User**: Signup/login schema validation (Zod)
+- **Budget**: Budget creation/update schema validation
+- **Transaction**: Transaction creation/update schema validation
+- **Auth**: Auth-related request schema validation
+
+### Data (`src/data/`)
+- **Category definitions**: Default expense/income categories with subcategories
+- **City expense data**: Cost-of-living data for 50+ cities, used by AI budget generation
+
+### Services (`src/services/`)
+- **Geolocation service**: City/location resolution and formatting for onboarding
+- **Category suggestion service**: AI-assisted category suggestions by city and household size
+- **Category management service**: Add/edit/delete custom categories and subcategories
+
 ### Components (`src/components/`)
 - Placeholder for future shared UI components
 
