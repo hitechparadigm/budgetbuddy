@@ -70,7 +70,27 @@ function checkSharedDocs() {
   }
   return !undocumented.length && !stale.length;
 }
-function checkAppDrift() { /* Requirement 2 - implemented in task 3.1 */ }
+
+function checkAppDrift() {
+  const ts = fs.readFileSync(path.join(ROOT, 'infrastructure/bin/app.ts'), 'utf-8');
+  const js = fs.readFileSync(path.join(ROOT, 'infrastructure/bin/app.js'), 'utf-8');
+
+  const tsSlugs = extractStackSlugs(ts);
+  const jsSlugs = extractStackSlugs(js);
+
+  const onlyInTs = [...tsSlugs].filter((s) => !jsSlugs.has(s));
+  const onlyInJs = [...jsSlugs].filter((s) => !tsSlugs.has(s));
+
+  if (onlyInTs.length || onlyInJs.length) {
+    console.error('\u274c app.ts and app.js stack lists differ:');
+    if (onlyInTs.length) console.error(`   Only in app.ts: ${onlyInTs.join(', ')}`);
+    if (onlyInJs.length) console.error(`   Only in app.js: ${onlyInJs.join(', ')}`);
+    return false;
+  }
+  console.log('\u2705 app.ts and app.js instantiate the same stacks');
+  return true;
+}
+
 function checkStackManifest() { /* Requirement 3 - implemented in task 5.1 */ }
 function checkGatewayRouting() { /* Requirement 4 - implemented in task 7.1 */ }
 
@@ -100,4 +120,15 @@ function main() {
   process.exit(failed ? 1 : 0);
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  extractStackSlugs,
+  checkSharedDocs,
+  checkAppDrift,
+  checkStackManifest,
+  checkGatewayRouting,
+  CHECKS,
+};
