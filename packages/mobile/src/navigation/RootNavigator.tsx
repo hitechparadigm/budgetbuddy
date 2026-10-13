@@ -22,6 +22,7 @@ import TipsScreen from '@/screens/TipsScreen';
 import SyncSettingsScreen from '@/screens/SyncSettingsScreen';
 import OfflineSettingsScreen from '@/screens/OfflineSettingsScreen';
 import PlannedTransactionsScreen from '@/screens/PlannedTransactionsScreen';
+import BiometricSetupScreen from '@/screens/auth/BiometricSetupScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const BudgetStack = createStackNavigator<BudgetStackParamList>();
@@ -46,6 +47,7 @@ export type MoreStackParamList = {
   OfflineSettings: undefined;
   PlannedTransactions: undefined;
   Settings: undefined;
+  BiometricSetup: undefined;
 };
 
 const MoreStack = createStackNavigator<MoreStackParamList>();
@@ -105,6 +107,7 @@ function MoreStackNavigator() {
       <MoreStack.Screen name="OfflineSettings" component={OfflineSettingsScreen} options={{ title: 'Offline Settings' }} />
       <MoreStack.Screen name="PlannedTransactions" component={PlannedTransactionsScreen} options={{ title: 'Planned Transactions' }} />
       <MoreStack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <MoreStack.Screen name="BiometricSetup" component={BiometricSetupScreen} options={{ title: 'Biometric Authentication' }} />
     </MoreStack.Navigator>
   );
 }

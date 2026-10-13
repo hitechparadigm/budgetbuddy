@@ -1,4 +1,37 @@
 # Changelog
+## [1.12.3] - 2026-10-13
+
+### feat: mobile biometric authentication (mobile-app task 15)
+
+- Added `packages/mobile/src/services/biometric.ts` wrapping `expo-local-authentication`
+  (`hasHardwareAsync`, `isEnrolledAsync`, `supportedAuthenticationTypesAsync`,
+  `authenticateAsync`) plus an `AsyncStorage`-persisted on/off preference. This gates local
+  app unlock only - it sits in front of the existing Cognito session already held in
+  `SecureStore` and does not change what the backend considers an authenticated request.
+- Replaced the 0-byte stub `BiometricSetupScreen.tsx` with a real implementation: checks
+  device hardware/enrollment, requires a successful OS biometric prompt before turning the
+  setting on (not just flipping a switch), and shows a clear reason when the device has no
+  scanner or no enrolled biometrics.
+- Found the actual starting state didn't match the spec's prior note at all: the dependency
+  (`expo-local-authentication@^17.0.8`) was installed and declared, but `BiometricSetupScreen.tsx`
+  was a genuinely empty file (confirmed `Length: 0`), and `SettingsScreen.tsx`'s "Biometric
+  Authentication" toggle was wired to a local `useState` that did nothing on toggle - no
+  persistence, no OS call, no screen to navigate to.
+- Registered the new screen in `MoreStackNavigator` (`BiometricSetup` route) and changed
+  `SettingsScreen.tsx`'s biometric row from the dead toggle to a navigation row pointing at it,
+  matching how every other Settings sub-feature (2FA backup codes, etc.) is already wired.
+- Verified: `tsc --noEmit` 0 errors; `npx jest` 257/259 passing (2 skipped), matching the
+  documented baseline, with no new mock needed in `navigation.test.tsx` (the new screen's
+  import chain resolves cleanly under Jest, unlike some other `MoreStackNavigator` screens);
+  `lint:check:mobile` initially regressed to 153 errors (2 unused imports - `useEffect`,
+  `Alert` - left over from an earlier draft of the screen), fixed back to the documented
+  151-error baseline exactly.
+- Corrected two stale claims in `.kiro/specs/mobile-app/tasks.md` while verifying this: task
+  13's note about Settings-screen typecheck errors (`userId`/`Budget`/`TwoFactorSetup` prop
+  mismatches) is stale - `tsc --noEmit` reports 0 errors package-wide, confirmed directly.
+  Task 15's note that `BiometricSetupScreen.tsx` "exists" was also stale - it existed as a
+  0-byte file, which is a materially different claim than a working screen.
+
 ## [1.12.2] - 2026-10-13
 
 ### feat: Canadian investment account types (TFSA, RRSP, FHSA, RESP)

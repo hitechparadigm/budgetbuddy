@@ -1,4 +1,4 @@
----
+﻿---
 inclusion: always
 ---
 
@@ -10,7 +10,7 @@ inclusion: always
 **Date**: 2026-10-13
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed, npm audit critical CVE fixed via from-scratch lockfile regen, modular-architecture spec COMPLETE (15/15 tasks), mobile Planned Transactions screen built (mobile-app task 12) - see Mobile/Infrastructure/Security/Modular Architecture sections)
+**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed, npm audit critical CVE fixed via from-scratch lockfile regen, modular-architecture spec COMPLETE (15/15 tasks), mobile Planned Transactions screen built (mobile-app task 12), Canadian investment account types added, mobile biometric authentication built (mobile-app task 15) - see Mobile/Infrastructure/Security/Modular Architecture sections)
 
 ## What's Live and Working
 
@@ -182,6 +182,25 @@ inclusion: always
       `MoreStackNavigator` screen import) after it surfaced a real new test failure on the
       first run. Verified unchanged: `tsc --noEmit` 0 errors, `jest` 257/259 (2x runs),
       `lint:check:mobile` exactly 151 pre-existing errors (zero new ones introduced).
+- [x] Canadian investment account types (TFSA, RRSP, FHSA, RESP) added alongside the
+      existing US types (401k, IRA, Roth IRA, HSA) on both `InvestmentsPage.tsx` (web) and
+      `InvestmentsScreen.tsx` (mobile) - triggered by verifying a claim in an external
+      strategic review (`docs/startup-assessment-canada-strategy.md`) against the actual
+      code. The review's other two findings (family-category privacy gap, premium feature
+      gating) were confirmed STALE/already-implemented and flagged as corrections in the
+      doc rather than acted on. Relabeled `brokerage` to "Brokerage (non-registered)";
+      replaced a 5-deep nested ternary emoji lookup with an `ACCOUNT_TYPE_EMOJI` map on
+      both platforms. Verified: `tsc --noEmit` 0 errors both platforms.
+- [x] Mobile biometric authentication (`mobile-app` spec task 15) - the spec's claim that
+      `BiometricSetupScreen.tsx` "exists" but lacks a navigator route was misleading: the
+      file was a literal 0-byte stub and the Settings toggle was wired to inert local
+      state. Built a real `services/biometric.ts` wrapper around `expo-local-authentication`
+      (`getAvailability`/`authenticate`/`isEnabled`/`setEnabled`, preference persisted via
+      `AsyncStorage`) and a real `BiometricSetupScreen.tsx`. Wired into `MoreStackNavigator`
+      and changed `SettingsScreen.tsx`'s biometric row from a dead `type: "toggle"` to
+      `type: "navigation"` that routes to the new screen. Verified unchanged: `tsc --noEmit`
+      0 errors, `jest` 257/259 (2 skipped), `lint:check:mobile` exactly 151 pre-existing
+      errors (temporarily regressed to 153 from two unused imports, fixed back to baseline).
 
 ### Modular Architecture (`modular-architecture` spec, COMPLETE, 15/15 tasks)
 - [x] All 15 tasks done (every required task + every optional `*` task). Final waves 3-6:
