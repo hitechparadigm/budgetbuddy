@@ -70,7 +70,7 @@ export interface Holding {
   costBasis: number;
   currentPrice: number;
   previousPrice?: number;
-  accountType: 'brokerage' | '401k' | 'ira' | 'roth_ira' | 'hsa' | 'crypto';
+  accountType: 'brokerage' | 'tfsa' | 'rrsp' | 'fhsa' | 'resp' | '401k' | 'ira' | 'roth_ira' | 'hsa' | 'crypto';
   lastUpdated: string;
   createdAt: string;
 }

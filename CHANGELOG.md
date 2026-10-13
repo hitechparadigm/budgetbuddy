@@ -1,4 +1,43 @@
 # Changelog
+## [1.12.2] - 2026-10-13
+
+### feat: Canadian investment account types (TFSA, RRSP, FHSA, RESP)
+
+- Added `tfsa`, `rrsp`, `fhsa`, and `resp` to the investment account-type union in both
+  `packages/web-app/src/services/investmentsApi.ts` and `packages/mobile/src/services/investments.ts`
+  (`CreateHoldingRequest`/`UpdateHoldingRequest` reference `Holding['accountType']` and picked
+  up the new values automatically, no separate edit needed there).
+- Added matching options to the `ACCOUNT_TYPES` dropdown lists in `InvestmentsPage.tsx` (web)
+  and `InvestmentsScreen.tsx` (mobile), alongside the existing US-style types (401(k), IRA, Roth
+  IRA, HSA) rather than replacing them, since the app already has live US-account-type data.
+  Relabeled `brokerage` to "Brokerage (non-registered)" for clarity now that there are
+  registered-account alternatives alongside it.
+- Replaced both platforms' 5-deep nested ternary for the allocation-chart emoji (unreadable, and
+  about to get worse with 4 more types) with a small `ACCOUNT_TYPE_EMOJI` lookup map.
+- Widened the web allocation grid from `md:grid-cols-6` to `sm:grid-cols-3 md:grid-cols-5` to
+  accommodate 10 account types instead of 6 without cramping.
+- This closes a real gap identified by an external strategic review of the repo: investment
+  account types were US-only (401(k)/IRA/Roth IRA/HSA) with no Canadian equivalents anywhere in
+  the UI, which would have been a visible rough edge for any Canada-first positioning.
+- Verified: `type-check:web` and `type-check:mobile` both 0 errors; `InvestmentsPage.test.tsx`
+  16/16 passing (uses `fc.constantFrom()` directly, unaffected by the UI list change); mobile
+  `npx jest` 257/259 passing (2 skipped), matching the documented baseline exactly; only the 4
+  intended files changed per `git status`.
+
+### docs: add external startup assessment and Canadian market strategy review
+
+- Added `docs/startup-assessment-canada-strategy.md` - a cleaned-up, properly formatted version
+  of an external strategic review (positioning, target audience sequencing, competitive
+  landscape, monetization model, 90-day launch plan). Indexed in `docs/README.md` under
+  "Product & Design".
+- Corrected two claims in the original review against the actual codebase before publishing it:
+  the "family-category privacy gap" is already enforced in `backend/functions/budget/index.js`
+  (rejects hidden/private categories on `family`-type budgets), and "premium feature gating not
+  yet wired" is already implemented in `entitlements.js`'s `canUseFeature()` - deliberately
+  classified all-free pending real billing, a documented strategic choice rather than a missing
+  wire-up. Both corrections are flagged inline in the doc rather than silently fixed, so the
+  reasoning is visible to anyone reading it later.
+
 ## [1.12.1] - 2026-10-13
 
 ### feat: mobile Planned Transactions screen (mobile-app spec task 12)

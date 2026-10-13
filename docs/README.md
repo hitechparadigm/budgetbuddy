@@ -26,6 +26,7 @@ subject and extend it instead (see `.kiro/steering/structure.md`, "Documentation
 ## Product & Design
 - **[Product Requirements](./product-requirements.md)** - Living document of what is built, in progress, and planned
 - **[Mobile UX Design](./mobile-ux-design.md)** - Competitive analysis and design system for the mobile app
+- **[Startup Assessment & Canadian Market Strategy](./startup-assessment-canada-strategy.md)** - External review of positioning, target audience, and monetization strategy
 
 ## Development Process
 - **[Development Status](./development-status.md)** - Current session progress and next priorities

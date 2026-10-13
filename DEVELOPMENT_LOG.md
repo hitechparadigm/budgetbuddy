@@ -1,4 +1,62 @@
 # Development Log
+## 2026-10-13 - Startup Review Cleanup + Canadian Investment Account Types (Session 168)
+
+### Summary
+User provided an external strategic review PDF (Canadian market positioning, target audience,
+ad-based monetization through realtors/mortgage brokers) and asked for the document to be
+made user-friendly plus the next steps advised and started. Treated this as two deliverables:
+a cleaned-up strategy doc, and one concrete, non-strategic technical fix the review correctly
+identified.
+
+### Verification before touching anything
+Before editing or trusting any claim in the review, read the actual code it was making claims
+about:
+- `backend/functions/budget/index.js`: confirmed family-budget category privacy IS already
+  enforced (rejects hidden/private categories outright on `family`-type budgets) - the
+  review's "family-category privacy gap" finding is stale, already fixed per
+  docs/product-requirements.md's Known Gaps section.
+- `backend/layers/common/nodejs/entitlements.js`: confirmed `canUseFeature()` IS implemented
+  and already called from export/insights handlers - the review's "premium feature gating not
+  yet wired" finding is also stale; it's deliberately all-free pending real billing, a
+  documented strategic choice, not a missing wire-up.
+- `packages/web-app/src/pages/InvestmentsPage.tsx`, `packages/mobile/src/screens/InvestmentsScreen.tsx`,
+  and both platforms' `investmentsApi.ts`/`investments.ts`: confirmed the review's investment
+  account-type finding WAS accurate - account types were 401(k)/IRA/Roth IRA/HSA/brokerage/
+  crypto only, zero Canadian equivalents (TFSA/RRSP/FHSA/RESP) anywhere in either platform's UI
+  or type definitions.
+
+### Work Completed
+1. Added `tfsa`/`rrsp`/`fhsa`/`resp` to the `accountType` union in both `investmentsApi.ts` (web)
+   and `investments.ts` (mobile) - `CreateHoldingRequest`/`UpdateHoldingRequest` reference
+   `Holding['accountType']` so they updated automatically.
+2. Added matching dropdown options to `ACCOUNT_TYPES` in both `InvestmentsPage.tsx` and
+   `InvestmentsScreen.tsx`, alongside (not replacing) the existing US types, since the app
+   already has live US-account-type holdings data that must keep working. Relabeled
+   `brokerage` to "Brokerage (non-registered)" for clarity.
+3. Replaced the 5-deep nested ternary used for the allocation-chart emoji on both platforms
+   with a small `ACCOUNT_TYPE_EMOJI` lookup object - the ternary was already hard to read and
+   would have needed 4 more branches.
+4. Widened the web allocation grid (`md:grid-cols-6` -> `sm:grid-cols-3 md:grid-cols-5`) since
+   there are now 10 account types instead of 6.
+5. Wrote `docs/startup-assessment-canada-strategy.md` - the external review reformatted as
+   clean markdown (proper tables, no PDF-extraction artifacts), with the two stale findings
+   above corrected inline (with a visible "Corrections" note explaining what changed and why,
+   rather than silently editing them out). Indexed in `docs/README.md`.
+
+### Verification
+`type-check:web` and `type-check:mobile`: 0 errors both. `npx jest InvestmentsPage` (web):
+16/16 passing. `npx jest` (mobile): 257/259 passing, 2 skipped - matching the documented
+baseline exactly, confirming no regression from the UI list changes. `git status` confirmed
+only the 4 intended source files plus the new doc and its index entry changed.
+
+### Explicitly not done in this pass (deferred - strategic decisions, not technical fixes)
+Did not reposition the landing page/marketing copy toward "18-29 Canadians" messaging, did not
+build any ad/sponsorship infrastructure, and did not implement the suggested life-stage
+navigation reorganization. These are product/business decisions the review raises as open
+questions (teen vs. 18-29 audience, consumer-ads vs. institutional-distribution business
+model) that the user has not yet chosen between - flagged back to the user as next steps
+rather than assumed.
+
 ## 2026-10-13 - Mobile Planned Transactions Screen (mobile-app task 12, Session 168)
 
 ### Summary
