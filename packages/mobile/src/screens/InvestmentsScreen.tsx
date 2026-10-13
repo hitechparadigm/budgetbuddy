@@ -34,13 +34,30 @@ import {
 } from "../services/investments";
 
 const ACCOUNT_TYPES = [
-  { value: "brokerage", label: "Brokerage" },
+  { value: "brokerage", label: "Brokerage (non-registered)" },
+  { value: "tfsa", label: "TFSA" },
+  { value: "rrsp", label: "RRSP" },
+  { value: "fhsa", label: "FHSA" },
+  { value: "resp", label: "RESP" },
   { value: "401k", label: "401(k)" },
   { value: "ira", label: "Traditional IRA" },
   { value: "roth_ira", label: "Roth IRA" },
   { value: "hsa", label: "HSA" },
   { value: "crypto", label: "Cryptocurrency" },
 ];
+
+const ACCOUNT_TYPE_EMOJI: Record<string, string> = {
+  brokerage: "\u{1F4BC}",
+  tfsa: "\u{1F6E1}\u{FE0F}",
+  rrsp: "\u{1F3E6}",
+  fhsa: "\u{1F3E1}",
+  resp: "\u{1F393}",
+  "401k": "\u{1F3E2}",
+  ira: "\u{1F3E6}",
+  roth_ira: "\u{1F48E}",
+  hsa: "\u{1F3E5}",
+  crypto: "\u20BF",
+};
 
 export const InvestmentsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -385,17 +402,7 @@ export const InvestmentsScreen: React.FC = () => {
                   {portfolio.allocation.map((item, i) => (
                     <View key={i} style={styles.allocationCard}>
                       <Text style={styles.allocationEmoji}>
-                        {item.type === "brokerage"
-                          ? "💼"
-                          : item.type === "401k"
-                            ? "🏢"
-                            : item.type === "ira"
-                              ? "🏦"
-                              : item.type === "roth_ira"
-                                ? "💎"
-                                : item.type === "hsa"
-                                  ? "🏥"
-                                  : "₿"}
+                        {ACCOUNT_TYPE_EMOJI[item.type] ?? "\u{1F4B0}"}
                       </Text>
                       <Text style={styles.allocationLabel}>
                         {getAccountTypeLabel(item.type)}

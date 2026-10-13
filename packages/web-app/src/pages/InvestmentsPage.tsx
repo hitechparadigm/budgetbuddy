@@ -26,13 +26,30 @@ import {
 import { TrendingUp, TrendingDown, Minus, ExternalLink, RefreshCw, Newspaper, BarChart3 } from "lucide-react";
 
 const ACCOUNT_TYPES = [
-  { value: "brokerage", label: "Brokerage" },
+  { value: "brokerage", label: "Brokerage (non-registered)" },
+  { value: "tfsa", label: "TFSA" },
+  { value: "rrsp", label: "RRSP" },
+  { value: "fhsa", label: "FHSA" },
+  { value: "resp", label: "RESP" },
   { value: "401k", label: "401(k)" },
   { value: "ira", label: "Traditional IRA" },
   { value: "roth_ira", label: "Roth IRA" },
   { value: "hsa", label: "HSA" },
   { value: "crypto", label: "Cryptocurrency" },
 ];
+
+const ACCOUNT_TYPE_EMOJI: Record<string, string> = {
+  brokerage: "\u{1F4BC}",
+  tfsa: "\u{1F6E1}\u{FE0F}",
+  rrsp: "\u{1F3E6}",
+  fhsa: "\u{1F3E1}",
+  resp: "\u{1F393}",
+  "401k": "\u{1F3E2}",
+  ira: "\u{1F3E6}",
+  roth_ira: "\u{1F48E}",
+  hsa: "\u{1F3E5}",
+  crypto: "\u20BF",
+};
 
 const PERFORMANCE_PERIODS = [
   { value: "1M", label: "1 Month" },
@@ -530,21 +547,11 @@ export const InvestmentsPage: React.FC = () => {
             <h2 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">
               Asset Allocation by Account Type
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               {portfolio.allocation.map((item, i) => (
                 <div key={i} className="text-center">
                   <div className="text-2xl mb-1">
-                    {item.type === "brokerage"
-                      ? "💼"
-                      : item.type === "401k"
-                        ? "🏢"
-                        : item.type === "ira"
-                          ? "🏦"
-                          : item.type === "roth_ira"
-                            ? "💎"
-                            : item.type === "hsa"
-                              ? "🏥"
-                              : "₿"}
+                    {ACCOUNT_TYPE_EMOJI[item.type] ?? "\u{1F4B0}"}
                   </div>
                   <p className="text-sm font-medium text-[var(--color-foreground)]">
                     {getAccountTypeLabel(item.type)}
