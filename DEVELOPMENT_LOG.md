@@ -1,4 +1,41 @@
 # Development Log
+## 2026-10-13 - Mobile Planned Transactions Screen (mobile-app task 12, Session 168)
+
+### Summary
+With CI green and the modular-architecture spec complete, swept remaining open items
+across other active specs and found mobile-app's task 12 (Planned Transactions screen)
+genuinely actionable - a real web implementation exists to mirror, no external blocker.
+Built it.
+
+### Work Completed
+Read the web app's PlannedTransactionsPage.tsx end to end to understand the real
+transaction-planning Lambda contract (GET/POST /transaction-planning, PUT/DELETE
+/transaction-planning/{planId}, POST /transaction-planning/execute), then read 3
+existing mobile screens (BillsScreen, SubscriptionsScreen) to match the established
+mobile pattern: inline fetch() calls against a hardcoded extended-features API base URL
+(matching how BillsScreen/SubscriptionsScreen already call the main/features APIs - no
+central API client is used for screen-level fetches in this codebase), Card/
+LoadingSpinner/FloatingActionButton from components/ui, useTheme() for colors, useAuth()
+for the bearer token.
+
+Built PlannedTransactionsScreen.tsx with upcoming/all/completed filter tabs, an inline
+new-plan form (type toggle, category, amount, recurring switch + frequency picker), a
+mark-as-done action (calls /execute), and delete with a native Alert confirmation.
+Wired into MoreStackNavigator (added to MoreStackParamList, registered the screen) and
+added a "Planned Transactions" menu item to MoreScreen.tsx's Money section.
+
+### Verification
+- npx tsc --noEmit in packages/mobile: 0 errors (unchanged from the documented baseline).
+- npx jest: first run surfaced one real new failure - src/test/navigation.test.tsx failed
+  because it explicitly mocks every screen MoreStackNavigator imports (several pull in
+  native Expo/Amplify modules unavailable in Jest) and didn't yet have a mock for the new
+  screen. Added the mock following the file's own established mockScreen() pattern.
+  Re-ran twice after the fix: 257/259 passing, 2 skipped, both times - matching the
+  documented baseline exactly.
+- lint:check:mobile: exactly 151 errors, matching the documented pre-existing baseline
+  exactly - confirms zero new lint errors introduced by this change.
+- git status confirmed only the intended 4 files changed (RootNavigator.tsx,
+  MoreScreen.tsx, navigation.test.tsx, plus the new screen file) - no stray artifacts.
 ## 2026-10-13 - modular-architecture Spec Complete: Waves 4-6 + Optional Tasks (Session 168)
 
 ### Summary

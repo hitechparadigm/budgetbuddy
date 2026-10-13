@@ -21,6 +21,7 @@ import SubscriptionsScreen from '@/screens/SubscriptionsScreen';
 import TipsScreen from '@/screens/TipsScreen';
 import SyncSettingsScreen from '@/screens/SyncSettingsScreen';
 import OfflineSettingsScreen from '@/screens/OfflineSettingsScreen';
+import PlannedTransactionsScreen from '@/screens/PlannedTransactionsScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 const BudgetStack = createStackNavigator<BudgetStackParamList>();
@@ -43,6 +44,7 @@ export type MoreStackParamList = {
   Tips: undefined;
   SyncSettings: undefined;
   OfflineSettings: undefined;
+  PlannedTransactions: undefined;
   Settings: undefined;
 };
 
@@ -101,6 +103,7 @@ function MoreStackNavigator() {
       <MoreStack.Screen name="Tips" component={TipsScreen} options={{ title: 'Tips' }} />
       <MoreStack.Screen name="SyncSettings" component={SyncSettingsScreen} options={{ title: 'Sync Settings' }} />
       <MoreStack.Screen name="OfflineSettings" component={OfflineSettingsScreen} options={{ title: 'Offline Settings' }} />
+      <MoreStack.Screen name="PlannedTransactions" component={PlannedTransactionsScreen} options={{ title: 'Planned Transactions' }} />
       <MoreStack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
     </MoreStack.Navigator>
   );

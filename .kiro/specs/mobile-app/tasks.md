@@ -262,8 +262,16 @@ satisfy the first two without the third (unlikely here, but not assumed).
       the original task title still does not exist.
 - [x] 11. Bills screen with AI pattern badges - `BillsScreen.tsx` exists and is now
       reachable via the `More` tab (task 6.4).
-- [ ] 12. Planned Transactions screen - no screen or route found under `packages/mobile/src`
-      at all (unlike the web app's `PlannedTransactionsPage`). Not started on mobile.
+- [x] 12. Planned Transactions screen - `PlannedTransactionsScreen.tsx` built against the
+      same `transaction-planning` Lambda (extended features API gateway) the web app's
+      `PlannedTransactionsPage` uses: upcoming/all/completed filter tabs, create (one-off
+      or recurring), mark-as-done (executes into a real transaction), delete with
+      confirmation. Reachable via the `More` tab's new "Planned Transactions" menu item
+      (`MoreStackNavigator`). `npx tsc --noEmit` 0 errors (unchanged), `npx jest` 257/259
+      passing twice in a row (unchanged baseline - added a mock for the new screen to
+      `navigation.test.tsx`, which explicitly mocks every `MoreStackNavigator` screen
+      import), `lint:check:mobile` 151 errors (unchanged pre-existing baseline, confirming
+      zero new lint errors introduced).
 - [~] 13. Settings screen - `SettingsScreen.tsx` is reachable via the `More` tab (task 6.4)
       and previously via the tab bar; several typecheck errors live here (`userId` doesn't
       exist on `User` type, `Budget` type mismatch between `types/index.ts` and
