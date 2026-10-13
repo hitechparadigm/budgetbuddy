@@ -1,4 +1,24 @@
 # Changelog
+## [1.12.1] - 2026-10-13
+
+### feat: mobile Planned Transactions screen (mobile-app spec task 12)
+
+- Added `PlannedTransactionsScreen.tsx` to `packages/mobile` - the mobile app's first
+  screen for scheduling future income/expenses, built against the same
+  `transaction-planning` Lambda (extended features API gateway) the web app's
+  `PlannedTransactionsPage` already uses. Supports upcoming/all/completed filter tabs,
+  creating one-off or recurring plans, marking a plan as done (executes it into a real
+  transaction), and deleting with confirmation.
+- Wired into `MoreStackNavigator` and added a "Planned Transactions" menu item to
+  `MoreScreen.tsx`'s "Money" section, next to "Bills".
+- Added a mock for the new screen to `src/test/navigation.test.tsx`, which explicitly
+  mocks every screen `MoreStackNavigator` imports (several pull in native Expo/Amplify
+  modules unavailable in Jest).
+- Verified: `npx tsc --noEmit` in `packages/mobile` still reports 0 errors; `npx jest`
+  still passes 257/259 (2 skipped) across two consecutive runs, matching the documented
+  baseline exactly; `lint:check:mobile` still reports exactly 151 pre-existing errors,
+  confirming this change introduced zero new lint errors.
+
 ## [1.12.0] - 2026-10-13
 
 ### feat: modular-architecture guardrails complete (15/15 tasks, all required + optional)

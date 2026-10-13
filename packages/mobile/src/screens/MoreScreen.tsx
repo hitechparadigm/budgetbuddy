@@ -29,6 +29,7 @@ const MENU_SECTIONS: { title: string; items: MoreMenuItem[] }[] = [
     title: "Money",
     items: [
       { id: "Bills", title: "Bills", subtitle: "Upcoming and recurring bills", icon: "receipt-outline" },
+      { id: "PlannedTransactions", title: "Planned Transactions", subtitle: "Schedule future income and expenses", icon: "calendar-outline" },
       { id: "BankSync", title: "Accounts", subtitle: "Linked bank accounts", icon: "card-outline" },
       { id: "Subscriptions", title: "Subscriptions", subtitle: "Recurring subscriptions", icon: "repeat-outline" },
       { id: "DebtPayoff", title: "Debt Payoff", subtitle: "Snowball and avalanche plans", icon: "trending-down-outline" },

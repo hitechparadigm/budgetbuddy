@@ -10,7 +10,7 @@ inclusion: always
 **Date**: 2026-10-13
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed, npm audit critical CVE fixed via from-scratch lockfile regen, modular-architecture spec COMPLETE (15/15 tasks) - see Mobile/Infrastructure/Security/Modular Architecture sections)
+**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed, npm audit critical CVE fixed via from-scratch lockfile regen, modular-architecture spec COMPLETE (15/15 tasks), mobile Planned Transactions screen built (mobile-app task 12) - see Mobile/Infrastructure/Security/Modular Architecture sections)
 
 ## What's Live and Working
 
@@ -172,6 +172,16 @@ inclusion: always
       `.ts` sources have accumulated since `.js` was last regenerated) - those were
       reverted and left untouched, out of scope for this fix; only `app.js` itself was
       kept. Stripped the build's added inline sourcemap comment to keep the diff minimal.
+- [x] Mobile Planned Transactions screen (`mobile-app` spec task 12) - built
+      `PlannedTransactionsScreen.tsx` against the same `transaction-planning` Lambda the
+      web app's `PlannedTransactionsPage` uses (extended features API gateway):
+      upcoming/all/completed tabs, create one-off/recurring, mark-as-done (executes into a
+      real transaction), delete with confirmation. Wired into `MoreStackNavigator` + a new
+      "Planned Transactions" item in `MoreScreen.tsx`'s Money section. Added a mock for the
+      new screen to `navigation.test.tsx` (which explicitly mocks every
+      `MoreStackNavigator` screen import) after it surfaced a real new test failure on the
+      first run. Verified unchanged: `tsc --noEmit` 0 errors, `jest` 257/259 (2x runs),
+      `lint:check:mobile` exactly 151 pre-existing errors (zero new ones introduced).
 
 ### Modular Architecture (`modular-architecture` spec, COMPLETE, 15/15 tasks)
 - [x] All 15 tasks done (every required task + every optional `*` task). Final waves 3-6:

@@ -114,6 +114,7 @@ jest.mock('../screens/SubscriptionsScreen', () => mockScreen('subscriptions-scre
 jest.mock('../screens/TipsScreen', () => mockScreen('tips-screen', 'Tips Screen'));
 jest.mock('../screens/SyncSettingsScreen', () => mockScreen('syncsettings-screen', 'SyncSettings Screen'));
 jest.mock('../screens/OfflineSettingsScreen', () => mockScreen('offlinesettings-screen', 'OfflineSettings Screen'));
+jest.mock('../screens/PlannedTransactionsScreen', () => mockScreen('plannedtransactions-screen', 'PlannedTransactions Screen'));
 
 describe('Navigation Structure', () => {
   it('should render bottom tab navigator with all tabs', () => {
