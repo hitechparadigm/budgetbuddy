@@ -1,6 +1,6 @@
 # Specs Index
 
-**Last Updated**: 2026-09-30
+**Last Updated**: 2026-10-13
 
 Every spec is a direct child of `.kiro/specs/`. There is no `archive/` subdirectory - a spec's
 lifecycle state is recorded in its `.config.kiro` `status` field (`active | complete | superseded`),
@@ -21,7 +21,7 @@ never by its location. See `.kiro/steering/structure.md` for the rule.
 | `infra-cleanup` | complete | process | Destroyed deprecated api-family-stack after zero-traffic confirmation; SES production-access request assembled, filing left to the Operator |
 | `mobile-app` | active | feature | React Native + Expo iOS/Android app |
 | `mobile-ui-polish` | complete | feature | Mobile-specific UI polish bringing feature parity with completed web implementations |
-| `modular-architecture` | active | process | Additive guardrails preventing architecture drift (doc consistency checks, deploy entrypoint sync, stack manifest, gateway routing map, module scaffold) - no changes to the 4 API Gateways, single table, or CDK stack boundaries |
+| `modular-architecture` | complete | process | Additive guardrails preventing architecture drift (doc consistency checks, deploy entrypoint sync, stack manifest, gateway routing map, module scaffold) - no changes to the 4 API Gateways, single table, or CDK stack boundaries |
 | `multi-currency` | complete | feature | Multi-currency support: 6 currencies, selection, formatting, settings management |
 | `onboarding-403-fix` | complete | fix | Fixed the auth-onboarding Lambda 403 error for first-time users |
 | `plan-model-redesign` | complete | process | Migrated the data model from `FAMILY#`-scoped to `BUDGET#`-scoped with four roles (ADR-001) |

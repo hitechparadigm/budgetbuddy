@@ -57,7 +57,7 @@ edits an existing workflow YAML file's steps in place.
     - Run `node scripts/consistency-check.js --check=app-drift` against the real repository and
       confirm it prints the `✅` success line
     - _Requirements: 2.1, 2.2, 2.3_
-  - [ ]* 3.2 Write unit tests for `checkAppDrift` / `extractStackSlugs`
+  - [x]* 3.2 Write unit tests for `checkAppDrift` / `extractStackSlugs`
     - Fixture pair 1: a slug string present only in one of the two fixture sources - assert it is
       reported in the correct "only in X" bucket
     - Fixture pair 2: identical slug sets in both fixture sources - assert the function returns
@@ -73,7 +73,7 @@ edits an existing workflow YAML file's steps in place.
     - _Requirements: 3.1_
 
 - [ ] 5. Implement and verify `checkStackManifest` (Requirement 3)
-  - [ ] 5.1 Implement `checkStackManifest()` in `scripts/consistency-check.js`
+  - [x] 5.1 Implement `checkStackManifest()` in `scripts/consistency-check.js`
     - Reuse `extractStackSlugs()` against `infrastructure/bin/app.ts` to get the live slug set
     - Parse `infrastructure/stack-manifest.json`, collect its `stacks[].slug` values
     - Report any slug present in one set and absent from the other, labeled "in app.ts, missing
@@ -82,7 +82,7 @@ edits an existing workflow YAML file's steps in place.
       and confirm it prints the `✅` success line (validates task 4.1's manifest content against
       the real `app.ts`)
     - _Requirements: 3.2, 3.3_
-  - [ ]* 5.2 Write unit tests for `checkStackManifest`
+  - [x]* 5.2 Write unit tests for `checkStackManifest`
     - Fixture pair 1: a manifest fixture missing a slug present in an `app.ts` fixture's
       extracted set - assert it is reported as out of sync
     - Fixture pair 2: manifest and `app.ts` fixture slug sets match exactly - assert the function
@@ -102,7 +102,7 @@ edits an existing workflow YAML file's steps in place.
     - _Requirements: 4.1_
 
 - [ ] 7. Implement and verify `checkGatewayRouting` (Requirement 4)
-  - [ ] 7.1 Implement `extractRoutePrefixes()` and `checkGatewayRouting()` in
+  - [x] 7.1 Implement `extractRoutePrefixes()` and `checkGatewayRouting()` in
         `scripts/consistency-check.js`
     - For each of `api-stack.ts`, `api-features-stack.ts`, `api-features-extended-stack.ts`,
       `api-budgets-stack.ts` under `infrastructure/lib/`, extract every
@@ -114,15 +114,15 @@ edits an existing workflow YAML file's steps in place.
       and confirm it prints the `✅` success line (validates task 6.1's map content against the
       real CDK stacks)
     - _Requirements: 4.3, 4.4_
-  - [ ]* 7.2 Write unit tests for `checkGatewayRouting`
+  - [x]* 7.2 Write unit tests for `checkGatewayRouting`
     - Fixture pair 1: a fixture CDK stack source with a route prefix absent from a fixture routing
       map - assert it is reported as undocumented
     - Fixture pair 2: a fixture routing map with an extra entry not present in the fixture CDK
       source - assert the function still returns `true` (extra doc entries are not an error)
     - _Requirements: 4.4_
 
-- [ ]* 8. Write the Property 1 determinism/side-effect-free test
-  - [ ]* 8.1 Add `scripts/consistency-check.test.js`'s Property 1 test
+- [x]* 8. Write the Property 1 determinism/side-effect-free test
+  - [x]* 8.1 Add `scripts/consistency-check.test.js`'s Property 1 test
     - For each of the four check functions, invoke it twice in succession against the same fixed
       fixture-file pair; assert both calls return the identical boolean and the identical ordered
       mismatch list, and assert every file the function reads (its own fixtures and the other
@@ -133,7 +133,7 @@ edits an existing workflow YAML file's steps in place.
       `npm run test:unit`-style invocation, matching how `tests/*.test.js` is already discovered
     - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.2, 3.3, 4.3, 4.4_
 
-- [ ] 9. Checkpoint - all consistency checks and their tests pass
+- [x] 9. Checkpoint - all consistency checks and their tests pass
   - Run `node scripts/consistency-check.js` (no `--check` filter) against the actual current
     repository state and confirm exit code 0 with all four `✅` lines
   - Run `npx jest scripts/consistency-check.test.js` and confirm all unit tests and the Property 1
@@ -179,41 +179,41 @@ edits an existing workflow YAML file's steps in place.
       service/repository/page logic, and run `node scripts/consistency-check.js` before
       committing
     - _Requirements: 4.2, 5.3, 5.4_
-  - [ ]* 11.4 Manual smoke test of `scripts/scaffold-feature.js`
+  - [x]* 11.4 Manual smoke test of `scripts/scaffold-feature.js`
     - Run `node scripts/scaffold-feature.js sample-feature` in a scratch location, confirm the
       generated `index.js` passes `node -c`, confirm the generated `.ts`/`.tsx` files pass
       `npx tsc --noEmit` in `packages/web-app`, then delete every generated file
     - _Requirements: 5.1, 5.2_
 
 - [ ] 12. Document the Module_Scaffold (Requirement 5.5)
-  - [ ] 12.1 Create `docs/module-scaffold-guide.md`
+  - [x] 12.1 Create `docs/module-scaffold-guide.md`
     - Document `scripts/scaffold-feature.js`'s invocation (`node scripts/scaffold-feature.js
       <name>`), the full list of generated file paths, and links to
       `docs/gateway-routing-map.md` and `infrastructure/stack-manifest.json`
     - _Requirements: 5.5_
-  - [ ] 12.2 Index `docs/module-scaffold-guide.md` in `docs/README.md`
+  - [x] 12.2 Index `docs/module-scaffold-guide.md` in `docs/README.md`
     - Add a bullet for it under the existing "Development Process" section
     - _Requirements: 5.5_
 
 - [ ] 13. Wire the consistency checks into `pr-check.yml` CI (Requirements 1/2/3/4's CI clauses)
-  - [ ] 13.1 Add the `consistency-checks` job to `.github/workflows/pr-check.yml`
+  - [x] 13.1 Add the `consistency-checks` job to `.github/workflows/pr-check.yml`
     - New sibling job (matching the `mobile-tests` job's additive pattern): checkout, setup-node,
       then `run: node scripts/consistency-check.js`
     - _Requirements: 1.4, 1.5, 2.4, 2.5, 3.5, 3.6, 4.5, 4.6_
-  - [ ] 13.2 Add `consistency-checks` to the `pr-summary` job
+  - [x] 13.2 Add `consistency-checks` to the `pr-summary` job
     - Add `consistency-checks` to `pr-summary`'s `needs` array
     - Add a `| Consistency Checks | ... |` row to the summary table, matching the existing
       `mobile-tests` row's conditional-emoji pattern
     - _Requirements: 1.5, 2.5, 3.6, 4.6_
 
-- [ ] 14. Checkpoint - CI workflow YAML syntax is valid
+- [x] 14. Checkpoint - CI workflow YAML syntax is valid
   - Run `node -e "require('js-yaml').load(require('fs').readFileSync('.github/workflows/pr-check.yml','utf-8'))"`
     and confirm it does not throw
   - Run the same check against `.github/workflows/deploy-dev.yml` and
     `.github/workflows/deploy-prod.yml`
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 15. Final checkpoint - full repository consistency confirmed
+- [x] 15. Final checkpoint - full repository consistency confirmed
   - Run `node scripts/consistency-check.js` one more time against the repository state after all
     edits in this plan and confirm exit code 0 with all four `✅` lines
   - Ensure all tests pass, ask the user if questions arise.

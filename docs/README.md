@@ -30,6 +30,7 @@ subject and extend it instead (see `.kiro/steering/structure.md`, "Documentation
 ## Development Process
 - **[Development Status](./development-status.md)** - Current session progress and next priorities
 - **[Development Best Practices](./DEVELOPMENT_BEST_PRACTICES.md)** - Architecture patterns and lessons learned
+- **[Module Scaffold Guide](./module-scaffold-guide.md)** - Generating a new feature module's starter backend Lambda and frontend service+page files
 
 ## Outside `/docs`
 - **[Repository README](../README.md)** - Project overview, quick start, recent achievements
