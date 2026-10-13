@@ -1,4 +1,57 @@
 # Development Log
+## 2026-10-13 - Mobile Biometric Authentication (mobile-app task 15, Session 168)
+
+### Summary
+After committing and pushing the Canadian investment account types + strategy doc work, ran
+the autonomy check while waiting on that CI run. Found mobile-app spec task 15 (biometric
+auth) genuinely actionable - same unreachable-stub pattern as task 12 (Planned Transactions)
+fixed earlier in this session - and built it for real.
+
+### What was actually there vs. what the spec claimed
+The spec note said BiometricSetupScreen.tsx "exists" with expo-local-authentication as a
+dependency, missing only a navigator route. Checked directly: the dependency IS installed
+(package.json, ^17.0.8) and genuinely unused anywhere in app code (only referenced via mocks
+in property tests). BiometricSetupScreen.tsx was a literal 0-byte file (Get-Item confirmed
+Length: 0). SettingsScreen.tsx's "Biometric Authentication" row was a local useState toggle
+with an onToggle handler that only called setBiometricEnabled(value) - no persistence, no OS
+API call, no navigation anywhere. "Exists but no navigator route" was not an accurate
+description of the gap.
+
+### Work Completed
+- Read expo-local-authentication's actual type definitions
+  (node_modules/expo-local-authentication/build/LocalAuthentication.d.ts /
+  .types.d.ts) to get the real API surface before writing any code against it.
+- Added services/biometric.ts: getAvailability() (hardware + enrollment + type label),
+  authenticate() (wraps authenticateAsync, treats cancellation/lockout/errors uniformly as
+  false rather than throwing), isEnabled()/setEnabled() (AsyncStorage-persisted preference).
+- Replaced the empty stub with a real BiometricSetupScreen.tsx: shows device/enrollment
+  availability, requires a successful OS prompt before allowing the toggle to turn on (not
+  just flipping local state), explains why the toggle is disabled when the device has no
+  scanner or enrollment.
+- Wired into MoreStackNavigator (new BiometricSetup route, added to MoreStackParamList) and
+  changed SettingsScreen.tsx's biometric row from the dead toggle to a navigation row -
+  added useNavigation/StackNavigationProp imports to SettingsScreen.tsx, which didn't
+  previously use navigation at all.
+
+### Verification
+tsc --noEmit: 0 errors. npx jest: 257/259 passing (2 skipped) - matching the documented
+baseline, and notably no new mock was needed in navigation.test.tsx (unlike the Planned
+Transactions screen earlier this session) since BiometricSetupScreen's import chain
+resolves cleanly under Jest. lint:check:mobile: first run regressed to 153 errors (useEffect
+and Alert imports left over from an earlier draft, both unused in the final version) - fixed
+back to exactly 151, the documented pre-existing baseline, confirmed via a second lint run.
+
+### Spec corrections
+Fixed two stale claims in .kiro/specs/mobile-app/tasks.md while here: task 13's typecheck-error
+note (userId/Budget/TwoFactorSetup prop mismatches) no longer reflects reality - tsc --noEmit
+reports 0 errors package-wide, checked directly rather than assumed. Task 15 is now accurately
+marked complete with the real starting-state description (0-byte file, not "exists").
+
+### Mobile-app spec status
+14 of 16 numbered tasks now at [x] or [~] with accurate notes; only task 16 (App Store/Play
+Store submission prep) remains fully unstarted - that one requires developer accounts, store
+listings, and release builds, which are account/business setup steps rather than code.
+
 ## 2026-10-13 - Startup Review Cleanup + Canadian Investment Account Types (Session 168)
 
 ### Summary

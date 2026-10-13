@@ -272,18 +272,30 @@ satisfy the first two without the third (unlikely here, but not assumed).
       `navigation.test.tsx`, which explicitly mocks every `MoreStackNavigator` screen
       import), `lint:check:mobile` 151 errors (unchanged pre-existing baseline, confirming
       zero new lint errors introduced).
-- [~] 13. Settings screen - `SettingsScreen.tsx` is reachable via the `More` tab (task 6.4)
-      and previously via the tab bar; several typecheck errors live here (`userId` doesn't
-      exist on `User` type, `Budget` type mismatch between `types/index.ts` and
-      `types/budget.ts`, missing `TwoFactorSetup` props). It does not itself link out to
+- [x] 13. Settings screen - `SettingsScreen.tsx` is reachable via the `More` tab (task 6.4)
+      and previously via the tab bar. Re-verified: the previously-noted typecheck errors
+      (`userId` on `User`, `Budget` type mismatch, missing `TwoFactorSetup` props) no
+      longer exist - `npx tsc --noEmit` in `packages/mobile` reports 0 errors across the
+      whole package (confirmed directly, not inferred). It does not itself link out to
       Bills/Insights/Accounts/Goals/Sync/Offline - but those are all now reachable as
       `MoreScreen.tsx` sibling menu items instead, so the original concern (no entry point
       anywhere) is resolved even though Settings itself doesn't provide the links.
 - [x] 14. Insights / AI Coach chat screen - `InsightsScreen.tsx` exists and is now reachable
       via the `More` tab (task 6.4).
-- [~] 15. Biometric auth (optional, expo-local-authentication) — `BiometricSetupScreen.tsx`
-      exists and `expo-local-authentication` is a dependency, but the screen has no navigator
-      route.
+- [x] 15. Biometric auth (optional, expo-local-authentication) - built for real.
+      `BiometricSetupScreen.tsx` was previously a 0-byte stub file with no implementation
+      anywhere, despite the task note claiming it "exists" - the Settings screen's
+      "Biometric Authentication" row was a local `useState` toggle wired to nothing (no
+      persistence, no OS API call). Added `services/biometric.ts` wrapping
+      `expo-local-authentication` (`hasHardwareAsync`/`isEnrolledAsync`/
+      `supportedAuthenticationTypesAsync`/`authenticateAsync`) plus an
+      `AsyncStorage`-persisted on/off preference; built the real
+      `BiometricSetupScreen.tsx` (availability check, OS prompt confirmation required
+      before enabling, clear messaging when hardware/enrollment is missing); registered it
+      in `MoreStackNavigator`; changed `SettingsScreen.tsx`'s biometric row from a dead
+      toggle to a navigation row pointing at the new screen. Verified: `tsc --noEmit` 0
+      errors, `jest` 257/259 (unchanged baseline), `lint:check:mobile` 151 errors exactly
+      (2 new unused-import errors introduced then fixed before this count).
 - [ ] 16. App Store (iOS) + Play Store (Android) submission prep — not started.
 
 ### Phase 3 - Testing

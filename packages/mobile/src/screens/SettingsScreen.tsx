@@ -9,6 +9,9 @@ import {
   Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import type { MoreStackParamList } from "../navigation/RootNavigator";
 import { Card, Button } from "../components/ui";
 import { ExportModal } from "../components/ExportModal";
 import { BackupModal } from "../components/BackupModal";
@@ -38,6 +41,7 @@ interface SettingsItem {
 }
 
 export default function SettingsScreen() {
+  const navigation = useNavigation<StackNavigationProp<MoreStackParamList>>();
   const { colors, isDark } = useTheme();
   const {
     signOut,
@@ -61,7 +65,6 @@ export default function SettingsScreen() {
   const exportTransactions: ExportTransaction[] = [];
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [darkModeEnabled, setDarkModeEnabled] = useState(isDark);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [exportType, setExportType] = useState<
@@ -304,13 +307,9 @@ export default function SettingsScreen() {
     {
       id: "biometric",
       title: "Biometric Authentication",
-      subtitle: "Use Face ID or Touch ID to unlock",
-      type: "toggle",
-      value: biometricEnabled,
-      onToggle: async (value) => {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        setBiometricEnabled(value);
-      },
+      subtitle: "Use Face ID, Touch ID, or fingerprint to unlock",
+      type: "navigation" as const,
+      onPress: () => navigation.navigate("BiometricSetup"),
     },
   ];
 
