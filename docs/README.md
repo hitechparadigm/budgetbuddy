@@ -9,6 +9,7 @@ subject and extend it instead (see `.kiro/steering/structure.md`, "Documentation
 
 ## Architecture & Infrastructure
 - **[AWS Stack Architecture](./aws-stack-architecture.md)** - Stack list, dependencies, DynamoDB schema, Lambda access pattern, resource naming/tagging standards, deployment commands
+- **[API Gateway Routing Map](./gateway-routing-map.md)** - Route prefix to API Gateway mapping across the four CDK API stacks, with criteria for choosing a gateway for new feature domains
 
 ## Configuration & Setup
 - **[Configuration Guide](./configuration-guide.md)** - Environment variables and frontend configuration

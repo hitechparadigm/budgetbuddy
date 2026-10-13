@@ -6,11 +6,11 @@ inclusion: always
 
 ## Current Status
 
-**Version**: 1.10.x
-**Date**: 2026-10-12
+**Version**: 1.11.x
+**Date**: 2026-10-13
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed, npm audit critical CVE fixed via from-scratch lockfile regen - see Mobile/Infrastructure/Security sections)
+**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed, npm audit critical CVE fixed via from-scratch lockfile regen, modular-architecture spec wave 0+1 (8/15 tasks) done - see Mobile/Infrastructure/Security/Modular Architecture sections)
 
 ## What's Live and Working
 
@@ -172,6 +172,26 @@ inclusion: always
       `.ts` sources have accumulated since `.js` was last regenerated) - those were
       reverted and left untouched, out of scope for this fix; only `app.js` itself was
       kept. Stripped the build's added inline sourcemap comment to keep the diff minimal.
+
+### Modular Architecture (`modular-architecture` spec, active, 8/15 tasks done)
+- [x] Wave 0+1 of the Task Dependency Graph complete (tasks 1.1, 2.1, 4.1, 6.1, 6.2, 10.1,
+      10.2, 11.1, 11.2). `scripts/consistency-check.js` CLI skeleton + `checkSharedDocs()`
+      implemented and verified against the real repo (found and fixed a real gap:
+      `packages/shared/README.md` was missing `validation`/`data`/`services` sections for
+      exports `src/index.ts` already had). `infrastructure/stack-manifest.json` and
+      `docs/gateway-routing-map.md` created and verified against the real CDK source (found
+      one real omission in the design draft - `api-stack.ts`'s top-level `health` resource
+      - and included it). `deploy-dev.yml`/`deploy-prod.yml`'s hardcoded CloudFormation
+      stack-name arrays replaced with a `jq` read of the new manifest - confirmed this fixes
+      a real live gap, since the hardcoded list in `deploy-dev.yml` was already missing
+      `auth-onboarding` and `notification`. `scripts/scaffold-feature.js` backend+frontend
+      generator built and smoke-tested with a scratch `sample-feature` name (syntax-checked,
+      type-checked, conflict-detection verified, all scratch files deleted after).
+- [ ] Remaining: `checkAppDrift()` (task 3.1), `checkStackManifest()` (task 5.1),
+      `checkGatewayRouting()` (task 7.1), the optional unit-test tasks
+      (2.2/3.2/5.2/7.2/8.1/11.4), `docs/module-scaffold-guide.md` (task 12),
+      `pr-check.yml` wiring (task 13), and checkpoints 9/14/15.
+
 
 ## Deprecated / Removed
 - `FamilyIdResolver` - deleted

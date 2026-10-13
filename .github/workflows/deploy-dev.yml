@@ -285,16 +285,11 @@ jobs:
       - name: Check CloudFormation stacks
         run: |
           echo "Checking CloudFormation stacks..."
-          stacks=(
-            "budgetbuddy-${{ env.ENVIRONMENT }}-database"
-            "budgetbuddy-${{ env.ENVIRONMENT }}-auth"
-            "budgetbuddy-${{ env.ENVIRONMENT }}-api"
-            "budgetbuddy-${{ env.ENVIRONMENT }}-api-features"
-            "budgetbuddy-${{ env.ENVIRONMENT }}-api-features-extended"
-            "budgetbuddy-${{ env.ENVIRONMENT }}-api-budgets"
-            "budgetbuddy-${{ env.ENVIRONMENT }}-hosting"
-            "budgetbuddy-${{ env.ENVIRONMENT }}-monitoring"
-          )
+          mapfile -t slugs < <(jq -r '.stacks[].slug' infrastructure/stack-manifest.json)
+          stacks=()
+          for slug in "${slugs[@]}"; do
+            stacks+=("budgetbuddy-${{ env.ENVIRONMENT }}-${slug}")
+          done
 
           for stack in "${stacks[@]}"; do
             status=$(aws cloudformation describe-stacks --stack-name "$stack" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "NOT_FOUND")

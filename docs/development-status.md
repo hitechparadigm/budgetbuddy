@@ -1,8 +1,17 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-10-12
+**Last Updated**: 2026-10-13
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
+
+## LATEST - Session 168: modular-architecture Wave 0+1 Tasks (2026-10-13)
+
+Completed 8 of 15 tasks in the modular-architecture spec: the consistency-check.js CLI
+skeleton plus its first real check (checkSharedDocs), the stack-manifest.json and
+gateway-routing-map.md reference files, both deploy workflows' hardcoded stack-name
+arrays replaced with a manifest read, and the full scaffold-feature.js generator
+(backend + frontend). Fixed a real gap the new check found: packages/shared/README.md
+was missing three documented sections for exports that already existed.
 
 ## LATEST - Session 168: mobile-app Staleness Sweep + modular-architecture Spec (2026-10-12)
 

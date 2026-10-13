@@ -14,7 +14,7 @@ edits an existing workflow YAML file's steps in place.
 ## Tasks
 
 - [ ] 1. Set up the consistency-check.js CLI foundation
-  - [ ] 1.1 Create `scripts/consistency-check.js` with the CLI skeleton
+  - [x] 1.1 Create `scripts/consistency-check.js` with the CLI skeleton
     - Add the `#!/usr/bin/env node` shebang, `ROOT` constant, and an empty `checkSharedDocs`,
       `checkAppDrift`, `checkStackManifest`, `checkGatewayRouting` function per design.md's
       Components section (bodies filled in by later tasks)
@@ -28,7 +28,7 @@ edits an existing workflow YAML file's steps in place.
     - _Requirements: 1.6, 2.1, 2.2, 3.2_
 
 - [ ] 2. Implement and verify `checkSharedDocs` (Requirement 1)
-  - [ ] 2.1 Implement `checkSharedDocs()` in `scripts/consistency-check.js`
+  - [x] 2.1 Implement `checkSharedDocs()` in `scripts/consistency-check.js`
     - Extract exported top-level directory names from `packages/shared/src/index.ts`'s
       `export * from './X'` statements
     - Extract documented directory names from `packages/shared/README.md`'s `` `src/X/` `` inline
@@ -65,7 +65,7 @@ edits an existing workflow YAML file's steps in place.
     - _Requirements: 2.3_
 
 - [ ] 4. Create the Stack_Manifest data file (Requirement 3)
-  - [ ] 4.1 Create `infrastructure/stack-manifest.json`
+  - [x] 4.1 Create `infrastructure/stack-manifest.json`
     - List all 10 stacks currently instantiated in `infrastructure/bin/app.ts`, each as
       `{ slug, class, file }`, matching the schema in design.md's Data Models section
     - Include the `description` field explaining it must be updated in the same commit as any
@@ -90,13 +90,13 @@ edits an existing workflow YAML file's steps in place.
     - _Requirements: 3.3_
 
 - [ ] 6. Create the Gateway_Routing_Map document (Requirement 4)
-  - [ ] 6.1 Create `docs/gateway-routing-map.md`
+  - [x] 6.1 Create `docs/gateway-routing-map.md`
     - One table per API Gateway (`apiBaseUrl`, `budgetsApiUrl`, `featuresApiUrl`,
       `extendedFeaturesApiUrl`), each row a route prefix in inline code plus its owning Lambda and
       an optional notes column, per the content in design.md's Components section
     - Add the "Choosing a gateway for a new feature domain" criteria section
     - _Requirements: 4.1_
-  - [ ] 6.2 Index `docs/gateway-routing-map.md` in `docs/README.md`
+  - [x] 6.2 Index `docs/gateway-routing-map.md` in `docs/README.md`
     - Add a bullet for it under the existing "Architecture & Infrastructure" section, per the
       Documentation Placement steering rule
     - _Requirements: 4.1_
@@ -141,18 +141,18 @@ edits an existing workflow YAML file's steps in place.
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 10. Wire the Stack_Manifest into the deploy workflows (Requirement 3.4)
-  - [ ] 10.1 Update `.github/workflows/deploy-dev.yml`'s `health-checks` job
+  - [x] 10.1 Update `.github/workflows/deploy-dev.yml`'s `health-checks` job
     - Replace the hardcoded `stacks=(...)` array in the "Check CloudFormation stacks" step with a
       `jq -r '.stacks[].slug' infrastructure/stack-manifest.json` read, building the same
       `budgetbuddy-${{ env.ENVIRONMENT }}-<slug>` names the loop already checks
     - Leave the status-checking loop body, checkout step, and AWS credentials step unchanged
     - _Requirements: 3.4_
-  - [ ] 10.2 Update `.github/workflows/deploy-prod.yml`'s `health-checks` job
+  - [x] 10.2 Update `.github/workflows/deploy-prod.yml`'s `health-checks` job
     - Apply the identical `jq` read replacement to its "Check CloudFormation stacks" step
     - _Requirements: 3.4_
 
 - [ ] 11. Build the Module_Scaffold generator (Requirement 5)
-  - [ ] 11.1 Implement the backend generator in `scripts/scaffold-feature.js`
+  - [x] 11.1 Implement the backend generator in `scripts/scaffold-feature.js`
     - Accept `<name>` as a CLI argument; write
       `backend/functions/<name>/{index.js,service.js,repository.js,<name>.test.js,package.json}`
     - `index.js` includes the real boilerplate common to existing Lambdas: CORS OPTIONS handling,
@@ -164,7 +164,7 @@ edits an existing workflow YAML file's steps in place.
     - Before writing anything, check every target path with `fs.existsSync`; if any already
       exists, abort with the list of conflicting paths and write nothing
     - _Requirements: 5.1, 5.6_
-  - [ ] 11.2 Implement the frontend generator in `scripts/scaffold-feature.js`
+  - [x] 11.2 Implement the frontend generator in `scripts/scaffold-feature.js`
     - Write `packages/web-app/src/services/<name>Api.ts` (imports the correct `config.<gatewayKey>`
       per `docs/gateway-routing-map.md`'s criteria, `authHeaders()`, CRUD function stubs) and
       `packages/web-app/src/pages/<Name>Page.tsx` (`<Name>` = PascalCase of `<name>`, minimal page
