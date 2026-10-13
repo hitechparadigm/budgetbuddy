@@ -1,4 +1,44 @@
 # Changelog
+## [1.12.0] - 2026-10-13
+
+### feat: modular-architecture guardrails complete (15/15 tasks, all required + optional)
+
+- Implemented `checkGatewayRouting()`/`extractRoutePrefixes()` in `scripts/consistency-check.js`
+  (task 7.1) - verified against the real repository: all CDK route prefixes across the four
+  API stacks are documented in `docs/gateway-routing-map.md`.
+- Added `docs/module-scaffold-guide.md` (tasks 12.1/12.2) documenting `scaffold-feature.js`'s
+  usage, generated-file table, and manual TODO checklist; indexed in `docs/README.md`.
+- Wired the `consistency-checks` job into `.github/workflows/pr-check.yml` (tasks 13.1/13.2) -
+  new sibling job matching the `mobile-tests` additive pattern, added to `pr-summary`'s
+  `needs` array, summary table, and pass/fail gating condition.
+- Completed all three checkpoints: task 9 (`node scripts/consistency-check.js` exits 0 with
+  all four checkmark lines against the real repo), task 14 (all three touched workflow YAML files
+  parse via `js-yaml`), task 15 (final full consistency-check re-run, still clean).
+- Completed the remaining optional tasks: unit tests for `checkStackManifest()` (5.2) and
+  `checkGatewayRouting()` (7.2), plus the Property 1 determinism/side-effect-free test (8.1) -
+  `scripts/consistency-check.test.js` now has 10 passing tests covering all four check
+  functions plus the cross-cutting determinism property.
+- This closes the `modular-architecture` spec: 15/15 tasks complete (all required tasks plus
+  every optional one). No task in this spec added, removed, or modified a CDK stack, API
+  Gateway, or DynamoDB table - every change was additive tooling, reference documentation, or
+  a workflow step that reads a new reference file instead of a hardcoded array.
+
+## [1.11.2] - 2026-10-13
+
+### feat: modular-architecture guardrails wave 3 (checkStackManifest, scaffold guide, final smoke test)
+
+- Implemented `checkStackManifest()` in `scripts/consistency-check.js` (task 5.1) - verified
+  it passes against the real repository (`infrastructure/stack-manifest.json` currently
+  matches `app.ts`'s 10 stacks exactly).
+- Added `docs/module-scaffold-guide.md` (task 12.1) documenting `scaffold-feature.js`'s
+  invocation, every generated file path, and the manual checklist steps the generator
+  intentionally leaves for a human (choosing a gateway, wiring CDK, filling in business
+  logic). Indexed in `docs/README.md` under "Development Process" (task 12.2).
+- Re-ran the manual smoke test (task 11.4) against the final generator state: scratch
+  `sample-feature` scaffold, `node -c` on the generated `index.js`, `npx tsc --noEmit` in
+  `packages/web-app` with zero errors referencing the generated files, all scratch files
+  deleted after.
+
 ## [1.11.1] - 2026-10-13
 
 ### feat: modular-architecture guardrails wave 2 (checkAppDrift, unit tests, TODO checklist)

@@ -91,8 +91,69 @@ function checkAppDrift() {
   return true;
 }
 
-function checkStackManifest() { /* Requirement 3 - implemented in task 5.1 */ }
-function checkGatewayRouting() { /* Requirement 4 - implemented in task 7.1 */ }
+function checkStackManifest() {
+  const ts = fs.readFileSync(path.join(ROOT, 'infrastructure/bin/app.ts'), 'utf-8');
+  const tsSlugs = extractStackSlugs(ts);
+
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'infrastructure/stack-manifest.json'), 'utf-8'));
+  const manifestSlugs = new Set(manifest.stacks.map((s) => s.slug));
+
+  const onlyInApp = [...tsSlugs].filter((s) => !manifestSlugs.has(s));
+  const onlyInManifest = [...manifestSlugs].filter((s) => !tsSlugs.has(s));
+
+  if (onlyInApp.length || onlyInManifest.length) {
+    console.error('\u274c stack-manifest.json is out of sync with app.ts:');
+    if (onlyInApp.length) console.error(`   In app.ts, missing from manifest: ${onlyInApp.join(', ')}`);
+    if (onlyInManifest.length) console.error(`   In manifest, missing from app.ts: ${onlyInManifest.join(', ')}`);
+    return false;
+  }
+  console.log('\u2705 stack-manifest.json matches app.ts');
+  return true;
+}
+const API_STACK_FILES = {
+  'api-stack.ts': 'apiBaseUrl',
+  'api-features-stack.ts': 'featuresApiUrl',
+  'api-features-extended-stack.ts': 'extendedFeaturesApiUrl',
+  'api-budgets-stack.ts': 'budgetsApiUrl',
+};
+
+/**
+ * Extracts every top-level API Gateway route prefix created via
+ * `this.api.root.addResource('<prefix>')` in a CDK API stack source string.
+ * @param {string} source - file contents of a CDK API stack file
+ * @returns {Set<string>} the set of route prefixes found
+ */
+function extractRoutePrefixes(source) {
+  const prefixes = new Set();
+  for (const m of source.matchAll(/this\.api\.root\.addResource\('([a-z0-9-]+)'\)/g)) {
+    prefixes.add(m[1]);
+  }
+  return prefixes;
+}
+
+function checkGatewayRouting() {
+  const mapDoc = fs.readFileSync(path.join(ROOT, 'docs/gateway-routing-map.md'), 'utf-8');
+  const documented = new Set([...mapDoc.matchAll(/`([a-z0-9-]+)`/g)].map((m) => m[1]));
+
+  const undocumented = [];
+  for (const [file, gatewayKey] of Object.entries(API_STACK_FILES)) {
+    const source = fs.readFileSync(path.join(ROOT, 'infrastructure/lib', file), 'utf-8');
+    const prefixes = extractRoutePrefixes(source);
+    for (const prefix of prefixes) {
+      if (!documented.has(prefix)) {
+        undocumented.push(`${prefix} (${file} -> ${gatewayKey})`);
+      }
+    }
+  }
+
+  if (undocumented.length) {
+    console.error(`\u274c Undocumented route prefixes: ${undocumented.join(', ')}`);
+    console.error('   Add each to docs/gateway-routing-map.md under its owning gateway.');
+    return false;
+  }
+  console.log('\u2705 All CDK route prefixes are documented in gateway-routing-map.md');
+  return true;
+}
 
 const CHECKS = {
   'shared-docs': checkSharedDocs,
@@ -126,6 +187,7 @@ if (require.main === module) {
 
 module.exports = {
   extractStackSlugs,
+  extractRoutePrefixes,
   checkSharedDocs,
   checkAppDrift,
   checkStackManifest,

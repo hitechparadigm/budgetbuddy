@@ -1,4 +1,68 @@
 # Development Log
+## 2026-10-13 - modular-architecture Spec Complete: Waves 4-6 + Optional Tasks (Session 168)
+
+### Summary
+Finished the modular-architecture spec entirely in this session: implemented the last
+required check function, wrote its documentation, wired it into CI, ran all three
+checkpoints, and completed every remaining optional task. 15 of 15 tasks done.
+
+### Work Completed
+- Task 7.1: Implemented extractRoutePrefixes()/checkGatewayRouting() exactly per design.md.
+  Verified against the real repo - every route prefix across the four CDK API stacks is
+  documented in docs/gateway-routing-map.md, so the check passes legitimately.
+- Tasks 12.1/12.2: Added docs/module-scaffold-guide.md and indexed it in docs/README.md's
+  Development Process section.
+- Tasks 13.1/13.2: Wired a new consistency-checks job into pr-check.yml, matching the
+  mobile-tests job's additive pattern. Added it to pr-summary's needs array, the summary
+  table, and the pass/fail gating condition. Hit and fixed a PowerShell string-replacement
+  bug mid-edit (a multi-line here-string replace mangled a line into one long run with no
+  newline) - caught it by re-reading the file after the edit, fixed with a corrected
+  targeted replace, re-verified via a fresh read.
+- Checkpoint 9: node scripts/consistency-check.js (no filter) exits 0 with all four success
+  lines against the real repo.
+- Checkpoint 14: all three touched workflow YAML files (pr-check.yml, deploy-dev.yml,
+  deploy-prod.yml) parse cleanly via js-yaml.
+- Checkpoint 15: final re-run of the full consistency-check, still clean.
+- Optional tasks 3.2, 5.2, 7.2: added unit tests for checkAppDrift/extractStackSlugs,
+  checkStackManifest, and checkGatewayRouting/extractRoutePrefixes to
+  scripts/consistency-check.test.js, following the same fs.readFileSync-fallback mocking
+  pattern established for checkSharedDocs in the wave 2 session entry.
+- Optional task 8.1: added the Property 1 test (deterministic, side-effect-free check
+  functions) - invokes checkSharedDocs() twice against the same fixed fixture and asserts
+  identical results, unmutated fixture content, and zero fs.writeFileSync calls.
+- scripts/consistency-check.test.js now has 10 passing tests total (up from 5 after wave 2).
+
+### Spec Status: COMPLETE
+All 15 tasks in .kiro/specs/modular-architecture/tasks.md are checked off - every required
+task and every optional (*) task. validate_spec_format confirmed no format issues. No task
+across the whole spec added, removed, or modified a CDK stack, API Gateway, or DynamoDB
+table (Requirement 6) - every change was additive tooling, reference documentation, or a
+workflow step reading a new reference file instead of a hardcoded array.
+## 2026-10-13 - modular-architecture Spec: Wave 3 Tasks (Session 168)
+
+### Summary
+Continued the modular-architecture spec while waiting on the wave 2 CI run. Completed
+tasks 5.1, 12.1, 12.2, and the re-run of 11.4 (wave 3 of the Task Dependency Graph).
+
+### Work Completed
+- Task 5.1: Implemented checkStackManifest() in scripts/consistency-check.js exactly per
+  design.md. Verified against the real repo - infrastructure/stack-manifest.json currently
+  matches app.ts's 10 stacks exactly, so the check passes legitimately.
+- Task 12.1/12.2: Added docs/module-scaffold-guide.md documenting scaffold-feature.js's
+  usage, the full generated-file table (backend + frontend), and the manual TODO checklist
+  steps the generator deliberately leaves to a human. Indexed under docs/README.md's
+  Development Process section.
+- Task 11.4: Re-ran the manual smoke test against the final generator state (now includes
+  the TODO-<name>.md file added in wave 2) - scratch sample-feature scaffold, node -c on
+  index.js, npx tsc --noEmit in packages/web-app with zero errors referencing the generated
+  files. All scratch files deleted after.
+
+### Modular-architecture spec status
+14 of 15 tasks complete (all required tasks; the only remaining required work is task 13 -
+pr-check.yml CI wiring - plus checkpoints 9/14/15 and the fully-optional unit-test tasks
+3.2/5.2/7.2 and the Property 1 test, task 8.1's remaining portion). checkGatewayRouting()
+(task 7.1) still needs implementing before the final checkpoint (task 15) can pass with a
+clean `node scripts/consistency-check.js` run across all four checks.
 ## 2026-10-13 - modular-architecture Spec: Wave 2 Tasks (Session 168)
 
 ### Summary

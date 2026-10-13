@@ -10,7 +10,7 @@ inclusion: always
 **Date**: 2026-10-13
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed, npm audit critical CVE fixed via from-scratch lockfile regen, modular-architecture spec wave 0+1+2 (11/15 tasks) done - see Mobile/Infrastructure/Security/Modular Architecture sections)
+**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed, npm audit critical CVE fixed via from-scratch lockfile regen, modular-architecture spec COMPLETE (15/15 tasks) - see Mobile/Infrastructure/Security/Modular Architecture sections)
 
 ## What's Live and Working
 
@@ -173,31 +173,23 @@ inclusion: always
       reverted and left untouched, out of scope for this fix; only `app.js` itself was
       kept. Stripped the build's added inline sourcemap comment to keep the diff minimal.
 
-### Modular Architecture (`modular-architecture` spec, active, 11/15 tasks done)
-- [x] Wave 0+1+2 of the Task Dependency Graph complete (tasks 1.1, 2.1, 2.2, 3.1, 4.1,
-      6.1, 6.2, 10.1, 10.2, 11.1, 11.2, 11.3). `scripts/consistency-check.js` CLI with
-      `checkSharedDocs()` and `checkAppDrift()` implemented and verified against the real
-      repo (found and fixed a real gap: `packages/shared/README.md` was missing
-      `validation`/`data`/`services` sections for exports `src/index.ts` already had).
-      `infrastructure/stack-manifest.json` and `docs/gateway-routing-map.md` created and
-      verified against the real CDK source (found one real omission in the design draft -
-      `api-stack.ts`'s top-level `health` resource - and included it).
-      `deploy-dev.yml`/`deploy-prod.yml`'s hardcoded CloudFormation stack-name arrays
-      replaced with a `jq` read of the new manifest - confirmed this fixes a real live gap,
-      since the hardcoded list in `deploy-dev.yml` was already missing `auth-onboarding` and
-      `notification`. `scripts/scaffold-feature.js` backend+frontend+TODO-checklist
-      generator built and smoke-tested three times with a scratch `sample-feature` name
-      (syntax-checked, type-checked, conflict-detection verified, all scratch files deleted
-      after each run). `scripts/consistency-check.test.js` added with unit tests for both
-      implemented checks - fixed a real test-authoring bug (unscoped `fs.readFileSync` mock
-      breaking Jest's own sourcemap internals; fixed by falling back to the real impl for
-      unrecognized paths). Added `scripts` to root `jest.config.js`'s `roots` (part of task
-      8.1, pulled forward); verified via stash-based A/B test that this introduces no
-      regression in `backend/functions/transactions`'s pre-existing 4-failed/2-passed state.
-- [ ] Remaining: `checkStackManifest()` (task 5.1), `checkGatewayRouting()` (task 7.1), the
-      optional unit-test tasks (3.2/5.2/7.2/11.4), the Property 1 test (task 8.1's
-      remaining portion), `docs/module-scaffold-guide.md` (task 12), `pr-check.yml` wiring
-      (task 13), and checkpoints 9/14/15.
+### Modular Architecture (`modular-architecture` spec, COMPLETE, 15/15 tasks)
+- [x] All 15 tasks done (every required task + every optional `*` task). Final waves 3-6:
+      `checkStackManifest()` (5.1) and `checkGatewayRouting()`/`extractRoutePrefixes()` (7.1)
+      implemented and verified against the real repo; `docs/module-scaffold-guide.md`
+      created and indexed (12.1/12.2); a new `consistency-checks` job wired into
+      `pr-check.yml` matching the `mobile-tests` additive pattern, including the
+      `pr-summary` job's `needs` array, table row, and gating condition (13.1/13.2); all
+      three checkpoints passed (9: full `consistency-check.js` run exits 0 with all four
+      checkmarks; 14: all three touched workflow YAML files parse via `js-yaml`; 15: final
+      re-run still clean); the three remaining optional unit-test tasks (3.2/5.2/7.2) and
+      the Property 1 determinism/side-effect-free test (8.1) all added to
+      `scripts/consistency-check.test.js`, now 10 passing tests total.
+      `validate_spec_format` confirmed zero format issues on the final `tasks.md`. No task
+      across the entire spec added, removed, or modified a CDK stack, API Gateway, or
+      DynamoDB table - every change was additive tooling, reference docs, or a workflow
+      step reading a new reference file instead of a hardcoded array.
+
 
 
 
