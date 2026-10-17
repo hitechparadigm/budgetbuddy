@@ -9,14 +9,9 @@ import { Budget, Transaction } from '../../types';
 
 // Mock dependencies
 jest.mock('expo-file-system', () => ({
-  Paths: {
-    document: { uri: 'file:///mock/document/' },
-  },
-  File: jest.fn().mockImplementation((path, filename) => ({
-    uri: `${path.uri}${filename}`,
-    write: jest.fn().mockResolvedValue(undefined),
-    text: jest.fn().mockResolvedValue('{"version":"1.0.0","timestamp":"2023-01-01T00:00:00.000Z","userId":"test","budgets":[],"transactions":[],"settings":{},"metadata":{"totalBudgets":0,"totalTransactions":0,"dateRange":{"earliest":"2023-01-01T00:00:00.000Z","latest":"2023-01-01T00:00:00.000Z"},"categories":[]}}'),
-  })),
+  documentDirectory: 'file:///mock/document/',
+  writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
+  readAsStringAsync: jest.fn().mockResolvedValue('{"version":"1.0.0","timestamp":"2023-01-01T00:00:00.000Z","userId":"test","budgets":[],"transactions":[],"settings":{},"metadata":{"totalBudgets":0,"totalTransactions":0,"dateRange":{"earliest":"2023-01-01T00:00:00.000Z","latest":"2023-01-01T00:00:00.000Z"},"categories":[]}}'),
 }));
 
 jest.mock('expo-sharing', () => ({
@@ -161,18 +156,13 @@ describe('Backup and Restore Property Tests', () => {
         fc.string({ minLength: 1, maxLength: 50 }),
         async (budgets, transactions, userId) => {
           // Mock the File.write to capture the backup data
+          // Mock writeAsStringAsync to capture the backup data
           let capturedBackupData: BackupData | null = null;
-          const mockFile = {
-            uri: 'file:///mock/backup.json',
-            write: jest.fn().mockImplementation((data: string) => {
-              capturedBackupData = JSON.parse(data);
-              return Promise.resolve();
-            }),
-          };
-
-          // Mock the File constructor
-          const { File } = require('expo-file-system');
-          File.mockImplementation(() => mockFile);
+          const FileSystem = require('expo-file-system');
+          FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
+            capturedBackupData = JSON.parse(data);
+            return Promise.resolve();
+          });
 
           // Create backup
           const result = await backupService.createFullBackup(budgets, transactions, userId);
@@ -230,17 +220,13 @@ describe('Backup and Restore Property Tests', () => {
         }),
         async (budgets, transactions, userId, options) => {
           // Mock the File.write to capture the backup data
+          // Mock writeAsStringAsync to capture the backup data
           let capturedBackupData: BackupData | null = null;
-          const mockFile = {
-            uri: 'file:///mock/backup.json',
-            write: jest.fn().mockImplementation((data: string) => {
-              capturedBackupData = JSON.parse(data);
-              return Promise.resolve();
-            }),
-          };
-
-          const { File } = require('expo-file-system');
-          File.mockImplementation(() => mockFile);
+          const FileSystem = require('expo-file-system');
+          FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
+            capturedBackupData = JSON.parse(data);
+            return Promise.resolve();
+          });
 
           // Create backup with filters
           const result = await backupService.createFullBackup(budgets, transactions, userId, options);
@@ -303,11 +289,9 @@ describe('Backup and Restore Property Tests', () => {
             },
           };
 
-          // Mock File.text to return the backup data
-          const { File } = require('expo-file-system');
-          File.mockImplementation(() => ({
-            text: jest.fn().mockResolvedValue(JSON.stringify(mockBackupData)),
-          }));
+          // Mock readAsStringAsync to return the backup data
+          const FileSystem = require('expo-file-system');
+          FileSystem.readAsStringAsync.mockResolvedValue(JSON.stringify(mockBackupData));
 
           // Perform restore
           const result = await backupService.restoreFromBackup();

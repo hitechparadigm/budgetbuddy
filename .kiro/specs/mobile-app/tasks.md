@@ -296,30 +296,40 @@ satisfy the first two without the third (unlikely here, but not assumed).
       toggle to a navigation row pointing at the new screen. Verified: `tsc --noEmit` 0
       errors, `jest` 257/259 (unchanged baseline), `lint:check:mobile` 151 errors exactly
       (2 new unused-import errors introduced then fixed before this count).
-- [~] 16. App Store (iOS) + Play Store (Android) submission prep — in progress (Session
-      169). Auditing for real submission readiness (not just reading this note) surfaced
-      four previously-undetected bugs that would have shipped broken core functionality -
-      all masked by offline-fallback catches: services/api.ts read auth tokens from a
-      nonexistent AsyncStorage key (every request through the shared client went out
-      unauthenticated), its base-URL fallback pointed at a placeholder domain that was
-      never a real backend, its URL-building silently dropped the API Gateway's /v1
-      stage prefix, and eact-native-reanimated@4.2.1 was installed against this
-      project's Expo SDK 49 / RN 0.72.6 (old architecture) despite requiring RN >=0.76 and
-      the New Architecture. All four fixed and verified (	sc 0 errors, jest 257/259
-      unchanged baseline, lint:check:mobile 151 unchanged baseline). Also added
-      eas.json (did not exist), generated placeholder app icon/splash assets (pp.json
-      referenced 4 PNGs that did not exist), and added the iOS Info.plist usage-
-      description strings + Android permissions + Expo config plugins this app's actual
-      camera/biometric/notification usage requires but pp.json never declared (missing
-      NSCameraUsageDescription etc. is an automatic App Store rejection, not a warning).
-      **The task-defining discovery**: 
-px expo install --check shows every native
-      dependency is multiple major versions ahead of what SDK 49 expects, and Apple now
-      requires the iOS 26 SDK (Xcode 26+) for any new submission - SDK 49's toolchain
-      predates that by years. A full Expo SDK upgrade (49 -> current LTS) is required
-      before a submittable build is possible; user chose to proceed with that upgrade now
-      rather than deferring it. See DEVELOPMENT_LOG.md 2026-10-17 entry for full detail.
-
+- [~] 16. App Store (iOS) + Play Store (Android) submission prep - in progress (Session
+      169). Auditing for real submission readiness surfaced four previously-undetected
+      bugs in services/api.ts, all masked by offline-fallback catches: a dead auth-token
+      storage key (every request through the shared client went out unauthenticated), a
+      placeholder base-URL fallback that was never a real backend, URL-building that
+      silently dropped the API Gateway /v1 stage prefix, and react-native-reanimated v4
+      installed against this Expo SDK 49 / RN 0.72.6 project despite requiring the New
+      Architecture. All four fixed and verified. Also added eas.json (did not exist),
+      placeholder app icon/splash assets, and the iOS Info.plist usage-description
+      strings + Android permissions + Expo config plugins this app actually needs but
+      app.json never declared.
+      
+      Logged into a real EAS account and ran a real cloud build (eas build) rather than
+      trusting local typecheck/jest alone, since this is a Windows dev machine with no
+      Xcode/Android SDK to verify a native build locally. That surfaced the real scope:
+      every native Expo module in this project was several majors ahead of what SDK 49
+      actually bundles (npx expo install --check). Ran npx expo install --fix to align
+      all 26 packages, then fixed the real API breakage that correct downgrade caused -
+      offline.ts (expo-sqlite v11's older openDatabase/execAsync API, not
+      runAsync/getAllAsync), ReceiptScanner.tsx (expo-camera v13's Camera component, not
+      CameraView), and backup.ts/export.ts (expo-file-system v15's legacy
+      documentDirectory/writeAsStringAsync API, not the Paths/File object API) - plus the
+      two test files whose expo-file-system mocks needed the same update.
+      
+      Root-caused and fixed a real EAS-Build-only bug in metro.config.js: watchFolders was
+      hardcoded empty, so Metro could not see into the symlinked/junctioned
+      @budget-buddy/shared package that 10 screens deep-import from - this only broke a
+      real release Metro bundle on EAS's Linux container, never a local dev-server run
+      against a warm cache. Also removed expo-secure-store from app.json's plugins array
+      (it ships no plugin file at the SDK-49-correct version) and fixed
+      react-native-get-random-values's peer-dependency conflict (EAS Build's cloud
+      install runs without --legacy-peer-deps, which local dev had been silently relying
+      on). A fresh EAS Android preview build is in flight against all of the above; result
+      pending. See DEVELOPMENT_LOG.md 2026-10-17 entries for full detail on both passes.
 ### Phase 3 - Testing
 
 Coverage target: >80% statements and branches on `packages/mobile/src/`.

@@ -1,5 +1,88 @@
 # Development Log
 
+## 2026-10-17 - Mobile Expo SDK 49 Native Dependency Alignment + Real EAS Build (mobile-app task 16, Session 169)
+
+### Summary
+User asked to verify the mobile app actually works before any store submission attempt.
+Set up a real EAS account, ran eas init to link a real project, and triggered a real
+Android preview build via eas build - treated as the authoritative test instead of
+anything locally simulated, since this is a Windows dev machine with no Xcode/Android SDK.
+
+### Build attempt 1: install failure
+First cloud build failed in the npm install phase (not a config issue):
+react-native-get-random-values@2.0.0 requires react-native >=0.81, but this project pins
+0.72.6. Local dev had been silently working around this with --legacy-peer-deps; EAS
+Build runs plain npm install with no such flag. Downgraded to the SDK-49-correct ~1.9.0.
+
+### Build attempt 2: Gradle failure, root cause found
+Second build got past install and into the real native Gradle build, then failed:
+expo-camera build.gradle calls useCoreDependencies(), a Gradle plugin API that does not
+exist in SDK 49 native tooling. Ran npx expo install --check and found the actual scope:
+every native Expo module in this project is multiple majors ahead of what SDK 49 expects
+(expo-camera 15 vs 13, expo-sqlite 16 vs 11, expo-file-system 19 vs 15, 23 others). Ran
+npx expo install --fix to align all 26 packages at once.
+
+### Fixing the real API breakage the downgrade caused
+The downgrade is correct but costs real API surface - app code was written against newer
+module versions than SDK 49 ships. tsc surfaced 16 errors across 4 files:
+- offline.ts: expo-sqlite v11 only exposes the older openDatabase()/execAsync(queries,
+  readOnly) WebSQL-style API, not runAsync/getAllAsync/openDatabaseAsync. Rewrote the
+  whole SQLite access layer, including createTables (v11 execAsync does not split a
+  semicolon-joined SQL string into multiple statements the way some newer versions do -
+  had to pass one Query object per CREATE TABLE/INDEX statement).
+- ReceiptScanner.tsx: expo-camera v13 has no CameraView component, only Camera + CameraType.
+- backup.ts and export.ts: expo-file-system v15 has no Paths/File object API, only the
+  legacy documentDirectory/writeAsStringAsync/readAsStringAsync functions.
+
+Fixing these broke 2 test suites whose jest.mock(expo-file-system) calls - including
+several in-test runtime mock overrides, not just the top-level mock - still assumed the
+newer File/Paths shape. Updated both to mock writeAsStringAsync/readAsStringAsync instead.
+
+### Build attempt 3: config error with a misleading stack trace
+Local expo config check (done before spending another cloud build cycle) failed with
+"Unexpected token typeof" inside an ESM/CJS module loader stack trace - looked like a
+Node version incompatibility. Actual cause: expo-secure-store at the SDK-49-correct
+version (12.3.1) ships no app.plugin.js at all (removed in a later major), and app.json
+still listed it in the plugins array from the original app-store-readiness pass. Removed
+it - this app never needed a config plugin for it in the first place.
+
+### Build attempt 4: the actual EAS-specific bug
+Native build succeeded this time, reaching the final JS bundling step, which failed:
+"Unable to resolve module @budget-buddy/shared/src/utils/currency" from GoalsScreen.tsx.
+Confirmed the file is real and git-tracked (not a missing-dist-build problem - the deep
+import reaches into committed src/, not the gitignored dist/ build output). Root cause:
+metro.config.js had watchFolders hardcoded to an empty array with a comment saying it
+"bypasses all workspace detection." Metro only follows symlinks/junctions into watched
+directories - @budget-buddy/shared is linked via file:../shared and resolved as a
+symlink/junction in node_modules, so its real files were invisible to the bundler despite
+the link existing. 10 screens/components use this exact deep-path import pattern (reaching
+past the package index, which only re-exports a simpler formatCurrency(amount) from a
+different file, to get the richer formatCurrency(amount, currencyCode, options) from
+src/utils/currency.ts directly) - this is an established repo-wide pattern shared with the
+web app, not a mobile-specific mistake, so the fix belongs in Metro config, not in rewriting
+10 import statements. Added the shared package path to watchFolders.
+
+This explains why it never surfaced locally: Metro dev server runs against a long-lived
+cache that was warmed before this gap mattered, and no one had done a cold release bundle
+(as opposed to a dev-server Expo Go session) until this EAS Build attempt.
+
+### Status at end of session
+Fourth build attempt triggered against the commit with all fixes above; result pending at
+time of writing (verification tooling only reports terminal build status, not intermediate
+progress within a single invocation window). Each of the 4 failures so far was a genuinely
+different root cause reached by actually progressing further through the real build
+pipeline each time, not the same error recurring - install, native Gradle compile, config
+resolution, and JS bundling, in that order.
+
+### Verification
+tsc --noEmit: 0 errors. jest: 257/259 passing, 2 skipped, 0 failed (the known
+order-dependent TwoFactorSetup.test.tsx flake did not reproduce this run). lint:check:mobile:
+150 errors, down 1 from the 151 baseline, no new errors introduced. npx expo install --check:
+all dependencies now report up to date against SDK 49. npx expo config --type public:
+resolves cleanly with exit 0.
+
+
+
 ## 2026-10-17 - Mobile App-Store-Readiness Bug Fixes (mobile-app task 16, Session 169)
 
 ### Summary

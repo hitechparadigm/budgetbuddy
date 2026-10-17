@@ -1,5 +1,5 @@
 import { Budget, Transaction } from '../types';
-import { Paths, File } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { Platform } from 'react-native';
@@ -28,15 +28,15 @@ class ExportService {
       const csvContent = this.generateBudgetCSV(filteredBudgets);
 
       const fileName = `budgets_${this.formatDateForFilename(new Date())}.csv`;
-      const budgetFile = new File(Paths.document, fileName);
+      const budgetFileUri = `${FileSystem.documentDirectory}${fileName}`;
 
-      await budgetFile.write(csvContent);
+      await FileSystem.writeAsStringAsync(budgetFileUri, csvContent);
 
       if (Platform.OS !== 'web' && await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(budgetFile.uri);
+        await Sharing.shareAsync(budgetFileUri);
       }
 
-      return { success: true, filePath: budgetFile.uri };
+      return { success: true, filePath: budgetFileUri };
     } catch (error) {
       return {
         success: false,
@@ -54,15 +54,15 @@ class ExportService {
       const csvContent = this.generateTransactionCSV(filteredTransactions);
 
       const fileName = `transactions_${this.formatDateForFilename(new Date())}.csv`;
-      const transactionFile = new File(Paths.document, fileName);
+      const transactionFileUri = `${FileSystem.documentDirectory}${fileName}`;
 
-      await transactionFile.write(csvContent);
+      await FileSystem.writeAsStringAsync(transactionFileUri, csvContent);
 
       if (Platform.OS !== 'web' && await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(transactionFile.uri);
+        await Sharing.shareAsync(transactionFileUri);
       }
 
-      return { success: true, filePath: transactionFile.uri };
+      return { success: true, filePath: transactionFileUri };
     } catch (error) {
       return {
         success: false,
@@ -121,24 +121,24 @@ class ExportService {
         } catch (printError) {
           // Fallback: save as HTML file if PDF generation fails
           const htmlFileName = `budget_report_${this.formatDateForFilename(month)}.html`;
-          const htmlFile = new File(Paths.document, htmlFileName);
+          const fallbackHtmlFileUri = `${FileSystem.documentDirectory}${htmlFileName}`;
 
-          await htmlFile.write(htmlContent);
+          await FileSystem.writeAsStringAsync(fallbackHtmlFileUri, htmlContent);
 
           if (await Sharing.isAvailableAsync()) {
-            await Sharing.shareAsync(htmlFile.uri);
+            await Sharing.shareAsync(fallbackHtmlFileUri);
           }
 
-          return { success: true, filePath: htmlFile.uri, pages: 1 };
+          return { success: true, filePath: fallbackHtmlFileUri, pages: 1 };
         }
       } else {
         // Web platform: save as HTML file
         const htmlFileName = `budget_report_${this.formatDateForFilename(month)}.html`;
-        const htmlFile = new File(Paths.document, htmlFileName);
+        const webHtmlFileUri = `${FileSystem.documentDirectory}${htmlFileName}`;
 
-        await htmlFile.write(htmlContent);
+        await FileSystem.writeAsStringAsync(webHtmlFileUri, htmlContent);
 
-        return { success: true, filePath: htmlFile.uri, pages: 1 };
+        return { success: true, filePath: webHtmlFileUri, pages: 1 };
       }
     } catch (error) {
       return {

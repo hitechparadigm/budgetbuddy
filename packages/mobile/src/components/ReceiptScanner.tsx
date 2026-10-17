@@ -22,7 +22,7 @@ import {
   Alert,
   Modal,
 } from "react-native";
-import { Camera, CameraType, CameraView } from "expo-camera";
+import { Camera, CameraType } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { receiptService, ProcessReceiptResponse } from "../services/receipt";
 
@@ -41,7 +41,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [remainingScans, setRemainingScans] = useState<number | null>(null);
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<Camera>(null);
 
   useEffect(() => {
     if (visible) {
@@ -224,7 +224,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
         ) : (
           // Camera view
           <View style={styles.cameraContainer}>
-            <CameraView ref={cameraRef} style={styles.camera} facing="back">
+            <Camera ref={cameraRef} style={styles.camera} type={CameraType.back}>
               {/* Overlay guide */}
               <View style={styles.cameraOverlay}>
                 <View style={styles.guideFrame}>
@@ -237,7 +237,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
                   Position receipt within the frame
                 </Text>
               </View>
-            </CameraView>
+            </Camera>
 
             {/* Camera controls */}
             <View style={styles.cameraControls}>

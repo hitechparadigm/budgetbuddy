@@ -9,14 +9,9 @@ import { Budget, Transaction } from '../../types';
 
 // Mock dependencies
 jest.mock('expo-file-system', () => ({
-  Paths: {
-    document: { uri: 'file:///mock/document/' },
-  },
-  File: jest.fn().mockImplementation((path, filename) => ({
-    uri: `${path.uri}${filename}`,
-    write: jest.fn().mockResolvedValue(undefined),
-    text: jest.fn().mockResolvedValue('mock,csv,data\n1,2,3'),
-  })),
+  documentDirectory: 'file:///mock/document/',
+  writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
+  readAsStringAsync: jest.fn().mockResolvedValue('mock,csv,data\n1,2,3'),
 }));
 
 jest.mock('expo-sharing', () => ({
@@ -155,18 +150,13 @@ describe('Data Export Property Tests', () => {
         fc.array(budgetGenerator, { maxLength: 20 }),
         exportOptionsGenerator,
         async (budgets, options) => {
-          // Mock the File.write to capture CSV data
+          // Mock writeAsStringAsync to capture CSV data
           let capturedCsvData = '';
-          const mockFile = {
-            uri: 'file:///mock/budgets.csv',
-            write: jest.fn().mockImplementation((data: string) => {
-              capturedCsvData = data;
-              return Promise.resolve();
-            }),
-          };
-
-          const { File } = require('expo-file-system');
-          File.mockImplementation(() => mockFile);
+          const FileSystem = require('expo-file-system');
+          FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
+            capturedCsvData = data;
+            return Promise.resolve();
+          });
 
           // Export budgets as CSV
           const result = await exportService.exportBudgetsToCSV(budgets, { ...options, format: 'csv' });
@@ -228,18 +218,13 @@ describe('Data Export Property Tests', () => {
         fc.array(transactionGenerator, { maxLength: 50 }),
         exportOptionsGenerator,
         async (transactions, options) => {
-          // Mock the File.write to capture CSV data
+          // Mock writeAsStringAsync to capture CSV data
           let capturedCsvData = '';
-          const mockFile = {
-            uri: 'file:///mock/transactions.csv',
-            write: jest.fn().mockImplementation((data: string) => {
-              capturedCsvData = data;
-              return Promise.resolve();
-            }),
-          };
-
-          const { File } = require('expo-file-system');
-          File.mockImplementation(() => mockFile);
+          const FileSystem = require('expo-file-system');
+          FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
+            capturedCsvData = data;
+            return Promise.resolve();
+          });
 
           // Export transactions as CSV
           const result = await exportService.exportTransactionsToCSV(transactions, { ...options, format: 'csv' });
@@ -372,18 +357,13 @@ describe('Data Export Property Tests', () => {
           categories: fc.array(fc.string({ minLength: 1, maxLength: 50 }), { minLength: 1, maxLength: 5 }),
         }),
         async (transactions, filters) => {
-          // Mock file operations
+          // Mock writeAsStringAsync to capture CSV data
           let capturedCsvData = '';
-          const mockFile = {
-            uri: 'file:///mock/filtered.csv',
-            write: jest.fn().mockImplementation((data: string) => {
-              capturedCsvData = data;
-              return Promise.resolve();
-            }),
-          };
-
-          const { File } = require('expo-file-system');
-          File.mockImplementation(() => mockFile);
+          const FileSystem = require('expo-file-system');
+          FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
+            capturedCsvData = data;
+            return Promise.resolve();
+          });
 
           // Export with filters
           const result = await exportService.exportTransactionsToCSV(transactions, { ...filters, format: 'csv' });
@@ -453,17 +433,12 @@ describe('Data Export Property Tests', () => {
         async (transactions) => {
           // Mock file operations to capture and return CSV data
           let capturedCsvData = '';
-          const mockFile = {
-            uri: 'file:///mock/roundtrip.csv',
-            write: jest.fn().mockImplementation((data: string) => {
-              capturedCsvData = data;
-              return Promise.resolve();
-            }),
-            text: jest.fn().mockImplementation(() => Promise.resolve(capturedCsvData)),
-          };
-
-          const { File } = require('expo-file-system');
-          File.mockImplementation(() => mockFile);
+          const FileSystem = require('expo-file-system');
+          FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
+            capturedCsvData = data;
+            return Promise.resolve();
+          });
+          FileSystem.readAsStringAsync.mockImplementation(() => Promise.resolve(capturedCsvData));
 
           // Export transactions
           const exportResult = await exportService.exportTransactionsToCSV(transactions, { format: 'csv' });

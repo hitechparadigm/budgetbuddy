@@ -1,4 +1,50 @@
 # Changelog
+## [1.13.1] - 2026-10-17
+
+### fix: mobile Expo SDK 49 native dependency alignment + EAS build fix (mobile-app, Session 169)
+
+- Ran "npx expo install --fix" to align all 26 native Expo/React-Native dependencies to the
+  exact versions Expo SDK 49 actually bundles (e.g. expo-camera 15.0.16 to 13.4.4,
+  expo-sqlite 16.0.10 to 11.3.3, react-native 0.72.6 to 0.72.10). Discovered via a real
+  EAS cloud build: Gradle failed with "Could not find method useCoreDependencies()" because
+  the newer expo-camera build.gradle calls an API absent from SDK 49 native tooling.
+- Rewrote src/services/offline.ts SQLite layer for expo-sqlite v11 actual API
+  (openDatabase() + execAsync(queries, readOnly) returning ResultSet array), replacing calls
+  to runAsync/getAllAsync/openDatabaseAsync that only exist in newer expo-sqlite majors.
+  Added execWrite/execRead helper wrappers so every other call site keeps its original
+  (sql, args) shape.
+- Rewrote src/components/ReceiptScanner.tsx for expo-camera v13 Camera/CameraType API
+  (the newer CameraView component does not exist at this version).
+- Rewrote src/services/backup.ts and src/services/export.ts for expo-file-system v15
+  legacy documentDirectory/writeAsStringAsync/readAsStringAsync API (the newer Paths/File
+  object API does not exist at this version).
+- Updated backup-restore.test.ts and data-export.test.ts jest.mock(expo-file-system)
+  calls (top-level mock plus several in-test runtime overrides) to match the same legacy
+  API shape.
+- Removed expo-secure-store from app.json plugins array: at the SDK-49-correct version
+  (12.3.1) the package ships no app.plugin.js at all, so listing it as a plugin threw a
+  hard PluginError that broke every expo config/eas build invocation with an opaque
+  ESM/CJS error instead of the real underlying message.
+- Root-caused and fixed a real EAS Build failure in metro.config.js: watchFolders was
+  hardcoded to an empty array. Metro only follows symlinks/junctions into directories it
+  is explicitly told to watch, so every deep subpath import of the monorepo-linked
+  budget-buddy shared package (used by 10 screens/components for the richer formatCurrency
+  signature the package root does not re-export) failed to resolve during a real release
+  Metro bundle on EAS Linux build containers. Fixed by adding the shared package to
+  watchFolders.
+- Linked this project to a real EAS project (eas init) under the hitechparadigm account;
+  app.json extra.eas.projectId placeholder replaced with the real generated ID.
+- Fixed react-native-get-random-values v2.0.0 peer-dependency conflict (requires
+  react-native >=0.81, this project pins 0.72.6) by downgrading to v1.9.0 (also
+  SDK-49-correct) - this was blocking EAS Build cloud npm install step, which runs
+  without the legacy-peer-deps flag local development had been silently relying on.
+
+Verified: tsc --noEmit 0 errors, jest 257/259 (2 skipped, 0 failed this run), lint:check:mobile
+150 errors (down 1 from the 151 baseline, no new errors), npx expo install --check reports
+all dependencies up to date, npx expo config --type public resolves cleanly.
+
+Real EAS Android preview build in progress against this commit - full native-build
+verification pending, tracked as the immediate next step.
 
 ## [1.13.0] - 2026-10-17
 

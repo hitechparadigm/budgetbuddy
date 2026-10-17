@@ -33,13 +33,14 @@
       "package": "com.budgetbuddy.mobile",
       "versionCode": 1,
       "permissions": [
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION",
-        "CAMERA",
-        "USE_BIOMETRIC",
-        "USE_FINGERPRINT",
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -47,7 +48,6 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-secure-store",
       "expo-location",
       [
         "expo-camera",
@@ -78,8 +78,9 @@
     "scheme": "budgetbuddy",
     "extra": {
       "eas": {
-        "projectId": "YOUR_EAS_PROJECT_ID"
+        "projectId": "21a1e627-a63f-4546-a964-e1aacef65966"
       }
-    }
+    },
+    "owner": "hitechparadigm"
   }
 }
