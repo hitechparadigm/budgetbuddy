@@ -1,6 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import NetInfo from '@react-native-community/netinfo';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 /**
  * API Configuration and Client
@@ -9,7 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration
 export const API_CONFIG = {
-  baseURL: process.env.EXPO_PUBLIC_API_URL || 'https://api.budgetbuddy.com',
+  baseURL: process.env.EXPO_PUBLIC_API_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1',
   timeout: 10000,
   retryAttempts: 3,
   retryDelay: 1000,
@@ -89,9 +90,19 @@ export class ApiError extends Error {
 /**
  * Get authentication token from storage
  */
+// Must match services/auth.ts STORAGE_KEYS.ID_TOKEN exactly - that is the
+// only place a real session token is ever written (SecureStore on native,
+// localStorage on web via the same Platform.OS branch). This was previously
+// reading a nonexistent AsyncStorage key ('auth_token'), so every request
+// through this client went out with no Authorization header at all.
+const ID_TOKEN_KEY = 'auth_id_token';
+
 const getAuthToken = async (): Promise<string | null> => {
   try {
-    return await AsyncStorage.getItem('auth_token');
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(ID_TOKEN_KEY);
+    }
+    return await SecureStore.getItemAsync(ID_TOKEN_KEY);
   } catch (error) {
     console.error('Failed to get auth token:', error);
     return null;
@@ -119,16 +130,23 @@ const buildHeaders = async (customHeaders: Record<string, string> = {}): Promise
 
 /**
  * Build request URL with parameters
+ *
+ * new URL(endpoint, base) drops the base URL's own path (e.g. '/v1')
+ * whenever endpoint starts with '/', per the WHATWG URL spec (a leading
+ * slash is resolved as absolute-from-origin). Every call site here passes
+ * a leading-slash endpoint ('/budgets', etc.), so the API Gateway stage
+ * prefix must be concatenated manually instead of relying on URL base
+ * resolution to preserve it.
  */
 const buildUrl = (endpoint: string, params?: Record<string, string | number>): string => {
-  const url = new URL(endpoint, API_CONFIG.baseURL);
-
+  const base = API_CONFIG.baseURL.replace(/\/+$/, '');
+  const path = endpoint.replace(/^\/+/, '');
+  const url = new URL(`${base}/${path}`);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       url.searchParams.append(key, String(value));
     });
   }
-
   return url.toString();
 };
 

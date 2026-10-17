@@ -296,7 +296,29 @@ satisfy the first two without the third (unlikely here, but not assumed).
       toggle to a navigation row pointing at the new screen. Verified: `tsc --noEmit` 0
       errors, `jest` 257/259 (unchanged baseline), `lint:check:mobile` 151 errors exactly
       (2 new unused-import errors introduced then fixed before this count).
-- [ ] 16. App Store (iOS) + Play Store (Android) submission prep — not started.
+- [~] 16. App Store (iOS) + Play Store (Android) submission prep — in progress (Session
+      169). Auditing for real submission readiness (not just reading this note) surfaced
+      four previously-undetected bugs that would have shipped broken core functionality -
+      all masked by offline-fallback catches: services/api.ts read auth tokens from a
+      nonexistent AsyncStorage key (every request through the shared client went out
+      unauthenticated), its base-URL fallback pointed at a placeholder domain that was
+      never a real backend, its URL-building silently dropped the API Gateway's /v1
+      stage prefix, and eact-native-reanimated@4.2.1 was installed against this
+      project's Expo SDK 49 / RN 0.72.6 (old architecture) despite requiring RN >=0.76 and
+      the New Architecture. All four fixed and verified (	sc 0 errors, jest 257/259
+      unchanged baseline, lint:check:mobile 151 unchanged baseline). Also added
+      eas.json (did not exist), generated placeholder app icon/splash assets (pp.json
+      referenced 4 PNGs that did not exist), and added the iOS Info.plist usage-
+      description strings + Android permissions + Expo config plugins this app's actual
+      camera/biometric/notification usage requires but pp.json never declared (missing
+      NSCameraUsageDescription etc. is an automatic App Store rejection, not a warning).
+      **The task-defining discovery**: 
+px expo install --check shows every native
+      dependency is multiple major versions ahead of what SDK 49 expects, and Apple now
+      requires the iOS 26 SDK (Xcode 26+) for any new submission - SDK 49's toolchain
+      predates that by years. A full Expo SDK upgrade (49 -> current LTS) is required
+      before a submittable build is possible; user chose to proceed with that upgrade now
+      rather than deferring it. See DEVELOPMENT_LOG.md 2026-10-17 entry for full detail.
 
 ### Phase 3 - Testing
 

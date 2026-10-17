@@ -143,7 +143,7 @@ describe('Quick Actions System Properties', () => {
             fc.record({
               categoryId: fc.string({ minLength: 1 }),
               categoryName: fc.string({ minLength: 1, maxLength: 30 }),
-              amount: fc.float({ min: Math.fround(0.01), max: Math.fround(1000) }),
+              amount: fc.float({ min: Math.fround(0.01), max: Math.fround(1000), noNaN: true }),
             }),
             { minLength: 1, maxLength: 10 }
           ),

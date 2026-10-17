@@ -114,6 +114,9 @@ infrastructure/lib/*.js.map
 .expo/
 dist/
 
+# EAS Submit service account credentials (Google Play) - never commit
+packages/mobile/google-service-account.json
+
 # React Native
 .expo/
 .expo-shared/

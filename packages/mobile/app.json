@@ -17,8 +17,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.budgetbuddy.mobile",
+      "buildNumber": "1",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Location is used to provide personalized budget suggestions and track transaction locations"
+        "NSLocationWhenInUseUsageDescription": "Location is used to provide personalized budget suggestions and track transaction locations",
+        "NSCameraUsageDescription": "BudgetBuddy uses your camera to scan receipts so you can automatically extract and categorize transactions",
+        "NSPhotoLibraryUsageDescription": "BudgetBuddy accesses your photo library so you can attach a receipt image to a transaction",
+        "NSFaceIDUsageDescription": "BudgetBuddy uses Face ID to let you quickly and securely unlock the app"
       }
     },
     "android": {
@@ -27,9 +31,15 @@
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.budgetbuddy.mobile",
+      "versionCode": 1,
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
       ]
     },
     "web": {
@@ -38,8 +48,38 @@
     },
     "plugins": [
       "expo-secure-store",
-      "expo-location"
+      "expo-location",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "BudgetBuddy uses your camera to scan receipts so you can automatically extract and categorize transactions"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "BudgetBuddy accesses your photo library so you can attach a receipt image to a transaction"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "BudgetBuddy uses Face ID to let you quickly and securely unlock the app"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#059669"
+        }
+      ]
     ],
-    "scheme": "budgetbuddy"
+    "scheme": "budgetbuddy",
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      }
+    }
   }
 }
