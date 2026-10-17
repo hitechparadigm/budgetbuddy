@@ -1,4 +1,111 @@
 # Development Log
+
+## 2026-10-17 - Mobile App-Store-Readiness Bug Fixes (mobile-app task 16, Session 169)
+
+### Summary
+User asked to continue mobile development and testing until app-store submission is
+possible (mobile-app spec task 16, previously "not started"). Rather than jumping
+straight to store listing mechanics, read the actual networking/auth code first since
+nothing in the repo had ever verified it against a real device or native build. Found
+four real, previously-undetected bugs and one deterministic (not flaky) test failure,
+all masked by offline-fallback catch blocks or jest module mocks.
+
+### What was found
+1. `services/api.ts`'s `getAuthToken()` read a nonexistent `AsyncStorage` key
+   (`auth_token`). The real session lives in `SecureStore`/`localStorage` under
+   `auth_id_token` (`services/auth.ts`'s `STORAGE_KEYS.ID_TOKEN`). Every request through
+   the shared `api` client - Budget, Transactions, Credit Score, Insights, Net Worth,
+   Receipts, Sync - has been going out unauthenticated.
+2. `API_CONFIG.baseURL`'s fallback was `https://api.budgetbuddy.com`, a domain that was
+   never a real backend, and no `.env`/`.env.local` in this workspace sets
+   `EXPO_PUBLIC_API_URL`. Combined with bug 1, Budget and Transactions - the two primary
+   tabs - have never reached the real backend in this dev environment; they've been
+   silently running the SQLite offline-fallback path exclusively, which is why nobody
+   noticed via typecheck/jest (both mock or bypass this module).
+3. `buildUrl()`'s `new URL(endpoint, baseURL)` call silently drops the base URL's own
+   path whenever `endpoint` starts with `/` (WHATWG URL spec - a leading slash resolves
+   as absolute-from-origin, discarding the base's path component). Every call site
+   passes a leading-slash endpoint, so even with 1 and 2 fixed, every request would have
+   hit the API Gateway's root instead of its `/v1` stage and 404'd. Verified the exact
+   failure and fix with a standalone `node -e` reproduction before touching the file.
+4. `react-native-reanimated@4.2.1` was installed against Expo SDK 49 / RN 0.72.6 (old
+   architecture). Reanimated 4.x requires RN >=0.76, the New Architecture, and a native
+   `react-native-worklets` package absent from this project - confirmed via a web search
+   that SDK 49 shipped `~3.3.0` as its bundled version
+   (`expo/bundledNativeModules.json` in `node_modules` confirmed this directly).
+   Downgraded to the exact expected version with `--save-exact`. Also found
+   `babel.config.js` was entirely missing `'react-native-reanimated/plugin'`, required
+   for the library to work at all and must be listed last in the plugins array - added
+   it. Any screen using the library (`DraggableGoalList.tsx`, `SwipeableTipCard.tsx`)
+   would have crashed or failed a release build without this.
+5. `quick-actions.test.ts`'s "should update favorite categories based on usage" property
+   test failed deterministically at a specific fast-check seed - not the "order-dependent
+   flaky" classification the spec file carried for this and one other suite. Reproduced
+   directly: `fc.float({ min, max })` can still generate `NaN` without `noNaN: true`, even
+   with both bounds specified - confirmed with an isolated 2000-run fast-check script at
+   the exact failing seed before touching the test. Fixed the one generator whose output
+   feeds an average/sum assertion; left two other `fc.float` calls in the same file alone
+   since their outputs don't feed arithmetic comparisons.
+
+### A genuinely separate, order-dependent-flaky failure also found
+`TwoFactorSetup.test.tsx`'s "does not show close button on backup step" failed in the
+full suite run but passed standalone, 3x in a row. Verified this is real pre-existing
+flakiness (not caused by any change made here) by stashing all changes, clearing the
+jest cache, and reproducing the identical failure against pristine HEAD. Left unchanged
+and out of scope, matching the spec's existing note about this file.
+
+### Also fixed while scoping store-submission readiness
+- Created `packages/mobile/eas.json` (did not exist) with development/preview/production
+  build profiles and a production `submit` block for both App Store Connect and Google
+  Play.
+- `app.json` referenced four PNG assets (`icon.png`, `splash.png`, `adaptive-icon.png`,
+  `favicon.png`) that did not exist (`assets/` was empty - any build would fail or Expo
+  would silently substitute defaults). Generated placeholder solid-color PNGs at the
+  correct required dimensions using a minimal from-scratch PNG encoder (no external
+  image library needed) in the brand emerald color `#059669`. Flagged to the user: these
+  are placeholders, real branded artwork is still required before actual submission.
+- `app.json` declared zero iOS `Info.plist` usage-description strings and was missing
+  Expo config plugin entries for camera, image picker, local authentication, and
+  notifications - despite the app actually using all four (`ReceiptScanner.tsx`,
+  `biometric.ts`, `NotificationSettings.tsx`). Missing `NSCameraUsageDescription`/
+  `NSFaceIDUsageDescription`/etc. is an automatic App Store rejection reason, not a
+  warning. Added all four plugin entries plus their permission-description strings, and
+  the corresponding Android `permissions` array entries. Validated via
+  `npx expo config --type public`, which resolves and merges plugin-injected permissions
+  correctly (also auto-added `RECORD_AUDIO`, required transitively by the camera plugin).
+- Fixed `.env.example`'s wrong/placeholder API Gateway URLs to the real main, features,
+  and extended-features gateway URLs, cross-referenced against
+  `.kiro/steering/architecture.md` and actual CDK route definitions in
+  `infrastructure/lib/`.
+- Added `packages/mobile/google-service-account.json` to the root `.gitignore` - the EAS
+  Android submit credential path now referenced in `eas.json`.
+
+### The actual scope-defining discovery
+`npx expo install --check` surfaced that every native Expo module in `packages/mobile`
+is several major versions ahead of SDK 49's expectations (e.g. `expo-camera` 15.0.16 vs.
+expected 13.4.4, `expo-sqlite` 16.0.10 vs. 11.3.3, `expo-file-system` 19.0.21 vs. 15.4.5) -
+strong evidence this `node_modules` tree has likely never been through a real native
+prebuild, only Metro/Jest, neither of which exercises native linking. Separately and more
+urgently, confirmed via Apple's developer documentation that App Store submissions now
+require the iOS 26 SDK (Xcode 26+), which Expo SDK 49's native toolchain predates by
+years - this is a hard submission gate independent of anything in this app's own code.
+
+Presented this to the user as a scope decision rather than continuing to patch: the
+config/bug fixes above are real and worth keeping regardless, but reaching an actual
+app-store-submittable state requires a full Expo SDK upgrade (49 -> current LTS,
+currently 54 or 55), which touches the New Architecture and every native module - a
+substantially larger and riskier effort than anything done so far in this task. User
+chose to proceed with the full upgrade now rather than deferring it.
+
+### Verification
+`tsc --noEmit`: 0 errors (unchanged). `jest`: 257/259 passing, 2 skipped, 1 known
+pre-existing flaky failure (reproduced identically on pristine HEAD, confirmed
+unrelated to these changes). `lint:check:mobile`: exactly 151 pre-existing errors,
+unchanged baseline (temporarily regressed to 152 from an unused `AsyncStorage` import
+left behind by the token-storage fix, caught and fixed back to baseline before this
+commit). `npx expo config --type public`: resolves cleanly with all new plugins and
+permissions merged correctly.
+
 ## 2026-10-13 - Mobile Biometric Authentication (mobile-app task 15, Session 168)
 
 ### Summary
@@ -13662,4 +13769,3 @@ Created `infrastructure/lib/api-family-stack.ts`:
 - `docs/aws-stack-architecture.md` - Should be updated with new stack architecture
 
 ---
-

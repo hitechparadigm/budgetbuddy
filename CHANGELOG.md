@@ -1,4 +1,79 @@
 # Changelog
+
+## [1.13.0] - 2026-10-17
+
+### fix: mobile app-store-readiness bugs (mobile-app, Session 169)
+
+Found while auditing the mobile app for App Store/Play Store submission readiness
+(`mobile-app` spec task 16). All four are real, previously-undetected bugs that would
+have shipped broken core functionality - none were caught before because every affected
+call site has an offline-fallback catch block that silently swallowed the failure.
+
+- **Dead auth token path (critical)**: `services/api.ts`'s `getAuthToken()` read
+  `AsyncStorage.getItem('auth_token')`, a key nothing in the app ever wrote.
+  `services/auth.ts` persists the real session via `expo-secure-store` under
+  `auth_id_token`. Every request through `api.get/post/put/delete` - used by Budget,
+  Transactions, Credit Score, Insights, Net Worth, Receipts, and Sync - went out with no
+  `Authorization` header at all. Fixed to read the correct `SecureStore`/`localStorage`
+  key, matching the pattern already proven working in `GoalsScreen.tsx` and
+  `PlannedTransactionsScreen.tsx`.
+- **Wrong API base URL fallback (critical)**: `API_CONFIG.baseURL` fell back to
+  `https://api.budgetbuddy.com`, a placeholder domain that was never a real backend, with
+  no `.env`/`.env.local` in this workspace setting `EXPO_PUBLIC_API_URL` to override it.
+  Combined with the token bug above, Budget and Transactions - the two primary tabs -
+  have never actually reached the real backend; they were silently running the SQLite
+  offline-fallback path exclusively. Fixed to fall back to the real main API Gateway URL.
+- **URL path-prefix stripping (critical)**: `buildUrl()` used `new URL(endpoint, baseURL)`,
+  which drops the base URL's own path (the API Gateway's `/v1` stage prefix) whenever
+  `endpoint` starts with `/` per the WHATWG URL spec - every call site passes a
+  leading-slash endpoint. Even with the two fixes above, every request would have hit
+  `.../budgets` instead of `.../v1/budgets` (404). Fixed to concatenate the base and path
+  manually instead of relying on URL base resolution.
+- **Wrong `react-native-reanimated` major version**: v4.2.1 was installed, but this
+  project is pinned to Expo SDK 49 / React Native 0.72.6 (old architecture); Reanimated
+  4.x requires RN >=0.76 and the New Architecture plus a native `react-native-worklets`
+  package that isn't installed. `expo/bundledNativeModules.json` confirms SDK 49 expects
+  `~3.3.0`. Downgraded to the exact expected version and added the required
+  `react-native-reanimated/plugin` to `babel.config.js` (was entirely missing, listed
+  last per the library's requirement) - any screen using Reanimated (Goals drag-reorder,
+  swipeable tip cards) would have crashed or failed to build in a release binary.
+- **Flaky property test fixed**: `quick-actions.test.ts`'s "should update favorite
+  categories based on usage" property failed deterministically (not flaky) on a
+  `fc.float({min,max})` generator that can still produce `NaN` without `noNaN: true` set,
+  even with both bounds specified (confirmed via direct fast-check reproduction at the
+  failing seed). Added `noNaN: true` to the one generator feeding an average/sum
+  assertion; the other two `fc.float` calls in the same file don't feed arithmetic
+  assertions and were left alone to avoid scope creep.
+- Added `packages/mobile/eas.json` (development/preview/production build profiles +
+  production submit config for both stores) - did not exist.
+- Generated placeholder app icon/splash/adaptive-icon/favicon PNGs (brand emerald
+  `#059669`, correct required dimensions) since `app.json` referenced four asset files
+  that did not exist (`assets/` was empty) - real branded artwork is still needed before
+  actual submission, flagged separately.
+- Added the iOS `Info.plist` usage-description strings and Android permissions/Expo
+  config plugin entries for every native capability the app actually uses but `app.json`
+  never declared: camera + photo library (receipt scanning), Face ID (biometric unlock),
+  and the `expo-notifications` plugin. Missing `NSCameraUsageDescription`/
+  `NSFaceIDUsageDescription` etc. causes automatic App Store rejection or a crash on
+  first permission prompt, not just a lint warning.
+- Fixed `.env.example`'s placeholder/wrong API Gateway URLs to the real main/features/
+  extended-features gateway URLs (cross-referenced against `architecture.md` and actual
+  Lambda routing in `infrastructure/lib/`).
+- Added `packages/mobile/google-service-account.json` to `.gitignore` - the EAS Android
+  submit credential path now referenced in `eas.json`, never to be committed.
+- **Found but not yet fixed, tracked as the next task**: `npx expo install --check`
+  reveals every native dependency in `packages/mobile` is multiple major versions ahead
+  of what the declared Expo SDK 49 expects (e.g. `expo-camera` 15.0.16 vs. expected
+  13.4.4, `expo-sqlite` 16.0.10 vs. 11.3.3) - this `node_modules` tree has likely never
+  been through a real native prebuild. More urgently, Apple now requires App Store
+  submissions be built with the iOS 26 SDK (Xcode 26+), which Expo SDK 49's toolchain
+  predates by years. A full Expo SDK upgrade (49 -> 54/55) is required before any store
+  submission is possible - this is a separate, larger effort, not a config fix.
+
+Verified: `tsc --noEmit` 0 errors, `jest` 257/259 (2 skipped, 1 known pre-existing
+order-dependent flaky failure reproduced identically on pristine HEAD before any of
+these changes), `lint:check:mobile` exactly 151 pre-existing errors (unchanged baseline).
+
 ## [1.12.3] - 2026-10-13
 
 ### feat: mobile biometric authentication (mobile-app task 15)
@@ -8571,4 +8646,3 @@ Both web and mobile apps now:
 ## Previous versions...
 
 [Previous changelog entries would be here]
-

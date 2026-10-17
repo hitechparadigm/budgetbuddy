@@ -1,4 +1,4 @@
-﻿---
+---
 inclusion: always
 ---
 
@@ -10,7 +10,7 @@ inclusion: always
 **Date**: 2026-10-13
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Current Session**: ~168 (mobile jest suite fixed, mobile wired into workspace/CI, app.js drift fixed, npm audit critical CVE fixed via from-scratch lockfile regen, modular-architecture spec COMPLETE (15/15 tasks), mobile Planned Transactions screen built (mobile-app task 12), Canadian investment account types added, mobile biometric authentication built (mobile-app task 15) - see Mobile/Infrastructure/Security/Modular Architecture sections)
+**Current Session**: ~169 (mobile app-store-readiness audit found 4 real bugs in services/api.ts - dead auth token path, placeholder base URL, URL path-prefix stripping, wrong reanimated major version - all fixed; added eas.json, placeholder icons, iOS/Android store-required permissions; discovered Expo SDK 49 cannot produce an App-Store-submittable build (Apple requires iOS 26 SDK/Xcode 26+) and every native dependency is multiple majors ahead of SDK 49's expectations - full SDK upgrade in progress, see Mobile section)
 
 ## What's Live and Working
 
@@ -201,6 +201,35 @@ inclusion: always
       `type: "navigation"` that routes to the new screen. Verified unchanged: `tsc --noEmit`
       0 errors, `jest` 257/259 (2 skipped), `lint:check:mobile` exactly 151 pre-existing
       errors (temporarily regressed to 153 from two unused imports, fixed back to baseline).
+- [~] Mobile app-store-readiness audit (`mobile-app` spec task 16, Session 169) - found
+      and fixed 4 real bugs in `services/api.ts` masked by offline-fallback catches on
+      every call site: `getAuthToken()` read a nonexistent AsyncStorage key (real tokens
+      live in SecureStore under `auth_id_token` per `services/auth.ts`) so every request
+      through the shared `api` client went out unauthenticated; `API_CONFIG.baseURL`'s
+      fallback was a placeholder domain that was never a real backend with no `.env`
+      override present, meaning Budget and Transactions (the two primary tabs) have
+      never reached the real backend in this dev environment; `buildUrl()`'s
+      `new URL(endpoint, baseURL)` silently dropped the API Gateway's `/v1` stage prefix
+      per the WHATWG URL spec. All three fixed and verified with standalone `node -e`
+      reproductions before and after. Also found `react-native-reanimated@4.2.1`
+      installed against this project's Expo SDK 49 / RN 0.72.6 (old architecture)
+      despite requiring RN >=0.76 and the New Architecture - downgraded to the exact
+      SDK-49-expected `~3.3.0` and added the missing `react-native-reanimated/plugin`
+      to `babel.config.js` (was entirely absent). Fixed a deterministic (not flaky)
+      property-test failure in `quick-actions.test.ts` (`fc.float` without `noNaN: true`
+      can still generate `NaN`). Added `eas.json` (did not exist), generated placeholder
+      app icon/splash/adaptive-icon/favicon PNGs (`app.json` referenced 4 files that did
+      not exist), and added the iOS `Info.plist` usage-description strings + Android
+      permissions + Expo config plugins for camera/biometric/notifications this app
+      actually uses but `app.json` never declared. Verified unchanged: `tsc --noEmit` 0
+      errors, `jest` 257/259 (1 pre-existing order-dependent flaky failure reproduced
+      identically on pristine HEAD, confirmed unrelated), `lint:check:mobile` exactly
+      151 pre-existing errors. **Task-defining discovery**: `npx expo install --check`
+      shows every native dependency multiple majors ahead of SDK 49's expectations, and
+      Apple now requires the iOS 26 SDK (Xcode 26+) for new submissions - SDK 49's
+      toolchain predates that by years. A full Expo SDK upgrade (49 -> current LTS) is
+      required before any submittable build is possible; user chose to proceed with the
+      upgrade now. In progress - see DEVELOPMENT_LOG.md 2026-10-17 entry.
 
 ### Modular Architecture (`modular-architecture` spec, COMPLETE, 15/15 tasks)
 - [x] All 15 tasks done (every required task + every optional `*` task). Final waves 3-6:
