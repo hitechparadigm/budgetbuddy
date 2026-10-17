@@ -1,4 +1,17 @@
 # Development Log
+## 2026-10-17 - EAS Build Attempt 6: Zod Version Pin for Metro Resolution (Session 169 cont.)
+
+Build attempt 5 (post-install hook) progressed past the shared-package dist resolution
+into a new failure: zod resolved to 3.25.76 (latest patch within the declared ^3.22.4
+range) via the eas-build-post-install rebuild, and Metro v0.76 (bundled with SDK 49)
+could not resolve its main field (./index.cjs) despite the file existing on disk -
+a resolver incompatibility with how recent zod versions lay out their exports map.
+Pinned zod to the exact 3.22.4 version (classic lib/index.js CJS layout, resolves
+correctly). web-app has its own separate zod dependency/lockfile, confirmed unaffected.
+
+Triggering build attempt 6 against this commit next.
+
+
 ## 2026-10-17 - EAS Build Attempt 5: Shared Package Build Hook + Critical CVE (Session 169 cont.)
 
 Build attempt 4 (watchFolders fix) progressed past JS bundling into a new failure:
