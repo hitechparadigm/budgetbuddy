@@ -1,4 +1,22 @@
 # Changelog
+## [1.13.3] - 2026-10-17
+
+### fix: mobile zod version pin for Metro v0.76 resolution (mobile-app, Session 169)
+
+- Fixed a 5th real EAS Build failure: packages/shared own zod dependency resolved to
+  3.25.76 (within the declared ^3.22.4 range) under the eas-build-post-install rebuild,
+  and that version main field (./index.cjs) could not be resolved by Metro v0.76 (the
+  version bundled with Expo SDK 49), despite the file existing on disk - a resolver
+  incompatibility with how recent zod versions structure their exports map alongside a
+  root-level main fallback. Pinned zod to the exact version (3.22.4) that was true when
+  this dependency range was first declared, which uses a classic lib/index.js CJS layout
+  Metro v0.76 resolves correctly.
+
+Verified: packages/shared tsc --noEmit 0 errors, jest 84/84 passing, npm audit unchanged
+(zod was unrelated to the earlier critical CVE); packages/web-app has its own separate
+zod dependency and lockfile, unaffected, tsc --noEmit 0 errors; packages/mobile tsc
+--noEmit 0 errors, jest 257/259 (2 skipped, 0 failed).
+
 ## [1.13.2] - 2026-10-17
 
 ### fix: mobile EAS Build shared-package build hook + critical CVE (mobile-app, Session 169)
