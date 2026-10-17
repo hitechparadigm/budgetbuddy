@@ -1,5 +1,5 @@
 import { Budget, Transaction } from '../types';
-import { Paths, File } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -102,14 +102,14 @@ class BackupService {
       const fileName = `budgetbuddy_backup_${timestamp}.json`;
 
       // Create file in document directory
-      const backupFile = new File(Paths.document, fileName);
+      const fileUri = `${FileSystem.documentDirectory}${fileName}`;
 
       // Write backup file
-      await backupFile.write(backupJson);
+      await FileSystem.writeAsStringAsync(fileUri, backupJson);
 
       // Share the backup file
       if (Platform.OS !== 'web' && await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(backupFile.uri, {
+        await Sharing.shareAsync(fileUri, {
           mimeType: 'application/json',
           dialogTitle: 'Save BudgetBuddy Backup',
         });
@@ -120,7 +120,7 @@ class BackupService {
 
       return {
         success: true,
-        filePath: backupFile.uri,
+        filePath: fileUri,
         backupSize,
       };
     } catch (error) {
@@ -149,7 +149,7 @@ class BackupService {
       const fileUri = result.assets[0].uri;
 
       // Read backup file
-      const backupContent = await new File(fileUri).text();
+      const backupContent = await FileSystem.readAsStringAsync(fileUri);
 
       // Parse backup data
       const backupData: BackupData = JSON.parse(backupContent);
@@ -287,13 +287,13 @@ class BackupService {
         };
 
         const backupJson = JSON.stringify(backupData, null, 2);
-        const backupFile = new File(Paths.document, fileName);
+        const preDeletionFileUri = `${FileSystem.documentDirectory}${fileName}`;
 
-        await backupFile.write(backupJson);
+        await FileSystem.writeAsStringAsync(preDeletionFileUri, backupJson);
 
         // Force share the backup
         if (Platform.OS !== 'web' && await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(backupFile.uri, {
+          await Sharing.shareAsync(preDeletionFileUri, {
             mimeType: 'application/json',
             dialogTitle: 'Save Final Backup Before Account Deletion',
           });

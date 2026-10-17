@@ -41,12 +41,39 @@ export interface OfflineData {
 let db: SQLite.SQLiteDatabase | null = null;
 
 /**
+ * expo-sqlite@11 (the version this app is pinned to - matches Expo SDK 49's
+ * bundled native modules) only exposes the WebSQL-style `execAsync(queries,
+ * readOnly)` API, not the newer `runAsync`/`getAllAsync` promise methods the
+ * rest of this file was originally written against. These two helpers
+ * translate the simpler (sql, args) call shape used everywhere below onto
+ * the real v11 API so only this one spot needs to know about the
+ * difference.
+ */
+const execWrite = async (
+  sql: string,
+  args: unknown[] = []
+): Promise<{ insertId?: number; rowsAffected: number }> => {
+  if (!db) throw new Error('Database not initialized');
+  const [result] = await db.execAsync([{ sql, args }], false);
+  if ('error' in result) throw result.error;
+  return { insertId: result.insertId, rowsAffected: result.rowsAffected };
+};
+
+const execRead = async <T = any>(sql: string, args: unknown[] = []): Promise<T[]> => {
+  if (!db) throw new Error('Database not initialized');
+  const [result] = await db.execAsync([{ sql, args }], true);
+  if ('error' in result) throw result.error;
+  return result.rows as T[];
+};
+
+/**
  * Initialize offline storage
  */
 export const initializeOfflineStorage = async (): Promise<void> => {
   try {
-    // Initialize SQLite database
-    db = await SQLite.openDatabaseAsync(DB_NAME);
+    // Initialize SQLite database - openDatabase() is synchronous in v11,
+    // unlike the newer openDatabaseAsync()
+    db = SQLite.openDatabase(DB_NAME);
 
     // Create tables if they don't exist
     await createTables();
@@ -67,68 +94,64 @@ export const initializeOfflineStorage = async (): Promise<void> => {
 /**
  * Create database tables
  */
+const CREATE_TABLE_STATEMENTS = [
+  `CREATE TABLE IF NOT EXISTS budgets (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    amount REAL NOT NULL,
+    category TEXT NOT NULL,
+    frequency TEXT NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    is_deleted INTEGER DEFAULT 0,
+    sync_status TEXT DEFAULT 'synced'
+  )`,
+  `CREATE TABLE IF NOT EXISTS transactions (
+    id TEXT PRIMARY KEY,
+    budget_id TEXT NOT NULL,
+    description TEXT NOT NULL,
+    amount REAL NOT NULL,
+    category TEXT NOT NULL,
+    date TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    is_deleted INTEGER DEFAULT 0,
+    sync_status TEXT DEFAULT 'synced',
+    FOREIGN KEY (budget_id) REFERENCES budgets (id)
+  )`,
+  `CREATE TABLE IF NOT EXISTS categories (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL,
+    icon TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    is_deleted INTEGER DEFAULT 0,
+    sync_status TEXT DEFAULT 'synced'
+  )`,
+  `CREATE TABLE IF NOT EXISTS sync_metadata (
+    entity_type TEXT PRIMARY KEY,
+    last_sync_timestamp TEXT NOT NULL,
+    last_sync_status TEXT NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_budgets_category ON budgets(category)`,
+  `CREATE INDEX IF NOT EXISTS idx_budgets_date ON budgets(start_date, end_date)`,
+  `CREATE INDEX IF NOT EXISTS idx_transactions_budget ON transactions(budget_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date)`,
+  `CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category)`,
+];
+
 const createTables = async (): Promise<void> => {
   if (!db) throw new Error('Database not initialized');
-
-  const createTablesSQL = `
-    -- Budgets table
-    CREATE TABLE IF NOT EXISTS budgets (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      amount REAL NOT NULL,
-      category TEXT NOT NULL,
-      frequency TEXT NOT NULL,
-      start_date TEXT NOT NULL,
-      end_date TEXT,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL,
-      is_deleted INTEGER DEFAULT 0,
-      sync_status TEXT DEFAULT 'synced'
-    );
-
-    -- Transactions table
-    CREATE TABLE IF NOT EXISTS transactions (
-      id TEXT PRIMARY KEY,
-      budget_id TEXT NOT NULL,
-      description TEXT NOT NULL,
-      amount REAL NOT NULL,
-      category TEXT NOT NULL,
-      date TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL,
-      is_deleted INTEGER DEFAULT 0,
-      sync_status TEXT DEFAULT 'synced',
-      FOREIGN KEY (budget_id) REFERENCES budgets (id)
-    );
-
-    -- Categories table
-    CREATE TABLE IF NOT EXISTS categories (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      color TEXT NOT NULL,
-      icon TEXT,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL,
-      is_deleted INTEGER DEFAULT 0,
-      sync_status TEXT DEFAULT 'synced'
-    );
-
-    -- Sync metadata table
-    CREATE TABLE IF NOT EXISTS sync_metadata (
-      entity_type TEXT PRIMARY KEY,
-      last_sync_timestamp TEXT NOT NULL,
-      last_sync_status TEXT NOT NULL
-    );
-
-    -- Create indexes for better performance
-    CREATE INDEX IF NOT EXISTS idx_budgets_category ON budgets(category);
-    CREATE INDEX IF NOT EXISTS idx_budgets_date ON budgets(start_date, end_date);
-    CREATE INDEX IF NOT EXISTS idx_transactions_budget ON transactions(budget_id);
-    CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
-    CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
-  `;
-
-  await db.execAsync(createTablesSQL);
+  // v11's execAsync() runs one statement per Query entry - unlike some newer
+  // expo-sqlite versions, it does not split a single semicolon-separated
+  // SQL string into multiple statements.
+  const queries = CREATE_TABLE_STATEMENTS.map((sql) => ({ sql, args: [] }));
+  const results = await db.execAsync(queries, false);
+  const failure = results.find((r): r is { error: Error } => 'error' in r);
+  if (failure) throw failure.error;
 };
 
 /**
@@ -216,7 +239,7 @@ export const storeOfflineData = async (
 
     switch (table) {
       case 'budgets':
-        await db.runAsync(
+        await execWrite(
           `INSERT OR REPLACE INTO budgets
            (id, name, amount, category, frequency, start_date, end_date, created_at, updated_at, sync_status)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -236,7 +259,7 @@ export const storeOfflineData = async (
         break;
 
       case 'transactions':
-        await db.runAsync(
+        await execWrite(
           `INSERT OR REPLACE INTO transactions
            (id, budget_id, description, amount, category, date, created_at, updated_at, sync_status)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -255,7 +278,7 @@ export const storeOfflineData = async (
         break;
 
       case 'categories':
-        await db.runAsync(
+        await execWrite(
           `INSERT OR REPLACE INTO categories
            (id, name, color, icon, created_at, updated_at, sync_status)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -301,7 +324,7 @@ export const getOfflineData = async <T = any>(
 
     query += ' ORDER BY updated_at DESC';
 
-    const result = await db.getAllAsync(query, params);
+    const result = await execRead(query, params);
     return result as T[];
   } catch (error) {
     console.error(`Failed to get ${table} data offline:`, error);
@@ -319,7 +342,7 @@ export const deleteOfflineData = async (
   if (!db) throw new Error('Database not initialized');
 
   try {
-    await db.runAsync(
+    await execWrite(
       `UPDATE ${table} SET is_deleted = 1, updated_at = ?, sync_status = 'pending' WHERE id = ?`,
       [new Date().toISOString(), id]
     );
@@ -343,9 +366,9 @@ export const getPendingSyncItems = async (): Promise<{
 
   try {
     const [budgets, transactions, categories] = await Promise.all([
-      db.getAllAsync(`SELECT * FROM budgets WHERE sync_status = 'pending'`),
-      db.getAllAsync(`SELECT * FROM transactions WHERE sync_status = 'pending'`),
-      db.getAllAsync(`SELECT * FROM categories WHERE sync_status = 'pending'`),
+      execRead(`SELECT * FROM budgets WHERE sync_status = 'pending'`),
+      execRead(`SELECT * FROM transactions WHERE sync_status = 'pending'`),
+      execRead(`SELECT * FROM categories WHERE sync_status = 'pending'`),
     ]);
 
     return { budgets, transactions, categories };
@@ -365,7 +388,7 @@ export const markAsSynced = async (
   if (!db) throw new Error('Database not initialized');
 
   try {
-    await db.runAsync(
+    await execWrite(
       `UPDATE ${table} SET sync_status = 'synced' WHERE id = ?`,
       [id]
     );
@@ -425,12 +448,15 @@ export const clearOfflineData = async (): Promise<void> => {
   if (!db) throw new Error('Database not initialized');
 
   try {
-    await db.execAsync(`
-      DELETE FROM budgets;
-      DELETE FROM transactions;
-      DELETE FROM categories;
-      DELETE FROM sync_metadata;
-    `);
+    await db.execAsync(
+      [
+        { sql: 'DELETE FROM budgets', args: [] },
+        { sql: 'DELETE FROM transactions', args: [] },
+        { sql: 'DELETE FROM categories', args: [] },
+        { sql: 'DELETE FROM sync_metadata', args: [] },
+      ],
+      false
+    );
 
     await AsyncStorage.multiRemove([
       STORAGE_KEYS.SYNC_QUEUE,
