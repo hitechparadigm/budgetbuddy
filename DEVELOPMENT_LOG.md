@@ -1,4 +1,22 @@
 # Development Log
+## 2026-10-17 - EAS Build Attempt 5: Shared Package Build Hook + Critical CVE (Session 169 cont.)
+
+Build attempt 4 (watchFolders fix) progressed past JS bundling into a new failure:
+packages/shared main field (dist/index.js) does not exist on a fresh EAS clone, since
+dist/ is gitignored and never committed - correct for npm packages normally published via
+a CI publish step, but this one is only ever consumed via a file: link, so nothing ever
+builds it for a fresh clone. Added eas-build-post-install (the standard EAS Build lifecycle
+hook, runs after npm install) to build it in place. Verified locally by deleting dist and
+confirming the hook script regenerates it with exit 0.
+
+Running that build surfaced a pre-existing critical CVE (handlebars via ts-jest) in
+packages/shared own separate lockfile - unrelated to anything fixed earlier this session
+in the root lockfile. npm audit fix resolved it with no breaking changes; verified
+packages/shared typecheck and its 84-test suite are unaffected.
+
+Triggering build attempt 5 against this commit next.
+
+
 
 ## 2026-10-17 - Mobile Expo SDK 49 Native Dependency Alignment + Real EAS Build (mobile-app task 16, Session 169)
 

@@ -1,4 +1,26 @@
 # Changelog
+## [1.13.2] - 2026-10-17
+
+### fix: mobile EAS Build shared-package build hook + critical CVE (mobile-app, Session 169)
+
+- Fixed a 4th real EAS Build failure, reached only after the watchFolders fix let Metro
+  see into the monorepo-linked shared package: packages/shared main field points to
+  dist/index.js, which is gitignored (never committed) and therefore does not exist on
+  a fresh EAS clone. Added an eas-build-post-install script to packages/mobile/package.json
+  (the standard EAS Build lifecycle hook that runs after npm install) that builds the
+  shared package in place before Metro ever tries to resolve it. Verified locally by
+  deleting packages/shared/dist and confirming the hook regenerates it with exit 0.
+- Running the shared package build surfaced a pre-existing critical CVE in its own
+  separate lockfile (handlebars, transitive via ts-jest, a devDependency): 1 critical,
+  39 other findings. Ran npm audit fix - resolved the critical finding with no breaking
+  changes (33 findings remain, all moderate/high devDependency-only Jest-internal
+  transitives requiring a Jest major bump to fully clear, same accepted-risk pattern as
+  the root lockfile). Verified packages/shared typecheck and its own test suite
+  (84/84 passing) are unaffected.
+
+Verified: packages/shared tsc --noEmit 0 errors, jest 84/84 passing; packages/mobile
+tsc --noEmit 0 errors, jest 257/259 (2 skipped, 0 failed).
+
 ## [1.13.1] - 2026-10-17
 
 ### fix: mobile Expo SDK 49 native dependency alignment + EAS build fix (mobile-app, Session 169)

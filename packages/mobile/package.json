@@ -5,6 +5,7 @@
   "description": "BudgetBuddy mobile application built with React Native and Expo",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
+    "eas-build-post-install": "cd ../shared && npm install && npm run build",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
