@@ -472,7 +472,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   - **Status**: Phase 2 Task 11 complete (auth-onboarding), continuing with remaining functions
 
 - 🔧 **CRITICAL ONBOARDING BUG FIX** - Fixed recurring 500 error preventing budget creation after onboarding
-  - **User Report**: user@example.com unable to create budget for January 2026
+  - **User Report**: [personal address redacted] unable to create budget for January 2026
   - **Root Cause**: Import order bug - `dynamoHelpers` and `FamilyIdResolver` imported at line 1036 but used at line 928
   - **Error**: `ReferenceError: dynamoHelpers is not defined` causing 500 error on onboarding endpoint
   - **Solution**: Moved imports to top of file (line 20) after AWS SDK imports

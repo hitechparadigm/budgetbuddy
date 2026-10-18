@@ -1,4 +1,28 @@
 # Development Log
+## 2026-10-17 - Deploys Now Fail When They Fail (Session 170)
+First item of the Wave 1 security-and-operations task (FEAT-001, plan item 5, review finding
+P-12). Both deploy workflows were structurally incapable of reporting a failed deployment:
+each of the three staged `npx cdk deploy` invocations ended in `|| echo "...continuing..."`,
+and the post-deploy `Check CloudFormation stacks` step accepted `UPDATE_ROLLBACK_COMPLETE`
+as success while printing that the stack was "functional". A stack that failed and rolled
+back to the previous code therefore produced a green run whose summary claimed the commit
+shipped.
+Removed all six fallbacks, added `set -euo pipefail` to the deploy and stack-check run
+blocks in both files, and replaced the rollback-tolerant status test with a `*ROLLBACK*`
+arm that exits 1 with an actionable message. Deploy steps 1-3 were left in place on
+purpose: they are redundant with step 4's `cdk deploy --all` but they encode the
+CommonLayer export ordering workaround documented in the comment above them, and
+restructuring the workflow was explicitly out of scope.
+This went first in the wave because every later change ships through `deploy-dev.yml`, and
+the single push at the end of the wave needs to be able to report a genuine failure.
+Note for the wave's final step: this change makes the next failing deploy go red. The dev
+stacks were last updated between 2026-05 and 2026-10-17 and are not all known-clean, so a
+red run right after the push may be a pre-existing failure becoming visible rather than one
+this wave caused - read the run log before assuming causation.
+Verified: `js-yaml` parses both workflow files; the `continuing...` and
+`UPDATE_ROLLBACK_COMPLETE` greps return zero rows; `git status --short` lists only the
+three intended files. Not pushed - the wave pushes once, at the end.
+
 ## 2026-10-17 - EAS Build Attempt 6: Zod Version Pin for Metro Resolution (Session 169 cont.)
 
 Build attempt 5 (post-install hook) progressed past the shared-package dist resolution
@@ -1751,18 +1775,18 @@ Full heuristic review of the web app UI (31 pages, 37+ components) using the des
 
 ### Work Completed
 
-1. **Investigated email invitation failure** for `user@example.com`:
+1. **Investigated email invitation failure** for [personal address redacted]:
    - Confirmed both root causes were already fixed in previous session (commits `fd7c4a3`, `e75dd23`)
    - `budgetsApiUrl` now points to correct API gateway (`jcl39tq8x0`)
    - `FROM_EMAIL` now uses `info@hitechparadigm.com` (verified SES identity)
 
 2. **Live end-to-end verification**:
    - Invoked `budgetbuddy-email-budgets` Lambda directly
-   - Email delivered to `user@example.com` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
+   - Email delivered to [personal address redacted] ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
    - CloudWatch logs confirmed successful delivery
 
 3. **SES sandbox status**:
-   - Verified identities: `user@example.com`, `user@example.com`, `info@hitechparadigm.com`, `user@example.com`, `user@example.com`, `user@example.com`, `noreply@budgetbuddy.com`
+   - Verified identities: [personal address redacted], the configured ALERT_EMAIL, `info@hitechparadigm.com`, [personal address redacted], [personal address redacted], [personal address redacted], `noreply@budgetbuddy.com`
    - Still in sandbox ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â need to request production access to send to arbitrary addresses
 
 4. **Updated `docs/USER_JOURNEYS.md`**:
@@ -2818,7 +2842,7 @@ The AI-powered bill reminders and budget planning feature is now:
 
 User reported: "Testing again: Pending invitation already exists for this email"
 
-- Trying to invite user@example.com
+- Trying to invite the configured ALERT_EMAIL
 - Getting error about existing pending invitation
 - Unclear how to resolve
 
@@ -2841,7 +2865,7 @@ User reported: "Testing again: Pending invitation already exists for this email"
    - ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Tests passing (49 tests in invitation-management.test.js)
 
 3. **Root Cause**:
-   - A pending invitation already exists in the database for user@example.com
+   - A pending invitation already exists in the database for the configured ALERT_EMAIL
    - User needs to revoke the existing invitation before sending a new one
    - The UI to do this is already available but user may not have seen it
 
@@ -2856,7 +2880,7 @@ User reported: "Testing again: Pending invitation already exists for this email"
 3. Scroll down to find the "Pending Invitations" section
    - This section only appears for primary account holders
    - It only shows if there are pending invitations
-4. Find the invitation for user@example.com
+4. Find the invitation for the configured ALERT_EMAIL
 5. Click the "Cancel" button next to that invitation
 6. Wait for confirmation message
 7. Send a new invitation
@@ -11352,7 +11376,7 @@ git commit -m "feat: Complete Task 11.4 - Create CDK infrastructure for auth-onb
 
 **User-Reported Production Bug**
 
-- **Reporter**: user@example.com
+- **Reporter**: [personal address redacted]
 - **Issue**: Unable to create budget for January 2026 after completing onboarding
 - **Error**: 500 Internal Server Error on `/auth/onboarding` endpoint
 - **User Quote**: "I thought that issue was fixed long ago"
@@ -11469,7 +11493,7 @@ backend/functions/
 - ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Commit immediate fix
 - ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Update documentation
 - ÃƒÂ¢Ã‚ÂÃ‚Â³ Push to trigger CI/CD deployment
-- ÃƒÂ¢Ã‚ÂÃ‚Â³ Test with user's account (user@example.com)
+- ÃƒÂ¢Ã‚ÂÃ‚Â³ Test with user's account ([personal address redacted])
 
 **Short-Term** (Next Session):
 

@@ -74,7 +74,7 @@ database → auth → auth-onboarding → api → api-features
 - `security-check.sh`: scans only `.ts`/`.js` in infra/scripts/layers; excludes `cdk-out-temp`, `.playwright-mcp`
 
 ## SES Status
-- Sandbox mode — verified: `user@example.com`, `user@example.com`, `info@hitechparadigm.com`, `user@example.com`, `user@example.com`, `user@example.com`, `noreply@budgetbuddy.com`
+- Sandbox mode — verified: [personal address redacted], the configured ALERT_EMAIL, `info@hitechparadigm.com`, [personal address redacted], [personal address redacted], [personal address redacted], `noreply@budgetbuddy.com`
 - FROM_EMAIL = `info@hitechparadigm.com`
 
 ## Removed / Deprecated

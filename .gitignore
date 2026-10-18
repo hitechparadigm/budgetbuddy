@@ -152,3 +152,7 @@ commit-out.txt
 validate-out.txt
 v2.txt
 *.tmp.txt
+
+# Agent task scratch space and git worktrees (never commit)
+.agents/
+.worktrees/

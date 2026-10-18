@@ -332,7 +332,7 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 
 5. **`shared` budget type has no distinct behavioral rules** — `shared` is accepted and stored but behaves identically to `family` except for the partner limit. The vision specifies shared budgets should only contain shared expenses (no income, no personal debt). This is a product enforcement question, not a data model issue.
 
-6. **SES still in sandbox mode** — can only send to verified addresses. Verified: `user@example.com`, `user@example.com`, `info@hitechparadigm.com`, `user@example.com`, `user@example.com`. Request SES production access to send to any address.
+6. **SES still in sandbox mode** — can only send to verified addresses. Verified: [personal address redacted], the configured ALERT_EMAIL, `info@hitechparadigm.com`, [personal address redacted], [personal address redacted]. Request SES production access to send to any address.
 
 ### Low Priority
 

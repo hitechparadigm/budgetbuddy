@@ -412,7 +412,7 @@ All 15+ pages audited via Playwright. Design token sweep across 120+ files. CI/C
 
 **Status**: Feature already implemented and deployed ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 
-**User Issue**: Getting "Pending invitation already exists for this email" error when trying to invite user@example.com
+**User Issue**: Getting "Pending invitation already exists for this email" error when trying to invite the configured ALERT_EMAIL
 
 **Root Cause**: A pending invitation already exists in the database for this email address
 
@@ -422,7 +422,7 @@ All 15+ pages audited via Playwright. Design token sweep across 120+ files. CI/C
 
 1. Navigate to Family Settings page in the web app
 2. Scroll to the "Pending Invitations" section (only visible to primary account holder)
-3. Find the invitation for user@example.com
+3. Find the invitation for the configured ALERT_EMAIL
 4. Click the "Cancel" button to revoke the pending invitation
 5. Send a new invitation
 
@@ -3161,7 +3161,7 @@ All competitive feature backends are now deployed and operational:
 
 ### Recurring 500 Error Resolution
 
-- **User-Reported Issue**: user@example.com unable to create budget for January 2026 after onboarding
+- **User-Reported Issue**: [personal address redacted] unable to create budget for January 2026 after onboarding
   - **Error**: 500 Internal Server Error on `/auth/onboarding` endpoint
   - **Root Cause**: Import order bug - `dynamoHelpers` and `FamilyIdResolver` imported at line 1036 but used at line 928
   - **Technical Error**: `ReferenceError: dynamoHelpers is not defined` when onboarding endpoint executes

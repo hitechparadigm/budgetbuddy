@@ -1,4 +1,24 @@
 # Changelog
+## [1.13.4] - 2026-10-17
+### ci: fail deploys on stack failure and rollback (wave1-security-ops, Session 170)
+- Removed the six `|| echo "...continuing..."` fallbacks from the `npx cdk deploy`
+  invocations in `.github/workflows/deploy-dev.yml` (steps 1-3) and
+  `.github/workflows/deploy-prod.yml` (steps 1-3). A failed `cdk deploy` produced a green
+  step, so a run could report a shipped commit that never deployed. Added
+  `set -euo pipefail` to the deploy and stack-check `run:` blocks in both workflows.
+- The `Check CloudFormation stacks` step no longer accepts `UPDATE_ROLLBACK_COMPLETE` as
+  success and no longer logs it as "functional". Any `*ROLLBACK*` status now fails the run
+  with "the deployment did NOT ship", covering `UPDATE_ROLLBACK_COMPLETE`,
+  `ROLLBACK_COMPLETE`, `UPDATE_ROLLBACK_FAILED` and `ROLLBACK_IN_PROGRESS`.
+- Added `.agents/` and `.worktrees/` to `.gitignore` per the No Stray Root Artifacts rule.
+- Expected effect: the next failing deploy goes red instead of green. Dev stacks are not
+  all currently clean, so a red run immediately after this change is a pre-existing failure
+  becoming visible, not a new one.
+Verified: both workflow files parse via js-yaml; `grep -n 'continuing\.\.\.|UPDATE_ROLLBACK_COMPLETE'`
+returns zero rows across both files. Deploy steps 1-3 were deliberately kept (they encode
+the CommonLayer export ordering workaround) - scope was "stop hiding failures", not
+restructuring the workflow.
+
 ## [1.13.3] - 2026-10-17
 
 ### fix: mobile zod version pin for Metro v0.76 resolution (mobile-app, Session 169)
@@ -1384,7 +1404,7 @@ Applied `PageHeader` component to all 8 remaining pages for visual consistency:
 
 - **Root cause 1**: `budgetsApiUrl` in `environment.ts` was pointing to the wrong API gateway (`q0zoob6728` main API instead of `jcl39tq8x0` budgets API) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â fixed in `fd7c4a3`
 - **Root cause 2**: `FROM_EMAIL` in `api-budgets-stack.ts` defaulted to `noreply@budgetbuddy.com` (unverified in SES) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â fixed to `info@hitechparadigm.com` in `e75dd23`
-- **Verified**: Live Lambda invocation confirmed email delivered to `user@example.com` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
+- **Verified**: Live Lambda invocation confirmed email delivered to [personal address redacted] ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
 - **Note**: SES still in sandbox mode ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â can only send to verified addresses until production access is requested
 - Updated `docs/USER_JOURNEYS.md` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Section 4 email status, infrastructure status, gap analysis, requirements traceability
 
@@ -1962,7 +1982,7 @@ DynamoDB on every request.
 ### ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ User Support - Family Invitation Management (Session 124)
 
 - **Issue Resolution**: "Pending invitation already exists for this email"
-  - User reported error when trying to invite user@example.com
+  - User reported error when trying to invite the configured ALERT_EMAIL
   - Investigation revealed feature is already fully implemented and deployed (Session 123)
   - No code changes needed - user just needs to use existing UI
 
@@ -6692,7 +6712,7 @@ cdk deploy --profile hitechparadigm
 ### ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€šÃ‚Â§ CRITICAL BUG FIX - ONBOARDING 500 ERROR (RECURRING ISSUE)
 
 - **Onboarding Import Order Bug** - Fixed ReferenceError causing 500 error during budget creation
-  - **User Report**: user@example.com unable to create budget for January 2026
+  - **User Report**: [personal address redacted] unable to create budget for January 2026
   - **Root Cause**: `dynamoHelpers` and `FamilyIdResolver` imported at line 1036 but used starting at line 928
   - **Error**: `ReferenceError: dynamoHelpers is not defined` when onboarding endpoint executes
   - **Solution**: Moved imports to line 20 (top of file after AWS SDK imports)
@@ -8125,7 +8145,7 @@ Both web and mobile apps now:
 ### ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚Âº BUG FIXES
 
 - **ESLint Error**: Removed unused `PutItemCommand` import causing pipeline failure
-- **User Access**: Fixed `user@example.com` by assigning to existing family `family_test_20251026`
+- **User Access**: Fixed [personal address redacted] by assigning to existing family `family_test_20251026`
 - **Data Validation**: Added number validation for all budget amounts to prevent undefined errors
 
 ### ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â¡ DOCUMENTATION

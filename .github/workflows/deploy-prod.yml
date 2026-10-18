@@ -147,6 +147,7 @@ jobs:
         env:
           ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
         run: |
+          set -euo pipefail
           echo "🚀 Deploying BudgetBuddy infrastructure to PRODUCTION environment..."
 
           echo "Step 1: Deploying base stacks (database, auth, hosting)..."
@@ -155,7 +156,7 @@ jobs:
             budgetbuddy-${{ env.ENVIRONMENT }}-hosting \
             budgetbuddy-${{ env.ENVIRONMENT }}-auth-onboarding \
             --require-approval never \
-            --context environment=${{ env.ENVIRONMENT }} || echo "Base stacks deployment may have failed, continuing..."
+            --context environment=${{ env.ENVIRONMENT }}
 
           echo "Step 2: Deploying dependent stacks..."
           npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api-features \
@@ -163,12 +164,12 @@ jobs:
             budgetbuddy-${{ env.ENVIRONMENT }}-api-budgets \
             budgetbuddy-${{ env.ENVIRONMENT }}-notification \
             --require-approval never \
-            --context environment=${{ env.ENVIRONMENT }} || echo "Dependent stacks deployment may have failed, continuing..."
+            --context environment=${{ env.ENVIRONMENT }}
 
           echo "Step 3: Deploying main API stack..."
           npx cdk deploy budgetbuddy-${{ env.ENVIRONMENT }}-api \
             --require-approval never \
-            --context environment=${{ env.ENVIRONMENT }} || echo "API stack deployment may have failed, continuing..."
+            --context environment=${{ env.ENVIRONMENT }}
 
           echo "Step 4: Deploying all remaining stacks..."
           npx cdk deploy --all \
@@ -299,6 +300,7 @@ jobs:
 
       - name: Check CloudFormation stacks
         run: |
+          set -euo pipefail
           echo "Checking production CloudFormation stacks..."
           mapfile -t slugs < <(jq -r '.stacks[].slug' infrastructure/stack-manifest.json)
           stacks=()
@@ -308,8 +310,11 @@ jobs:
 
           for stack in "${stacks[@]}"; do
             status=$(aws cloudformation describe-stacks --stack-name "$stack" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "NOT_FOUND")
-            if [[ "$status" == "CREATE_COMPLETE" || "$status" == "UPDATE_COMPLETE" || "$status" == "UPDATE_ROLLBACK_COMPLETE" ]]; then
+            if [[ "$status" == "CREATE_COMPLETE" || "$status" == "UPDATE_COMPLETE" ]]; then
               echo "✅ Stack $stack: $status"
+            elif [[ "$status" == *ROLLBACK* ]]; then
+              echo "❌ Stack $stack rolled back: $status — the deployment did NOT ship"
+              exit 1
             else
               echo "❌ Stack $stack: $status"
               exit 1
