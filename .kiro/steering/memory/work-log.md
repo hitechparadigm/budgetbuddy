@@ -63,6 +63,24 @@ inclusion: always
 - Security-check scanning fixes from session 162 remain stable (`.playwright-mcp` logs, `cdk-out-temp`
   excluded from secret scans).
 - Both consolidation commits (`248b373`, `5d73e4f`) deployed successfully.
+- Session 170 (`758f09e`, Wave 1 FEAT-001, review finding P-12): both deploy workflows were
+  structurally unable to report a failed deployment. Each of the three staged `npx cdk deploy`
+  invocations in `deploy-dev.yml` and `deploy-prod.yml` ended in `|| echo "...continuing..."`, and
+  the `Check CloudFormation stacks` step accepted `UPDATE_ROLLBACK_COMPLETE` as success while
+  logging the stack as "functional" - so a stack that failed and rolled back to the previous code
+  produced a GREEN run claiming the commit shipped. Removed all six fallbacks, added
+  `set -euo pipefail` to four run blocks (the deploy step and the stack-check step in each file),
+  and replaced the rollback-tolerant status test with a `*ROLLBACK*` arm that exits 1. Deploy
+  steps 1-3 were deliberately kept - they are redundant with step 4's `cdk deploy --all` but they
+  encode the CommonLayer export ordering workaround documented in the comment above them.
+  **Consequence to expect:** the next failing deploy now goes RED. Dev stacks were last updated
+  between 2026-05 and 2026-10-17 and are not all known-clean, so a red run shortly after this
+  change may be a pre-existing failure becoming newly visible rather than a newly caused one -
+  read `gh run view --log-failed` before attributing it.
+- `js-yaml` is NOT installed at the repo root, so the steering/context YAML-parse gate command
+  fails there with `MODULE_NOT_FOUND`. It resolves from `infrastructure/`, `packages/mobile/` and
+  `packages/web-app/` - run the check with `cwd=infrastructure` and a `../.github/workflows/...`
+  path.
 
 ## Known Open Items
 
