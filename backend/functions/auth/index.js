@@ -101,10 +101,11 @@ function getCorsHeaders(origin) {
  */
 exports.handler = async (event, _context) => {
   console.log("=== AUTH HANDLER START ===");
-  console.log("Event received:", JSON.stringify(event, null, 2));
+  // Never log the event or the headers: the event carries event.body (a plaintext
+  // password on the register and login paths) and event.headers.Authorization (a live
+  // bearer token). Method and path are the only safe breadcrumbs.
   console.log("HTTP Method:", event.httpMethod);
   console.log("Path:", event.path);
-  console.log("Headers:", JSON.stringify(event.headers, null, 2));
 
   try {
     const httpMethod = event.httpMethod;
@@ -157,7 +158,10 @@ exports.handler = async (event, _context) => {
       try {
         if (event.body) {
           requestBody = JSON.parse(event.body);
-          console.log("Successfully parsed request body:", requestBody);
+          console.log("Registration request received:", {
+            email: requestBody.email,
+            hasPassword: !!requestBody.password,
+          });
         } else {
           console.log("No body received in request");
           return {
@@ -234,10 +238,9 @@ exports.handler = async (event, _context) => {
       console.log("Validation passed, creating user in Cognito");
 
       try {
-        // Generate unique user ID
-        const userId = `user_${Date.now()}_${Math.random()
-          .toString(36)
-          .substr(2, 9)}`;
+        // Generate unique user ID (UUID-backed; never Math.random - a guessable
+        // userId is a budget-access primitive, see getUserFromEvent)
+        const userId = generateId.user();
 
         // Create user in Cognito User Pool
         const createUserCommand = new AdminCreateUserCommand({
@@ -249,8 +252,11 @@ exports.handler = async (event, _context) => {
               Value: requestBody.email,
             },
             {
+              // The address has NOT been proven at this point. Marking it verified
+              // would let a caller register an address they do not control, which the
+              // Google link-by-email path then trusts.
               Name: "email_verified",
-              Value: "true",
+              Value: "false",
             },
             {
               Name: "given_name",
@@ -299,6 +305,10 @@ exports.handler = async (event, _context) => {
           currency: { S: requestBody.currency || 'USD' },
           subscriptionTier: { S: 'free' },
           onboardingCompleted: { BOOL: false },
+          // The email address has not been proven yet. Delivering an actual
+          // verification message is a follow-up: it needs either Cognito managed
+          // login or SES production access (SES is still in sandbox).
+          emailVerificationPending: { BOOL: true },
           createdAt: { S: currentTime },
           updatedAt: { S: currentTime },
         };
@@ -746,7 +756,6 @@ exports.handler = async (event, _context) => {
           body: JSON.stringify({
             error: "Google Sign-In Failed",
             message: "Failed to process Google authentication",
-            details: error.message,
           }),
         };
       }
@@ -850,7 +859,6 @@ exports.handler = async (event, _context) => {
           body: JSON.stringify({
             error: "Internal Server Error",
             message: "Failed to get user profile",
-            details: error.message,
           }),
         };
       }
@@ -1003,7 +1011,6 @@ exports.handler = async (event, _context) => {
           body: JSON.stringify({
             error: "Internal Server Error",
             message: "Failed to update user profile",
-            details: error.message,
           }),
         };
       }
@@ -1075,17 +1082,15 @@ exports.handler = async (event, _context) => {
           };
         }
 
-        // Validate required fields
-        console.log("ONBOARDING DEBUG - Validating request body:");
-        console.log("  - city:", requestBody.city);
-        console.log("  - country:", requestBody.country);
-        console.log("  - familySize:", requestBody.familySize);
-        console.log("  - currentMonth:", requestBody.currentMonth);
-        console.log("  - selectedCategories:", requestBody.selectedCategories);
-        console.log(
-          "  - selectedCategories length:",
-          requestBody.selectedCategories?.length,
-        );
+        // Validate required fields. Log field presence only - city, country and
+        // family size are PII and some log groups have no expiry.
+        console.log("Onboarding request received:", {
+          hasCity: !!requestBody.city,
+          hasCountry: !!requestBody.country,
+          hasFamilySize: !!requestBody.familySize,
+          hasCurrentMonth: !!requestBody.currentMonth,
+          selectedCategoriesCount: requestBody.selectedCategories?.length ?? 0,
+        });
 
         if (
           !requestBody.city ||
@@ -1094,15 +1099,13 @@ exports.handler = async (event, _context) => {
           !requestBody.currentMonth ||
           !requestBody.selectedCategories
         ) {
-          console.error("ONBOARDING VALIDATION FAILED:");
-          console.error("  - Missing city:", !requestBody.city);
-          console.error("  - Missing country:", !requestBody.country);
-          console.error("  - Missing familySize:", !requestBody.familySize);
-          console.error("  - Missing currentMonth:", !requestBody.currentMonth);
-          console.error(
-            "  - Missing selectedCategories:",
-            !requestBody.selectedCategories,
-          );
+          console.error("Onboarding validation failed - missing fields:", {
+            city: !requestBody.city,
+            country: !requestBody.country,
+            familySize: !requestBody.familySize,
+            currentMonth: !requestBody.currentMonth,
+            selectedCategories: !requestBody.selectedCategories,
+          });
 
           return {
             statusCode: 400,
@@ -1253,7 +1256,6 @@ exports.handler = async (event, _context) => {
           body: JSON.stringify({
             error: "Internal Server Error",
             message: "Failed to complete onboarding",
-            details: error.message,
           }),
         };
       }
@@ -1621,7 +1623,6 @@ exports.handler = async (event, _context) => {
         error: "Internal Server Error",
         message: "An error occurred processing your request",
         service: "auth",
-        errorDetails: error.message,
       }),
     };
   }

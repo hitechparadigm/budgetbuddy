@@ -1,4 +1,82 @@
 # Development Log
+## 2026-10-30 - Auth Subsystem: Spoofing Path Closed, Credentials Out of Logs (Session 170)
+
+Second item of the Wave 1 security-and-operations task (FEAT-002, plan items 1 and 4,
+review findings AC-01 and AC-02). Both halves touch the same subsystem, so they ship
+together.
+
+AC-01 was a real privilege-escalation path, not a hardening nit. `selfSignUpEnabled: true`
+plus `custom:userId` in the public app client's `writeAttributes` let anyone call the
+Cognito `SignUp` API directly with the public client ID and set `custom:userId` to a
+victim's user ID: Cognito permits a client holding write access to populate an immutable
+attribute once, at SignUp, and `getUserFromEvent` returns
+`claims["custom:userId"] || claims.sub`, which `BudgetAccessResolver.resolveAccess` then
+trusts for every budget read and write. Victim user IDs are discoverable -
+`/budgets/{budgetId}/members/{userId}` exposes them to any member and transactions carry
+`createdBy`. Removed the four identity/entitlement attributes from `writeAttributes`
+(leaving `country`) and set `selfSignUpEnabled: false`. `readAttributes` was deliberately
+left alone: the web app reads all four from the ID token at `AuthContext.tsx:70-76`.
+
+Turning self sign-up off breaks mobile registration, so that had to land in the same change
+set. Mobile now posts to `POST /auth/register` like the web app does. Worth noting the old
+mobile path was almost certainly already broken: it sent only `email` and `name`, while the
+pool requires `given_name` and `family_name`. `RegisterScreen` therefore gained separate
+first-name and last-name fields mirroring the web `RegisterForm`. `confirmSignUpUser` and
+`resendConfirmationCode` now reject with
+'Email confirmation is not used: accounts are created already confirmed', following the
+pattern already used for the six unsupported MFA methods in the same file.
+`ConfirmSignUpScreen` and its navigator route stay in place but unreachable - deleting UI
+was out of scope.
+
+Also extracted the six SecureStore keys into `services/storage-keys.ts` (owner instruction):
+import-free constants exporting `STORAGE_KEYS` and `ID_TOKEN_KEY`, so a Wave 2 fix for
+`services/plaid.ts:56` (which reads the web app's `'budgetbuddy_id_token'` instead of
+`'auth_id_token'`) can import the key without pulling Amplify or Google-auth side effects
+into its module graph. `services/api.ts` and `components/FamilySettings.tsx` re-declare the
+same literal with the correct value - cosmetic duplication, left for Wave 2 to avoid a
+merge conflict with the agent currently in those files.
+
+AC-02 was wider than the review recorded. The finding named the registration-body log, but
+`auth/index.js:104` logged the entire API Gateway event as JSON - `event.body` with the
+plaintext password AND `event.headers.Authorization` with a live bearer token - and `:107`
+logged all headers separately. With 7-day retention, anyone holding `logs:GetLogEvents` on
+`/aws/lambda/budgetbuddy-auth` could read the password of every user who registered that
+week. Deleted both, redacted the body log to `{ email, hasPassword }`, collapsed the
+onboarding PII logs to field presence, dropped raw `error.message` from five client
+responses, and switched user-ID generation to `generateId.user()`.
+
+The `log-sanitizer.js` branch of item 4b was deliberately skipped: a grep shows the helper
+is referenced only by the shared layer's own `index.js` barrel and its test, never at a
+Lambda call site, and the plan makes extending `SENSITIVE_FIELDS` conditional on it
+actually being used. Inline redaction, which is what the file already did on the login path,
+has no layer-path dependency. A sweep of `utils.js` and `shared/*.js` found no
+event/body/token/password logging to fix.
+
+`email_verified` is the one genuinely undecided piece and it is deliberately left that way.
+It is now `"false"` with `emailVerificationPending: true` on the profile record, but the
+pool uses `signInAliases: { email: true }` and Cognito only honours an email alias for
+sign-in when `email_verified` is true. If sign-in breaks, `false` locks out every new user -
+a worse regression than the finding. The wave's final step must register a fresh email
+against DEV and then sign in with it: keep `false` if that succeeds, revert to `"true"` in
+the same change set if it fails, and report AC-02's verification half as blocked on SES
+production access. There is no third option here that can be decided from source.
+
+Verified: `infrastructure` build + typecheck exit 0, with only `auth-stack.js` kept from the
+regenerated compiled output; `type-check:mobile` 0 errors; mobile jest 256 passed / 2
+skipped / 1 failed, where the failure
+(`TwoFactorSetup > Close Behavior > does not show close button on backup step`) reproduces
+identically on pristine HEAD run standalone, so the work-log's "257 passed, flaky only in a
+full run" baseline is stale; mobile eslint 149 errors against a baseline freshly re-measured
+at 150 on pristine HEAD (`storage-keys.ts` and `RegisterScreen.tsx` contribute zero
+findings); root `lint:check` exit 0; `security:check:bash` exit 0 once the gitignored
+`packages/web-app/dist` build output is out of the way, which is how CI sees it;
+`backend/functions/auth` jest failure set byte-identical to pristine HEAD. Two environment
+notes for later steps: root `node_modules` was absent and had to be restored with `npm ci`
+before the lint and security gates could run at all, and `cross-env` (root devDependency,
+pinned 10.1.0) was unresolvable, so `lint:check:mobile` had to be run as
+`ESLINT_USE_FLAT_CONFIG=false npx eslint src --ext .ts,.tsx` from `packages/mobile`.
+Not pushed - the wave pushes once, at the end.
+
 ## 2026-10-17 - Deploys Now Fail When They Fail (Session 170)
 First item of the Wave 1 security-and-operations task (FEAT-001, plan item 5, review finding
 P-12). Both deploy workflows were structurally incapable of reporting a failed deployment:

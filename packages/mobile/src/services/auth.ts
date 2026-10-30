@@ -5,20 +5,17 @@
  * using Expo SecureStore for JWT tokens and user session management.
  */
 
-import { signIn, signUp, confirmSignUp, resendSignUpCode, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
+import { signIn, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { googleAuthService, GoogleAuthResult, GoogleUser } from './googleAuth';
+import { API_CONFIG } from './api';
+import { STORAGE_KEYS } from './storage-keys';
 
-// Secure storage keys
-const STORAGE_KEYS = {
-  ACCESS_TOKEN: 'auth_access_token',
-  REFRESH_TOKEN: 'auth_refresh_token',
-  ID_TOKEN: 'auth_id_token',
-  USER_DATA: 'auth_user_data',
-  GOOGLE_ACCESS_TOKEN: 'auth_google_access_token',
-  GOOGLE_ID_TOKEN: 'auth_google_id_token',
-} as const;
+// Secure storage keys live in their own import-free module so that callers which only
+// need a key (e.g. services/plaid.ts) do not pull in Amplify or Google-auth side effects.
+// Re-exported here so existing deep imports keep working.
+export { STORAGE_KEYS } from './storage-keys';
 
 export interface User {
   id: string;
@@ -45,6 +42,9 @@ export interface LoginCredentials {
 export interface RegisterCredentials {
   email: string;
   password: string;
+  firstName: string;
+  lastName: string;
+  /** @deprecated kept for back-compat with callers that still pass a single display name */
   name?: string;
 }
 
@@ -246,32 +246,51 @@ class AuthService {
   }
 
   /**
-   * Register new user
+   * Register new user through the backend.
+   *
+   * Cognito self sign-up is disabled: the pool only accepts server-side AdminCreateUser,
+   * which is what prevents a caller from choosing their own custom:userId. Registration
+   * therefore goes to POST /auth/register, the same route the web app uses. This request
+   * is unauthenticated on purpose and must not go through the shared `apiRequest` helper,
+   * which attaches an auth token and an offline cache.
+   *
+   * The backend creates a CONFIRMED user with a permanent password, so there is never a
+   * confirmation step and `needsVerification` is always false.
    */
   async signUpUser(credentials: RegisterCredentials): Promise<{ user: User; needsVerification: boolean }> {
     try {
-      const { isSignUpComplete, nextStep } = await signUp({
-        username: credentials.email,
-        password: credentials.password,
-        options: {
-          userAttributes: {
-            email: credentials.email,
-            name: credentials.name || '',
-          },
-        },
+      const response = await fetch(`${API_CONFIG.baseURL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password,
+          firstName: credentials.firstName,
+          lastName: credentials.lastName,
+        }),
       });
 
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw {
+          name: response.status === 409 ? 'UsernameExistsException' : 'RegistrationError',
+          message: data.message || 'Registration failed. Please try again',
+        };
+      }
+
       const user: User = {
-        id: credentials.email,
-        email: credentials.email,
-        name: credentials.name,
+        id: data.userId || credentials.email,
+        email: data.email || credentials.email,
+        name: [credentials.firstName, credentials.lastName].filter(Boolean).join(' '),
         emailVerified: false,
         createdAt: new Date().toISOString(),
+        authProvider: 'cognito',
       };
 
       return {
         user,
-        needsVerification: !isSignUpComplete,
+        needsVerification: false,
       };
     } catch (error: any) {
       throw this.handleAuthError(error);
@@ -280,29 +299,20 @@ class AuthService {
 
   /**
    * Confirm user registration with verification code
+   *
+   * Not applicable: accounts are created already confirmed by POST /auth/register.
    */
-  async confirmSignUpUser(email: string, code: string): Promise<void> {
-    try {
-      await confirmSignUp({
-        username: email,
-        confirmationCode: code,
-      });
-    } catch (error: any) {
-      throw this.handleAuthError(error);
-    }
+  async confirmSignUpUser(_email: string, _code: string): Promise<void> {
+    throw new Error('Email confirmation is not used: accounts are created already confirmed');
   }
 
   /**
    * Resend verification code
+   *
+   * Not applicable: accounts are created already confirmed by POST /auth/register.
    */
-  async resendConfirmationCode(email: string): Promise<void> {
-    try {
-      await resendSignUpCode({
-        username: email,
-      });
-    } catch (error: any) {
-      throw this.handleAuthError(error);
-    }
+  async resendConfirmationCode(_email: string): Promise<void> {
+    throw new Error('Email confirmation is not used: accounts are created already confirmed');
   }
 
   /**

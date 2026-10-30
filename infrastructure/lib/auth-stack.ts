@@ -164,8 +164,10 @@ export class AuthStack extends cdk.Stack {
       // Email configuration for verification and notifications
       email: cognito.UserPoolEmail.withCognito('noreply@budgetbuddy.com'),
 
-      // Self-service account management
-      selfSignUpEnabled: true,
+      // Self-service account management: disabled. Accounts are created only by the
+      // server through AdminCreateUser (backend/functions/auth POST /auth/register), which
+      // is what prevents a caller from choosing their own custom:userId at SignUp time.
+      selfSignUpEnabled: false,
       userVerification: {
         emailSubject: 'Welcome to BudgetBuddy - Verify your email',
         emailBody: 'Welcome to BudgetBuddy! Please click the link below to verify your email address: {##Verify Email##}',
@@ -253,9 +255,14 @@ export class AuthStack extends cdk.Stack {
           'country'
         ),
 
-      // Write attributes: familyId and familyRole are intentionally excluded.
-      // Budget membership and role are resolved from DynamoDB via BudgetAccessResolver,
-      // not stored in Cognito. Only userId is written during registration.
+      // Write attributes: identity and entitlement attributes (userId, accountType,
+      // subscriptionTier, onboardingCompleted) are deliberately NOT client-writable. They are
+      // written exclusively by the server through AdminCreateUser /
+      // AdminUpdateUserAttributes, which do not consult client write permission. Granting
+      // them here would let a caller populate custom:userId with a victim's ID at SignUp and
+      // inherit that victim's budgets, because getUserFromEvent trusts the claim.
+      // familyId and familyRole stay excluded for the same reason they always were: budget
+      // membership and role are resolved from DynamoDB via BudgetAccessResolver.
       writeAttributes: new cognito.ClientAttributes()
         .withStandardAttributes({
           email: true,
@@ -263,13 +270,7 @@ export class AuthStack extends cdk.Stack {
           familyName: true,
           address: true,
         })
-        .withCustomAttributes(
-          'userId',
-          'accountType',
-          'subscriptionTier',
-          'onboardingCompleted',
-          'country'
-        ),
+        .withCustomAttributes('country'),
     });
 
     // Output User Pool ID for client configuration

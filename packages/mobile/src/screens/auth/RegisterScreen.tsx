@@ -28,7 +28,8 @@ type RegisterScreenProps = AuthScreenProps<'Register'>;
 export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const { signUp, isLoading } = useAuth();
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -36,7 +37,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<{
-    name?: string;
+    firstName?: string;
+    lastName?: string;
     email?: string;
     password?: string;
     confirmPassword?: string;
@@ -59,11 +61,18 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
   const validateForm = (): boolean => {
     const newErrors: typeof errors = {};
 
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+    // First name validation
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = 'First name is required';
+    } else if (formData.firstName.trim().length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters';
+    }
+
+    // Last name validation
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Last name is required';
+    } else if (formData.lastName.trim().length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters';
     }
 
     // Email validation
@@ -119,7 +128,8 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
 
     try {
       const result = await signUp({
-        name: formData.name.trim(),
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
         email: formData.email.trim(),
         password: formData.password,
       });
@@ -170,20 +180,38 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) =>
           </View>
 
           <View style={styles.form}>
-            {/* Name Input */}
+            {/* First Name Input */}
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>Full Name</Text>
+              <Text style={styles.label}>First Name</Text>
               <TextInput
-                style={[styles.input, errors.name ? styles.inputError : null]}
-                value={formData.name}
-                onChangeText={(value) => updateField('name', value)}
-                placeholder="Enter your full name"
+                style={[styles.input, errors.firstName ? styles.inputError : null]}
+                value={formData.firstName}
+                onChangeText={(value) => updateField('firstName', value)}
+                placeholder="Enter your first name"
                 placeholderTextColor="#999"
                 autoCapitalize="words"
                 autoCorrect={false}
+                textContentType="givenName"
                 editable={!isLoading}
               />
-              {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+              {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
+            </View>
+
+            {/* Last Name Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Last Name</Text>
+              <TextInput
+                style={[styles.input, errors.lastName ? styles.inputError : null]}
+                value={formData.lastName}
+                onChangeText={(value) => updateField('lastName', value)}
+                placeholder="Enter your last name"
+                placeholderTextColor="#999"
+                autoCapitalize="words"
+                autoCorrect={false}
+                textContentType="familyName"
+                editable={!isLoading}
+              />
+              {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
             </View>
 
             {/* Email Input */}

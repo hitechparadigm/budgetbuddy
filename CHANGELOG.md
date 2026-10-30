@@ -1,4 +1,52 @@
 # Changelog
+## [1.13.5] - 2026-10-30
+### fix: close identity-spoofing path and stop logging credentials (wave1-security-ops, Session 170)
+
+Security (Cognito, review finding AC-01):
+- `infrastructure/lib/auth-stack.ts`: the public app client's `writeAttributes` no longer
+  grants `custom:userId`, `custom:accountType`, `custom:subscriptionTier` or
+  `custom:onboardingCompleted` - only `country` plus the standard attributes. Cognito lets a
+  client with write access populate an immutable attribute once, at SignUp, and
+  `getUserFromEvent` returns `claims["custom:userId"] || claims.sub`, so a self-registered
+  user could have set `custom:userId` to a victim's ID and inherited that victim's budgets.
+  `readAttributes` is unchanged - the web app reads all four from the ID token.
+- `selfSignUpEnabled: false`. Accounts are now created only by the server through
+  `AdminCreateUser`, which does not consult client write permission.
+- Mobile registration moved off Cognito self sign-up onto `POST /auth/register`, the route
+  the web app already uses. `RegisterCredentials` gained `firstName`/`lastName` (the pool
+  requires `given_name` + `family_name`, which the old mobile call never sent),
+  `RegisterScreen` now collects both, and `confirmSignUpUser`/`resendConfirmationCode`
+  reject with a clear message instead of calling APIs that no longer apply.
+- New `packages/mobile/src/services/storage-keys.ts` holds the six SecureStore keys as
+  import-free constants, exporting `STORAGE_KEYS` and `ID_TOKEN_KEY`. `services/auth.ts`
+  imports and re-exports it so deep imports keep working.
+
+Security (auth Lambda logging, review finding AC-02):
+- `backend/functions/auth/index.js` no longer logs the whole API Gateway event or the
+  request headers. The event carried `event.body` (a plaintext password on register and
+  login) and `event.headers.Authorization` (a live bearer token); with 7-day log retention
+  anyone holding `logs:GetLogEvents` could read both. The parsed registration body log is
+  now the redacted `{ email, hasPassword }` shape this file already used on the login path.
+- Onboarding logs record field presence only, not the city/country/family-size values.
+- Five handlers no longer return raw `error.message` to the client; the detail stays in
+  `console.error`.
+- Registration user IDs come from `generateId.user()` (UUID-backed) instead of
+  `Date.now()` + `Math.random()`.
+- `email_verified` at `AdminCreateUser` is now `"false"` and the profile record carries
+  `emailVerificationPending: true`. **Provisional**: the pool uses email-alias sign-in, which
+  Cognito only honours when `email_verified` is true, so a live register-then-sign-in test
+  against DEV decides whether this stays `false` or reverts to `"true"` in the same change
+  set. Not yet run - deployment happens once, at the end of the wave.
+
+Verified: `infrastructure` build + typecheck exit 0; `type-check:mobile` 0 errors;
+mobile jest 256 passed / 1 failed / 2 skipped where the single failure
+(`TwoFactorSetup > Close Behavior > does not show close button on backup step`) reproduces
+identically on pristine HEAD standalone; mobile eslint 149 errors against a freshly measured
+150-error baseline; root `lint:check` exit 0; `security:check:bash` exit 0 (CI parity - the
+only local failure comes from gitignored `packages/web-app/dist` build output);
+`backend/functions/auth` jest failure set byte-identical to pristine HEAD (6 pre-existing
+failures: a TDZ bug in `auth.test.js`'s `jest.mock` factory and six Google-OAuth cases).
+
 ## [1.13.4] - 2026-10-17
 ### ci: fail deploys on stack failure and rollback (wave1-security-ops, Session 170)
 - Removed the six `|| echo "...continuing..."` fallbacks from the `npx cdk deploy`

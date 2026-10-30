@@ -17,6 +17,23 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
+### Recent Achievements (2026-10-30)
+
+- **Cognito identity-spoofing path closed** - the public app client no longer has write
+  access to `custom:userId`, `custom:accountType`, `custom:subscriptionTier` or
+  `custom:onboardingCompleted`, and self sign-up is disabled. A client holding write
+  access can populate an immutable attribute once at SignUp, and the backend trusts
+  `claims["custom:userId"]` for every budget read and write, so a self-registered user
+  could have inherited another user's budgets. Mobile registration moved to
+  `POST /auth/register` in the same change set.
+- **Plaintext passwords and bearer tokens out of the auth Lambda's logs** - the handler
+  no longer logs the whole API Gateway event (which carried `event.body` and
+  `event.headers.Authorization`) or the request headers. Registration user IDs are now
+  UUID-backed instead of `Date.now()` + `Math.random()`.
+- **Pending a live test**: new accounts are created with `email_verified: "false"`. The
+  pool uses email-alias sign-in, which Cognito honours only when that flag is true, so a
+  register-then-sign-in check against DEV decides whether it stays `false`.
+
 ### Recent Achievements (2026-10-12)
 
 - **work-log.md stale duplicate fixed** - the Infrastructure section still listed

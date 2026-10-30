@@ -1,8 +1,29 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-10-17
+**Last Updated**: 2026-10-30
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
+
+## LATEST - Session 170: Auth Subsystem Security Change Set (2026-10-30)
+
+Second item of the Wave 1 security-and-operations task (review findings AC-01, AC-02).
+Closed a privilege-escalation path in Cognito: `selfSignUpEnabled: true` plus
+`custom:userId` in the public app client's `writeAttributes` let anyone call the Cognito
+`SignUp` API with the public client ID and set `custom:userId` to another user's ID, which
+`BudgetAccessResolver` then trusts for every budget read and write. `writeAttributes` now
+grants only `country`; `readAttributes` is unchanged because the web app reads all four
+custom attributes from the ID token. Mobile registration moved to `POST /auth/register`
+in the same change set, since self sign-up off otherwise breaks it.
+
+Also stopped the auth Lambda logging the entire API Gateway event (plaintext password in
+`event.body`, bearer token in `event.headers.Authorization`) and all request headers, and
+switched registration user IDs from `Date.now()` + `Math.random()` to a UUID generator.
+
+Open: new accounts carry `email_verified: "false"`, which is provisional. The pool uses
+email-alias sign-in and Cognito honours an alias only when that flag is true, so a live
+register-then-sign-in test against DEV decides whether it stays `false` or reverts.
+Delivering a real verification message is blocked either way - self sign-up is now off and
+SES is still in sandbox.
 
 ## LATEST - Session 168: modular-architecture Wave 0+1 Tasks (2026-10-13)
 

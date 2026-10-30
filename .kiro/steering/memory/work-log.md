@@ -107,6 +107,46 @@ inclusion: always
 
 ### Security
 - [ ] Security posture ~85% (up from ~80% - critical CVE fixed, security-check.sh now exits 0 clean, see below)
+- [x] Identity-spoofing path through Cognito closed (Session 170, FEAT-002, review finding
+      AC-01). `selfSignUpEnabled: true` plus `custom:userId` in the public app client's
+      `writeAttributes` let anyone call the Cognito `SignUp` API with the public client ID and
+      set `custom:userId` to a victim's user ID - Cognito permits a client with write access to
+      populate an immutable attribute once at SignUp, and `getUserFromEvent` returns
+      `claims["custom:userId"] || claims.sub`, which `BudgetAccessResolver` then trusts for
+      every budget read and write. `writeAttributes` now grants only `country` plus the
+      standard attributes; `selfSignUpEnabled: false`. `readAttributes` deliberately unchanged
+      (web reads all four from the ID token at `AuthContext.tsx:70-76`). Mobile registration
+      re-pointed at `POST /auth/register` in the same change set, since self sign-up off
+      otherwise breaks it - and the old mobile call was likely already failing, as it sent only
+      `email`/`name` while the pool requires `given_name` + `family_name`. **The proof is a
+      post-deploy negative test, not yet run** - see the commands in FEAT-002's `findings`.
+- [x] Plaintext passwords and bearer tokens out of the auth Lambda's logs (Session 170,
+      FEAT-002, review finding AC-02). `auth/index.js` logged the entire API Gateway event as
+      JSON (so `event.body`'s plaintext password AND `event.headers.Authorization`) plus all
+      headers separately; with 7-day retention, `logs:GetLogEvents` on
+      `/aws/lambda/budgetbuddy-auth` read back every password registered that week. Those two
+      lines are gone, the registration-body log is now `{ email, hasPassword }`, onboarding logs
+      record field presence only, five handlers no longer echo raw `error.message` to the
+      client, and registration user IDs come from `generateId.user()` rather than
+      `Date.now()` + `Math.random()`.
+- [ ] `email_verified` on registration is **provisionally** `"false"` with
+      `emailVerificationPending: true` on the profile record (Session 170, FEAT-002, plan item
+      4d). UNDECIDED BY DESIGN: the pool uses `signInAliases: { email: true }` and Cognito only
+      honours an email alias for sign-in when `email_verified` is true, so this may lock out
+      every newly registered user. The wave's final step must register a fresh email against
+      DEV and then sign in: keep `false` if sign-in succeeds, revert to `"true"` in the same
+      change set if it fails. Delivering a real verification message is blocked either way -
+      self sign-up is now off (no Cognito confirmation-code flow) and SES is still in sandbox.
+- [ ] Wave 2 follow-up: consolidate the `'auth_id_token'` literal. `services/storage-keys.ts`
+      now owns it (`STORAGE_KEYS` + `ID_TOKEN_KEY`, import-free); `services/plaid.ts:56` reads
+      the wrong key (`'budgetbuddy_id_token'`, the web app's) and is the actual bug, while
+      `services/api.ts:98` and `components/FamilySettings.tsx:79,82` re-declare the correct
+      value and are cosmetic duplication. All three were left untouched in Session 170 to avoid
+      a merge conflict with the concurrently running Wave 2 agent.
+- [ ] Owner decision required, NOT executed (Session 170, FEAT-002): the review recommends
+      purging the affected `/aws/lambda/budgetbuddy-auth` log streams and considering a forced
+      password reset for everyone who registered inside the 7-day retention window. Both are
+      destructive and user-visible, so they were surfaced rather than run.
 - [x] Resolved the npm audit vs npm ci conflict from earlier in Session 168 (commits
       bc42d55/4efef12 had each failed CI a different way). Root cause: the lockfile
       itself was corrupted (`@unrs/resolver-binding-wasm32-wasi` depended on
