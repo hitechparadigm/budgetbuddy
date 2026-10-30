@@ -342,7 +342,13 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 
 ### Mobile (New)
 
-10. **React Native + Expo mobile app** — substantially built, not "not yet started" (corrected stale claim, Session 168). Real implementations exist for auth, budget, transactions, offline SQLite sync, notifications, receipts, exports, 2FA-stub, currency, backup/restore, biometric unlock, and planned transactions, with a 25-file property-based test suite (257/259 passing). `npm run typecheck` reports 0 errors. 5-tab navigation (Budget/Transactions/Goals/Summary/More) covers all screens. Remaining gap: App Store/Play Store submission prep (not started) and Detox E2E (not started). See `.kiro/specs/mobile-app/tasks.md` for the full audited task list.
+10. **React Native + Expo mobile app** — substantially built, not "not yet started" (corrected stale claim, Session 168). Real implementations exist for auth, budget, transactions, offline SQLite sync, notifications, receipts, exports, 2FA-stub, currency, backup/restore, biometric unlock, and planned transactions, with a 25-file property-based test suite (256 passing / 2 skipped / 1 failing as of Session 170 — the failure, `TwoFactorSetup > Close Behavior > does not show close button on backup step`, reproduces standalone on a pristine checkout, so the earlier "257/259, flaky only in a full run" reading was wrong). `npm run typecheck` reports 0 errors. 5-tab navigation (Budget/Transactions/Goals/Summary/More) covers all screens. Remaining gap: App Store/Play Store submission prep (not started) and Detox E2E (not started). See `.kiro/specs/mobile-app/tasks.md` for the full audited task list.
+
+### Security (New)
+
+11. **New accounts carry `email_verified: "false"` with no way to deliver a verification** — Session 170 stopped `POST /auth/register` from asserting an unproven email address as verified, and the `USER#<id>/PROFILE` record now carries `emailVerificationPending: true`. Neither delivery path exists today: Cognito self sign-up is disabled (so its confirmation-code flow is unavailable) and SES is in sandbox (item 6), so a custom verification email can only reach the verified addresses. **This value is provisional**: the pool uses `signInAliases: { email: true }` and Cognito honours an email alias for sign-in only when `email_verified` is true, so a live register-then-sign-in test against DEV decides whether it stays `false` or reverts to `"true"`. Resolving it properly needs either SES production access or Cognito managed login.
+
+12. **Registration log exposure window not remediated** — the auth Lambda logged plaintext passwords and bearer tokens until Session 170. Retention on `/aws/lambda/budgetbuddy-auth` is 7 days, so anyone holding `logs:GetLogEvents` could read the password of every user who registered inside that window. Purging the affected streams and forcing a password reset for those users are both destructive and user-visible, so they were surfaced with exact commands for the owner to decide, not executed. A reset is complicated by item 6 — Cognito's default sender may not reach users while SES is in sandbox.
 
 ---
 
@@ -608,11 +614,14 @@ New endpoints added during web app polish, verified live:
 
 **Goal**: Native iOS and Android app with offline support, matching web feature parity on Tier 1 features.
 
-**Status**: Design complete (`docs/mobile-ux-design.md`), spec created (`.kiro/specs/mobile-app/`), implementation not yet started.
+**Status**: Design complete (`docs/mobile-ux-design.md`), spec created (`.kiro/specs/mobile-app/`). The
+per-feature statuses below are stale as of the Session 164 audit — the app is substantially built. See
+Known Gaps item 10 and `.kiro/specs/mobile-app/tasks.md` for the audited, evidence-based task list;
+only the Authentication row has been re-verified against the source (Session 170).
 
 | Feature | Frontend | Status |
 |---------|----------|--------|
-| Authentication (email + Google PKCE) | `LoginScreen`, `RegisterScreen` | 🔲 Not started |
+| Authentication (email + Google PKCE) | `LoginScreen`, `RegisterScreen` | ✅ Built — registration goes through `POST /auth/register` (Cognito self sign-up is disabled); sign-in stays on Amplify SRP. `RegisterScreen` collects first and last name, which the user pool requires. Email confirmation is not used: accounts are created already confirmed, so `ConfirmSignUpScreen` is unreachable |
 | Onboarding (budget type + AI generation) | `BudgetTypeScreen`, `AIGenerationScreen` | 🔲 Not started |
 | Budget screen (groups, categories, FAB) | `BudgetScreen` | 🔲 Not started |
 | Quick transaction entry (bottom sheet) | `AddTransactionSheet` | 🔲 Not started |
