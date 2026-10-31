@@ -17,6 +17,16 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
+### Recent Achievements (2026-10-31)
+
+- **Scheduled handlers ported to AWS SDK v3** - `budget-alerts`, `daily-reminders`,
+  `investments`, `investments-price-updater`, `restore` and `scheduled-backup` no longer
+  `require('aws-sdk')`, which the Node.js 20 runtime does not ship (`budget-alerts` and
+  `daily-reminders` had failed every invocation for at least 14 days). `bills-scheduler` now
+  uses bounded GSI1 queries instead of a scan helper that did not exist, and writes its
+  notifications where the notifications service reads them. Not yet deployed. Daily reminders
+  still send nothing until the `FAMILY#` key migration lands; restore returns 501 until then.
+
 ### Recent Achievements (2026-10-30)
 
 - **Cognito identity-spoofing path closed** - the public app client no longer has write

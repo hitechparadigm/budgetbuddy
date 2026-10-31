@@ -6,18 +6,45 @@ const mockPut = jest.fn();
 const mockUpdate = jest.fn();
 const mockDelete = jest.fn();
 
-jest.mock("aws-sdk", () => {
+// Mock the SDK v3 document client: route send() to a per-operation mock by command type
+jest.mock("@aws-sdk/lib-dynamodb", () => {
+  const command = (name) =>
+    class {
+      constructor(input) {
+        this.name = name;
+        this.input = input;
+      }
+    };
+  const routes = {
+    query: (input) => mockQuery(input),
+    put: (input) => mockPut(input),
+    update: (input) => mockUpdate(input),
+    delete: (input) => mockDelete(input),
+  };
   return {
-    DynamoDB: {
-      DocumentClient: jest.fn(() => ({
-        query: () => ({ promise: mockQuery }),
-        put: () => ({ promise: mockPut }),
-        update: () => ({ promise: mockUpdate }),
-        delete: () => ({ promise: mockDelete }),
-      })),
+    DynamoDBDocumentClient: {
+      from: () => ({ send: (cmd) => routes[cmd.name](cmd.input) }),
     },
+    QueryCommand: command("query"),
+    PutCommand: command("put"),
+    UpdateCommand: command("update"),
+    DeleteCommand: command("delete"),
   };
 });
+
+// Ships with the Node 20 Lambda runtime; not installed in this repo
+jest.mock(
+  "@aws-sdk/client-secrets-manager",
+  () => ({
+    SecretsManagerClient: class {
+      send() {
+        return Promise.reject(new Error("Secrets Manager not mocked"));
+      }
+    },
+    GetSecretValueCommand: class {},
+  }),
+  { virtual: true },
+);
 
 describe("Investments Lambda Function", () => {
   beforeEach(() => {

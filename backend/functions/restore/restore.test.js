@@ -2,37 +2,47 @@
  * Unit tests for Restore Service
  */
 
+// The common layer mounts at /opt/nodejs only inside Lambda. Use the real
+// layer (so getUserFromEvent is exercised as deployed) with dynamoHelpers
+// replaced by mocks.
+jest.mock(
+  "/opt/nodejs/utils",
+  () => {
+    const actual = jest.requireActual("../../layers/common/nodejs/utils");
+    return {
+      ...actual,
+      dynamoHelpers: { getItem: jest.fn(), putItem: jest.fn() },
+    };
+  },
+  { virtual: true },
+);
+
+const { dynamoHelpers } = require("/opt/nodejs/utils");
 const { handler } = require("./index");
 
-// Mock AWS SDK
-jest.mock("aws-sdk", () => {
-  const mockDocumentClient = {
-    get: jest.fn(),
-    put: jest.fn(),
-  };
-
-  return {
-    DynamoDB: {
-      DocumentClient: jest.fn(() => ({
-        get: (params) => ({
-          promise: () => mockDocumentClient.get(params),
-        }),
-        put: (params) => ({
-          promise: () => mockDocumentClient.put(params),
-        }),
-      })),
-    },
-    __mockDocumentClient: mockDocumentClient,
-  };
+/** Request that has passed the API Gateway Cognito authorizer */
+const authorizedRequest = (body) => ({
+  httpMethod: "POST",
+  headers: {},
+  requestContext: { authorizer: { claims: { sub: "user123" } } },
+  body,
 });
 
-const AWS = require("aws-sdk");
-const mockDocumentClient = AWS.__mockDocumentClient;
+const mockProfile = () =>
+  dynamoHelpers.getItem.mockResolvedValue({
+    userId: "user123",
+    familyId: "family123",
+  });
 
 describe("Restore Service", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "log").mockImplementation(() => {});
     process.env.TABLE_NAME = "test-table";
+  });
+
+  afterEach(() => {
+    console.log.mockRestore();
   });
 
   describe("CORS Preflight", () => {
@@ -50,6 +60,7 @@ describe("Restore Service", () => {
 
   describe("Authentication", () => {
     it("should return 401 for missing authorization header", async () => {
+      // No authorizer context at all: the request never passed Cognito
       const event = {
         httpMethod: "POST",
         headers: {},
@@ -63,11 +74,13 @@ describe("Restore Service", () => {
     });
 
     it("should return 401 for invalid token format", async () => {
+      // Authorizer context present but carrying no claims
       const event = {
         httpMethod: "POST",
         headers: {
           Authorization: "InvalidToken",
         },
+        requestContext: { authorizer: {} },
         body: JSON.stringify({}),
       };
 
@@ -79,26 +92,11 @@ describe("Restore Service", () => {
 
   describe("Backup Data Validation", () => {
     beforeEach(() => {
-      // Mock user profile lookup
-      mockDocumentClient.get.mockResolvedValue({
-        Item: {
-          userId: "user123",
-          familyId: "family123",
-        },
-      });
+      mockProfile();
     });
 
     it("should return 400 for invalid JSON", async () => {
-      const event = {
-        httpMethod: "POST",
-        headers: {
-          Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.test",
-        },
-        body: "invalid json",
-      };
-
-      const response = await handler(event);
+      const response = await handler(authorizedRequest("invalid json"));
 
       expect(response.statusCode).toBe(400);
       expect(JSON.parse(response.body).error).toBe(
@@ -107,21 +105,16 @@ describe("Restore Service", () => {
     });
 
     it("should return 400 for missing version field", async () => {
-      const event = {
-        httpMethod: "POST",
-        headers: {
-          Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.test",
-        },
-        body: JSON.stringify({
-          data: {
-            budgets: [],
-            transactions: [],
-          },
-        }),
-      };
-
-      const response = await handler(event);
+      const response = await handler(
+        authorizedRequest(
+          JSON.stringify({
+            data: {
+              budgets: [],
+              transactions: [],
+            },
+          }),
+        ),
+      );
 
       expect(response.statusCode).toBe(400);
       expect(JSON.parse(response.body).error).toBe("Invalid backup data");
@@ -131,21 +124,16 @@ describe("Restore Service", () => {
     });
 
     it("should return 400 for missing budgets array", async () => {
-      const event = {
-        httpMethod: "POST",
-        headers: {
-          Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.test",
-        },
-        body: JSON.stringify({
-          version: "1.0.0",
-          data: {
-            transactions: [],
-          },
-        }),
-      };
-
-      const response = await handler(event);
+      const response = await handler(
+        authorizedRequest(
+          JSON.stringify({
+            version: "1.0.0",
+            data: {
+              transactions: [],
+            },
+          }),
+        ),
+      );
 
       expect(response.statusCode).toBe(400);
       expect(JSON.parse(response.body).details).toContain(
@@ -154,26 +142,21 @@ describe("Restore Service", () => {
     });
 
     it("should return 400 for budget missing month field", async () => {
-      const event = {
-        httpMethod: "POST",
-        headers: {
-          Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.test",
-        },
-        body: JSON.stringify({
-          version: "1.0.0",
-          data: {
-            budgets: [
-              {
-                categories: [],
-              },
-            ],
-            transactions: [],
-          },
-        }),
-      };
-
-      const response = await handler(event);
+      const response = await handler(
+        authorizedRequest(
+          JSON.stringify({
+            version: "1.0.0",
+            data: {
+              budgets: [
+                {
+                  categories: [],
+                },
+              ],
+              transactions: [],
+            },
+          }),
+        ),
+      );
 
       expect(response.statusCode).toBe(400);
       expect(JSON.parse(response.body).details).toContain(
@@ -182,26 +165,21 @@ describe("Restore Service", () => {
     });
 
     it("should return 400 for transaction missing required fields", async () => {
-      const event = {
-        httpMethod: "POST",
-        headers: {
-          Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.test",
-        },
-        body: JSON.stringify({
-          version: "1.0.0",
-          data: {
-            budgets: [],
-            transactions: [
-              {
-                // Missing date, category, amount, type
-              },
-            ],
-          },
-        }),
-      };
-
-      const response = await handler(event);
+      const response = await handler(
+        authorizedRequest(
+          JSON.stringify({
+            version: "1.0.0",
+            data: {
+              budgets: [],
+              transactions: [
+                {
+                  // Missing date, category, amount, type
+                },
+              ],
+            },
+          }),
+        ),
+      );
 
       expect(response.statusCode).toBe(400);
       const details = JSON.parse(response.body).details;
@@ -212,21 +190,16 @@ describe("Restore Service", () => {
     });
   });
 
+  // Restore writes the retired FAMILY# key layout, so the handler refuses valid
+  // backups with 501 until the budget-key migration lands. These cases cover
+  // that guard: valid input is accepted up to the write and nothing is written.
   describe("Data Restoration", () => {
     beforeEach(() => {
-      // Mock user profile lookup
-      mockDocumentClient.get.mockResolvedValue({
-        Item: {
-          userId: "user123",
-          familyId: "family123",
-        },
-      });
-
-      // Mock successful put operations
-      mockDocumentClient.put.mockResolvedValue({});
+      mockProfile();
+      dynamoHelpers.putItem.mockResolvedValue(undefined);
     });
 
-    it("should successfully restore valid backup data", async () => {
+    it("should refuse a valid backup with 501 and write nothing", async () => {
       const validBackup = {
         version: "1.0.0",
         data: {
@@ -256,28 +229,16 @@ describe("Restore Service", () => {
         },
       };
 
-      const event = {
-        httpMethod: "POST",
-        headers: {
-          Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.test",
-        },
-        body: JSON.stringify(validBackup),
-      };
+      const response = await handler(authorizedRequest(JSON.stringify(validBackup)));
 
-      const response = await handler(event);
-
-      expect(response.statusCode).toBe(200);
-      const body = JSON.parse(response.body);
-      expect(body.success).toBe(true);
-      expect(body.restored.budgets).toBe(1);
-      expect(body.restored.transactions).toBe(1);
-
-      // Verify DynamoDB put was called for budgets and transactions
-      expect(mockDocumentClient.put).toHaveBeenCalledTimes(2);
+      expect(response.statusCode).toBe(501);
+      expect(JSON.parse(response.body).error).toBe(
+        "Restore is disabled pending the budget-key migration",
+      );
+      expect(dynamoHelpers.putItem).not.toHaveBeenCalled();
     });
 
-    it("should restore multiple budgets and transactions", async () => {
+    it("should refuse multiple budgets and transactions without writing any", async () => {
       const validBackup = {
         version: "1.0.0",
         data: {
@@ -319,40 +280,20 @@ describe("Restore Service", () => {
         },
       };
 
-      const event = {
-        httpMethod: "POST",
-        headers: {
-          Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.test",
-        },
-        body: JSON.stringify(validBackup),
-      };
+      const response = await handler(authorizedRequest(JSON.stringify(validBackup)));
 
-      const response = await handler(event);
-
-      expect(response.statusCode).toBe(200);
-      const body = JSON.parse(response.body);
-      expect(body.restored.budgets).toBe(2);
-      expect(body.restored.transactions).toBe(3);
-
-      // Verify DynamoDB put was called for all items
-      expect(mockDocumentClient.put).toHaveBeenCalledTimes(5);
+      expect(response.statusCode).toBe(501);
+      expect(dynamoHelpers.putItem).not.toHaveBeenCalled();
     });
   });
 
   describe("Error Handling", () => {
     beforeEach(() => {
-      // Mock user profile lookup
-      mockDocumentClient.get.mockResolvedValue({
-        Item: {
-          userId: "user123",
-          familyId: "family123",
-        },
-      });
+      mockProfile();
     });
 
-    it("should return 500 if DynamoDB put fails", async () => {
-      mockDocumentClient.put.mockRejectedValue(new Error("DynamoDB error"));
+    it("should not reach DynamoDB writes even when put would fail", async () => {
+      dynamoHelpers.putItem.mockRejectedValue(new Error("DynamoDB error"));
 
       const validBackup = {
         version: "1.0.0",
@@ -367,23 +308,14 @@ describe("Restore Service", () => {
         },
       };
 
-      const event = {
-        httpMethod: "POST",
-        headers: {
-          Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.test",
-        },
-        body: JSON.stringify(validBackup),
-      };
+      const response = await handler(authorizedRequest(JSON.stringify(validBackup)));
 
-      const response = await handler(event);
-
-      expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body).error).toBe("Failed to restore data");
+      expect(response.statusCode).toBe(501);
+      expect(dynamoHelpers.putItem).not.toHaveBeenCalled();
     });
 
     it("should return 500 if user profile not found", async () => {
-      mockDocumentClient.get.mockResolvedValue({});
+      dynamoHelpers.getItem.mockResolvedValue(null);
 
       const validBackup = {
         version: "1.0.0",
@@ -393,16 +325,7 @@ describe("Restore Service", () => {
         },
       };
 
-      const event = {
-        httpMethod: "POST",
-        headers: {
-          Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMTIzIn0.test",
-        },
-        body: JSON.stringify(validBackup),
-      };
-
-      const response = await handler(event);
+      const response = await handler(authorizedRequest(JSON.stringify(validBackup)));
 
       expect(response.statusCode).toBe(500);
       expect(JSON.parse(response.body).message).toContain(

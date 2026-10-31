@@ -1,6 +1,25 @@
-const AWS = require("aws-sdk");
-const dynamodb = new AWS.DynamoDB.DocumentClient();
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const {
+  DynamoDBDocumentClient,
+  QueryCommand,
+  PutCommand,
+  UpdateCommand,
+  DeleteCommand,
+} = require("@aws-sdk/lib-dynamodb");
+const {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} = require("@aws-sdk/client-secrets-manager");
 const { v4: uuidv4 } = require("uuid");
+
+// Reused across warm invocations. removeUndefinedValues matches the SDK v2
+// DocumentClient, which silently dropped undefined attributes.
+const dynamodb = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
+  marshallOptions: { removeUndefinedValues: true },
+});
+const secretsManager = new SecretsManagerClient({
+  region: process.env.AWS_REGION || "us-east-1",
+});
 
 const TABLE_NAME = process.env.TABLE_NAME || "BudgetBuddyTable";
 
@@ -47,7 +66,7 @@ async function getPortfolio(userId) {
     },
   };
 
-  const result = await dynamodb.query(params).promise();
+  const result = await dynamodb.send(new QueryCommand(params));
   const holdings = result.Items || [];
 
   // Calculate portfolio summary
@@ -112,7 +131,7 @@ async function getHoldings(userId) {
     },
   };
 
-  const result = await dynamodb.query(params).promise();
+  const result = await dynamodb.send(new QueryCommand(params));
   return result.Items || [];
 }
 
@@ -136,12 +155,12 @@ async function addHolding(userId, holdingData) {
     createdAt: now,
   };
 
-  await dynamodb
-    .put({
+  await dynamodb.send(
+    new PutCommand({
       TableName: TABLE_NAME,
       Item: holding,
-    })
-    .promise();
+    }),
+  );
 
   return holding;
 }
@@ -197,21 +216,21 @@ async function updateHolding(userId, holdingId, updates) {
     ReturnValues: "ALL_NEW",
   };
 
-  const result = await dynamodb.update(params).promise();
+  const result = await dynamodb.send(new UpdateCommand(params));
   return result.Attributes;
 }
 
 // Delete holding
 async function deleteHolding(userId, holdingId) {
-  await dynamodb
-    .delete({
+  await dynamodb.send(
+    new DeleteCommand({
       TableName: TABLE_NAME,
       Key: {
         PK: `USER#${userId}`,
         SK: `HOLDING#${holdingId}`,
       },
-    })
-    .promise();
+    }),
+  );
 
   return { success: true };
 }
@@ -336,7 +355,7 @@ async function getPerformanceHistory(userId, period) {
     ScanIndexForward: false, // Most recent first
   };
 
-  const result = await dynamodb.query(params).promise();
+  const result = await dynamodb.send(new QueryCommand(params));
   const snapshots = result.Items || [];
 
   // Filter by period
@@ -418,12 +437,12 @@ async function savePortfolioSnapshot(userId) {
     createdAt: now,
   };
 
-  await dynamodb
-    .put({
+  await dynamodb.send(
+    new PutCommand({
       TableName: TABLE_NAME,
       Item: snapshot,
-    })
-    .promise();
+    }),
+  );
 
   return snapshot;
 }
@@ -435,9 +454,10 @@ let _avApiKey = null;
 async function getAlphaVantageKey() {
   if (_avApiKey) return _avApiKey;
   const secretName = process.env.ALPHAVANTAGE_SECRET_NAME || 'budgetbuddy/alphavantage/api-key';
-  const sm = new AWS.SecretsManager({ region: process.env.AWS_REGION || 'us-east-1' });
   try {
-    const data = await sm.getSecretValue({ SecretId: secretName }).promise();
+    const data = await secretsManager.send(
+      new GetSecretValueCommand({ SecretId: secretName }),
+    );
     _avApiKey = data.SecretString;
     return _avApiKey;
   } catch (err) {

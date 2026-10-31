@@ -4,7 +4,21 @@
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 
-## LATEST - Session 170: Auth Subsystem Security Change Set (2026-10-30)
+## LATEST - Session 170: Scheduled Handlers Ported to AWS SDK v3 (2026-10-31)
+
+Third item of the Wave 1 security-and-operations task (review findings P-01, AC-11). Six
+handlers that `require('aws-sdk')` crashed at import on Node.js 20; they now use SDK v3 or the
+common layer's `dynamoHelpers`, which gained paginated `scan` and `queryByGSI`.
+`bills-scheduler` queries GSI1 for three months of bills and writes notifications at
+`USER#<userId>`. `restore` returns 501 until the `FAMILY#` key migration lands. Committed
+locally, not yet deployed; live verification (invoke + log tail for `budget-alerts`,
+`daily-reminders`, `bill-scheduler`) runs after the single Wave 1 deploy.
+
+Open after this change: `daily-reminders` will report 0 reminders (its reads are still
+`FAMILY#`-keyed), and `budget-alerts`/`daily-reminders` have read-only IAM, so alert
+deduplication and nudge writes fail until their grants are widened.
+
+## Session 170: Auth Subsystem Security Change Set (2026-10-30)
 
 Second item of the Wave 1 security-and-operations task (review findings AC-01, AC-02).
 Closed a privilege-escalation path in Cognito: `selfSignUpEnabled: true` plus

@@ -7,12 +7,14 @@
  * **Validates: Requirement 36.5** - Bill reminder notifications
  */
 
-const AWS = require("aws-sdk");
+const { LambdaClient, InvokeCommand } = require("@aws-sdk/client-lambda");
+const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
+const { dynamoHelpers } = require("/opt/nodejs/utils");
 
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const lambda = new AWS.Lambda();
+// Reused across warm invocations
+const lambdaClient = new LambdaClient({});
+const ses = new SESClient({ region: process.env.AWS_REGION || "us-east-1" });
 
-const TABLE_NAME = process.env.TABLE_NAME || "budgetbuddy-main";
 const NOTIFICATION_FUNCTION =
   process.env.NOTIFICATION_FUNCTION || "budgetbuddy-notifications";
 
@@ -23,26 +25,14 @@ const BILL_REMINDER_DAYS = [7, 3, 0];
  * Get all active users
  */
 async function getAllUsers() {
-  const users = [];
-  let lastEvaluatedKey = undefined;
-
-  do {
-    const params = {
-      TableName: TABLE_NAME,
-      FilterExpression: "begins_with(PK, :pk) AND SK = :sk",
-      ExpressionAttributeValues: {
-        ":pk": "USER#",
-        ":sk": "PROFILE",
-      },
-      ExclusiveStartKey: lastEvaluatedKey,
-    };
-
-    const result = await dynamodb.scan(params).promise();
-    users.push(...(result.Items || []));
-    lastEvaluatedKey = result.LastEvaluatedKey;
-  } while (lastEvaluatedKey);
-
-  return users;
+  // dynamoHelpers.scan follows LastEvaluatedKey across every page
+  return dynamoHelpers.scan({
+    FilterExpression: "begins_with(PK, :pk) AND SK = :sk",
+    ExpressionAttributeValues: {
+      ":pk": "USER#",
+      ":sk": "PROFILE",
+    },
+  });
 }
 
 /**
@@ -50,18 +40,13 @@ async function getAllUsers() {
  */
 async function getNotificationPreferences(userId) {
   try {
-    const result = await dynamodb
-      .get({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: `USER#${userId}`,
-          SK: "NOTIFICATION_PREFERENCES",
-        },
-      })
-      .promise();
+    const item = await dynamoHelpers.getItem(
+      `USER#${userId}`,
+      "NOTIFICATION_PREFERENCES",
+    );
 
     return (
-      result.Item || {
+      item || {
         dailyReminders: true,
         reminderTime: "19:00",
         quietHoursStart: "22:00",
@@ -79,21 +64,17 @@ async function getNotificationPreferences(userId) {
  */
 async function getLastTransactionDate(familyId) {
   try {
-    const result = await dynamodb
-      .query({
-        TableName: TABLE_NAME,
-        KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
-        ExpressionAttributeValues: {
-          ":pk": `FAMILY#${familyId}`,
-          ":sk": "TRANSACTION#",
-        },
-        ScanIndexForward: false, // Descending order
-        Limit: 1,
-      })
-      .promise();
+    const items = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+      KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
+      ExpressionAttributeValues: {
+        ":sk": "TRANSACTION#",
+      },
+      ScanIndexForward: false, // Descending order
+      Limit: 1,
+    });
 
-    if (result.Items && result.Items.length > 0) {
-      return result.Items[0].date;
+    if (items.length > 0) {
+      return items[0].date;
     }
 
     return null;
@@ -157,6 +138,13 @@ async function sendDailyReminder(user) {
     const userId = user.userId;
     const familyId = user.familyId;
 
+    // getLastTransactionDate still reads the retired FAMILY# layout. Without a
+    // familyId it finds nothing and would remind every user on every run, so
+    // skip, as the bill and weekly-insight paths below already do.
+    if (!familyId) {
+      return { userId, sent: false, reason: "no_family_id" };
+    }
+
     // Get notification preferences
     const preferences = await getNotificationPreferences(userId);
 
@@ -218,20 +206,22 @@ async function sendDailyReminder(user) {
     };
 
     // Send notification
-    await lambda
-      .invoke({
+    await lambdaClient.send(
+      new InvokeCommand({
         FunctionName: NOTIFICATION_FUNCTION,
         InvocationType: "Event",
-        Payload: JSON.stringify({
-          httpMethod: "POST",
-          path: "/notifications/send",
-          body: JSON.stringify({
-            userId,
-            notification,
+        Payload: Buffer.from(
+          JSON.stringify({
+            httpMethod: "POST",
+            path: "/notifications/send",
+            body: JSON.stringify({
+              userId,
+              notification,
+            }),
           }),
-        }),
-      })
-      .promise();
+        ),
+      }),
+    );
 
     console.log(`✅ Daily reminder sent to user ${userId}`);
 
@@ -261,25 +251,18 @@ async function getUpcomingBillsForFamily(familyId) {
     const todayStr = today.toISOString().split("T")[0];
     const futureStr = sevenDaysLater.toISOString().split("T")[0];
 
-    const result = await dynamodb
-      .query({
-        TableName: TABLE_NAME,
-        KeyConditionExpression: "PK = :pk",
-        FilterExpression:
-          "entityType = :entityType AND dueDate >= :today AND dueDate <= :future AND #status <> :paid AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
-        ExpressionAttributeNames: { "#status": "status" },
-        ExpressionAttributeValues: {
-          ":pk": `FAMILY#${familyId}`,
-          ":entityType": "BILL",
-          ":today": todayStr,
-          ":future": futureStr,
-          ":paid": "paid",
-          ":false": false,
-        },
-      })
-      .promise();
-
-    return result.Items || [];
+    return await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+      FilterExpression:
+        "entityType = :entityType AND dueDate >= :today AND dueDate <= :future AND #status <> :paid AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: {
+        ":entityType": "BILL",
+        ":today": todayStr,
+        ":future": futureStr,
+        ":paid": "paid",
+        ":false": false,
+      },
+    });
   } catch (error) {
     console.error(
       `Error getting upcoming bills for family ${familyId}:`,
@@ -352,20 +335,22 @@ async function sendBillReminder(userId, bill, daysUntilDue) {
     };
 
     // Send notification
-    await lambda
-      .invoke({
+    await lambdaClient.send(
+      new InvokeCommand({
         FunctionName: NOTIFICATION_FUNCTION,
         InvocationType: "Event",
-        Payload: JSON.stringify({
-          httpMethod: "POST",
-          path: "/notifications/send",
-          body: JSON.stringify({
-            userId,
-            notification,
+        Payload: Buffer.from(
+          JSON.stringify({
+            httpMethod: "POST",
+            path: "/notifications/send",
+            body: JSON.stringify({
+              userId,
+              notification,
+            }),
           }),
-        }),
-      })
-      .promise();
+        ),
+      }),
+    );
 
     // Mark reminder as sent
     const todayStr = new Date().toISOString().split("T")[0];
@@ -373,20 +358,12 @@ async function sendBillReminder(userId, bill, daysUntilDue) {
     const remindersSent = bill.remindersSent || [];
     remindersSent.push(reminderKey);
 
-    await dynamodb
-      .update({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: `FAMILY#${bill.familyId}`,
-          SK: `BILL#${bill.billId}`,
-        },
-        UpdateExpression: "SET remindersSent = :reminders, updatedAt = :now",
-        ExpressionAttributeValues: {
-          ":reminders": remindersSent,
-          ":now": new Date().toISOString(),
-        },
-      })
-      .promise();
+    // updateItem also sets updatedAt
+    await dynamoHelpers.updateItem(
+      `FAMILY#${bill.familyId}`,
+      `BILL#${bill.billId}`,
+      { remindersSent },
+    );
 
     console.log(`✅ Bill reminder sent: ${bill.name} (${daysUntilDue} days)`);
     return { sent: true, billId: bill.billId, daysUntilDue };
@@ -493,20 +470,22 @@ async function sendWeeklyInsightNotification(user) {
     };
 
     // Send notification
-    await lambda
-      .invoke({
+    await lambdaClient.send(
+      new InvokeCommand({
         FunctionName: NOTIFICATION_FUNCTION,
         InvocationType: "Event",
-        Payload: JSON.stringify({
-          httpMethod: "POST",
-          path: "/notifications/send",
-          body: JSON.stringify({
-            userId,
-            notification,
+        Payload: Buffer.from(
+          JSON.stringify({
+            httpMethod: "POST",
+            path: "/notifications/send",
+            body: JSON.stringify({
+              userId,
+              notification,
+            }),
           }),
-        }),
-      })
-      .promise();
+        ),
+      }),
+    );
 
     console.log(`✅ Weekly insight sent to user ${userId}`);
     return { userId, sent: true };
@@ -619,23 +598,16 @@ async function getTransactionsForFamily(familyId, startDate, endDate) {
     const startStr = startDate.toISOString().split("T")[0];
     const endStr = endDate.toISOString().split("T")[0];
 
-    const result = await dynamodb
-      .query({
-        TableName: TABLE_NAME,
-        KeyConditionExpression: "PK = :pk",
-        FilterExpression:
-          "entityType = :entityType AND #date >= :start AND #date <= :end",
-        ExpressionAttributeNames: { "#date": "date" },
-        ExpressionAttributeValues: {
-          ":pk": `FAMILY#${familyId}`,
-          ":entityType": "TRANSACTION",
-          ":start": startStr,
-          ":end": endStr,
-        },
-      })
-      .promise();
-
-    return result.Items || [];
+    return await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+      FilterExpression:
+        "entityType = :entityType AND #date >= :start AND #date <= :end",
+      ExpressionAttributeNames: { "#date": "date" },
+      ExpressionAttributeValues: {
+        ":entityType": "TRANSACTION",
+        ":start": startStr,
+        ":end": endStr,
+      },
+    });
   } catch (error) {
     console.error("Error getting transactions for family:", error);
     return [];
@@ -661,22 +633,12 @@ async function generateSpendingNudges(user) {
     const fractionElapsed = dayOfMonth / daysInMonth;
 
     // Get user's default budget
-    const profileResult = await dynamodb.get({
-      TableName: TABLE_NAME,
-      Key: { PK: `USER#${user.userId}`, SK: 'PROFILE' },
-    }).promise();
-
-    const profile = profileResult.Item;
+    const profile = await dynamoHelpers.getItem(`USER#${user.userId}`, 'PROFILE');
     if (!profile || !profile.defaultBudgetId) return null;
     const budgetId = profile.defaultBudgetId;
 
     // Get current month budget period
-    const periodResult = await dynamodb.get({
-      TableName: TABLE_NAME,
-      Key: { PK: `BUDGET#${budgetId}`, SK: `PERIOD#${month}` },
-    }).promise();
-
-    const period = periodResult.Item;
+    const period = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, `PERIOD#${month}`);
     if (!period || !period.groups) return null;
 
     const nudges = [];
@@ -720,7 +682,7 @@ async function generateSpendingNudges(user) {
       ttl: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 7-day TTL
     };
 
-    await dynamodb.put({ TableName: TABLE_NAME, Item: nudgeRecord }).promise();
+    await dynamoHelpers.putItem(nudgeRecord);
     return nudges.length;
   } catch (_err) {
     // Non-fatal — nudges are best-effort
@@ -886,9 +848,7 @@ exports.handler = async (event) => {
  * Tells the user their new budget is ready and what was pre-filled from last month.
  */
 async function sendMonthlyKickoffEmail(user) {
-  const SES_REGION = process.env.AWS_REGION || 'us-east-1';
   const SES_FROM = process.env.SES_FROM_EMAIL || 'noreply@budgetbuddy.app';
-  const ses = new AWS.SES({ region: SES_REGION });
 
   try {
     const { userId, email, firstName } = user;
@@ -902,12 +862,9 @@ async function sendMonthlyKickoffEmail(user) {
     try {
       const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
         .toISOString().substring(0, 7);
-      const prevBudget = await dynamodb.get({
-        TableName: TABLE_NAME,
-        Key: { PK: `BUDGET#${userId}`, SK: `PERIOD#${prevMonth}` },
-      }).promise();
-      if (prevBudget.Item) {
-        const groups = prevBudget.Item.groups || {};
+      const prevBudget = await dynamoHelpers.getItem(`BUDGET#${userId}`, `PERIOD#${prevMonth}`);
+      if (prevBudget) {
+        const groups = prevBudget.groups || {};
         let catCount = 0;
         ['income','savings','expenses'].forEach(g => {
           if (groups[g]) groups[g].forEach(grp => { catCount += (grp.categories || []).length; });
@@ -920,7 +877,7 @@ async function sendMonthlyKickoffEmail(user) {
     const bodyText = `Hi ${firstName || 'there'},\n\nYour ${monthName} budget has been set up automatically using ${prefillSummary}. Log in to review and adjust your plan for the month.\n\nhttps://d1ueeugn9zcx7n.cloudfront.net/budget\n\nHappy budgeting,\nThe BudgetBuddy Team`;
     const bodyHtml = `<p>Hi ${firstName || 'there'},</p><p>Your <strong>${monthName}</strong> budget has been set up automatically using <strong>${prefillSummary}</strong>. Log in to review and adjust your plan.</p><p><a href="https://d1ueeugn9zcx7n.cloudfront.net/budget" style="background:#059669;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:600;">Open my budget →</a></p><p>Happy budgeting,<br/>The BudgetBuddy Team</p>`;
 
-    await ses.sendEmail({
+    await ses.send(new SendEmailCommand({
       Source: SES_FROM,
       Destination: { ToAddresses: [email] },
       Message: {
@@ -930,7 +887,7 @@ async function sendMonthlyKickoffEmail(user) {
           Html: { Data: bodyHtml, Charset: 'UTF-8' },
         },
       },
-    }).promise();
+    }));
 
     console.log(`Monthly kickoff email sent to ${email}`);
   } catch (err) {

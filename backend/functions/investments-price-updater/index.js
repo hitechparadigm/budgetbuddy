@@ -1,8 +1,21 @@
-const AWS = require("aws-sdk");
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const {
+  DynamoDBDocumentClient,
+  ScanCommand,
+  UpdateCommand,
+} = require("@aws-sdk/lib-dynamodb");
+const {
+  SecretsManagerClient,
+  GetSecretValueCommand,
+} = require("@aws-sdk/client-secrets-manager");
 const https = require("https");
 
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const secretsManager = new AWS.SecretsManager();
+// Reused across warm invocations. removeUndefinedValues matches the SDK v2
+// DocumentClient, which silently dropped undefined attributes.
+const dynamodb = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
+  marshallOptions: { removeUndefinedValues: true },
+});
+const secretsManager = new SecretsManagerClient({});
 
 const TABLE_NAME = process.env.TABLE_NAME || "BudgetBuddyTable";
 const ALPHA_VANTAGE_SECRET_NAME =
@@ -18,11 +31,11 @@ async function getApiKey() {
   }
 
   try {
-    const secret = await secretsManager
-      .getSecretValue({
+    const secret = await secretsManager.send(
+      new GetSecretValueCommand({
         SecretId: ALPHA_VANTAGE_SECRET_NAME,
-      })
-      .promise();
+      }),
+    );
 
     cachedApiKey = JSON.parse(secret.SecretString).apiKey;
     return cachedApiKey;
@@ -108,7 +121,7 @@ async function getAllSymbols() {
       params.ExclusiveStartKey = lastEvaluatedKey;
     }
 
-    const result = await dynamodb.scan(params).promise();
+    const result = await dynamodb.send(new ScanCommand(params));
 
     result.Items.forEach((item) => {
       if (item.symbol) {
@@ -142,12 +155,12 @@ async function updateHoldingsPrice(symbol, price) {
       params.ExclusiveStartKey = lastEvaluatedKey;
     }
 
-    const result = await dynamodb.scan(params).promise();
+    const result = await dynamodb.send(new ScanCommand(params));
 
     // Update each holding
     for (const item of result.Items) {
-      await dynamodb
-        .update({
+      await dynamodb.send(
+        new UpdateCommand({
           TableName: TABLE_NAME,
           Key: {
             PK: item.PK,
@@ -158,8 +171,8 @@ async function updateHoldingsPrice(symbol, price) {
             ":price": price,
             ":updated": now,
           },
-        })
-        .promise();
+        }),
+      );
 
       updatedCount++;
     }

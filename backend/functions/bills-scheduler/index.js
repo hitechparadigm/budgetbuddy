@@ -123,22 +123,54 @@ exports.handler = async (event, context) => {
 };
 
 /**
- * Get all unpaid bills from all families
+ * Get the YYYY-MM keys for the previous, current and next month (UTC)
+ */
+function getBillMonths(now = new Date()) {
+  return [-1, 0, 1].map((offset) =>
+    new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset, 1))
+      .toISOString()
+      .slice(0, 7),
+  );
+}
+
+/**
+ * Get unpaid bills due in the previous, current or next month
+ *
+ * Bills are indexed on GSI1 as GSI1PK = BILLS#<YYYY-MM> (see bills/index.js),
+ * so three bounded queries cover overdue bills, today and the +7-day window
+ * across a month boundary without scanning the whole table.
  */
 async function getAllUnpaidBills() {
-  // Scan for all bills with status != paid
-  const bills = await dynamoHelpers.scan({
-    FilterExpression:
-      "entityType = :entityType AND #status <> :paid AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
-    ExpressionAttributeNames: { "#status": "status" },
-    ExpressionAttributeValues: {
-      ":entityType": "BILL",
-      ":paid": "paid",
-      ":false": false,
-    },
+  const pages = await Promise.all(
+    getBillMonths().map((month) =>
+      dynamoHelpers.queryByGSI("GSI1", `BILLS#${month}`, {
+        FilterExpression:
+          "entityType = :entityType AND #status <> :paid AND (attribute_not_exists(isDeleted) OR isDeleted = :false)",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: {
+          ":entityType": "BILL",
+          ":paid": "paid",
+          ":false": false,
+        },
+      }),
+    ),
+  );
+
+  return pages.flat();
+}
+
+/**
+ * Get the user IDs of a budget's active members
+ */
+async function getActiveMemberIds(budgetId) {
+  const members = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
+    KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
+    ExpressionAttributeValues: { ":sk": "MEMBER#" },
   });
 
-  return bills;
+  return members
+    .filter((member) => member.userId && member.status === "active")
+    .map((member) => member.userId);
 }
 
 /**
@@ -165,7 +197,7 @@ async function sendNotifications(bills, reminderType) {
       sent++;
       logger.info("Bill notification sent", {
         billId: bill.billId,
-        familyId: bill.familyId,
+        budgetId: bill.budgetId,
         reminderType,
       });
     } catch (error) {
@@ -181,11 +213,15 @@ async function sendNotifications(bills, reminderType) {
 }
 
 /**
- * Create notification record in DynamoDB
+ * Create one notification record per active budget member
+ *
+ * Written at PK USER#<userId> / SK NOTIFICATION#<timestamp>_<billId>, the
+ * layout notifications/index.js reads for notification history.
  */
 async function createNotification(bill, reminderType) {
-  const notificationId = `notif_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-  const currentTime = new Date().toISOString();
+  const now = Date.now();
+  const currentTime = new Date(now).toISOString();
+  const notificationId = `${now}_${bill.billId}`;
 
   // Determine notification message
   let title, message, priority;
@@ -217,16 +253,18 @@ async function createNotification(bill, reminderType) {
       priority = "medium";
   }
 
-  const notification = {
-    PK: `FAMILY#${bill.familyId}`,
+  const userIds = await getActiveMemberIds(bill.budgetId);
+
+  const notifications = userIds.map((userId) => ({
+    PK: `USER#${userId}`,
     SK: `NOTIFICATION#${notificationId}`,
-    GSI1PK: `FAMILY#${bill.familyId}`,
-    GSI1SK: `NOTIFICATION#${currentTime}`,
     entityType: "NOTIFICATION",
     notificationId,
-    familyId: bill.familyId,
+    userId,
+    budgetId: bill.budgetId,
     type: "bill_reminder",
     title,
+    body: message,
     message,
     priority,
     billId: bill.billId,
@@ -234,11 +272,14 @@ async function createNotification(bill, reminderType) {
     billAmount: bill.amount,
     billDueDate: bill.dueDate,
     reminderType,
-    isRead: false,
+    read: false,
+    sentAt: currentTime,
     createdAt: currentTime,
-  };
+  }));
 
-  await dynamoHelpers.putItem(notification);
+  for (const notification of notifications) {
+    await dynamoHelpers.putItem(notification);
+  }
 
-  return notification;
+  return notifications;
 }

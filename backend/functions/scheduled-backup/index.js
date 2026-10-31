@@ -5,10 +5,18 @@
  * Triggered by EventBridge (CloudWatch Events) rules.
  */
 
-const AWS = require("aws-sdk");
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const { DynamoDBDocumentClient, ScanCommand } = require("@aws-sdk/lib-dynamodb");
+const {
+  S3Client,
+  PutObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
+} = require("@aws-sdk/client-s3");
 
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const s3 = new AWS.S3();
+// Reused across warm invocations
+const dynamodb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
 
 const TABLE_NAME = process.env.TABLE_NAME || "budgetbuddy-main";
 const BACKUP_BUCKET = process.env.BACKUP_BUCKET || "budgetbuddy-backups";
@@ -34,7 +42,7 @@ async function getAllUserProfiles() {
       ExclusiveStartKey: lastEvaluatedKey,
     };
 
-    const result = await dynamodb.scan(params).promise();
+    const result = await dynamodb.send(new ScanCommand(params));
     profiles.push(...(result.Items || []));
     lastEvaluatedKey = result.LastEvaluatedKey;
   } while (lastEvaluatedKey);
@@ -60,7 +68,7 @@ async function getBudgetsForFamily(familyId) {
       ExclusiveStartKey: lastEvaluatedKey,
     };
 
-    const result = await dynamodb.scan(params).promise();
+    const result = await dynamodb.send(new ScanCommand(params));
     budgets.push(...(result.Items || []));
     lastEvaluatedKey = result.LastEvaluatedKey;
   } while (lastEvaluatedKey);
@@ -86,7 +94,7 @@ async function getTransactionsForFamily(familyId) {
       ExclusiveStartKey: lastEvaluatedKey,
     };
 
-    const result = await dynamodb.scan(params).promise();
+    const result = await dynamodb.send(new ScanCommand(params));
     transactions.push(...(result.Items || []));
     lastEvaluatedKey = result.LastEvaluatedKey;
   } while (lastEvaluatedKey);
@@ -166,8 +174,8 @@ async function uploadBackupToS3(userId, backupData) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const key = `backups/${userId}/${timestamp}.json`;
 
-  await s3
-    .putObject({
+  await s3.send(
+    new PutObjectCommand({
       Bucket: BACKUP_BUCKET,
       Key: key,
       Body: JSON.stringify(backupData, null, 2),
@@ -178,8 +186,8 @@ async function uploadBackupToS3(userId, backupData) {
         backupDate: backupData.backupDate,
         version: backupData.version,
       },
-    })
-    .promise();
+    }),
+  );
 
   return key;
 }
@@ -193,26 +201,26 @@ async function cleanupOldBackups(userId) {
   cutoffDate.setDate(cutoffDate.getDate() - BACKUP_RETENTION_DAYS);
 
   // List all backups for user
-  const listResult = await s3
-    .listObjectsV2({
+  const listResult = await s3.send(
+    new ListObjectsV2Command({
       Bucket: BACKUP_BUCKET,
       Prefix: prefix,
-    })
-    .promise();
+    }),
+  );
 
   const objectsToDelete = (listResult.Contents || [])
     .filter((obj) => obj.LastModified < cutoffDate)
     .map((obj) => ({ Key: obj.Key }));
 
   if (objectsToDelete.length > 0) {
-    await s3
-      .deleteObjects({
+    await s3.send(
+      new DeleteObjectsCommand({
         Bucket: BACKUP_BUCKET,
         Delete: {
           Objects: objectsToDelete,
         },
-      })
-      .promise();
+      }),
+    );
 
     console.log(
       `Deleted ${objectsToDelete.length} old backups for user ${userId}`,

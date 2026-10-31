@@ -94,6 +94,33 @@ inclusion: always
       `api-features-extended`, `api-budgets`, `notification-stack` all present) - re-verified Session 165,
       this item was resolved as part of the mobile-app spec's work and this note was stale.
 
+### Backend Scheduled Functions (Session 170, Wave 1 FEAT-003, review findings P-01/AC-11)
+- [x] Six handlers ported off `require('aws-sdk')` (Node 20 does not ship SDK v2; they crashed
+      at import): `budget-alerts`, `daily-reminders`, `investments`, `investments-price-updater`,
+      `restore`, `scheduled-backup`. Common layer gained paginated `dynamoHelpers.scan` and
+      `dynamoHelpers.queryByGSI`. No bundling change. Committed locally, NOT yet deployed; the
+      post-deploy check is `aws lambda invoke` + `aws logs tail` on `budgetbuddy-dev-budget-alerts`,
+      `-daily-reminders` and `-bill-scheduler` (singular), expecting no ImportModuleError/TypeError.
+- [x] `bills-scheduler` uses three GSI1 `BILLS#<YYYY-MM>` queries instead of the nonexistent
+      `dynamoHelpers.scan`, and writes notifications at `USER#<userId>` / `NOTIFICATION#...`
+      instead of `FAMILY#undefined`. Old orphaned rows were not migrated.
+- [ ] `daily-reminders` runs but sends 0 reminders: reminder paths still read `FAMILY#` keys
+      (`getLastTransactionDate`, `getUpcomingBillsForFamily`, `getTransactionsForFamily`) and the
+      kickoff email reads `BUDGET#${userId}`. `sendDailyReminder` now skips users with no
+      `familyId` (0 of 56 DEV profiles have one); without that skip the empty FAMILY# lookup
+      would remind every user on every 15-minute run in the window. Remove the skip as part of
+      the `FAMILY#` key migration.
+- [ ] `budget-alerts` and `daily-reminders` have `grantReadData` only (`notification-stack.ts`),
+      so `budget-alerts`' alert-sent marker PutItem and `daily-reminders`' nudge PutItem are
+      denied (both swallowed). Visible effect after deploy: repeat budget alerts every 6 hours.
+      Owner decision; `daily-reminders` also has no `ses:SendEmail` grant for the kickoff email.
+- [ ] `restore` returns 501 until the key migration (its writes still target `FAMILY#`).
+- [ ] `investments-price-updater`, `scheduled-backup`: ported, still not wired into any stack;
+      `scheduled-backup` is `FAMILY#`-keyed throughout.
+- [ ] `credit-score`, `export`, `notifications`, `transaction-planning` still DECLARE `aws-sdk`
+      in `package.json` (no production `require` remains); dead declarations, cleanup pending.
+      `transaction-planning` is owned by the Wave 2 branch.
+
 ### Infrastructure
 - [x] `api-family-stack` destroyed and removed from CDK app entrypoint (infra-cleanup spec)
 - [ ] SES still in sandbox - production access not yet requested

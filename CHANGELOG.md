@@ -1,4 +1,38 @@
 # Changelog
+## [1.13.7] - 2026-10-31
+### fix: port the scheduled handlers to AWS SDK v3 (wave1-security-ops, Session 170)
+Backend (review findings P-01, AC-11):
+- `budget-alerts`, `daily-reminders`, `investments`, `investments-price-updater`, `restore`
+  and `scheduled-backup` no longer `require('aws-sdk')`. The Node.js 20 runtime does not
+  ship SDK v2, so each threw `Runtime.ImportModuleError` at import; live, `budget-alerts`
+  failed 171/171 invocations and `daily-reminders` 4,032/4,032 over 14 days. They now use
+  SDK v3 clients (from the Node 20 runtime and the common layer) or `dynamoHelpers`. No
+  bundling or CDK change; `aws-sdk` (and `jsonwebtoken` in `restore`) removed from each
+  `package.json` and lockfile.
+- `bills-scheduler` replaces its call to the nonexistent `dynamoHelpers.scan` with three
+  bounded `queryByGSI('GSI1', 'BILLS#<YYYY-MM>')` queries (previous, current and next month).
+  Its notifications were written under `FAMILY#undefined`, which nothing reads; it now writes
+  one item per active budget member at `USER#<userId>` / `NOTIFICATION#<timestamp>_<billId>`,
+  the layout the notifications service reads. Existing orphaned rows are not migrated.
+- `restore` now returns `501` ("Restore is disabled pending the budget-key migration")
+  before it writes anything. Its write path still targets the retired `FAMILY#` layout; the
+  guard keeps the endpoint as non-functional as it was while import-broken. It also reads the
+  user from the Cognito authorizer claims (`getUserFromEvent`) instead of decoding the JWT
+  itself, and no longer logs the raw event, which carried the bearer token.
+- `daily-reminders` skips a user whose profile has no `familyId` (reason `no_family_id`), as
+  its bill and weekly-insight paths already did. Its last-transaction lookup reads the retired
+  `FAMILY#` layout, so without the skip every user would get "Start tracking your expenses
+  today!" on each 15-minute run inside the reminder window. No current profile (0 of 56 in
+  DEV) has a `familyId`.
+Known remaining (not fixed here):
+- `daily-reminders` will run green and send 0 reminders until the `FAMILY#` key migration.
+  Only the spending-nudge path is key-correct, and its write is denied by the function's
+  read-only IAM grant. Daily reminders are not restored by this change.
+- `budget-alerts` has read-only IAM (`grantReadData`), so its alert-sent marker write fails
+  and alerts will repeat on every 6-hour scheduled run.
+- `investments-price-updater` and `scheduled-backup` are ported but still not deployed;
+  `scheduled-backup` is `FAMILY#`-keyed throughout.
+
 ## [1.13.6] - 2026-10-31
 ### fix: paginated scan and GSI query helpers in the common layer (wave1-security-ops, Session 170)
 Backend (common layer, review finding AC-11):

@@ -1,4 +1,54 @@
 # Development Log
+## 2026-10-31 - Scheduled Handlers Ported to AWS SDK v3 (Session 170)
+Rest of FEAT-003 (plan item 2, review findings P-01 and AC-11). Six handlers required
+`aws-sdk`, which the Node.js 20 runtime does not provide. Live, `budget-alerts` had failed
+171/171 invocations and `daily-reminders` 4,032/4,032 over 14 days, all with
+`Runtime.ImportModuleError`. The port is pure JavaScript with no bundling or CDK change: SDK v3
+clients resolve from the Node 20 runtime and the common layer. `budget-alerts`,
+`daily-reminders` and `restore` (all three have the common layer attached) moved onto
+`dynamoHelpers`; `investments`, `investments-price-updater` and `scheduled-backup` use
+`@aws-sdk/lib-dynamodb` directly, with `removeUndefinedValues` set wherever they write to
+match the v2 DocumentClient. `aws-sdk` (and `restore`'s
+`jsonwebtoken`) came out of each `package.json` (`restore` never shipped `jsonwebtoken` in its unbundled
+asset, so that import would have failed too); each function's lockfile was regenerated in
+an isolated temp directory so the diff only removes the SDK v2 tree. Running npm inside the
+function directory resolves to the `backend/` workspace root and churns its lockfile, so
+that was reverted.
+
+`bills-scheduler` called `dynamoHelpers.scan`, which did not exist (TypeError every run). It
+now runs three bounded `queryByGSI('GSI1', 'BILLS#<YYYY-MM>')` queries for the previous,
+current and next month. Its notifications were written to `FAMILY#undefined` because bills
+carry `budgetId`, not `familyId`. It now writes one item per active budget member at
+`USER#<userId>` / `NOTIFICATION#<timestamp>_<billId>`, which `notifications/index.js` reads.
+Old orphaned rows are left in place.
+
+`restore` gained a 501 guard before any write. Its write path still produces the retired
+`FAMILY#` layout, and porting it made it loadable, so without the guard it could write
+unreadable rows into the live table. It also logged the raw API Gateway event (bearer token
+plus backup body) on every call; that line now logs method and path only.
+
+The plan expected `daily-reminders` to report 0 reminders after the port, but that was wrong
+for `sendDailyReminder`: a lookup that finds no transactions means "never logged anything",
+so every user would be reminded on each 15-minute run inside the reminder window. A read-only
+DEV count found 56 profiles, none with a `familyId`, and 7 `DEVICE#` records. The function now
+skips users without a `familyId`, the same guard its bill and weekly-insight paths already
+had, which keeps today's behaviour (nothing sent).
+
+Not fixed, by design: `daily-reminders` reads `FAMILY#` keys on its reminder paths, so it will
+run green and send 0 reminders until the key migration. Both `budget-alerts` and
+`daily-reminders` have `grantReadData` only, so the alert-sent marker and the nudge write will
+be denied. For `budget-alerts` that means a member gets the same alert on every 6-hour run;
+widening the grant is a CDK change in a file another item owns, so it is reported, not made.
+
+Tests: rewrote the stale `budget-alerts/integration.test.js` (FAMILY# fixtures, integer
+thresholds, `TTL`) against the real BUDGET# behaviour, keeping all five cases; rewrote the v2
+mocks in `investments`, `investments-price-updater` and `restore`; added
+`bills-scheduler/index.test.js` (3) and `daily-reminders/handler.test.js` (2). Before/after:
+budget-alerts 20/17 -> 24/13, daily-reminders 14/1 -> 17/0 (its one fast-check batch test is
+seed-dependent: failed on one run, passed on the next), investments 13/2 -> 13/2,
+investments-price-updater 4/3 -> 7/0, restore 12/0 -> 12/0, bills-scheduler none -> 3/0
+(passed/failed). Every remaining failure is pre-existing and unrelated to the SDK.
+
 ## 2026-10-31 - Common Layer: Paginated Scan and GSI Query Helpers (Session 170)
 First step of FEAT-003 (plan item 2, review findings P-01 and AC-11). `dynamoHelpers`
 exported only `getItem`, `putItem`, `queryByPK` and `updateItem`, yet `bills-scheduler`

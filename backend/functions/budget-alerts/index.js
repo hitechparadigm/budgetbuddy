@@ -7,12 +7,13 @@
  * Updated to use BUDGET#<budgetId> partition keys (replaced FAMILY#<familyId>).
  */
 
-const AWS = require('aws-sdk');
+const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
+const { unmarshall } = require('@aws-sdk/util-dynamodb');
+const { dynamoHelpers } = require('/opt/nodejs/utils');
 
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const lambda = new AWS.Lambda();
+// Reused across warm invocations
+const lambdaClient = new LambdaClient({});
 
-const TABLE_NAME = process.env.TABLE_NAME || 'budgetbuddy-dev-main';
 const NOTIFICATION_FUNCTION =
   process.env.NOTIFICATION_FUNCTION_ARN ||
   process.env.NOTIFICATION_FUNCTION ||
@@ -27,17 +28,7 @@ const ALERT_THRESHOLDS = [0.8, 0.9, 1.0]; // 80%, 90%, 100%
  */
 async function getBudget(budgetId, month) {
   try {
-    const result = await dynamodb
-      .get({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: `BUDGET#${budgetId}`,
-          SK: `PERIOD#${month}`,
-        },
-      })
-      .promise();
-
-    return result.Item || null;
+    return await dynamoHelpers.getItem(`BUDGET#${budgetId}`, `PERIOD#${month}`);
   } catch (error) {
     console.error('Error getting budget:', error);
     return null;
@@ -49,18 +40,10 @@ async function getBudget(budgetId, month) {
  */
 async function getBudgetMembers(budgetId) {
   try {
-    const result = await dynamodb
-      .query({
-        TableName: TABLE_NAME,
-        KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
-        ExpressionAttributeValues: {
-          ':pk': `BUDGET#${budgetId}`,
-          ':sk': 'MEMBER#',
-        },
-      })
-      .promise();
-
-    return result.Items || [];
+    return await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':sk': 'MEMBER#' },
+    });
   } catch (error) {
     console.error('Error getting budget members:', error);
     return [];
@@ -74,17 +57,9 @@ async function getBudgetMembers(budgetId) {
 async function wasAlertSent(budgetId, month, categoryName, threshold) {
   try {
     const alertKey = `${month}-${categoryName}-${threshold}`;
-    const result = await dynamodb
-      .get({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: `BUDGET#${budgetId}`,
-          SK: `ALERT#${alertKey}`,
-        },
-      })
-      .promise();
+    const item = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, `ALERT#${alertKey}`);
 
-    return !!result.Item;
+    return !!item;
   } catch (error) {
     console.error('Error checking alert status:', error);
     return false;
@@ -98,21 +73,16 @@ async function wasAlertSent(budgetId, month, categoryName, threshold) {
 async function markAlertSent(budgetId, month, categoryName, threshold) {
   try {
     const alertKey = `${month}-${categoryName}-${threshold}`;
-    await dynamodb
-      .put({
-        TableName: TABLE_NAME,
-        Item: {
-          PK: `BUDGET#${budgetId}`,
-          SK: `ALERT#${alertKey}`,
-          budgetId,
-          month,
-          categoryName,
-          threshold,
-          sentAt: new Date().toISOString(),
-          expiresAt: Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60, // 90 days TTL
-        },
-      })
-      .promise();
+    await dynamoHelpers.putItem({
+      PK: `BUDGET#${budgetId}`,
+      SK: `ALERT#${alertKey}`,
+      budgetId,
+      month,
+      categoryName,
+      threshold,
+      sentAt: new Date().toISOString(),
+      expiresAt: Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60, // 90 days TTL
+    });
   } catch (error) {
     console.error('Error marking alert as sent:', error);
   }
@@ -123,20 +93,22 @@ async function markAlertSent(budgetId, month, categoryName, threshold) {
  */
 async function sendNotification(userId, notification) {
   try {
-    await lambda
-      .invoke({
+    await lambdaClient.send(
+      new InvokeCommand({
         FunctionName: NOTIFICATION_FUNCTION,
         InvocationType: 'Event', // Async
-        Payload: JSON.stringify({
-          httpMethod: 'POST',
-          path: '/notifications/send',
-          body: JSON.stringify({
-            userId,
-            notification,
+        Payload: Buffer.from(
+          JSON.stringify({
+            httpMethod: 'POST',
+            path: '/notifications/send',
+            body: JSON.stringify({
+              userId,
+              notification,
+            }),
           }),
-        }),
-      })
-      .promise();
+        ),
+      }),
+    );
 
     console.log(`Notification sent to user ${userId}`);
   } catch (error) {
@@ -293,19 +265,14 @@ async function checkAllBudgets() {
 
     console.log(`Checking all budgets for month ${currentMonth}`);
 
-    // Scan for all budget PERIOD records for current month
-    const result = await dynamodb
-      .scan({
-        TableName: TABLE_NAME,
-        FilterExpression: 'begins_with(PK, :pkPrefix) AND SK = :sk',
-        ExpressionAttributeValues: {
-          ':pkPrefix': 'BUDGET#',
-          ':sk': `PERIOD#${currentMonth}`,
-        },
-      })
-      .promise();
-
-    const budgets = result.Items || [];
+    // Scan for all budget PERIOD records for current month (follows every page)
+    const budgets = await dynamoHelpers.scan({
+      FilterExpression: 'begins_with(PK, :pkPrefix) AND SK = :sk',
+      ExpressionAttributeValues: {
+        ':pkPrefix': 'BUDGET#',
+        ':sk': `PERIOD#${currentMonth}`,
+      },
+    });
     console.log(`Found ${budgets.length} budget periods to check`);
 
     const results = [];
@@ -334,9 +301,7 @@ exports.handler = async (event) => {
 
       for (const record of event.Records) {
         if (record.eventName === 'INSERT' || record.eventName === 'MODIFY') {
-          const newImage = AWS.DynamoDB.Converter.unmarshall(
-            record.dynamodb.NewImage,
-          );
+          const newImage = unmarshall(record.dynamodb.NewImage);
 
           // Only process transaction records: SK starts with TXN#
           if (newImage.SK && (newImage.SK.startsWith('TXN#') || newImage.SK.startsWith('TRANSACTION#'))) {

@@ -6,9 +6,7 @@
   "scripts": {
     "test": "jest"
   },
-  "dependencies": {
-    "aws-sdk": "^2.1000.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "jest": "^29.0.0"
   }

@@ -3,11 +3,10 @@
  * Handles restoration of budget and transaction data from JSON backups
  */
 
-const AWS = require("aws-sdk");
-const jwt = require("jsonwebtoken");
+const { getUserFromEvent, dynamoHelpers } = require("/opt/nodejs/utils");
 
-const dynamodb = new AWS.DynamoDB.DocumentClient();
-const TABLE_NAME = process.env.TABLE_NAME || "budgetbuddy-main";
+// See the 501 guard in the handler; flip only after the budget-key migration
+const RESTORE_DISABLED = true;
 
 /**
  * Get CORS headers for API responses
@@ -22,41 +21,17 @@ function getCorsHeaders() {
 }
 
 /**
- * Parse and validate JWT token
- */
-function parseToken(authHeader) {
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw new Error("Missing or invalid authorization header");
-  }
-
-  const token = authHeader.substring(7);
-  try {
-    return jwt.decode(token);
-  } catch (_e) {
-    throw new Error("Invalid JWT token");
-  }
-}
-
-/**
  * Get user's family ID from their profile
  */
 async function getFamilyId(userId) {
   try {
-    const result = await dynamodb
-      .get({
-        TableName: TABLE_NAME,
-        Key: {
-          PK: `USER#${userId}`,
-          SK: "PROFILE",
-        },
-      })
-      .promise();
+    const profile = await dynamoHelpers.getItem(`USER#${userId}`, "PROFILE");
 
-    if (!result.Item) {
+    if (!profile) {
       throw new Error("User profile not found");
     }
 
-    return result.Item.familyId;
+    return profile.familyId;
   } catch (error) {
     console.error("Error getting family ID:", error);
     throw error;
@@ -146,12 +121,7 @@ async function restoreBudgets(familyId, budgets) {
         updatedAt: now,
       };
 
-      await dynamodb
-        .put({
-          TableName: TABLE_NAME,
-          Item: item,
-        })
-        .promise();
+      await dynamoHelpers.putItem(item);
 
       restoredBudgets.push(budgetId);
     } catch (error) {
@@ -191,12 +161,7 @@ async function restoreTransactions(familyId, transactions) {
         createdAt: transaction.createdAt || now,
       };
 
-      await dynamodb
-        .put({
-          TableName: TABLE_NAME,
-          Item: item,
-        })
-        .promise();
+      await dynamoHelpers.putItem(item);
 
       restoredTransactions.push(transactionId);
     } catch (error) {
@@ -215,7 +180,8 @@ async function restoreTransactions(familyId, transactions) {
  * Main Lambda handler
  */
 exports.handler = async (event) => {
-  console.log("Restore request:", JSON.stringify(event, null, 2));
+  // Never log the raw event: it carries the bearer token and the backup body
+  console.log("Restore request:", { httpMethod: event.httpMethod, path: event.path });
 
   try {
     // Handle CORS preflight
@@ -227,23 +193,15 @@ exports.handler = async (event) => {
       };
     }
 
-    // Parse and validate token
-    let token;
+    // The Cognito authorizer has already verified the token; read its claims
+    let userId;
     try {
-      token = parseToken(
-        event.headers.Authorization || event.headers.authorization,
-      );
-    } catch (authError) {
-      return {
-        statusCode: 401,
-        headers: getCorsHeaders(),
-        body: JSON.stringify({
-          error: authError.message,
-        }),
-      };
+      ({ userId } = getUserFromEvent(event));
+    } catch (_authError) {
+      userId = null;
     }
 
-    if (!token || !token.sub) {
+    if (!userId) {
       return {
         statusCode: 401,
         headers: getCorsHeaders(),
@@ -252,8 +210,6 @@ exports.handler = async (event) => {
         }),
       };
     }
-
-    const userId = token.sub;
 
     // Get family ID
     const familyId = await getFamilyId(userId);
@@ -281,6 +237,20 @@ exports.handler = async (event) => {
         body: JSON.stringify({
           error: "Invalid backup data",
           details: validationErrors,
+        }),
+      };
+    }
+
+    // Holding action: restoreBudgets/restoreTransactions still write the
+    // retired FAMILY#<familyId> / BUDGET#, TRANSACTION# layout and read the
+    // removed profile.familyId. Writing that into the live table would create
+    // rows nothing reads, so refuse until the budget-key migration lands.
+    if (RESTORE_DISABLED) {
+      return {
+        statusCode: 501,
+        headers: getCorsHeaders(),
+        body: JSON.stringify({
+          error: "Restore is disabled pending the budget-key migration",
         }),
       };
     }

@@ -9,19 +9,46 @@ const mockGetSecretValue = jest.fn();
 const mockScan = jest.fn();
 const mockUpdate = jest.fn();
 
-jest.mock("aws-sdk", () => {
+// SDK v3: route each client's send() to a per-operation mock by command type.
+// virtual: true because @aws-sdk/client-secrets-manager ships with the Node 20
+// Lambda runtime and is not installed in this repo.
+const mockCommand = (name) =>
+  class {
+    constructor(input) {
+      this.name = name;
+      this.input = input;
+    }
+  };
+
+jest.mock("@aws-sdk/lib-dynamodb", () => {
+  const routes = {
+    scan: (input) => mockScan(input),
+    update: (input) => mockUpdate(input),
+  };
   return {
-    DynamoDB: {
-      DocumentClient: jest.fn(() => ({
-        scan: () => ({ promise: mockScan }),
-        update: () => ({ promise: mockUpdate }),
-      })),
+    DynamoDBDocumentClient: {
+      from: () => ({ send: (cmd) => routes[cmd.name](cmd.input) }),
     },
-    SecretsManager: jest.fn(() => ({
-      getSecretValue: () => ({ promise: mockGetSecretValue }),
-    })),
+    ScanCommand: mockCommand("scan"),
+    UpdateCommand: mockCommand("update"),
   };
 });
+
+jest.mock(
+  "@aws-sdk/client-secrets-manager",
+  () => ({
+    SecretsManagerClient: class {
+      send(cmd) {
+        return mockGetSecretValue(cmd.input);
+      }
+    },
+    GetSecretValueCommand: mockCommand("getSecretValue"),
+  }),
+  { virtual: true },
+);
+
+// index.js reads the secret name at module load, so set it before requiring
+process.env.ALPHA_VANTAGE_SECRET_NAME = "test-secret";
 
 const { handler } = require("./index");
 
@@ -52,7 +79,13 @@ describe("Investments Price Updater Lambda", () => {
     it("should handle Secrets Manager errors", async () => {
       mockGetSecretValue.mockRejectedValue(new Error("Secret not found"));
 
-      const result = await handler({});
+      // Fresh module instance: the API key cached by the previous test would
+      // otherwise skip Secrets Manager entirely
+      let freshHandler;
+      jest.isolateModules(() => {
+        freshHandler = require("./index").handler;
+      });
+      const result = await freshHandler({});
 
       expect(result.statusCode).toBe(500);
       expect(JSON.parse(result.body).error).toBe("Stock price update failed");
