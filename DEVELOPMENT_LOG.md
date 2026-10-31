@@ -1,4 +1,15 @@
 # Development Log
+## 2026-10-31 - Wave 1 Deploy Gate (Session 170)
+The converge review approved Wave 1 (FEAT-001..005). The 12 commits `758f09e`..`1ec2c3d` sit on
+`develop`, unpushed. `node.exe scripts/check-cicd-status.js` reported SUCCESS for run
+39060367826 (`95a4466`), so no deployment is in progress. The push is held for explicit owner
+approval: it turns Cognito self sign-up off, narrows the public client's write attributes, adds a
+second SNS alert topic with an email subscription, turns on deletion protection and an AWS Backup
+plan, and narrows the Bedrock IAM grant. The review and a partial synth diff found no resource
+replacement. FEAT-003, FEAT-004 and FEAT-005 are documented in their own entries below. Still
+owner-gated after the deploy: confirming both SNS subscription emails, purging the auth log
+streams that hold plaintext passwords, forcing password resets inside the 7-day retention window,
+and requesting SES production access.
 ## 2026-10-31 - email_verified Reverted to "true" (Session 170)
 Converge-review blocker B-1. FEAT-002 had set `email_verified: "false"` at `AdminCreateUser`
 and left the final value to a live register-then-sign-in test. The review found that the test

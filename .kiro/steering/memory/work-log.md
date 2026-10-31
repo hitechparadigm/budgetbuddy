@@ -77,6 +77,10 @@ inclusion: always
   between 2026-05 and 2026-10-17 and are not all known-clean, so a red run shortly after this
   change may be a pre-existing failure becoming newly visible rather than a newly caused one -
   read `gh run view --log-failed` before attributing it.
+- Session 170 deploy gate: Wave 1 FEAT-001..005 (`758f09e`..`1ec2c3d`, plus the deploy-gate
+  docs commit) passed converge review and are committed on `develop` but NOT pushed, pending
+  explicit owner approval. Last CI/CD run before the gate: 39060367826 (`95a4466`), SUCCESS.
+  FEAT-003/004/005 are all still "committed locally, NOT yet deployed" (see their sections).
 - `js-yaml` is NOT installed at the repo root, so the steering/context YAML-parse gate command
   fails there with `MODULE_NOT_FOUND`. It resolves from `infrastructure/`, `packages/mobile/` and
   `packages/web-app/` - run the check with `cwd=infrastructure` and a `../.github/workflows/...`

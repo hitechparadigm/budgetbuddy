@@ -1,4 +1,12 @@
 # Changelog
+## [1.13.12] - 2026-10-31
+### docs: record the Wave 1 deploy gate (wave1-security-ops, Session 170)
+- Wave 1 (FEAT-001..005, `758f09e`..`1ec2c3d`) passed converge review and is committed on
+  `develop` but NOT pushed. The DEV deploy waits for explicit owner approval because it changes
+  Cognito sign-up exposure. `scripts/check-cicd-status.js` reported SUCCESS for the last run
+  (39060367826, `95a4466`), so no deployment is in progress.
+- FEAT-003 (1.13.6-1.13.7), FEAT-004 (1.13.8) and FEAT-005 (1.13.9) are already described in
+  their own entries below. All three are committed locally and not yet deployed.
 ## [1.13.11] - 2026-10-31
 ### fix(auth): keep password reset working for new accounts (wave1-security-ops, Session 170)
 - `POST /auth/register` creates Cognito users with `email_verified: "true"` again, reverting
