@@ -126,6 +126,23 @@ inclusion: always
       in `package.json` (no production `require` remains); dead declarations, cleanup pending.
       `transaction-planning` is owned by the Wave 2 branch.
 
+### AI / Bedrock (Session 170, Wave 1 FEAT-005, review finding L-05)
+- [x] One model for every AI Lambda: `us.anthropic.claude-haiku-4-5-20251001-v1:0` (Claude Haiku
+      4.5 through the US inference profile). It comes from the common layer `BEDROCK_MODEL_ID` and
+      CDK `lib/config/bedrock.ts`; `bedrockModelResourceArns(region, account)` holds the IAM
+      ARNs. The old `claude-3-5-sonnet-20241022-v2:0` is end-of-life, so every AI feature had
+      been serving its fallback. `api-stack.ts`'s Bedrock `resources: ['*']` is gone. Committed
+      locally, NOT yet deployed.
+- [x] `AiFallbackUsed`/`AiInvokeSucceeded` EMF metrics (namespace `BudgetBuddy/AI`) and alarm
+      `budgetbuddy-ai-fallback-in-use` on the monitoring alerts topic.
+- [ ] Post-deploy proof: `POST /ai/generate-budget` for a month with no `PERIOD#`, then
+      `aws logs tail /aws/lambda/budgetbuddy-ai --since 5m` must show no "using fallback budget"
+      line, and `aws cloudwatch list-metrics --namespace BudgetBuddy/AI` must list
+      `AiInvokeSucceeded`.
+- [ ] Optional: Claude Haiku 5.5 is about 10x cheaper but returns AccessDeniedException for this
+      account (it needs an owner request). The `pattern-detection` cost constants still use
+      Sonnet prices.
+
 ### Infrastructure
 - [x] `api-family-stack` destroyed and removed from CDK app entrypoint (infra-cleanup spec)
 - [ ] SES still in sandbox - production access not yet requested

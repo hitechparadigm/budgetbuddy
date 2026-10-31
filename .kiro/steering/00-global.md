@@ -86,7 +86,7 @@ which yielding is correct, so it cannot loop indefinitely.
 
 ## AWS Services in Use
 
-Lambda (Node.js 20.x), API Gateway (4 gateways), DynamoDB single-table (`budgetbuddy-main`), Cognito, S3, Bedrock (Claude 3.5 Sonnet), CloudWatch, SES, EventBridge, Secrets Manager, Plaid
+Lambda (Node.js 20.x), API Gateway (4 gateways), DynamoDB single-table (`budgetbuddy-main`), Cognito, S3, Bedrock (Claude Haiku 4.5 via `us.` inference profile, see `infrastructure/lib/config/bedrock.ts`), CloudWatch, SES, EventBridge, Secrets Manager, Plaid
 
 AWS profile for all CLI/dev work: `hitechparadigm`
 

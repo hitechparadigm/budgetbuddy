@@ -1,4 +1,30 @@
 # Development Log
+## 2026-10-31 - Bedrock Model Fixed, AI Fallback Alarmed (Session 170)
+FEAT-005 (plan item 7; review finding L-05).
+Model choice: `aws bedrock list-foundation-models --by-provider anthropic` lists 15 Anthropic
+text models, all `INFERENCE_PROFILE`-only. The local CLI (2.15.35) has no
+`list-inference-profiles`, so profile IDs and routing regions come from the AWS model cards. A
+one-request `InvokeModel` probe (max_tokens 64) per candidate: `us.anthropic.claude-haiku-5-5`
+returned AccessDeniedException (not enabled for this account), and
+`us.anthropic.claude-haiku-4-5-20251001-v1:0` answered with a single text block.
+`anthropic.claude-3-5-sonnet-20241022-v2:0` returned "reached the end of its life", which is
+why the AI features have been on their fallbacks. Haiku 4.5 is the cheapest invocable model
+and fits a one-shot 4,096-token JSON generation. Its response's `content[0]` is the text block,
+so the existing parsing is unchanged. Haiku 5.5 is about 10x cheaper but needs the owner to
+enable it; not required.
+IAM: an inference profile needs the profile ARN (account-scoped, so the helper takes
+`account`) plus the foundation-model ARN in each destination region.
+EMF design: an alarm with no dimensions only matches a metric published with no dimensions.
+The plan's emitter published only the `[Feature, ModelId]` set, so the alarm could never have
+fired. `emitEmfMetric` now also publishes the empty dimension set, which the EMF spec allows.
+Ownership: `api-features-extended-stack.ts` belongs to Wave 2. On an owner ruling, this change
+touches only the import, the four Bedrock `resources:` lines and three `environment` additions.
+Compiled output: `npm run build` regenerated `api-stack.js` with a lot of unrelated drift
+(Stripe, SES, Cognito), so that was reverted, and the four Bedrock edits were applied to
+`api-stack.js` by hand. `monitoring-stack.js` and the new `config/bedrock.js`/`.d.ts` are kept;
+the new sourcemap line was stripped from `bedrock.js`.
+Not done: the `pattern-detection` cost constants still use Sonnet prices ($0.003/$0.015 per 1K),
+which is 3x high for Haiku 4.5; this affects only a log warning.
 ## 2026-10-31 - Alarms Routed to Email, Data Stores Protected (Session 170)
 FEAT-004 (plan items 3 and 6; review findings P-17, L-02, AC-07, AC-13, L-01). CDK only, and
 additive.

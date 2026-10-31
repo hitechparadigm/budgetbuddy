@@ -328,10 +328,32 @@ export class MonitoringStack extends cdk.Stack {
             comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
         });
 
+        // AI fallback alarm - the AI Lambdas serve a deterministic template when Bedrock
+        // fails, and report success. They emit AiFallbackUsed (EMF, undimensioned
+        // aggregate plus Feature/ModelId) on every fallback.
+        const aiFallbackAlarm = new cloudwatch.Alarm(this, 'AiFallbackAlarm', {
+            alarmName: 'budgetbuddy-ai-fallback-in-use',
+            alarmDescription: 'AI features are serving the deterministic fallback instead of Bedrock output',
+
+            metric: new cloudwatch.Metric({
+                namespace: 'BudgetBuddy/AI',
+                metricName: 'AiFallbackUsed',
+                statistic: 'Sum',
+                period: cdk.Duration.minutes(15),
+            }),
+
+            threshold: 1,
+            evaluationPeriods: 1,
+            comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            // The EMF metric does not exist until its first emission; missing data is healthy
+            treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+        });
+
         // Add alarms to SNS topic
         apiErrorAlarm.addAlarmAction(new cloudwatchActions.SnsAction(this.alertTopic));
         apiLatencyAlarm.addAlarmAction(new cloudwatchActions.SnsAction(this.alertTopic));
         dynamoThrottleAlarm.addAlarmAction(new cloudwatchActions.SnsAction(this.alertTopic));
+        aiFallbackAlarm.addAlarmAction(new cloudwatchActions.SnsAction(this.alertTopic));
     }
 
     /**
@@ -358,8 +380,21 @@ export class MonitoringStack extends cdk.Stack {
             height: 6,
         });
 
-        // Add cost widget to dashboard
-        this.applicationDashboard.addWidgets(costWidget);
+        // AI outcome widget - Bedrock successes vs deterministic fallbacks
+        const aiOutcomeWidget = new cloudwatch.GraphWidget({
+            title: 'AI: Bedrock vs Fallback',
+            left: ['AiInvokeSucceeded', 'AiFallbackUsed'].map((metricName) => new cloudwatch.Metric({
+                namespace: 'BudgetBuddy/AI',
+                metricName,
+                statistic: 'Sum',
+                period: cdk.Duration.minutes(15),
+            })),
+            width: 12,
+            height: 6,
+        });
+
+        // Add cost and AI widgets to dashboard (one row)
+        this.applicationDashboard.addWidgets(costWidget, aiOutcomeWidget);
 
         // Cost alarm - alert if monthly costs exceed $200
         const costAlarm = new cloudwatch.Alarm(this, 'CostAlarm', {

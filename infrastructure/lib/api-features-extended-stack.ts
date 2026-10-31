@@ -21,6 +21,7 @@ import * as logs from 'aws-cdk-lib/aws-logs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
+import { BEDROCK_MODEL_ID, bedrockModelResourceArns } from './config/bedrock';
 
 export interface ApiFeaturesExtendedStackProps extends cdk.StackProps {
   table: dynamodb.Table;
@@ -244,13 +245,17 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       handler: 'index.handler',
       description: 'BudgetBuddy insights handler for spending analytics and AI-generated insights',
       timeout: cdk.Duration.seconds(60),
+      environment: {
+        ...commonProps.environment,
+        BEDROCK_MODEL_ID,
+      },
     });
 
     // Grant Insights Lambda permission to invoke Bedrock
     this.functions.insightsHandler.addToRolePolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: ['bedrock:InvokeModel'],
-      resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
+      resources: bedrockModelResourceArns(this.region, this.account),
     }));
 
     // Receipt Lambda
@@ -314,6 +319,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       environment: {
         ...commonProps.environment,
         PATTERN_CACHE_BUCKET: this.patternCacheBucket.bucketName,
+        BEDROCK_MODEL_ID,
       },
     });
 
@@ -322,7 +328,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
     this.functions.patternDetectionHandler.addToRolePolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: ['bedrock:InvokeModel'],
-      resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
+      resources: bedrockModelResourceArns(this.region, this.account),
     }));
 
     // Budget Planning Lambda
@@ -346,13 +352,17 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       description: 'BudgetBuddy budget planning handler for AI-powered budget suggestions',
       timeout: cdk.Duration.seconds(60),
       memorySize: 1024,
+      environment: {
+        ...commonProps.environment,
+        BEDROCK_MODEL_ID,
+      },
     });
 
     // Grant Budget Planning Lambda permission to invoke Bedrock
     this.functions.budgetPlanningHandler.addToRolePolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: ['bedrock:InvokeModel'],
-      resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
+      resources: bedrockModelResourceArns(this.region, this.account),
     }));
 
     // Transaction Planning Lambda — AI-powered planned transactions
@@ -369,7 +379,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
     this.functions.transactionPlanningHandler.addToRolePolicy(new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
       actions: ['bedrock:InvokeModel'],
-      resources: [`arn:aws:bedrock:${this.region}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`],
+      resources: bedrockModelResourceArns(this.region, this.account),
     }));
 
     // Transaction Categorization Rules Lambda

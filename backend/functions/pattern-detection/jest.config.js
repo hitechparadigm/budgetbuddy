@@ -8,4 +8,7 @@ module.exports = {
     "!**/coverage/**",
     "!jest.config.js",
   ],
+  moduleNameMapper: {
+    "^/opt/nodejs/utils$": "<rootDir>/__mocks__/utils.js",
+  },
 };

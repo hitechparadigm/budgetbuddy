@@ -60,7 +60,11 @@ const BudgetAccessResolver = {
   assertPermission: jest.fn(),
 };
 
+const BEDROCK_MODEL_ID = 'test-model-id';
+const emitEmfMetric = jest.fn();
 module.exports = {
+  BEDROCK_MODEL_ID,
+  emitEmfMetric,
   successResponse,
   errorResponse,
   parseRequestBody,

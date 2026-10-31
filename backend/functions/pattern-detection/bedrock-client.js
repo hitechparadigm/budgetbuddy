@@ -1,7 +1,7 @@
 /**
  * AWS Bedrock Client
  *
- * Client for interacting with AWS Bedrock (Claude 3.5 Sonnet) with retry logic,
+ * Client for interacting with AWS Bedrock (common layer BEDROCK_MODEL_ID) with retry logic,
  * response validation, and cost monitoring.
  */
 
@@ -9,9 +9,10 @@ const {
   BedrockRuntimeClient,
   InvokeModelCommand,
 } = require("@aws-sdk/client-bedrock-runtime");
+const { BEDROCK_MODEL_ID } = require("/opt/nodejs/utils");
 
-// Claude 3.5 Sonnet model ID
-const MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0";
+// Shared model ID from the common layer (one value for every AI handler)
+const MODEL_ID = BEDROCK_MODEL_ID;
 
 // Retry configuration
 const MAX_RETRIES = 3;

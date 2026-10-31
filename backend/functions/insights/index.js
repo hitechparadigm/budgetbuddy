@@ -15,6 +15,8 @@ const {
   dynamoHelpers,
   logger,
   BudgetAccessResolver,
+  BEDROCK_MODEL_ID,
+  emitEmfMetric,
 } = require("/opt/nodejs/utils");
 const { canUseFeature } = require("/opt/nodejs/entitlements");
 
@@ -29,9 +31,6 @@ const bedrockClient = new BedrockRuntimeClient({
   region: process.env.AWS_REGION || "us-east-1",
 });
 
-// Bedrock model configuration
-const BEDROCK_MODEL_ID =
-  process.env.BEDROCK_MODEL_ID || "anthropic.claude-3-sonnet-20240229-v1:0";
 
 /**
  * Main Lambda handler for insights operations
@@ -1020,11 +1019,13 @@ User's Question: ${question}
 Provide a helpful, personalized response:`;
 
     const response = await invokeBedrockModel(prompt);
+    emitEmfMetric("AiInvokeSucceeded", 1, { Feature: "insights-ask", ModelId: BEDROCK_MODEL_ID });
     return response;
   } catch (error) {
     logger.warn("Bedrock AI unavailable, using fallback", {
       error: error.message,
     });
+    emitEmfMetric("AiFallbackUsed", 1, { Feature: "insights-ask", ModelId: BEDROCK_MODEL_ID });
     return generateAIResponse(question, summary, categoryBreakdown);
   }
 }
@@ -1134,10 +1135,12 @@ Return ONLY a JSON array of insight objects, no other text:`;
     const jsonMatch = response.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       const aiInsights = JSON.parse(jsonMatch[0]);
+      emitEmfMetric("AiInvokeSucceeded", 1, { Feature: "insights-generate", ModelId: BEDROCK_MODEL_ID });
       return aiInsights.slice(0, 3); // Limit to 3 insights
     }
 
     // Fallback if parsing fails
+    emitEmfMetric("AiFallbackUsed", 1, { Feature: "insights-generate", ModelId: BEDROCK_MODEL_ID });
     return generateInsights(
       summary,
       previousSummary,
@@ -1148,6 +1151,7 @@ Return ONLY a JSON array of insight objects, no other text:`;
     logger.warn("AI insights generation failed, using fallback", {
       error: error.message,
     });
+    emitEmfMetric("AiFallbackUsed", 1, { Feature: "insights-generate", ModelId: BEDROCK_MODEL_ID });
     return generateInsights(
       summary,
       previousSummary,

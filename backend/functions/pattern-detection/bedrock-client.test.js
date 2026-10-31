@@ -402,7 +402,8 @@ describe("AWS Bedrock Client", () => {
 
   describe("Constants", () => {
     it("should export correct model ID", () => {
-      expect(MODEL_ID).toBe("anthropic.claude-3-5-sonnet-20241022-v2:0");
+      // Re-exported from the common layer's BEDROCK_MODEL_ID (mocked in __mocks__/utils.js)
+      expect(MODEL_ID).toBe(require("/opt/nodejs/utils").BEDROCK_MODEL_ID);
     });
 
     it("should export correct retry configuration", () => {

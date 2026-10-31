@@ -20,7 +20,7 @@ jest.mock('@aws-sdk/lib-dynamodb', () => {
 
 const { __sendMock: mockSend } = require('@aws-sdk/lib-dynamodb');
 
-const { BudgetAccessResolver, generateId, dynamoHelpers } = require('./utils');
+const { BudgetAccessResolver, generateId, dynamoHelpers, emitEmfMetric } = require('./utils');
 const { FEATURE_CATALOG, canUseFeature } = require('./entitlements');
 
 // ---------------------------------------------------------------------------
@@ -515,5 +515,36 @@ describe('dynamoHelpers.queryByGSI', () => {
       PK: 'BUDGET#1',
       SK: 'BILL#bill_1',
     });
+  });
+});
+
+describe('emitEmfMetric', () => {
+  let logSpy;
+  beforeEach(() => { logSpy = jest.spyOn(console, 'log').mockImplementation(() => {}); });
+  afterEach(() => { logSpy.mockRestore(); });
+
+  test('writes one parseable EMF line in the BudgetBuddy/AI namespace', () => {
+    emitEmfMetric('AiFallbackUsed', 1, { Feature: 'generate-budget', ModelId: 'm' });
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    const doc = JSON.parse(logSpy.mock.calls[0][0]);
+    const directive = doc._aws.CloudWatchMetrics[0];
+    expect(directive.Namespace).toBe('BudgetBuddy/AI');
+    expect(directive.Metrics).toEqual([{ Name: 'AiFallbackUsed', Unit: 'Count' }]);
+    expect(typeof doc._aws.Timestamp).toBe('number');
+    expect(doc.AiFallbackUsed).toBe(1);
+    expect(doc.Feature).toBe('generate-budget');
+  });
+
+  test('publishes an undimensioned set so a dimensionless alarm matches', () => {
+    emitEmfMetric('AiFallbackUsed', 1, { Feature: 'insights-ask', ModelId: 'm' });
+    const directive = JSON.parse(logSpy.mock.calls[0][0])._aws.CloudWatchMetrics[0];
+    expect(directive.Dimensions).toEqual([[], ['Feature', 'ModelId']]);
+  });
+
+  test('emits only the empty dimension set when no dimensions are given', () => {
+    emitEmfMetric('AiInvokeSucceeded', 2);
+    const doc = JSON.parse(logSpy.mock.calls[0][0]);
+    expect(doc._aws.CloudWatchMetrics[0].Dimensions).toEqual([[]]);
+    expect(doc.AiInvokeSucceeded).toBe(2);
   });
 });

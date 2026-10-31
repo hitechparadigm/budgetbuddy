@@ -25,6 +25,7 @@ const {
   extractJsonFromResponse,
 } = require("./ai-prompt-builder");
 const { callBedrock } = require("./bedrock-client");
+const { BEDROCK_MODEL_ID, emitEmfMetric } = require("/opt/nodejs/utils");
 
 /**
  * Minimum months of transaction history required
@@ -121,6 +122,10 @@ async function analyzeTransactionsForPatterns(userId, familyId, options = {}) {
         "AI enhancement failed, using algorithm results:",
         error.message,
       );
+      emitEmfMetric("AiFallbackUsed", 1, {
+        Feature: "pattern-detection",
+        ModelId: BEDROCK_MODEL_ID,
+      });
     }
   }
 
@@ -178,9 +183,17 @@ async function enhancePatternsWithAI(
     aiPatterns = extractJsonFromResponse(response.text);
   } catch (error) {
     console.warn("Failed to parse AI response:", error.message);
+    emitEmfMetric("AiFallbackUsed", 1, {
+      Feature: "pattern-detection",
+      ModelId: BEDROCK_MODEL_ID,
+    });
     return algorithmPatterns;
   }
 
+  emitEmfMetric("AiInvokeSucceeded", 1, {
+    Feature: "pattern-detection",
+    ModelId: BEDROCK_MODEL_ID,
+  });
   // Merge AI insights with algorithm patterns
   return mergePatterns(algorithmPatterns, aiPatterns);
 }

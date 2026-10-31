@@ -616,7 +616,52 @@ const BudgetAccessResolver = {
   },
 };
 
+/**
+ * The one Bedrock model every AI handler invokes. CDK sets BEDROCK_MODEL_ID from
+ * infrastructure/lib/config/bedrock.ts; this default is only the floor.
+ * Claude Haiku 4.5 has no on-demand throughput for its bare model ID, so this is the
+ * US cross-region inference profile ID (routes to us-east-1, us-east-2, us-west-2).
+ */
+const BEDROCK_MODEL_ID =
+  process.env.BEDROCK_MODEL_ID || "us.anthropic.claude-haiku-4-5-20251001-v1:0";
+
+/**
+ * Emit one CloudWatch metric in the BudgetBuddy/AI namespace via Embedded Metric
+ * Format. A single structured log line becomes the metric, so no IAM grant and no
+ * PutMetricData call is needed.
+ *
+ * Each DimensionSet publishes a separate metric. The empty set publishes the
+ * undimensioned aggregate that the CloudWatch alarm reads; an alarm on a metric with
+ * no dimensions never matches a metric that only exists with dimensions.
+ *
+ * @param {string} metricName - e.g. 'AiFallbackUsed'
+ * @param {number} value - Count to record
+ * @param {Object<string, string>} [dimensions] - e.g. { Feature: 'generate-budget' }
+ */
+const emitEmfMetric = (metricName, value, dimensions = {}) => {
+  console.log(
+    JSON.stringify({
+      _aws: {
+        Timestamp: Date.now(),
+        CloudWatchMetrics: [
+          {
+            Namespace: "BudgetBuddy/AI",
+            Dimensions: Object.keys(dimensions).length
+              ? [[], Object.keys(dimensions)]
+              : [[]],
+            Metrics: [{ Name: metricName, Unit: "Count" }],
+          },
+        ],
+      },
+      ...dimensions,
+      [metricName]: value,
+    })
+  );
+};
+
 module.exports = {
+  BEDROCK_MODEL_ID,
+  emitEmfMetric,
   getDynamoClient,
   createResponse,
   successResponse,

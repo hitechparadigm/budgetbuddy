@@ -1,7 +1,7 @@
 /**
  * BudgetBuddy AI Lambda Function
  *
- * Handles AI-powered budget generation using AWS Bedrock (Claude 3.5).
+ * Handles AI-powered budget generation using AWS Bedrock (model: common layer BEDROCK_MODEL_ID).
  * Resolves budget access via BudgetAccessResolver on every request — no familyId, no stale JWT.
  *
  * Routes:
@@ -17,6 +17,8 @@ const {
   dynamoHelpers,
   logger,
   BudgetAccessResolver,
+  BEDROCK_MODEL_ID,
+  emitEmfMetric,
 } = require('/opt/nodejs/utils');
 
 const {
@@ -225,9 +227,11 @@ async function handleGenerateBudget(event, { userId, budgetId, role, budgetType,
   let generatedGroups;
   try {
     generatedGroups = await generateBudgetWithBedrock({ month, location, householdSize, currency, budgetType });
+    emitEmfMetric('AiInvokeSucceeded', 1, { Feature: 'generate-budget', ModelId: BEDROCK_MODEL_ID });
   } catch (err) {
     // Bedrock unavailable, EOL model, timeout, or any other failure — use fallback
     logger.warn('Bedrock generation failed, using fallback budget', { userId, error: err.message });
+    emitEmfMetric('AiFallbackUsed', 1, { Feature: 'generate-budget', ModelId: BEDROCK_MODEL_ID });
     generatedGroups = buildFallbackBudget({ householdSize, currency, location });
   }
 
@@ -267,7 +271,7 @@ async function handleGenerateBudget(event, { userId, budgetId, role, budgetType,
 // Bedrock integration
 // ---------------------------------------------------------------------------
 /**
- * Call AWS Bedrock (Claude 3.5 Sonnet) to generate a zero-based budget.
+ * Call AWS Bedrock (BEDROCK_MODEL_ID from the common layer) to generate a zero-based budget.
  *
  * @param {Object} params
  * @param {string} params.month         - YYYY-MM
@@ -327,7 +331,7 @@ Rules:
 - Return ONLY the JSON object, no explanation`;
 
   const client = getBedrockClient();
-  const modelId = process.env.BEDROCK_MODEL_ID || 'anthropic.claude-3-haiku-20240307-v1:0';
+  const modelId = BEDROCK_MODEL_ID;
 
   const command = new InvokeModelCommand({
     modelId,

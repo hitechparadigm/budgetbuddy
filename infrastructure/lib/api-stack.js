@@ -54,6 +54,7 @@ const apigateway = __importStar(require("aws-cdk-lib/aws-apigateway"));
 const lambda = __importStar(require("aws-cdk-lib/aws-lambda"));
 const iam = __importStar(require("aws-cdk-lib/aws-iam"));
 const logs = __importStar(require("aws-cdk-lib/aws-logs"));
+const bedrock_1 = require("./config/bedrock");
 class ApiStack extends cdk.Stack {
     constructor(scope, id, props) {
         super(scope, id, props);
@@ -169,11 +170,11 @@ class ApiStack extends cdk.Stack {
             functionName: 'budgetbuddy-ai',
             code: lambda.Code.fromAsset('../backend/functions/ai'),
             handler: 'index.handler',
-            description: 'BudgetBuddy AI handler for personalized budget generation using AWS Bedrock Claude 3.5',
+            description: 'BudgetBuddy AI handler for personalized budget generation using AWS Bedrock',
             timeout: cdk.Duration.minutes(2), // AI calls may take longer
             environment: {
                 ...commonEnvironment,
-                BEDROCK_MODEL_ID: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+                BEDROCK_MODEL_ID: bedrock_1.BEDROCK_MODEL_ID,
             },
         });
         /**
@@ -301,7 +302,7 @@ class ApiStack extends cdk.Stack {
                 'bedrock:InvokeModel',
                 'bedrock:InvokeModelWithResponseStream',
             ],
-            resources: ['*'], // Bedrock models don't have specific ARNs
+            resources: (0, bedrock_1.bedrockModelResourceArns)(this.region, this.account),
         }));
         // Email Handler needs SES permissions
         this.functions.emailHandler.addToRolePolicy(new iam.PolicyStatement({

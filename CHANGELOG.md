@@ -1,4 +1,35 @@
 # Changelog
+## [1.13.9] - 2026-10-31
+### fix: point Bedrock at an available model and alarm on AI fallback (wave1-security-ops, Session 170)
+AI path (review finding L-05):
+- Three different Claude 3.x model IDs were hardcoded in five places. A test `InvokeModel` from
+  account <ACCOUNT_ID> showed `anthropic.claude-3-5-sonnet-20241022-v2:0` has reached end of life,
+  so every AI feature has been serving its deterministic fallback while reporting success.
+- One model for every AI Lambda: `us.anthropic.claude-haiku-4-5-20251001-v1:0` (Claude Haiku 4.5
+  through the US cross-region inference profile; the bare model ID has no on-demand throughput).
+  It is the cheapest Anthropic text model this account can invoke: Claude Haiku 5.5 returned
+  `AccessDeniedException`.
+- The common layer exports `BEDROCK_MODEL_ID` (env var first, the profile ID as default).
+  `ai`, `insights` and `pattern-detection` read it; `pattern-detection/bedrock-client.js` still
+  re-exports `MODEL_ID`.
+- New `infrastructure/lib/config/bedrock.ts`: `BEDROCK_MODEL_ID` and
+  `bedrockModelResourceArns(region, account)`, which returns the inference-profile ARN plus the
+  foundation-model ARN in us-east-1, us-east-2 and us-west-2 (the profile's routing regions).
+  `api-stack.ts` uses it for the `ai` Lambda, replacing `resources: ['*']`. The four
+  extended-stack grants (insights, pattern-detection, budget-planning, transaction-planning) use
+  it in place of the end-of-life model ARN. `BEDROCK_MODEL_ID` is now set as an env var on
+  `ai`, `insights`, `pattern-detection` and `budget-planning`.
+Fallback telemetry:
+- Common layer `emitEmfMetric(name, value, dimensions)` writes a CloudWatch Embedded Metric
+  Format log line in namespace `BudgetBuddy/AI` (no IAM change, no API call). Each metric is
+  published undimensioned and by `Feature`/`ModelId`; the undimensioned copy is what the alarm
+  reads.
+- `AiFallbackUsed` is emitted on every fallback in `ai` (generate-budget), `insights`
+  (insights-ask, insights-generate) and `pattern-detection`; `AiInvokeSucceeded` on success.
+  Fallback behaviour is unchanged.
+- monitoring-stack: alarm `budgetbuddy-ai-fallback-in-use` (Sum over 15 min >= 1, missing data
+  not breaching) on the alerts topic, and a "Bedrock vs Fallback" dashboard widget next to the
+  cost widget. The alarm reads `INSUFFICIENT_DATA`/OK until the first AI call after deploy.
 ## [1.13.8] - 2026-10-31
 ### feat: route alarms to email and protect the data stores (wave1-security-ops, Session 170)
 Monitoring (review findings P-17, L-02):

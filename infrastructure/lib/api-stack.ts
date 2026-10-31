@@ -24,6 +24,7 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
+import { BEDROCK_MODEL_ID, bedrockModelResourceArns } from './config/bedrock';
 
 /**
  * Props for the API Stack
@@ -194,11 +195,11 @@ export class ApiStack extends cdk.Stack {
       functionName: 'budgetbuddy-ai',
       code: lambda.Code.fromAsset('../backend/functions/ai'),
       handler: 'index.handler',
-      description: 'BudgetBuddy AI handler for personalized budget generation using AWS Bedrock Claude 3.5',
+      description: 'BudgetBuddy AI handler for personalized budget generation using AWS Bedrock',
       timeout: cdk.Duration.minutes(2), // AI calls may take longer
       environment: {
         ...commonEnvironment,
-        BEDROCK_MODEL_ID: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+        BEDROCK_MODEL_ID,
       },
     });
 
@@ -345,7 +346,7 @@ export class ApiStack extends cdk.Stack {
         'bedrock:InvokeModel',
         'bedrock:InvokeModelWithResponseStream',
       ],
-      resources: ['*'], // Bedrock models don't have specific ARNs
+      resources: bedrockModelResourceArns(this.region, this.account),
     }));
 
     // Email Handler needs SES permissions
