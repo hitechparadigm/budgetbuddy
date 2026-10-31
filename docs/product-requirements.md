@@ -357,6 +357,8 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 14. **Budget alerts repeating: fixed in Session 170 (FEAT-004), not yet deployed** — `budget-alerts` is BUDGET#-keyed and will send real 80/90/100% alerts after the port deploys. It previously had a read-only IAM grant, so the "alert already sent" marker would never have been saved. `notification-stack.ts` now also grants it `dynamodb:PutItem`, so each alert is sent once per category, threshold and month.
 
 15. **Bill reminders and data restore** — `bills-scheduler` now queries bills by month on GSI1 and writes notifications where the notification center reads them (`USER#<userId>`); earlier rows written under `FAMILY#undefined` remain orphaned. `POST /restore` returns 501 until the key migration, because its write path still targets the `FAMILY#` layout. `scheduled-backup` and `investments-price-updater` are ported but not deployed.
+### AI (New)
+16. **AI features were serving fallbacks: fixed in Session 170 (FEAT-005), not yet deployed** — the hardcoded Claude 3.x model IDs had reached end of life on Bedrock, so AI budget generation, AI insights/coach and AI pattern enhancement silently returned their deterministic fallbacks while reporting success. All now use one model, `us.anthropic.claude-haiku-4-5-20251001-v1:0` (Claude Haiku 4.5). Every fallback emits `AiFallbackUsed` (namespace `BudgetBuddy/AI`), and alarm `budgetbuddy-ai-fallback-in-use` fires on it. REQ-NEW-04 below holds only once the deploy is verified.
 
 ---
 
