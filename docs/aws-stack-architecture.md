@@ -207,12 +207,18 @@ The active stack for all budget collaboration features. Replaced `api-family-sta
 | `budgetbuddy-notifications` | Device registration, preferences, history |
 | `budgetbuddy-daily-reminders` | EventBridge-triggered daily reminders |
 
+- **SNS Topic**: `budgetbuddy-dev-notification-alerts` (its own topic; monitoring depends on this
+  stack, so sharing monitoring's topic would be circular). Email subscription to `ALERT_EMAIL`.
+- **Alarms** (3 per function, 12 total, all publish to the topic): Errors >= 1 in 5 min,
+  Throttles > 1, p99 Duration > 80% of the function's own timeout.
+- **Log retention**: 7 days on all four functions.
+
 ---
 
 ## Monitoring Stack (`budgetbuddy-dev-monitoring`)
 
 - **CloudWatch Dashboard**: `budgetbuddy-dev-application-metrics`
-- **SNS Topic**: `budgetbuddy-dev-alerts`
+- **SNS Topic**: `budgetbuddy-dev-monitoring-alerts`
 - **Alarms**: API 5XX rate, Lambda errors, DynamoDB throttling, monthly cost > $100
 
 ---

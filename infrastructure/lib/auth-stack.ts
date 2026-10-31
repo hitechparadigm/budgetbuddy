@@ -18,6 +18,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { isDataProtected } from './config/data-protection';
 import { Construct } from 'constructs';
 
 export class AuthStack extends cdk.Stack {
@@ -186,8 +187,10 @@ export class AuthStack extends cdk.Stack {
         deviceOnlyRememberedOnUserPrompt: true,
       },
 
-      // Automatic deletion when stack is destroyed (for dev environments)
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      // Protected by default: the dev pool holds the real users (see config/data-protection.ts).
+      // Opt out only for a throwaway stack with --context dataProtection=false.
+      deletionProtection: isDataProtected(this),
+      removalPolicy: isDataProtected(this) ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     });
 
     /**

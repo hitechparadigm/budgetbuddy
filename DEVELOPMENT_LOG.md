@@ -1,4 +1,38 @@
 # Development Log
+## 2026-10-31 - Alarms Routed to Email, Data Stores Protected (Session 170)
+FEAT-004 (plan items 3 and 6; review findings P-17, L-02, AC-07, AC-13, L-01). CDK only, and
+additive.
+Alarms: the 12 notification-stack alarms had no actions, and the DEV alerts topic had 0
+subscribers because `ALERT_EMAIL` was set only in the prod workflow. `deploy-dev.yml` now sets it
+(default the configured ALERT_EMAIL). notification-stack gets its own topic rather than monitoring's.
+`monitoringStack.addDependency(notificationStack)` already exists, so the reverse reference
+would be circular, and moving the topic would add a cross-stack export lock. The cost is a
+second confirmation email. The error threshold changed from "more than 5 over 2 periods" to
+"1 or more in one period", which a 15-minute job can actually reach. Duration thresholds are
+80% of `fn.timeout`, so they follow the timeout if it changes. Log retention is 7 days. I kept
+`logRetention` (deprecated in favour of `logGroup`) because `logGroup` would try to create the
+existing `/aws/lambda/budgetbuddy-dev-*` groups and fail the deploy. The other stacks already
+use `logRetention`. I created no new Errors alarms, since the existing loop covers all four
+functions, including BillScheduler.
+Grants (owner ruling on FEAT-003's D5): `budget-alerts` and `daily-reminders` each get
+`table.grant(fn, 'dynamodb:PutItem')` next to `grantReadData`. PutItem is the only write either
+of them makes on a key-correct path: `markAlertSent` and the nudge record. `daily-reminders`'
+`updateItem` targets `FAMILY#` bill keys, which are dead until the key migration, so it gets
+no UpdateItem. I did not add `ses:SendEmail` for the kickoff email. The function's sender
+defaults to the unverified `noreply@budgetbuddy.app`, because `SES_FROM_EMAIL` is never set, so
+a scoped grant alone would not make the email send. That stays a follow-up.
+Data protection: protection is now opt-out through `isDataProtected()`. The table and the user
+pool get deletion protection and RETAIN; the table gets a daily backup plan that keeps 35 days.
+Read-only AWS checks: AWS Backup is already enabled for DynamoDB in this account; no existing
+vault, plan or topic uses the new names; the four notification log groups had no retention.
+Replacement check: a full `cdk synth` needs Docker. Instead, a throwaway script synthesized only
+the database, auth and notification stacks (none uses Docker bundling), and I diffed the result
+against the deployed templates. Nothing is removed, no resource changes type, and the table and
+pool keep their logical IDs. Each only gains `DeletionProtection(Enabled)` and the Retain
+policies, which are in-place updates. `PointInTimeRecoverySpecification` renders the same as
+before. Everything else is new resources or in-place alarm property changes.
+Owner action after deploy: confirm both SNS subscriptions from the emails sent to
+the configured ALERT_EMAIL.
 ## 2026-10-31 - Scheduled Handlers Ported to AWS SDK v3 (Session 170)
 Rest of FEAT-003 (plan item 2, review findings P-01 and AC-11). Six handlers required
 `aws-sdk`, which the Node.js 20 runtime does not provide. Live, `budget-alerts` had failed

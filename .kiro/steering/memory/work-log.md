@@ -110,10 +110,15 @@ inclusion: always
       `familyId` (0 of 56 DEV profiles have one); without that skip the empty FAMILY# lookup
       would remind every user on every 15-minute run in the window. Remove the skip as part of
       the `FAMILY#` key migration.
-- [ ] `budget-alerts` and `daily-reminders` have `grantReadData` only (`notification-stack.ts`),
-      so `budget-alerts`' alert-sent marker PutItem and `daily-reminders`' nudge PutItem are
-      denied (both swallowed). Visible effect after deploy: repeat budget alerts every 6 hours.
-      Owner decision; `daily-reminders` also has no `ses:SendEmail` grant for the kickoff email.
+- [x] `budget-alerts` and `daily-reminders` now also get `dynamodb:PutItem` on the table
+      (Session 170, FEAT-004, owner ruling on FEAT-003's D5), on top of `grantReadData`. This is
+      narrower than `grantReadWriteData`. `budget-alerts`' alert-sent dedup record and
+      `daily-reminders`' nudge record now persist, so alerts no longer repeat every 6 hours.
+- [ ] `daily-reminders` kickoff email: no `ses:SendEmail` grant, AND it sends from
+      `SES_FROM_EMAIL || 'noreply@budgetbuddy.app'`. The stack never sets `SES_FROM_EMAIL`, and
+      that address is not a verified SES identity. Fixing it needs an env var (e.g.
+      `info@hitechparadigm.com`) plus a grant scoped to that identity ARN, and SES sandbox limits
+      recipients anyway. Follow-up; not done in FEAT-004.
 - [ ] `restore` returns 501 until the key migration (its writes still target `FAMILY#`).
 - [ ] `investments-price-updater`, `scheduled-backup`: ported, still not wired into any stack;
       `scheduled-backup` is `FAMILY#`-keyed throughout.
@@ -131,6 +136,30 @@ inclusion: always
       Docker-based asset bundling unconditionally for every synth/diff (app.ts constructs
       all stacks regardless of target). The infra-cleanup spec's app.ts/app.js edits were
       verified via tsc --noEmit + grep instead; full synth against live AWS is unverified.
+      Workaround used in Session 170 (FEAT-004): a throwaway script that instantiates only the
+      Docker-free stacks (database, auth, notification), synthesizes them, and diffs the result
+      against `aws cloudformation get-template`. Not committed. Asset staging takes ~10 minutes.
+- [x] Alarms reach a human (Session 170, Wave 1 FEAT-004, review findings P-17/L-02).
+      `deploy-dev.yml` now passes `ALERT_EMAIL` (default the configured ALERT_EMAIL, a repo secret
+      overrides it). notification-stack has its OWN topic `budgetbuddy-dev-notification-alerts`
+      (monitoring depends on notification, so using monitoring's topic would be circular). All 12
+      notification alarms publish to it; error alarms now fire on >= 1 error in one 5-minute
+      period (the old > 5 over 2 periods could never fire for a 15-minute job); duration alarms
+      sit at 80% of each function's own timeout; 7-day log retention on all four functions.
+      Committed locally, NOT yet deployed.
+- [ ] OWNER ACTION after the deploy: two SNS confirmation emails go to the configured ALERT_EMAIL
+      (monitoring topic + notification topic). Until both links are clicked, alarms reach nobody.
+      Check: `aws sns list-subscriptions-by-topic --topic-arn <arn>` shows a real ARN, not
+      `PendingConfirmation`. Consolidating the two topics is deferred.
+- [x] Data stores protected (Session 170, FEAT-004, review findings AC-07/AC-13/L-01).
+      `lib/config/data-protection.ts` `isDataProtected()` is ON unless
+      `--context dataProtection=false`. `budgetbuddy-main` and the Cognito pool get deletion
+      protection + RETAIN; the table gets a daily 35-day AWS Backup plan (vault
+      `budgetbuddy-dev-vault`). PITR stays on (deprecated prop swapped for
+      `pointInTimeRecoverySpecification`, identical rendered template). A partial synth diffed
+      against the deployed templates shows no replacement of the table or the pool.
+      Consequence: a future change that would replace either resource now FAILS the stack update,
+      and `cdk destroy` leaves both behind.
 
 ### Security
 - [ ] Security posture ~85% (up from ~80% - critical CVE fixed, security-check.sh now exits 0 clean, see below)

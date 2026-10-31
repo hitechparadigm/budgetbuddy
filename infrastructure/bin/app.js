@@ -107,6 +107,7 @@ const notificationStack = new notification_stack_1.NotificationStack(app, `${sta
     table: databaseStack.table,
     // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
     expoAccessToken: process.env.EXPO_ACCESS_TOKEN || 'placeholder-token-configure-in-aws',
+    alertEmail: process.env.ALERT_EMAIL,
 });
 /**
  * API Stack - API Gateway and Lambda functions

@@ -1,4 +1,44 @@
 # Changelog
+## [1.13.8] - 2026-10-31
+### feat: route alarms to email and protect the data stores (wave1-security-ops, Session 170)
+Monitoring (review findings P-17, L-02):
+- `deploy-dev.yml` passes `ALERT_EMAIL` to the CDK deploy, defaulting to the configured ALERT_EMAIL
+  (a test address; `secrets.ALERT_EMAIL` overrides it). Before this, only `deploy-prod.yml`
+  set it, so the DEV alerts topic had 0 subscribers.
+- `notification-stack.ts` creates its own SNS topic, `budgetbuddy-<env>-notification-alerts`,
+  with an email subscription. It cannot use monitoring-stack's topic, because monitoring-stack
+  already depends on notification-stack, and exporting the topic would add a cross-stack
+  export lock.
+- All 12 notification alarms (errors, throttles and duration for each of the four functions)
+  now publish to that topic. Before this, none had an action.
+- Error alarms fire on 1 or more errors in one 5-minute period. The old threshold (more than 5
+  errors over two periods) could never trip for a 15-minute job, so `daily-reminders` read OK
+  while failing every invocation.
+- Duration alarms trigger at 80% of each function's own timeout, read from the function
+  itself. The old flat 1 s threshold was always in alarm for the 300 s batch jobs.
+- 7-day log retention on all four notification functions. Their log groups never expired.
+- `budget-alerts` and `daily-reminders` get `dynamodb:PutItem` on the table, in addition to
+  `grantReadData` (narrower than `grantReadWriteData`). `budget-alerts`' alert-sent dedup record
+  was being denied, so once deployed, each member of a budget over 80% would have received the
+  same alert on every 6-hour run and every transaction stream event. `daily-reminders`' nudge
+  record now persists too. Its kickoff email is still blocked (no `ses:SendEmail` grant, and an
+  unverified default sender), which remains a follow-up.
+Data protection (review findings AC-07, AC-13, L-01):
+- New `infrastructure/lib/config/data-protection.ts`: `isDataProtected()` returns true unless
+  `--context dataProtection=false` is set. Protection used to depend on `environment === 'prod'`,
+  but DEV is the only deployed environment and holds the real users and data.
+- `budgetbuddy-main`: deletion protection on, `removalPolicy` RETAIN, and the deprecated
+  `pointInTimeRecovery` replaced by `pointInTimeRecoverySpecification`. The rendered template is
+  the same, and PITR stays on.
+- Cognito user pool: deletion protection on, `removalPolicy` RETAIN (was DESTROY in all
+  environments).
+- AWS Backup: vault `budgetbuddy-<env>-vault` (RETAIN) and a daily plan with 35-day retention,
+  selecting the table.
+Notes:
+- Both SNS subscriptions stay `PendingConfirmation` until the recipient clicks the link in each
+  confirmation email.
+- With deletion protection on, a change that would replace the table or the pool fails the
+  stack update. `cdk destroy` leaves both resources behind.
 ## [1.13.7] - 2026-10-31
 ### fix: port the scheduled handlers to AWS SDK v3 (wave1-security-ops, Session 170)
 Backend (review findings P-01, AC-11):

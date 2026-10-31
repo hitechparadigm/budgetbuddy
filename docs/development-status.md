@@ -4,7 +4,17 @@
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 
-## LATEST - Session 170: Scheduled Handlers Ported to AWS SDK v3 (2026-10-31)
+## LATEST - Session 170: Alarms Routed to Email, Data Stores Protected (2026-10-31)
+Fourth item of the Wave 1 security-and-operations task (review findings P-17, L-02, AC-07,
+AC-13, L-01). The notification stack has its own SNS topic, and all 12 of its alarms send to
+`ALERT_EMAIL` (DEV default the configured ALERT_EMAIL). Error alarms fire on a single error, and
+duration alarms trigger at 80% of each function's timeout. Log retention is 7 days.
+`budgetbuddy-main` and the Cognito pool have deletion protection and RETAIN by default
+(`isDataProtected()`), and the table has a daily 35-day AWS Backup plan. `budget-alerts` and
+`daily-reminders` also get `dynamodb:PutItem`, so budget alerts are deduplicated instead of
+repeating every 6 hours. Committed locally, not yet deployed. Open: two SNS confirmation clicks
+by the owner.
+## Session 170: Scheduled Handlers Ported to AWS SDK v3 (2026-10-31)
 
 Third item of the Wave 1 security-and-operations task (review findings P-01, AC-11). Six
 handlers that `require('aws-sdk')` crashed at import on Node.js 20; they now use SDK v3 or the
@@ -15,8 +25,8 @@ locally, not yet deployed; live verification (invoke + log tail for `budget-aler
 `daily-reminders`, `bill-scheduler`) runs after the single Wave 1 deploy.
 
 Open after this change: `daily-reminders` will report 0 reminders (its reads are still
-`FAMILY#`-keyed), and `budget-alerts`/`daily-reminders` have read-only IAM, so alert
-deduplication and nudge writes fail until their grants are widened.
+`FAMILY#`-keyed). The read-only IAM on `budget-alerts`/`daily-reminders` was later fixed by
+adding a `dynamodb:PutItem` grant (FEAT-004, entry above).
 
 ## Session 170: Auth Subsystem Security Change Set (2026-10-30)
 

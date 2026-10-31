@@ -18,6 +18,12 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
 ### Recent Achievements (2026-10-31)
+- **Alarms reach a human, data stores protected** - the 12 notification alarms now email
+  `ALERT_EMAIL` through their own SNS topic, fire on a single error, and use duration thresholds
+  derived from each function's timeout. The DynamoDB table and the Cognito user pool now have
+  deletion protection and RETAIN in every environment unless explicitly opted out, and the table
+  gets a daily backup kept 35 days. Not yet deployed; both SNS subscriptions need a confirmation
+  click.
 
 - **Scheduled handlers ported to AWS SDK v3** - `budget-alerts`, `daily-reminders`,
   `investments`, `investments-price-updater`, `restore` and `scheduled-backup` no longer

@@ -68,7 +68,17 @@ database → auth → auth-onboarding → api → api-features
 
 ## Infrastructure Security
 - `dataTraceEnabled: false` on all API Gateways (no JWT token logging)
-- DynamoDB `removalPolicy`: RETAIN prod, DESTROY dev
+- Data protection is ON by default in every environment, dev included (dev holds the real
+  users and data): `isDataProtected()` in `infrastructure/lib/config/data-protection.ts` gives
+  `budgetbuddy-main` and the Cognito User Pool deletion protection + `removalPolicy: RETAIN`, and
+  the table a daily 35-day AWS Backup plan (vault `budgetbuddy-<env>-vault`). PITR is always on.
+  Opt out only for a throwaway stack: `--context dataProtection=false`
+- Deletion protection makes any change that would REPLACE the table or the user pool fail the
+  stack update; `cdk destroy` of database/auth now leaves both behind (manual cleanup)
+- Alarm topics: notification-stack has its own `budgetbuddy-<env>-notification-alerts` topic
+  (monitoring depends on notification, so it cannot use monitoring's topic without a cycle);
+  both topics subscribe `ALERT_EMAIL` (dev default the configured ALERT_EMAIL) and each needs a
+  one-time confirmation click
 - Cognito IAM scoped to specific User Pool ARN
 - SES sandbox — verified senders only
 - `security-check.sh`: scans only `.ts`/`.js` in infra/scripts/layers; excludes `cdk-out-temp`, `.playwright-mcp`

@@ -5,12 +5,17 @@ import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as logs from 'aws-cdk-lib/aws-logs';
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
+import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { Construct } from 'constructs';
 
 export interface NotificationStackProps extends cdk.StackProps {
   table: dynamodb.Table;
   // Note: commonLayer and sharedLayer are now created internally to avoid CloudFormation export dependency issues
   expoAccessToken: string;
+  alertEmail?: string;
 }
 
 export class NotificationStack extends cdk.Stack {
@@ -18,6 +23,13 @@ export class NotificationStack extends cdk.Stack {
   public readonly budgetAlertsFunction: lambda.Function;
   public readonly dailyRemindersFunction: lambda.Function;
   public readonly billSchedulerFunction: lambda.Function;
+
+  /**
+   * This stack's own alerts topic. Deliberately not monitoring-stack's topic: monitoring
+   * already depends on this stack, so referencing it here would be circular, and moving it
+   * here would add a cross-stack export lock.
+   */
+  private alertTopic!: sns.Topic;
 
   constructor(scope: Construct, id: string, props: NotificationStackProps) {
     super(scope, id, props);
@@ -50,6 +62,7 @@ export class NotificationStack extends cdk.Stack {
       },
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
+      logRetention: logs.RetentionDays.ONE_WEEK,
       description: 'Handles push notification delivery, device management, and preferences',
     });
 
@@ -69,12 +82,16 @@ export class NotificationStack extends cdk.Stack {
       },
       timeout: cdk.Duration.seconds(60),
       memorySize: 512,
+      logRetention: logs.RetentionDays.ONE_WEEK,
       // Reserved concurrency removed for dev - can be added in prod if needed
       description: 'Monitors budget spending and triggers alerts at threshold levels',
     });
 
     // Grant DynamoDB read permissions to Budget Alerts Service
     props.table.grantReadData(this.budgetAlertsFunction);
+    // markAlertSent's dedup record (BUDGET#<id>/ALERT#...) is its only write; without it every
+    // member of an over-80% budget got the same alert on every run and stream event.
+    props.table.grant(this.budgetAlertsFunction, 'dynamodb:PutItem');
 
     // Grant Lambda invoke permission to call Notification Service
     this.notificationFunction.grantInvoke(this.budgetAlertsFunction);
@@ -92,11 +109,14 @@ export class NotificationStack extends cdk.Stack {
       },
       timeout: cdk.Duration.seconds(300), // 5 minutes for batch processing
       memorySize: 1024,
+      logRetention: logs.RetentionDays.ONE_WEEK,
       description: 'Sends daily reminders to users who haven\'t logged transactions',
     });
 
     // Grant DynamoDB read permissions to Daily Reminders Service
     props.table.grantReadData(this.dailyRemindersFunction);
+    // Best-effort spending-nudge record (putItem) is its only key-correct write today.
+    props.table.grant(this.dailyRemindersFunction, 'dynamodb:PutItem');
 
     // Grant Lambda invoke permission to call Notification Service
     this.notificationFunction.grantInvoke(this.dailyRemindersFunction);
@@ -113,6 +133,7 @@ export class NotificationStack extends cdk.Stack {
       },
       timeout: cdk.Duration.seconds(300), // 5 minutes for batch processing
       memorySize: 512,
+      logRetention: logs.RetentionDays.ONE_WEEK,
       description: 'Checks for upcoming bills and sends reminder notifications',
     });
 
@@ -194,7 +215,8 @@ export class NotificationStack extends cdk.Stack {
       })
     );
 
-    // 6. Create CloudWatch alarms
+    // 6. Create the alerts topic, then CloudWatch alarms that publish to it
+    this.createAlertTopic(props.alertEmail);
     this.createAlarms();
 
     // 7. Create CloudWatch dashboard
@@ -226,6 +248,33 @@ export class NotificationStack extends cdk.Stack {
     });
   }
 
+  /**
+   * Create the SNS topic the notification alarms publish to (same idiom as
+   * monitoring-stack.ts createAlertTopic). The email subscription stays in
+   * PendingConfirmation until the recipient clicks the AWS confirmation link.
+   */
+  private createAlertTopic(alertEmail?: string): void {
+    this.alertTopic = new sns.Topic(this, 'AlertTopic', {
+      topicName: `${this.stackName}-alerts`,
+      displayName: 'BudgetBuddy Notification Function Alerts',
+    });
+
+    if (alertEmail) {
+      this.alertTopic.addSubscription(new subscriptions.EmailSubscription(alertEmail));
+    }
+
+    cdk.Tags.of(this.alertTopic).add('Component', 'Notification');
+    cdk.Tags.of(this.alertTopic).add('Service', 'SNS');
+    cdk.Tags.of(this.alertTopic).add('AlertType', 'Critical');
+    cdk.Tags.of(this.alertTopic).add('CostCenter', 'BudgetBuddy-Operations');
+    cdk.Tags.of(this.alertTopic).add('NotificationMethod', 'Email');
+
+    new cdk.CfnOutput(this, 'AlertTopicArn', {
+      value: this.alertTopic.topicArn,
+      description: 'SNS topic ARN for BudgetBuddy notification function alarms',
+    });
+  }
+
   private createAlarms(): void {
     const functions = [
       { fn: this.notificationFunction, name: 'Notification' },
@@ -233,24 +282,27 @@ export class NotificationStack extends cdk.Stack {
       { fn: this.dailyRemindersFunction, name: 'DailyReminders' },
       { fn: this.billSchedulerFunction, name: 'BillScheduler' },
     ];
+    const alarmAction = new cloudwatchActions.SnsAction(this.alertTopic);
 
     functions.forEach(({ fn, name }) => {
-      // Error rate alarm
-      new cloudwatch.Alarm(this, `${name}ErrorAlarm`, {
+      // Error alarm: any error in one 5-minute period. A 15-minute job can produce at most
+      // one error per period, so the old "> 5 over 2 periods" could never fire.
+      const errorAlarm = new cloudwatch.Alarm(this, `${name}ErrorAlarm`, {
         alarmName: `${fn.functionName}-errors`,
         alarmDescription: `Error rate alarm for ${name} Lambda function`,
         metric: fn.metricErrors({
           period: cdk.Duration.minutes(5),
           statistic: 'Sum',
         }),
-        threshold: 5,
-        evaluationPeriods: 2,
-        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+        threshold: 1,
+        evaluationPeriods: 1,
+        comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
         treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
       });
+      errorAlarm.addAlarmAction(alarmAction);
 
       // Throttle alarm
-      new cloudwatch.Alarm(this, `${name}ThrottleAlarm`, {
+      const throttleAlarm = new cloudwatch.Alarm(this, `${name}ThrottleAlarm`, {
         alarmName: `${fn.functionName}-throttles`,
         alarmDescription: `Throttle alarm for ${name} Lambda function`,
         metric: fn.metricThrottles({
@@ -262,20 +314,25 @@ export class NotificationStack extends cdk.Stack {
         comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
         treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
       });
+      throttleAlarm.addAlarmAction(alarmAction);
 
-      // Duration alarm (p99 > 1 second)
-      new cloudwatch.Alarm(this, `${name}DurationAlarm`, {
+      // Duration alarm: p99 above 80% of the function's own timeout, read from the function
+      // so the two cannot drift. A flat 1 s was permanent noise for the 300 s batch jobs.
+      // Lambda's default timeout is 3 s, used only if a function ever omits `timeout`.
+      const timeoutMs = (fn.timeout ?? cdk.Duration.seconds(3)).toMilliseconds();
+      const durationAlarm = new cloudwatch.Alarm(this, `${name}DurationAlarm`, {
         alarmName: `${fn.functionName}-duration`,
-        alarmDescription: `Duration alarm for ${name} Lambda function`,
+        alarmDescription: `Duration alarm for ${name} Lambda function (p99 > 80% of timeout)`,
         metric: fn.metricDuration({
           period: cdk.Duration.minutes(5),
           statistic: 'p99',
         }),
-        threshold: 1000, // 1 second in milliseconds
+        threshold: timeoutMs * 0.8,
         evaluationPeriods: 2,
         comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
         treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
       });
+      durationAlarm.addAlarmAction(alarmAction);
     });
   }
 

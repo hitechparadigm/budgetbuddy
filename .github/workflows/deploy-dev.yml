@@ -140,6 +140,8 @@ jobs:
 
       - name: Deploy infrastructure stacks
         working-directory: infrastructure
+        env:
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL || 'user@example.com' }}
         run: |
           set -euo pipefail
           echo "Deploying BudgetBuddy infrastructure to development environment..."

@@ -16,7 +16,9 @@
 
 import * as cdk from 'aws-cdk-lib';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as backup from 'aws-cdk-lib/aws-backup';
 import { Construct } from 'constructs';
+import { isDataProtected } from './config/data-protection';
 
 export class DatabaseStack extends cdk.Stack {
   /**
@@ -63,16 +65,18 @@ export class DatabaseStack extends cdk.Stack {
 
       // Enable point-in-time recovery for data protection
       // Allows restoration of table to any point within the last 35 days
-      pointInTimeRecovery: true,
+      // Always on, independent of isDataProtected
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
 
       // Server-side encryption using AWS managed keys
       // Ensures data is encrypted at rest for compliance
       encryption: dynamodb.TableEncryption.AWS_MANAGED,
 
-      // RETAIN in production to prevent accidental data loss on stack deletion
-      removalPolicy: this.node.tryGetContext('environment') === 'prod'
-        ? cdk.RemovalPolicy.RETAIN
-        : cdk.RemovalPolicy.DESTROY,
+      // Protected by default: dev is the deployed environment and holds the real data.
+      // Deletion protection also makes any change that would replace the table fail the
+      // stack update instead of recreating it empty.
+      deletionProtection: isDataProtected(this),
+      removalPolicy: isDataProtected(this) ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     });
 
     /**
@@ -197,5 +201,23 @@ export class DatabaseStack extends cdk.Stack {
     cdk.Tags.of(this.table).add('CostCenter', 'BudgetBuddy-Core');
     cdk.Tags.of(this.table).add('DataType', 'Application-Data');
     cdk.Tags.of(this.table).add('BackupRequired', 'Yes');
+
+    // Daily AWS Backup of the table, kept 35 days (matches the PITR window). Skipped for an
+    // opted-out throwaway stack so it does not leave a RETAIN-ed vault behind. Project,
+    // Environment, Owner, ManagedBy and CostCenter come from the app-level tags in bin/app.ts.
+    if (isDataProtected(this)) {
+      const vault = new backup.BackupVault(this, 'BudgetBuddyBackupVault', {
+        backupVaultName: `budgetbuddy-${this.node.tryGetContext('environment') || 'dev'}-vault`,
+        removalPolicy: cdk.RemovalPolicy.RETAIN,
+      });
+      const plan = backup.BackupPlan.daily35DayRetention(this, 'BudgetBuddyBackupPlan', vault);
+      plan.addSelection('MainTable', {
+        resources: [backup.BackupResource.fromDynamoDbTable(this.table)],
+      });
+
+      cdk.Tags.of(vault).add('Component', 'Database');
+      cdk.Tags.of(vault).add('Service', 'Backup');
+      cdk.Tags.of(vault).add('DataType', 'Application-Data');
+    }
   }
 }
