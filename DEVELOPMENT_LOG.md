@@ -1,4 +1,16 @@
 # Development Log
+## 2026-10-31 - Common Layer: Paginated Scan and GSI Query Helpers (Session 170)
+First step of FEAT-003 (plan item 2, review findings P-01 and AC-11). `dynamoHelpers`
+exported only `getItem`, `putItem`, `queryByPK` and `updateItem`, yet `bills-scheduler`
+called `dynamoHelpers.scan` and three of the six SDK v2 handlers queued for porting need a
+scan. Added `scan` and `queryByGSI`, both paginating on `LastEvaluatedKey`; `scan` has a
+50-page guard that warns rather than looping without bound. Five new tests in
+`common.test.js` mock the document client's `send` and cover two-page pagination,
+`ExclusiveStartKey` threading, the page guard, option passthrough and GSI key derivation.
+Common-layer jest went from 94 passed / 2 failed to 99 passed / 2 failed. The two failures
+are the pre-existing `budget.export`/`reports.advanced` entitlement tests, owned by the
+billing wave, and are unchanged. The SDK v3 handler ports follow in the next commits.
+
 ## 2026-10-30 - Auth Subsystem: Spoofing Path Closed, Credentials Out of Logs (Session 170)
 
 Second item of the Wave 1 security-and-operations task (FEAT-002, plan items 1 and 4,

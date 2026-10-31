@@ -1,4 +1,19 @@
 # Changelog
+## [1.13.6] - 2026-10-31
+### fix: paginated scan and GSI query helpers in the common layer (wave1-security-ops, Session 170)
+Backend (common layer, review finding AC-11):
+- `dynamoHelpers.scan(options)` and `dynamoHelpers.queryByGSI(indexName, pk, options)` added
+  to `backend/layers/common/nodejs/utils.js`. Both loop on `LastEvaluatedKey` and concatenate
+  every page, because a single DynamoDB page stops at 1 MB and a one-shot call truncates
+  silently. `scan` stops after `maxPages` (default 50) and logs a warning when it does.
+  `queryByGSI` builds its key condition from the index name (`GSI1` -> `GSI1PK = :gsipk`).
+  `bills-scheduler` already called `dynamoHelpers.scan`, which did not exist, so it threw
+  `TypeError` on every daily run.
+- `@aws-sdk/util-dynamodb` declared explicitly in the layer's `package.json`, pinned at
+  `3.996.9` (the version `@aws-sdk/lib-dynamodb` already pulls in), for the SDK v3 port of
+  `budget-alerts`' stream-image `unmarshall`.
+- `updateItem`'s JSDoc no longer claims optimistic locking; it is last-write-wins.
+
 ## [1.13.5] - 2026-10-30
 ### fix: close identity-spoofing path and stop logging credentials (wave1-security-ops, Session 170)
 

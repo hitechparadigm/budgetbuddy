@@ -12,6 +12,7 @@ const {
   GetCommand,
   PutCommand,
   QueryCommand,
+  ScanCommand,
   UpdateCommand,
   DeleteCommand,
 } = require("@aws-sdk/lib-dynamodb");
@@ -264,7 +265,96 @@ const dynamoHelpers = {
   },
 
   /**
-   * Update item with optimistic locking
+   * Query items by a global secondary index partition key
+   *
+   * Paginates on LastEvaluatedKey until the index is exhausted, so callers never
+   * receive a silently truncated page.
+   *
+   * @param {string} indexName - GSI name (e.g. "GSI1"); the key expression is
+   *   derived from it as "<indexName>PK = :gsipk"
+   * @param {string} pk - Index partition key value
+   * @param {Object} options - Additional QueryCommand options. Any
+   *   ExpressionAttributeValues are merged with the derived :gsipk value.
+   * @returns {Promise<Array>} All matching items across every page
+   */
+  async queryByGSI(indexName, pk, options = {}) {
+    const client = getDynamoClient();
+
+    // Extract ExpressionAttributeValues from options to prevent overwriting
+    const { ExpressionAttributeValues: optionValues, ...otherOptions } =
+      options;
+
+    const items = [];
+    let lastEvaluatedKey;
+
+    do {
+      const command = new QueryCommand({
+        TableName: process.env.TABLE_NAME,
+        IndexName: indexName,
+        KeyConditionExpression: `${indexName}PK = :gsipk`,
+        ExpressionAttributeValues: {
+          ":gsipk": pk,
+          ...(optionValues || {}),
+        },
+        ...otherOptions,
+        ...(lastEvaluatedKey ? { ExclusiveStartKey: lastEvaluatedKey } : {}),
+      });
+
+      const result = await client.send(command);
+      items.push(...(result.Items || []));
+      lastEvaluatedKey = result.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return items;
+  },
+
+  /**
+   * Scan the whole table, following every page
+   *
+   * DynamoDB caps a single Scan response at 1 MB, so a one-shot scan silently
+   * truncates on a table of any size. This helper loops on LastEvaluatedKey and
+   * concatenates the results.
+   *
+   * @param {Object} options - Additional ScanCommand options. `maxPages`
+   *   (default 50) bounds the loop; tripping it logs a warning so a data-size
+   *   increase surfaces instead of truncating quietly.
+   * @returns {Promise<Array>} All scanned items
+   */
+  async scan(options = {}) {
+    const client = getDynamoClient();
+
+    const { maxPages = 50, ...scanOptions } = options;
+
+    const items = [];
+    let lastEvaluatedKey;
+    let pages = 0;
+
+    do {
+      const command = new ScanCommand({
+        TableName: process.env.TABLE_NAME,
+        ...scanOptions,
+        ...(lastEvaluatedKey ? { ExclusiveStartKey: lastEvaluatedKey } : {}),
+      });
+
+      const result = await client.send(command);
+      items.push(...(result.Items || []));
+      lastEvaluatedKey = result.LastEvaluatedKey;
+      pages += 1;
+
+      if (lastEvaluatedKey && pages >= maxPages) {
+        logger.warn("Scan stopped at maxPages; results are truncated", {
+          maxPages,
+          itemsScanned: items.length,
+        });
+        break;
+      }
+    } while (lastEvaluatedKey);
+
+    return items;
+  },
+
+  /**
+   * Update item (last-write-wins; no conditional check is applied)
    * @param {string} pk - Partition key
    * @param {string} sk - Sort key
    * @param {Object} updates - Fields to update

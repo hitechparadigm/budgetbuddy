@@ -1,10 +1,26 @@
 'use strict';
 
 /**
- * Tests for common layer: BudgetAccessResolver and entitlements.canUseFeature
+ * Tests for common layer: BudgetAccessResolver, entitlements.canUseFeature and
+ * the paginating dynamoHelpers.scan / dynamoHelpers.queryByGSI helpers.
  */
 
-const { BudgetAccessResolver, generateId } = require('./utils');
+// Replace the document client with a single shared send() mock so the
+// dynamoHelpers pagination loops can be driven deterministically. The mock is
+// created inside the factory to stay safe against jest.mock hoisting.
+jest.mock('@aws-sdk/lib-dynamodb', () => {
+  const actual = jest.requireActual('@aws-sdk/lib-dynamodb');
+  const sendMock = jest.fn();
+  return {
+    ...actual,
+    __sendMock: sendMock,
+    DynamoDBDocumentClient: { from: () => ({ send: sendMock }) },
+  };
+});
+
+const { __sendMock: mockSend } = require('@aws-sdk/lib-dynamodb');
+
+const { BudgetAccessResolver, generateId, dynamoHelpers } = require('./utils');
 const { FEATURE_CATALOG, canUseFeature } = require('./entitlements');
 
 // ---------------------------------------------------------------------------
@@ -390,6 +406,114 @@ describe('FEATURE_CATALOG', () => {
     Object.entries(FEATURE_CATALOG).forEach(([key, value]) => {
       expect(typeof value.description).toBe('string');
       expect(value.description.length).toBeGreaterThan(0);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// dynamoHelpers.scan / dynamoHelpers.queryByGSI
+// ---------------------------------------------------------------------------
+
+describe('dynamoHelpers.scan', () => {
+  beforeEach(() => {
+    mockSend.mockReset();
+    process.env.TABLE_NAME = 'budgetbuddy-test';
+  });
+
+  test('follows LastEvaluatedKey and concatenates both pages', async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        Items: [{ PK: 'BUDGET#1' }, { PK: 'BUDGET#2' }],
+        LastEvaluatedKey: { PK: 'BUDGET#2', SK: 'METADATA' },
+      })
+      .mockResolvedValueOnce({ Items: [{ PK: 'BUDGET#3' }] });
+
+    const items = await dynamoHelpers.scan();
+
+    expect(mockSend).toHaveBeenCalledTimes(2);
+    expect(items.map((i) => i.PK)).toEqual(['BUDGET#1', 'BUDGET#2', 'BUDGET#3']);
+
+    // Page 1 must not carry a start key; page 2 must carry the first page's key.
+    expect(mockSend.mock.calls[0][0].input.ExclusiveStartKey).toBeUndefined();
+    expect(mockSend.mock.calls[1][0].input.ExclusiveStartKey).toEqual({
+      PK: 'BUDGET#2',
+      SK: 'METADATA',
+    });
+  });
+
+  test('stops at maxPages and warns instead of looping forever', async () => {
+    mockSend.mockResolvedValue({
+      Items: [{ PK: 'BUDGET#1' }],
+      LastEvaluatedKey: { PK: 'BUDGET#1' },
+    });
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const items = await dynamoHelpers.scan({ maxPages: 3 });
+
+    expect(mockSend).toHaveBeenCalledTimes(3);
+    expect(items).toHaveLength(3);
+    expect(warnSpy).toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+  });
+
+  test('passes caller options through to the ScanCommand', async () => {
+    mockSend.mockResolvedValueOnce({ Items: [] });
+
+    await dynamoHelpers.scan({
+      FilterExpression: 'begins_with(PK, :pk)',
+      ExpressionAttributeValues: { ':pk': 'BUDGET#' },
+    });
+
+    const input = mockSend.mock.calls[0][0].input;
+    expect(input.TableName).toBe('budgetbuddy-test');
+    expect(input.FilterExpression).toBe('begins_with(PK, :pk)');
+    expect(input.ExpressionAttributeValues).toEqual({ ':pk': 'BUDGET#' });
+    expect(input.maxPages).toBeUndefined();
+  });
+});
+
+describe('dynamoHelpers.queryByGSI', () => {
+  beforeEach(() => {
+    mockSend.mockReset();
+    process.env.TABLE_NAME = 'budgetbuddy-test';
+  });
+
+  test('derives the key expression from the index name', async () => {
+    mockSend.mockResolvedValueOnce({ Items: [{ billId: 'bill_1' }] });
+
+    const items = await dynamoHelpers.queryByGSI('GSI1', 'BILLS#2026-10');
+
+    const input = mockSend.mock.calls[0][0].input;
+    expect(input.IndexName).toBe('GSI1');
+    expect(input.KeyConditionExpression).toBe('GSI1PK = :gsipk');
+    expect(input.ExpressionAttributeValues).toEqual({ ':gsipk': 'BILLS#2026-10' });
+    expect(items).toEqual([{ billId: 'bill_1' }]);
+  });
+
+  test('merges caller ExpressionAttributeValues and paginates', async () => {
+    mockSend
+      .mockResolvedValueOnce({
+        Items: [{ billId: 'bill_1' }],
+        LastEvaluatedKey: { PK: 'BUDGET#1', SK: 'BILL#bill_1' },
+      })
+      .mockResolvedValueOnce({ Items: [{ billId: 'bill_2' }] });
+
+    const items = await dynamoHelpers.queryByGSI('GSI1', 'BILLS#2026-10', {
+      FilterExpression: '#s = :s',
+      ExpressionAttributeNames: { '#s': 'status' },
+      ExpressionAttributeValues: { ':s': 'unpaid' },
+    });
+
+    expect(mockSend).toHaveBeenCalledTimes(2);
+    expect(items.map((i) => i.billId)).toEqual(['bill_1', 'bill_2']);
+    expect(mockSend.mock.calls[0][0].input.ExpressionAttributeValues).toEqual({
+      ':gsipk': 'BILLS#2026-10',
+      ':s': 'unpaid',
+    });
+    expect(mockSend.mock.calls[1][0].input.ExclusiveStartKey).toEqual({
+      PK: 'BUDGET#1',
+      SK: 'BILL#bill_1',
     });
   });
 });
