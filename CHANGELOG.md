@@ -1,9 +1,23 @@
 # Changelog
+## [1.13.10] - 2026-10-31
+### chore: stop publishing personal email addresses (wave1-security-ops, Session 170)
+- `deploy-dev.yml` reads `ALERT_EMAIL` only from the GitHub Actions secret, matching
+  `deploy-prod.yml`. The repository is public, and the previous committed fallback published a
+  personal address. If the secret is ever deleted, the alert topics lose their email
+  subscription rather than falling back to a hardcoded address.
+- Personal addresses removed from every file Wave 1 changed (CHANGELOG, DEVELOPMENT_LOG,
+  README, `docs/development-status.md`, `docs/product-requirements.md`, and the
+  `architecture.md`/`work-log.md` steering memory). Historical entries now read
+  `[personal address redacted]`; the alert recipient is referred to as the configured
+  `ALERT_EMAIL` (a GitHub Actions secret). Git history still contains the old text.
+- The AWS account ID removed from the same files: the Bedrock config comment
+  (`infrastructure/lib/config/bedrock.{ts,js,d.ts}`), the 1.13.9 entry below, and a Secrets
+  Manager ARN in DEVELOPMENT_LOG, which now reads `<ACCOUNT_ID>`.
 ## [1.13.9] - 2026-10-31
 ### fix: point Bedrock at an available model and alarm on AI fallback (wave1-security-ops, Session 170)
 AI path (review finding L-05):
 - Three different Claude 3.x model IDs were hardcoded in five places. A test `InvokeModel` from
-  account <ACCOUNT_ID> showed `anthropic.claude-3-5-sonnet-20241022-v2:0` has reached end of life,
+  the project AWS account showed `anthropic.claude-3-5-sonnet-20241022-v2:0` has reached end of life,
   so every AI feature has been serving its deterministic fallback while reporting success.
 - One model for every AI Lambda: `us.anthropic.claude-haiku-4-5-20251001-v1:0` (Claude Haiku 4.5
   through the US cross-region inference profile; the bare model ID has no on-demand throughput).
@@ -33,9 +47,9 @@ Fallback telemetry:
 ## [1.13.8] - 2026-10-31
 ### feat: route alarms to email and protect the data stores (wave1-security-ops, Session 170)
 Monitoring (review findings P-17, L-02):
-- `deploy-dev.yml` passes `ALERT_EMAIL` to the CDK deploy, defaulting to the configured ALERT_EMAIL
-  (a test address; `secrets.ALERT_EMAIL` overrides it). Before this, only `deploy-prod.yml`
-  set it, so the DEV alerts topic had 0 subscribers.
+- `deploy-dev.yml` passes the configured `ALERT_EMAIL` (a GitHub Actions secret) to the CDK
+  deploy, the same way `deploy-prod.yml` does. Before this, only `deploy-prod.yml` set it, so
+  the DEV alerts topic had 0 subscribers.
 - `notification-stack.ts` creates its own SNS topic, `budgetbuddy-<env>-notification-alerts`,
   with an email subscription. It cannot use monitoring-stack's topic, because monitoring-stack
   already depends on notification-stack, and exporting the topic would add a cross-stack
@@ -1572,7 +1586,7 @@ Applied `PageHeader` component to all 8 remaining pages for visual consistency:
 
 - **Root cause 1**: `budgetsApiUrl` in `environment.ts` was pointing to the wrong API gateway (`q0zoob6728` main API instead of `jcl39tq8x0` budgets API) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â fixed in `fd7c4a3`
 - **Root cause 2**: `FROM_EMAIL` in `api-budgets-stack.ts` defaulted to `noreply@budgetbuddy.com` (unverified in SES) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â fixed to `info@hitechparadigm.com` in `e75dd23`
-- **Verified**: Live Lambda invocation confirmed email delivered to [personal address redacted] ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
+- **Verified**: Live Lambda invocation confirmed email delivered to `[personal address redacted]` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
 - **Note**: SES still in sandbox mode ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â can only send to verified addresses until production access is requested
 - Updated `docs/USER_JOURNEYS.md` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Section 4 email status, infrastructure status, gap analysis, requirements traceability
 
@@ -2150,7 +2164,7 @@ DynamoDB on every request.
 ### ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ User Support - Family Invitation Management (Session 124)
 
 - **Issue Resolution**: "Pending invitation already exists for this email"
-  - User reported error when trying to invite the configured ALERT_EMAIL
+  - User reported error when trying to invite [personal address redacted]
   - Investigation revealed feature is already fully implemented and deployed (Session 123)
   - No code changes needed - user just needs to use existing UI
 
@@ -8313,7 +8327,7 @@ Both web and mobile apps now:
 ### ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚Âº BUG FIXES
 
 - **ESLint Error**: Removed unused `PutItemCommand` import causing pipeline failure
-- **User Access**: Fixed [personal address redacted] by assigning to existing family `family_test_20251026`
+- **User Access**: Fixed `[personal address redacted]` by assigning to existing family `family_test_20251026`
 - **Data Validation**: Added number validation for all budget amounts to prevent undefined errors
 
 ### ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â¡ DOCUMENTATION

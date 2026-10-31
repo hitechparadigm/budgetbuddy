@@ -7,7 +7,7 @@
 ## LATEST - Session 170: Alarms Routed to Email, Data Stores Protected (2026-10-31)
 Fourth item of the Wave 1 security-and-operations task (review findings P-17, L-02, AC-07,
 AC-13, L-01). The notification stack has its own SNS topic, and all 12 of its alarms send to
-`ALERT_EMAIL` (DEV default the configured ALERT_EMAIL). Error alarms fire on a single error, and
+the configured `ALERT_EMAIL` (a GitHub Actions secret). Error alarms fire on a single error, and
 duration alarms trigger at 80% of each function's timeout. Log retention is 7 days.
 `budgetbuddy-main` and the Cognito pool have deletion protection and RETAIN by default
 (`isDataProtected()`), and the table has a daily 35-day AWS Backup plan. `budget-alerts` and
@@ -457,7 +457,7 @@ All 15+ pages audited via Playwright. Design token sweep across 120+ files. CI/C
 
 **Status**: Feature already implemented and deployed ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 
-**User Issue**: Getting "Pending invitation already exists for this email" error when trying to invite the configured ALERT_EMAIL
+**User Issue**: Getting "Pending invitation already exists for this email" error when trying to invite [personal address redacted]
 
 **Root Cause**: A pending invitation already exists in the database for this email address
 
@@ -467,7 +467,7 @@ All 15+ pages audited via Playwright. Design token sweep across 120+ files. CI/C
 
 1. Navigate to Family Settings page in the web app
 2. Scroll to the "Pending Invitations" section (only visible to primary account holder)
-3. Find the invitation for the configured ALERT_EMAIL
+3. Find the invitation for [personal address redacted]
 4. Click the "Cancel" button to revoke the pending invitation
 5. Send a new invitation
 

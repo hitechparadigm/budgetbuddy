@@ -77,14 +77,14 @@ database → auth → auth-onboarding → api → api-features
   stack update; `cdk destroy` of database/auth now leaves both behind (manual cleanup)
 - Alarm topics: notification-stack has its own `budgetbuddy-<env>-notification-alerts` topic
   (monitoring depends on notification, so it cannot use monitoring's topic without a cycle);
-  both topics subscribe `ALERT_EMAIL` (dev default the configured ALERT_EMAIL) and each needs a
+  both topics subscribe the configured `ALERT_EMAIL` (a GitHub Actions secret) and each needs a
   one-time confirmation click
 - Cognito IAM scoped to specific User Pool ARN
 - SES sandbox — verified senders only
 - `security-check.sh`: scans only `.ts`/`.js` in infra/scripts/layers; excludes `cdk-out-temp`, `.playwright-mcp`
 
 ## SES Status
-- Sandbox mode — verified: [personal address redacted], the configured ALERT_EMAIL, `info@hitechparadigm.com`, [personal address redacted], [personal address redacted], [personal address redacted], `noreply@budgetbuddy.com`
+- Sandbox mode — the sender `info@hitechparadigm.com` plus six other verified identities, deliberately not recorded in the repo; list them with `aws ses list-identities`
 - FROM_EMAIL = `info@hitechparadigm.com`
 
 ## Removed / Deprecated

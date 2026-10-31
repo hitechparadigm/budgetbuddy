@@ -157,15 +157,15 @@ inclusion: always
       Docker-free stacks (database, auth, notification), synthesizes them, and diffs the result
       against `aws cloudformation get-template`. Not committed. Asset staging takes ~10 minutes.
 - [x] Alarms reach a human (Session 170, Wave 1 FEAT-004, review findings P-17/L-02).
-      `deploy-dev.yml` now passes `ALERT_EMAIL` (default the configured ALERT_EMAIL, a repo secret
-      overrides it). notification-stack has its OWN topic `budgetbuddy-dev-notification-alerts`
+      `deploy-dev.yml` now passes the configured `ALERT_EMAIL` (a GitHub Actions secret, no
+      committed default). notification-stack has its OWN topic `budgetbuddy-dev-notification-alerts`
       (monitoring depends on notification, so using monitoring's topic would be circular). All 12
       notification alarms publish to it; error alarms now fire on >= 1 error in one 5-minute
       period (the old > 5 over 2 periods could never fire for a 15-minute job); duration alarms
       sit at 80% of each function's own timeout; 7-day log retention on all four functions.
       Committed locally, NOT yet deployed.
-- [ ] OWNER ACTION after the deploy: two SNS confirmation emails go to the configured ALERT_EMAIL
-      (monitoring topic + notification topic). Until both links are clicked, alarms reach nobody.
+- [ ] OWNER ACTION after the deploy: two SNS confirmation emails go to the configured
+      `ALERT_EMAIL` (a GitHub Actions secret) (monitoring topic + notification topic). Until both links are clicked, alarms reach nobody.
       Check: `aws sns list-subscriptions-by-topic --topic-arn <arn>` shows a real ARN, not
       `PendingConfirmation`. Consolidating the two topics is deferred.
 - [x] Data stores protected (Session 170, FEAT-004, review findings AC-07/AC-13/L-01).

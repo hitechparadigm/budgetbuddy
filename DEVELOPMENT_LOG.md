@@ -1,4 +1,14 @@
 # Development Log
+## 2026-10-31 - Personal Addresses Removed from Wave 1 Files (Session 170)
+Converge-loop fix requested by the orchestrator. The GitHub repository is public, and
+`deploy-dev.yml` defaulted `ALERT_EMAIL` to a personal address. The orchestrator created the
+`ALERT_EMAIL` Actions secret, so the workflow now reads `${{ secrets.ALERT_EMAIL }}` with no
+fallback, the same as `deploy-prod.yml`. Every personal address in the files Wave 1 changed was
+replaced, including older entries in those files; files Wave 1 did not touch are left for a
+separate docs-cleanup task. The AWS account ID was masked in the same files (the Bedrock
+config comment and one Secrets Manager ARN). The text is gone from the tip only; git history
+keeps it, and so do the messages of two earlier Wave 1 commits. Rewriting either is the owner's
+decision.
 ## 2026-10-31 - Bedrock Model Fixed, AI Fallback Alarmed (Session 170)
 FEAT-005 (plan item 7; review finding L-05).
 Model choice: `aws bedrock list-foundation-models --by-provider anthropic` lists 15 Anthropic
@@ -29,8 +39,8 @@ which is 3x high for Haiku 4.5; this affects only a log warning.
 FEAT-004 (plan items 3 and 6; review findings P-17, L-02, AC-07, AC-13, L-01). CDK only, and
 additive.
 Alarms: the 12 notification-stack alarms had no actions, and the DEV alerts topic had 0
-subscribers because `ALERT_EMAIL` was set only in the prod workflow. `deploy-dev.yml` now sets it
-(default the configured ALERT_EMAIL). notification-stack gets its own topic rather than monitoring's.
+subscribers because `ALERT_EMAIL` was set only in the prod workflow. `deploy-dev.yml` now passes
+the configured `ALERT_EMAIL` (a GitHub Actions secret). notification-stack gets its own topic rather than monitoring's.
 `monitoringStack.addDependency(notificationStack)` already exists, so the reverse reference
 would be circular, and moving the topic would add a cross-stack export lock. The cost is a
 second confirmation email. The error threshold changed from "more than 5 over 2 periods" to
@@ -57,8 +67,8 @@ against the deployed templates. Nothing is removed, no resource changes type, an
 pool keep their logical IDs. Each only gains `DeletionProtection(Enabled)` and the Retain
 policies, which are in-place updates. `PointInTimeRecoverySpecification` renders the same as
 before. Everything else is new resources or in-place alarm property changes.
-Owner action after deploy: confirm both SNS subscriptions from the emails sent to
-the configured ALERT_EMAIL.
+Owner action after deploy: confirm both SNS subscriptions from the emails sent to the
+configured `ALERT_EMAIL` (a GitHub Actions secret).
 ## 2026-10-31 - Scheduled Handlers Ported to AWS SDK v3 (Session 170)
 Rest of FEAT-003 (plan item 2, review findings P-01 and AC-11). Six handlers required
 `aws-sdk`, which the Node.js 20 runtime does not provide. Live, `budget-alerts` had failed
@@ -1975,18 +1985,18 @@ Full heuristic review of the web app UI (31 pages, 37+ components) using the des
 
 ### Work Completed
 
-1. **Investigated email invitation failure** for [personal address redacted]:
+1. **Investigated email invitation failure** for `[personal address redacted]`:
    - Confirmed both root causes were already fixed in previous session (commits `fd7c4a3`, `e75dd23`)
    - `budgetsApiUrl` now points to correct API gateway (`jcl39tq8x0`)
    - `FROM_EMAIL` now uses `info@hitechparadigm.com` (verified SES identity)
 
 2. **Live end-to-end verification**:
    - Invoked `budgetbuddy-email-budgets` Lambda directly
-   - Email delivered to [personal address redacted] ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
+   - Email delivered to `[personal address redacted]` ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â SES message ID `0100019e82f8f731-b7376f04-2ace-4d62-8104-773dfe681812-000000`
    - CloudWatch logs confirmed successful delivery
 
 3. **SES sandbox status**:
-   - Verified identities: [personal address redacted], the configured ALERT_EMAIL, `info@hitechparadigm.com`, [personal address redacted], [personal address redacted], [personal address redacted], `noreply@budgetbuddy.com`
+   - Verified identities: the sender `info@hitechparadigm.com` plus six others, deliberately not recorded in the repo (`aws ses list-identities`)
    - Still in sandbox ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â need to request production access to send to arbitrary addresses
 
 4. **Updated `docs/USER_JOURNEYS.md`**:
@@ -3042,7 +3052,7 @@ The AI-powered bill reminders and budget planning feature is now:
 
 User reported: "Testing again: Pending invitation already exists for this email"
 
-- Trying to invite the configured ALERT_EMAIL
+- Trying to invite [personal address redacted]
 - Getting error about existing pending invitation
 - Unclear how to resolve
 
@@ -3065,7 +3075,7 @@ User reported: "Testing again: Pending invitation already exists for this email"
    - ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ Tests passing (49 tests in invitation-management.test.js)
 
 3. **Root Cause**:
-   - A pending invitation already exists in the database for the configured ALERT_EMAIL
+   - A pending invitation already exists in the database for [personal address redacted]
    - User needs to revoke the existing invitation before sending a new one
    - The UI to do this is already available but user may not have seen it
 
@@ -3080,7 +3090,7 @@ User reported: "Testing again: Pending invitation already exists for this email"
 3. Scroll down to find the "Pending Invitations" section
    - This section only appears for primary account holders
    - It only shows if there are pending invitations
-4. Find the invitation for the configured ALERT_EMAIL
+4. Find the invitation for [personal address redacted]
 5. Click the "Cancel" button next to that invitation
 6. Wait for confirmation message
 7. Send a new invitation
@@ -13756,7 +13766,7 @@ Both platforms use the same shared utility:
 **AWS Secrets Manager:**
 
 - Secret Name: budgetbuddy-dev/google-oauth
-- ARN: arn:aws:secretsmanager:us-east-1:<ACCOUNT_ID>:secret:budgetbuddy-dev/google-oauth-Ai9T8o
+- ARN: arn:aws:secretsmanager:us-east-1:<ACCOUNT_ID>:secret:budgetbuddy-dev/google-oauth-<suffix>
 - Profile: hitechparadigm
 
 ### Requirements Coverage

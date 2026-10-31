@@ -5,7 +5,7 @@
  *
  * Claude Haiku 4.5 through the US cross-region inference profile. The bare
  * foundation-model ID has no on-demand throughput for this model, so the profile ID
- * is required. Chosen 2026-10-31 by a test InvokeModel from account <ACCOUNT_ID>:
+ * is required. Chosen 2026-10-31 by a test InvokeModel from the project AWS account:
  * Haiku 4.5 answered; Haiku 5.5 returned AccessDeniedException (not enabled for the
  * account); the old claude-3-5-sonnet-20241022-v2:0 returned "end of its life".
  */
