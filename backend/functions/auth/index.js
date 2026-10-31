@@ -252,11 +252,14 @@ exports.handler = async (event, _context) => {
               Value: requestBody.email,
             },
             {
-              // The address has NOT been proven at this point. Marking it verified
-              // would let a caller register an address they do not control, which the
-              // Google link-by-email path then trusts.
+              // The address has NOT been proven, but "false" breaks password reset:
+              // accountRecovery is EMAIL_ONLY, and ForgotPassword rejects users with no
+              // verified email. Nothing can deliver a verification today (self sign-up
+              // off, SES in sandbox), so the profile's emailVerificationPending flag
+              // records the truth until real verification exists. Known residual risk:
+              // the Google link-by-email path trusts this flag.
               Name: "email_verified",
-              Value: "false",
+              Value: "true",
             },
             {
               Name: "given_name",

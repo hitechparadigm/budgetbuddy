@@ -46,9 +46,10 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
   no longer logs the whole API Gateway event (which carried `event.body` and
   `event.headers.Authorization`) or the request headers. Registration user IDs are now
   UUID-backed instead of `Date.now()` + `Math.random()`.
-- **Pending a live test**: new accounts are created with `email_verified: "false"`. The
-  pool uses email-alias sign-in, which Cognito honours only when that flag is true, so a
-  register-then-sign-in check against DEV decides whether it stays `false`.
+- **Open: unproven email addresses**: new accounts are still created with
+  `email_verified: "true"`. `"false"` was reverted before deploy because the pool's
+  `EMAIL_ONLY` account recovery rejects password reset without a verified email. The
+  profile record carries `emailVerificationPending: true` until real verification exists.
 
 ### Recent Achievements (2026-10-12)
 

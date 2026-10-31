@@ -202,14 +202,14 @@ inclusion: always
       record field presence only, five handlers no longer echo raw `error.message` to the
       client, and registration user IDs come from `generateId.user()` rather than
       `Date.now()` + `Math.random()`.
-- [ ] `email_verified` on registration is **provisionally** `"false"` with
-      `emailVerificationPending: true` on the profile record (Session 170, FEAT-002, plan item
-      4d). UNDECIDED BY DESIGN: the pool uses `signInAliases: { email: true }` and Cognito only
-      honours an email alias for sign-in when `email_verified` is true, so this may lock out
-      every newly registered user. The wave's final step must register a fresh email against
-      DEV and then sign in: keep `false` if sign-in succeeds, revert to `"true"` in the same
-      change set if it fails. Delivering a real verification message is blocked either way -
-      self sign-up is now off (no Cognito confirmation-code flow) and SES is still in sandbox.
+- [ ] `email_verified` on registration stays `"true"`, with `emailVerificationPending: true`
+      on the profile record (Session 170, FEAT-002, plan item 4d fallback branch, taken before
+      deploy on converge-review finding B-1). `"false"` breaks password reset: the pool's
+      `accountRecovery` is `EMAIL_ONLY` and Cognito `ForgotPassword` rejects users with no
+      verified email, so `POST /auth/forgot-password` would return 500 for every new user.
+      AC-02's verification half is BLOCKED on SES production access or Cognito managed login;
+      until then an unproven address is trusted by the Google link-by-email path
+      (pre-account-takeover risk stays open).
 - [ ] Wave 2 follow-up: consolidate the `'auth_id_token'` literal. `services/storage-keys.ts`
       now owns it (`STORAGE_KEYS` + `ID_TOKEN_KEY`, import-free); `services/plaid.ts:56` reads
       the wrong key (`'budgetbuddy_id_token'`, the web app's) and is the actual bug, while

@@ -43,11 +43,11 @@ Also stopped the auth Lambda logging the entire API Gateway event (plaintext pas
 `event.body`, bearer token in `event.headers.Authorization`) and all request headers, and
 switched registration user IDs from `Date.now()` + `Math.random()` to a UUID generator.
 
-Open: new accounts carry `email_verified: "false"`, which is provisional. The pool uses
-email-alias sign-in and Cognito honours an alias only when that flag is true, so a live
-register-then-sign-in test against DEV decides whether it stays `false` or reverts.
-Delivering a real verification message is blocked either way - self sign-up is now off and
-SES is still in sandbox.
+Open: new accounts are still created with `email_verified: "true"` and an unproven address.
+`"false"` was tried and reverted before deploy, because the pool's `EMAIL_ONLY` account
+recovery rejects password reset for users with no verified email. The profile record carries
+`emailVerificationPending: true`. Delivering a real verification message is blocked - self
+sign-up is now off and SES is still in sandbox.
 
 ## LATEST - Session 168: modular-architecture Wave 0+1 Tasks (2026-10-13)
 

@@ -1,4 +1,16 @@
 # Development Log
+## 2026-10-31 - email_verified Reverted to "true" (Session 170)
+Converge-review blocker B-1. FEAT-002 had set `email_verified: "false"` at `AdminCreateUser`
+and left the final value to a live register-then-sign-in test. The review found that the test
+could not catch the real failure. The pool signs in with the email as the username, not an
+alias, so sign-in would likely still work. Password reset would not: `accountRecovery` is
+`EMAIL_ONLY`, and Cognito `ForgotPassword` throws `InvalidParameterException` for a user with
+no verified email or phone. The handler maps only `UserNotFoundException` and
+`LimitExceededException`, so every new user would get a 500 from `POST /auth/forgot-password`.
+Took the plan's item 4d fallback branch before deploying: the value is `"true"` again, the
+profile keeps `emailVerificationPending: true`, and AC-02's verification half is blocked on SES
+production access or Cognito managed login. The Google link-by-email pre-account-takeover risk
+that motivated the change stays open until real verification exists.
 ## 2026-10-31 - Personal Addresses Removed from Wave 1 Files (Session 170)
 Converge-loop fix requested by the orchestrator. The GitHub repository is public, and
 `deploy-dev.yml` defaulted `ALERT_EMAIL` to a personal address. The orchestrator created the
@@ -192,6 +204,7 @@ a worse regression than the finding. The wave's final step must register a fresh
 against DEV and then sign in with it: keep `false` if that succeeds, revert to `"true"` in
 the same change set if it fails, and report AC-02's verification half as blocked on SES
 production access. There is no third option here that can be decided from source.
+(Superseded before deploy: reverted to `"true"`, see the "email_verified Reverted" entry.)
 
 Verified: `infrastructure` build + typecheck exit 0, with only `auth-stack.js` kept from the
 regenerated compiled output; `type-check:mobile` 0 errors; mobile jest 256 passed / 2

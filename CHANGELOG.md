@@ -1,4 +1,15 @@
 # Changelog
+## [1.13.11] - 2026-10-31
+### fix(auth): keep password reset working for new accounts (wave1-security-ops, Session 170)
+- `POST /auth/register` creates Cognito users with `email_verified: "true"` again, reverting
+  the provisional `"false"` from 1.13.5. The pool's `accountRecovery` is `EMAIL_ONLY`, and
+  Cognito `ForgotPassword` rejects a user with no verified email or phone. Nothing sets the
+  flag to true later (self sign-up is off and SES is in sandbox), so `"false"` would have made
+  `POST /auth/forgot-password` return 500 for every newly registered user.
+- The `USER#<id>/PROFILE` record keeps `emailVerificationPending: true`, so the address is
+  still recorded as unproven. Real verification is blocked on SES production access or Cognito
+  managed login. Until then the pre-account-takeover risk through the Google link-by-email path
+  stays open.
 ## [1.13.10] - 2026-10-31
 ### chore: stop publishing personal email addresses (wave1-security-ops, Session 170)
 - `deploy-dev.yml` reads `ALERT_EMAIL` only from the GitHub Actions secret, matching
@@ -170,7 +181,8 @@ Security (auth Lambda logging, review finding AC-02):
   `emailVerificationPending: true`. **Provisional**: the pool uses email-alias sign-in, which
   Cognito only honours when `email_verified` is true, so a live register-then-sign-in test
   against DEV decides whether this stays `false` or reverts to `"true"` in the same change
-  set. Not yet run - deployment happens once, at the end of the wave.
+  set. Not yet run - deployment happens once, at the end of the wave. (Reverted to `"true"`
+  in 1.13.11 before deploy: `"false"` breaks password reset.)
 
 Verified: `infrastructure` build + typecheck exit 0; `type-check:mobile` 0 errors;
 mobile jest 256 passed / 1 failed / 2 skipped where the single failure
