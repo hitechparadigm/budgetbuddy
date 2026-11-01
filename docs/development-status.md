@@ -1,10 +1,17 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-10-31
+**Last Updated**: 2026-11-01
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 
-## LATEST - Session 170: Alarms Routed to Email, Data Stores Protected (2026-10-31)
+## LATEST - Session 170: Wave 1 Deploy Broke the Common Layer (2026-11-01)
+Wave 1 deployed to DEV in run 41318103714, and then every Lambda that loads the common layer
+failed at import (`Cannot find module '@smithy/core/client'`), so the main API returns 502. The
+cause is the exact `@aws-sdk/util-dynamodb` pin in the layer's `package.json`, which the CI
+workspace install split across the layer and `backend/node_modules`. The fix removes the pin. It
+is committed locally and waits for owner approval to push.
+
+## Session 170: Alarms Routed to Email, Data Stores Protected (2026-10-31)
 Fourth item of the Wave 1 security-and-operations task (review findings P-17, L-02, AC-07,
 AC-13, L-01). The notification stack has its own SNS topic, and all 12 of its alarms send to
 the configured `ALERT_EMAIL` (a GitHub Actions secret). Error alarms fire on a single error, and

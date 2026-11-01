@@ -81,6 +81,18 @@ inclusion: always
   docs commit) passed converge review and are committed on `develop` but NOT pushed, pending
   explicit owner approval. Last CI/CD run before the gate: 39060367826 (`95a4466`), SUCCESS.
   FEAT-003/004/005 are all still "committed locally, NOT yet deployed" (see their sections).
+- Session 170 deploy outage (2026-11-01): the Wave 1 range was pushed as `d0032a7`..`a981212`.
+  Run 41318103714 deployed every stack, then failed its health check. Every Lambda that loads
+  the common layer returned 502 with `Runtime.ImportModuleError: Cannot find module
+  '@smithy/core/client'`. Cause: FEAT-003 pinned `@aws-sdk/util-dynamodb` at `3.996.9` in the
+  layer's `package.json`. `backend/` is an npm workspace root, so the CI step
+  `npm install --production` in `backend/layers/common/nodejs` hoists matching packages into
+  `backend/node_modules`, which the layer asset does not ship. The pin's peer range forced newer
+  `@aws-sdk/client-dynamodb`/`core` into the layer while their `@smithy/*` deps stayed hoisted,
+  so they loaded the runtime's older `@smithy/core`. Fix: the pin is removed. The layer again
+  ships only `uuid`, and the Lambdas use the Node 20 runtime's bundled SDK v3, as before Wave 1.
+  Rule: do not add `@aws-sdk/*` to the layer's `package.json` without also fixing the CI install
+  to build the layer outside the workspace.
 - `js-yaml` is NOT installed at the repo root, so the steering/context YAML-parse gate command
   fails there with `MODULE_NOT_FOUND`. It resolves from `infrastructure/`, `packages/mobile/` and
   `packages/web-app/` - run the check with `cwd=infrastructure` and a `../.github/workflows/...`

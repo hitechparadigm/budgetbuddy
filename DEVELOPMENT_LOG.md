@@ -1,4 +1,28 @@
 # Development Log
+## 2026-11-01 - Wave 1 Deploy Broke the Common Layer (Session 170)
+The Wave 1 range was pushed as `d0032a7`..`a981212`. Deploy run 41318103714 updated every stack
+(validation, infrastructure and web jobs green), then its post-deploy `Test API endpoints` step
+failed. `curl` on `/v1/health`, `/v1/auth/health` and `/v1/budget/health` returned 502.
+CloudWatch for `budgetbuddy-auth` and `budgetbuddy-budget` showed `Runtime.ImportModuleError:
+Cannot find module '@smithy/core/client'` from
+`/opt/nodejs/node_modules/@aws-sdk/core/.../account-id-endpoint`. Downloaded layer
+`budgetbuddy-common:46`: it holds `@aws-sdk/client-dynamodb` 3.1161.0, `@aws-sdk/core` 3.979.1
+and `@aws-sdk/util-dynamodb` 3.996.9, and no `@smithy/*` package at all.
+
+Cause: FEAT-003 pinned `@aws-sdk/util-dynamodb` at `3.996.9` in the layer's `package.json`. Its
+peer range (`@aws-sdk/client-dynamodb ^3.1111.0`) conflicts with the 3.981.0 that
+`backend/package-lock.json` hoists. `backend/` is an npm workspace root, so the CI step
+`npm install --production` in `backend/layers/common/nodejs` nested the newer SDK clients in the
+layer and left their `@smithy/*` dependencies hoisted in `backend/node_modules`, which the layer
+asset (`Code.fromAsset('../backend/layers/common')`) does not include. At runtime those clients
+picked up the Lambda runtime's older `@smithy/core`. Local jest never saw this because it
+resolves through `backend/node_modules`.
+
+Fix: removed the pin. Reproduced the CI step in a scratch copy of the `backend/` manifests and
+lockfile: with the pin, the layer's `node_modules` got `@aws/`, `@aws-sdk/` (15 packages) and
+`uuid`, with no `@smithy`, matching layer 46. Without it, the layer got only `uuid`. With only
+`uuid` in the layer, every `@aws-sdk/*` import resolves to the runtime-bundled SDK v3, as before
+Wave 1. Pushing this fix needs owner approval because the deploy gate did not record an approval.
 ## 2026-10-31 - Wave 1 Deploy Gate (Session 170)
 The converge review approved Wave 1 (FEAT-001..005). The 12 commits `758f09e`..`1ec2c3d` sit on
 `develop`, unpushed. `node.exe scripts/check-cicd-status.js` reported SUCCESS for run

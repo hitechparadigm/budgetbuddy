@@ -1,4 +1,15 @@
 # Changelog
+## [1.13.13] - 2026-11-01
+### fix(layer): stop the common layer from shipping a half-installed AWS SDK (Session 170)
+- Removed the exact `@aws-sdk/util-dynamodb` `3.996.9` pin from
+  `backend/layers/common/nodejs/package.json` (added in 1.13.6). In CI, `backend/` is an npm
+  workspace root, so the layer install hoisted the new SDK's `@smithy/*` packages out of the
+  layer asset. Deploy run 41318103714 then broke every Lambda that loads the common layer with
+  `Runtime.ImportModuleError: Cannot find module '@smithy/core/client'` (the main API returned
+  502 on `/health`, `/auth/health` and `/budget/health`).
+- Without the pin, the CI layer install puts only `uuid` in the layer, as before Wave 1. All
+  `@aws-sdk/*` imports, including `budget-alerts`' `@aws-sdk/util-dynamodb`, resolve to the
+  SDK v3 bundled with the Node.js 20 Lambda runtime.
 ## [1.13.12] - 2026-10-31
 ### docs: record the Wave 1 deploy gate (wave1-security-ops, Session 170)
 - Wave 1 (FEAT-001..005, `758f09e`..`1ec2c3d`) passed converge review and is committed on
