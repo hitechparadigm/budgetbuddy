@@ -80,7 +80,7 @@ inclusion: always
 - Session 170 deploy gate: Wave 1 FEAT-001..005 (`758f09e`..`1ec2c3d`, plus the deploy-gate
   docs commit) passed converge review and are committed on `develop` but NOT pushed, pending
   explicit owner approval. Last CI/CD run before the gate: 39060367826 (`95a4466`), SUCCESS.
-  FEAT-003/004/005 are all still "committed locally, NOT yet deployed" (see their sections).
+  Superseded 2026-11-01: Wave 1 is DEPLOYED to DEV (see the outage note below).
 - Session 170 deploy outage (2026-11-01): the Wave 1 range was pushed as `d0032a7`..`a981212`.
   Run 41318103714 deployed every stack, then failed its health check. Every Lambda that loads
   the common layer returned 502 with `Runtime.ImportModuleError: Cannot find module
@@ -93,6 +93,10 @@ inclusion: always
   ships only `uuid`, and the Lambdas use the Node 20 runtime's bundled SDK v3, as before Wave 1.
   Rule: do not add `@aws-sdk/*` to the layer's `package.json` without also fixing the CI install
   to build the layer outside the workspace.
+  Recovered: `4f935a2` deployed in run 41321252759 (SUCCESS). `budgetbuddy-common:47` ships only
+  `uuid`; the main API health routes return 200; the auth, budget, transaction, tips and
+  investments logs show no import errors. Live Wave 1 checks passed the same day (DEVELOPMENT_LOG
+  2026-11-01). Open follow-up: build the layer outside the npm workspace in CI.
 - `js-yaml` is NOT installed at the repo root, so the steering/context YAML-parse gate command
   fails there with `MODULE_NOT_FOUND`. It resolves from `infrastructure/`, `packages/mobile/` and
   `packages/web-app/` - run the check with `cwd=infrastructure` and a `../.github/workflows/...`
@@ -114,9 +118,13 @@ inclusion: always
 - [x] Six handlers ported off `require('aws-sdk')` (Node 20 does not ship SDK v2; they crashed
       at import): `budget-alerts`, `daily-reminders`, `investments`, `investments-price-updater`,
       `restore`, `scheduled-backup`. Common layer gained paginated `dynamoHelpers.scan` and
-      `dynamoHelpers.queryByGSI`. No bundling change. Committed locally, NOT yet deployed; the
-      post-deploy check is `aws lambda invoke` + `aws logs tail` on `budgetbuddy-dev-budget-alerts`,
-      `-daily-reminders` and `-bill-scheduler` (singular), expecting no ImportModuleError/TypeError.
+      `dynamoHelpers.queryByGSI`. No bundling change. Deployed 2026-11-01. Verified:
+      `daily-reminders` scheduled runs at 15:36Z and 15:51Z finished with no import error;
+      `budget-alerts` invoked with a no-op stream event returned 200 with no FunctionError.
+- [ ] Watch the first post-deploy scheduled runs: `budget-alerts` (rate 6 h, next about 19:47Z on
+      2026-11-01; its stream mapping still shows the pre-deploy "PROBLEM: Function call failed")
+      and `bill-scheduler` (cron 08:00Z). Not invoked by hand, because both write notifications
+      for real users.
 - [x] `bills-scheduler` uses three GSI1 `BILLS#<YYYY-MM>` queries instead of the nonexistent
       `dynamoHelpers.scan`, and writes notifications at `USER#<userId>` / `NOTIFICATION#...`
       instead of `FAMILY#undefined`. Old orphaned rows were not migrated.
@@ -147,14 +155,14 @@ inclusion: always
       4.5 through the US inference profile). It comes from the common layer `BEDROCK_MODEL_ID` and
       CDK `lib/config/bedrock.ts`; `bedrockModelResourceArns(region, account)` holds the IAM
       ARNs. The old `claude-3-5-sonnet-20241022-v2:0` is end-of-life, so every AI feature had
-      been serving its fallback. `api-stack.ts`'s Bedrock `resources: ['*']` is gone. Committed
-      locally, NOT yet deployed.
+      been serving its fallback. `api-stack.ts`'s Bedrock `resources: ['*']` is gone. Deployed
+      2026-11-01.
 - [x] `AiFallbackUsed`/`AiInvokeSucceeded` EMF metrics (namespace `BudgetBuddy/AI`) and alarm
       `budgetbuddy-ai-fallback-in-use` on the monitoring alerts topic.
-- [ ] Post-deploy proof: `POST /ai/generate-budget` for a month with no `PERIOD#`, then
-      `aws logs tail /aws/lambda/budgetbuddy-ai --since 5m` must show no "using fallback budget"
-      line, and `aws cloudwatch list-metrics --namespace BudgetBuddy/AI` must list
-      `AiInvokeSucceeded`.
+- [x] Post-deploy proof (2026-11-01): `POST /budget/ai-generate` (the deployed route; there is no
+      `/ai/generate-budget` resource on the gateway) for a month with no `PERIOD#` returned 200.
+      `budgetbuddy-ai` logs had 0 "using fallback" lines, `BudgetBuddy/AI` lists
+      `AiInvokeSucceeded`, and the alarm is OK.
 - [ ] Optional: Claude Haiku 5.5 is about 10x cheaper but returns AccessDeniedException for this
       account (it needs an owner request). The `pattern-detection` cost constants still use
       Sonnet prices.
@@ -179,11 +187,10 @@ inclusion: always
       notification alarms publish to it; error alarms now fire on >= 1 error in one 5-minute
       period (the old > 5 over 2 periods could never fire for a 15-minute job); duration alarms
       sit at 80% of each function's own timeout; 7-day log retention on all four functions.
-      Committed locally, NOT yet deployed.
-- [ ] OWNER ACTION after the deploy: two SNS confirmation emails go to the configured
-      `ALERT_EMAIL` (a GitHub Actions secret) (monitoring topic + notification topic). Until both links are clicked, alarms reach nobody.
-      Check: `aws sns list-subscriptions-by-topic --topic-arn <arn>` shows a real ARN, not
-      `PendingConfirmation`. Consolidating the two topics is deferred.
+      Deployed 2026-11-01.
+- [x] SNS subscriptions confirmed (checked 2026-11-01): `budgetbuddy-dev-monitoring-alerts` and
+      `budgetbuddy-dev-notification-alerts` each have one confirmed email subscription (a real
+      ARN, not `PendingConfirmation`). Consolidating the two topics is deferred.
 - [x] Data stores protected (Session 170, FEAT-004, review findings AC-07/AC-13/L-01).
       `lib/config/data-protection.ts` `isDataProtected()` is ON unless
       `--context dataProtection=false`. `budgetbuddy-main` and the Cognito pool get deletion
@@ -207,8 +214,12 @@ inclusion: always
       (web reads all four from the ID token at `AuthContext.tsx:70-76`). Mobile registration
       re-pointed at `POST /auth/register` in the same change set, since self sign-up off
       otherwise breaks it - and the old mobile call was likely already failing, as it sent only
-      `email`/`name` while the pool requires `given_name` + `family_name`. **The proof is a
-      post-deploy negative test, not yet run** - see the commands in FEAT-002's `findings`.
+      `email`/`name` while the pool requires `given_name` + `family_name`. Proven live on
+      2026-11-01: `SignUp` with `custom:userId` fails with NotAuthorizedException "A client
+      attempted to write unauthorized attribute"; a plain `SignUp` fails with "SignUp is not
+      permitted for this user pool"; neither created a user. `POST /auth/register` returns 201
+      with a `user_<uuid>` ID, and the new user can sign in (both the app login and
+      `USER_PASSWORD_AUTH`).
 - [x] Plaintext passwords and bearer tokens out of the auth Lambda's logs (Session 170,
       FEAT-002, review finding AC-02). `auth/index.js` logged the entire API Gateway event as
       JSON (so `event.body`'s plaintext password AND `event.headers.Authorization`) plus all

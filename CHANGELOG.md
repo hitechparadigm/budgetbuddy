@@ -1,4 +1,12 @@
 # Changelog
+## [1.13.14] - 2026-11-01
+### docs: record DEV recovery and Wave 1 live verification (Session 170)
+- `4f935a2` (1.13.13) deployed in run 41321252759 (SUCCESS). DEV recovered: the main API health
+  routes return 200, and the common layer (`budgetbuddy-common:47`) ships only `uuid` again.
+- Wave 1's live checks passed in DEV: Cognito self sign-up and spoofed `custom:userId` writes
+  are rejected, register-then-sign-in works, deletion protection and PITR are on, Bedrock
+  generates budgets without falling back, and both SNS alert subscriptions are confirmed.
+- New gotcha: never pin `@aws-sdk/*` in the common layer's `package.json`.
 ## [1.13.13] - 2026-11-01
 ### fix(layer): stop the common layer from shipping a half-installed AWS SDK (Session 170)
 - Removed the exact `@aws-sdk/util-dynamodb` `3.996.9` pin from

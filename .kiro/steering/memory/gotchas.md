@@ -49,6 +49,16 @@ ExpressionAttributeNames: { '#s': 'status' }
 ### aws-sdk v2 not available on Node 20
 - Use AWS SDK v3 (`@aws-sdk/...`) or `dynamoHelpers` from common layer
 
+### Never pin `@aws-sdk/*` in the common layer's package.json
+- Do not pin `@aws-sdk/*` packages in `backend/layers/common/nodejs/package.json` to a version
+  different from what `lib-dynamodb` resolves in `backend/package-lock.json`. `backend/` is an npm
+  workspace root, so CI's `npm install --production` in the layer directory can hoist a split
+  copy. Newer clients land in the layer while their `@smithy/*` deps stay in
+  `backend/node_modules`, which the layer asset does not ship.
+- Symptom: every Lambda using the layer fails with `Runtime.ImportModuleError: Cannot find module
+  '@smithy/core/client'` (2026-11-01, run 41318103714). Local jest cannot catch it.
+- The layer normally ships only `uuid`. Lambdas get SDK v3 from the Node 20 runtime.
+
 ## CDK / Infrastructure
 
 ### Never export Lambda Layers across stacks

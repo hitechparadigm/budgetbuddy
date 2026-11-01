@@ -1,4 +1,44 @@
 # Development Log
+## 2026-11-01 - DEV Recovered, Wave 1 Verified Live (Session 170)
+The owner approved the forward fix. `4f935a2` went out as a fast-forward of `a981212` (protected
+value scan: 0 hits), and run 41321252759 finished SUCCESS. Root cause, recorded below: the exact
+`@aws-sdk/util-dynamodb` `3.996.9` pin, combined with the CI workspace install split, left
+`@smithy/core/client` missing from the layer.
+
+Recovery evidence:
+- `/v1/health`, `/v1/auth/health`, `/v1/budget/health`, `/v1/transactions/health` and
+  `/v1/ai/health` all return 200. They returned 502 before the fix.
+- Layer `budgetbuddy-common:47` (now on `budgetbuddy-auth`) contains only `uuid`.
+- Last 10 minutes of logs for `budgetbuddy-auth`, `-budget`, `-transaction`, `-tips` (Features
+  API) and `-investments`: 0 `ImportModuleError` / "Cannot find module" events.
+- The persistent test user signs in (`POST /auth/login` 200). `GET /budget/current?month=2026-11`
+  returns 200, `GET /transactions` 200, and Features API `GET /tips/daily` 200.
+
+Wave 1 live checks:
+- AC-01: `cognito-idp sign-up` with `custom:userId` fails with NotAuthorizedException "A client
+  attempted to write unauthorized attribute". A plain `sign-up` fails with "SignUp is not
+  permitted for this user pool". Neither created a user. The pool reports
+  `AllowAdminCreateUserOnly: true`, and the `budgetbuddy-client` write attributes are `address`,
+  `custom:country`, `email`, `family_name` and `given_name`.
+- Register-then-sign-in with a throwaway `example.com` user: `POST /auth/register` 201 with a
+  `user_<uuid>` ID. `POST /auth/login` 200, `USER_PASSWORD_AUTH` returns an IdToken, and
+  `GET /budget/current` returns 200. `email_verified` stays `"true"` (no revert needed; see
+  `3e4cbe5`).
+- AC-02 logs: the auth log contains only value-free breadcrumbs (`hasPassword: true`, "Password
+  set as permanent"). No token or password values.
+- Data protection: `budgetbuddy-main` has `DeletionProtectionEnabled: true` and PITR ENABLED.
+  The Cognito pool has `DeletionProtection: ACTIVE`. Vault `budgetbuddy-dev-vault` and
+  `BudgetBuddyBackupPlan` exist.
+- Bedrock: `POST /budget/ai-generate` for 2026-12 (no period yet) returns 200. Logs show 0
+  "using fallback" lines, `BudgetBuddy/AI` lists `AiInvokeSucceeded`, and
+  `budgetbuddy-ai-fallback-in-use` is OK.
+- Scheduled functions: `daily-reminders` ran at 15:36Z and 15:51Z with no import error.
+  `budget-alerts` invoked with a no-op stream event returns 200 with no FunctionError. The next
+  scheduled `budget-alerts` (rate 6 h) and `bill-scheduler` (08:00Z) runs have not happened yet.
+- SNS: both alert topics have one confirmed email subscription.
+- Cleanup: deleted the throwaway user's 5 DynamoDB rows (`USER#/PROFILE`, `BUDGET#` METADATA,
+  MEMBER, PERIOD#2026-11, PERIOD#2026-12) and its Cognito user. The pool is back to 56 users,
+  and the persistent test user was not touched.
 ## 2026-11-01 - Wave 1 Deploy Broke the Common Layer (Session 170)
 The Wave 1 range was pushed as `d0032a7`..`a981212`. Deploy run 41318103714 updated every stack
 (validation, infrastructure and web jobs green), then its post-deploy `Test API endpoints` step
