@@ -214,6 +214,11 @@ class AuthService {
           // error instead of silently mismapping fields the UI can't act on.
           throw new Error('MFA sign-in is not supported yet');
         }
+        // Amplify v6 turns Cognito's PasswordResetRequiredException (an admin-forced
+        // reset) into this step instead of throwing it.
+        if (nextStep?.signInStep === 'RESET_PASSWORD') {
+          throw { name: 'PasswordResetRequiredException' };
+        }
         throw new Error('Sign in failed');
       }
 
@@ -537,6 +542,12 @@ class AuthService {
         break;
       case 'NotAuthorizedException':
         message = 'Invalid email or password';
+        break;
+      case 'PasswordResetRequiredException':
+        // The app has no reset screen yet, so point the user at the web app's reset flow.
+        message =
+          'Your password must be reset. On the BudgetBuddy website, choose "Forgot your ' +
+          'password?" to get a reset code and set a new password, then sign in here.';
         break;
       case 'UserNotFoundException':
         message = 'No account found with this email address';

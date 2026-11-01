@@ -1276,7 +1276,7 @@ exports.handler = async (event, _context) => {
         if (event.body) {
           requestBody = JSON.parse(event.body);
           console.log("Successfully parsed login request body:", {
-            email: requestBody.email,
+            hasEmail: !!requestBody.email,
             hasPassword: !!requestBody.password,
           });
         } else {
@@ -1378,10 +1378,16 @@ exports.handler = async (event, _context) => {
           }),
         };
       } catch (authError) {
-        console.error("Cognito authentication error:", authError);
+        // Log the error name only: Cognito messages are not shown to the client.
+        console.error("Cognito authentication error:", authError.name);
 
-        // Handle specific authentication errors
-        if (authError.name === "NotAuthorizedException") {
+        // Wrong password and unknown user must stay indistinguishable (the app
+        // client also sets preventUserExistenceErrors, so Cognito itself
+        // reports an unknown user as NotAuthorizedException).
+        if (
+          authError.name === "NotAuthorizedException" ||
+          authError.name === "UserNotFoundException"
+        ) {
           return {
             statusCode: 401,
             headers: getCorsHeaders(origin),
@@ -1392,13 +1398,39 @@ exports.handler = async (event, _context) => {
           };
         }
 
-        if (authError.name === "UserNotFoundException") {
+        // An admin forced a reset (AdminResetUserPassword) and Cognito has
+        // already emailed a code. 403, not 401: the client must not treat this
+        // as bad credentials or a stale session, it must start the reset flow.
+        if (authError.name === "PasswordResetRequiredException") {
           return {
-            statusCode: 401,
+            statusCode: 403,
             headers: getCorsHeaders(origin),
             body: JSON.stringify({
-              error: "Authentication Failed",
-              message: "Invalid email or password",
+              error: "PASSWORD_RESET_REQUIRED",
+              message:
+                "Your password must be reset. Check your email for a code.",
+            }),
+          };
+        }
+
+        if (authError.name === "UserNotConfirmedException") {
+          return {
+            statusCode: 403,
+            headers: getCorsHeaders(origin),
+            body: JSON.stringify({
+              error: "USER_NOT_CONFIRMED",
+              message: "Your account is not confirmed yet.",
+            }),
+          };
+        }
+
+        if (authError.name === "TooManyRequestsException") {
+          return {
+            statusCode: 429,
+            headers: getCorsHeaders(origin),
+            body: JSON.stringify({
+              error: "Too Many Requests",
+              message: "Too many sign-in attempts. Please wait and try again.",
             }),
           };
         }
@@ -1409,7 +1441,6 @@ exports.handler = async (event, _context) => {
           body: JSON.stringify({
             error: "Login Failed",
             message: "An error occurred during authentication",
-            details: authError.message,
           }),
         };
       }

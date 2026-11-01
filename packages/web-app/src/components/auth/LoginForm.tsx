@@ -48,6 +48,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const [forgotNewPassword, setForgotNewPassword] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError] = useState<string | null>(null);
+  // Set when sign-in came back PASSWORD_RESET_REQUIRED (admin-forced reset):
+  // Cognito has already emailed a code, so the user goes straight to the code step.
+  const [resetRequired, setResetRequired] = useState(false);
 
   const {
     register,
@@ -97,8 +100,22 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         }
       }
 
+      if (
+        error instanceof ApiClientError &&
+        error.errorCode === "PASSWORD_RESET_REQUIRED"
+      ) {
+        clearError();
+        setForgotEmail(data.email.trim());
+        setForgotCode("");
+        setForgotNewPassword("");
+        setForgotError(null);
+        setResetRequired(true);
+        setForgotStep("code");
+        return;
+      }
+
       if (error instanceof ApiClientError) {
-        if (error.isAuthError) {
+        if (error.statusCode === 401) {
           setSubmitError("Invalid email or password. Please try again.");
         } else if (error.isNetworkError) {
           setSubmitError(
@@ -201,6 +218,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to reset password');
+      setResetRequired(false);
       setForgotStep('done');
     } catch (e) {
       setForgotError(e instanceof Error ? e.message : 'Failed to reset password');
@@ -452,6 +470,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
           {forgotStep === 'code' && (
             <div className="mt-2 text-left space-y-3">
+              {resetRequired && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md text-sm text-amber-800 dark:text-amber-300" role="status">
+                  Your password must be reset before you can sign in. We have already emailed
+                  you a reset code: enter it below with a new password.
+                </div>
+              )}
               <p className="text-sm font-medium text-[var(--color-foreground)]">Enter reset code</p>
               <p className="text-xs text-[var(--color-muted-foreground)]">Check your email for a 6-digit code from no-reply@verificationemail.com</p>
               <input
@@ -473,7 +497,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               />
               {forgotError && <p className="text-xs text-red-600">{forgotError}</p>}
               <div className="flex gap-2">
-                <button type="button" onClick={() => setForgotStep('email')}
+                <button type="button" onClick={() => { setForgotStep('email'); setResetRequired(false); }}
                   className="flex-1 px-3 py-2 text-sm text-[var(--color-muted-foreground)] bg-[var(--color-muted)] rounded-md hover:opacity-80">
                   Back
                 </button>

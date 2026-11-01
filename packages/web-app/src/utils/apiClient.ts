@@ -11,7 +11,9 @@ const API_BASE_URL = config.apiBaseUrl;
 export class ApiClientError extends Error {
   constructor(
     message: string,
-    public statusCode: number
+    public statusCode: number,
+    /** Machine-readable `error` field from the response body, when present. */
+    public errorCode?: string
   ) {
     super(message);
     this.name = 'ApiClientError';
@@ -92,7 +94,8 @@ class SimpleApiClient {
 
         throw new ApiClientError(
           errorData.message || 'An error occurred',
-          response.status
+          response.status,
+          typeof errorData.error === 'string' ? errorData.error : undefined
         );
       }
 
