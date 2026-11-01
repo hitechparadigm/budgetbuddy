@@ -1,4 +1,31 @@
 # Development Log
+## 2026-11-01 - Reset-Required Logins Routed to the Reset Flow (Session 170)
+A user whose Cognito account is in `RESET_REQUIRED` could not sign in on web or mobile: the login
+handler had no branch for `PasswordResetRequiredException`, so it returned a generic 500 with the
+raw Cognito message, and mobile showed "Sign in failed". `b3c0043` fixes both clients.
+
+- Backend (`auth/index.js` login): 403 `PASSWORD_RESET_REQUIRED`, 403 `USER_NOT_CONFIRMED`, 429
+  for throttling, and one identical 401 for wrong password or unknown user. The pool client
+  already sets `preventUserExistenceErrors: true`. The two 403 codes reveal that the account
+  exists, which Cognito also reveals to any direct `InitiateAuth` caller. The fallback 500 drops
+  the raw message, and logs now record field presence and the error name only.
+- 403 was chosen over 409 because a login creates no resource, and 401 already means bad
+  credentials or an expired session to `apiClient` (it triggers a token refresh).
+- Web: `LoginForm` sends the user straight to the code step of the existing inline reset flow,
+  with the email prefilled. It does not call `/auth/forgot-password` itself; Cognito sends the
+  code when an admin resets the password, and "Resend code" requests a new one.
+- Mobile: the `RESET_PASSWORD` next step maps to a message that points to the website. The
+  `ForgotPassword` route that `LoginScreen` links to is still unregistered (pre-existing dead
+  link), and unconfirmed users still see "Sign in failed" because Amplify turns that error into a
+  `CONFIRM_SIGN_UP` step. Both are out of scope.
+- Tests: auth 18/24 passing (new `login.test.js` 12/12; the 6 failures are the pre-existing
+  `google-oauth.test.js` ones, and `auth.test.js` still fails to load). Web 248/274 (new
+  `LoginForm.test.tsx` 5/5; the 26 failures are the known `TransactionPlanningModal` and
+  `Sidebar.pbt` suites). Mobile 258/261 (new `auth.test.ts` 2/2; the known flaky
+  `TwoFactorSetup` failure). `tsc --noEmit` clean on web and mobile.
+- Shipped with explicit-path `git add` and `git push origin develop` instead of
+  `safe-commit-push.js`, because that script runs `git add .` and would have committed the
+  owner's uncommitted `.kiro/specs/mobile-app/tasks.md` edit and an untracked steering file.
 ## 2026-11-01 - DEV Recovered, Wave 1 Verified Live (Session 170)
 The owner approved the forward fix. `4f935a2` went out as a fast-forward of `a981212` (protected
 value scan: 0 hits), and run 41321252759 finished SUCCESS. Root cause, recorded below: the exact

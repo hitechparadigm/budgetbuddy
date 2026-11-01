@@ -1,4 +1,22 @@
 # Changelog
+## [1.13.15] - 2026-11-01
+### fix(auth): route reset-required logins to the reset flow (Session 170)
+- `POST /auth/login` returns 403 `{ error: 'PASSWORD_RESET_REQUIRED' }` when Cognito raises
+  `PasswordResetRequiredException`. Before, that case fell through to the generic 500, so a user
+  whose password was reset by an admin could not sign in and was never told why.
+- Other login error mappings: `UserNotConfirmedException` returns 403 `USER_NOT_CONFIRMED`,
+  `TooManyRequestsException` returns 429, and `NotAuthorizedException`/`UserNotFoundException`
+  return one byte-identical 401. The fallback 500 no longer echoes the raw Cognito message, and
+  the handler logs `hasEmail` and the error name instead of the email address and error object.
+- Web: `ApiClientError` carries the body's `error` code. On `PASSWORD_RESET_REQUIRED`,
+  `LoginForm` opens the forgot-password code step with the email prefilled and a notice that a
+  code was already emailed; "Resend code" still calls `POST /auth/forgot-password`. The generic
+  "Invalid email or password" text now shows only for 401.
+- Mobile: Amplify v6's `RESET_PASSWORD` sign-in step now raises `PasswordResetRequiredException`
+  with a message pointing to the website's reset flow, instead of "Sign in failed". The mobile
+  app has no reset screen yet.
+- Tests: new `backend/functions/auth/login.test.js` (12), `LoginForm.test.tsx` (5) and mobile
+  `services/auth.test.ts` (2), all passing. Pre-existing failing suites are unchanged.
 ## [1.13.14] - 2026-11-01
 ### docs: record DEV recovery and Wave 1 live verification (Session 170)
 - `4f935a2` (1.13.13) deployed in run 41321252759 (SUCCESS). DEV recovered: the main API health
