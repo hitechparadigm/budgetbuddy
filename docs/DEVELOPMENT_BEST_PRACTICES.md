@@ -6,26 +6,9 @@ This document consolidates lessons learned and best practices for maintaining co
 
 ## Architecture Patterns (Critical)
 
-### BudgetAccessResolver — Every Budget Lambda Must Use This
-
-Every Lambda that touches budget data **must** follow this exact sequence:
-
-```javascript
-// 1. Extract userId from JWT (JWT carries ONLY userId — no budgetId, no role)
-const { userId } = getUserFromEvent(event);
-
-// 2. Resolve budget context from DynamoDB
-const { budgetId, role, budgetType, budgetStatus, subscriptionTier } =
-  await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
-
-// 3. Enforce permissions
-BudgetAccessResolver.assertPermission(role, action, budgetStatus);
-
-// 4. Check feature entitlements (never check subscriptionTier directly)
-if (!canUseFeature(subscriptionTier, 'featureKey')) throw 403;
-
-// 5. Read/write BUDGET#<budgetId>/... records
-```
+The request lifecycle (`getUserFromEvent` -> `BudgetAccessResolver.resolveAccess` -> `assertPermission`
+-> `canUseFeature` -> `BUDGET#<budgetId>` reads and writes), the key layout and the layer strategy are
+documented once in [architecture.md](./architecture.md). The lessons below are the mistakes to avoid.
 
 **Never**:
 - Read `custom:familyId` or `custom:familyRole` from the JWT
@@ -48,21 +31,11 @@ const commonLayer = new lambda.LayerVersion(this, 'CommonLayer', {
 new CfnOutput(this, 'CommonLayerArn', { value: commonLayer.layerVersionArn });
 ```
 
-### DynamoDB Key Pattern
+### DynamoDB Keys
 
-All budget data lives under `BUDGET#<budgetId>` partition keys:
-
-| Entity | PK | SK |
-|--------|----|----|
-| Budget metadata | `BUDGET#<budgetId>` | `METADATA` |
-| Budget member | `BUDGET#<budgetId>` | `MEMBER#<userId>` |
-| Budget period | `BUDGET#<budgetId>` | `PERIOD#<YYYY-MM>` |
-| Account | `BUDGET#<budgetId>` | `ACCOUNT#<accountId>` |
-| Transaction | `BUDGET#<budgetId>` | `TXN#<date>#<txnId>` |
-
-User profiles: `USER#<userId>` / `PROFILE` — contains `defaultBudgetId`.
-
-**Never** use `FAMILY#` partition keys. They are legacy and no longer written.
+Write budget data under `BUDGET#<budgetId>`; transactions use SK `TRANSACTION#<transactionId>`. **Never**
+write new `FAMILY#` partition keys. A few handlers still use `FAMILY#` and `TXN#`; they are listed under
+"Known inconsistencies" in [architecture.md](./architecture.md#known-inconsistencies).
 
 ---
 

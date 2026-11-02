@@ -1,4 +1,32 @@
 # Changelog
+## [1.13.17] - 2026-11-02
+### docs: consolidate documentation, add architecture doc and data-protection rule (Session 170)
+#### Added
+- `docs/architecture.md`: single canonical architecture document (stacks, deploy order, gateways and
+  route prefixes, functions by domain, data model, auth, AI, notifications, monitoring, CI/CD, known
+  inconsistencies), with a Mermaid diagram and `docs/diagrams/budgetbuddy-architecture.drawio`.
+- `.kiro/steering/data-protection.md`: mandatory rule for secrets and personal data.
+- `scripts/check-sensitive-data.js` (+ test, `.sensitive-data-allowlist`): scanner for secrets and
+  personal data. It blocks the pre-commit hook on newly added staged lines, runs report-only as
+  section 9 of `scripts/security-check.sh` in CI, and backs the `data-protection-check` Kiro hook.
+  Extra protected terms load only from the git-ignored `.sensitive-data-patterns.local`.
+#### Changed
+- Reviewed 136 tracked markdown files. Corrected stale facts across docs and steering: deploy order
+  (notification before api), `TRANSACTION#` and `PLAN#` keys, invitation keys, GSI usage, Google
+  sign-in status, environments (no staging deploy), Expo/RN versions, rate limits, notification
+  alarms, Bedrock model, stack and table names.
+- Diagram, README, product requirements and function READMEs now show the Wave 1 changes as
+  deployed (2026-11-01) and agree with `docs/architecture.md`.
+- README, SYSTEM_GUIDE, steering architecture memory, backend README and best-practices doc now
+  point to `docs/architecture.md` instead of restating it.
+#### Removed
+- `docs/aws-stack-architecture.md` (merged into `docs/architecture.md`).
+- Tracked generated artifacts under `.playwright-mcp/` and `infrastructure/cdk-out-temp/` (now
+  untracked). `.agents/` and `.worktrees/` stay git-ignored.
+#### Security
+- Removed personal data (names, personal addresses, real user IDs, test-user addresses) from tracked
+  markdown, including CHANGELOG and DEVELOPMENT_LOG. Remaining non-markdown occurrences are tracked
+  for a follow-up code/test scrub.
 ## [1.13.16] - 2026-11-02
 ### fix(auth): add missing confirm-forgot-password route (Session 170)
 - Main API: new public `POST /auth/confirm-forgot-password` resource on the auth Lambda. The web
@@ -7648,7 +7676,7 @@ if (!familyId) {
 ### ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã‚Âº USER PROFILE ISSUE IDENTIFIED
 
 - **Profile Not Found (404)** - New user profile not created in DynamoDB
-  - **Symptom**: `/auth/profile` returning "User profile not found" for `info@hitechparadigm.com`
+  - **Symptom**: `/auth/profile` returning "User profile not found" for `user@example.com`
   - **Root Cause**: User registration process didn't complete profile creation in DynamoDB
   - **Impact**: User cannot access onboarding flow or app functionality
   - **Next Steps**: User needs to complete registration process properly to create profile

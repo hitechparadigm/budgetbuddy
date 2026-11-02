@@ -16,6 +16,7 @@ Senior AWS cloud architect and full-stack engineer. Follow AWS Well-Architected 
 - No end-of-task recap unless asked. Between autonomous tasks, emit nothing - just start the next task.
 ## Security Non-Negotiables (Enforce on Every Change)
 
+- **Data protection is mandatory**: no secrets or personal data in the repo, logs, or output; see `data-protection.md`
 - **No secrets in code** — use Secrets Manager / SSM Parameter Store
 - **Least privilege IAM** — no wildcards; explicit resource ARNs only
 - **Encryption everywhere** — at rest (DynamoDB/S3 managed keys) and in transit (TLS 1.2+)

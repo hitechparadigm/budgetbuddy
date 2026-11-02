@@ -4,7 +4,7 @@ AI-powered budget suggestion service for BudgetBuddy.
 
 ## Overview
 
-This Lambda function generates intelligent budget suggestions by analyzing recurring bills, transaction history, and spending patterns. It uses AWS Bedrock (Claude 3.5 Sonnet) to provide personalized budget recommendations with confidence scores and explanations.
+This Lambda function generates intelligent budget suggestions by analyzing recurring bills, transaction history, and spending patterns. It computes the recommendations, with confidence scores and explanations, in code. The function has a Bedrock `InvokeModel` grant for the shared model (`BEDROCK_MODEL_ID`, Claude Haiku 4.5), but the handler does not call Bedrock today.
 
 ## Features
 
@@ -107,7 +107,7 @@ For bi-weekly expenses, the system calculates whether 2 or 3 occurrences fall wi
 ## IAM Permissions
 
 - DynamoDB: Read/Write access to main table
-- Bedrock: InvokeModel permission for Claude 3.5 Sonnet
+- Bedrock: InvokeModel on the shared model ARNs (`bedrockModelResourceArns`), unused by the current code
 
 ## Testing
 

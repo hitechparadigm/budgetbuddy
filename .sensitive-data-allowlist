@@ -1,0 +1,29 @@
+# Allowlist for scripts/check-sensitive-data.js (see .kiro/steering/data-protection.md).
+#
+# One entry per line; lines starting with # are comments.
+#   path:<prefix>  excludes every file whose repo-relative path starts with <prefix>
+#   anything else  is an exact value allowed anywhere, compared case-insensitively
+#
+# Only add values that data-protection.md lists as allowed. Never add a real person's data,
+# a real account ID, or an example access key (security-check.sh step 1 would flag it).
+
+# The scanner, its test and this file describe the patterns they look for.
+path:scripts/check-sensitive-data.js
+path:scripts/check-sensitive-data.test.js
+path:.sensitive-data-allowlist
+
+# Reserved example values (RFC 2606, AWS documentation placeholder account ID).
+user@example.com
+example.com
+example.org
+123456789012
+
+# Configured business sender.
+info@hitechparadigm.com
+
+# Public endpoints that already ship in the web bundle.
+q0zoob6728.execute-api.us-east-1.amazonaws.com
+jcl39tq8x0.execute-api.us-east-1.amazonaws.com
+0poeu07vth.execute-api.us-east-1.amazonaws.com
+hkjzroedjf.execute-api.us-east-1.amazonaws.com
+d1ueeugn9zcx7n.cloudfront.net

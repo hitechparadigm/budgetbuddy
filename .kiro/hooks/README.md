@@ -1,6 +1,6 @@
 # Kiro Hooks
 
-Four active hooks. All use the current schema. Anything not listed here has been removed.
+Five active hooks. All use the current schema. Anything not listed here has been removed.
 
 ## Schema (current)
 
@@ -42,6 +42,7 @@ reduce how often it runs or what it costs.
 | `doc-management-guide.json` | `PostFileCreate` | spec `requirements`/`design`/`tasks` md | Reminds to follow spec structure. |
 | `update-user-journeys.json` | `PostFileCreate` | new `pages/` or `screens/` `.tsx` | Reminds to update `docs/product-requirements.md`. |
 | `auto-log-cleanup.json` | `PostFileCreate` | `temp-logs/` | Reminds to clean up after AWS log analysis. |
+| `data-protection-check.json` | `PreToolUse` | write tool names (`fs_write`, `str_replace`, ...) | Checks content about to be written against `.kiro/steering/data-protection.md`; masks protected values or stops to ask. |
 
 ## Why there is no `UserPromptSubmit` hook
 

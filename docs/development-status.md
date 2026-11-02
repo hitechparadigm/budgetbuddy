@@ -1,6 +1,7 @@
 # Development Status - BudgetBuddy
 
 **Last Updated**: 2026-11-02
+**Architecture**: see [architecture.md](./architecture.md) for the current system; this file is a status history.
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 

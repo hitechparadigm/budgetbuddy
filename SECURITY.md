@@ -4,6 +4,15 @@
 
 This document outlines security practices and guidelines for the BudgetBuddy application to prevent exposure of sensitive information.
 
+The governing rule for secrets and personal data is [.kiro/steering/data-protection.md](.kiro/steering/data-protection.md).
+It applies to every tracked file, commit message, log and report. `scripts/check-sensitive-data.js`
+(run by `.husky/pre-commit`) enforces it before each commit. Its tracked code holds only generic
+patterns. Terms that are themselves protected, such as real names or employer-internal names, are
+read at run time from an optional, git-ignored `.sensitive-data-patterns.local` file at the repo
+root (one regular expression per line), which each machine keeps for itself and never commits.
+Security controls and known gaps in the
+deployed system are listed in [docs/architecture.md](docs/architecture.md#11-security-controls-and-known-gaps).
+
 ## Automated Security Checks
 
 ### Pre-deployment Security Validation

@@ -21,9 +21,11 @@ inclusion: always
 ## CDK Stacks (deploy order)
 
 ```
-database → auth → auth-onboarding → api → api-features
-→ api-features-extended → api-budgets → hosting → notification → monitoring
+database → auth → auth-onboarding → notification → api → api-features
+→ api-features-extended → api-budgets → hosting → monitoring
 ```
+
+Source of truth: `infrastructure/stack-manifest.json`; details in `docs/architecture.md`.
 
 ## CDK Critical Rule
 

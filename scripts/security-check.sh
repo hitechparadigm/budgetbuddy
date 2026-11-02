@@ -17,6 +17,11 @@ NC='\033[0m' # No Color
 # Track if any security issues are found
 SECURITY_ISSUES=0
 
+# Section 9 (personal data and secrets in tracked files) is report-only while existing
+# occurrences in code and tests are still being scrubbed. Flip the default to true once that
+# scrub has merged, so findings fail the check. See .kiro/steering/data-protection.md.
+SENSITIVE_DATA_SCAN_BLOCKING="${SENSITIVE_DATA_SCAN_BLOCKING:-false}"
+
 # Function to report security issue
 report_issue() {
     echo -e "${RED}❌ SECURITY ISSUE: $1${NC}"
@@ -365,6 +370,22 @@ if [ -n "$DB_STRINGS" ]; then
     report_issue "Database connection strings found - ensure they use environment variables"
 else
     report_success "No hardcoded database connection strings found"
+fi
+
+echo ""
+echo "9. Scanning tracked files for personal data and secrets..."
+# The scanner prints only <file>:<line>  <category>, never the matched value.
+# The call sits inside an if, so its non-zero exit does not trip set -e.
+if command -v node &> /dev/null; then
+    if node scripts/check-sensitive-data.js --all; then
+        report_success "No personal data or secrets in tracked files"
+    elif [ "$SENSITIVE_DATA_SCAN_BLOCKING" = "true" ]; then
+        report_issue "Personal data or secrets found in tracked files (see .kiro/steering/data-protection.md)"
+    else
+        report_warning "Personal data or secrets found in tracked files (report-only; set SENSITIVE_DATA_SCAN_BLOCKING=true to block)"
+    fi
+else
+    report_warning "node not available - skipping personal data and secrets scan"
 fi
 
 echo ""

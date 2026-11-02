@@ -253,86 +253,36 @@ interface NotificationSettings {
 }
 ```
 
-## DynamoDB Tables
+## DynamoDB Items
 
-### Notifications Table
+Notifications and devices live in the single table `budgetbuddy-main` (there are no separate
+notification or settings tables):
 
-**Table Name:** `budgetbuddy-{env}-notifications`
+| Item | PK | SK |
+|---|---|---|
+| Registered device | `USER#<userId>` | `DEVICE#<deviceToken>` |
+| Notification | `USER#<userId>` | `NOTIFICATION#<id>` |
 
-**Primary Key:**
-
-- Partition Key: `notificationId` (String)
-
-**Global Secondary Indexes:**
-
-- **UserIdIndex**:
-  - Partition Key: `userId` (String)
-  - Sort Key: `createdAt` (String)
-  - Projection: ALL
-  - Purpose: Query all notifications for a user, sorted by creation time
-
-**Attributes:**
-
-- `notificationId`: String (PK)
-- `userId`: String (GSI PK)
-- `type`: String
-- `title`: String
-- `message`: String
-- `metadata`: Map
-- `isRead`: Boolean
-- `readAt`: String (optional)
-- `createdAt`: String (GSI SK)
-
-### User Settings Table
-
-**Table Name:** `budgetbuddy-{env}-user-settings`
-
-**Primary Key:**
-
-- Partition Key: `userId` (String)
-- Sort Key: `settingType` (String)
-
-**Attributes:**
-
-- `userId`: String (PK)
-- `settingType`: String (SK) - Always "notifications" for notification settings
-- `settings`: Map
-- `updatedAt`: String
+Full key layout: [docs/architecture.md](../../../docs/architecture.md#5-data-model).
 
 ## Environment Variables
 
-- `NOTIFICATIONS_TABLE`: DynamoDB table name for notifications
-- `USER_SETTINGS_TABLE`: DynamoDB table name for user settings
+- `TABLE_NAME`: DynamoDB table name (default `budgetbuddy-main`)
+- `EXPO_ACCESS_TOKEN`: Expo push access token
 
 ## IAM Permissions
 
-The Lambda function requires the following permissions:
-
-```json
-{
-  "Effect": "Allow",
-  "Action": [
-    "dynamodb:GetItem",
-    "dynamodb:PutItem",
-    "dynamodb:UpdateItem",
-    "dynamodb:DeleteItem",
-    "dynamodb:Query"
-  ],
-  "Resource": [
-    "arn:aws:dynamodb:*:*:table/budgetbuddy-*-notifications",
-    "arn:aws:dynamodb:*:*:table/budgetbuddy-*-notifications/index/*",
-    "arn:aws:dynamodb:*:*:table/budgetbuddy-*-user-settings"
-  ]
-}
-```
+The notification stack grants the function read/write access to `budgetbuddy-main`
+(`grantReadWriteData`), scoped to that table.
 
 ## Usage Examples
 
 ### Creating a Notification from Another Service
 
 ```javascript
-const AWS = require("aws-sdk");
-const lambda = new AWS.Lambda();
+// AWS SDK v3 (SDK v2 `aws-sdk` is not available on Node.js 20)
+const { LambdaClient, InvokeCommand } = require("@aws-sdk/client-lambda");
+const lambda = new LambdaClient({});
 
 const params = {
   FunctionName: "budgetbuddy-dev-notifications",
@@ -354,7 +304,7 @@ const params = {
   }),
 };
 
-await lambda.invoke(params).promise();
+await lambda.send(new InvokeCommand(params));
 ```
 
 ### Frontend Integration
@@ -403,13 +353,9 @@ npm test
 
 ## Deployment
 
-The function is deployed as part of the API Features Extended stack:
-
-```bash
-cd infrastructure
-npm run build
-npx cdk deploy budgetbuddy-dev-api-features-extended --context environment=dev
-```
+The function (`budgetbuddy-<env>-notifications`) is part of the notification stack
+(`infrastructure/lib/notification-stack.ts`); the Main API routes `/notifications` to it. It deploys
+with all stacks through GitHub Actions; see [docs/deployment-guide.md](../../../docs/deployment-guide.md).
 
 ## Future Enhancements
 

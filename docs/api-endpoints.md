@@ -66,7 +66,7 @@ All API responses follow a standardized format:
 - **CORS Security**: Proper CORS configuration with specific origins (no wildcard with credentials)
 - **Token Validation**: Enhanced JWT token validation with proper error handling
 - **Security Headers**: All responses include appropriate security headers
-- **Rate Limiting**: Enhanced rate limiting to prevent abuse
+- **Rate Limiting**: not configured yet (see [Rate Limits](#rate-limits))
 
 **Security Monitoring**:
 
@@ -158,6 +158,35 @@ Authenticate user and get JWT tokens.
   }
 }
 ```
+
+**Reset-required users**: if an administrator has forced a password reset, the response is
+`403` with `"error": "PASSWORD_RESET_REQUIRED"`. Cognito has already emailed a code; continue with
+`POST /auth/confirm-forgot-password`.
+
+#### POST /auth/forgot-password
+
+Public. Asks Cognito to email a password-reset code.
+
+**Request Body**: `{ "email": "user@example.com" }`
+
+**Response**: `200 OK` whether or not the account exists, so the endpoint does not reveal accounts.
+
+#### POST /auth/confirm-forgot-password
+
+Public. Sets a new password with the emailed code. `POST /auth/reset-password` is an alias.
+
+**Request Body**:
+
+```json
+{
+  "email": "user@example.com",
+  "code": "<code from email>",
+  "newPassword": "<new password>"
+}
+```
+
+**Responses**: `200 OK` on success; `400` for a missing field, a password under 8 characters, an
+incorrect or expired code, or a password that fails the pool policy.
 
 ## Budget Management
 
@@ -584,9 +613,9 @@ All endpoints return consistent error responses:
 
 ## Rate Limits
 
-- **Authentication endpoints**: 10 requests per minute per IP
-- **CRUD operations**: 100 requests per minute per user
-- **Health checks**: No rate limit
+No application rate limits are configured. None of the deployed stacks sets stage throttling, a usage
+plan or AWS WAF, so only the account-level API Gateway quotas apply. See
+[architecture.md](./architecture.md#11-security-controls-and-known-gaps).
 
 ## Testing
 

@@ -35,9 +35,10 @@ fileMatchPattern: "{.github/workflows/**,scripts/deploy*,scripts/*cicd*}"
 
 ## Environments
 
-- dev: auto-deploy from `develop` branch on every push
-- staging: auto-deploy from `main` branch
-- prod: manual approval via `deploy-prod.yml` workflow dispatch
+- dev: auto-deploy from `develop` branch on every push (the only deployed environment)
+- staging: not deployed by any workflow; a push to `main` runs only `deployment-security.yml`,
+  which synthesizes but does not deploy
+- prod: manual approval via `deploy-prod.yml` workflow dispatch (no prod stacks exist yet)
 
 ## Deployment Summary in GitHub Actions
 

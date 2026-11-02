@@ -64,8 +64,8 @@ Tests the complete family collaboration flow.
 Before running these tests, ensure:
 
 1. **Environment is deployed**: Latest code deployed to dev environment
-2. **Test user exists**: User `user@example.com` exists in Cognito
-3. **Password configured**: Update test files with actual password
+2. **Test user exists**: a persistent DEV test user exists in Cognito (its address is not recorded in the repo)
+3. **Password configured**: set the `TEST_USER_PASSWORD` environment variable; never commit a real password
 4. **CORS configured**: Gateway Responses added to both API stacks
 5. **Plaid sandbox**: Plaid sandbox credentials configured
 
@@ -99,13 +99,12 @@ npm run test:plaid -- --verbose
 
 ### Update Test Credentials
 
-Edit the test files to update credentials:
+Pass credentials through environment variables, never by editing the test files with real values:
 
-**plaid-integration.test.js:**
+**plaid-integration.test.js** reads the password from `TEST_USER_PASSWORD`:
 
-```javascript
-const TEST_USER_EMAIL = "user@example.com";
-const TEST_USER_PASSWORD = "YourActualPassword"; // Update this
+```bash
+TEST_USER_PASSWORD=<password> npx jest tests/plaid-integration.test.js
 ```
 
 **family-collaboration.test.js:**

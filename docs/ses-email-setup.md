@@ -30,13 +30,13 @@ You also need to verify the sender email. You have two options:
 **Option A: Use your real email as sender**
 
 ```bash
-node scripts/setup-ses-email.js verify user@example.com
+node scripts/setup-ses-email.js verify sender@example.com
 ```
 
 Then update the email Lambda to use this email:
 
-- Edit `backend/functions/email/index.js`
-- Change `FROM_EMAIL` to your verified email
+- Set the `fromEmail` CDK context to your verified sender; CDK passes it to the Lambdas as `FROM_EMAIL`
+- Deploy through GitHub Actions (see `docs/deployment-guide.md`)
 
 **Option B: Verify a domain** (requires DNS access)
 
@@ -163,9 +163,9 @@ These services work immediately without sandbox restrictions.
 node scripts/setup-ses-email.js verify user@example.com
 
 # Verify sender email
-node scripts/setup-ses-email.js verify user@example.com
+node scripts/setup-ses-email.js verify sender@example.com
 
-# Update FROM_EMAIL in backend/functions/email/index.js
+# Set the fromEmail CDK context to the verified sender (passed to the Lambdas as FROM_EMAIL)
 ```
 
 **For production:**

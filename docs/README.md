@@ -1,6 +1,6 @@
 # BudgetBuddy Documentation
 
-**Last Updated**: 2026-09-23
+**Last Updated**: 2026-10-31
 
 Every document below is either actively maintained or a stable reference. There is no
 `docs/archive/` subdirectory - one-off session and incident summaries have been retired. Before
@@ -8,7 +8,7 @@ creating a new document here, check this index for an existing document covering
 subject and extend it instead (see `.kiro/steering/structure.md`, "Documentation Placement").
 
 ## Architecture & Infrastructure
-- **[AWS Stack Architecture](./aws-stack-architecture.md)** - Stack list, dependencies, DynamoDB schema, Lambda access pattern, resource naming/tagging standards, deployment commands
+- **[Architecture](./architecture.md)** - The single architecture reference: diagram, stacks and deploy order, request lifecycle, data model and known inconsistencies, auth, CI/CD, observability, security gaps
 - **[API Gateway Routing Map](./gateway-routing-map.md)** - Route prefix to API Gateway mapping across the four CDK API stacks, with criteria for choosing a gateway for new feature domains
 
 ## Configuration & Setup

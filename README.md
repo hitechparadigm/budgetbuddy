@@ -9,13 +9,19 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Web Application**: Complete AWS serverless architecture deployed and production-ready ✓
 - **Mobile Foundation**: React Native + Expo app with comprehensive budget management ✓
 - **Budget System**: Full CRUD operations with offline support and visual progress tracking ✓
-- **Authentication System**: AWS Cognito + Google Sign-In integration with secure token storage ✓
+- **Authentication System**: AWS Cognito email + password sign-in with secure token storage ✓ (Google sign-in does not work yet; see [docs/architecture.md](docs/architecture.md))
 - **AI-Powered Onboarding**: Location-based budget suggestions with 348 cities across 9 countries ✓
 - **Security Infrastructure**: Enterprise-grade security pipeline with comprehensive validation ✓
 - **Property-Based Testing**: Advanced testing methodology with 100% test coverage ✓
 - **Cross-Platform**: iOS, Android, and Web platform compatibility achieved ✓
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
+
+### Recent Achievements (2026-11-01)
+- **Wave 1 live in dev** - the 2026-10-30 and 2026-10-31 changes below are deployed. The live
+  checks passed: self sign-up and spoofed attribute writes are rejected, deletion protection is
+  on, Bedrock answers without the fallback, and both alert subscriptions are confirmed. The
+  current system is described in [docs/architecture.md](docs/architecture.md).
 
 ### Recent Achievements (2026-10-31)
 - **Alarms reach a human, data stores protected** - the 12 notification alarms now email
@@ -787,7 +793,7 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **[Complete Documentation](./docs/README.md)** - Technical documentation index
 - **[Development Status](./docs/development-status.md)** - Detailed current status and next steps
 - **[API Endpoints](./docs/api-endpoints.md)** - Complete API documentation
-- **[API Troubleshooting](./docs/api-troubleshooting.md)** - Common API issues and solutions
+- **[Architecture](./docs/architecture.md)** - System architecture, diagram and data model
 - **[Development Log](./DEVELOPMENT_LOG.md)** - Detailed development history
 
 ## Current Status & Quick Start
@@ -821,7 +827,7 @@ cd packages/web-app && npm run dev
 # Visit: http://localhost:5173/
 
 # Test with existing user
-# Email: alice.johnson@budgetbuddy.com
+# Email: user@example.com (a persistent DEV test user exists; its address is not recorded here)
 # Password: [Use environment variable or create new test user]
 
 # Test budget endpoints
@@ -830,7 +836,7 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 
 ### For DevOps
 
-- **Infrastructure**: All 5 AWS stacks deployed and operational
+- **Infrastructure**: All 10 CDK stacks deployed to dev (see [docs/architecture.md](docs/architecture.md))
 - **Monitoring**: CloudWatch dashboards and logging active
 - **CI/CD**: GitHub Actions with automated deployment
 - **Cost**: Currently ~$5-10/month (development environment)
@@ -839,7 +845,7 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 
 ### User Experience
 
-- **AI-Powered Budget Generation**: Personalized budgets using AWS Bedrock Claude 3.5 Sonnet with regional cost-of-living data
+- **AI-Powered Budget Generation**: Personalized budgets using Amazon Bedrock (Claude Haiku 4.5) with regional cost-of-living data
 - **Comprehensive Onboarding**: Dynamic questionnaire based on location, family situation, and lifestyle
 - **Zero-Based Budgeting**: Ensure every dollar is allocated with automatic balance calculations
 - **Multi-Platform Support**: Web (React), iOS/Android (React Native) with real-time synchronization
@@ -859,21 +865,10 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 
 ## Technical Architecture
 
-### Technology Stack
-
-- **Frontend Monorepo**: Yarn Workspaces + Turborepo
-  - Web: React 18+ with Vite + Tailwind CSS
-  - Mobile: React Native with Expo 0.76+ + React Native Paper
-  - Admin: React 18+ with Vite + React Admin/MUI
-  - Shared: Common components, types, and utilities
-- **Backend**: AWS Serverless (Lambda + Node.js 20)
-- **Database**: Amazon DynamoDB with single-table design + GSI indexes
-- **Authentication**: Amazon Cognito User Pools with JWT tokens
-- **AI**: AWS Bedrock (Claude 3.5 Sonnet) for budget generation
-- **Payments**: Stripe for subscription management
-- **Email**: Amazon SES for notifications and tips
-- **Infrastructure**: AWS CDK (TypeScript) for Infrastructure as Code
-- **CI/CD**: GitHub Actions for automated deployment
+BudgetBuddy is fully serverless on AWS: a React/Vite web app and a React Native/Expo mobile app call
+4 API Gateway REST APIs backed by 36 Node.js 20 Lambda functions, one DynamoDB table and Cognito, all
+defined in 10 CDK stacks and deployed to dev through GitHub Actions. AI features use Amazon Bedrock
+(Claude Haiku 4.5). The full reference, with diagram, is [docs/architecture.md](docs/architecture.md).
 
 ## Implementation Roadmap
 

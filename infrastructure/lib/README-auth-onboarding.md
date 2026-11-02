@@ -311,8 +311,7 @@ Continue Phase 2 refactoring:
 
 ## References
 
-- [Design Document](.kiro/specs/auth-lambda-refactoring/design.md)
-- [Requirements](.kiro/specs/auth-lambda-refactoring/requirements.md)
-- [Tasks](.kiro/specs/auth-lambda-refactoring/tasks.md)
-- [Lambda Function Code](../backend/functions/auth-onboarding/index.js)
-- [Unit Tests](../backend/functions/auth-onboarding/index.test.js)
+- The `auth-lambda-refactoring` spec that planned this split is no longer in the repository
+- [Architecture](../../docs/architecture.md)
+- [Lambda Function Code](../../backend/functions/auth-onboarding/index.js)
+- [Unit Tests](../../backend/functions/auth-onboarding/index.test.js)

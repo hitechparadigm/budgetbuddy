@@ -38,7 +38,7 @@ Generate validated AWS architecture diagrams as draw.io XML using official AWS4 
 
 ### Step 4: Validate and Export
 
-1. Write the `.drawio` file to `./docs/`
+1. Write the `.drawio` file to `./docs/diagrams/`
 2. Verify XML is well-formed
 3. If validation fails, fix errors and rewrite
 
@@ -50,7 +50,7 @@ Generate validated AWS architecture diagrams as draw.io XML using official AWS4 
 - Legend: ALWAYS for 7+ services (unless user opts out)
 - Sketch mode: OFF (unless user explicitly requests)
 - Grid: OFF (`grid=0`)
-- File location: `./docs/` directory
+- File location: `./docs/diagrams/` directory
 - XML format: Uncompressed, wrapped in `<mxfile><diagram><mxGraphModel>`
 
 ## Style Rules
@@ -116,7 +116,7 @@ Always use the full `mxfile` wrapper:
 
 ## File Naming
 
-Each diagram gets a descriptive filename in kebab-case, placed in `./docs/` (e.g., `docs/budgetbuddy-serverless-architecture.drawio`). Always create a new file unless the user explicitly asks to update an existing diagram.
+Each diagram gets a descriptive filename in kebab-case, placed in `./docs/diagrams/` (e.g., `docs/diagrams/budgetbuddy-architecture.drawio`). Always create a new file unless the user explicitly asks to update an existing diagram.
 
 ## Important Rules
 
@@ -140,6 +140,6 @@ Each diagram gets a descriptive filename in kebab-case, placed in `./docs/` (e.g
 
 ## Output
 
-1. Create the `docs/` directory if it does not exist
-2. Save the diagram to `./docs/<descriptive-name>.drawio`
+1. Create the `docs/diagrams/` directory if it does not exist
+2. Save the diagram to `./docs/diagrams/<descriptive-name>.drawio`
 3. Present to the user: file path, diagram type, services included, and recommended alt text

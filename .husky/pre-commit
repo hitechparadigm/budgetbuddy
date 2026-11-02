@@ -1,6 +1,9 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
+# Data protection gate: runs before the SKIP_PRECOMMIT_VALIDATION early exit so it always applies
+node scripts/check-sensitive-data.js --staged || { echo "❌ Sensitive data in staged lines (see .kiro/steering/data-protection.md). Commit blocked."; exit 1; }
+
 echo "🔒 BudgetBuddy Pre-Commit Hook"
 echo "=============================="
 echo ""

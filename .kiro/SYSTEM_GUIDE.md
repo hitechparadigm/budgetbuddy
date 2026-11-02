@@ -1,29 +1,20 @@
 # BudgetBuddy Development System Guide
 
-**Last Updated**: 2026-09-23
+**Last Updated**: 2026-10-31
 
 ---
 
 ## Architecture (Current)
 
+The full, code-verified reference is [docs/architecture.md](../docs/architecture.md). Summary:
+
 ```
-Auth:    Cognito User Pools + Google OAuth (PKCE)
-         JWT carries only userId - no familyId, no role
-
-Access:  BudgetAccessResolver.resolveAccess(userId, dynamoHelpers)
-         -> { budgetId, role, budgetType, budgetStatus, subscriptionTier }
-         Called at the top of every Lambda that touches budget data
-
-Roles:   owner | partner | household_member | viewer
-         Feature gating: canUseFeature(subscriptionTier, featureKey)
-
-Data:    Single-table DynamoDB (budgetbuddy-main)
-         BUDGET#<budgetId>  - all budget data (METADATA, MEMBER#, PERIOD#, ACCOUNT#, TXN#)
-         USER#<userId>/PROFILE - stores defaultBudgetId, onboardingCompleted, currency, location
-
-Stacks:  database -> auth -> auth-onboarding -> api -> api-features
-         -> api-features-extended -> api-budgets -> hosting -> notification -> monitoring
-         api-family: DEPRECATED (returns 410 Gone)
+Auth:    Cognito User Pools, email + password (Google sign-in not working; replacement planned)
+Access:  JWT carries only userId; BudgetAccessResolver.resolveAccess resolves budgetId + role per request
+Data:    Single-table DynamoDB (budgetbuddy-main): USER#<userId>/PROFILE, BUDGET#<budgetId>/(METADATA,
+         MEMBER#, PERIOD#, ACCOUNT#, TRANSACTION#, GOAL#, PLAN#, INVITATION#)
+Stacks:  database -> auth -> auth-onboarding -> notification -> api -> api-features
+         -> api-features-extended -> api-budgets -> hosting -> monitoring
 ```
 
 ## Lambda Access Pattern
@@ -68,7 +59,7 @@ node scripts/check-cicd-status.js
 Every spec is a direct child of `.kiro/specs/` - there is no `archive/` subdirectory. A spec's
 lifecycle state is recorded in its `.config.kiro` `status` field (`active | complete |
 superseded`) and `category` field (`feature | process | fix`), never by its location. See
-`.kiro/specs/README.md` for the full index of all 19 specs.
+`.kiro/specs/README.md` for the full index of all 24 specs.
 
 **Active specs** (in progress or upcoming):
 - `web-app-polish/` - Web app design, IA, AI, polish (status: complete)
@@ -94,7 +85,8 @@ Create a spec when: feature is complex (>1 week), has 10+ tasks, or can be devel
 
 - `/family/*` API - returns 410 Gone. Use `/budgets/*` instead.
 - `FamilyIdResolver` - removed. Use `BudgetAccessResolver`.
-- `FAMILY#` partition keys - replaced by `BUDGET#`.
-- `custom:familyId` JWT claim - ignored. Only `custom:userId` is used.
+- `FAMILY#` partition keys - replaced by `BUDGET#`. A few handlers still use them; see
+  "Known inconsistencies" in `docs/architecture.md`.
+- `custom:familyId` JWT claim - ignored. `getUserFromEvent` reads `custom:userId`, falling back to `sub`.
 - `FamilySettings.tsx` - replaced by `BudgetMembersPage` at `/budget/members`.
 - `api-family-stack` - destroyed. Replaced entirely by `api-budgets-stack`.

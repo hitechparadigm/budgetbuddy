@@ -4,11 +4,11 @@ AI-powered recurring bill pattern detection service for BudgetBuddy.
 
 ## Overview
 
-This Lambda function analyzes transaction history to identify recurring payment patterns using AWS Bedrock (Claude 3.5 Sonnet) and algorithmic pattern detection. Detected patterns can be converted into bill reminders for proactive financial management.
+This Lambda function analyzes transaction history to identify recurring payment patterns using AWS Bedrock (the common layer `BEDROCK_MODEL_ID`, Claude Haiku 4.5) and algorithmic pattern detection. Detected patterns can be converted into bill reminders for proactive financial management.
 
 ## Features
 
-- **AI Pattern Detection**: Uses Claude 3.5 Sonnet to analyze transactions and identify recurring bills
+- **AI Pattern Detection**: Uses Claude Haiku 4.5 to analyze transactions and identify recurring bills
 - **Fuzzy Merchant Matching**: Groups similar merchant names using Levenshtein distance
 - **Confidence Scoring**: Rates pattern reliability based on timing consistency, amount variance, and occurrence count
 - **Manual Pattern Creation**: Allows users to manually mark transactions as recurring
@@ -116,7 +116,7 @@ confidenceScore = (
 
 - DynamoDB: Read/Write access to main table
 - S3: Read/Write access to pattern cache bucket
-- Bedrock: InvokeModel permission for Claude 3.5 Sonnet
+- Bedrock: InvokeModel on the shared model ARNs (`bedrockModelResourceArns`)
 
 ## Testing
 

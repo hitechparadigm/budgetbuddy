@@ -6,13 +6,13 @@
 
 ### Lambda Functions (`functions/`)
 
-- **auth/**: User authentication, registration, profile management (⚠️ Being refactored - see below)
+- **auth/**: User authentication, registration, profile management (onboarding split out - see below)
 - **auth-onboarding/**: ✨ NEW - Standalone onboarding Lambda (~300 lines, independently deployable)
 - **budget/**: Budget CRUD operations, category management, calculations
 - **transactions/**: Transaction management with automatic budget updates
 - **ai/**: AI-powered budget generation using AWS Bedrock
 - **budgets/**: Budget collaboration, invitations, member management (replaces the deprecated `family/` Lambda, which returns 410 Gone)
-- **payment/**: Stripe integration for subscription management
+- **payment/**: Stripe subscription placeholder; today it answers only `/payments/health` (Stripe is not configured)
 - **email/**: SES email sending for notifications and tips
 - **admin/**: Admin dashboard operations and analytics
 - **export/**: CSV/PDF export and data backup functionality
@@ -53,13 +53,11 @@ See `functions/auth-onboarding/README.md` for detailed documentation.
 
 ## Architecture
 
-Each Lambda function:
-
-1. Receives API Gateway events
-2. Validates input using Zod schemas
-3. Performs business logic operations
-4. Interacts with DynamoDB using single-table design
-5. Returns structured API responses
+Function placement per stack and API, the request lifecycle (`getUserFromEvent` ->
+`BudgetAccessResolver.resolveAccess` -> `assertPermission` -> `canUseFeature`), the DynamoDB key
+layout and the scheduled and stream triggers are documented in
+[docs/architecture.md](../docs/architecture.md). All handlers run on Node.js 20 and use AWS SDK v3
+(`@aws-sdk/*`) or the common layer's `dynamoHelpers`; SDK v2 (`aws-sdk`) is not available on that runtime.
 
 ## Environment Variables
 
@@ -68,7 +66,7 @@ Functions expect these environment variables:
 - `TABLE_NAME`: DynamoDB table name
 - `NODE_ENV`: Environment (development/production)
 - `LOG_LEVEL`: Logging verbosity
-- `BEDROCK_MODEL_ID`: AI model identifier
+- `BEDROCK_MODEL_ID`: AI model identifier (`us.anthropic.claude-haiku-4-5-20251001-v1:0`; CDK value in `infrastructure/lib/config/bedrock.ts`, fallback default in `layers/common/nodejs/utils.js`)
 - `STRIPE_SECRET_KEY`: Payment processing key
 
 ## Deployment

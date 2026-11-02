@@ -24,7 +24,7 @@ Web + iOS + Android. Freemium model.
 | `family` | Full — all members see everything, no hidden categories | Couples, households managing finances together |
 | `shared` | Limited — only shared expenses | Roommates, in-laws, group trips |
 
-**Family budget rule**: When `budgetType = family`, there are no hidden categories, no private transactions, no per-user visibility filters. Both partners see all income, expenses, debts, savings, and transactions. If a user wants personal spending money, it appears as a visible category (e.g. "Project personal spending: $300/month").
+**Family budget rule**: When `budgetType = family`, there are no hidden categories, no private transactions, no per-user visibility filters. Both partners see all income, expenses, debts, savings, and transactions. If a user wants personal spending money, it appears as a visible category (e.g. "Alex personal spending: $300/month").
 
 **Personal budget rule**: Cannot have members. Owner can invite Viewers.
 
@@ -43,9 +43,9 @@ Web + iOS + Android. Freemium model.
 
 A user can belong to multiple budgets with different roles in each:
 ```
-Project:
-  - Project Personal Budget    → owner
-  - Owner Family Budget        → owner
+Alex:
+  - Alex Personal Budget      → owner
+  - Example Family Budget      → owner
   - House Shared Budget        → member
   - Client Review Budget       → viewer (expires 2026-08-31)
 ```
@@ -65,15 +65,20 @@ BUDGET#<budgetId>
   MEMBER#<userId>  → { role, status, joinedAt, expiresAt, accessLabel, GSI1PK, GSI1SK }
   PERIOD#<YYYY-MM> → { income/savings/expense groups, totals, rolloverIn, rolloverOut }
   ACCOUNT#<id>     → { nickname, accountType, balance }
-  TXN#<id>         → { amount, category, date, accountId }
+  TRANSACTION#<id> → { amount, category, date, accountId }
   GOAL#<id>        → { name, targetAmount, currentAmount, targetDate, subType? }
-  INVITATION#<id>  → { budgetId, invitedEmail, role, tokenHash, status, expiresAt, viewerExpiresAt }
-  PLANNED_TXN#<id> → { name, amount, dueDate, categoryId, categoryName, isPaid, paidAt?, createdAt }
+  PLAN#<planId>    → { name, amount, dueDate, categoryId, categoryName, isPaid, paidAt?, createdAt }  (entityType PLANNED_TRANSACTION)
+
+INVITATION#<invitationId>
+  METADATA         → { budgetId, invitedEmail, role, tokenHash, status, expiresAt, viewerExpiresAt }
 ```
+
+The verified key layout, with writer file:line and known inconsistencies, is in
+[architecture.md](./architecture.md#5-data-model).
 
 **`GOAL#<id>` `subType`**: optional field — `'goal'` (default), `'borrowed'`, or `'lent'`. No migration needed; existing goals without `subType` treated as regular goals.
 
-**`PLANNED_TXN#<id>`**: planned future transactions (income or expense). `isPaid: false` on creation; `POST .../mark-paid` sets `isPaid: true` + `paidAt`.
+**`PLAN#<planId>`**: planned future transactions (income or expense). `isPaid: false` on creation; `POST .../mark-paid` sets `isPaid: true` + `paidAt`.
 
 **GSI1**: `GSI1PK = USER#<userId>` / `GSI1SK = BUDGET#<budgetId>` — lists all budgets a user belongs to.
 
@@ -216,7 +221,8 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 - ✅ Account management at `/accounts`
 
 ### Auth
-- ✅ Cognito User Pools + Google OAuth 2.0 (PKCE)
+- ✅ Cognito User Pools, email + password
+- ❌ Google OAuth 2.0 — not working: no Google IdP on the pool; planned replacement is a Cognito federated Google IdP with PKCE
 - ✅ JWT carries only `userId` — no budgetId, no role, no familyId
 - ✅ `BudgetAccessResolver` resolves budget + role from DynamoDB on every request
 
@@ -233,7 +239,7 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 - ✅ Notifications: device registration, preferences (GET/PUT), notification history, push delivery via Expo
 - ✅ Net worth tracking (manual + investment accounts) — `backend/functions/net-worth/` deployed to extended stack
 - ✅ **Tools page** — `/tools` with client-side Debt Payoff Calculator (5-scenario comparison table + bar chart) and Compound Interest Calculator (up to 50yr growth chart, 5 compounding frequencies)
-- ✅ **Planned transactions** — `backend/functions/transaction-planning/` + CDK in `api-features-extended-stack.ts`; full CRUD on `PLANNED_TXN#<id>` keys; mark-paid endpoint; RBAC enforced (owner/partner write, viewer read-only)
+- ✅ **Planned transactions** — `backend/functions/transaction-planning/` + CDK in `api-features-extended-stack.ts`; CRUD on `PLAN#<planId>` keys (update and delete return 404 today because of a path-parameter mismatch, see architecture.md "Known inconsistencies"); mark-paid endpoint; RBAC enforced (owner/partner write, viewer read-only)
 
 ### Frontend
 - ✅ `BudgetMembersPage` at `/budget/members` — full member management UI
@@ -332,7 +338,7 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 
 5. **`shared` budget type has no distinct behavioral rules** — `shared` is accepted and stored but behaves identically to `family` except for the partner limit. The vision specifies shared budgets should only contain shared expenses (no income, no personal debt). This is a product enforcement question, not a data model issue.
 
-6. **SES still in sandbox mode** — can only send to verified addresses. Verified: the sender `info@hitechparadigm.com` plus other identities deliberately not recorded in the repo (`aws ses list-identities`). Request SES production access to send to any address.
+6. **SES still in sandbox mode** — can only send to verified addresses. Verified sender identities are managed in the SES console; see [ses-email-setup.md](./ses-email-setup.md). Request SES production access to send to any address.
 
 ### Low Priority
 
@@ -352,7 +358,7 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 
 ### Scheduled Notifications (New)
 
-13. **Daily reminders, spending nudges and the monthly kickoff email do not deliver** — until Session 170, `daily-reminders` and `budget-alerts` crashed on every invocation (`require('aws-sdk')` on Node.js 20), so the ✅ marks above for proactive spending nudges, the monthly SES kickoff email and EventBridge push reminders describe code that never ran. The SDK v3 port (not yet deployed) stops the crashes, but `daily-reminders` still reads the retired `FAMILY#` keys and now skips every user without a `familyId` (all current profiles), so it sends nothing. Its nudge write is denied by its read-only IAM grant, and it has no `ses:SendEmail` permission. Restoring the feature needs the `FAMILY#` key migration plus wider IAM grants.
+13. **Daily reminders, spending nudges and the monthly kickoff email do not deliver** — until Session 170, `daily-reminders` and `budget-alerts` crashed on every invocation (`require('aws-sdk')` on Node.js 20), so the ✅ marks above for proactive spending nudges, the monthly SES kickoff email and EventBridge push reminders describe code that never ran. The SDK v3 port (deployed 2026-11-01) stops the crashes, but `daily-reminders` still reads the retired `FAMILY#` keys and now skips every user without a `familyId` (all current profiles), so it sends nothing. Its nudge write now persists through a narrow `dynamodb:PutItem` grant, but it has no `ses:SendEmail` permission and its default sender is not a verified SES identity. Restoring the feature needs the `FAMILY#` key migration plus an SES grant and sender.
 
 14. **Budget alerts repeating: fixed in Session 170 (FEAT-004), deployed to DEV 2026-11-01** — `budget-alerts` is BUDGET#-keyed and loads without error since the deploy (a direct test invocation returned 200). Its first scheduled run after the deploy had not happened at the time of writing. It previously had a read-only IAM grant, so the "alert already sent" marker would never have been saved. `notification-stack.ts` now also grants it `dynamodb:PutItem`, so each alert is sent once per category, threshold and month.
 
@@ -421,7 +427,7 @@ New endpoints added during web app polish, verified live:
 | Step | Frontend | Backend API | Status |
 |------|----------|-------------|--------|
 | Register | `AuthPage.tsx` / `RegisterForm.tsx` — autocomplete attrs, design token buttons, proper `htmlFor`/`id` structure | `POST /auth/register` | ✅ |
-| Google Sign-In | `GoogleSignInButton.tsx` | `POST /auth/google` | ✅ |
+| Google Sign-In | `GoogleSignInButton.tsx` | `POST /auth/google` | ❌ Not working: no Google IdP on the pool (see [architecture](./architecture.md#6-authentication)) |
 | Sign In | `LoginForm.tsx` — autocomplete on email+password, design token submit button, full 3-step Forgot Password inline flow (email → code → new password) | `POST /auth/login`, `POST /auth/forgot-password`, `POST /auth/confirm-forgot-password` | ✅ |
 | Accept invitation | `AcceptInvitationPage.tsx` — smart tab (Login vs Create Account), pre-fills email; fixed: JWT decoded manually on NONE-auth route, `acceptInvitationCore` bypasses stale React state | `POST /budgets/accept-invitation` | ✅ |
 | Budget type selection | `OnboardingPage.tsx` — 5-step total, inline descriptions, no disclosure modal | `POST /auth/onboarding` | ✅ |
@@ -631,7 +637,7 @@ only the Authentication row has been re-verified against the source (Session 170
 
 | Feature | Frontend | Status |
 |---------|----------|--------|
-| Authentication (email + Google PKCE) | `LoginScreen`, `RegisterScreen` | ✅ Built — registration goes through `POST /auth/register` (Cognito self sign-up is disabled); sign-in stays on Amplify SRP. `RegisterScreen` collects first and last name, which the user pool requires. Email confirmation is not used: accounts are created already confirmed, so `ConfirmSignUpScreen` is unreachable |
+| Authentication (email; Google PKCE not working, no Google IdP on the pool) | `LoginScreen`, `RegisterScreen` | ✅ Built — registration goes through `POST /auth/register` (Cognito self sign-up is disabled); sign-in stays on Amplify SRP. `RegisterScreen` collects first and last name, which the user pool requires. Email confirmation is not used: accounts are created already confirmed, so `ConfirmSignUpScreen` is unreachable |
 | Onboarding (budget type + AI generation) | `BudgetTypeScreen`, `AIGenerationScreen` | 🔲 Not started |
 | Budget screen (groups, categories, FAB) | `BudgetScreen` | 🔲 Not started |
 | Quick transaction entry (bottom sheet) | `AddTransactionSheet` | 🔲 Not started |

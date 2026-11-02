@@ -42,17 +42,18 @@ The following secrets must be configured in the GitHub repository:
 ```
 HITECHPARADIGM_AWS_ACCESS_KEY_ID     # AWS Access Key for hitechparadigm profile
 HITECHPARADIGM_AWS_SECRET_ACCESS_KEY # AWS Secret Key for hitechparadigm profile
+ALERT_EMAIL                          # Address subscribed to both alarm SNS topics (no hardcoded fallback)
 ```
+
+If `ALERT_EMAIL` is not set, the alarm topics are created without an email subscription. Each
+subscription must be confirmed once from the email that SNS sends after the deploy.
 
 ### AWS Resources Created
 
-The deployment creates the following AWS resources with `budgetbuddy-{env}-` prefix:
-
-- **Database Stack**: DynamoDB table with GSI indexes
-- **Auth Stack**: Cognito User Pool and Client
-- **API Stack**: Lambda functions and API Gateway
-- **Hosting Stack**: S3 buckets and CloudFront distributions
-- **Monitoring Stack**: CloudWatch dashboards and SNS alerts
+The deployment creates 10 CloudFormation stacks named `budgetbuddy-{env}-<slug>`, in this order:
+database, auth, auth-onboarding, notification, api, api-features, api-features-extended,
+api-budgets, hosting, monitoring. What each stack contains is in
+[docs/architecture.md](../../docs/architecture.md#8-infrastructure-as-code).
 
 ## Environment Configuration
 
@@ -60,14 +61,14 @@ The deployment creates the following AWS resources with `budgetbuddy-{env}-` pre
 
 - **Stack Prefix**: `budgetbuddy-dev-`
 - **Region**: `us-east-1`
-- **Removal Policy**: `DESTROY` (for easy cleanup)
+- **Removal Policy**: `RETAIN` with deletion protection on the table and user pool (dev holds the real data)
 - **Deployment**: Automatic on `develop` branch push
 
-### Future Environments
+### Other Environments
 
-Additional workflows can be added for:
-- **Staging**: Manual or automatic deployment from `main` branch
-- **Production**: Manual deployment with approval gates
+- **Staging**: not deployed. No workflow deploys staging; a push to `main` runs only
+  `deployment-security.yml`, which synthesizes but does not deploy.
+- **Production**: `deploy-prod.yml` is manual dispatch with a confirmation input; no prod stacks exist yet.
 
 ## Monitoring and Troubleshooting
 

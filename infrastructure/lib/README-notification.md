@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Notification Stack provides push notification and daily reminder functionality for BudgetBuddy. It includes three Lambda functions, EventBridge scheduled rules, DynamoDB Streams integration, and comprehensive monitoring.
+The Notification Stack provides push notification and daily reminder functionality for BudgetBuddy. It includes four Lambda functions (notifications, budget-alerts, daily-reminders, bill-scheduler), three EventBridge scheduled rules, a DynamoDB Streams mapping, an alert topic and alarms. All handlers use AWS SDK v3 through the common layer. Overall architecture: [docs/architecture.md](../../docs/architecture.md).
 
 ## Architecture
 
@@ -52,7 +52,7 @@ The Notification Stack provides push notification and daily reminder functionali
 - Runtime: Node.js 20.x
 - Memory: 512 MB
 - Timeout: 30 seconds
-- Provisioned Concurrency: 2 (for low latency)
+- Provisioned Concurrency: none
 
 **Environment Variables**:
 
@@ -170,6 +170,12 @@ The Notification Stack provides push notification and daily reminder functionali
 - Maximum retry attempts: 2
 - Maximum event age: 2 hours
 
+### Bill Scheduler Rule
+
+**Schedule**: Daily at 08:00 UTC (`cron(0 8 * * ? *)`)
+
+**Target**: Bill Scheduler Lambda (`budgetbuddy-<env>-bill-scheduler`, code in `backend/functions/bills-scheduler`)
+
 ## DynamoDB Streams
 
 **Stream View Type**: NEW_AND_OLD_IMAGES
@@ -181,29 +187,36 @@ The Notification Stack provides push notification and daily reminder functionali
 - Starting position: LATEST
 - Maximum retry attempts: 2
 - Bisect batch on function error: true
-- Filter pattern: Only TRANSACTION records
+- Filter pattern: only `INSERT` events whose SK begins with `TRANSACTION#`
 
 ## Monitoring
 
 ### CloudWatch Alarms
 
+Twelve alarms, three per function (deployed 2026-11-01). All publish to the stack's own SNS
+topic `budgetbuddy-<env>-notification-alerts`, which subscribes the configured `ALERT_EMAIL` (a GitHub
+Actions secret). The stack cannot use the monitoring stack's topic because monitoring depends on
+notification.
+
 **Error Rate Alarms**:
 
-- Threshold: 5 errors in 5 minutes
-- Evaluation periods: 2
+- Threshold: 1 or more errors in 5 minutes
+- Evaluation periods: 1
 - Action: SNS notification
 
 **Throttle Alarms**:
 
-- Threshold: 1 throttle in 5 minutes
+- Threshold: more than 1 throttle in 5 minutes
 - Evaluation periods: 1
 - Action: SNS notification
 
 **Duration Alarms**:
 
-- Threshold: p99 > 1 second
+- Threshold: p99 above 80% of the function's own timeout
 - Evaluation periods: 2
 - Action: SNS notification
+
+**Log retention**: 7 days on all four functions.
 
 ### CloudWatch Dashboard
 
@@ -223,16 +236,10 @@ The Notification Stack provides push notification and daily reminder functionali
 2. Common and Shared Lambda layers deployed
 3. Expo access token stored in Secrets Manager
 
-### Deploy Command
+### Deploy
 
-```bash
-# Set AWS profile
-$env:AWS_PROFILE="hitechparadigm"
-
-# Deploy stack
-cd infrastructure
-cdk deploy budgetbuddy-dev-notification --profile hitechparadigm
-```
+The stack deploys with all the others through GitHub Actions (`deploy-dev.yml`), after `database`
+and before `api`. Do not run `cdk deploy` locally; see [docs/deployment-guide.md](../../docs/deployment-guide.md).
 
 ### Verify Deployment
 
@@ -376,7 +383,7 @@ aws logs tail /aws/lambda/budgetbuddy-dev-daily-reminders --follow --profile hit
 ### API Security
 
 - All endpoints require JWT authentication
-- Rate limiting: 100 requests/minute per user
+- Rate limiting: none configured (no stage throttling or usage plan)
 - Input validation on all endpoints
 - CORS configured for allowed origins only
 

@@ -376,15 +376,14 @@ Replace with:
 
 Current (Known Gaps, item 6):
 ```
-6. **SES still in sandbox mode** — can only send to verified addresses. Verified: `user@example.com`, `user@example.com`, `info@hitechparadigm.com`, `user@example.com`, `user@example.com`. Request SES production access to send to any address.
+6. **SES still in sandbox mode** — can only send to verified addresses. Verified: the configured sender plus other verified identities (managed in the SES console). Request SES production access to send to any address.
 ```
 Per Requirement 9: if the SES support case has been filed by the time this doc is updated,
 replace with:
 ```
 6. **SES production access requested, pending AWS approval** — sending remains restricted to
    verified addresses (see `docs/ses-email-setup.md`) until AWS approves the request. Verified:
-   `user@example.com`, `user@example.com`, `info@hitechparadigm.com`,
-   `user@example.com`, `user@example.com`.
+   the configured sender plus other verified identities (managed in the SES console).
 ```
 If the case has not yet been filed at documentation-update time, leave the current sandbox
 wording in place (Requirement 9 Criterion 1 requires stating the sandbox restriction while
@@ -520,16 +519,15 @@ leave unchanged):
 Current ("SES Status" section):
 ```
 ## SES Status
-- Sandbox mode — verified: `user@example.com`, `user@example.com`, `info@hitechparadigm.com`, `user@example.com`, `user@example.com`, `user@example.com`, `noreply@budgetbuddy.com`
+- Sandbox mode — verified: the configured sender plus other verified identities (managed in the SES console)
 - FROM_EMAIL = `info@hitechparadigm.com`
 ```
 Replace with (once filed):
 ```
 ## SES Status
 - Production access requested <date>, pending AWS approval. Until approved, sending remains
-  restricted to verified addresses: `user@example.com`, `user@example.com`,
-  `info@hitechparadigm.com`, `user@example.com`, `user@example.com`,
-  `user@example.com`, `noreply@budgetbuddy.com`
+  restricted to verified addresses: the configured sender plus other verified identities
+  (managed in the SES console)
 - FROM_EMAIL = `info@hitechparadigm.com`
 - Bounce/complaint handling: manual (SES console + `setup-ses-email.js list`); no SNS
   automation yet — see `docs/ses-email-setup.md`
@@ -602,9 +600,8 @@ Compliance/process answers:
     email that would require a List-Unsubscribe header, but will add one if we introduce any
     non-transactional sending in the future.
 
-Currently verified identities (for reference, from docs/ses-email-setup.md):
-  user@example.com, user@example.com, info@hitechparadigm.com,
-  user@example.com, user@example.com, user@example.com, noreply@budgetbuddy.com
+Currently verified identities: the configured sender plus other verified identities
+  (managed in the SES console; not recorded in the repository)
 
 FROM_EMAIL in production: info@hitechparadigm.com
 ```

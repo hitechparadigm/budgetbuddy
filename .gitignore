@@ -156,3 +156,7 @@ v2.txt
 # Agent task scratch space and git worktrees (never commit)
 .agents/
 .worktrees/
+
+# Local-only extra patterns for scripts/check-sensitive-data.js (protected terms such as real
+# names or employer-internal names; never commit)
+.sensitive-data-patterns.local

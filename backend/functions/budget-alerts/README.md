@@ -18,7 +18,7 @@ The Budget Alerts Service Lambda monitors budget spending and sends alerts when 
 
 **Triggers**:
 
-1. **DynamoDB Streams**: Real-time transaction events (INSERT/MODIFY)
+1. **DynamoDB Streams**: Real-time transaction events (`INSERT` only, SK beginning with `TRANSACTION#`)
 2. **EventBridge**: Scheduled checks every 6 hours
 3. **Manual**: Direct Lambda invocation
 
@@ -401,16 +401,15 @@ Alerts are deduplicated using a composite key:
 
 ## Deployment
 
-Deployed via CDK as part of Notification Stack:
-
-```bash
-cd infrastructure
-cdk deploy budgetbuddy-dev-notification --profile hitechparadigm
-```
+Deployed as part of the notification stack (`infrastructure/lib/notification-stack.ts`) through
+GitHub Actions; see [docs/deployment-guide.md](../../../docs/deployment-guide.md). The stack gives the
+function read access plus `dynamodb:PutItem` on `budgetbuddy-main`, 7-day log retention, and error,
+throttle and duration alarms on the `budgetbuddy-<env>-notification-alerts` topic.
 
 ## Dependencies
 
-- `aws-sdk`: AWS SDK for JavaScript
+- AWS SDK v3: `@aws-sdk/client-lambda`, `@aws-sdk/util-dynamodb`
+- Common layer `dynamoHelpers` (`/opt/nodejs/utils`)
 
 ## Future Enhancements
 

@@ -34,10 +34,16 @@ BUDGET#<budgetId>
   MEMBER#<userId>  → { role, status, joinedAt }
   PERIOD#<YYYY-MM> → { income/savings/expense groups, totals }
   ACCOUNT#<id>     → { nickname, accountType, balance }
-  TXN#<id>         → { amount, category, date, accountId }
+  TRANSACTION#<id> → { amount, category, date, accountId }
   GOAL#<id>        → { name, targetAmount, currentAmount, targetDate }
-  INVITATION#<id>  → { invitedEmail, role, token, expiresAt, status }
+  PLAN#<planId>    → planned transaction
+
+INVITATION#<invitationId>
+  METADATA         → { invitedEmail, role, token, expiresAt, status }
 ```
+
+The verified key layout and its known inconsistencies (`TXN#`, surviving `FAMILY#`) are in
+[docs/architecture.md](docs/architecture.md#5-data-model).
 
 ### Lambda Access Pattern (every Lambda that touches budget data)
 
@@ -90,8 +96,8 @@ Lambda (Node.js 20.x) + API Gateway (REST) with Cognito authorizer. CDK v2 for a
 ### Stack Layout
 
 ```
-database → auth → auth-onboarding → api → api-features
-→ api-features-extended → api-budgets → hosting → notification → monitoring
+database → auth → auth-onboarding → notification → api → api-features
+→ api-features-extended → api-budgets → hosting → monitoring
 ```
 
 Each stack creates its own Lambda Layers. **Never export Lambda Layers across stacks** — cross-stack layer refs cause CloudFormation deployment failures.
@@ -125,6 +131,10 @@ GSI3PK / GSI3SK  — category analytics (BUDGET#<month> / CATEGORY#<id>)
 GSI4PK / GSI4SK  — invitation lookups (INVITATION#<email> / CREATED#<timestamp>)
 ```
 
+**Status note (2026-10-31)**: in code, GSI1 is overloaded (memberships, transactions and periods by
+budget, bills by month), GSI2 is written but never queried, and GSI3 is never written. See
+[docs/architecture.md](docs/architecture.md#5-data-model).
+
 ---
 
 ## ADR-004: Lambda Layer Strategy
@@ -150,6 +160,12 @@ Two layers per stack (each stack creates its own — no cross-stack exports):
 - Two Lambda functions: `auth` (login/register/profile) + `auth-onboarding` (standalone)
 - Auth Lambda refactoring paused — not needed until 10,000+ users or measured cold start issues
 
+**Status note (2026-10-31)**: the Google OAuth 2.0 (PKCE) part of this decision is not implemented.
+The user pool has no Google identity provider and no hosted domain; a custom `/auth/google` branch in
+the auth Lambda cannot issue valid tokens. Email and password sign-in goes through the auth Lambda.
+The planned replacement is a Cognito federated Google IdP with managed login and PKCE. See
+[docs/architecture.md](docs/architecture.md#6-authentication).
+
 ---
 
 ## ADR-006: Feature Gating
@@ -166,7 +182,7 @@ Use `canUseFeature(subscriptionTier, featureKey)` from `backend/layers/common/no
 | Concern | Decision |
 |---------|----------|
 | Data model | Single-table DynamoDB, `BUDGET#` partition key |
-| Auth | Cognito + Google OAuth, JWT carries only `userId` |
+| Auth | Cognito + Google OAuth (Google part not implemented, see the ADR-005 status note), JWT carries only `userId` |
 | Budget access | `BudgetAccessResolver` resolves from DynamoDB on every request |
 | Roles | `owner \| partner \| household_member \| viewer` |
 | Infrastructure | CDK v2, Lambda + API Gateway, no cross-stack layer exports |

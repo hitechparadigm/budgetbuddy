@@ -1,4 +1,25 @@
 # Development Log
+## 2026-11-02 - Docs Consolidated, Architecture Doc and Data-Protection Enforcement (Session 170)
+- Wrote `docs/architecture.md` as the one architecture document, verified against
+  `infrastructure/bin/app.ts`, `infrastructure/lib/*-stack.ts` and backend code; merged and deleted
+  `docs/aws-stack-architecture.md`; added the draw.io diagram
+  `docs/diagrams/budgetbuddy-architecture.drawio`.
+- Reviewed 136 tracked markdown files and fixed stale facts in about 25 docs, READMEs and steering
+  files (deploy order, key prefixes, GSIs, Google sign-in, environments, mobile versions,
+  notification alarms, Bedrock model).
+- Added the mandatory data-protection steering rule plus enforcement:
+  `scripts/check-sensitive-data.js` (`--all`, `--staged`), blocking pre-commit gate on newly added
+  lines, report-only `security-check.sh` section 9 in CI, PreToolUse hook. Untracked 119 generated
+  files under `.playwright-mcp/` and `infrastructure/cdk-out-temp/`; `.agents/` and `.worktrees/`
+  stay git-ignored.
+- Scrubbed personal data from all tracked markdown. Final markdown grep: 0 hits. Whole-repo scanner:
+  41 report-only findings in 13 non-markdown files (test fixtures, scripts, example tokens), left
+  for a code/test scrub.
+- Landed on `develop` as one squashed commit, so the intermediate branch history never reached the
+  remote.
+- Verification: consistency-check 4/4, markdown links 0 missing, `security-check.sh` exit 0.
+- Follow-ups: scrub the non-markdown hits; then set `SENSITIVE_DATA_SCAN_BLOCKING=true`; run jest on
+  `scripts/check-sensitive-data.test.js`.
 ## 2026-11-02 - Password Reset Confirm Route Fixed (Session 170)
 Users with a forced reset could not set a new password on web. Two faults stacked:
 
@@ -3489,7 +3510,7 @@ The feature is already deployed and functional. No code changes were made in thi
 
 ### Problem Solved
 
-**Issue**: User d**\***o.m\*\*\*user@example.com clicked to send family invitation but emails never arrived in inbox.
+**Issue**: User [personal address redacted] clicked to send family invitation but emails never arrived in inbox.
 
 **Root Cause**:
 
@@ -12755,7 +12776,7 @@ if (!familyId) {
 - **Symptom**: All users getting "User profile not found" error on profile endpoint
 - **Root Cause**: Cognito User Pool Client missing `userId` in `readAttributes` and `writeAttributes`
 - **Technical Details**:
-  - User registration creates DynamoDB record with custom `userId` (e.g., `user_1767573863746_5mrmnozon`)
+  - User registration creates DynamoDB record with custom `userId` (e.g., `user_<timestamp>_<suffix>`)
   - Profile lookup tries to extract `userId` from ID token via `payload["custom:userId"]`
   - ID token doesn't include `custom:userId` because it's not in client's `readAttributes`
   - Fallback to `payload.sub` (Cognito sub) fails because DynamoDB uses custom `userId` as key
@@ -12777,7 +12798,7 @@ if (!userId) {
 
 **DynamoDB Key Structure**:
 
-- User profiles stored with PK: `USER#user_1767573863746_5mrmnozon`
+- User profiles stored with PK: `USER#user_<timestamp>_<suffix>`
 - Cognito sub format: `b4a8f408-00e1-70c0-a1b3-930da8a2df9c`
 - Mismatch causes 404 "User profile not found"
 
@@ -12808,7 +12829,7 @@ if (!userId) {
 **User Profile Not Found (404)**
 
 - **Symptom**: `/auth/profile` returning 404 "User profile not found"
-- **Root Cause**: New user `info@hitechparadigm.com` profile not created in DynamoDB
+- **Root Cause**: New user `user@example.com` profile not created in DynamoDB
 - **Impact**: User cannot access onboarding flow or app functionality
 - **Next Steps**: User needs to complete registration process properly
 
@@ -12847,7 +12868,7 @@ aws cloudfront create-invalidation --distribution-id E1L1SU9OV8L4YR --paths "/*"
 ### Next Steps
 
 1. ÃƒÂ¢Ã‚ÂÃ‚Â³ Wait 5-15 minutes for CloudFront cache invalidation to complete
-2. ÃƒÂ¢Ã‚ÂÃ‚Â³ User should try logging out and registering again with `info@hitechparadigm.com`
+2. ÃƒÂ¢Ã‚ÂÃ‚Â³ User should try logging out and registering again with `user@example.com`
 3. ÃƒÂ¢Ã‚ÂÃ‚Â³ Verify profile creation during registration process
 4. ÃƒÂ¢Ã‚ÂÃ‚Â³ Test complete onboarding flow after profile exists
 

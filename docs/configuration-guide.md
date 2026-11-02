@@ -13,12 +13,12 @@ AWS_REGION=us-east-1
 AWS_PROFILE=hitechparadigm
 ENVIRONMENT=dev
 
-# Database
-TABLE_NAME=budgetbuddy-dev-main
+# Database (the table name has no environment prefix)
+TABLE_NAME=budgetbuddy-main
 
 # Authentication
-USER_POOL_ID=us-east-1_xxxxxxxxx
-USER_POOL_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
+USER_POOL_ID=<USER_POOL_ID>
+USER_POOL_CLIENT_ID=<USER_POOL_CLIENT_ID>
 
 # API Gateway
 API_URL=https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/
@@ -184,28 +184,9 @@ Key metrics tracked:
 
 ## 🚀 Deployment Configuration
 
-### CDK Deployment
-
-```bash
-# Deploy all stacks
-cd infrastructure
-npm run deploy:dev
-
-# Deploy specific stack
-npx cdk deploy budgetbuddy-dev-api --context environment=dev
-```
-
-### Web App Deployment
-
-```bash
-# Build and deploy web app
-cd packages/web-app
-npm run build
-
-# Deploy to S3/CloudFront (via CDK)
-cd ../../infrastructure
-npm run deploy:dev
-```
+Infrastructure and the web app deploy only through GitHub Actions (`deploy-dev.yml` deploys the CDK
+stacks, builds the web app and syncs it to S3/CloudFront). Do not run `cdk deploy` locally. See the
+[Deployment Guide](./deployment-guide.md).
 
 ## 🔄 CI/CD Configuration
 
@@ -213,14 +194,16 @@ npm run deploy:dev
 
 Workflows are configured in `.github/workflows/`:
 
-- `deploy-dev.yml` - Automated deployment on push to develop branch
+- `deploy-dev.yml` - Automated deployment on push to develop branch (dev is the only deployed environment)
+- `deploy-prod.yml` - Manual dispatch only; no prod stacks exist yet
+- No workflow deploys staging
 
 ### Required GitHub Secrets
 
 - `HITECHPARADIGM_AWS_ACCESS_KEY_ID`
 - `HITECHPARADIGM_AWS_SECRET_ACCESS_KEY`
 
-See [GitHub Secrets Setup](./github-secrets-setup.md) for details.
+See [Branch Protection](../.github/BRANCH_PROTECTION.md) for the full list of required secrets.
 
 ## 📝 Configuration Files
 
@@ -261,11 +244,16 @@ See [GitHub Secrets Setup](./github-secrets-setup.md) for details.
 ## 📚 Additional Resources
 
 - [API Endpoints Documentation](./api-endpoints.md)
-- [AWS Stack Architecture](./aws-stack-architecture.md)
-- [Stack Management Guide](./stack-management-guide.md)
-- [CI/CD Automation Guide](./cicd-automation-guide.md)
+- [Architecture](./architecture.md)
+- [CI/CD Workflows](../.github/workflows/README.md)
 
 ## 🔐 Google OAuth Configuration
+
+> **Status (2026-10-31): Google sign-in does not work in any deployed environment.** The Cognito user
+> pool has no Google identity provider and no hosted domain, and the backend `/auth/google` flow cannot
+> issue valid tokens (`GOOGLE_CLIENT_ID` is not set by CI). The planned replacement is a Cognito
+> federated Google IdP with managed login and PKCE. The steps below describe client-side setup only.
+> See [architecture.md](./architecture.md#6-authentication).
 
 ### Setup Instructions
 

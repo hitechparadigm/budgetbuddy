@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Data Protection Check",
+      "description": "Checks content before it is written to disk against .kiro/steering/data-protection.md",
+      "trigger": "PreToolUse",
+      "matcher": "^(fs_write|fsWrite|fs_append|fsAppend|str_replace|strReplace|write|edit|create)$",
+      "action": {
+        "type": "agent",
+        "prompt": "Before this write, check the content against .kiro/steering/data-protection.md. If it contains a secret (password, API key, token, private key), personal data (the name, email, phone or address of a real person), an AWS account ID, an IAM user name, a local path or machine name, or an employer-internal name, replace it with an allowed value or placeholder (user@example.com, <ACCOUNT_ID>, <TOKEN>) before writing, or stop and ask the user. Never repeat the protected value in your reply."
+      },
+      "enabled": true
+    }
+  ]
+}

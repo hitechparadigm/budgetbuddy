@@ -34,6 +34,7 @@ Development system configuration for BudgetBuddy.
 - **Before every push**: `node scripts/check-cicd-status.js` - never push during deployment
 - **Commit via**: `node scripts/safe-commit-push.js "type: description"`
 - **Architecture**: JWT carries only `userId`. Budget access resolved via `BudgetAccessResolver` on every request.
+  Full reference: [docs/architecture.md](../docs/architecture.md).
 - **Data**: All budget data under `BUDGET#<budgetId>` PK. `USER#<userId>/PROFILE` stores `defaultBudgetId`.
 - **Deprecated**: `/family/*` API returns 410. `FamilyIdResolver` removed. Do not use.
 
@@ -41,7 +42,7 @@ Development system configuration for BudgetBuddy.
 
 All specs are direct children of `.kiro/specs/` - there is no `archive/` subdirectory. A spec's
 lifecycle state lives in its `.config.kiro` `status` field (`active | complete | superseded`),
-never in its location. See `.kiro/specs/README.md` for the full index of all 19 specs with
+never in its location. See `.kiro/specs/README.md` for the full index of all 24 specs with
 status, category, and description. When a spec finishes, update its `status` field in place and
 update `.kiro/specs/README.md` in the same commit - do not move the spec directory.
 
@@ -59,7 +60,7 @@ update `.kiro/specs/README.md` in the same commit - do not move the spec directo
 ## What's Deprecated / Removed
 
 - `/family/*` API - returns 410. `FamilyIdResolver` removed. Use `BudgetAccessResolver`.
-- `FAMILY#` partition keys - replaced by `BUDGET#`.
-- `custom:familyId` JWT claim - ignored. Only `custom:userId` is used.
+- `FAMILY#` partition keys - replaced by `BUDGET#` (a few handlers still use them; see `docs/architecture.md`).
+- `custom:familyId` JWT claim - ignored. `getUserFromEvent` reads `custom:userId`, falling back to `sub`.
 - `FamilySettings.tsx` - replaced by `BudgetMembersPage` at `/budget/members`.
 - `api-family-stack` - destroyed. Replaced entirely by `api-budgets-stack`.

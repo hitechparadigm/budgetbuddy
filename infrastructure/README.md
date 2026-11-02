@@ -6,17 +6,19 @@
 
 ### CDK Stacks (`lib/`)
 
-- **database-stack.ts**: DynamoDB single-table design with 4 GSIs
-- **auth-stack.ts**: Cognito User Pools + Google OAuth for authentication, and shared Lambda layers
+Listed in deploy order (`stack-manifest.json`). Full contents per stack, routes and triggers:
+[docs/architecture.md](../docs/architecture.md#8-infrastructure-as-code).
+
+- **database-stack.ts**: DynamoDB single-table design with 4 GSIs, stream, AWS Backup plan
+- **auth-stack.ts**: Cognito User Pool (email + password; no Google IdP configured), app client, shared Lambda layer
 - **auth-onboarding-stack.ts**: Standalone Lambda for user onboarding (independently deployable)
-- **notification-stack.ts**: Push notifications and daily reminder Lambdas
-- **api-stack.ts**: Core API Gateway and Lambdas (auth, budget, transactions, AI, admin)
-- **api-features-stack.ts**: Plaid, reconciliation, export, bills, subscriptions, debts, goals, accounts
-- **api-features-extended-stack.ts**: Insights, receipt, transaction planning, net worth, credit score, learn, tips
-- **api-family-stack.ts**: **Deprecated** - returns 410 Gone for all routes. Replaced by `api-budgets-stack.ts`.
-- **api-budgets-stack.ts**: Budget collaboration, members, and invitations (replaces `api-family-stack`)
-- **hosting-stack.ts**: S3 + CloudFront for the web app
-- **monitoring-stack.ts**: CloudWatch dashboards and alarms
+- **notification-stack.ts**: notifications, budget-alerts, daily-reminders and bill-scheduler Lambdas, stream mapping, EventBridge schedules, its own alert topic and 12 alarms
+- **api-stack.ts**: Main API and Lambdas (auth, budget, transaction, ai, payment, email, export, restore, bills, goals, accounts)
+- **api-features-stack.ts**: Features API (plaid, reconciliation, admin, comparison, tips, learn, subscriptions, debt-payoff, credit-score, email, investments)
+- **api-features-extended-stack.ts**: Extended API (insights, receipt, pattern-detection, budget-planning, transaction-planning, rules, net-worth) and the receipts and pattern-cache buckets
+- **api-budgets-stack.ts**: Budget collaboration, members, and invitations (replaced the destroyed `api-family-stack`)
+- **hosting-stack.ts**: S3 + CloudFront for the web app and admin dashboard
+- **monitoring-stack.ts**: CloudWatch dashboard, alert topic and alarms
 
 `admin-stack.ts` and `auth-register-stack.ts` exist in `lib/` but are not currently instantiated
 in `bin/app.ts` - they are not part of the deployed stack set.
@@ -75,39 +77,26 @@ Configures CDK behavior:
 
 ### Deployment Commands
 
-Deploy all infrastructure:
-
-```bash
-yarn deploy
-```
-
-Deploy specific stack:
-
-```bash
-yarn cdk deploy BudgetBuddy-dev-Database
-```
+Deploy only through GitHub Actions (`deploy-dev.yml` on push to `develop`); see
+[docs/deployment-guide.md](../docs/deployment-guide.md). The `deploy`, `deploy:dev` and `destroy`
+scripts exist but are not the supported path.
 
 View changes before deployment:
 
 ```bash
-yarn diff
+npm run diff
 ```
 
 Generate CloudFormation templates:
 
 ```bash
-yarn synth
+npm run synth
 ```
 
 ### Environment Configuration
 
-Set environment context:
-
-```bash
-yarn cdk deploy --context environment=prod
-```
-
-This creates stacks with names like `BudgetBuddy-prod-Database` instead of `BudgetBuddy-dev-Database`.
+The `environment` context (default `dev`) sets the stack names: `budgetbuddy-<env>-<slug>`, for
+example `budgetbuddy-dev-database`. Only dev is deployed.
 
 ## Cost Optimization Features
 

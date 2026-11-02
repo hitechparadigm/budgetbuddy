@@ -42,72 +42,42 @@ aws configure --profile hitechparadigm
 
 ## Deployment Methods
 
-### Method 1: CI/CD Pipeline (Recommended)
+### GitHub Actions (the only supported method)
 
-The **fastest and safest** way to deploy is through the CI/CD pipeline:
-
-```bash
-# 1. Commit all changes
-git add .
-git commit -m "feat: Your feature description"
-
-# 2. Push to develop branch (triggers automatic deployment)
-git push origin develop
-```
-
-The CI/CD pipeline will automatically:
-
-1. Run pre-deployment checks (security, linting, tests)
-2. Deploy all infrastructure stacks
-3. Run health checks
-4. Generate deployment summary
-
-**Total Time**: ~15-20 minutes
-
-### Method 2: Manual CDK Commands
+All deployments go through GitHub Actions. Do not run `cdk deploy` from a workstation: only one
+CloudFormation deployment may run at a time, and the workflow is what enforces that.
 
 ```bash
-# Bootstrap CDK (first time only)
-cd infrastructure
-cdk bootstrap
+# 1. Make sure no deployment is running (must report SUCCESS)
+node scripts/check-cicd-status.js
 
-# Install dependencies and build
-npm install
-npm run build
-
-# Deploy all stacks
-cdk deploy --all --context environment=dev --profile hitechparadigm
+# 2. Commit and push to develop (validates, commits, pushes; triggers deploy-dev.yml)
+node scripts/safe-commit-push.js "feat: your feature description"
 ```
+
+`deploy-dev.yml` then:
+
+1. Runs pre-deployment checks (security, linting, tests)
+2. Runs `cdk synth` and a staged `cdk deploy` of all stacks
+3. Builds the web app, syncs it to S3 and invalidates the CloudFront cache
+4. Fails the run if any stack ends in a failed or rolled-back state
+5. Runs health checks and writes a deployment summary
+
+Pushes that change only markdown or `docs/**` do not trigger a deployment.
 
 ---
 
 ## Deployment Environments
 
-| Environment | Stack Prefix           | Removal Policy | Cost     |
-| ----------- | ---------------------- | -------------- | -------- |
-| Development | `budgetbuddy-dev-`     | DESTROY        | Minimal  |
-| Staging     | `budgetbuddy-staging-` | RETAIN         | Moderate |
-| Production  | `budgetbuddy-prod-`    | RETAIN         | Full     |
+| Environment | Stack Prefix       | Status | Triggered by |
+| ----------- | ------------------ | ------ | ------------ |
+| Development | `budgetbuddy-dev-` | Deployed; holds the real users and data | Push to `develop` or manual dispatch of `deploy-dev.yml` |
+| Staging     | `budgetbuddy-staging-` | Not deployed | No workflow deploys staging; a push to `main` runs only the synth-only `deployment-security.yml` |
+| Production  | `budgetbuddy-prod-` | Not deployed | Manual dispatch of `deploy-prod.yml` (no prod stacks exist yet) |
 
-### Deploy to Development
-
-```bash
-git push origin develop
-# OR manually:
-cd infrastructure && cdk deploy --all --context environment=dev
-```
-
-### Deploy to Staging
-
-```bash
-git push origin main
-# OR manually:
-cd infrastructure && cdk deploy --all --context environment=staging
-```
-
-### Deploy to Production
-
-Production requires manual approval in GitHub Actions.
+Data protection is on in every environment, dev included: the `budgetbuddy-main` table and the
+Cognito user pool have deletion protection and `RETAIN` unless a throwaway stack is deployed with
+`--context dataProtection=false`. Details: [architecture.md](./architecture.md#9-environments-and-cicd).
 
 ---
 
@@ -204,13 +174,11 @@ aws cloudformation describe-stacks \
 
 ## Cleanup
 
-### Destroy Development Environment
+### Destroying an Environment
 
-```bash
-# CAREFUL - destroys all resources!
-cd infrastructure
-cdk destroy --all --context environment=dev --profile hitechparadigm
-```
+Dev holds the real users and data, so it is never destroyed. With data protection on, `cdk destroy`
+of the database or auth stack leaves the table and the user pool behind; they need manual cleanup.
+Tearing down any environment is an owner decision.
 
 ---
 
@@ -219,13 +187,13 @@ cdk destroy --all --context environment=dev --profile hitechparadigm
 | Environment | Monthly Cost                 |
 | ----------- | ---------------------------- |
 | Development | ~$10-20                      |
-| Staging     | ~$30-50                      |
-| Production  | ~$100-500 (depends on usage) |
+| Staging     | ~$30-50 (estimate; not deployed) |
+| Production  | ~$100-500 (estimate; not deployed, depends on usage) |
 
 ---
 
 ## Additional Resources
 
-- **CI/CD Guide**: `docs/cicd-automation-guide.md`
-- **Stack Architecture**: `docs/aws-stack-architecture.md`
+- **CI/CD Workflows**: `.github/workflows/README.md`
+- **Architecture**: [architecture.md](./architecture.md)
 - **API Endpoints**: `docs/api-endpoints.md`

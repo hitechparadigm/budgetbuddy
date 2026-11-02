@@ -4,6 +4,9 @@ inclusion: always
 
 # Architecture Decisions
 
+Agent summary. The full, code-verified reference (diagram, function placement, key-layout evidence,
+known inconsistencies) is `docs/architecture.md`.
+
 ## Data Model — Budget-Centric (ADR-001)
 - All shared data lives under `BUDGET#<budgetId>` partition keys in DynamoDB single table (`budgetbuddy-main`)
 - `USER#<userId>/PROFILE` stores `defaultBudgetId`
@@ -23,29 +26,38 @@ BUDGET#<budgetId>
   MEMBER#<userId>  → { role, status, joinedAt }
   PERIOD#<YYYY-MM> → { income/savings/expense groups, totals }
   ACCOUNT#<id>     → { nickname, accountType, balance }
-  TXN#<id>         → { amount, category, date, accountId }
+  TRANSACTION#<id> → { amount, category, date, accountId }   (GSI1 BUDGET#<id> / DATE#<date>)
   GOAL#<id>        → { name, targetAmount, currentAmount, targetDate, subType? }
-  INVITATION#<id>  → { invitedEmail, role, token, expiresAt, status }
-  PLANNED_TXN#<id> → { amount, category, dueDate, isPaid, paidAt?, createdAt }
+  PLAN#<planId>    → planned transaction, entityType PLANNED_TRANSACTION
+  BILL#<id>        → bill (GSI1PK BILLS#<YYYY-MM>)
+
+INVITATION#<invitationId>
+  METADATA         → { invitedEmail, role, token, expiresAt, status }   (GSI4 INVITATION#<email>)
 ```
+Known inconsistencies (see `docs/architecture.md`): executing a planned transaction writes `TXN#`
+and export/comparison/tips read `TXN#`; a few handlers still use `FAMILY#`.
 
 ## DynamoDB GSIs
-- GSI1: `BUDGET#<budgetId>` / `USER#<userId>` — budget membership queries
-- GSI2: `BUDGET#<month>` / `DATE#<date>` — date-based queries
-- GSI3: `BUDGET#<month>` / `CATEGORY#<id>` — category analytics
+Generic `GSI{1-4}PK`/`GSI{1-4}SK`, all project `ALL`.
+- GSI1: overloaded — memberships by user (`USER#<userId>`), transactions/periods by budget, bills by month
+- GSI2: written by budget and transactions, never queried
+- GSI3: never written
 - GSI4: `INVITATION#<email>` / `CREATED#<timestamp>` — invitation lookups
 
 ## API Gateways (4 total)
-- Main API: `q0zoob6728.execute-api.us-east-1.amazonaws.com` — auth, budget, transactions, accounts, goals, ai
+Prefix-to-gateway map: `docs/gateway-routing-map.md`.
+- Main API: `q0zoob6728.execute-api.us-east-1.amazonaws.com` — auth, users, budget, transactions, accounts, goals, bills, export, restore, payments, ai, notifications
 - Budgets API: `jcl39tq8x0.execute-api.us-east-1.amazonaws.com` — budget collaboration, invitations
-- Features API: `0poeu07vth.execute-api.us-east-1.amazonaws.com` — notifications, tips, learn, debt, comparison, export, credit-score
-- Extended Features API: `hkjzroedjf.execute-api.us-east-1.amazonaws.com` — insights, receipt, pattern-detection, budget-planning, transaction-planning, rules, net-worth
+- Features API: `0poeu07vth.execute-api.us-east-1.amazonaws.com` — plaid, reconcile, admin, comparison, tips, learn, subscriptions, debts, credit-score, investments
+- Extended Features API: `hkjzroedjf.execute-api.us-east-1.amazonaws.com` — insights, receipt, patterns, budget-planning, transaction-planning, rules, net-worth
 
 ## Stack Deploy Order
 ```
-database → auth → auth-onboarding → api → api-features
-→ api-features-extended → api-budgets → hosting → notification → monitoring
+database → auth → auth-onboarding → notification → api → api-features
+→ api-features-extended → api-budgets → hosting → monitoring
 ```
+`notification` precedes `api` because the Main API takes `notificationFunction`
+(`infrastructure/bin/app.ts`, `infrastructure/stack-manifest.json`).
 
 ## Lambda Layer Strategy (ADR-004)
 - Two layers per stack: **common** and **shared**
@@ -53,7 +65,10 @@ database → auth → auth-onboarding → api → api-features
 - Each stack creates its own layer from the same source directory
 
 ## Auth (ADR-005)
-- Cognito User Pools + Google OAuth 2.0 (PKCE)
+- Cognito User Pools, email + password via the auth Lambda (`POST /auth/register`, `POST /auth/login`)
+- Google sign-in does not work today: no Google IdP on the pool and the custom `/auth/google` branch
+  cannot issue tokens. Planned replacement: Cognito federated Google IdP + managed login with PKCE
+- No MFA configured on the pool
 - JWT carries only `userId` — no budgetId, no role
 - Two Lambdas: `auth` + `auth-onboarding` (standalone)
 
@@ -84,8 +99,8 @@ database → auth → auth-onboarding → api → api-features
 - `security-check.sh`: scans only `.ts`/`.js` in infra/scripts/layers; excludes `cdk-out-temp`, `.playwright-mcp`
 
 ## SES Status
-- Sandbox mode — the sender `info@hitechparadigm.com` plus six other verified identities, deliberately not recorded in the repo; list them with `aws ses list-identities`
-- FROM_EMAIL = `info@hitechparadigm.com`
+- Sandbox mode — verified sender identities are managed in the SES console; see `docs/ses-email-setup.md`
+- FROM_EMAIL: configured via the `fromEmail` CDK context
 
 ## Removed / Deprecated
 - `FamilyIdResolver`, `FAMILY#` keys, `custom:familyId`, `/family/*` API, `FamilySettings.tsx`, `api-family-stack`

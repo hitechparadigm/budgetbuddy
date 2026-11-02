@@ -4,6 +4,13 @@
 
 The Daily Reminders Service Lambda sends daily expense tracking reminders to users who haven't logged transactions in 3+ days. It runs on a scheduled basis (every 15 minutes) and checks if users need reminders based on their preferences, reminder time, and quiet hours settings.
 
+> **Status (2026-10-31): the function runs but sends no reminders.** The reminder paths still read
+> deprecated `FAMILY#` keys (`getLastTransactionDate`, and the upcoming-bill and transaction lookups),
+> so `sendDailyReminder` skips users without a `familyId`, which is every current user. The kickoff
+> email has no `ses:SendEmail` grant and no verified sender configured. Both are open items until the
+> `FAMILY#` to `BUDGET#` key migration; see "Known inconsistencies" in
+> [docs/architecture.md](../../../docs/architecture.md#known-inconsistencies).
+
 ## Purpose
 
 - Send daily reminders to users who haven't logged transactions
@@ -433,16 +440,15 @@ Processed batch 2/10
 
 ## Deployment
 
-Deployed via CDK as part of Notification Stack:
-
-```bash
-cd infrastructure
-cdk deploy budgetbuddy-dev-notification --profile hitechparadigm
-```
+Deployed as part of the notification stack (`infrastructure/lib/notification-stack.ts`) through
+GitHub Actions; see [docs/deployment-guide.md](../../../docs/deployment-guide.md). The stack gives the
+function read access plus `dynamodb:PutItem` on `budgetbuddy-main`, 7-day log retention, and error,
+throttle and duration alarms on the `budgetbuddy-<env>-notification-alerts` topic.
 
 ## Dependencies
 
-- `aws-sdk`: AWS SDK for JavaScript
+- AWS SDK v3: `@aws-sdk/client-lambda`, `@aws-sdk/client-ses`
+- Common layer `dynamoHelpers` (`/opt/nodejs/utils`)
 
 ## Future Enhancements
 

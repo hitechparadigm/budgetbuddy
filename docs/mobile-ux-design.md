@@ -509,7 +509,7 @@ Me:
 │ └─────────────────────────────────────┘ │  ← Red when over-allocated
 │                                         │
 │ INCOME ──────────────────────────────── │
-│ ┌─ 💰 Paycheck Dima ────────────────┐  │
+│ ┌─ 💰 Paycheck ─────────────────────┐  │
 │ │  Planned $8,800   Received $0     │  │
 │ │  ░░░░░░░░░░░░░░░  0%              │  │
 │ └───────────────────────────────────┘  │
@@ -624,8 +624,8 @@ Paused (muted + ⏸) / Archived (collapsed section)
 │ Me                                      │
 ├─────────────────────────────────────────┤
 │ ┌─────────────────────────────────────┐ │
-│ │ 🏙️ Avatar  Project Owner            │ │
-│ │            user@example.com   │ │
+│ │ 🏙️ Avatar  Alex Example            │ │
+│ │            user@example.com         │ │
 │ │            [FREE]  [⬆ Get Premium] │ │
 │ └─────────────────────────────────────┘ │
 │                                         │
@@ -669,7 +669,7 @@ Paused (muted + ⏸) / Archived (collapsed section)
 │              🦉  Buddy                  │
 │    Your financial companion             │
 │                                         │
-│  "Hi Project! I know your budget,        │
+│  "Hi Alex! I know your budget,          │
 │   accounts, goals, and spending         │
 │   patterns. Ask me anything."           │
 │                                         │
@@ -786,12 +786,12 @@ Attach screenshot? (optional)
 [+ Add Screenshot]
 
 [Send Feedback]
-Or email: support@budgetbuddy.com
+Or email: support@example.com
 ```
 
 Post-send confirmation (Budge has no confirmation):
 ```
-  ✅  Thanks, Project!
+  ✅  Thanks, Alex!
   Your feedback has been received.
   We typically respond within 24 hours.
   [Back to Settings]

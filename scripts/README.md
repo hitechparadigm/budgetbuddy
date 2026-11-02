@@ -18,19 +18,6 @@ Note: Redundant security scripts (`security-check.ps1`, `security-check-simple.p
 - `validate-for-commit.js` - Pre-commit validation orchestrator
 - `safe-commit-push.js` - Safe commit with validation
 
-**Validation Utilities** (`scripts/utils/`):
-
-- `git-utils.js` - Git operations (staged files, categorization)
-- `date-utils.js` - Date parsing and validation
-- `content-parser.js` - Markdown content parsing
-
-**Validators** (`scripts/validators/`):
-
-- `changelog-validator.js` - CHANGELOG.md validation
-- `dev-log-validator.js` - DEVELOPMENT_LOG.md validation
-- `readme-validator.js` - README.md validation
-- `status-validator.js` - docs/development-status.md validation
-
 ### Git Hooks
 
 - `setup-git-hooks.ps1` - Git hooks setup (Windows)
@@ -50,8 +37,6 @@ Note: Redundant security scripts (`security-check.ps1`, `security-check-simple.p
 
 - `delete-corrupted-budgets.js` - Database cleanup utility
 - `check-cicd-status.js` - CI/CD monitoring
-- `cleanup-analysis.js` - Codebase cleanup analysis tool
-- `cleanup-executor.js` - Codebase cleanup execution tool
 
 ## Usage
 
@@ -125,16 +110,6 @@ node scripts/test-user-journey.js
 node scripts/delete-corrupted-budgets.js [familyId]
 ```
 
-### Codebase Cleanup
-
-```bash
-# Analyze codebase for cleanup
-node scripts/cleanup-analysis.js
-
-# Execute cleanup
-node scripts/cleanup-executor.js
-```
-
 ## Removed Scripts
 
 The following obsolete scripts were removed during codebase cleanup:
@@ -158,6 +133,13 @@ The following obsolete scripts were removed during codebase cleanup:
 - `test-local-deployment.sh` - Not used in current workflow
 - `validate-json.ps1` - Basic validation, not needed
 - `generateCityData.ts` - AI data generation (one-time use, completed)
+
+### No Longer in the Repository
+
+These were documented here but are not tracked in git: the `scripts/utils/` helpers (`git-utils.js`,
+`date-utils.js`, `content-parser.js`), the `scripts/validators/` modules (`changelog-validator.js`,
+`dev-log-validator.js`, `readme-validator.js`, `status-validator.js`), `cleanup-analysis.js` and
+`cleanup-executor.js`.
 
 ### Cleanup Scripts (Consolidated)
 
