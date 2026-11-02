@@ -1,4 +1,14 @@
 # Changelog
+## [1.13.16] - 2026-11-02
+### fix(auth): add missing confirm-forgot-password route (Session 170)
+- Main API: new public `POST /auth/confirm-forgot-password` resource on the auth Lambda. The web
+  reset step called it, and API Gateway answered 403 because the resource did not exist.
+- Auth Lambda: moved the placeholder "other POST" 200 response below the `forgot-password` and
+  `confirm-forgot-password` branches. Above them it answered 200 and neither branch ever ran, so
+  `forgot-password` never called Cognito.
+- `POST /auth/reset-password` now runs the same ConfirmForgotPassword logic instead of the
+  placeholder 200.
+- Tests: new `backend/functions/auth/password-reset.test.js` (8), passing.
 ## [1.13.15] - 2026-11-01
 ### fix(auth): route reset-required logins to the reset flow (Session 170)
 - `POST /auth/login` returns 403 `{ error: 'PASSWORD_RESET_REQUIRED' }` when Cognito raises

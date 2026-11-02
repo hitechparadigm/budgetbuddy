@@ -1543,20 +1543,6 @@ exports.handler = async (event, _context) => {
       }
     }
 
-    // For other POST requests, return a simple success response
-    if (httpMethod === "POST") {
-      console.log("Other POST request received for path:", path);
-      return {
-        statusCode: 200,
-        headers: getCorsHeaders(origin),
-        body: JSON.stringify({
-          message: "POST endpoint working",
-          path,
-          note: "This endpoint is not yet implemented",
-        }),
-      };
-    }
-
     // ── Forgot Password ─────────────────────────────────────────────────────
     // POST /auth/forgot-password  { email }
     // Triggers Cognito to send a verification code to the user's email
@@ -1596,8 +1582,9 @@ exports.handler = async (event, _context) => {
     }
 
     // POST /auth/confirm-forgot-password  { email, code, newPassword }
-    // Confirms a password reset using the code sent to email
-    if (httpMethod === "POST" && path === "/auth/confirm-forgot-password") {
+    // Confirms a password reset using the code sent to email.
+    // POST /auth/reset-password is a gateway alias for the same action.
+    if (httpMethod === "POST" && (path === "/auth/confirm-forgot-password" || path === "/auth/reset-password")) {
       let body;
       try {
         body = JSON.parse(event.body || "{}");
@@ -1633,6 +1620,21 @@ exports.handler = async (event, _context) => {
         }
         return { statusCode: 500, headers: getCorsHeaders(origin), body: JSON.stringify({ error: "Internal Server Error", message: "Failed to reset password" }) };
       }
+    }
+
+    // For other POST requests, return a simple success response. This must stay below
+    // every real POST branch: above them it answered 200 and the branch never ran.
+    if (httpMethod === "POST") {
+      console.log("Other POST request received for path:", path);
+      return {
+        statusCode: 200,
+        headers: getCorsHeaders(origin),
+        body: JSON.stringify({
+          message: "POST endpoint working",
+          path,
+          note: "This endpoint is not yet implemented",
+        }),
+      };
     }
 
     // Default response for unhandled routes

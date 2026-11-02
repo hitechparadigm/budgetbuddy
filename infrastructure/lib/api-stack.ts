@@ -510,6 +510,12 @@ export class ApiStack extends cdk.Stack {
       operationName: 'ForgotPassword',
     });
 
+    // Confirm forgot password (public: the user is signed out during a reset)
+    const confirmForgotPasswordResource = authResource.addResource('confirm-forgot-password');
+    confirmForgotPasswordResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {
+      operationName: 'ConfirmForgotPassword',
+    });
+
     // Reset password
     const resetPasswordResource = authResource.addResource('reset-password');
     resetPasswordResource.addMethod('POST', new apigateway.LambdaIntegration(this.functions.authHandler), {

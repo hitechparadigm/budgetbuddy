@@ -1,4 +1,23 @@
 # Development Log
+## 2026-11-02 - Password Reset Confirm Route Fixed (Session 170)
+Users with a forced reset could not set a new password on web. Two faults stacked:
+
+- The main API had no `auth/confirm-forgot-password` resource, so the web reset step got API
+  Gateway's 403 "Missing Authentication Token". Added it in `api-stack.ts`, public like
+  `forgot-password` (the user is signed out), with the API's default CORS preflight.
+- In `auth/index.js` a generic "other POST" block returned 200 `POST endpoint working` above the
+  `forgot-password` and `confirm-forgot-password` branches, so both branches were dead code.
+  `forgot-password` answered 200 without calling Cognito, and with the route alone the web form
+  would have shown "Password reset successfully" while the password stayed unchanged. The block
+  now sits below every real POST branch; other unimplemented POST routes (`/auth/confirm`) still
+  get the placeholder 200.
+- `/auth/reset-password` (CDK `ResetPassword`) had no handler branch and returned the same
+  placeholder 200. It is now an alias of the confirm branch. No client calls it.
+- Mobile has no reset screen and calls neither route; the login error points users to the
+  website.
+- Tests: new `password-reset.test.js` 8/8. Auth suite otherwise unchanged (the 6
+  `google-oauth.test.js` failures and the `auth.test.js` load error are identical on HEAD).
+  `tsc --noEmit` in `infrastructure` exits 0; `consistency-check.js` 4/4.
 ## 2026-11-01 - Reset-Required Logins Routed to the Reset Flow (Session 170)
 A user whose Cognito account is in `RESET_REQUIRED` could not sign in on web or mobile: the login
 handler had no branch for `PasswordResetRequiredException`, so it returned a generic 500 with the
