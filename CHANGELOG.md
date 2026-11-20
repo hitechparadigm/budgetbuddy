@@ -1,4 +1,14 @@
 # Changelog
+## [1.14.1] - 2026-11-20
+### fix: Wave 2 live-check fixes (Session 170)
+#### Fixed
+- `GET /transaction-planning` returned 500 in DEV after the 1.14.0 deploy: the list query put
+  `begins_with(SK, :skPrefix)` in its `FilterExpression`, and DynamoDB rejects filters on key
+  attributes. The prefix now sits in the key condition
+  (`PK = :pk AND begins_with(SK, :skPrefix)`). The routes test asserts the key-condition shape and
+  that no `PK`/`SK`/GSI key appears in the filter (the mocked query could not surface the error).
+  Goals, accounts, rules and budget were checked for the same mistake; none had it.
+
 ## [1.14.0] - 2026-11-20
 ### feat: core flows (Wave 2, Session 170)
 Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`). No file under

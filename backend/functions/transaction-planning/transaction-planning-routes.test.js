@@ -304,10 +304,19 @@ describe('GET /transaction-planning filter expression', () => {
     expect(FilterExpression).not.toMatch(/entityType = :et AND attribute_not_exists\(isDeleted\) OR/);
   });
 
-  it('narrows the query to the planned-transaction sort-key prefix', async () => {
-    const { FilterExpression, ExpressionAttributeValues } = await capturedFilter();
-    expect(FilterExpression).toContain('begins_with(SK, :skPrefix)');
+  it('narrows the query to the planned-transaction sort-key prefix in the key condition', async () => {
+    const { KeyConditionExpression, FilterExpression, ExpressionAttributeValues } = await capturedFilter();
+    expect(KeyConditionExpression).toBe('PK = :pk AND begins_with(SK, :skPrefix)');
     expect(ExpressionAttributeValues[':skPrefix']).toBe(PLANNED_TXN_SK_PREFIX);
+  });
+
+  it('never references a primary-key attribute in the FilterExpression', async () => {
+    // DynamoDB rejects a filter on PK/SK with a ValidationException, which the
+    // mocked queryByPK cannot surface; this shipped as a live 500.
+    const { FilterExpression } = await capturedFilter({
+      type: 'expense', startDate: '2026-01-01', endDate: '2026-12-31',
+    });
+    expect(FilterExpression).not.toMatch(/\b(PK|SK|GSI\dPK|GSI\dSK)\b/);
   });
 
   it('excludes soft-deleted plans returned by the query', async () => {

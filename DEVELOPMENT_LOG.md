@@ -1,4 +1,14 @@
 # Development Log
+## 2026-11-20 - Wave 2 Live in DEV: Migration, Backfill, Live-Check Fixes (Session 170)
+**Summary:** after the 1.14.0 deploy (run 44681795448) the accounts migration ran for real
+(dry 28 / applied 28 / re-run 0 to copy, 28 already present; the `FAMILY#` originals are kept),
+the DEV test user's `PROFILE` row got `userId`/`email` (`GET /auth/profile` 500 -> 200), and 31
+live checks ran as that user. 30 passed. The failure was `GET /transaction-planning` returning
+500, because the Wave 2 list query filtered on the `SK` key attribute. Fixed in 1.14.1 by moving the
+prefix into the key condition. Every row the checks created was deleted afterwards.
+**Files Changed:** `backend/functions/transaction-planning/index.js`,
+`transaction-planning-routes.test.js` (18 passed).
+
 ## 2026-11-20 - Wave 2 Core Flows Merged, develop History Rewritten (Session 170)
 Wave 2 (`fix/wave2-core-flows`, 24 commits, review pass 3 approved with 9 non-blocking findings)
 landed on `develop` as one squash commit, so the branch commits never reach the remote. It is

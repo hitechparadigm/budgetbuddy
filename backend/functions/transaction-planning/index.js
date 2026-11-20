@@ -190,8 +190,9 @@ async function getPlannedTransactions(event, _userId, budgetId) {
   //   (entityType = :et AND attribute_not_exists(isDeleted)) OR isDeleted = :f
   // which returns every item in the partition that carries isDeleted: false
   // regardless of entity type, and keeps returning soft-deleted plans.
+  // The SK prefix belongs in the key condition: DynamoDB rejects a
+  // FilterExpression that references a primary-key attribute (500 in DEV).
   const filterParts = [
-    'begins_with(SK, :skPrefix)',
     'entityType = :et',
     '(attribute_not_exists(isDeleted) OR isDeleted = :f)',
   ];
@@ -218,7 +219,10 @@ async function getPlannedTransactions(event, _userId, budgetId) {
     exprVals[':ie'] = false;
   }
 
+  // queryByPK spreads caller options after its default `PK = :pk`, so this
+  // overrides the key condition; it still supplies :pk itself.
   const result = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
+    KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
     FilterExpression: filterParts.join(' AND '),
     ExpressionAttributeValues: exprVals,
   });
