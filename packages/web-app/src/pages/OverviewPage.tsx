@@ -84,9 +84,16 @@ function getDailyInsight(): string {
 
 interface BudgetPeriod {
   totalIncome: number;
+  /** Planned savings total (sum of plannedAmount) as stored on the period record. */
   totalSavings: number;
+  /** Planned expense total (sum of plannedAmount) as stored on the period record. */
   totalExpenses: number;
+  /** Planned: income minus planned savings and expenses. */
   remainingBalance: number;
+  /** Actual: sum of spentAmount over the expense categories. */
+  spentExpenses: number;
+  /** Actual: sum of spentAmount over the savings categories. */
+  spentSavings: number;
   currency?: string;
   groups?: any;
 }
@@ -126,6 +133,29 @@ function formatCurrency(amount: number, currency = 'USD'): string {
     currency,
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+/**
+ * Categories of one group type from a budget period's `groups`.
+ * The period record stores `{ income, savings, expenses }` as category arrays
+ * (the shape onboarding writes and BudgetPage saves); the array-of-groups shape
+ * is accepted too, as BudgetPage's transformBackendBudget does.
+ */
+function getGroupCategories(groups: any, type: 'income' | 'savings' | 'expense'): any[] {
+  if (!groups) return [];
+  if (Array.isArray(groups)) {
+    return groups
+      .filter((g: any) => g?.type === type)
+      .flatMap((g: any) => (Array.isArray(g.categories) ? g.categories : []));
+  }
+  const value = groups[type === 'expense' ? 'expenses' : type];
+  if (Array.isArray(value)) return value;
+  return Array.isArray(value?.categories) ? value.categories : [];
+}
+
+/** Actual spending: the same spentAmount field BudgetPage's Spent column sums. */
+function sumSpent(categories: any[]): number {
+  return categories.reduce((sum, cat) => sum + (Number(cat?.spentAmount) || 0), 0);
 }
 
 function daysUntil(dateStr: string): number {
@@ -184,10 +214,12 @@ const FinancialHealthBar: React.FC<{
   if (loading) return <Skeleton className="h-20 w-full rounded-xl" />;
   if (!period) return null;
 
+  // Income against ACTUAL spending (expense + savings spentAmount), not the planned
+  // totals: totalExpenses/totalSavings/remainingBalance on the period are plan sums.
   const income = period.totalIncome;
-  const spent = period.totalExpenses + period.totalSavings;
-  const remaining = period.remainingBalance;
-  const pct = income > 0 ? Math.min((spent / income) * 100, 100) : 0;
+  const spent = period.spentExpenses + period.spentSavings;
+  const remaining = income - spent;
+  const pct = income > 0 ? Math.min((spent / income) * 100, 100) : spent > 0 ? 100 : 0;
   const isOver = remaining < 0;
 
   return (
@@ -222,6 +254,7 @@ const FinancialHealthBar: React.FC<{
             {isOver ? ' over' : ''}
           </p>
         </div>
+        {/* Unassigned is deliberately a plan figure: income not yet assigned to categories */}
         {Math.max(period.remainingBalance, 0) > 0 && (
           <div>
             <p className="text-xs text-[var(--color-muted-foreground)]">Unassigned</p>
@@ -566,7 +599,8 @@ const BudgetHealthScore: React.FC<{ month: string }> = ({ month }) => {  const [
         </div>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: 'Savings rate', value: data.components.savingsRate },
+            // The backend computes this from planned savings / planned income.
+            { label: 'Planned savings rate', value: data.components.savingsRate },
             { label: 'Adherence', value: data.components.adherence },
             { label: 'Goal progress', value: data.components.goalProgress },
           ].map((c) => (
@@ -614,8 +648,11 @@ export const OverviewPage: React.FC = () => {
         return;
       }
 
-      // totalIncome/totalSavings/totalExpenses are plain numbers from calculateBudgetTotals
+      // totalIncome/totalSavings/totalExpenses are PLANNED sums from calculateBudgetTotals.
+      // Actual spending comes from each category's spentAmount, as on BudgetPage.
       const period: BudgetPeriod = {
+        spentExpenses: sumSpent(getGroupCategories(data.groups, 'expense')),
+        spentSavings: sumSpent(getGroupCategories(data.groups, 'savings')),
         totalIncome: Number(data.totalIncome) || 0,
         totalSavings: Number(data.totalSavings) || 0,
         totalExpenses: Number(data.totalExpenses) || 0,
@@ -718,27 +755,14 @@ export const OverviewPage: React.FC = () => {
   // Extract top spending categories from budget period
   const topCategories: CategoryData[] = React.useMemo(() => {
     if (!period?.groups) return [];
-    const cats: CategoryData[] = [];
-    const groups = period.groups;
-
-    // Handle both array format (from API) and object format
-    if (Array.isArray(groups)) {
-      for (const group of groups as any[]) {
-        if (group.type === 'expense' || group.type === 'savings') {
-          for (const cat of (group.categories || [])) {
-            cats.push({
-              name: cat.name,
-              plannedAmount: Number(cat.plannedAmount) || 0,
-              spentAmount: Number(cat.spentAmount) || 0,
-            });
-          }
-        }
-      }
-    } else {
-      if ((groups as any).expenses?.categories) cats.push(...(groups as any).expenses.categories);
-      if ((groups as any).savings?.categories) cats.push(...(groups as any).savings.categories);
-    }
-    return cats;
+    return [
+      ...getGroupCategories(period.groups, 'expense'),
+      ...getGroupCategories(period.groups, 'savings'),
+    ].map((cat: any) => ({
+      name: cat.name,
+      plannedAmount: Number(cat.plannedAmount) || 0,
+      spentAmount: Number(cat.spentAmount) || 0,
+    }));
   }, [period]);
 
   // Net worth trend label
@@ -801,7 +825,7 @@ export const OverviewPage: React.FC = () => {
         />
         <StatCard
           label="Total Spent"
-          value={loadingBudget ? '—' : formatCurrency(period?.totalExpenses || 0, currency)}
+          value={loadingBudget ? '—' : formatCurrency(period?.spentExpenses || 0, currency)}
           icon={ArrowUpRight}
           iconColor="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
           loading={loadingBudget}
@@ -809,7 +833,7 @@ export const OverviewPage: React.FC = () => {
         />
         <StatCard
           label="Total Saved"
-          value={loadingBudget ? '—' : formatCurrency(period?.totalSavings || 0, currency)}
+          value={loadingBudget ? '—' : formatCurrency(period?.spentSavings || 0, currency)}
           icon={ArrowDownRight}
           iconColor="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
           loading={loadingBudget}
@@ -835,8 +859,8 @@ export const OverviewPage: React.FC = () => {
       <div className="sm:hidden grid grid-cols-2 gap-2">
         {[
           { label: 'Income', value: loadingBudget ? '…' : formatCurrency(period?.totalIncome || 0, currency), color: 'text-[var(--color-foreground)]', href: '/budget' },
-          { label: 'Spent', value: loadingBudget ? '…' : formatCurrency(period?.totalExpenses || 0, currency), color: 'text-red-600 dark:text-red-400', href: '/budget' },
-          { label: 'Saved', value: loadingBudget ? '…' : formatCurrency(period?.totalSavings || 0, currency), color: 'text-[var(--color-primary)]', href: '/goals' },
+          { label: 'Spent', value: loadingBudget ? '…' : formatCurrency(period?.spentExpenses || 0, currency), color: 'text-red-600 dark:text-red-400', href: '/budget' },
+          { label: 'Saved', value: loadingBudget ? '…' : formatCurrency(period?.spentSavings || 0, currency), color: 'text-[var(--color-primary)]', href: '/goals' },
           { label: 'Net Worth', value: loadingNetWorth ? '…' : netWorthHistory.length ? formatCurrency(netWorthHistory[netWorthHistory.length - 1], currency) : '—', color: 'text-[var(--color-foreground)]', href: '/net-worth' },
         ].map(stat => (
           <button

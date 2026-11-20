@@ -30,6 +30,14 @@ export const config = {
   /** Google OAuth Web Client ID */
   googleClientId: import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID || '',
 
+  /**
+   * Show Google sign-in on /auth. OFF unless VITE_ENABLE_GOOGLE_SIGNIN is exactly 'true'.
+   * Off by default because the web client ID rejects this origin and /auth/google cannot
+   * issue valid tokens; turn it on once the Cognito federated Google IdP exists.
+   * While off, the Google Identity Services script is never loaded.
+   */
+  enableGoogleSignIn: import.meta.env.VITE_ENABLE_GOOGLE_SIGNIN === 'true',
+
   /** Current environment */
   appEnv: import.meta.env.VITE_APP_ENV || 'development',
 

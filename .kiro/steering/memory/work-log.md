@@ -160,6 +160,20 @@ Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`
 - [ ] Queued mobile category update/delete in `syncService` has no route (`/budget/categories`
       exposes GET and POST only).
 
+### Web Live-Test Fixes (Session 170, 1.14.2, web app only)
+- [x] Overview spent figures use actual category `spentAmount` from `GET /budget/current` (Total
+      Spent/Saved cards, mobile strip, Budget Health bar Spent/Remaining/badge/progress). They had
+      used the period's planned `totalExpenses`/`totalSavings`/`remainingBalance`.
+- [x] Google sign-in hidden on `/auth` (both tabs) behind `VITE_ENABLE_GOOGLE_SIGNIN`, default off;
+      flag-off builds ship no `@react-oauth/google` chunk. Re-enable after Cognito federation.
+- [ ] Transactions have two stores: budget-period-embedded (written by category Record
+      transaction) and TRANSACTION# entities (`/transactions`); readers disagree (Overview weekly
+      spend, Insights show 0). Needs a source-of-truth decision.
+- [ ] `GET /budget/health-score` adherence is always 100: `getBudgetHealthScore` iterates
+      `groups.expenses` as groups with `categories`, but the period stores `groups.expenses` as a
+      flat category array, so planned expenses sum to 0. Backend fix; the web labels the savings
+      component "Planned savings rate" (it is planned savings / planned income).
+
 ### Backend Scheduled Functions (Session 170, Wave 1 FEAT-003, review findings P-01/AC-11)
 - [x] Six handlers ported off `require('aws-sdk')` (Node 20 does not ship SDK v2; they crashed
       at import): `budget-alerts`, `daily-reminders`, `investments`, `investments-price-updater`,

@@ -11,7 +11,7 @@ import { registerSchema } from '../../utils/validation';
 import type { RegisterFormData } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { ApiClientError } from '../../utils/apiClient';
-import { GoogleSignInButton } from './GoogleSignInButton';
+import { GoogleSignInSection } from './GoogleSignInSection';
 
 // ============================================================================
 // Types
@@ -116,23 +116,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           </div>
         )}
 
-        {/* Google Sign-In Button */}
-        <div className="mb-6">
-          <GoogleSignInButton
-            onSuccess={() => onSuccess?.(true)}
-            onError={(error) => setSubmitError(error)}
-          />
-        </div>
-
-        {/* Divider */}
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[var(--color-border)]"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-[var(--color-surface)] text-[var(--color-muted-foreground)]">Or sign up with email</span>
-          </div>
-        </div>
+        {/* Google Sign-In (hidden unless VITE_ENABLE_GOOGLE_SIGNIN=true) */}
+        <GoogleSignInSection
+          onSuccess={() => onSuccess?.(true)}
+          onError={(error) => setSubmitError(error)}
+          dividerLabel="Or sign up with email"
+        />
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* First Name Field */}

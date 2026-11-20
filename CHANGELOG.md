@@ -1,4 +1,29 @@
 # Changelog
+## [1.14.2] - 2026-11-20
+### fix(web): Overview actual spending, Google sign-in hidden (Session 170)
+Web app only; no backend or infrastructure change.
+#### Fixed
+- Overview "Total Spent" showed the period's planned expense total (`totalExpenses`), so a newly
+  onboarded user with no transactions saw "Total Spent $3,550" and "Over budget". Every spent
+  figure on Overview now sums the categories' `spentAmount`, the same field BudgetPage's Spent
+  column uses: the Total Spent and Total Saved cards, the mobile Spent/Saved strip, and the Budget
+  Health bar's Spent, Remaining, progress bar and "Over budget" badge (now income minus actual
+  spending, not income minus plan).
+- Overview "Top Spending Categories" was always empty for real data: it read
+  `groups.expenses.categories`, but the period stores `groups.expenses` as a category array.
+- Budget Health Score: "Savings rate" is relabelled "Planned savings rate"; the backend computes
+  it from planned savings over planned income.
+- Google sign-in on `/auth` failed (Google returns 403 for this origin, and `/auth/google` cannot
+  issue valid tokens). The button and its divider are hidden on the Sign In and Sign Up tabs
+  behind `VITE_ENABLE_GOOGLE_SIGNIN` (`config.enableGoogleSignIn`, default off). While off, the
+  build drops `@react-oauth/google`, so no Google Identity Services script loads.
+#### Changed
+- `GoogleOAuthProvider` moved from `main.tsx` into `GoogleSignInButton`, which is lazy-loaded by
+  the new `GoogleSignInSection`. `vite.config.ts` defines the flag as a literal so the disabled
+  branch is removed at build time.
+#### Tests
+- `OverviewPage.test.tsx` (2) and `AuthPage.test.tsx` (3) render the real components. Web suite:
+  253 passed / 26 failed (before: 248 / 26; the 26 are the two known stale suites).
 ## [1.14.1] - 2026-11-20
 ### fix: Wave 2 live-check fixes (Session 170)
 #### Fixed

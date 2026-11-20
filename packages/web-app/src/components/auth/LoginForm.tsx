@@ -12,7 +12,7 @@ import { loginSchema } from "../../utils/validation";
 import type { LoginFormData } from "../../types";
 import { useAuth } from "../../contexts/AuthContext";
 import { ApiClientError } from "../../utils/apiClient";
-import { GoogleSignInButton } from "./GoogleSignInButton";
+import { GoogleSignInSection } from "./GoogleSignInSection";
 import { TwoFactorVerify } from "../TwoFactorVerify";
 
 // ============================================================================
@@ -297,25 +297,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           </div>
         )}
 
-        {/* Google Sign-In Button */}
-        <div className="mb-6">
-          <GoogleSignInButton
-            onSuccess={onSuccess}
-            onError={(error) => setSubmitError(error)}
-          />
-        </div>
-
-        {/* Divider */}
-        <div className="relative mb-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[var(--color-border)] dark:border-gray-600"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-[var(--color-surface)] dark:bg-gray-800 text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
-              Or continue with email
-            </span>
-          </div>
-        </div>
+        {/* Google Sign-In (hidden unless VITE_ENABLE_GOOGLE_SIGNIN=true) */}
+        <GoogleSignInSection
+          onSuccess={onSuccess}
+          onError={(error) => setSubmitError(error)}
+          dividerLabel="Or continue with email"
+        />
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Email Field */}

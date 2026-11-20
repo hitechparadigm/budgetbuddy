@@ -223,7 +223,7 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 
 ### Auth
 - ✅ Cognito User Pools, email + password
-- ❌ Google OAuth 2.0 — not working: no Google IdP on the pool; planned replacement is a Cognito federated Google IdP with PKCE
+- ❌ Google OAuth 2.0 — not working: no Google IdP on the pool; planned replacement is a Cognito federated Google IdP with PKCE. The web button is hidden behind `VITE_ENABLE_GOOGLE_SIGNIN` (default off) since 1.14.2
 - ✅ JWT carries only `userId` — no budgetId, no role, no familyId
 - ✅ `BudgetAccessResolver` resolves budget + role from DynamoDB on every request
 
@@ -377,6 +377,8 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 22. **Accounts migration leaves the `FAMILY#*/ACCOUNT#*` originals in place** — `scripts/migrate-accounts-family-to-budget.js` copies and never deletes. Deleting the originals is a separate owner decision.
 23. **`api-features` stack is at 484 of 500 CloudFormation resources** — new routes on the Features API need a stack split or a different gateway first.
 24. **Mobile Wave 2 features have no device check** — the receipt-scan and transaction-template mounts (plan item 22), onboarding currency and create forms are verified by unit tests only; mobile is not deployed by this repo's pipeline. A queued mobile category update/delete still has no route (`/budget/categories` exposes GET and POST only).
+25. **Transactions have two stores** — budget-period-embedded (written by category Record transaction, returned by `GET /budget/current`) and `TRANSACTION#` entities (`GET /transactions`). Readers disagree: Overview's weekly spend line and Insights read `/transactions` and show 0 for spending recorded from a category. Needs a source-of-truth decision. (Overview's spent totals read the budget period since 1.14.2.)
+26. **Budget Health Score adherence is always 100** — `GET /budget/health-score` treats `groups.expenses` as groups with `categories`, but the period stores a flat category array, so planned expenses sum to 0. Backend fix pending.
 
 ---
 
@@ -439,7 +441,7 @@ New endpoints added during web app polish, verified live:
 | Step | Frontend | Backend API | Status |
 |------|----------|-------------|--------|
 | Register | `AuthPage.tsx` / `RegisterForm.tsx` — autocomplete attrs, design token buttons, proper `htmlFor`/`id` structure | `POST /auth/register` | ✅ |
-| Google Sign-In | `GoogleSignInButton.tsx` | `POST /auth/google` | ❌ Not working: no Google IdP on the pool (see [architecture](./architecture.md#6-authentication)) |
+| Google Sign-In | `GoogleSignInButton.tsx` (hidden unless `VITE_ENABLE_GOOGLE_SIGNIN=true`) | `POST /auth/google` | ❌ Not working: no Google IdP on the pool (see [architecture](./architecture.md#6-authentication)) |
 | Sign In | `LoginForm.tsx` — autocomplete on email+password, design token submit button, full 3-step Forgot Password inline flow (email → code → new password) | `POST /auth/login`, `POST /auth/forgot-password`, `POST /auth/confirm-forgot-password` | ✅ |
 | Accept invitation | `AcceptInvitationPage.tsx` — smart tab (Login vs Create Account), pre-fills email; fixed: JWT decoded manually on NONE-auth route, `acceptInvitationCore` bypasses stale React state | `POST /budgets/accept-invitation` | ✅ |
 | Budget type selection | `OnboardingPage.tsx` — 5-step total, inline descriptions, no disclosure modal | `POST /auth/onboarding` | ✅ |

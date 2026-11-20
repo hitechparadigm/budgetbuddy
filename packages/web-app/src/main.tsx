@@ -3,11 +3,11 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import App from './App';
 import './index.css';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID || '';
+// GoogleOAuthProvider is mounted inside GoogleSignInButton, not here, so the Google
+// Identity Services script loads only when VITE_ENABLE_GOOGLE_SIGNIN=true.
 
 /**
  * Vite's built-in preload error event fires when a lazy-loaded chunk 404s
@@ -41,9 +41,7 @@ function mountApp(el: HTMLElement) {
   const root = ReactDOM.createRoot(el);
   root.render(
     <React.StrictMode>
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        <App />
-      </GoogleOAuthProvider>
+      <App />
     </React.StrictMode>
   );
 }

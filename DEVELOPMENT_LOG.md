@@ -1,4 +1,28 @@
 # Development Log
+## 2026-11-20 - Overview Actual Spending, Google Sign-In Hidden on Web (Session 170)
+**Summary:** two bugs from the live DEV browser test, fixed in the web app only (1.14.2).
+Overview's Total Spent card, its mobile Spent strip and the Budget Health bar read the period's
+`totalExpenses`/`totalSavings`/`remainingBalance`, which `calculateBudgetTotals` fills from
+`plannedAmount`. A newly onboarded user therefore saw "Total Spent $3,550" and "Over budget" with
+no transactions. Overview now sums each category's `spentAmount` from `GET /budget/current` (the
+BudgetPage Spent column's field): Spent = expense + savings spending, Remaining = income minus
+that, and the badge and progress bar follow. Total Saved also uses actual savings `spentAmount`.
+"Unassigned" stays a plan figure (income not yet assigned). Top Spending Categories had read
+`groups.expenses.categories`, which the stored shape never has, so it was always empty; it now
+reads the category arrays. The Health Score's savings component is labelled "Planned savings rate".
+Google sign-in on `/auth` is hidden behind `VITE_ENABLE_GOOGLE_SIGNIN` (default off) on both tabs.
+`GoogleOAuthProvider` moved into the lazy-loaded `GoogleSignInButton`, and `vite.config.ts`
+defines the flag as a literal so a flag-off build contains no `@react-oauth/google` chunk (checked
+in `dist/`: no `accounts.google.com`; a flag-on build does contain it).
+**Found, not fixed (backend):** `GET /budget/health-score` iterates `groups.expenses` as groups
+with `categories`, but the period stores it as a flat category array, so adherence is always 100.
+Transactions also have two stores that readers disagree on (work-log Known Open Items).
+**Files Changed:** `packages/web-app/src/pages/OverviewPage.tsx`, `OverviewPage.test.tsx` (new),
+`AuthPage.test.tsx` (new); `src/components/auth/GoogleSignInSection.tsx` (new),
+`GoogleSignInButton.tsx`, `LoginForm.tsx`, `RegisterForm.tsx`; `src/config/environment.ts`,
+`src/vite-env.d.ts`, `src/main.tsx`, `vite.config.ts`. `tsc --noEmit` 0 errors; jest 253 passed /
+26 failed (before 248 / 26, same two stale suites); `npm run build` succeeded.
+
 ## 2026-11-20 - Wave 2 Live in DEV: Migration, Backfill, Live-Check Fixes (Session 170)
 **Summary:** after the 1.14.0 deploy (run 44681795448) the accounts migration ran for real
 (dry 28 / applied 28 / re-run 0 to copy, 28 already present; the `FAMILY#` originals are kept),

@@ -4,8 +4,9 @@
  */
 
 import React, { useState } from 'react';
-import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import { GoogleLogin, GoogleOAuthProvider, CredentialResponse } from '@react-oauth/google';
 import { useAuth } from '../../contexts/AuthContext';
+import { config } from '../../config/environment';
 
 // ============================================================================
 // Types
@@ -62,14 +63,24 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   // Render
   // ============================================================================
 
+  // The provider lives here, not in main.tsx, so the Google Identity Services script
+  // is only injected when this button actually mounts (see GoogleSignInSection).
   return (
-    <div className="w-full opacity-100" style={{ opacity: loading || isProcessing ? 0.6 : 1 }}>
-      <GoogleLogin
-        onSuccess={handleSuccess}
-        onError={handleError}
-        text="signin_with"
-        width="100%"
-      />
-    </div>
+    <GoogleOAuthProvider clientId={config.googleClientId}>
+      <div
+        data-testid="google-signin"
+        className="w-full opacity-100"
+        style={{ opacity: loading || isProcessing ? 0.6 : 1 }}
+      >
+        <GoogleLogin
+          onSuccess={handleSuccess}
+          onError={handleError}
+          text="signin_with"
+          width="100%"
+        />
+      </div>
+    </GoogleOAuthProvider>
   );
 };
+
+export default GoogleSignInButton;
