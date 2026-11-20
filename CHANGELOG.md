@@ -1,4 +1,17 @@
 # Changelog
+## [1.13.18] - 2026-11-20
+### ci: move GitHub Actions to Node 24 action versions (Session 170)
+#### Changed
+- `.github/workflows/*.yml`: `actions/checkout` v4 -> v7, `actions/setup-node` v4 -> v7,
+  `actions/upload-artifact` v4 -> v7, `aws-actions/configure-aws-credentials` v4 -> v6,
+  `codecov/codecov-action` v3 -> v7. All run on the node24 action runtime (codecov is a composite
+  action), which removes the Node 20 deprecation warning. GitHub removed Node 20 from runners on
+  2026-09-23.
+- `NODE_VERSION` for build and test steps: `"20"` -> `"24"`. No `engines`, `packageManager`,
+  `.nvmrc` or `.node-version` pins exist. The Lambda runtime (`NODEJS_20_X`) is unchanged and is a
+  separate follow-up.
+- `pr-check.yml` codecov step: `file:` -> `files:` (`file` was deprecated in v5 and is not an input
+  of v7).
 ## [1.13.17] - 2026-11-02
 ### docs: consolidate documentation, add architecture doc and data-protection rule (Session 170)
 #### Added

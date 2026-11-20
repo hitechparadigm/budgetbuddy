@@ -1,4 +1,18 @@
 # Development Log
+## 2026-11-20 - GitHub Actions Moved to Node 24 Action Versions (Session 170)
+- GitHub warned that `actions/checkout@v4`, `actions/setup-node@v4` and
+  `aws-actions/configure-aws-credentials@v4` target Node 20 and were being forced onto Node 24.
+- Bumped every workflow: checkout v7, setup-node v7, upload-artifact v7, configure-aws-credentials
+  v6, codecov-action v7. `NODE_VERSION` for build/test steps is now `"24"`.
+- Release notes for every major in between were read. Changes that touch this repo: codecov
+  `file` -> `files` (applied). Codecov v4+ needs a token unless the Codecov org allows tokenless
+  uploads; no token was added, and `fail_ci_if_error` stays `false`, so a failed upload does not
+  fail the PR check. Checkout v7 refuses fork-PR checkouts under `pull_request_target`/
+  `workflow_run`; no workflow uses those triggers today (e2e's `workflow_run` is commented out).
+  setup-node v5+ auto-caching needs a `packageManager` field, which no `package.json` has.
+- Not changed: the Lambda runtime (`NODEJS_20_X`), a separate follow-up.
+- Verification: all five workflow files parse with js-yaml; no `@v4` and no `NODE_VERSION: "20"`
+  remain.
 ## 2026-11-02 - Docs Consolidated, Architecture Doc and Data-Protection Enforcement (Session 170)
 - Wrote `docs/architecture.md` as the one architecture document, verified against
   `infrastructure/bin/app.ts`, `infrastructure/lib/*-stack.ts` and backend code; merged and deleted

@@ -12,7 +12,7 @@ on:
         required: true
 
 env:
-  NODE_VERSION: "20"
+  NODE_VERSION: "24"
   AWS_REGION: "us-east-1"
   ENVIRONMENT: "prod"
 
@@ -38,10 +38,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -101,16 +101,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.HITECHPARADIGM_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.HITECHPARADIGM_AWS_SECRET_ACCESS_KEY }}
@@ -206,16 +206,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.HITECHPARADIGM_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.HITECHPARADIGM_AWS_SECRET_ACCESS_KEY }}
@@ -286,10 +286,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.HITECHPARADIGM_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.HITECHPARADIGM_AWS_SECRET_ACCESS_KEY }}
