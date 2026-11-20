@@ -8,7 +8,7 @@
       "matcher": "^(fs_write|fsWrite|fs_append|fsAppend|str_replace|strReplace|write|edit|create)$",
       "action": {
         "type": "agent",
-        "prompt": "Before this write, check the content against .kiro/steering/data-protection.md. If it contains a secret (password, API key, token, private key), personal data (the name, email, phone or address of a real person), an AWS account ID, an IAM user name, a local path or machine name, or an employer-internal name, replace it with an allowed value or placeholder (user@example.com, <ACCOUNT_ID>, <TOKEN>) before writing, or stop and ask the user. Never repeat the protected value in your reply."
+        "prompt": "EXEMPTION: if the target path is exactly `.sensitive-data-patterns.local` at the repo root, or matches `.kiro/steering/local-*.md`, skip this check and proceed. These are the git-ignored, local-only files data-protection.md designates for real values; first confirm the path is git-ignored or listed in `.git/info/exclude`, and never echo their contents in your reply. For every other path: before this write, check the content against .kiro/steering/data-protection.md. If it contains a secret (password, API key, token, private key), personal data (the name, email, phone or address of a real person), an AWS account ID, an IAM user name, a local path or machine name, or an employer-internal name, replace it with an allowed value or placeholder (user@example.com, <ACCOUNT_ID>, <TOKEN>) before writing, or stop and ask the user. Never repeat the protected value in your reply."
       },
       "enabled": true
     }
