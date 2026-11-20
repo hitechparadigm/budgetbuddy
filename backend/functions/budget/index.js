@@ -758,7 +758,8 @@ async function deleteBudget(event, user, budgetId) {
  *   "month": "YYYY-MM",
  *   "groupType": "income" | "savings" | "expenses",
  *   "rolloverEnabled": boolean,
- *   "rolloverCap": number (optional)
+ *   "rolloverCap": number | null (optional; null clears a stored cap,
+ *                  omitting the field leaves it unchanged)
  * }
  *
  * **Validates: Requirement 40.7** - Enable/disable rollover per category
@@ -824,9 +825,14 @@ async function updateCategoryRollover(event, user, categoryId) {
           rolloverEnabled: requestBody.rolloverEnabled,
           rolloverAmount: requestBody.rolloverEnabled ? (category.rolloverAmount || 0) : 0,
         };
+        // Three distinct cases, and the middle one used to be missing:
+        //   a number  -> set the cap
+        //   null      -> CLEAR the cap (the client blanked the field)
+        //   absent    -> leave the stored cap alone, unless rollover is being
+        //                turned off, in which case a cap is meaningless
         if (requestBody.rolloverCap !== undefined && requestBody.rolloverCap !== null) {
           updatedCategory.rolloverCap = requestBody.rolloverCap;
-        } else if (!requestBody.rolloverEnabled) {
+        } else if (requestBody.rolloverCap === null || !requestBody.rolloverEnabled) {
           delete updatedCategory.rolloverCap;
         }
         return updatedCategory;

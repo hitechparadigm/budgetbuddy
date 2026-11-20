@@ -95,7 +95,21 @@ exports.handler = async (event, context) => {
     return errorResponse.notFound('Endpoint not found');
   } catch (err) {
     logger.error('Rules handler error', { error: err.message, stack: err.stack });
-    return errorResponse.internal('Internal server error');
+
+    // BudgetAccessResolver throws structured { statusCode, message } errors;
+    // surface those rather than flattening every denial to a 500.
+    if (err && err.statusCode && err.message) {
+      return {
+        statusCode: err.statusCode,
+        headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ success: false, message: err.message }),
+      };
+    }
+
+    // errorResponse has no `internal` - it is `internalError`. Calling the
+    // nonexistent one threw a TypeError from inside this catch block, so the
+    // invocation failed unhandled and API Gateway returned 502.
+    return errorResponse.internalError('Internal server error');
   }
 };
 
@@ -113,7 +127,11 @@ async function handleListRules(event, user) {
 
 async function handleCreateRule(event, user) {
   const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
-  BudgetAccessResolver.assertPermission(role, 'budget.write', budgetStatus);
+  // 'budget.edit', not 'budget.write'. The action set assertPermission accepts
+  // is closed (backend/layers/common/nodejs/utils.js) and has no budget.write,
+  // so the old value threw { statusCode: 400, message: 'Unknown action: ...' }
+  // on every write - create, update, delete and apply were all dead.
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const body = parseRequestBody(event.body);
 
@@ -148,10 +166,10 @@ async function handleCreateRule(event, user) {
 
 async function handleUpdateRule(event, user, ruleId) {
   const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
-  BudgetAccessResolver.assertPermission(role, 'budget.write', budgetStatus);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const existing = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, `RULE#${ruleId}`);
-  if (!existing) {
+  if (!existing || existing.isDeleted) {
     return errorResponse.notFound('Rule not found');
   }
 
@@ -174,9 +192,21 @@ async function handleUpdateRule(event, user, ruleId) {
 
 async function handleDeleteRule(event, user, ruleId) {
   const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
-  BudgetAccessResolver.assertPermission(role, 'budget.write', budgetStatus);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
-  await dynamoHelpers.deleteItem(`BUDGET#${budgetId}`, `RULE#${ruleId}`);
+  const existing = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, `RULE#${ruleId}`);
+  if (!existing || existing.isDeleted) {
+    return errorResponse.notFound('Rule not found');
+  }
+
+  // Soft delete. dynamoHelpers has no deleteItem (only getItem, putItem,
+  // queryByPK and updateItem), so the previous dynamoHelpers.deleteItem call
+  // threw a TypeError on every delete. Soft delete also matches how
+  // transaction-planning and accounts remove rows.
+  await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, `RULE#${ruleId}`, {
+    isDeleted: true,
+    deletedAt: new Date().toISOString(),
+  });
 
   return successResponse({}, 'Rule deleted successfully');
 }
@@ -186,7 +216,7 @@ async function handleDeleteRule(event, user, ruleId) {
  */
 async function handleApplyRules(event, user) {
   const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(user.userId, dynamoHelpers);
-  BudgetAccessResolver.assertPermission(role, 'budget.write', budgetStatus);
+  BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
 
   const body = parseRequestBody(event.body);
   const transactions = body.transactions || [];
@@ -205,12 +235,22 @@ async function handleApplyRules(event, user) {
     const matchedRule = findMatchingRule(txn, rules);
     if (matchedRule) {
       appliedCount++;
-      // Increment appliedCount on the rule (fire-and-forget)
-      dynamoHelpers.putItem({
-        ...matchedRule,
-        appliedCount: (matchedRule.appliedCount || 0) + 1,
-        updatedAt: new Date().toISOString(),
-      }).catch(() => {});
+
+      // Increment appliedCount (fire-and-forget). This must be updateItem:
+      // the rules in scope here came through formatRule, which strips PK/SK,
+      // so the previous putItem wrote a keyless item and DynamoDB rejected it
+      // every time - silently, because of the .catch below.
+      dynamoHelpers
+        .updateItem(`BUDGET#${budgetId}`, `RULE#${matchedRule.ruleId}`, {
+          appliedCount: (matchedRule.appliedCount || 0) + 1,
+          updatedAt: new Date().toISOString(),
+        })
+        .catch((err) =>
+          logger.warn('Failed to increment rule appliedCount', {
+            ruleId: matchedRule.ruleId,
+            error: err.message,
+          }),
+        );
 
       return { ...txn, categoryId: matchedRule.categoryId, ruleApplied: matchedRule.ruleId };
     }
@@ -226,19 +266,29 @@ async function handleApplyRules(event, user) {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Load every live rule for a budget.
+ *
+ * This used `dynamoHelpers.query`, which does not exist on the common layer -
+ * it exports only getItem, putItem, queryByPK and updateItem. The TypeError
+ * was swallowed by a catch that returned [], so GET /rules always reported
+ * zero rules no matter how many were stored, and apply-rules never matched
+ * anything. The catch is gone too: a real query failure must surface as a 500
+ * rather than silently looking like "no rules".
+ */
 async function getRulesForBudget(budgetId) {
-  try {
-    const result = await dynamoHelpers.query({
-      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
-      ExpressionAttributeValues: {
-        ':pk': `BUDGET#${budgetId}`,
-        ':skPrefix': 'RULE#',
-      },
-    });
-    return (result.Items || []).map(formatRule);
-  } catch (_e) {
-    return [];
-  }
+  // queryByPK supplies KeyConditionExpression 'PK = :pk' and ':pk'; the
+  // options spread overrides the expression and merges the extra value.
+  const items = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
+    KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
+    FilterExpression: 'attribute_not_exists(isDeleted) OR isDeleted = :notDeleted',
+    ExpressionAttributeValues: {
+      ':skPrefix': 'RULE#',
+      ':notDeleted': false,
+    },
+  });
+
+  return (items || []).map(formatRule);
 }
 
 /**

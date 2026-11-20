@@ -10,6 +10,7 @@ inclusion: always
 **Date**: 2026-10-13
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
+**Latest (2026-11-20, Session 170)**: Wave 2 core flows squash-merged to `develop` (see "Core Flows" under Known Open Items); the accounts `FAMILY#` -> `BUDGET#` data migration runs after its deploy.
 **Current Session**: ~169 (mobile app-store-readiness audit found 4 real bugs in services/api.ts - dead auth token path, placeholder base URL, URL path-prefix stripping, wrong reanimated major version - all fixed; added eas.json, placeholder icons, iOS/Android store-required permissions; discovered Expo SDK 49 cannot produce an App-Store-submittable build (Apple requires iOS 26 SDK/Xcode 26+) and every native dependency is multiple majors ahead of SDK 49's expectations - full SDK upgrade in progress, see Mobile section)
 
 ## What's Live and Working
@@ -114,6 +115,51 @@ inclusion: always
       `api-features-extended`, `api-budgets`, `notification-stack` all present) - re-verified Session 165,
       this item was resolved as part of the mobile-app spec's work and this note was stale.
 
+### Core Flows (Session 170, Wave 2, squash-merged to `develop` 2026-11-20)
+Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`); no file under
+`infrastructure/` changed. Mobile changes ship only with a device/EAS build, not this pipeline.
+- [x] Planned transactions: handler reads `pathParameters.plannedTransactionId`, so PUT/DELETE no
+      longer 404; mark-paid is `POST /transaction-planning/{plannedTransactionId}/mark-paid` and the
+      unrouted `/execute` branch is gone; `PLAN#` sort keys centralized in
+      `transaction-planning/keys.js`; list filter precedence fixed (soft-deleted plans stay hidden).
+- [x] Goals persist and return `subType` (`goal|borrowed|lent`), `personName`, `notes`; web
+      Borrowed/Lent tabs can populate; mobile GoalsScreen has the same tabs and a create form.
+- [x] Accounts read and write `BUDGET#<budgetId>/ACCOUNT#<id>` (was `FAMILY#`), no GSI1 on new
+      items, and the onboarding Cash account (`balance`, no `isTracked`) formats correctly.
+      `scripts/migrate-accounts-family-to-budget.js` copies existing `FAMILY#*/ACCOUNT#*` rows and
+      never deletes the originals; it must run AFTER the Lambda deploy. Deleting the originals is a
+      separate owner decision.
+- [x] Mobile per-gateway clients (`config/api.ts`, `api`/`featuresApi`/`extendedFeaturesApi`/
+      `budgetsApi`); `plaid.ts`, `api.ts` and `FamilySettings.tsx` import `ID_TOKEN_KEY` (closes the
+      Session 170 storage-key follow-up under Security).
+- [x] Rules Lambda: five calls to nonexistent layer members repaired (`budget.edit`,
+      `internalError`, `queryByPK`, soft delete, keyed `updateItem`); first test suite added.
+- [x] Web: rule creation in Settings, rollover toggle + cap in BudgetPage's category edit modal
+      (`PUT /budget/categories/{categoryId}/rollover`), `BudgetSuggestionsModal` mounted behind an
+      "AI suggestions" action. Blanking a rollover cap now clears it.
+- [x] Mobile: onboarding posts `/auth/onboarding` (currency forwarded), real create forms for
+      goals/bills/subscriptions/debts, sync-conflict toasts, `services/search.ts` module, receipt
+      confirmation files against the budget's real categories, offline-queue clear/retry.
+- [ ] `GET /auth/profile` returns 500 for a user whose `USER#<userId>/PROFILE` row lacks
+      `userId`/`email` (a user created outside `/auth/register` and then onboarded):
+      `auth/index.js` reads `result.Item.userId.S`/`email.S` without optional chaining, and
+      `auth-onboarding` SETs only onboarding fields. Wave 2 did not change either file. The DEV
+      test user's row is backfilled by hand; the code fix (fall back to the ID-token claims, or
+      `if_not_exists` SET in onboarding) is open.
+- [ ] Mobile onboarding "Skip for now" creates no budget, so a skipped user lands in an empty app.
+- [ ] No web recategorize control for manually entered transactions, so the "always categorize
+      this merchant" prompt (W2-R-05) has no place to live.
+- [ ] `PendingTransactions.tsx` posts `categoryName` where `POST /rules` requires `categoryId`, so
+      that prompt has never created a rule (W2-R-19, Plaid-coupled).
+- [ ] `backend/functions/budget/budget.test.js` has 8 failures that assert the `FAMILY#`-era world
+      (`custom:familyId`, `family_user_*` keys, wildcard CORS); entangled with the key migration.
+- [ ] Mobile receipt-scan and transaction-template mounts were plan item 22; they have unit tests
+      only, no device check.
+- [ ] `api-features` stack is at 484 of 500 CloudFormation resources; new routes there need a
+      stack split or a move to another gateway first.
+- [ ] Queued mobile category update/delete in `syncService` has no route (`/budget/categories`
+      exposes GET and POST only).
+
 ### Backend Scheduled Functions (Session 170, Wave 1 FEAT-003, review findings P-01/AC-11)
 - [x] Six handlers ported off `require('aws-sdk')` (Node 20 does not ship SDK v2; they crashed
       at import): `budget-alerts`, `daily-reminders`, `investments`, `investments-price-updater`,
@@ -148,7 +194,7 @@ inclusion: always
       `scheduled-backup` is `FAMILY#`-keyed throughout.
 - [ ] `credit-score`, `export`, `notifications`, `transaction-planning` still DECLARE `aws-sdk`
       in `package.json` (no production `require` remains); dead declarations, cleanup pending.
-      `transaction-planning` is owned by the Wave 2 branch.
+      `transaction-planning` was not cleaned up by Wave 2 either.
 
 ### AI / Bedrock (Session 170, Wave 1 FEAT-005, review finding L-05)
 - [x] One model for every AI Lambda: `us.anthropic.claude-haiku-4-5-20251001-v1:0` (Claude Haiku
@@ -237,7 +283,8 @@ inclusion: always
       AC-02's verification half is BLOCKED on SES production access or Cognito managed login;
       until then an unproven address is trusted by the Google link-by-email path
       (pre-account-takeover risk stays open).
-- [ ] Wave 2 follow-up: consolidate the `'auth_id_token'` literal. `services/storage-keys.ts`
+- [x] (Closed by Wave 2, 2026-11-20: `plaid.ts`, `api.ts` and `FamilySettings.tsx` now import
+      `ID_TOKEN_KEY`.) Wave 2 follow-up: consolidate the `'auth_id_token'` literal. `services/storage-keys.ts`
       now owns it (`STORAGE_KEYS` + `ID_TOKEN_KEY`, import-free); `services/plaid.ts:56` reads
       the wrong key (`'budgetbuddy_id_token'`, the web app's) and is the actual bug, while
       `services/api.ts:98` and `components/FamilySettings.tsx:79,82` re-declare the correct

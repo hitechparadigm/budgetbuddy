@@ -15,6 +15,8 @@ import {
   Pressable,
   ScrollView,
   FlatList,
+  Modal,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -24,9 +26,11 @@ import { Card, FloatingActionButton, LoadingSpinner } from "../components/ui";
 import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../contexts/AuthContext";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
+import { apiBaseUrl } from "../config/api";
 
-const API_BASE_URL =
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+// /bills lives on the main gateway.
+
+const API_BASE_URL = apiBaseUrl;
 
 interface Bill {
   billId: string;
@@ -61,6 +65,15 @@ export default function BillsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [payingBillId, setPayingBillId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    name: "",
+    amount: "",
+    dueDate: "",
+    notes: "",
+  });
   const currency = "USD";
 
   const loadBills = useCallback(async () => {
@@ -94,6 +107,61 @@ export default function BillsScreen() {
       setRefreshing(false);
     }
   }, [token]);
+
+  const handleCreateBill = async () => {
+    const amount = parseFloat(form.amount);
+
+    if (!form.name.trim()) {
+      setCreateError("Enter a bill name.");
+      return;
+    }
+    if (isNaN(amount) || amount <= 0) {
+      setCreateError("Enter a positive amount.");
+      return;
+    }
+    // The handler rejects anything that is not YYYY-MM-DD, so check here
+    // rather than round-tripping to find out.
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.dueDate.trim())) {
+      setCreateError("Enter the due date as YYYY-MM-DD.");
+      return;
+    }
+
+    try {
+      setCreating(true);
+      setCreateError(null);
+
+      const response = await fetch(`${API_BASE_URL}/bills`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          amount,
+          dueDate: form.dueDate.trim(),
+          notes: form.notes.trim() || null,
+        }),
+      });
+
+      if (!response.ok) {
+        // Surface the server's reason rather than a generic failure.
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message ?? "Failed to add the bill");
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowCreateModal(false);
+      await loadBills();
+    } catch (err) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setCreateError(
+        err instanceof Error ? err.message : "Failed to add the bill"
+      );
+    } finally {
+      setCreating(false);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -386,11 +454,112 @@ export default function BillsScreen() {
             label: "Add Bill",
             onPress: () => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              Alert.alert("Add Bill", "Bill creation form coming soon!");
+              setForm({ name: "", amount: "", dueDate: "", notes: "" });
+              setCreateError(null);
+              setShowCreateModal(true);
             },
           },
         ]}
       />
+
+      {/* Create bill. POST /bills requires name, amount and a YYYY-MM-DD
+          dueDate (backend/functions/bills/index.js). */}
+      <Modal
+        visible={showCreateModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[styles.modalContent, { backgroundColor: colors.surface }]}
+          >
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              Add Bill
+            </Text>
+
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Bill name"
+              placeholderTextColor={colors.textSecondary}
+              value={form.name}
+              onChangeText={(name) => setForm((f) => ({ ...f, name }))}
+              accessibilityLabel="Bill name"
+            />
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Amount"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="decimal-pad"
+              value={form.amount}
+              onChangeText={(amount) => setForm((f) => ({ ...f, amount }))}
+              accessibilityLabel="Amount"
+            />
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Due date (YYYY-MM-DD)"
+              placeholderTextColor={colors.textSecondary}
+              value={form.dueDate}
+              onChangeText={(dueDate) => setForm((f) => ({ ...f, dueDate }))}
+              accessibilityLabel="Due date"
+            />
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Notes (optional)"
+              placeholderTextColor={colors.textSecondary}
+              value={form.notes}
+              onChangeText={(notes) => setForm((f) => ({ ...f, notes }))}
+              accessibilityLabel="Notes"
+            />
+
+            {createError && (
+              <Text style={[styles.modalError, { color: colors.error }]}>
+                {createError}
+              </Text>
+            )}
+
+            <View style={styles.modalButtons}>
+              <Pressable
+                onPress={() => setShowCreateModal(false)}
+                style={[styles.modalButton, { borderColor: colors.border }]}
+              >
+                <Text style={[styles.modalButtonText, { color: colors.text }]}>
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleCreateBill}
+                disabled={creating}
+                style={[
+                  styles.modalButton,
+                  styles.modalButtonPrimary,
+                  {
+                    backgroundColor: creating
+                      ? colors.textSecondary
+                      : colors.primary,
+                  },
+                ]}
+              >
+                <Text style={styles.modalButtonTextPrimary}>
+                  {creating ? "Saving..." : "Add Bill"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -561,5 +730,56 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 14,
     textAlign: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalContent: {
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  modalError: {
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 4,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  modalButtonPrimary: {
+    borderWidth: 0,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  modalButtonTextPrimary: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#ffffff",
   },
 });

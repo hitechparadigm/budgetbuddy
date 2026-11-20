@@ -275,23 +275,41 @@ jest.mock('../services/offline', () => ({
   addToSyncQueue: jest.fn(() => Promise.resolve()),
 }));
 
-// Mock API service
-jest.mock('../services/api', () => ({
-  api: {
+// Mock API service.
+//
+// There are four gateway clients, one per API Gateway. Each must be mocked
+// separately: a service that calls budgetsApi would otherwise see `undefined`
+// here. Tests that need to assert real URL construction should
+// jest.unmock('../services/api') and mock global.fetch instead.
+jest.mock('../services/api', () => {
+  // Defined inside the factory: jest.mock is hoisted, so a module-scope
+  // helper would be out of scope here.
+  const makeApiClientMock = () => ({
     get: jest.fn(() => Promise.resolve({ data: [] })),
     post: jest.fn(() => Promise.resolve({ data: {} })),
     put: jest.fn(() => Promise.resolve({ data: {} })),
+    patch: jest.fn(() => Promise.resolve({ data: {} })),
     delete: jest.fn(() => Promise.resolve()),
-  },
-  queryKeys: {
-    budgets: ['budgets'],
-    budget: (id: string) => ['budget', id],
-    budgetsByMonth: (year: number, month: number) => ['budgets', year, month],
-    upcomingOccurrences: (days: number) => ['upcomingOccurrences', days],
-    recurringBudgets: ['recurringBudgets'],
-  },
-  getNetworkStatus: () => ({ isOnline: true }),
-}));
+  });
+
+  return {
+    api: makeApiClientMock(),
+    featuresApi: makeApiClientMock(),
+    extendedFeaturesApi: makeApiClientMock(),
+    budgetsApi: makeApiClientMock(),
+    createApiClient: jest.fn(() => makeApiClientMock()),
+    apiRequest: jest.fn(() => Promise.resolve({ data: {}, status: 200 })),
+    apiCall: jest.fn(() => Promise.resolve({})),
+    queryKeys: {
+      budgets: ['budgets'],
+      budget: (id: string) => ['budget', id],
+      budgetsByMonth: (year: number, month: number) => ['budgets', year, month],
+      upcomingOccurrences: (days: number) => ['upcomingOccurrences', days],
+      recurringBudgets: ['recurringBudgets'],
+    },
+    getNetworkStatus: () => ({ isOnline: true }),
+  };
+});
 
 // Global test timeout
 jest.setTimeout(30000);

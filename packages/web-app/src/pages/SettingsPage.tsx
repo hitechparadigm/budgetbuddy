@@ -32,42 +32,135 @@ interface Rule {
   createdAt: string;
 }
 
+interface RuleCategoryOption {
+  id: string;
+  name: string;
+}
+
 const TransactionRulesSection: React.FC = () => {
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<RuleCategoryOption[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [merchantPattern, setMerchantPattern] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const loadRules = useCallback(async () => {
+    setError(null);
     try {
       const token = localStorage.getItem('budgetbuddy_id_token');
       if (!token) return;
       const res = await fetch(`${config.extendedFeaturesApiUrl}/rules`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setError('Could not load your rules.');
+        return;
+      }
       const data = await res.json();
       setRules(data.data?.rules || data.rules || []);
     } catch {
-      // silent
+      setError('Could not load your rules.');
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadRules(); }, [loadRules]);
-
-  const handleDelete = async (ruleId: string) => {
-    setDeleting(ruleId);
+  // Categories for a rule's target, read from the current budget. Same source
+  // QuickAddTransactionModal uses.
+  const loadCategories = useCallback(async () => {
     try {
       const token = localStorage.getItem('budgetbuddy_id_token');
       if (!token) return;
-      await fetch(`${config.extendedFeaturesApiUrl}/rules/${ruleId}`, {
+      const month = new Date().toISOString().substring(0, 7);
+      const res = await fetch(`${config.apiBaseUrl}/budget/current?month=${month}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const groups = (data.data || data).groups || {};
+      const opts: RuleCategoryOption[] = [];
+      const push = (c: { id?: string; categoryId?: string; name?: string; categoryName?: string }) => {
+        const id = c.id || c.categoryId;
+        const name = c.name || c.categoryName;
+        if (id && name) opts.push({ id, name });
+      };
+      if (Array.isArray(groups)) {
+        groups.forEach((g: { categories?: unknown[] }) =>
+          (g.categories || []).forEach(c => push(c as Parameters<typeof push>[0]))
+        );
+      } else {
+        [...(groups.savings || []), ...(groups.expenses || [])].forEach(push);
+      }
+      setCategories(opts);
+    } catch {
+      // A missing category list only disables the picker; not worth surfacing
+      // as an error above the rules list.
+    }
+  }, []);
+
+  useEffect(() => { loadRules(); loadCategories(); }, [loadRules, loadCategories]);
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!merchantPattern.trim() || !categoryId) {
+      setError('Enter a merchant and pick a category.');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('budgetbuddy_id_token');
+      if (!token) return;
+      const res = await fetch(`${config.extendedFeaturesApiUrl}/rules`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          merchantPattern: merchantPattern.trim(),
+          categoryId,
+          categoryName: categories.find(c => c.id === categoryId)?.name ?? '',
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message ?? 'Failed to create the rule.');
+      }
+      setMerchantPattern('');
+      setCategoryId('');
+      setShowForm(false);
+      // Re-read from the server rather than appending locally, so a rule that
+      // did not actually persist cannot look saved.
+      await loadRules();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create the rule.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (ruleId: string) => {
+    setDeleting(ruleId);
+    setError(null);
+    try {
+      const token = localStorage.getItem('budgetbuddy_id_token');
+      if (!token) return;
+      const res = await fetch(`${config.extendedFeaturesApiUrl}/rules/${ruleId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
+      // This used to drop the row from local state regardless of the response
+      // and swallow the error, so a failing delete looked like it had worked
+      // until the next reload.
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message ?? 'Failed to delete the rule.');
+      }
       setRules(prev => prev.filter(r => r.ruleId !== ruleId));
-    } catch {
-      // silent
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete the rule.');
     } finally {
       setDeleting(null);
     }
@@ -75,17 +168,84 @@ const TransactionRulesSection: React.FC = () => {
 
   return (
     <div className="bg-surface rounded-lg shadow-sm border border-border p-6 mb-6">
-      <h2 className="text-xl font-semibold text-foreground mb-1">Auto-Categorization Rules</h2>
+      <div className="flex items-start justify-between mb-1 gap-4">
+        <h2 className="text-xl font-semibold text-foreground">Auto-Categorization Rules</h2>
+        <button
+          type="button"
+          onClick={() => { setShowForm(v => !v); setError(null); }}
+          className="shrink-0 px-3 py-1.5 text-sm rounded-lg border border-border text-foreground hover:bg-muted transition-colors"
+          aria-expanded={showForm}
+        >
+          {showForm ? 'Cancel' : '+ Add rule'}
+        </button>
+      </div>
       <p className="text-sm text-muted-foreground mb-4">
-        When you recategorize a transaction, you can save a rule — transactions from that merchant will always go to the selected category.
+        A rule sends every transaction from a merchant to the same category. Add one here, or
+        save one while recategorizing a transaction on the Budget page.
       </p>
+
+      {showForm && (
+        <form onSubmit={handleCreate} className="mb-4 p-4 bg-muted rounded-lg space-y-3">
+          <div>
+            <label htmlFor="rule-merchant" className="block text-sm font-medium text-foreground mb-1">
+              If the merchant contains
+            </label>
+            <input
+              id="rule-merchant"
+              type="text"
+              value={merchantPattern}
+              onChange={e => setMerchantPattern(e.target.value)}
+              placeholder="e.g. STARBUCKS"
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground
+                         focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+            />
+          </div>
+          <div>
+            <label htmlFor="rule-category" className="block text-sm font-medium text-foreground mb-1">
+              Always categorize as
+            </label>
+            <select
+              id="rule-category"
+              value={categoryId}
+              onChange={e => setCategoryId(e.target.value)}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground
+                         focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
+            >
+              <option value="">Select a category…</option>
+              {categories.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            {categories.length === 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                No categories found for this month's budget. Create a budget first.
+              </p>
+            )}
+          </div>
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:bg-[var(--color-primary-hover)]
+                       transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+          >
+            {saving ? 'Saving…' : 'Save rule'}
+          </button>
+        </form>
+      )}
+
+      {error && (
+        <p role="alert" className="mb-4 text-sm text-red-600 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">
+          {error}
+        </p>
+      )}
+
       {loading ? (
         <div className="space-y-2">
           {[1,2].map(i => <div key={i} className="h-10 rounded animate-pulse bg-muted" />)}
         </div>
       ) : rules.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No rules yet. Recategorize a transaction and choose "Always categorize [Merchant] as [Category]" to create one.
+          No rules yet. Use "+ Add rule" above to create one.
         </p>
       ) : (
         <div className="space-y-2">

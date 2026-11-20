@@ -10,11 +10,11 @@ const validators = require("./validators");
 
 /**
  * Create a new manual account
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {object} input - Account creation input
  * @returns {Promise<object>} Created account
  */
-async function createAccount(familyId, input) {
+async function createAccount(budgetId, input) {
   // Validate input
   const validation = validators.validateCreateAccountInput(input);
   if (!validation.isValid) {
@@ -24,7 +24,7 @@ async function createAccount(familyId, input) {
   }
 
   // Create the account
-  const account = await repository.createAccount(familyId, {
+  const account = await repository.createAccount(budgetId, {
     ...input,
     isManual: true,
   });
@@ -33,23 +33,23 @@ async function createAccount(familyId, input) {
 }
 
 /**
- * Get all accounts for a family
- * @param {string} familyId - Family ID
+ * Get all accounts for a budget
+ * @param {string} budgetId - Budget ID
  * @param {object} filters - Optional filters
  * @returns {Promise<object[]>} List of accounts
  */
-async function getAccounts(familyId, filters = {}) {
-  return repository.getAccounts(familyId, filters);
+async function getAccounts(budgetId, filters = {}) {
+  return repository.getAccounts(budgetId, filters);
 }
 
 /**
  * Get a single account by ID
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @returns {Promise<object>} Account
  */
-async function getAccount(familyId, accountId) {
-  const account = await repository.getAccount(familyId, accountId);
+async function getAccount(budgetId, accountId) {
+  const account = await repository.getAccount(budgetId, accountId);
 
   if (!account) {
     const error = new Error("Account not found");
@@ -62,12 +62,12 @@ async function getAccount(familyId, accountId) {
 
 /**
  * Update an account
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @param {object} input - Update input
  * @returns {Promise<object>} Updated account
  */
-async function updateAccount(familyId, accountId, input) {
+async function updateAccount(budgetId, accountId, input) {
   // Validate input
   const validation = validators.validateUpdateAccountInput(input);
   if (!validation.isValid) {
@@ -77,7 +77,7 @@ async function updateAccount(familyId, accountId, input) {
   }
 
   // Check if account exists
-  const existing = await repository.getAccount(familyId, accountId);
+  const existing = await repository.getAccount(budgetId, accountId);
   if (!existing) {
     const error = new Error("Account not found");
     error.statusCode = 404;
@@ -101,20 +101,20 @@ async function updateAccount(familyId, accountId, input) {
     }
   }
 
-  const updated = await repository.updateAccount(familyId, accountId, input);
+  const updated = await repository.updateAccount(budgetId, accountId, input);
   return updated;
 }
 
 /**
  * Delete a manual account
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @param {string} deletedBy - User ID who deleted
  * @returns {Promise<void>}
  */
-async function deleteAccount(familyId, accountId, deletedBy) {
+async function deleteAccount(budgetId, accountId, deletedBy) {
   // Check if account exists
-  const existing = await repository.getAccount(familyId, accountId);
+  const existing = await repository.getAccount(budgetId, accountId);
   if (!existing) {
     const error = new Error("Account not found");
     error.statusCode = 404;
@@ -131,7 +131,7 @@ async function deleteAccount(familyId, accountId, deletedBy) {
   }
 
   const deleted = await repository.deleteAccount(
-    familyId,
+    budgetId,
     accountId,
     deletedBy,
   );
@@ -144,12 +144,12 @@ async function deleteAccount(familyId, accountId, deletedBy) {
 
 /**
  * Reconcile account balance
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @param {object} input - Reconcile input
  * @returns {Promise<object>} Reconciliation result
  */
-async function reconcileAccount(familyId, accountId, input) {
+async function reconcileAccount(budgetId, accountId, input) {
   // Validate input
   const validation = validators.validateReconcileInput(input);
   if (!validation.isValid) {
@@ -159,7 +159,7 @@ async function reconcileAccount(familyId, accountId, input) {
   }
 
   // Check if account exists
-  const existing = await repository.getAccount(familyId, accountId);
+  const existing = await repository.getAccount(budgetId, accountId);
   if (!existing) {
     const error = new Error("Account not found");
     error.statusCode = 404;
@@ -167,7 +167,7 @@ async function reconcileAccount(familyId, accountId, input) {
   }
 
   const result = await repository.reconcileAccount(
-    familyId,
+    budgetId,
     accountId,
     input.newBalance,
     input.notes,
@@ -178,12 +178,12 @@ async function reconcileAccount(familyId, accountId, input) {
 
 /**
  * Set account tracking status
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @param {object} input - Tracking input
  * @returns {Promise<object>} Updated account
  */
-async function setAccountTracking(familyId, accountId, input) {
+async function setAccountTracking(budgetId, accountId, input) {
   // Validate input
   const validation = validators.validateSetTrackingInput(input);
   if (!validation.isValid) {
@@ -193,14 +193,14 @@ async function setAccountTracking(familyId, accountId, input) {
   }
 
   // Check if account exists
-  const existing = await repository.getAccount(familyId, accountId);
+  const existing = await repository.getAccount(budgetId, accountId);
   if (!existing) {
     const error = new Error("Account not found");
     error.statusCode = 404;
     throw error;
   }
 
-  const updated = await repository.updateAccount(familyId, accountId, {
+  const updated = await repository.updateAccount(budgetId, accountId, {
     isTracked: input.isTracked,
   });
 
@@ -209,32 +209,32 @@ async function setAccountTracking(familyId, accountId, input) {
 
 /**
  * Get accounts summary
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @returns {Promise<object>} Summary
  */
-async function getAccountsSummary(familyId) {
-  return repository.getAccountsSummary(familyId);
+async function getAccountsSummary(budgetId) {
+  return repository.getAccountsSummary(budgetId);
 }
 
 /**
  * Update account balance (called from transaction service)
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @param {number} balanceChange - Amount to change
  * @returns {Promise<object|null>} Updated account or null
  */
-async function updateAccountBalance(familyId, accountId, balanceChange) {
-  return repository.updateAccountBalance(familyId, accountId, balanceChange);
+async function updateAccountBalance(budgetId, accountId, balanceChange) {
+  return repository.updateAccountBalance(budgetId, accountId, balanceChange);
 }
 
 /**
  * Check if account exists
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @returns {Promise<boolean>}
  */
-async function accountExists(familyId, accountId) {
-  return repository.accountExists(familyId, accountId);
+async function accountExists(budgetId, accountId) {
+  return repository.accountExists(budgetId, accountId);
 }
 
 /**

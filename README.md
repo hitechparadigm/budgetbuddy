@@ -17,6 +17,17 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
+### Recent Achievements (2026-11-20)
+- **Wave 2 core flows** - planned transactions can be edited, deleted and marked paid (the routes
+  returned 404 or were unreachable); borrowed/lent goals keep their `subType`, `personName` and
+  `notes`; accounts moved from the deprecated `FAMILY#` keys to `BUDGET#<budgetId>/ACCOUNT#<id>`
+  with a copy-only migration script; the rules Lambda works for the first time and rules can be
+  created from Settings; rollover and AI budget suggestions are reachable from the Budget page.
+  Mobile gained real onboarding (with currency), create forms for goals, bills, subscriptions
+  and debts, per-gateway API clients, sync-conflict toasts and receipt confirmation against real
+  categories. Open follow-ups are listed in
+  [docs/product-requirements.md](docs/product-requirements.md) Known Gaps 17-24.
+
 ### Recent Achievements (2026-11-01)
 - **Wave 1 live in dev** - the 2026-10-30 and 2026-10-31 changes below are deployed. The live
   checks passed: self sign-up and spoofed attribute writes are rejected, deletion protection is

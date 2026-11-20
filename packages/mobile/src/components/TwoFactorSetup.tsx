@@ -28,8 +28,11 @@ import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "./ui";
 
-const API_BASE_URL =
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+import { apiBaseUrl } from "../config/api";
+
+
+// /auth lives on the main gateway.
+const API_BASE_URL = apiBaseUrl;
 
 type SetupStep = "intro" | "qr" | "verify" | "backup";
 

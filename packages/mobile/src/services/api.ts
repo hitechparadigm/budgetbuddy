@@ -2,15 +2,24 @@ import { QueryClient } from '@tanstack/react-query';
 import NetInfo from '@react-native-community/netinfo';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import {
+  apiBaseUrl,
+  featuresApiUrl,
+  extendedFeaturesApiUrl,
+  budgetsApiUrl,
+} from '../config/api';
+import { ID_TOKEN_KEY } from './storage-keys';
 
 /**
  * API Configuration and Client
  * Handles API requests with offline support and caching
  */
 
-// API Configuration
+// API Configuration. `baseURL` is the main gateway; the other three gateways
+// are reached through the per-gateway clients exported at the bottom of this
+// file (featuresApi, extendedFeaturesApi, budgetsApi).
 export const API_CONFIG = {
-  baseURL: process.env.EXPO_PUBLIC_API_URL || 'https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1',
+  baseURL: apiBaseUrl,
   timeout: 10000,
   retryAttempts: 3,
   retryDelay: 1000,
@@ -64,6 +73,11 @@ export interface ApiRequest {
   params?: Record<string, string | number>;
   headers?: Record<string, string>;
   requiresAuth?: boolean;
+  /**
+   * Which API Gateway to send this request to. Defaults to the main gateway.
+   * Normally set by the per-gateway client rather than per call site.
+   */
+  baseUrl?: string;
 }
 
 export interface ApiResponse<T = any> {
@@ -90,13 +104,11 @@ export class ApiError extends Error {
 /**
  * Get authentication token from storage
  */
-// Must match services/auth.ts STORAGE_KEYS.ID_TOKEN exactly - that is the
-// only place a real session token is ever written (SecureStore on native,
-// localStorage on web via the same Platform.OS branch). This was previously
-// reading a nonexistent AsyncStorage key ('auth_token'), so every request
-// through this client went out with no Authorization header at all.
-const ID_TOKEN_KEY = 'auth_id_token';
-
+// ID_TOKEN_KEY comes from services/storage-keys and must match what
+// services/auth.ts writes - that is the only place a real session token is
+// ever stored (SecureStore on native, localStorage on web via the same
+// Platform.OS branch). Reading any other key sends every request out with no
+// Authorization header at all.
 const getAuthToken = async (): Promise<string | null> => {
   try {
     if (Platform.OS === 'web') {
@@ -138,8 +150,12 @@ const buildHeaders = async (customHeaders: Record<string, string> = {}): Promise
  * prefix must be concatenated manually instead of relying on URL base
  * resolution to preserve it.
  */
-const buildUrl = (endpoint: string, params?: Record<string, string | number>): string => {
-  const base = API_CONFIG.baseURL.replace(/\/+$/, '');
+const buildUrl = (
+  endpoint: string,
+  params?: Record<string, string | number>,
+  baseUrl?: string
+): string => {
+  const base = (baseUrl ?? API_CONFIG.baseURL).replace(/\/+$/, '');
   const path = endpoint.replace(/^\/+/, '');
   const url = new URL(`${base}/${path}`);
   if (params) {
@@ -182,6 +198,29 @@ const handleApiError = (error: any, request: ApiRequest): ApiError => {
 };
 
 /**
+ * Whether a failed request is worth sending again.
+ *
+ * A 4xx is the server rejecting the request itself, so replaying it byte for
+ * byte cannot produce a different answer - and for a POST it is actively
+ * harmful: the first attempt may already have written, leaving the caller to
+ * wait out two more attempts before it sees the real status. POST
+ * /auth/onboarding is exactly that case - attempt 1 creates the budget,
+ * attempts 2 and 3 return 409. This matches the queryClient retry policy
+ * below, which also stops at any 4xx.
+ *
+ * Network and timeout failures carry no status and stay retryable, which is
+ * what the retry exists for on mobile.
+ */
+export const isRetryableError = (error: unknown): boolean => {
+  const err = error as { response?: { status?: number }; status?: number };
+  const status = err?.response?.status ?? err?.status;
+  if (typeof status === 'number' && status >= 400 && status < 500) {
+    return false;
+  }
+  return true;
+};
+
+/**
  * Retry logic for failed requests
  */
 const retryRequest = async <T>(
@@ -191,7 +230,7 @@ const retryRequest = async <T>(
   try {
     return await requestFn();
   } catch (error) {
-    if (attempt < API_CONFIG.retryAttempts) {
+    if (attempt < API_CONFIG.retryAttempts && isRetryableError(error)) {
       // Wait before retrying
       await new Promise(resolve => setTimeout(resolve, API_CONFIG.retryDelay * attempt));
       return retryRequest(requestFn, attempt + 1);
@@ -204,7 +243,15 @@ const retryRequest = async <T>(
  * Make API request
  */
 export const apiRequest = async <T = any>(request: ApiRequest): Promise<ApiResponse<T>> => {
-  const { endpoint, method, data, params, headers: customHeaders, requiresAuth = true } = request;
+  const {
+    endpoint,
+    method,
+    data,
+    params,
+    headers: customHeaders,
+    requiresAuth = true,
+    baseUrl,
+  } = request;
 
   // Check if request requires auth and we're not authenticated
   if (requiresAuth) {
@@ -219,7 +266,7 @@ export const apiRequest = async <T = any>(request: ApiRequest): Promise<ApiRespo
   }
 
   const requestFn = async () => {
-    const url = buildUrl(endpoint, params);
+    const url = buildUrl(endpoint, params, baseUrl);
     const headers = await buildHeaders(customHeaders);
 
     const fetchOptions: RequestInit = {
@@ -261,25 +308,53 @@ export const apiRequest = async <T = any>(request: ApiRequest): Promise<ApiRespo
   }
 };
 
+export interface ApiClient {
+  get: <T = any>(
+    endpoint: string,
+    params?: Record<string, string | number>,
+    options?: Partial<ApiRequest>
+  ) => Promise<ApiResponse<T>>;
+  post: <T = any>(endpoint: string, data?: any, options?: Partial<ApiRequest>) => Promise<ApiResponse<T>>;
+  put: <T = any>(endpoint: string, data?: any, options?: Partial<ApiRequest>) => Promise<ApiResponse<T>>;
+  patch: <T = any>(endpoint: string, data?: any, options?: Partial<ApiRequest>) => Promise<ApiResponse<T>>;
+  delete: <T = any>(endpoint: string, options?: Partial<ApiRequest>) => Promise<ApiResponse<T>>;
+}
+
 /**
- * Convenience methods for common HTTP verbs
+ * Build a client bound to one API Gateway.
+ *
+ * A caller can still override the gateway per call via `options.baseUrl`, but
+ * picking the right client is the intended mechanism: there are four gateways
+ * and roughly forty call sites.
  */
-export const api = {
-  get: <T = any>(endpoint: string, params?: Record<string, string | number>, options?: Partial<ApiRequest>) =>
-    apiRequest<T>({ endpoint, method: 'GET', params, ...options }),
+export const createApiClient = (baseUrl: string): ApiClient => ({
+  get: (endpoint, params, options) =>
+    apiRequest({ endpoint, method: 'GET', params, baseUrl, ...options }),
 
-  post: <T = any>(endpoint: string, data?: any, options?: Partial<ApiRequest>) =>
-    apiRequest<T>({ endpoint, method: 'POST', data, ...options }),
+  post: (endpoint, data, options) =>
+    apiRequest({ endpoint, method: 'POST', data, baseUrl, ...options }),
 
-  put: <T = any>(endpoint: string, data?: any, options?: Partial<ApiRequest>) =>
-    apiRequest<T>({ endpoint, method: 'PUT', data, ...options }),
+  put: (endpoint, data, options) =>
+    apiRequest({ endpoint, method: 'PUT', data, baseUrl, ...options }),
 
-  patch: <T = any>(endpoint: string, data?: any, options?: Partial<ApiRequest>) =>
-    apiRequest<T>({ endpoint, method: 'PATCH', data, ...options }),
+  patch: (endpoint, data, options) =>
+    apiRequest({ endpoint, method: 'PATCH', data, baseUrl, ...options }),
 
-  delete: <T = any>(endpoint: string, options?: Partial<ApiRequest>) =>
-    apiRequest<T>({ endpoint, method: 'DELETE', ...options }),
-};
+  delete: (endpoint, options) =>
+    apiRequest({ endpoint, method: 'DELETE', baseUrl, ...options }),
+});
+
+/** Main gateway: auth, budget, transactions, accounts, goals, bills, ai. */
+export const api = createApiClient(apiBaseUrl);
+
+/** Features gateway: investments, plaid, tips, learn, subscriptions, debts, credit-score. */
+export const featuresApi = createApiClient(featuresApiUrl);
+
+/** Extended features gateway: insights, receipt, patterns, rules, net-worth. */
+export const extendedFeaturesApi = createApiClient(extendedFeaturesApiUrl);
+
+/** Budgets gateway: budget collaboration, members, invitations. */
+export const budgetsApi = createApiClient(budgetsApiUrl);
 
 /**
  * React Query configuration
@@ -378,14 +453,21 @@ export const getApiClient = () => api;
  */
 export const apiCall = async <T = any>(
   endpoint: string,
-  options: { method?: ApiRequest['method']; body?: string; headers?: Record<string, string> } = {}
+  options: {
+    method?: ApiRequest['method'];
+    body?: string;
+    headers?: Record<string, string>;
+    /** Target gateway; defaults to the main gateway. */
+    baseUrl?: string;
+  } = {}
 ): Promise<T> => {
-  const { method = 'GET', body, headers } = options;
+  const { method = 'GET', body, headers, baseUrl } = options;
   const response = await apiRequest<T>({
     endpoint,
     method,
     data: body ? JSON.parse(body) : undefined,
     headers,
+    baseUrl,
   });
   return response.data;
 };

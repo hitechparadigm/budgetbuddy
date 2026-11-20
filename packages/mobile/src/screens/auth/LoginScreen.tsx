@@ -28,6 +28,17 @@ import TwoFactorVerify from "../../components/TwoFactorVerify";
 
 type LoginScreenProps = AuthScreenProps<"Login">;
 
+/**
+ * Whether Google sign-in can actually complete.
+ *
+ * False today: the Cognito user pool has no Google identity provider, and the
+ * custom /auth/google backend branch cannot mint a session, so the flow can
+ * be started but never finished. The button is rendered disabled rather than
+ * looking live. Flip this as part of the Cognito federated Google IdP work,
+ * together with the services/auth.ts implementation, not before.
+ */
+const GOOGLE_SIGN_IN_AVAILABLE = false;
+
 export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const {
     signIn,
@@ -168,11 +179,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
    * Handle Google Sign-In
    */
   const handleGoogleSignIn = async (): Promise<void> => {
+    // Unreachable while GOOGLE_SIGN_IN_AVAILABLE is false (the button is
+    // disabled); the guard keeps it that way if the button is ever re-enabled
+    // before the backend can actually complete the flow.
+    if (!GOOGLE_SIGN_IN_AVAILABLE) return;
+
     setGoogleLoading(true);
     try {
-      // TODO: Implement Google Sign-In integration
-      // This will call authService.signInWithGoogle() and handle the response
-      Alert.alert("Coming Soon", "Google Sign-In will be available soon");
+      // The real call belongs here, once Cognito has a Google identity
+      // provider. Implementing it needs services/auth.ts, which this wave
+      // does not own.
+      throw new Error("Google sign-in is not configured");
     } catch (error) {
       const authError = error as AuthError;
       Alert.alert("Google Sign-In Failed", authError.message);
@@ -283,13 +300,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <View style={styles.divider} />
             </View>
 
-            {/* Google Sign-In Button */}
+            {/* Google Sign-In — disabled while the backend cannot complete
+                the flow, so nobody can start one that will not finish. */}
             <GoogleSignInButton
               onPress={handleGoogleSignIn}
               loading={googleLoading}
-              disabled={isLoading || googleLoading}
+              disabled={!GOOGLE_SIGN_IN_AVAILABLE || isLoading || googleLoading}
               variant="signin"
             />
+            {!GOOGLE_SIGN_IN_AVAILABLE && (
+              <Text style={styles.googleUnavailableText}>
+                Google sign-in is not available yet. Please use your email and
+                password.
+              </Text>
+            )}
 
             {/* Sign Up Link */}
             <View style={styles.signUpContainer}>
@@ -489,6 +513,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#007AFF",
     fontWeight: "600",
+  },
+  googleUnavailableText: {
+    fontSize: 13,
+    color: "#666",
+    textAlign: "center",
+    marginTop: 8,
   },
   // MFA Modal styles
   mfaContainer: {

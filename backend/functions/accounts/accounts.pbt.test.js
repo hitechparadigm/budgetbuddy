@@ -82,7 +82,7 @@ describe("Account Property-Based Tests", () => {
 
           // Create account
           const created = await repository.createAccount(
-            "test-family-id",
+            "budget_test",
             input,
           );
 
@@ -99,7 +99,7 @@ describe("Account Property-Based Tests", () => {
 
           // Retrieve account
           const retrieved = await repository.getAccount(
-            "test-family-id",
+            "budget_test",
             created.accountId,
           );
 
@@ -112,6 +112,161 @@ describe("Account Property-Based Tests", () => {
         }),
         { numRuns: 100 },
       );
+    });
+  });
+
+  /**
+   * Accounts live in the BUDGET# partition (ADR-001). The FAMILY# prefix is
+   * deprecated, and the account item must carry no GSI1 entry.
+   */
+  describe("BUDGET# partition keys", () => {
+    it("writes every account under BUDGET# with no GSI1 entry", async () => {
+      await fc.assert(
+        fc.asyncProperty(validAccountInputArb, async (input) => {
+          const { dynamoHelpers } = require("/opt/nodejs/utils");
+          dynamoHelpers.putItem.mockImplementation(async (item) => item);
+
+          await repository.createAccount("budget_test", input);
+
+          const [item] = dynamoHelpers.putItem.mock.calls.at(-1);
+          expect(item.PK).toBe("BUDGET#budget_test");
+          expect(item.PK.startsWith("FAMILY#")).toBe(false);
+          expect(item.SK.startsWith("ACCOUNT#")).toBe(true);
+          expect(item.GSI1PK).toBeUndefined();
+          expect(item.GSI1SK).toBeUndefined();
+          expect(item.budgetId).toBe("budget_test");
+          expect(item.familyId).toBeUndefined();
+        }),
+        { numRuns: 50 },
+      );
+    });
+
+    it("reads, updates and deletes against BUDGET# keys", async () => {
+      const { dynamoHelpers } = require("/opt/nodejs/utils");
+      dynamoHelpers.getItem.mockResolvedValue({
+        accountId: "acc_1",
+        budgetId: "budget_test",
+        entityType: "ACCOUNT",
+        accountType: "banking",
+        accountSubtype: "checking",
+        nickname: "Checking",
+        currentBalance: 100,
+        currency: "USD",
+        isManual: true,
+        isTracked: true,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      });
+      dynamoHelpers.updateItem.mockImplementation(async (pk, sk, updates) => ({
+        accountId: "acc_1",
+        budgetId: "budget_test",
+        entityType: "ACCOUNT",
+        accountType: "banking",
+        currentBalance: 100,
+        isManual: true,
+        ...updates,
+      }));
+
+      await repository.getAccount("budget_test", "acc_1");
+      await repository.updateAccount("budget_test", "acc_1", { nickname: "x" });
+      await repository.deleteAccount("budget_test", "acc_1", "user_1");
+
+      for (const [pk, sk] of dynamoHelpers.getItem.mock.calls) {
+        expect(pk).toBe("BUDGET#budget_test");
+        expect(sk).toBe("ACCOUNT#acc_1");
+      }
+      for (const [pk, sk] of dynamoHelpers.updateItem.mock.calls) {
+        expect(pk).toBe("BUDGET#budget_test");
+        expect(sk).toBe("ACCOUNT#acc_1");
+      }
+    });
+
+    it("queries the BUDGET# partition when listing", async () => {
+      const { dynamoHelpers } = require("/opt/nodejs/utils");
+      dynamoHelpers.queryByPK.mockResolvedValue([]);
+
+      await repository.getAccounts("budget_test");
+
+      const [pk] = dynamoHelpers.queryByPK.mock.calls[0];
+      expect(pk).toBe("BUDGET#budget_test");
+    });
+  });
+
+  /**
+   * auth-onboarding writes the default "Cash" account directly, using
+   * `balance` instead of `currentBalance` and omitting isTracked. Those rows
+   * only became visible to GET /accounts once this repository moved to
+   * BUDGET# keys, so the response formatter must tolerate them.
+   */
+  describe("onboarding-written Cash account", () => {
+    /** Exactly what backend/functions/auth-onboarding/index.js writes. */
+    const onboardingCashAccount = {
+      PK: "BUDGET#budget_test",
+      SK: "ACCOUNT#acc_cash",
+      entityType: "ACCOUNT",
+      accountId: "acc_cash",
+      budgetId: "budget_test",
+      userId: "user_1",
+      nickname: "Cash",
+      accountType: "cash",
+      accountSubtype: "cash",
+      balance: 0,
+      currency: "USD",
+      isDefault: true,
+      isManual: true,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    it("formats with a numeric currentBalance of 0 and isTracked true", async () => {
+      const { dynamoHelpers } = require("/opt/nodejs/utils");
+      dynamoHelpers.getItem.mockResolvedValue({ ...onboardingCashAccount });
+
+      const account = await repository.getAccount("budget_test", "acc_cash");
+
+      expect(account.currentBalance).toBe(0);
+      expect(typeof account.currentBalance).toBe("number");
+      expect(account.isTracked).toBe(true);
+      expect(account.isManual).toBe(true);
+      expect(account.nickname).toBe("Cash");
+      expect(account.institutionName).toBeNull();
+      expect(account.mask).toBeNull();
+    });
+
+    it("appears in the account list with a defined balance", async () => {
+      const { dynamoHelpers } = require("/opt/nodejs/utils");
+      dynamoHelpers.queryByPK.mockResolvedValue([{ ...onboardingCashAccount }]);
+
+      const accounts = await repository.getAccounts("budget_test");
+
+      expect(accounts).toHaveLength(1);
+      expect(accounts[0].currentBalance).toBe(0);
+      expect(accounts[0].currentBalance).not.toBeUndefined();
+    });
+
+    it("does not mask a real currentBalance when both fields are present", async () => {
+      const { dynamoHelpers } = require("/opt/nodejs/utils");
+      dynamoHelpers.getItem.mockResolvedValue({
+        ...onboardingCashAccount,
+        currentBalance: 250,
+        balance: 0,
+      });
+
+      const account = await repository.getAccount("budget_test", "acc_cash");
+      expect(account.currentBalance).toBe(250);
+    });
+
+    it("counts toward the summary totals rather than producing NaN", async () => {
+      const { dynamoHelpers } = require("/opt/nodejs/utils");
+      dynamoHelpers.queryByPK.mockResolvedValue([
+        { ...onboardingCashAccount, balance: 40 },
+      ]);
+
+      const summary = await repository.getAccountsSummary("budget_test");
+
+      expect(summary.totalAssets).toBe(40);
+      expect(Number.isNaN(summary.netWorth)).toBe(false);
+      expect(summary.netWorth).toBe(40);
     });
   });
 
@@ -133,7 +288,7 @@ describe("Account Property-Based Tests", () => {
             // Create accounts and store them
             const accounts = inputs.map((input, index) => ({
               accountId: `acc-${index}`,
-              familyId: "test-family-id",
+              budgetId: "budget_test",
               entityType: "ACCOUNT",
               ...input,
               isManual: true,
@@ -145,11 +300,11 @@ describe("Account Property-Based Tests", () => {
             dynamoHelpers.queryByPK.mockResolvedValue(accounts);
 
             // Get accounts
-            const result = await repository.getAccounts("test-family-id");
+            const result = await repository.getAccounts("budget_test");
 
             // Get summary which groups by type
             const summary =
-              await repository.getAccountsSummary("test-family-id");
+              await repository.getAccountsSummary("budget_test");
 
             // Verify each account appears in exactly one group
             const allGroupedAccounts = Object.values(
@@ -207,7 +362,7 @@ describe("Account Property-Based Tests", () => {
             // Setup mock
             let storedAccount = {
               accountId: "test-acc-id",
-              familyId: "test-family-id",
+              budgetId: "budget_test",
               entityType: "ACCOUNT",
               ...accountInput,
               currentBalance: initialBalance,
@@ -235,7 +390,7 @@ describe("Account Property-Based Tests", () => {
 
               // Update account balance
               await repository.updateAccountBalance(
-                "test-family-id",
+                "budget_test",
                 "test-acc-id",
                 balanceChange,
               );
@@ -243,7 +398,7 @@ describe("Account Property-Based Tests", () => {
 
             // Verify final balance
             const finalAccount = await repository.getAccount(
-              "test-family-id",
+              "budget_test",
               "test-acc-id",
             );
 
@@ -274,7 +429,7 @@ describe("Account Property-Based Tests", () => {
             // Create accounts
             const accounts = inputs.map((input, index) => ({
               accountId: `acc-${index}`,
-              familyId: "test-family-id",
+              budgetId: "budget_test",
               entityType: "ACCOUNT",
               ...input,
               isManual: true,
@@ -301,7 +456,7 @@ describe("Account Property-Based Tests", () => {
 
             // Get summary
             const summary =
-              await repository.getAccountsSummary("test-family-id");
+              await repository.getAccountsSummary("budget_test");
 
             // Verify calculations
             expect(summary.totalAssets).toBeCloseTo(expectedAssets, 2);

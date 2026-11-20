@@ -1,0 +1,23 @@
+{
+  "name": "budgetbuddy-rules-function",
+  "version": "1.0.0",
+  "description": "BudgetBuddy Transaction Categorization Rules Lambda Function",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "budgetbuddy",
+    "rules",
+    "categorization",
+    "aws-lambda",
+    "dynamodb"
+  ],
+  "author": "BudgetBuddy Team",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

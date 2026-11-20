@@ -28,6 +28,7 @@ import {
 } from "../components/TransactionTemplateModal";
 import MarkRecurringModal from "../components/MarkRecurringModal";
 import { AiCoachChip } from "../components/AiCoachChip";
+import { BudgetSuggestionsModal } from "../components/BudgetSuggestionsModal";
 import { calculateOverBudgetInfo } from "../utils/overBudgetInfo";
 import {
   getCurrentMonthString,
@@ -67,6 +68,12 @@ interface BudgetCategory {
   isOneTime?: boolean; // true when frequency === 'one-time'
   // Sub-category support — optional parent grouping
   parentId?: string; // if set, this is a sub-category under parentId
+  // Rollover — unspent budget carried into next month. Managed through the
+  // dedicated PUT /budget/categories/{categoryId}/rollover endpoint, not the
+  // whole-budget PUT.
+  rolloverEnabled?: boolean;
+  rolloverCap?: number | null;
+  rolloverIn?: number;
 }
 
 interface BudgetGroup {
@@ -146,6 +153,7 @@ export const BudgetPage: React.FC = () => {
     "income" | "savings" | "expense" | null
   >(null);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [showSuggestionsModal, setShowSuggestionsModal] = useState(false);
 
   // Transaction filters state (replaces basic searchQuery)
   const { filters, setFilters, hasActiveFilters, clearFilters } =
@@ -172,6 +180,8 @@ export const BudgetPage: React.FC = () => {
     frequency: "monthly" as "monthly" | "biweekly" | "weekly" | "semi-monthly" | "one-time",
     frequencyAmount: "", // Per-period amount for biweekly/weekly
     parentId: "", // Optional parent category for sub-category grouping
+    rolloverEnabled: false,
+    rolloverCap: "", // blank means no cap
   });
 
   // Inline category amount editing state (P3-T4)
@@ -1008,6 +1018,11 @@ export const BudgetPage: React.FC = () => {
         frequency: category.frequency || "monthly",
         frequencyAmount: category.frequencyAmount?.toString() || "",
         parentId: category.parentId || "",
+        rolloverEnabled: category.rolloverEnabled === true,
+        rolloverCap:
+          category.rolloverCap === null || category.rolloverCap === undefined
+            ? ""
+            : String(category.rolloverCap),
       });
     } else {
       setEditingCategory(null);
@@ -1022,6 +1037,8 @@ export const BudgetPage: React.FC = () => {
         frequency: "monthly",
         frequencyAmount: "",
         parentId: defaultParentId || "",
+        rolloverEnabled: false,
+        rolloverCap: "",
       });
     }
     setShowBudgetItemModal(true);
@@ -1041,7 +1058,56 @@ export const BudgetPage: React.FC = () => {
       frequency: "monthly",
       frequencyAmount: "",
       parentId: "",
+      rolloverEnabled: false,
+      rolloverCap: "",
     });
+  };
+
+  /**
+   * Persist a category's rollover setting.
+   *
+   * Rollover has its own endpoint (PUT /budget/categories/{categoryId}/rollover)
+   * and is not part of the whole-budget PUT, so it must be saved separately.
+   * rolloverEnabled has to be a real boolean — the handler rejects a string.
+   */
+  const saveCategoryRollover = async (
+    categoryId: string,
+    groupType: "income" | "savings" | "expense",
+    rolloverEnabled: boolean,
+    rolloverCap: number | null,
+  ): Promise<void> => {
+    const token = localStorage.getItem("budgetbuddy_id_token");
+    if (!token) throw new Error("Not authenticated");
+
+    const res = await fetch(
+      `${API_BASE_URL}/budget/categories/${categoryId}/rollover`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          // month and groupType are both required by the handler (it 400s
+          // without either), because it locates the category inside one
+          // period record's groups object. That object is keyed
+          // income/savings/EXPENSES, so this page's singular "expense" has
+          // to be pluralised - the same mapping saveBudgetToBackend does.
+          month: currentMonth,
+          groupType: groupType === "expense" ? "expenses" : groupType,
+          rolloverEnabled,
+          // Always sent, including null: null is what clears a stored cap.
+          // Omitting the field means "leave the cap alone", so spreading it
+          // conditionally made blanking the cap input a no-op.
+          rolloverCap,
+        }),
+      },
+    );
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? "Failed to save the rollover setting");
+    }
   };
 
   const handleBudgetItemSubmit = async (e: React.FormEvent) => {
@@ -1163,6 +1229,15 @@ export const BudgetPage: React.FC = () => {
       ? parseFloat(budgetItemForm.frequencyAmount)
       : undefined;
 
+    // Blank cap means "no cap", sent as an explicit null so a previously
+    // stored cap is removed rather than left behind.
+    const parsedRolloverCap =
+      budgetItemForm.rolloverCap.trim() === ""
+        ? null
+        : Number.isFinite(parseFloat(budgetItemForm.rolloverCap))
+          ? parseFloat(budgetItemForm.rolloverCap)
+          : null;
+
     if (editingCategory) {
       // Edit existing category — preserve parentId or update it
       updatedBudget.groups = updatedBudget.groups.map((group) => ({
@@ -1171,6 +1246,8 @@ export const BudgetPage: React.FC = () => {
           if (cat.id === editingCategory.id) {
             return {
               ...cat,
+              rolloverEnabled: budgetItemForm.rolloverEnabled,
+              rolloverCap: parsedRolloverCap,
               name: budgetItemForm.name,
               icon: budgetItemForm.icon,
               baseAmount: budgetItemForm.isRecurring ? baseAmount : undefined,
@@ -1251,6 +1328,39 @@ export const BudgetPage: React.FC = () => {
     );
     await saveBudgetToBackend(updatedBudget);
     console.log("[handleBudgetItemSubmit] Saved to backend, closing modal...");
+
+    // Rollover is not part of the whole-budget PUT, so save it separately —
+    // and only when it actually changed, to avoid a redundant request on
+    // every edit. Only reachable while editing: a brand-new category has no
+    // server-side categoryId yet.
+    if (editingCategory) {
+      const capChanged =
+        (editingCategory.rolloverCap ?? null) !== parsedRolloverCap;
+      const enabledChanged =
+        (editingCategory.rolloverEnabled === true) !==
+        budgetItemForm.rolloverEnabled;
+
+      if (enabledChanged || capChanged) {
+        try {
+          await saveCategoryRollover(
+            editingCategory.id,
+            selectedGroupType,
+            budgetItemForm.rolloverEnabled,
+            parsedRolloverCap,
+          );
+          await loadBudget();
+        } catch (err) {
+          console.error("[handleBudgetItemSubmit] Rollover save failed:", err);
+          // Matches how this page surfaces every other save failure.
+          alert(
+            err instanceof Error
+              ? `Saved the item, but the rollover setting did not save: ${err.message}`
+              : "Saved the item, but the rollover setting did not save.",
+          );
+        }
+      }
+    }
+
     closeBudgetItemModal();
   };
 
@@ -1940,6 +2050,15 @@ export const BudgetPage: React.FC = () => {
                   </svg>
                 </button>
 
+                {/* AI budget suggestions — hidden on mobile */}
+                <button
+                  onClick={() => setShowSuggestionsModal(true)}
+                  className="hidden sm:flex px-4 py-2 text-sm font-medium text-purple-600 border border-purple-600 rounded-md hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors items-center gap-1.5"
+                  title="Suggest amounts for this month from your spending history"
+                >
+                  ✨ AI suggestions
+                </button>
+
                 {/* Reset Button — hidden on mobile */}
                 {budget && (
                   <button
@@ -2220,6 +2339,18 @@ export const BudgetPage: React.FC = () => {
                                   {category.transactions.length > 0 && !isParent && (
                                     <span className="text-xs text-[var(--color-muted-foreground)] bg-[var(--color-muted)] px-1.5 py-0.5 rounded-full flex-shrink-0">
                                       {category.transactions.length} txn{category.transactions.length > 1 ? 's' : ''}
+                                    </span>
+                                  )}
+                                  {category.rolloverEnabled && (
+                                    <span
+                                      className="text-xs text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded-full flex-shrink-0"
+                                      title={
+                                        category.rolloverCap
+                                          ? `Unspent money rolls over, up to ${formatCurrency(category.rolloverCap, currency)}`
+                                          : "Unspent money rolls over to next month"
+                                      }
+                                    >
+                                      ↻ rollover
                                     </span>
                                   )}
                                 </div>
@@ -3334,6 +3465,18 @@ export const BudgetPage: React.FC = () => {
         mode={templateModalMode}
       />
 
+      {/* AI budget suggestions (budget-planning, extended features gateway) */}
+      <BudgetSuggestionsModal
+        isOpen={showSuggestionsModal}
+        onClose={() => setShowSuggestionsModal(false)}
+        targetMonth={budget?.month || currentMonth}
+        currency={currency}
+        onSuggestionsApplied={() => {
+          setShowSuggestionsModal(false);
+          loadBudget();
+        }}
+      />
+
       {/* Budget Item Modal */}
       {showBudgetItemModal && selectedGroupType && (
         <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
@@ -3629,6 +3772,65 @@ export const BudgetPage: React.FC = () => {
                     </p>
                   </div>
                 </>
+              )}
+
+              {/* Rollover — only while editing. A new category has no
+                  server-side categoryId yet, and the rollover endpoint is
+                  addressed by that id. */}
+              {editingCategory && selectedGroupType !== "income" && (
+                <div className="pt-2 border-t border-[var(--color-border)]">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={budgetItemForm.rolloverEnabled}
+                      onChange={(e) =>
+                        setBudgetItemForm((prev) => ({
+                          ...prev,
+                          rolloverEnabled: e.target.checked,
+                        }))
+                      }
+                      className="mt-1 h-4 w-4 rounded border-[var(--color-border)] text-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]"
+                    />
+                    <span>
+                      <span className="block text-sm font-medium text-[var(--color-foreground)]">
+                        Roll over unspent money
+                      </span>
+                      <span className="block text-xs text-[var(--color-muted-foreground)]">
+                        Whatever is left in this category at the end of the
+                        month is added to next month's budget for it.
+                      </span>
+                    </span>
+                  </label>
+
+                  {budgetItemForm.rolloverEnabled && (
+                    <div className="mt-3 ml-7">
+                      <label
+                        htmlFor="rollover-cap"
+                        className="block text-sm font-medium text-[var(--color-foreground)] mb-1"
+                      >
+                        Maximum to carry over{" "}
+                        <span className="text-xs text-[var(--color-muted-foreground)]">
+                          (optional)
+                        </span>
+                      </label>
+                      <input
+                        id="rollover-cap"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={budgetItemForm.rolloverCap}
+                        onChange={(e) =>
+                          setBudgetItemForm((prev) => ({
+                            ...prev,
+                            rolloverCap: e.target.value,
+                          }))
+                        }
+                        placeholder="No limit"
+                        className="w-full px-4 py-2.5 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                      />
+                    </div>
+                  )}
+                </div>
               )}
 
               <div className="flex space-x-3 pt-4">

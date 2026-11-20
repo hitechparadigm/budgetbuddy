@@ -7,10 +7,13 @@
 
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
+import { featuresApiUrl } from "../config/api";
+import { ID_TOKEN_KEY } from "./storage-keys";
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_FEATURES_API_URL ||
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+// /plaid/* lives on the features gateway. The fallback here was the main
+// gateway, which has no /plaid route, so without a .env every Plaid call got
+// API Gateway's 403 "Missing Authentication Token".
+const API_BASE_URL = featuresApiUrl;
 
 export interface LinkedAccount {
   accountId: string;
@@ -53,7 +56,9 @@ export interface SyncStatus {
  * Get auth headers
  */
 async function getAuthHeaders(): Promise<HeadersInit> {
-  const token = await SecureStore.getItemAsync("budgetbuddy_id_token");
+  // This read the *web* app's key ('budgetbuddy_id_token'), which is never
+  // written on mobile, so every Plaid request went out unauthenticated.
+  const token = await SecureStore.getItemAsync(ID_TOKEN_KEY);
   return {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",

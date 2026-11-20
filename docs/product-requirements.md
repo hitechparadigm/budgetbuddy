@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-09-23 (Session 162 — CategoryIcon, AiCoachChip, GoalsPage Borrowed/Lent tabs, PlannedTransactions, transaction-planning CDK, spec/steering audit)
+**Last Updated**: 2026-11-20 (Session 170 — Wave 2 core flows: planned-transaction routes, borrowed/lent goal fields, accounts on `BUDGET#` keys, rules engine, web rollover/rules/AI-suggestion entry points, mobile onboarding and create forms)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -67,7 +67,7 @@ BUDGET#<budgetId>
   ACCOUNT#<id>     → { nickname, accountType, balance }
   TRANSACTION#<id> → { amount, category, date, accountId }
   GOAL#<id>        → { name, targetAmount, currentAmount, targetDate, subType? }
-  PLAN#<planId>    → { name, amount, dueDate, categoryId, categoryName, isPaid, paidAt?, createdAt }  (entityType PLANNED_TRANSACTION)
+  PLAN#<planId>    → { amount, scheduledDate, categoryId, categoryName, isExecuted, executedTransactionId?, createdAt }  (entityType PLANNED_TRANSACTION)
 
 INVITATION#<invitationId>
   METADATA         → { budgetId, invitedEmail, role, tokenHash, status, expiresAt, viewerExpiresAt }
@@ -78,7 +78,7 @@ The verified key layout, with writer file:line and known inconsistencies, is in
 
 **`GOAL#<id>` `subType`**: optional field — `'goal'` (default), `'borrowed'`, or `'lent'`. No migration needed; existing goals without `subType` treated as regular goals.
 
-**`PLAN#<planId>`**: planned future transactions (income or expense). `isPaid: false` on creation; `POST .../mark-paid` sets `isPaid: true` + `paidAt`.
+**`PLAN#<planId>`**: planned future transactions (income or expense). The prefix is defined once in `backend/functions/transaction-planning/keys.js`. `isExecuted: false` on creation; `POST /transaction-planning/{plannedTransactionId}/mark-paid` creates the real `TXN#` record and sets `isExecuted: true` + `executedTransactionId` + `executedAt`.
 
 **GSI1**: `GSI1PK = USER#<userId>` / `GSI1SK = BUDGET#<budgetId>` — lists all budgets a user belongs to.
 
@@ -216,7 +216,8 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 ### Accounts
 - ✅ Manual accounts (Cash, Checking, Savings, etc.)
 - ✅ Plaid bank account linking
-- ✅ Default Cash account created at onboarding
+- ✅ Default Cash account created at onboarding (visible in `GET /accounts` since Wave 2, Session 170)
+- ✅ Accounts stored at `BUDGET#<budgetId>/ACCOUNT#<id>` (Wave 2 moved them off the deprecated `FAMILY#` prefix; existing rows are copied by `scripts/migrate-accounts-family-to-budget.js`, originals kept)
 - ✅ Account reconciliation
 - ✅ Account management at `/accounts`
 
@@ -239,7 +240,7 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 - ✅ Notifications: device registration, preferences (GET/PUT), notification history, push delivery via Expo
 - ✅ Net worth tracking (manual + investment accounts) — `backend/functions/net-worth/` deployed to extended stack
 - ✅ **Tools page** — `/tools` with client-side Debt Payoff Calculator (5-scenario comparison table + bar chart) and Compound Interest Calculator (up to 50yr growth chart, 5 compounding frequencies)
-- ✅ **Planned transactions** — `backend/functions/transaction-planning/` + CDK in `api-features-extended-stack.ts`; CRUD on `PLAN#<planId>` keys (update and delete return 404 today because of a path-parameter mismatch, see architecture.md "Known inconsistencies"); mark-paid endpoint; RBAC enforced (owner/partner write, viewer read-only)
+- ✅ **Planned transactions** — `backend/functions/transaction-planning/` + CDK in `api-features-extended-stack.ts`; full CRUD on `PLAN#<planId>` keys; mark-paid endpoint; RBAC enforced (owner/partner write, viewer read-only)
 
 ### Frontend
 - ✅ `BudgetMembersPage` at `/budget/members` — full member management UI
@@ -366,6 +367,17 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 ### AI (New)
 16. **AI features were serving fallbacks: fixed in Session 170 (FEAT-005), deployed and verified in DEV 2026-11-01** — the hardcoded Claude 3.x model IDs had reached end of life on Bedrock, so AI budget generation, AI insights/coach and AI pattern enhancement silently returned their deterministic fallbacks while reporting success. All now use one model, `us.anthropic.claude-haiku-4-5-20251001-v1:0` (Claude Haiku 4.5). Every fallback emits `AiFallbackUsed` (namespace `BudgetBuddy/AI`), and alarm `budgetbuddy-ai-fallback-in-use` fires on it. Verified in DEV on 2026-11-01: `POST /budget/ai-generate` returned a generated budget with no fallback, `AiInvokeSucceeded` was recorded, and the alarm is OK, so REQ-NEW-04 below holds.
 
+### Core Flows (New — Wave 2 follow-ups, Session 170)
+
+17. **`GET /auth/profile` returns 500 when the PROFILE row lacks `userId`/`email`** — a user created outside `POST /auth/register` (for example by an admin) and then onboarded gets a `USER#<userId>/PROFILE` row holding only the onboarding fields, because `auth-onboarding` SETs only those. The profile handler in `auth/index.js` reads `userId` and `email` from the row without a guard and throws. Wave 2 did not change either file; the DEV test user's row was backfilled by hand. Fix options: fall back to the ID-token claims in the handler, or `SET userId/email if_not_exists` in onboarding.
+18. **Mobile onboarding "Skip for now" creates no budget** — a user who skips lands in an app with no budget to read.
+19. **"Create a rule?" prompt in `PendingTransactions.tsx` never creates a rule** (W2-R-19) — it posts `categoryName`; `POST /rules` requires `categoryId`. Plaid-coupled.
+20. **No web recategorize control for manually entered transactions** (W2-R-05) — the "always categorize this merchant" affordance has no flow to attach to. Rules can be created from Settings instead.
+21. **`budget.test.js` has 8 failing cases** that assert the pre-ADR-001 world (`custom:familyId`, `family_user_*` keys, wildcard CORS). They are entangled with the `FAMILY#` key migration.
+22. **Accounts migration leaves the `FAMILY#*/ACCOUNT#*` originals in place** — `scripts/migrate-accounts-family-to-budget.js` copies and never deletes. Deleting the originals is a separate owner decision.
+23. **`api-features` stack is at 484 of 500 CloudFormation resources** — new routes on the Features API need a stack split or a different gateway first.
+24. **Mobile Wave 2 features have no device check** — the receipt-scan and transaction-template mounts (plan item 22), onboarding currency and create forms are verified by unit tests only; mobile is not deployed by this repo's pipeline. A queued mobile category update/delete still has no route (`/budget/categories` exposes GET and POST only).
+
 ---
 
 ## Web App Polish Plan — New Requirements (docs/web-app-polish-plan.md)
@@ -477,7 +489,9 @@ New endpoints added during web app polish, verified live:
 | Month navigation | Month nav arrows in `BudgetPage.tsx` — timezone-safe | — | ✅ |
 | Session expiry UX | Session-expired banner — shown when token refresh fails | — | ✅ |
 | Budget month rollover | `createBudgetWithRecurringItems` — copies categories, resets spentAmount; auto-repairs corrupted empty months | `GET /budget/current` (auto-triggers) | ✅ |
-| Planned transactions | `PlannedTransactionsPage.tsx` at `/planned-transactions` — full CRUD, mark-paid | `GET/POST/PUT/DELETE /transaction-planning`, `POST .../mark-paid` | ✅ |
+| Planned transactions | `PlannedTransactionsPage.tsx` at `/planned-transactions` — full CRUD, mark-paid | `GET/POST /transaction-planning`, `PUT/DELETE /transaction-planning/{plannedTransactionId}`, `POST .../{plannedTransactionId}/mark-paid` | ✅ (PUT/DELETE/mark-paid work since Wave 2) |
+| Category rollover | Rollover toggle + optional cap in BudgetPage's category edit modal; rollover badge on the row | `PUT /budget/categories/{categoryId}/rollover` | ✅ (Wave 2; was unreachable) |
+| AI budget suggestions | "AI suggestions" header action in `BudgetPage.tsx` opens `BudgetSuggestionsModal` | budget-planning API (journey 9) | ✅ (Wave 2; the modal had no importer) |
 
 ---
 
@@ -491,7 +505,7 @@ New endpoints added during web app polish, verified live:
 | Connected accounts | `ConnectedAccounts.tsx` | `GET /plaid/accounts` | ✅ |
 | Pending transactions | `PendingTransactions.tsx` | `GET /plaid/pending` | ✅ |
 | Approve/reject | `PendingTransactions.tsx` | `POST /plaid/pending/approve` | ✅ |
-| "Create a rule?" prompt | `PendingTransactions.tsx` — shown on recategorization | `POST /rules` | ✅ |
+| "Create a rule?" prompt | `PendingTransactions.tsx` — shown on recategorization | `POST /rules` | ⚠️ Never creates a rule: posts `categoryName`, the handler requires `categoryId` (W2-R-19, Known Gaps 19) |
 | Sync | `ConnectedAccounts.tsx` | `POST /plaid/sync` | ✅ |
 | Unlink | `ConnectedAccounts.tsx` | `DELETE /plaid/accounts/{id}` | ✅ |
 
@@ -559,15 +573,15 @@ New endpoints added during web app polish, verified live:
 | Feature | Frontend | Backend API | Status |
 |---------|----------|-------------|--------|
 | Goals card grid | `GoalsPage.tsx` — SVG progress rings, drag-and-drop, "Add Funds" on card | `GET /goals` | ✅ |
-| **Goals Borrowed/Lent tabs** | `GoalsPage.tsx` — three-tab layout (Goals/Borrowed/Lent); filtered by `subType` field | `GET /goals` (filtered client-side) | ✅ |
-| **BorrowLendFormPage** | `BorrowLendFormPage.tsx` at `/goals/borrow-lend/new?type=borrowed\|lent` | `POST /goals` with `subType` | ✅ |
+| **Goals Borrowed/Lent tabs** | `GoalsPage.tsx` — three-tab layout (Goals/Borrowed/Lent); filtered by `subType` field | `GET /goals` (filtered client-side) | ✅ (populates since Wave 2: the Lambda used to drop `subType`) |
+| **BorrowLendFormPage** | `BorrowLendFormPage.tsx` at `/goals/borrow-lend/new?type=borrowed\|lent` | `POST /goals` with `subType`, `personName`, `notes` | ✅ (persisted since Wave 2; `personName` required for borrowed/lent) |
 | Create / edit / delete goal | `GoalFormPage.tsx` — `htmlFor`/`id` on all fields, design token inputs | `POST/PUT/DELETE /goals` | ✅ |
 | Debt payoff calculator | `DebtPayoffPage.tsx` — redesigned strategy UX: plain-English descriptions, "Saves most" badge | `GET /debts/payoff-plan` | ✅ |
 | Debt payoff timeline | `DebtPayoffPage.tsx` — horizontal timeline, color-coded by type, payment modal | `GET /debts/summary` | ✅ |
 | Add / edit debt | `DebtFormPage.tsx` — design token focus rings + inputs | `POST/PUT /debts` | ✅ |
 | Tools — Debt Payoff Calculator | `ToolsPage.tsx` — 5 extra-payment scenarios, **public route** | — (no API) | ✅ |
 | Tools — Compound Interest | `ToolsPage.tsx` — **public route** | — (no API) | ✅ |
-| Mobile goals | `GoalsScreen.tsx` | Same as web | 🔲 Not started |
+| Mobile goals | `GoalsScreen.tsx` — Goals/Borrowed/Lent tabs and a create form (Wave 2) | Same as web | ✅ Built (unit tests only, no device check) |
 
 ---
 
@@ -588,10 +602,10 @@ New endpoints added during web app polish, verified live:
 
 | Feature | Frontend | Backend API | Status |
 |---------|----------|-------------|--------|
-| Profile settings | `SettingsPage.tsx` — tab layout: Profile/Budget/Notifications/Banks/Privacy/Help | `GET/PUT /auth/profile` | ✅ |
+| Profile settings | `SettingsPage.tsx` — tab layout: Profile/Budget/Notifications/Banks/Privacy/Help | `GET/PUT /auth/profile` | ✅ (⚠️ 500 for a user whose PROFILE row lacks `userId`/`email`, Known Gaps 17) |
 | Budget members | Links to `BudgetMembersPage.tsx` | — | ✅ |
 | Notification settings | `NotificationSettings.tsx` | — | ✅ |
-| Auto-categorization rules | `TransactionRulesSection` in `SettingsPage.tsx` | `GET/DELETE /rules` | ✅ |
+| Auto-categorization rules | `TransactionRulesSection` in `SettingsPage.tsx` — list, "Add rule" form (merchant pattern + category), delete; failures are shown | `GET/POST/DELETE /rules` | ✅ (Wave 2: every rules path failed before, and a rule could only be created through the Plaid flow) |
 | Delete account | `DeleteAccountModal.tsx` | `DELETE /auth/account` | ✅ |
 | Dark mode | `ThemeContext.tsx` — full systematic token coverage across all 81 page + component files | — | ✅ |
 | Pricing page | `PricingPage.tsx` at `/pricing` | — | ✅ |
@@ -606,7 +620,7 @@ New endpoints added during web app polish, verified live:
 |---------|----------|-------------|--------|
 | Pattern detection | `BillsPage.tsx` | `GET /pattern-detection/patterns` | ✅ |
 | Mark as recurring | `BudgetPage.tsx` | `POST /pattern-detection/mark-recurring` | ✅ |
-| Budget suggestions | `BudgetSuggestionsModal.tsx` | `POST /budget-planning/suggestions` | ✅ |
+| Budget suggestions | `BudgetSuggestionsModal.tsx`, opened from the "AI suggestions" action on `BudgetPage.tsx` (mounted in Wave 2; it had no importer before) | `POST /budget-planning/suggestions` | ✅ |
 | Pattern review | `PatternReviewModal.tsx` | `PUT /pattern-detection/patterns/{id}` | ✅ |
 
 ---
@@ -619,9 +633,10 @@ New endpoints added during web app polish, verified live:
 |---------|----------|-------------|--------|
 | List planned transactions | `PlannedTransactionsPage.tsx` at `/planned-transactions` | `GET /transaction-planning` | ✅ |
 | Create planned transaction | Create form modal in `PlannedTransactionsPage.tsx` | `POST /transaction-planning` | ✅ |
-| Edit planned transaction | Edit modal in `PlannedTransactionsPage.tsx` | `PUT /transaction-planning/{id}` | ✅ |
-| Delete planned transaction | Delete confirmation in `PlannedTransactionsPage.tsx` | `DELETE /transaction-planning/{id}` | ✅ |
-| Mark as paid | Mark-paid button with visual indicator | `POST /transaction-planning/{id}/mark-paid` | ✅ |
+| Edit planned transaction | Edit modal in `PlannedTransactionsPage.tsx` | `PUT /transaction-planning/{plannedTransactionId}` | ✅ (returned 404 until Wave 2) |
+| Delete planned transaction | Delete confirmation in `PlannedTransactionsPage.tsx` | `DELETE /transaction-planning/{plannedTransactionId}` | ✅ (returned 404 until Wave 2) |
+| Mark as paid | Mark-paid button with visual indicator; creates the real transaction | `POST /transaction-planning/{plannedTransactionId}/mark-paid` | ✅ (clients called an unrouted `/execute` until Wave 2) |
+| Mobile planned transactions | `PlannedTransactionsScreen.tsx` — same routes as web | Same as web | ✅ Built (unit tests only) |
 | Sidebar navigation | CalendarClock + "Planned" in Manage group (`Sidebar.tsx`) | — | ✅ |
 
 ---
@@ -633,15 +648,20 @@ New endpoints added during web app polish, verified live:
 **Status**: Design complete (`docs/mobile-ux-design.md`), spec created (`.kiro/specs/mobile-app/`). The
 per-feature statuses below are stale as of the Session 164 audit — the app is substantially built. See
 Known Gaps item 10 and `.kiro/specs/mobile-app/tasks.md` for the audited, evidence-based task list;
-only the Authentication row has been re-verified against the source (Session 170).
+the Authentication, Onboarding and Goals rows and the "Added in Wave 2" rows have been re-verified
+against the source (Session 170). Mobile is not deployed by this repo's pipeline; every mobile row
+is verified by unit tests only, with no device check.
 
 | Feature | Frontend | Status |
 |---------|----------|--------|
 | Authentication (email; Google PKCE not working, no Google IdP on the pool) | `LoginScreen`, `RegisterScreen` | ✅ Built — registration goes through `POST /auth/register` (Cognito self sign-up is disabled); sign-in stays on Amplify SRP. `RegisterScreen` collects first and last name, which the user pool requires. Email confirmation is not used: accounts are created already confirmed, so `ConfirmSignUpScreen` is unreachable |
-| Onboarding (budget type + AI generation) | `BudgetTypeScreen`, `AIGenerationScreen` | 🔲 Not started |
+| Onboarding | `OnboardingScreen` + `OnboardingFlow`, `services/onboarding.ts` | ✅ Built (Wave 2) — posts the web payload to `POST /auth/onboarding` with the picked currency, 409 counts as success, failures are shown. "Skip for now" creates no budget (Known Gaps 18) |
+| Added in Wave 2: create forms | `GoalsScreen`, `BillsScreen`, `SubscriptionsScreen`, `DebtPayoffScreen` | ✅ Built — `POST /goals`, `POST /bills` (main), `POST /subscriptions`, `POST /debts` (features) |
+| Added in Wave 2: per-gateway clients | `config/api.ts`, `services/api.ts` | ✅ Built — `api`, `featuresApi`, `extendedFeaturesApi`, `budgetsApi`; shared `ID_TOKEN_KEY` |
+| Added in Wave 2: search, sync conflicts, receipts | `services/search.ts`, `components/ui/Toast.tsx`, `ReceiptConfirmation` in `TransactionsScreen` | ✅ Built — conflict toasts; receipt files against the budget's real categories |
 | Budget screen (groups, categories, FAB) | `BudgetScreen` | 🔲 Not started |
 | Quick transaction entry (bottom sheet) | `AddTransactionSheet` | 🔲 Not started |
-| Goals screen (Goals/Borrowed/Lent tabs) | `GoalsScreen` | 🔲 Not started |
+| Goals screen (Goals/Borrowed/Lent tabs) | `GoalsScreen` | ✅ Built (Wave 2) — three tabs filtered by `subType`, create form including `personName` |
 | Offline SQLite sync | `db/` + sync hooks | 🔲 Not started |
 | Push notifications | Expo Notifications | 🔲 Not started |
 

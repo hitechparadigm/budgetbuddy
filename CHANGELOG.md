@@ -1,4 +1,49 @@
 # Changelog
+## [1.14.0] - 2026-11-20
+### feat: core flows (Wave 2, Session 170)
+Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`). No file under
+`infrastructure/` changed; `api-features` stays at 484 of 500 CloudFormation resources.
+#### Added
+- `scripts/migrate-accounts-family-to-budget.js`: copies `FAMILY#*/ACCOUNT#*` rows to
+  `BUDGET#*/ACCOUNT#*`. Dry run by default; `--apply` refuses any table other than
+  `budgetbuddy-main` and needs a confirmed caller identity; skips targets that already exist;
+  never modifies or deletes the originals.
+- Web: "Add rule" form in Settings (no bank link needed), rollover toggle and cap in BudgetPage's
+  category edit modal, and an "AI suggestions" action that opens `BudgetSuggestionsModal`.
+- Mobile: onboarding calls `/auth/onboarding` (409 counts as success) and forwards the picked
+  currency; real create forms for goals (incl. borrowed/lent), bills, subscriptions and debts;
+  sync-conflict toasts (`components/ui/Toast.tsx`); receipt scan and transaction templates mounted
+  in TransactionsScreen; `services/search.ts` holds the transaction filter.
+- Mobile `config/api.ts`: one client per gateway (`api`, `featuresApi`, `extendedFeaturesApi`,
+  `budgetsApi`), defaults from `EXPO_PUBLIC_*`.
+- Tests: rules (24, new suite), transaction-planning routes and keys (17), accounts (28),
+  goals (53), rollover cap (5), mobile api-routing (22), onboarding, offline sync, sync
+  conflicts, receipt confirmation.
+#### Fixed
+- Planned transactions: PUT/DELETE read `pathParameters.plannedTransactionId` (they returned 404);
+  mark-paid is `POST /transaction-planning/{plannedTransactionId}/mark-paid`, replacing an
+  unrouted `/execute`; `PLAN#` keys go through `keys.js`; list filter precedence no longer returns
+  soft-deleted plans or other entity types.
+- Goals persist and return `subType`, `personName` and `notes`, validated against the merged
+  subType on update.
+- Accounts use `BUDGET#<budgetId>/ACCOUNT#<id>` instead of the deprecated `FAMILY#` prefix, write
+  no GSI1 keys, and format the onboarding Cash account (`balance`, no `isTracked`).
+- Rules Lambda: `budget.write` -> `budget.edit`, `errorResponse.internal` -> `internalError`,
+  `dynamoHelpers.query` -> `queryByPK`, nonexistent `deleteItem` -> soft delete, keyless
+  `putItem` -> keyed `updateItem`. Every rules path failed before.
+- Budget rollover: blanking a cap clears it; disabling rollover drops the cap.
+- Mobile: services route to their real gateway (they got 403 from the main one); `plaid.ts` read
+  the web app's storage key and sent unauthenticated requests; `/categories` -> `/budget/categories`;
+  receipt confirmation files against the budget's real categories and keeps user edits on
+  re-render; offline-queue clear/retry implemented; rejected 4xx requests are not replayed.
+- Tests: rollover fixtures use the flat category shape; debt-payoff properties assert what the
+  strategies guarantee (the old avalanche <= snowball property is false).
+#### Changed
+- Mobile Google sign-in button is disabled with an explanation; the backend cannot complete the
+  flow.
+#### Removed
+- `POST /transaction-planning/execute` handler branch (no gateway route reached it).
+- Mobile `QuickActionsFAB.test.tsx` (it tested its own mocks).
 ## [1.13.18] - 2026-11-20
 ### ci: move GitHub Actions to Node 24 action versions (Session 170)
 #### Changed

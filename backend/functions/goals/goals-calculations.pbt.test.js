@@ -1,13 +1,23 @@
 ﻿/**
  * Goal Calculations Property-Based Tests
  *
- * Property-based tests for savings and debt payoff goal calculations.
+ * Property-based tests for savings goal calculations.
  * These tests verify mathematical invariants for goal progress tracking.
  *
  * **Property 11: Savings Goal Calculation**
- * **Property 12: Debt Payoff Calculation**
  * **Property 13: Goal Math Accuracy**
  * **Validates: Requirements 9.1, 9.2, 9.6**
+ *
+ * Property 12 (debt payoff) used to live here against its own copy of the
+ * snowball and avalanche algorithms, which meant it could not detect a
+ * regression in shipped code. It now lives in
+ * backend/functions/debt-payoff/debt-payoff.pbt.test.js, which imports the
+ * real `calculatePayoffPlan` from that Lambda.
+ *
+ * KNOWN GAP: the savings and milestone helpers below are still local copies,
+ * because goals/index.js exports only `sendMilestoneNotifications`. Pointing
+ * them at the real code needs the handler to export them, which is a change
+ * to a deployed Lambda's surface and is left as its own task.
  */
 
 const fc = require("fast-check");
@@ -52,92 +62,6 @@ function calculateMonthsBetween(startDate, endDate) {
 }
 
 /**
- * Calculate debt payoff using snowball method (smallest balance first).
- */
-function calculateSnowballPayoff(debts, extraPayment) {
-  if (!debts || debts.length === 0) return { months: 0, totalInterest: 0 };
-
-  // Sort by balance (smallest first)
-  const sorted = [...debts].sort((a, b) => a.balance - b.balance);
-
-  let totalInterest = 0;
-  let months = 0;
-  let remainingDebts = sorted.map((d) => ({ ...d }));
-
-  while (remainingDebts.some((d) => d.balance > 0) && months < 360) {
-    months++;
-    let availableExtra = extraPayment;
-
-    for (let i = 0; i < remainingDebts.length; i++) {
-      const debt = remainingDebts[i];
-      if (debt.balance <= 0) continue;
-
-      // Calculate monthly interest
-      const monthlyRate = debt.interestRate / 100 / 12;
-      const interest = debt.balance * monthlyRate;
-      totalInterest += interest;
-
-      // Apply payment
-      let payment = debt.minimumPayment;
-      if (i === remainingDebts.findIndex((d) => d.balance > 0)) {
-        payment += availableExtra;
-        availableExtra = 0;
-      }
-
-      debt.balance = debt.balance + interest - payment;
-      if (debt.balance < 0) {
-        availableExtra += Math.abs(debt.balance);
-        debt.balance = 0;
-      }
-    }
-  }
-
-  return { months, totalInterest: Math.round(totalInterest * 100) / 100 };
-}
-
-/**
- * Calculate debt payoff using avalanche method (highest interest first).
- */
-function calculateAvalanchePayoff(debts, extraPayment) {
-  if (!debts || debts.length === 0) return { months: 0, totalInterest: 0 };
-
-  // Sort by interest rate (highest first)
-  const sorted = [...debts].sort((a, b) => b.interestRate - a.interestRate);
-
-  let totalInterest = 0;
-  let months = 0;
-  let remainingDebts = sorted.map((d) => ({ ...d }));
-
-  while (remainingDebts.some((d) => d.balance > 0) && months < 360) {
-    months++;
-    let availableExtra = extraPayment;
-
-    for (let i = 0; i < remainingDebts.length; i++) {
-      const debt = remainingDebts[i];
-      if (debt.balance <= 0) continue;
-
-      const monthlyRate = debt.interestRate / 100 / 12;
-      const interest = debt.balance * monthlyRate;
-      totalInterest += interest;
-
-      let payment = debt.minimumPayment;
-      if (i === remainingDebts.findIndex((d) => d.balance > 0)) {
-        payment += availableExtra;
-        availableExtra = 0;
-      }
-
-      debt.balance = debt.balance + interest - payment;
-      if (debt.balance < 0) {
-        availableExtra += Math.abs(debt.balance);
-        debt.balance = 0;
-      }
-    }
-  }
-
-  return { months, totalInterest: Math.round(totalInterest * 100) / 100 };
-}
-
-/**
  * Check if goal has reached a milestone.
  */
 function checkMilestone(previousProgress, currentProgress) {
@@ -160,14 +84,6 @@ const savingsGoalArbitrary = fc.record({
   targetAmount: fc.integer({ min: 100, max: 100000 }),
   currentAmount: fc.integer({ min: 0, max: 100000 }),
   monthsRemaining: fc.integer({ min: 1, max: 120 }),
-});
-
-const debtArbitrary = fc.record({
-  id: fc.string({ minLength: 1, maxLength: 20 }),
-  name: fc.string({ minLength: 1, maxLength: 50 }),
-  balance: fc.integer({ min: 100, max: 50000 }),
-  interestRate: fc.integer({ min: 0, max: 30 }),
-  minimumPayment: fc.integer({ min: 25, max: 500 }),
 });
 
 // ============================================================================
@@ -261,82 +177,6 @@ describe("Property 11: Savings Goal Calculation", () => {
         }),
         { numRuns: 100 },
       );
-    });
-  });
-});
-
-describe("Property 12: Debt Payoff Calculation", () => {
-  describe("12.1: Avalanche Saves Interest When Rates Differ Significantly", () => {
-    test("avalanche saves interest when all debts have positive interest rates", () => {
-      // Generate debts with positive interest rates only
-      const positiveRateDebtArbitrary = fc.record({
-        id: fc.string({ minLength: 1, maxLength: 20 }),
-        name: fc.string({ minLength: 1, maxLength: 50 }),
-        balance: fc.integer({ min: 1000, max: 20000 }),
-        interestRate: fc.integer({ min: 5, max: 25 }), // Positive rates only
-        minimumPayment: fc.integer({ min: 50, max: 300 }),
-      });
-
-      fc.assert(
-        fc.property(
-          fc.array(positiveRateDebtArbitrary, { minLength: 2, maxLength: 4 }),
-          fc.integer({ min: 100, max: 500 }),
-          (debts, extraPayment) => {
-            // Ensure debts have different interest rates
-            const uniqueRates = new Set(debts.map((d) => d.interestRate));
-            fc.pre(uniqueRates.size > 1);
-
-            const snowball = calculateSnowballPayoff(debts, extraPayment);
-            const avalanche = calculateAvalanchePayoff(debts, extraPayment);
-
-            // Avalanche should save interest or be equal
-            expect(avalanche.totalInterest).toBeLessThanOrEqual(
-              snowball.totalInterest + 1,
-            );
-          },
-        ),
-        { numRuns: 50 },
-      );
-    });
-  });
-
-  describe("12.2: Payoff Months Are Reasonable", () => {
-    test("payoff months is positive for non-zero debt", () => {
-      fc.assert(
-        fc.property(
-          fc.array(debtArbitrary, { minLength: 1, maxLength: 3 }),
-          fc.integer({ min: 0, max: 200 }),
-          (debts, extraPayment) => {
-            const result = calculateSnowballPayoff(debts, extraPayment);
-            expect(result.months).toBeGreaterThan(0);
-          },
-        ),
-        { numRuns: 50 },
-      );
-    });
-
-    test("more extra payment means fewer months", () => {
-      fc.assert(
-        fc.property(
-          fc.array(debtArbitrary, { minLength: 1, maxLength: 3 }),
-          fc.integer({ min: 50, max: 200 }),
-          (debts, extraBase) => {
-            const result1 = calculateSnowballPayoff(debts, extraBase);
-            const result2 = calculateSnowballPayoff(debts, extraBase + 100);
-
-            expect(result2.months).toBeLessThanOrEqual(result1.months);
-          },
-        ),
-        { numRuns: 50 },
-      );
-    });
-  });
-
-  describe("12.3: Empty Debt Handling", () => {
-    test("empty debt array returns 0 months and 0 interest", () => {
-      const result = calculateSnowballPayoff([], 100);
-      expect(result.months).toBe(0);
-      expect(result.totalInterest).toBe(0);
     });
   });
 });

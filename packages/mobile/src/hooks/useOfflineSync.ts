@@ -6,7 +6,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getNetworkStatus } from '../services/api';
-import { getStorageStats } from '../services/offline';
+import {
+  getStorageStats,
+  getSyncQueue,
+  removeFromSyncQueue,
+  updateSyncQueueItem,
+} from '../services/offline';
 import { syncService, SyncResult } from '../services/syncService';
 
 export interface SyncStatus {
@@ -137,22 +142,50 @@ export const useOfflineSync = (): UseOfflineSyncReturn => {
   // Clear sync queue (for debugging/reset)
   const clearSyncQueue = useCallback(async () => {
     try {
-      // This would need to be implemented in syncService
-      console.log('Clear sync queue not implemented in sync service yet');
+      // Read the queue and remove every item. This discards pending local
+      // changes, which is the point: it is the reset for a queue wedged by an
+      // item the server will never accept.
+      const queue = await getSyncQueue();
+      for (const item of queue) {
+        await removeFromSyncQueue(item.id);
+      }
       await updateSyncStatus();
     } catch (error) {
       console.error('Failed to clear sync queue:', error);
+      setSyncStatus(prev => ({
+        ...prev,
+        lastError:
+          error instanceof Error ? error.message : 'Failed to clear sync queue',
+      }));
     }
   }, [updateSyncStatus]);
 
   // Retry failed items
   const retryFailedItems = useCallback(async () => {
     try {
-      // This would need to be implemented in syncService
-      console.log('Retry failed items not implemented in sync service yet');
+      // Reset the retry counter and clear the recorded error on everything
+      // that failed at least once, then sync. Without the reset, an item that
+      // hit the retry ceiling would be skipped again immediately.
+      const queue = await getSyncQueue();
+      const failed = queue.filter(
+        item => item.retryCount > 0 || item.lastError !== undefined,
+      );
+
+      for (const item of failed) {
+        await updateSyncQueueItem(item.id, {
+          retryCount: 0,
+          lastError: undefined,
+        });
+      }
+
       await triggerSync();
     } catch (error) {
       console.error('Failed to retry items:', error);
+      setSyncStatus(prev => ({
+        ...prev,
+        lastError:
+          error instanceof Error ? error.message : 'Failed to retry items',
+      }));
     }
   }, [triggerSync]);
 

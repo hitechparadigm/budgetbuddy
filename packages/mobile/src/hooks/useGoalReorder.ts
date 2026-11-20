@@ -7,8 +7,11 @@ import { useState, useCallback } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useHaptics } from "./useHaptics";
 
-const API_BASE_URL =
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+import { apiBaseUrl } from "../config/api";
+
+
+// /goals lives on the main gateway.
+const API_BASE_URL = apiBaseUrl;
 
 interface UseGoalReorderOptions {
   onSuccess?: () => void;

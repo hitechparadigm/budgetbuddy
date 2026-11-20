@@ -15,6 +15,8 @@ import {
   Pressable,
   FlatList,
   ScrollView,
+  Modal,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -24,8 +26,11 @@ import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../contexts/AuthContext";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
-const API_BASE_URL =
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+import { featuresApiUrl } from "../config/api";
+
+
+// /debts lives on the features gateway, not the main gateway.
+const API_BASE_URL = featuresApiUrl;
 
 interface Debt {
   debtId: string;
@@ -65,6 +70,78 @@ export default function DebtPayoffScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [strategy, setStrategy] = useState<Strategy>("snowball");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    name: "",
+    currentBalance: "",
+    interestRate: "",
+    minimumPayment: "",
+  });
+
+  /**
+   * Create a debt. POST /debts requires name, a non-negative currentBalance,
+   * an interestRate between 0 and 100 and a non-negative minimumPayment, all
+   * as numbers (backend/functions/debt-payoff/index.js).
+   */
+  const handleCreateDebt = async () => {
+    const currentBalance = parseFloat(form.currentBalance);
+    const interestRate = parseFloat(form.interestRate);
+    const minimumPayment = parseFloat(form.minimumPayment);
+
+    if (!form.name.trim()) {
+      setCreateError("Enter a debt name.");
+      return;
+    }
+    if (isNaN(currentBalance) || currentBalance < 0) {
+      setCreateError("Enter the current balance.");
+      return;
+    }
+    if (isNaN(interestRate) || interestRate < 0 || interestRate > 100) {
+      setCreateError("Enter an interest rate between 0 and 100.");
+      return;
+    }
+    if (isNaN(minimumPayment) || minimumPayment < 0) {
+      setCreateError("Enter the minimum payment.");
+      return;
+    }
+
+    try {
+      setCreating(true);
+      setCreateError(null);
+
+      const response = await fetch(`${API_BASE_URL}/debts`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          currentBalance,
+          interestRate,
+          minimumPayment,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message ?? "Failed to add the debt");
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowCreateModal(false);
+      await loadDebts();
+    } catch (err) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setCreateError(
+        err instanceof Error ? err.message : "Failed to add the debt"
+      );
+    } finally {
+      setCreating(false);
+    }
+  };
   const currency = "USD";
 
   const loadDebts = useCallback(async () => {
@@ -430,11 +507,124 @@ export default function DebtPayoffScreen() {
             label: "Add Debt",
             onPress: () => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              Alert.alert("Add Debt", "Debt form coming soon!");
+              setForm({
+                name: "",
+                currentBalance: "",
+                interestRate: "",
+                minimumPayment: "",
+              });
+              setCreateError(null);
+              setShowCreateModal(true);
             },
           },
         ]}
       />
+
+      {/* Create debt */}
+      <Modal
+        visible={showCreateModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[styles.modalContent, { backgroundColor: colors.surface }]}
+          >
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              Add Debt
+            </Text>
+
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Debt name"
+              placeholderTextColor={colors.textSecondary}
+              value={form.name}
+              onChangeText={(name) => setForm((f) => ({ ...f, name }))}
+              accessibilityLabel="Debt name"
+            />
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Current balance"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="decimal-pad"
+              value={form.currentBalance}
+              onChangeText={(currentBalance) =>
+                setForm((f) => ({ ...f, currentBalance }))
+              }
+              accessibilityLabel="Current balance"
+            />
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Interest rate (%)"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="decimal-pad"
+              value={form.interestRate}
+              onChangeText={(interestRate) =>
+                setForm((f) => ({ ...f, interestRate }))
+              }
+              accessibilityLabel="Interest rate"
+            />
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Minimum monthly payment"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="decimal-pad"
+              value={form.minimumPayment}
+              onChangeText={(minimumPayment) =>
+                setForm((f) => ({ ...f, minimumPayment }))
+              }
+              accessibilityLabel="Minimum payment"
+            />
+
+            {createError && (
+              <Text style={[styles.modalError, { color: colors.error }]}>
+                {createError}
+              </Text>
+            )}
+
+            <View style={styles.modalButtons}>
+              <Pressable
+                onPress={() => setShowCreateModal(false)}
+                style={[styles.modalButton, { borderColor: colors.border }]}
+              >
+                <Text style={[styles.modalButtonText, { color: colors.text }]}>
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleCreateDebt}
+                disabled={creating}
+                style={[
+                  styles.modalButton,
+                  styles.modalButtonPrimary,
+                  {
+                    backgroundColor: creating
+                      ? colors.textSecondary
+                      : colors.primary,
+                  },
+                ]}
+              >
+                <Text style={styles.modalButtonTextPrimary}>
+                  {creating ? "Saving..." : "Add"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -442,6 +632,57 @@ export default function DebtPayoffScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalContent: {
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  modalError: {
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 4,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  modalButtonPrimary: {
+    borderWidth: 0,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  modalButtonTextPrimary: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#ffffff",
   },
   header: {
     flexDirection: "row",

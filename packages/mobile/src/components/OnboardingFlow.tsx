@@ -28,9 +28,17 @@ import { getAllCities } from "@budget-buddy/shared/src/data/cityExpenseData";
 import { CurrencySelector } from "./CurrencySelector";
 
 interface OnboardingFlowProps {
+  /**
+   * `currency` is a third argument rather than a field on
+   * `OnboardingSuggestions`, because that type carries only what the city
+   * data produces (city, country, familySize, classification, categories,
+   * totalMonthlyBudget) and the currency is a user choice collected by the
+   * currency step. The web app's OnboardingFlow has the same signature.
+   */
   onComplete: (
     suggestions: OnboardingSuggestions,
     selectedCategories: CategorySuggestion[],
+    currency: string,
   ) => void;
   onSkip: () => void;
 }
@@ -116,7 +124,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   const handleComplete = () => {
     if (suggestions) {
-      onComplete(suggestions, selectedCategories);
+      onComplete(suggestions, selectedCategories, currency);
     }
   };
 

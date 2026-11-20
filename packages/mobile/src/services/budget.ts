@@ -4,7 +4,9 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, queryKeys, getNetworkStatus } from './api';
+// /budgets/* lives on the dedicated budgets gateway (api-budgets-stack.ts),
+// not the main gateway.
+import { budgetsApi, queryKeys, getNetworkStatus } from './api';
 import {
   storeOfflineData,
   getOfflineData,
@@ -290,7 +292,7 @@ const fetchBudgets = async (filters?: BudgetFilters): Promise<Budget[]> => {
   try {
     if (isOnline) {
       // Try to fetch from API
-      const response = await api.get<Budget[]>('/budgets', filters as Record<string, string | number>);
+      const response = await budgetsApi.get<Budget[]>('/budgets', filters as Record<string, string | number>);
 
       // Store in offline storage
       for (const budget of response.data) {
@@ -322,7 +324,7 @@ const fetchBudgetSummary = async (budgetId: string, year: number, month: number)
 
   try {
     if (isOnline) {
-      const response = await api.get<BudgetSummary>(`/budgets/${budgetId}/summary`, {
+      const response = await budgetsApi.get<BudgetSummary>(`/budgets/${budgetId}/summary`, {
         year: year.toString(),
         month: month.toString(),
       });
@@ -486,7 +488,7 @@ const createBudget = async (budgetData: CreateBudgetRequest): Promise<Budget> =>
   if (isOnline) {
     try {
       // Try to create on server
-      const response = await api.post<Budget>('/budgets', budgetData);
+      const response = await budgetsApi.post<Budget>('/budgets', budgetData);
 
       // Update with server ID and mark as synced
       const serverBudget = response.data;
@@ -542,7 +544,7 @@ const updateBudget = async (budgetData: UpdateBudgetRequest): Promise<Budget> =>
   if (isOnline) {
     try {
       // Try to update on server
-      const response = await api.put<Budget>(`/budgets/${budgetData.id}`, budgetData);
+      const response = await budgetsApi.put<Budget>(`/budgets/${budgetData.id}`, budgetData);
 
       // Mark as synced
       const serverBudget = response.data;
@@ -583,7 +585,7 @@ const deleteBudget = async (budgetId: string): Promise<void> => {
   if (isOnline) {
     try {
       // Try to delete on server
-      await api.delete(`/budgets/${budgetId}`);
+      await budgetsApi.delete(`/budgets/${budgetId}`);
     } catch (error) {
       console.warn('Failed to delete budget on server, queued for sync:', error);
 

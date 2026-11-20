@@ -221,9 +221,9 @@ Key layout as the code writes it:
 | Budget metadata | `BUDGET#<budgetId>` | `METADATA` | `auth-onboarding/index.js:146` |
 | Budget member | `BUDGET#<budgetId>` | `MEMBER#<userId>` (GSI1PK `USER#<userId>`) | `budgets/index.js:371-372` |
 | Budget period | `BUDGET#<budgetId>` | `PERIOD#<YYYY-MM>` | `budget/index.js:299` |
-| Account | `BUDGET#<budgetId>` | `ACCOUNT#<accountId>` | `auth-onboarding/index.js:265-266` |
+| Account | `BUDGET#<budgetId>` | `ACCOUNT#<accountId>` (no GSI keys) | `accounts/repository.js:25`, `auth-onboarding/index.js:265-266` |
 | Transaction | `BUDGET#<budgetId>` | `TRANSACTION#<transactionId>` (GSI1 `BUDGET#<id>` / `DATE#<date>`) | `transactions/index.js:445-448` |
-| Planned transaction | `BUDGET#<budgetId>` | `PLAN#<planId>`, `entityType: 'PLANNED_TRANSACTION'` | `transaction-planning/index.js:128-130` |
+| Planned transaction | `BUDGET#<budgetId>` | `PLAN#<planId>`, `entityType: 'PLANNED_TRANSACTION'` | `transaction-planning/keys.js:13,20-24`, `transaction-planning/index.js:138` |
 | Goal | `BUDGET#<budgetId>` | `GOAL#<goalId>` | `goals/index.js:258` |
 | Bill | `BUDGET#<budgetId>` | `BILL#<billId>` (GSI1PK `BILLS#<YYYY-MM>`) | `bills/index.js:282-283` |
 | Invitation | `INVITATION#<invitationId>` | `METADATA` (GSI4 `INVITATION#<email>` / `CREATED#<timestamp>`, 7-day expiry) | `budgets/index.js:483-486` |
@@ -250,24 +250,24 @@ site at a time.
 
 - **`TXN#` vs `TRANSACTION#`.** Transactions are written as `TRANSACTION#` by `transactions/index.js:446`,
   `plaid/index.js:904`, `bills/index.js:417` and `restore/index.js:151`. Executing a planned transaction
-  writes `TXN#` instead (`transaction-planning/index.js:279`). Export, peer comparison and tips query
+  writes `TXN#` instead (`transaction-planning/index.js:307`). Export, peer comparison and tips query
   `begins_with(SK, 'TXN#')` (`export/index.js:60`, `comparison/index.js:317`, `tips/index.js:623`), so
   they miss every normally created transaction. The stream filter that feeds budget alerts matches only
   `TRANSACTION#` inserts (`notification-stack.ts:155`), so executed planned transactions raise no alert.
-- **Surviving `FAMILY#` keys.** The accounts Lambda passes the budget ID into a repository that writes
-  `FAMILY#<budgetId>/ACCOUNT#...` (`accounts/repository.js:21-23`), while onboarding writes the default
-  cash account under `BUDGET#` (`auth-onboarding/index.js:265`). `FAMILY#` is also read or written by
+- **Surviving `FAMILY#` keys.** `FAMILY#` is still read or written by
   `daily-reminders/index.js:67,254,601`, `pattern-detection/pattern-detection-repository.js:46,74`,
-  `restore/index.js:110,150` and the undeployed `scheduled-backup/index.js:65`.
+  `restore/index.js:110,150` and the undeployed `scheduled-backup/index.js:65`. Accounts moved to
+  `BUDGET#` in Wave 2 (2026-11-20); `scripts/migrate-accounts-family-to-budget.js` copies the old
+  `FAMILY#<budgetId>/ACCOUNT#...` rows and leaves the originals in place.
 - **`PLAN#` vs `PLANNED_TXN#`.** Older docs and steering describe `PLANNED_TXN#<id>`; the code writes
-  `PLAN#<planId>` (`transaction-planning/index.js:129`).
+  `PLAN#<planId>`, built only by `plannedTxnSK()` (`transaction-planning/keys.js:13,20-24`).
 - **Unused indexes.** GSI2 is written but never queried and GSI3 is never written
   (`database-stack.ts` comments describe access patterns that no code uses).
 - **Plaid access token in plaintext.** The token is stored on the `PLAID_ACCOUNT#` item
   (`plaid/index.js:308`) instead of Secrets Manager or a KMS-encrypted attribute.
-- **Route and handler drift.** CDK names the planned-transaction path parameter `{plannedTransactionId}`
-  (`api-features-extended-stack.ts:578`) while the handler reads `pathParameters.planId`
-  (`transaction-planning/index.js:65,70`), so update and delete return 404. `POST /auth/confirm` has a
+- **Route and handler drift.** (The planned-transaction `{plannedTransactionId}` mismatch was fixed in
+  Wave 2: the handler reads `pathParameters.plannedTransactionId`, `transaction-planning/index.js:57-86`,
+  and mark-paid is `POST /transaction-planning/{plannedTransactionId}/mark-paid`.) `POST /auth/confirm` has a
   CDK route (`api-stack.ts:502`) but no handler branch, so it falls through to the auth Lambda's
   placeholder "other POST" response and returns 200 without doing anything (`auth/index.js:1625-1628`).
 

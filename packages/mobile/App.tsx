@@ -18,6 +18,7 @@ import { handleNotificationNavigation } from "./src/utils/notificationNavigation
 import { initializeOfflineStorage } from "./src/services/offline";
 import { initializeApiClient, getApiClient } from "./src/services/api";
 import { syncService } from "./src/services/syncService";
+import { ToastHost } from "./src/components/ui";
 
 // Import Amplify configuration
 import "./src/config/amplify";
@@ -147,6 +148,8 @@ export default function App() {
         <AuthProvider>
           <CurrencyProvider>
             <AppNavigator />
+            {/* Surfaces resolved sync conflicts wherever the user is. */}
+            <ToastHost />
             <StatusBar style="auto" />
           </CurrencyProvider>
         </AuthProvider>

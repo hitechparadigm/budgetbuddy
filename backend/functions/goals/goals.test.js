@@ -235,6 +235,396 @@ describe("Goals Lambda Handler", () => {
     });
   });
 
+  describe("borrowed / lent goals", () => {
+    function createEvent(payload) {
+      return {
+        httpMethod: "POST",
+        path: "/goals",
+        headers: { Authorization: "Bearer test-token" },
+        body: JSON.stringify(payload),
+      };
+    }
+
+    beforeEach(() => {
+      dynamoHelpers.queryByPK.mockResolvedValue([]);
+    });
+
+    it("round-trips subType, personName and notes on create", async () => {
+      const result = await handler(
+        createEvent({
+          name: "Borrowed from John",
+          targetAmount: 500,
+          subType: "borrowed",
+          personName: "John Smith",
+          notes: "For car repair",
+        }),
+        { awsRequestId: "test-123" },
+      );
+      const body = JSON.parse(result.body);
+
+      expect(result.statusCode).toBe(200);
+      expect(body.data.subType).toBe("borrowed");
+      expect(body.data.personName).toBe("John Smith");
+      expect(body.data.notes).toBe("For car repair");
+
+      // The three fields must be persisted, not only echoed back.
+      const [stored] = dynamoHelpers.putItem.mock.calls[0];
+      expect(stored.subType).toBe("borrowed");
+      expect(stored.personName).toBe("John Smith");
+      expect(stored.notes).toBe("For car repair");
+    });
+
+    it("supports subType 'lent'", async () => {
+      const result = await handler(
+        createEvent({
+          name: "Lent to Bob",
+          targetAmount: 100,
+          subType: "lent",
+          personName: "Bob",
+        }),
+        { awsRequestId: "test-123" },
+      );
+      const body = JSON.parse(result.body);
+
+      expect(result.statusCode).toBe(200);
+      expect(body.data.subType).toBe("lent");
+      expect(body.data.personName).toBe("Bob");
+    });
+
+    it("rejects an unknown subType with 400", async () => {
+      const result = await handler(
+        createEvent({ name: "x", targetAmount: 1, subType: "nonsense" }),
+        { awsRequestId: "test-123" },
+      );
+
+      expect(result.statusCode).toBe(400);
+      expect(JSON.parse(result.body).message).toMatch(/subType/);
+      expect(dynamoHelpers.putItem).not.toHaveBeenCalled();
+    });
+
+    it("rejects borrowed/lent without personName with 400", async () => {
+      for (const subType of ["borrowed", "lent"]) {
+        jest.clearAllMocks();
+        dynamoHelpers.queryByPK.mockResolvedValue([]);
+
+        const result = await handler(
+          createEvent({ name: "x", targetAmount: 1, subType }),
+          { awsRequestId: "test-123" },
+        );
+
+        expect(result.statusCode).toBe(400);
+        expect(JSON.parse(result.body).message).toMatch(/personName/);
+        expect(dynamoHelpers.putItem).not.toHaveBeenCalled();
+      }
+    });
+
+    it("defaults subType to 'goal' when absent", async () => {
+      const result = await handler(
+        createEvent({ name: "Emergency Fund", targetAmount: 1000 }),
+        { awsRequestId: "test-123" },
+      );
+      const body = JSON.parse(result.body);
+
+      expect(result.statusCode).toBe(200);
+      expect(body.data.subType).toBe("goal");
+      expect(body.data.personName).toBeNull();
+    });
+
+    it("reads an existing goal with no stored subType back as 'goal'", async () => {
+      dynamoHelpers.getItem.mockResolvedValue({
+        goalId: "goal_legacy",
+        name: "Old Goal",
+        targetAmount: 1000,
+        currentAmount: 250,
+        status: "active",
+        milestones: {},
+        contributions: [],
+      });
+
+      const result = await handler(
+        {
+          httpMethod: "GET",
+          path: "/goals/goal_legacy",
+          pathParameters: { goalId: "goal_legacy" },
+          headers: { Authorization: "Bearer test-token" },
+        },
+        { awsRequestId: "test-123" },
+      );
+      const body = JSON.parse(result.body);
+
+      expect(result.statusCode).toBe(200);
+      expect(body.data.subType).toBe("goal");
+    });
+
+    it("caps personName at 100 characters and notes at 500", async () => {
+      const result = await handler(
+        createEvent({
+          name: "Borrowed",
+          targetAmount: 1,
+          subType: "borrowed",
+          personName: "N".repeat(250),
+          notes: "x".repeat(900),
+        }),
+        { awsRequestId: "test-123" },
+      );
+
+      expect(result.statusCode).toBe(200);
+      const [stored] = dynamoHelpers.putItem.mock.calls[0];
+      expect(stored.personName).toHaveLength(100);
+      expect(stored.notes).toHaveLength(500);
+    });
+
+    it("persists the three fields on update", async () => {
+      dynamoHelpers.getItem.mockResolvedValue({
+        goalId: "goal_1",
+        name: "Borrowed from John",
+        targetAmount: 500,
+        currentAmount: 0,
+        status: "active",
+        subType: "borrowed",
+        personName: "John",
+        milestones: {},
+        contributions: [],
+      });
+      dynamoHelpers.updateItem.mockResolvedValue({
+        goalId: "goal_1",
+        name: "Borrowed from John",
+        targetAmount: 500,
+        currentAmount: 100,
+        status: "active",
+        subType: "borrowed",
+        personName: "Jonathan",
+        notes: "Repaid half",
+        milestones: {},
+        contributions: [],
+      });
+
+      const result = await handler(
+        {
+          httpMethod: "PUT",
+          path: "/goals/goal_1",
+          pathParameters: { goalId: "goal_1" },
+          headers: { Authorization: "Bearer test-token" },
+          body: JSON.stringify({ personName: "Jonathan", notes: "Repaid half" }),
+        },
+        { awsRequestId: "test-123" },
+      );
+
+      expect(result.statusCode).toBe(200);
+      const [, , updates] = dynamoHelpers.updateItem.mock.calls[0];
+      expect(updates.personName).toBe("Jonathan");
+      expect(updates.notes).toBe("Repaid half");
+    });
+
+    it("rejects an update that switches subType to lent without a personName", async () => {
+      dynamoHelpers.getItem.mockResolvedValue({
+        goalId: "goal_1",
+        name: "Plain Goal",
+        targetAmount: 500,
+        currentAmount: 0,
+        status: "active",
+        milestones: {},
+        contributions: [],
+      });
+
+      const result = await handler(
+        {
+          httpMethod: "PUT",
+          path: "/goals/goal_1",
+          pathParameters: { goalId: "goal_1" },
+          headers: { Authorization: "Bearer test-token" },
+          body: JSON.stringify({ subType: "lent" }),
+        },
+        { awsRequestId: "test-123" },
+      );
+
+      expect(result.statusCode).toBe(400);
+      expect(dynamoHelpers.updateItem).not.toHaveBeenCalled();
+    });
+
+    it("lets an update of other fields leave subType and personName alone", async () => {
+      dynamoHelpers.getItem.mockResolvedValue({
+        goalId: "goal_1",
+        name: "Lent to Bob",
+        targetAmount: 500,
+        currentAmount: 0,
+        status: "active",
+        subType: "lent",
+        personName: "Bob",
+        milestones: {},
+        contributions: [],
+      });
+      dynamoHelpers.updateItem.mockResolvedValue({
+        goalId: "goal_1",
+        name: "Lent to Bob",
+        targetAmount: 600,
+        currentAmount: 0,
+        status: "active",
+        subType: "lent",
+        personName: "Bob",
+        milestones: {},
+        contributions: [],
+      });
+
+      const result = await handler(
+        {
+          httpMethod: "PUT",
+          path: "/goals/goal_1",
+          pathParameters: { goalId: "goal_1" },
+          headers: { Authorization: "Bearer test-token" },
+          body: JSON.stringify({ targetAmount: 600 }),
+        },
+        { awsRequestId: "test-123" },
+      );
+
+      expect(result.statusCode).toBe(200);
+      const [, , updates] = dynamoHelpers.updateItem.mock.calls[0];
+      expect(updates.subType).toBeUndefined();
+      expect(updates.personName).toBeUndefined();
+      expect(JSON.parse(result.body).data.subType).toBe("lent");
+    });
+
+    it("refuses to blank the personName of a borrowed goal", async () => {
+      // The requirement is evaluated against the MERGED subType. Checking
+      // only the incoming body let a PUT carrying an empty personName and no
+      // subType write null over a borrowed goal's required name.
+      dynamoHelpers.getItem.mockResolvedValue({
+        goalId: "goal_1",
+        name: "Borrowed from John",
+        targetAmount: 500,
+        currentAmount: 0,
+        status: "active",
+        subType: "borrowed",
+        personName: "John",
+        milestones: {},
+        contributions: [],
+      });
+
+      const result = await handler(
+        {
+          httpMethod: "PUT",
+          path: "/goals/goal_1",
+          pathParameters: { goalId: "goal_1" },
+          headers: { Authorization: "Bearer test-token" },
+          body: JSON.stringify({ personName: "" }),
+        },
+        { awsRequestId: "test-123" },
+      );
+
+      expect(result.statusCode).toBe(400);
+      expect(JSON.parse(result.body).message).toMatch(/personName/);
+      expect(dynamoHelpers.updateItem).not.toHaveBeenCalled();
+    });
+
+    it("refuses a whitespace-only personName on a lent goal", async () => {
+      dynamoHelpers.getItem.mockResolvedValue({
+        goalId: "goal_1",
+        name: "Lent to Bob",
+        targetAmount: 500,
+        currentAmount: 0,
+        status: "active",
+        subType: "lent",
+        personName: "Bob",
+        milestones: {},
+        contributions: [],
+      });
+
+      const result = await handler(
+        {
+          httpMethod: "PUT",
+          path: "/goals/goal_1",
+          pathParameters: { goalId: "goal_1" },
+          headers: { Authorization: "Bearer test-token" },
+          body: JSON.stringify({ personName: "   ", notes: "settled" }),
+        },
+        { awsRequestId: "test-123" },
+      );
+
+      expect(result.statusCode).toBe(400);
+      expect(dynamoHelpers.updateItem).not.toHaveBeenCalled();
+    });
+
+    it("allows blanking personName on a plain goal, where it is optional", async () => {
+      dynamoHelpers.getItem.mockResolvedValue({
+        goalId: "goal_1",
+        name: "Emergency Fund",
+        targetAmount: 500,
+        currentAmount: 0,
+        status: "active",
+        subType: "goal",
+        personName: "left over from an earlier edit",
+        milestones: {},
+        contributions: [],
+      });
+      dynamoHelpers.updateItem.mockResolvedValue({
+        goalId: "goal_1",
+        name: "Emergency Fund",
+        targetAmount: 500,
+        currentAmount: 0,
+        status: "active",
+        subType: "goal",
+        personName: null,
+        milestones: {},
+        contributions: [],
+      });
+
+      const result = await handler(
+        {
+          httpMethod: "PUT",
+          path: "/goals/goal_1",
+          pathParameters: { goalId: "goal_1" },
+          headers: { Authorization: "Bearer test-token" },
+          body: JSON.stringify({ personName: "" }),
+        },
+        { awsRequestId: "test-123" },
+      );
+
+      expect(result.statusCode).toBe(200);
+      const [, , updates] = dynamoHelpers.updateItem.mock.calls[0];
+      expect(updates.personName).toBeNull();
+    });
+
+    it("still accepts a real personName change on a borrowed goal", async () => {
+      dynamoHelpers.getItem.mockResolvedValue({
+        goalId: "goal_1",
+        name: "Borrowed from John",
+        targetAmount: 500,
+        currentAmount: 0,
+        status: "active",
+        subType: "borrowed",
+        personName: "John",
+        milestones: {},
+        contributions: [],
+      });
+      dynamoHelpers.updateItem.mockResolvedValue({
+        goalId: "goal_1",
+        name: "Borrowed from John",
+        targetAmount: 500,
+        currentAmount: 0,
+        status: "active",
+        subType: "borrowed",
+        personName: "Jo",
+        milestones: {},
+        contributions: [],
+      });
+
+      const result = await handler(
+        {
+          httpMethod: "PUT",
+          path: "/goals/goal_1",
+          pathParameters: { goalId: "goal_1" },
+          headers: { Authorization: "Bearer test-token" },
+          body: JSON.stringify({ personName: "Jo" }),
+        },
+        { awsRequestId: "test-123" },
+      );
+
+      expect(result.statusCode).toBe(200);
+      const [, , updates] = dynamoHelpers.updateItem.mock.calls[0];
+      expect(updates.personName).toBe("Jo");
+    });
+  });
+
   describe("POST /goals/{goalId}/contribute", () => {
     it("should add contribution and update progress", async () => {
       const mockGoal = {

@@ -5,7 +5,7 @@
  * **Validates: Requirement 41**
  */
 
-import { api } from './api';
+import { extendedFeaturesApi } from './api';
 
 // Types
 export interface Asset {
@@ -55,59 +55,59 @@ export interface NetWorthHistory {
 export const netWorthService = {
   // Get net worth summary
   async getSummary(): Promise<NetWorthSummary> {
-    const response = await api.get('/net-worth/summary');
+    const response = await extendedFeaturesApi.get('/net-worth/summary');
     return response.data.data;
   },
 
   // Get all assets
   async getAssets(): Promise<Asset[]> {
-    const response = await api.get('/net-worth/assets');
+    const response = await extendedFeaturesApi.get('/net-worth/assets');
     return response.data.data.assets;
   },
 
   // Create asset
   async createAsset(asset: Omit<Asset, 'assetId' | 'lastUpdated' | 'createdAt'>): Promise<Asset> {
-    const response = await api.post('/net-worth/assets', asset);
+    const response = await extendedFeaturesApi.post('/net-worth/assets', asset);
     return response.data.data;
   },
 
   // Update asset
   async updateAsset(assetId: string, updates: Partial<Asset>): Promise<Asset> {
-    const response = await api.put(`/net-worth/assets/${assetId}`, updates);
+    const response = await extendedFeaturesApi.put(`/net-worth/assets/${assetId}`, updates);
     return response.data.data;
   },
 
   // Delete asset
   async deleteAsset(assetId: string): Promise<void> {
-    await api.delete(`/net-worth/assets/${assetId}`);
+    await extendedFeaturesApi.delete(`/net-worth/assets/${assetId}`);
   },
 
   // Get all liabilities
   async getLiabilities(): Promise<Liability[]> {
-    const response = await api.get('/net-worth/liabilities');
+    const response = await extendedFeaturesApi.get('/net-worth/liabilities');
     return response.data.data.liabilities;
   },
 
   // Create liability
   async createLiability(liability: Omit<Liability, 'liabilityId' | 'lastUpdated' | 'createdAt'>): Promise<Liability> {
-    const response = await api.post('/net-worth/liabilities', liability);
+    const response = await extendedFeaturesApi.post('/net-worth/liabilities', liability);
     return response.data.data;
   },
 
   // Update liability
   async updateLiability(liabilityId: string, updates: Partial<Liability>): Promise<Liability> {
-    const response = await api.put(`/net-worth/liabilities/${liabilityId}`, updates);
+    const response = await extendedFeaturesApi.put(`/net-worth/liabilities/${liabilityId}`, updates);
     return response.data.data;
   },
 
   // Delete liability
   async deleteLiability(liabilityId: string): Promise<void> {
-    await api.delete(`/net-worth/liabilities/${liabilityId}`);
+    await extendedFeaturesApi.delete(`/net-worth/liabilities/${liabilityId}`);
   },
 
   // Get net worth history
   async getHistory(months: number = 12): Promise<NetWorthHistory[]> {
-    const response = await api.get('/net-worth/history', { months });
+    const response = await extendedFeaturesApi.get('/net-worth/history', { months });
     return response.data.data.history;
   },
 };

@@ -1,11 +1,23 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-11-02
+**Last Updated**: 2026-11-20
 **Architecture**: see [architecture.md](./architecture.md) for the current system; this file is a status history.
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 
-## LATEST - Session 170: Wave 1 Live in DEV (2026-11-01)
+## LATEST - Session 170: Wave 2 Core Flows Merged (2026-11-20)
+Wave 2 landed on `develop` as one squash commit. It deploys as Lambda code only
+(`transaction-planning`, `goals`, `accounts`, `rules`, `budget`); no infrastructure file changed.
+Planned transactions can be edited, deleted and marked paid through the routes the gateway
+actually exposes. Goals keep `subType`/`personName`/`notes`, so borrowed/lent works on web and
+mobile. Accounts read and write `BUDGET#<budgetId>/ACCOUNT#<id>`; existing `FAMILY#` rows are
+copied by `scripts/migrate-accounts-family-to-budget.js` after the deploy, and the originals stay.
+The rules Lambda had five calls to nonexistent layer members and now works; rule creation,
+category rollover and AI suggestions are reachable on web. Mobile gained real onboarding, create
+forms, per-gateway clients and sync-conflict toasts (unit-tested; mobile is not deployed by this
+pipeline). Open: `GET /auth/profile` 500 for PROFILE rows without `userId`/`email`, plus the
+follow-ups in [product-requirements.md](./product-requirements.md) Known Gaps 17-24.
+## Session 170: Wave 1 Live in DEV (2026-11-01)
 Wave 1 deployed to DEV in run 41318103714, and then every Lambda that loads the common layer
 failed at import (`Cannot find module '@smithy/core/client'`). The cause was the exact
 `@aws-sdk/util-dynamodb` pin in the layer's `package.json`, which the CI workspace install split

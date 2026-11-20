@@ -30,9 +30,10 @@ import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../contexts/AuthContext";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_EXTENDED_FEATURES_API_URL ||
-  "https://hkjzroedjf.execute-api.us-east-1.amazonaws.com/v1";
+import { extendedFeaturesApiUrl } from "../config/api";
+
+// /transaction-planning lives on the extended features gateway.
+const API_BASE_URL = extendedFeaturesApiUrl;
 
 interface PlannedTransaction {
   planId: string;
@@ -165,14 +166,17 @@ export default function PlannedTransactionsScreen() {
       setExecutingId(plan.planId);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      const response = await fetch(`${API_BASE_URL}/transaction-planning/execute`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ planId: plan.planId }),
-      });
+      // Resource-scoped mark-paid: the id goes in the path, no request body.
+      const response = await fetch(
+        `${API_BASE_URL}/transaction-planning/${plan.planId}/mark-paid`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) throw new Error("Failed to mark as done");
 

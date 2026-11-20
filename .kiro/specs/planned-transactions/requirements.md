@@ -22,9 +22,9 @@ Planned transactions let users schedule future income or expenses against budget
 
 #### Acceptance Criteria
 
-1. WHEN the user submits the create form with name, amount, due date, and category, THE system SHALL create a `PLANNED_TXN#<id>` record under `BUDGET#<budgetId>` in DynamoDB.
+1. WHEN the user submits the create form with name, amount, due date, and category, THE system SHALL create a `PLAN#<id>` record under `BUDGET#<budgetId>` in DynamoDB.
 2. THE system SHALL require name, amount (positive number), due date, and category.
-3. THE system SHALL default `isPaid` to `false` on creation.
+3. THE system SHALL default `isExecuted` to `false` and `executedTransactionId` to `null` on creation.
 
 ### Requirement 3: Edit and Delete
 
@@ -42,7 +42,7 @@ Planned transactions let users schedule future income or expenses against budget
 
 #### Acceptance Criteria
 
-1. WHEN the user marks a planned transaction as paid, THE system SHALL set `isPaid: true` and record `paidAt` timestamp.
+1. WHEN the user marks a planned transaction as paid, THE system SHALL create the real transaction, then set `isExecuted: true`, record `executedTransactionId` as that transaction's id, and record an `executedAt` timestamp.
 2. THE planned transaction SHALL remain visible after being marked paid, with a visual paid indicator.
 
 ### Requirement 5: Budget-Scoped Access Control

@@ -113,11 +113,17 @@ export async function deletePlannedTransaction(planId: string): Promise<void> {
   if (!res.ok) throw new Error('Failed to delete planned transaction');
 }
 
-export async function executePlannedTransaction(planId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/transaction-planning/execute`, {
+/**
+ * Mark a planned transaction as paid. The gateway exposes this as a
+ * resource-scoped POST with the id in the path and no request body.
+ */
+export async function markPlannedTransactionPaid(planId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/transaction-planning/${planId}/mark-paid`, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ planId }),
   });
-  if (!res.ok) throw new Error('Failed to execute planned transaction');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message ?? 'Failed to mark planned transaction as paid');
+  }
 }

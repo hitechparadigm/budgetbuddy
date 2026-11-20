@@ -9,22 +9,24 @@ const { dynamoHelpers, generateId } = require("/opt/nodejs/utils");
 
 /**
  * Create a new account
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {object} accountData - Account data
  * @returns {Promise<object>} Created account
  */
-async function createAccount(familyId, accountData) {
+async function createAccount(budgetId, accountData) {
   const accountId = generateId.custom("acc");
   const currentTime = new Date().toISOString();
 
+  // No GSI1PK/GSI1SK: nothing reads a GSI entry for accounts (getAccounts
+  // queries the base table by PK), and the old `FAMILY#<id>#ACCOUNTS` value
+  // violated the documented GSI1 contract of BUDGET#<budgetId> / USER#<userId>,
+  // so writing it polluted a shared index.
   const account = {
-    PK: `FAMILY#${familyId}`,
+    PK: `BUDGET#${budgetId}`,
     SK: `ACCOUNT#${accountId}`,
-    GSI1PK: `FAMILY#${familyId}#ACCOUNTS`,
-    GSI1SK: `${accountData.accountType}#${accountId}`,
     entityType: "ACCOUNT",
     accountId,
-    familyId,
+    budgetId,
     accountType: accountData.accountType,
     accountSubtype: accountData.accountSubtype,
     nickname: accountData.nickname,
@@ -48,13 +50,13 @@ async function createAccount(familyId, accountData) {
 }
 
 /**
- * Get all accounts for a family
- * @param {string} familyId - Family ID
+ * Get all accounts for a budget
+ * @param {string} budgetId - Budget ID
  * @param {object} filters - Optional filters
  * @returns {Promise<object[]>} List of accounts
  */
-async function getAccounts(familyId, filters = {}) {
-  const accounts = await dynamoHelpers.queryByPK(`FAMILY#${familyId}`, {
+async function getAccounts(budgetId, filters = {}) {
+  const accounts = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression: "entityType = :entityType",
     ExpressionAttributeValues: {
       ":entityType": "ACCOUNT",
@@ -85,13 +87,13 @@ async function getAccounts(familyId, filters = {}) {
 
 /**
  * Get a single account by ID
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @returns {Promise<object|null>} Account or null if not found
  */
-async function getAccount(familyId, accountId) {
+async function getAccount(budgetId, accountId) {
   const account = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ACCOUNT#${accountId}`,
   );
 
@@ -104,15 +106,15 @@ async function getAccount(familyId, accountId) {
 
 /**
  * Update an account
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @param {object} updates - Fields to update
  * @returns {Promise<object|null>} Updated account or null if not found
  */
-async function updateAccount(familyId, accountId, updates) {
+async function updateAccount(budgetId, accountId, updates) {
   // First check if account exists
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ACCOUNT#${accountId}`,
   );
 
@@ -126,7 +128,7 @@ async function updateAccount(familyId, accountId, updates) {
   };
 
   const updated = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ACCOUNT#${accountId}`,
     updateData,
   );
@@ -136,14 +138,14 @@ async function updateAccount(familyId, accountId, updates) {
 
 /**
  * Delete an account (soft delete - marks as deleted)
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @param {string} deletedBy - User ID who deleted
  * @returns {Promise<boolean>} True if deleted, false if not found
  */
-async function deleteAccount(familyId, accountId, deletedBy) {
+async function deleteAccount(budgetId, accountId, deletedBy) {
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ACCOUNT#${accountId}`,
   );
 
@@ -159,7 +161,7 @@ async function deleteAccount(familyId, accountId, deletedBy) {
   }
 
   // Soft delete by marking as deleted
-  await dynamoHelpers.updateItem(`FAMILY#${familyId}`, `ACCOUNT#${accountId}`, {
+  await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, `ACCOUNT#${accountId}`, {
     isDeleted: true,
     deletedAt: new Date().toISOString(),
     deletedBy,
@@ -171,15 +173,15 @@ async function deleteAccount(familyId, accountId, deletedBy) {
 
 /**
  * Reconcile account balance
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @param {number} newBalance - New balance
  * @param {string} notes - Optional notes
  * @returns {Promise<object>} Object with updated account and adjustment amount
  */
-async function reconcileAccount(familyId, accountId, newBalance, notes = null) {
+async function reconcileAccount(budgetId, accountId, newBalance, notes = null) {
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ACCOUNT#${accountId}`,
   );
 
@@ -192,7 +194,7 @@ async function reconcileAccount(familyId, accountId, newBalance, notes = null) {
   const currentTime = new Date().toISOString();
 
   const updated = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ACCOUNT#${accountId}`,
     {
       currentBalance: newBalance,
@@ -211,14 +213,14 @@ async function reconcileAccount(familyId, accountId, newBalance, notes = null) {
 
 /**
  * Update account balance (called when transactions are added/modified)
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @param {number} balanceChange - Amount to add (positive) or subtract (negative)
  * @returns {Promise<object|null>} Updated account or null if not found
  */
-async function updateAccountBalance(familyId, accountId, balanceChange) {
+async function updateAccountBalance(budgetId, accountId, balanceChange) {
   const existing = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ACCOUNT#${accountId}`,
   );
 
@@ -229,7 +231,7 @@ async function updateAccountBalance(familyId, accountId, balanceChange) {
   const newBalance = existing.currentBalance + balanceChange;
 
   const updated = await dynamoHelpers.updateItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ACCOUNT#${accountId}`,
     {
       currentBalance: newBalance,
@@ -242,11 +244,11 @@ async function updateAccountBalance(familyId, accountId, balanceChange) {
 
 /**
  * Get accounts summary (totals by type)
- * @param {string} familyId - Family ID
+ * @param {string} budgetId - Budget ID
  * @returns {Promise<object>} Summary with totals
  */
-async function getAccountsSummary(familyId) {
-  const accounts = await getAccounts(familyId);
+async function getAccountsSummary(budgetId) {
+  const accounts = await getAccounts(budgetId);
 
   // Filter out deleted accounts
   const activeAccounts = accounts.filter((a) => !a.isDeleted);
@@ -283,14 +285,14 @@ async function getAccountsSummary(familyId) {
 }
 
 /**
- * Check if an account exists and belongs to the family
- * @param {string} familyId - Family ID
+ * Check if an account exists and belongs to the budget
+ * @param {string} budgetId - Budget ID
  * @param {string} accountId - Account ID
  * @returns {Promise<boolean>} True if exists
  */
-async function accountExists(familyId, accountId) {
+async function accountExists(budgetId, accountId) {
   const account = await dynamoHelpers.getItem(
-    `FAMILY#${familyId}`,
+    `BUDGET#${budgetId}`,
     `ACCOUNT#${accountId}`,
   );
   return account && account.entityType === "ACCOUNT" && !account.isDeleted;
@@ -298,24 +300,32 @@ async function accountExists(familyId, accountId) {
 
 /**
  * Format account for API response (remove DynamoDB keys)
+ *
+ * This Lambda is not the only writer of ACCOUNT# items: auth-onboarding
+ * creates a default "Cash" account directly (backend/functions/auth-onboarding/index.js)
+ * using `balance` rather than `currentBalance` and without `isTracked`,
+ * `institutionName` or `mask`. Those rows became visible to GET /accounts when
+ * this repository moved from FAMILY# to BUDGET# keys, so every field an
+ * external writer may omit is defaulted here. Without this the Accounts page
+ * renders `undefined` balances for every user who onboarded.
  */
 function formatAccountResponse(account) {
   return {
     accountId: account.accountId,
-    familyId: account.familyId,
+    budgetId: account.budgetId,
     accountType: account.accountType,
-    accountSubtype: account.accountSubtype,
+    accountSubtype: account.accountSubtype ?? null,
     nickname: account.nickname,
-    institutionName: account.institutionName,
-    mask: account.mask,
-    currentBalance: account.currentBalance,
+    institutionName: account.institutionName ?? null,
+    mask: account.mask ?? null,
+    currentBalance: account.currentBalance ?? account.balance ?? 0,
     currency: account.currency,
-    isManual: account.isManual,
-    isTracked: account.isTracked,
-    plaidAccountId: account.plaidAccountId,
-    plaidItemId: account.plaidItemId,
-    lastSynced: account.lastSynced,
-    lastReconciled: account.lastReconciled,
+    isManual: account.isManual !== false,
+    isTracked: account.isTracked !== false,
+    plaidAccountId: account.plaidAccountId ?? null,
+    plaidItemId: account.plaidItemId ?? null,
+    lastSynced: account.lastSynced ?? null,
+    lastReconciled: account.lastReconciled ?? null,
     createdAt: account.createdAt,
     updatedAt: account.updatedAt,
   };

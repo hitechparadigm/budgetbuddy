@@ -28,8 +28,11 @@ import { useAuth } from "../contexts/AuthContext";
 import SwipeableTipCard from "../components/SwipeableTipCard";
 import { LoadingSpinner } from "../components/ui";
 
-const API_BASE_URL =
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+import { featuresApiUrl } from "../config/api";
+
+
+// /tips lives on the features gateway, not the main gateway.
+const API_BASE_URL = featuresApiUrl;
 const TIPS_STORAGE_KEY = "@budgetbuddy_tips_state";
 
 interface Tip {

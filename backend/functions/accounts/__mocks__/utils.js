@@ -63,10 +63,10 @@ const parseRequestBody = jest.fn((body) => {
   }
 });
 
+// Only userId: the JWT carries nothing else (ADR-001), and the budget id and
+// role come from BudgetAccessResolver.resolveAccess below.
 const getUserFromEvent = jest.fn(() => ({
   userId: "test-user-id",
-  familyId: "test-family-id",
-  familyRole: "primary",
 }));
 
 const generateId = {

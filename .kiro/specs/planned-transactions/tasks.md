@@ -33,19 +33,26 @@
 
 Coverage target: >80% statements and branches on `backend/functions/transaction-planning/`.
 
+The per-module test files named below follow the aspirational
+handler/service/repository split that this Lambda does not use (see
+`design.md`). The tests that exist today live in `transaction-planning.test.js`
+(41 cases), `transaction-planning-routes.test.js` (14, including the viewer and
+RBAC paths of 6.3) and `keys.test.js` (3). Treat the unchecked boxes as
+coverage still to add, not as files still to create.
+
 - [ ] 6.1 Unit tests - `repository.test.js`
-  - [ ] Query uses `queryByPK('BUDGET#<id>', 'PLANNED_TXN#')` (not the nonexistent `query()`)
-  - [ ] Create writes correct PK/SK and defaults `isPaid: false`
+  - [ ] Query uses `queryByPK('BUDGET#<id>', 'PLAN#')` (not the nonexistent `query()`)
+  - [ ] Create writes correct PK/SK and defaults `isExecuted: false`
   - [ ] Update preserves fields that were not supplied
   - [ ] Delete targets the correct composite key
-  - [ ] mark-paid sets `isPaid: true` and a `paidAt` ISO timestamp
+  - [ ] mark-paid sets `isExecuted: true`, `executedTransactionId`, and an `executedAt` ISO timestamp
   - [ ] DynamoDB rejection propagates as 500
   - _Requirements: 2.1, 3.1, 4.1_
 
 - [ ] 6.2 Unit tests - `service.test.js`
   - [ ] Rejects amount <= 0 and non-numeric amount
   - [ ] Rejects missing name, dueDate, or categoryId
-  - [ ] Uses `generateId.custom('ptxn')` (object, not callable)
+  - [ ] Uses `generateId.custom('plan')` (object, not callable)
   - [ ] Guards null body via `parseRequestBody(event.body) || {}`
   - _Requirements: 2.2_
 
@@ -60,7 +67,7 @@ Coverage target: >80% statements and branches on `backend/functions/transaction-
 
 - [ ] 6.5 Integration tests (dev only, AWS profile `hitechparadigm`)
   - [ ] POST then GET round-trip returns the created record
-  - [ ] mark-paid then GET reflects `isPaid: true`
+  - [ ] mark-paid then GET reflects `isExecuted: true`
   - [ ] DELETE then GET returns 404
   - [ ] `afterAll` removes every record created by the run
   - _Constraints: max 10 API calls, under ## Open Items

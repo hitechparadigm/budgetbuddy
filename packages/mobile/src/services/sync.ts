@@ -1,4 +1,4 @@
-import { api, getNetworkStatus } from './api';
+import { api, budgetsApi, getNetworkStatus } from './api';
 import {
   getSyncQueue,
   removeFromSyncQueue,
@@ -193,10 +193,13 @@ const syncServerDataToLocal = async (
 ): Promise<void> => {
   try {
     // Fetch latest data from server
+    // Each path is on the gateway that actually owns it: /budgets is on the
+    // budgets gateway, and the categories route is /budget/categories on the
+    // main gateway (a bare /categories exists on no gateway).
     const [budgetsResponse, transactionsResponse, categoriesResponse] = await Promise.all([
-      api.get('/budgets'),
+      budgetsApi.get('/budgets'),
       api.get('/transactions'),
-      api.get('/categories'),
+      api.get('/budget/categories'),
     ]);
 
     // Store server data locally

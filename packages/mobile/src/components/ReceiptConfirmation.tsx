@@ -11,7 +11,7 @@
  * **Validates: Requirement 44.4, 44.5**
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -24,53 +24,82 @@ import {
 } from "react-native";
 import { ExtractedReceiptData } from "../services/receipt";
 
+/** The minimum a category needs to be pickable here. */
+export interface ReceiptCategoryOption {
+  id: string;
+  name: string;
+}
+
 interface ReceiptConfirmationProps {
   visible: boolean;
   extractedData: ExtractedReceiptData | null;
+  /**
+   * The categories of the user's own budget. The picker offers exactly these.
+   * A fixed nine-name list used to be hardcoded here, which meant the name
+   * this sheet returned had no relation to the user's budget and the caller
+   * had to guess an id from it.
+   */
+  categories: ReceiptCategoryOption[];
   onClose: () => void;
   onSave: (data: {
     merchant: string;
     date: string;
     amount: number;
-    category: string;
+    /** An id from `categories`, never a free-text name. */
+    categoryId: string;
     notes?: string;
   }) => void;
 }
 
-const CATEGORIES = [
-  "Groceries",
-  "Dining",
-  "Shopping",
-  "Gas",
-  "Entertainment",
-  "Healthcare",
-  "Transportation",
-  "Utilities",
-  "Other",
-];
-
 export const ReceiptConfirmation: React.FC<ReceiptConfirmationProps> = ({
   visible,
   extractedData,
+  categories,
   onClose,
   onSave,
 }) => {
   const [merchant, setMerchant] = useState("");
   const [date, setDate] = useState("");
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [notes, setNotes] = useState("");
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
+  // `categories` is read inside the reset effect only to compute the initial
+  // preselect, and it must NOT be a dependency of that effect. Callers build
+  // the array inline (a `flatMap` over the budgets), so its identity changes
+  // on every parent render; depending on it meant any parent re-render while
+  // this sheet was open re-ran the reset below and silently reverted the
+  // merchant, date, amount, notes and category the user had just typed back
+  // to the OCR values. Reading it through a ref keeps the preselect current
+  // without making the reset fire on identity changes.
+  const categoriesRef = useRef(categories);
+  categoriesRef.current = categories;
+
+  // Resets the form from a NEW extraction only. `extractedData` is the one
+  // thing that should discard in-progress edits.
   useEffect(() => {
     if (extractedData) {
       setMerchant(extractedData.merchant || "");
       setDate(extractedData.date || new Date().toISOString().split("T")[0]);
       setAmount(extractedData.total?.toString() || "");
-      setCategory(extractedData.suggestedCategory || "Other");
+      // The OCR suggestion is a name from the receipt processor's own
+      // vocabulary, so it is treated as a hint: it preselects a category only
+      // when it matches one the user actually has. On a miss nothing is
+      // preselected and the user must pick, rather than the transaction
+      // landing in whichever category happens to come first.
+      const suggested = extractedData.suggestedCategory?.trim().toLowerCase();
+      const match = suggested
+        ? categoriesRef.current.find(
+            (c) => c.name.trim().toLowerCase() === suggested,
+          )
+        : undefined;
+      setCategoryId(match?.id ?? "");
       setNotes("");
     }
   }, [extractedData]);
+
+  const selectedCategory = categories.find((c) => c.id === categoryId);
 
   const handleSave = () => {
     if (!merchant.trim()) {
@@ -83,11 +112,21 @@ export const ReceiptConfirmation: React.FC<ReceiptConfirmationProps> = ({
       return;
     }
 
+    if (!selectedCategory) {
+      Alert.alert(
+        "Choose a category",
+        categories.length === 0
+          ? "Add a budget category before saving a receipt."
+          : "Select which budget category this receipt belongs to.",
+      );
+      return;
+    }
+
     onSave({
       merchant: merchant.trim(),
       date: date || new Date().toISOString().split("T")[0],
       amount: parseFloat(amount),
-      category,
+      categoryId: selectedCategory.id,
       notes: notes.trim() || undefined,
     });
   };
@@ -198,9 +237,23 @@ export const ReceiptConfirmation: React.FC<ReceiptConfirmationProps> = ({
               style={styles.categorySelector}
               onPress={() => setShowCategoryPicker(true)}
             >
-              <Text style={styles.categoryText}>{category}</Text>
+              <Text
+                style={[
+                  styles.categoryText,
+                  !selectedCategory && styles.categoryPlaceholder,
+                ]}
+              >
+                {selectedCategory?.name ?? "Select a category"}
+              </Text>
               <Text style={styles.categoryArrow}>▼</Text>
             </TouchableOpacity>
+            {!selectedCategory && (
+              <Text style={styles.categoryHint}>
+                {categories.length === 0
+                  ? "This budget has no categories yet."
+                  : "Pick the category this receipt belongs to."}
+              </Text>
+            )}
           </View>
 
           {/* Notes */}
@@ -276,27 +329,34 @@ export const ReceiptConfirmation: React.FC<ReceiptConfirmationProps> = ({
           >
             <View style={styles.pickerContainer}>
               <Text style={styles.pickerTitle}>Select Category</Text>
-              {CATEGORIES.map((cat) => (
+              {categories.length === 0 && (
+                <Text style={styles.pickerEmpty}>
+                  No budget categories yet. Add one on the Budget tab first.
+                </Text>
+              )}
+              {categories.map((cat) => (
                 <TouchableOpacity
-                  key={cat}
+                  key={cat.id}
                   style={[
                     styles.pickerOption,
-                    category === cat && styles.pickerOptionSelected,
+                    categoryId === cat.id && styles.pickerOptionSelected,
                   ]}
                   onPress={() => {
-                    setCategory(cat);
+                    setCategoryId(cat.id);
                     setShowCategoryPicker(false);
                   }}
                 >
                   <Text
                     style={[
                       styles.pickerOptionText,
-                      category === cat && styles.pickerOptionTextSelected,
+                      categoryId === cat.id && styles.pickerOptionTextSelected,
                     ]}
                   >
-                    {cat}
+                    {cat.name}
                   </Text>
-                  {category === cat && <Text style={styles.checkmark}>✓</Text>}
+                  {categoryId === cat.id && (
+                    <Text style={styles.checkmark}>✓</Text>
+                  )}
                 </TouchableOpacity>
               ))}
             </View>
@@ -428,6 +488,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#111827",
   },
+  categoryPlaceholder: {
+    color: "#9ca3af",
+  },
+  categoryHint: {
+    fontSize: 12,
+    color: "#b45309",
+    marginTop: 6,
+  },
   categoryArrow: {
     fontSize: 12,
     color: "#6b7280",
@@ -507,6 +575,12 @@ const styles = StyleSheet.create({
     color: "#111827",
     marginBottom: 16,
     textAlign: "center",
+  },
+  pickerEmpty: {
+    fontSize: 14,
+    color: "#6b7280",
+    textAlign: "center",
+    paddingVertical: 8,
   },
   pickerOption: {
     flexDirection: "row",

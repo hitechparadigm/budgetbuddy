@@ -16,7 +16,7 @@ import { profileApi } from '../services/api';
 import {
   getPlannedTransactions,
   deletePlannedTransaction,
-  executePlannedTransaction,
+  markPlannedTransactionPaid,
   type PlannedTransaction,
 } from '../services/plannedTransactionsApi';
 import {
@@ -102,7 +102,7 @@ export const PlannedTransactionsPage: React.FC = () => {
   const handleExecute = async (plan: PlannedTransaction) => {
     setExecuting(plan.planId);
     try {
-      await executePlannedTransaction(plan.planId);
+      await markPlannedTransactionPaid(plan.planId);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to mark as done');

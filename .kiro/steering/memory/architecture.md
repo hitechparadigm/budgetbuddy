@@ -37,6 +37,10 @@ INVITATION#<invitationId>
 Known inconsistencies (see `docs/architecture.md`): executing a planned transaction writes `TXN#`
 and export/comparison/tips read `TXN#`; a few handlers still use `FAMILY#`.
 
+The planned-transaction sort-key prefix is `PLAN#`, defined once in
+`backend/functions/transaction-planning/keys.js` (`PLANNED_TXN_SK_PREFIX`). Earlier revisions of this
+document said `PLANNED_TXN#`; the live rows have always been `PLAN#`.
+
 ## DynamoDB GSIs
 Generic `GSI{1-4}PK`/`GSI{1-4}SK`, all project `ALL`.
 - GSI1: overloaded — memberships by user (`USER#<userId>`), transactions/periods by budget, bills by month

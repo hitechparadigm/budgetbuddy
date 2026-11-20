@@ -61,24 +61,18 @@ describe("Budget Rollover Feature", () => {
             savings: [],
             expenses: [
               {
-                id: "group_housing",
-                name: "Housing",
-                categories: [
-                  {
-                    id: "cat_rent",
-                    name: "Rent",
-                    plannedAmount: 1500,
-                    rolloverEnabled: true,
-                    rolloverAmount: 100,
-                    rolloverCap: 500,
-                  },
-                  {
-                    id: "cat_utilities",
-                    name: "Utilities",
-                    plannedAmount: 200,
-                    rolloverEnabled: false,
-                  },
-                ],
+                id: "cat_rent",
+                name: "Rent",
+                plannedAmount: 1500,
+                rolloverEnabled: true,
+                rolloverAmount: 100,
+                rolloverCap: 500,
+              },
+              {
+                id: "cat_utilities",
+                name: "Utilities",
+                plannedAmount: 200,
+                rolloverEnabled: false,
               },
             ],
           },
@@ -103,19 +97,15 @@ describe("Budget Rollover Feature", () => {
           groups: expect.objectContaining({
             expenses: expect.arrayContaining([
               expect.objectContaining({
-                categories: expect.arrayContaining([
-                  expect.objectContaining({
-                    id: "cat_rent",
-                    rolloverEnabled: true,
-                    rolloverAmount: 100,
-                    rolloverCap: 500,
-                  }),
-                  expect.objectContaining({
-                    id: "cat_utilities",
-                    rolloverEnabled: false,
-                    rolloverAmount: 0,
-                  }),
-                ]),
+                id: "cat_rent",
+                rolloverEnabled: true,
+                rolloverAmount: 100,
+                rolloverCap: 500,
+              }),
+              expect.objectContaining({
+                id: "cat_utilities",
+                rolloverEnabled: false,
+                rolloverAmount: 0,
               }),
             ]),
           }),
@@ -153,16 +143,10 @@ describe("Budget Rollover Feature", () => {
             savings: [],
             expenses: [
               {
-                id: "group_food",
-                name: "Food",
-                categories: [
-                  {
-                    id: "cat_groceries",
-                    name: "Groceries",
-                    plannedAmount: 500,
-                    // No rollover fields provided
-                  },
-                ],
+                id: "cat_groceries",
+                name: "Groceries",
+                plannedAmount: 500,
+                // No rollover fields provided
               },
             ],
           },
@@ -187,13 +171,9 @@ describe("Budget Rollover Feature", () => {
           groups: expect.objectContaining({
             expenses: expect.arrayContaining([
               expect.objectContaining({
-                categories: expect.arrayContaining([
-                  expect.objectContaining({
-                    id: "cat_groceries",
-                    rolloverEnabled: false,
-                    rolloverAmount: 0,
-                  }),
-                ]),
+                id: "cat_groceries",
+                rolloverEnabled: false,
+                rolloverAmount: 0,
               }),
             ]),
           }),
@@ -230,39 +210,27 @@ describe("Budget Rollover Feature", () => {
             income: [],
             savings: [
               {
-                id: "group_savings",
-                name: "Savings",
-                categories: [
-                  {
-                    id: "cat_emergency",
-                    name: "Emergency Fund",
-                    plannedAmount: 500,
-                    rolloverEnabled: true,
-                    rolloverAmount: 200,
-                  },
-                ],
+                id: "cat_emergency",
+                name: "Emergency Fund",
+                plannedAmount: 500,
+                rolloverEnabled: true,
+                rolloverAmount: 200,
               },
             ],
             expenses: [
               {
-                id: "group_food",
-                name: "Food",
-                categories: [
-                  {
-                    id: "cat_groceries",
-                    name: "Groceries",
-                    plannedAmount: 400,
-                    rolloverEnabled: true,
-                    rolloverAmount: 50,
-                  },
-                  {
-                    id: "cat_dining",
-                    name: "Dining Out",
-                    plannedAmount: 100,
-                    rolloverEnabled: true,
-                    rolloverAmount: 25,
-                  },
-                ],
+                id: "cat_groceries",
+                name: "Groceries",
+                plannedAmount: 400,
+                rolloverEnabled: true,
+                rolloverAmount: 50,
+              },
+              {
+                id: "cat_dining",
+                name: "Dining Out",
+                plannedAmount: 100,
+                rolloverEnabled: true,
+                rolloverAmount: 25,
               },
             ],
           },
@@ -316,15 +284,9 @@ describe("Budget Rollover Feature", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
             },
           ],
         },
@@ -350,18 +312,12 @@ describe("Budget Rollover Feature", () => {
             savings: [],
             expenses: [
               {
-                id: "group_food",
-                name: "Food",
-                categories: [
-                  {
-                    id: "cat_groceries",
-                    name: "Groceries",
-                    plannedAmount: 500,
-                    rolloverEnabled: true,
-                    rolloverAmount: 75,
-                    rolloverCap: 300,
-                  },
-                ],
+                id: "cat_groceries",
+                name: "Groceries",
+                plannedAmount: 500,
+                rolloverEnabled: true,
+                rolloverAmount: 75,
+                rolloverCap: 300,
               },
             ],
           },
@@ -383,18 +339,14 @@ describe("Budget Rollover Feature", () => {
       // Verify updateItem was called with rollover fields
       expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
         "BUDGET#family_123",
-        "BUDGET#2026-02",
+        "PERIOD#2026-02",
         expect.objectContaining({
           groups: expect.objectContaining({
             expenses: expect.arrayContaining([
               expect.objectContaining({
-                categories: expect.arrayContaining([
-                  expect.objectContaining({
-                    rolloverEnabled: true,
-                    rolloverAmount: 75,
-                    rolloverCap: 300,
-                  }),
-                ]),
+                rolloverEnabled: true,
+                rolloverAmount: 75,
+                rolloverCap: 300,
               }),
             ]),
           }),
@@ -437,17 +389,11 @@ describe("Budget Rollover Feature", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                  rolloverEnabled: true,
-                  rolloverAmount: 150,
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
+              rolloverEnabled: true,
+              rolloverAmount: 150,
             },
           ],
         },
@@ -478,10 +424,10 @@ describe("Budget Rollover Feature", () => {
       const body = JSON.parse(result.body);
 
       expect(body.data.totalRollover).toBe(150);
-      expect(body.data.groups.expenses[0].categories[0].rolloverEnabled).toBe(
+      expect(body.data.groups.expenses[0].rolloverEnabled).toBe(
         true,
       );
-      expect(body.data.groups.expenses[0].categories[0].rolloverAmount).toBe(
+      expect(body.data.groups.expenses[0].rolloverAmount).toBe(
         150,
       );
     });
@@ -519,24 +465,18 @@ describe("Budget Rollover Feature", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                  rolloverEnabled: true,
-                  rolloverAmount: 100,
-                },
-                {
-                  id: "cat_dining",
-                  name: "Dining",
-                  plannedAmount: 200,
-                  rolloverEnabled: true,
-                  rolloverAmount: 50,
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
+              rolloverEnabled: true,
+              rolloverAmount: 100,
+            },
+            {
+              id: "cat_dining",
+              name: "Dining",
+              plannedAmount: 200,
+              rolloverEnabled: true,
+              rolloverAmount: 50,
             },
           ],
         },
@@ -602,18 +542,12 @@ describe("Budget Rollover Feature", () => {
             savings: [],
             expenses: [
               {
-                id: "group_food",
-                name: "Food",
-                categories: [
-                  {
-                    id: "cat_groceries",
-                    name: "Groceries",
-                    plannedAmount: 500,
-                    rolloverEnabled: true,
-                    rolloverAmount: 100,
-                    rolloverCap: 250,
-                  },
-                ],
+                id: "cat_groceries",
+                name: "Groceries",
+                plannedAmount: 500,
+                rolloverEnabled: true,
+                rolloverAmount: 100,
+                rolloverCap: 250,
               },
             ],
           },
@@ -638,11 +572,7 @@ describe("Budget Rollover Feature", () => {
           groups: expect.objectContaining({
             expenses: expect.arrayContaining([
               expect.objectContaining({
-                categories: expect.arrayContaining([
-                  expect.objectContaining({
-                    rolloverCap: 250,
-                  }),
-                ]),
+                rolloverCap: 250,
               }),
             ]),
           }),
@@ -685,18 +615,12 @@ describe("Budget Rollover Feature", () => {
             savings: [],
             expenses: [
               {
-                id: "group_food",
-                name: "Food",
-                categories: [
-                  {
-                    id: "cat_groceries",
-                    name: "Groceries",
-                    plannedAmount: 500,
-                    rolloverEnabled: true,
-                    rolloverAmount: 100,
-                    // No rolloverCap
-                  },
-                ],
+                id: "cat_groceries",
+                name: "Groceries",
+                plannedAmount: 500,
+                rolloverEnabled: true,
+                rolloverAmount: 100,
+                // No rolloverCap
               },
             ],
           },
@@ -716,7 +640,7 @@ describe("Budget Rollover Feature", () => {
       expect(result.statusCode).toBe(200);
 
       // Verify rolloverCap is not present when not set
-      const category = savedBudget.groups.expenses[0].categories[0];
+      const category = savedBudget.groups.expenses[0];
       expect(category.rolloverEnabled).toBe(true);
       expect(category.rolloverAmount).toBe(100);
       expect(category).not.toHaveProperty("rolloverCap");
@@ -758,19 +682,13 @@ describe("Budget Rollover Feature", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                  spentAmount: 450,
-                  rolloverEnabled: true,
-                  rolloverAmount: 50,
-                  rolloverCap: 200,
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
+              spentAmount: 450,
+              rolloverEnabled: true,
+              rolloverAmount: 50,
+              rolloverCap: 200,
             },
           ],
         },
@@ -804,7 +722,7 @@ describe("Budget Rollover Feature", () => {
 
       // Verify rollover is calculated correctly
       // newRollover = 50 + (500 - 450) = 100
-      const newCategory = savedBudget.groups.expenses[0].categories[0];
+      const newCategory = savedBudget.groups.expenses[0];
       expect(newCategory.rolloverEnabled).toBe(true);
       expect(newCategory.rolloverAmount).toBe(100); // Calculated rollover
       expect(newCategory.rolloverCap).toBe(200);
@@ -843,18 +761,12 @@ describe("Budget Rollover Feature", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                  spentAmount: 600, // Overspent by 100
-                  rolloverEnabled: true,
-                  rolloverAmount: 0,
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
+              spentAmount: 600, // Overspent by 100
+              rolloverEnabled: true,
+              rolloverAmount: 0,
             },
           ],
         },
@@ -888,7 +800,7 @@ describe("Budget Rollover Feature", () => {
 
       // Verify negative rollover for overspent category
       // newRollover = 0 + (500 - 600) = -100
-      const newCategory = savedBudget.groups.expenses[0].categories[0];
+      const newCategory = savedBudget.groups.expenses[0];
       expect(newCategory.rolloverEnabled).toBe(true);
       expect(newCategory.rolloverAmount).toBe(-100); // Negative rollover (debt)
       expect(newCategory.spentAmount).toBe(0);
@@ -927,19 +839,13 @@ describe("Budget Rollover Feature", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                  spentAmount: 200, // Underspent by 300
-                  rolloverEnabled: true,
-                  rolloverAmount: 150,
-                  rolloverCap: 200, // Cap at 200
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
+              spentAmount: 200, // Underspent by 300
+              rolloverEnabled: true,
+              rolloverAmount: 150,
+              rolloverCap: 200, // Cap at 200
             },
           ],
         },
@@ -974,7 +880,7 @@ describe("Budget Rollover Feature", () => {
       // Verify rollover is capped
       // Uncapped would be: 150 + (500 - 200) = 450
       // But cap is 200, so should be 200
-      const newCategory = savedBudget.groups.expenses[0].categories[0];
+      const newCategory = savedBudget.groups.expenses[0];
       expect(newCategory.rolloverEnabled).toBe(true);
       expect(newCategory.rolloverAmount).toBe(200); // Capped at 200
       expect(newCategory.rolloverCap).toBe(200);
@@ -1011,18 +917,12 @@ describe("Budget Rollover Feature", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                  spentAmount: 300, // Underspent by 200
-                  rolloverEnabled: false, // Disabled
-                  rolloverAmount: 100, // Should be ignored
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
+              spentAmount: 300, // Underspent by 200
+              rolloverEnabled: false, // Disabled
+              rolloverAmount: 100, // Should be ignored
             },
           ],
         },
@@ -1055,7 +955,7 @@ describe("Budget Rollover Feature", () => {
       expect(result.statusCode).toBe(200);
 
       // Verify rollover is 0 when disabled
-      const newCategory = savedBudget.groups.expenses[0].categories[0];
+      const newCategory = savedBudget.groups.expenses[0];
       expect(newCategory.rolloverEnabled).toBe(false);
       expect(newCategory.rolloverAmount).toBe(0); // No rollover when disabled
     });
@@ -1091,18 +991,12 @@ describe("Budget Rollover Feature", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                  spentAmount: 400,
-                  rolloverEnabled: true,
-                  rolloverAmount: 75,
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
+              spentAmount: 400,
+              rolloverEnabled: true,
+              rolloverAmount: 75,
             },
           ],
         },
@@ -1136,7 +1030,7 @@ describe("Budget Rollover Feature", () => {
 
       // Verify year-end rollover works correctly
       // newRollover = 75 + (500 - 400) = 175
-      const newCategory = savedBudget.groups.expenses[0].categories[0];
+      const newCategory = savedBudget.groups.expenses[0];
       expect(newCategory.rolloverEnabled).toBe(true);
       expect(newCategory.rolloverAmount).toBe(175);
       expect(savedBudget.month).toBe("2027-01");
@@ -1185,17 +1079,11 @@ describe("Rollover API Endpoints", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                  rolloverEnabled: false,
-                  rolloverAmount: 0,
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
+              rolloverEnabled: false,
+              rolloverAmount: 0,
             },
           ],
         },
@@ -1240,18 +1128,14 @@ describe("Rollover API Endpoints", () => {
       // Verify updateItem was called with correct data
       expect(dynamoHelpers.updateItem).toHaveBeenCalledWith(
         "BUDGET#family_123",
-        "BUDGET#2026-02",
+        "PERIOD#2026-02",
         expect.objectContaining({
           groups: expect.objectContaining({
             expenses: expect.arrayContaining([
               expect.objectContaining({
-                categories: expect.arrayContaining([
-                  expect.objectContaining({
-                    id: "cat_groceries",
-                    rolloverEnabled: true,
-                    rolloverCap: 200,
-                  }),
-                ]),
+                id: "cat_groceries",
+                rolloverEnabled: true,
+                rolloverCap: 200,
               }),
             ]),
           }),
@@ -1286,18 +1170,12 @@ describe("Rollover API Endpoints", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                  rolloverEnabled: true,
-                  rolloverAmount: 150,
-                  rolloverCap: 200,
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
+              rolloverEnabled: true,
+              rolloverAmount: 150,
+              rolloverCap: 200,
             },
           ],
         },
@@ -1338,7 +1216,7 @@ describe("Rollover API Endpoints", () => {
       expect(result.statusCode).toBe(200);
 
       // Verify rolloverAmount is reset to 0 when disabled
-      const updatedCategory = savedUpdates.groups.expenses[0].categories[0];
+      const updatedCategory = savedUpdates.groups.expenses[0];
       expect(updatedCategory.rolloverEnabled).toBe(false);
       expect(updatedCategory.rolloverAmount).toBe(0);
       expect(updatedCategory).not.toHaveProperty("rolloverCap");
@@ -1445,15 +1323,9 @@ describe("Rollover API Endpoints", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
             },
           ],
         },
@@ -1515,17 +1387,11 @@ describe("Rollover API Endpoints", () => {
           savings: [],
           expenses: [
             {
-              id: "group_food",
-              name: "Food",
-              categories: [
-                {
-                  id: "cat_groceries",
-                  name: "Groceries",
-                  plannedAmount: 500,
-                  rolloverEnabled: true,
-                  rolloverAmount: 175,
-                },
-              ],
+              id: "cat_groceries",
+              name: "Groceries",
+              plannedAmount: 500,
+              rolloverEnabled: true,
+              rolloverAmount: 175,
             },
           ],
         },
@@ -1569,7 +1435,7 @@ describe("Rollover API Endpoints", () => {
       expect(body.data.newRollover).toBe(0);
 
       // Verify rolloverAmount is reset to 0
-      const updatedCategory = savedUpdates.groups.expenses[0].categories[0];
+      const updatedCategory = savedUpdates.groups.expenses[0];
       expect(updatedCategory.rolloverAmount).toBe(0);
       // rolloverEnabled should remain unchanged
       expect(updatedCategory.rolloverEnabled).toBe(true);

@@ -27,9 +27,14 @@ import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../contexts/AuthContext";
 import { useGoalReorder } from "../hooks/useGoalReorder";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
+import { apiBaseUrl } from "../config/api";
 
-const API_BASE_URL =
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+// /goals lives on the main gateway.
+
+const API_BASE_URL = apiBaseUrl;
+
+/** Matches the three values the goals Lambda validates subType against. */
+type GoalSubType = "goal" | "borrowed" | "lent";
 
 interface Goal {
   goalId: string;
@@ -46,6 +51,43 @@ interface Goal {
   monthlyRequired: number | null;
   milestones: Record<string, { reached: boolean; date: string | null }>;
   completedAt: string | null;
+  subType?: GoalSubType;
+  personName?: string | null;
+  notes?: string | null;
+}
+
+const TABS: { key: GoalSubType; label: string }[] = [
+  { key: "goal", label: "Goals" },
+  { key: "borrowed", label: "Borrowed" },
+  { key: "lent", label: "Lent" },
+];
+
+const SUB_TYPE_ICON: Record<GoalSubType, string> = {
+  goal: "🎯",
+  borrowed: "💸",
+  lent: "🤝",
+};
+
+interface GoalFormState {
+  subType: GoalSubType;
+  name: string;
+  personName: string;
+  targetAmount: string;
+  currentAmount: string;
+  targetDate: string;
+  notes: string;
+}
+
+function emptyGoalForm(subType: GoalSubType): GoalFormState {
+  return {
+    subType,
+    name: "",
+    personName: "",
+    targetAmount: "",
+    currentAmount: "0",
+    targetDate: "",
+    notes: "",
+  };
 }
 
 interface GoalsSummary {
@@ -71,6 +113,11 @@ export default function GoalsScreen() {
   const [contributionAmount, setContributionAmount] = useState("");
   const [contributing, setContributing] = useState(false);
   const [isReorderMode, setIsReorderMode] = useState(false);
+  const [activeTab, setActiveTab] = useState<GoalSubType>("goal");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [form, setForm] = useState<GoalFormState>(emptyGoalForm("goal"));
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const currency = "USD";
 
   const { reorderGoals, isReordering } = useGoalReorder({
@@ -197,6 +244,83 @@ export default function GoalsScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
+  const openCreateModal = (subType: GoalSubType) => {
+    setForm(emptyGoalForm(subType));
+    setCreateError(null);
+    setShowCreateModal(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const handleCreate = async () => {
+    const isPersonal = form.subType === "borrowed" || form.subType === "lent";
+    const amount = parseFloat(form.targetAmount);
+
+    if (isNaN(amount) || amount <= 0) {
+      setCreateError("Enter a positive amount.");
+      return;
+    }
+    if (isPersonal && !form.personName.trim()) {
+      setCreateError(
+        form.subType === "borrowed"
+          ? "Who did you borrow from?"
+          : "Who did you lend to?",
+      );
+      return;
+    }
+    if (!isPersonal && !form.name.trim()) {
+      setCreateError("Enter a goal name.");
+      return;
+    }
+
+    // Same payload the web app's BorrowLendFormPage / GoalsPage send.
+    const name = isPersonal
+      ? form.subType === "borrowed"
+        ? `Borrowed from ${form.personName.trim()}`
+        : `Lent to ${form.personName.trim()}`
+      : form.name.trim();
+
+    const payload = {
+      name,
+      icon: SUB_TYPE_ICON[form.subType],
+      targetAmount: amount,
+      currentAmount: parseFloat(form.currentAmount) || 0,
+      targetDate: form.targetDate.trim() || null,
+      subType: form.subType,
+      personName: isPersonal ? form.personName.trim() : null,
+      notes: form.notes.trim() || null,
+    };
+
+    try {
+      setCreating(true);
+      setCreateError(null);
+
+      const response = await fetch(`${API_BASE_URL}/goals`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        // Surface the server's message rather than a generic failure.
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message ?? "Failed to create");
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowCreateModal(false);
+      setActiveTab(form.subType);
+      await loadGoals();
+    } catch (err) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setCreateError(err instanceof Error ? err.message : "Failed to create");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const getProgressColor = (percent: number) => {
     if (percent >= 100) return colors.success;
     if (percent >= 75) return colors.primary;
@@ -229,6 +353,11 @@ export default function GoalsScreen() {
             <Text style={[styles.goalName, { color: colors.text }]}>
               {goal.name} {goal.statusIndicator}
             </Text>
+            {goal.notes && (
+              <Text style={[styles.goalDate, { color: colors.textSecondary }]}>
+                {goal.notes}
+              </Text>
+            )}
             {goal.targetDate && (
               <Text style={[styles.goalDate, { color: colors.textSecondary }]}>
                 Target: {formatDate(goal.targetDate)}
@@ -325,6 +454,12 @@ export default function GoalsScreen() {
     </Card>
   );
 
+  // Goals written before borrowed/lent existed carry no subType and belong on
+  // the Goals tab, matching the web app's GoalsPage filter.
+  const visibleGoals = goals.filter(
+    (g) => (g.subType ?? "goal") === activeTab,
+  );
+
   if (loading) {
     return (
       <SafeAreaView
@@ -342,7 +477,7 @@ export default function GoalsScreen() {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <Text style={[styles.title, { color: colors.text }]}>🎯 Goals</Text>
-        {goals.length > 1 && (
+        {visibleGoals.length > 1 && (
           <Pressable
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -376,8 +511,48 @@ export default function GoalsScreen() {
         )}
       </View>
 
-      {/* Summary Cards */}
-      {summary && (
+      {/* Goals / Borrowed / Lent tabs */}
+      <View style={[styles.tabBar, { borderBottomColor: colors.border }]}>
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          const count = goals.filter(
+            (g) => (g.subType ?? "goal") === tab.key,
+          ).length;
+          return (
+            <Pressable
+              key={tab.key}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setIsReorderMode(false);
+                setActiveTab(tab.key);
+              }}
+              style={[
+                styles.tab,
+                isActive && {
+                  borderBottomColor: colors.primary,
+                  borderBottomWidth: 2,
+                },
+              ]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+              accessibilityLabel={`${tab.label} tab, ${count} items`}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: isActive ? colors.primary : colors.textSecondary },
+                ]}
+              >
+                {SUB_TYPE_ICON[tab.key]} {tab.label}
+                {count > 0 ? ` (${count})` : ""}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* Summary Cards — savings goals only */}
+      {summary && activeTab === "goal" && (
         <View style={styles.summaryContainer}>
           <Card style={styles.summaryCard}>
             <Text
@@ -427,19 +602,27 @@ export default function GoalsScreen() {
       )}
 
       {/* Goals List */}
-      {goals.length === 0 ? (
+      {visibleGoals.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🎯</Text>
+          <Text style={styles.emptyIcon}>{SUB_TYPE_ICON[activeTab]}</Text>
           <Text style={[styles.emptyTitle, { color: colors.text }]}>
-            No goals yet
+            {activeTab === "goal"
+              ? "No goals yet"
+              : activeTab === "borrowed"
+                ? "Nothing borrowed"
+                : "Nothing lent"}
           </Text>
           <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-            Create your first savings goal to start tracking
+            {activeTab === "goal"
+              ? "Create your first savings goal to start tracking"
+              : activeTab === "borrowed"
+                ? "Track money you borrowed and how much you have repaid"
+                : "Track money you lent and how much has come back"}
           </Text>
         </View>
       ) : isReorderMode ? (
         <DraggableGoalList
-          goals={goals}
+          goals={visibleGoals}
           onReorder={reorderGoals}
           onGoalPress={(goal) => openContributeModal(goal)}
           currency={currency}
@@ -447,7 +630,7 @@ export default function GoalsScreen() {
         />
       ) : (
         <FlatList
-          data={goals}
+          data={visibleGoals}
           renderItem={renderGoalItem}
           keyExtractor={(item) => item.goalId}
           contentContainerStyle={styles.listContent}
@@ -467,13 +650,155 @@ export default function GoalsScreen() {
           {
             icon: "add-circle-outline",
             label: "New Goal",
-            onPress: () => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              Alert.alert("New Goal", "Goal creation form coming soon!");
-            },
+            onPress: () => openCreateModal("goal"),
+          },
+          {
+            icon: "arrow-down-circle-outline",
+            label: "I Borrowed Money",
+            onPress: () => openCreateModal("borrowed"),
+          },
+          {
+            icon: "arrow-up-circle-outline",
+            label: "I Lent Money",
+            onPress: () => openCreateModal("lent"),
           },
         ]}
       />
+
+      {/* Create Modal — savings goal, borrowed or lent */}
+      <Modal
+        visible={showCreateModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[styles.modalContent, { backgroundColor: colors.surface }]}
+          >
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              {form.subType === "goal"
+                ? "New Savings Goal"
+                : form.subType === "borrowed"
+                  ? "Track Borrowed Money"
+                  : "Track Money You Lent"}
+            </Text>
+
+            {form.subType === "goal" ? (
+              <TextInput
+                style={[
+                  styles.input,
+                  { borderColor: colors.border, color: colors.text },
+                ]}
+                placeholder="Goal name (e.g. Emergency Fund)"
+                placeholderTextColor={colors.textSecondary}
+                value={form.name}
+                onChangeText={(name) => setForm((f) => ({ ...f, name }))}
+                accessibilityLabel="Goal name"
+              />
+            ) : (
+              <TextInput
+                style={[
+                  styles.input,
+                  { borderColor: colors.border, color: colors.text },
+                ]}
+                placeholder={
+                  form.subType === "borrowed"
+                    ? "Who did you borrow from?"
+                    : "Who did you lend to?"
+                }
+                placeholderTextColor={colors.textSecondary}
+                value={form.personName}
+                onChangeText={(personName) =>
+                  setForm((f) => ({ ...f, personName }))
+                }
+                accessibilityLabel="Person name"
+              />
+            )}
+
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder={
+                form.subType === "goal" ? "Target amount" : "Amount"
+              }
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="decimal-pad"
+              value={form.targetAmount}
+              onChangeText={(targetAmount) =>
+                setForm((f) => ({ ...f, targetAmount }))
+              }
+              accessibilityLabel="Amount"
+            />
+
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder={
+                form.subType === "goal"
+                  ? "Target date YYYY-MM-DD (optional)"
+                  : "Due date YYYY-MM-DD (optional)"
+              }
+              placeholderTextColor={colors.textSecondary}
+              value={form.targetDate}
+              onChangeText={(targetDate) =>
+                setForm((f) => ({ ...f, targetDate }))
+              }
+              accessibilityLabel="Date"
+            />
+
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Notes (optional)"
+              placeholderTextColor={colors.textSecondary}
+              value={form.notes}
+              onChangeText={(notes) => setForm((f) => ({ ...f, notes }))}
+              accessibilityLabel="Notes"
+            />
+
+            {createError && (
+              <Text style={[styles.modalSubtext, { color: colors.error }]}>
+                {createError}
+              </Text>
+            )}
+
+            <View style={styles.modalButtons}>
+              <Pressable
+                onPress={() => setShowCreateModal(false)}
+                style={[styles.modalButton, { borderColor: colors.border }]}
+              >
+                <Text style={[styles.modalButtonText, { color: colors.text }]}>
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleCreate}
+                disabled={creating}
+                style={[
+                  styles.modalButton,
+                  styles.modalButtonPrimary,
+                  {
+                    backgroundColor: creating
+                      ? colors.textSecondary
+                      : colors.success,
+                  },
+                ]}
+              >
+                <Text style={styles.modalButtonTextPrimary}>
+                  {creating ? "Saving..." : "Save"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Contribute Modal */}
       <Modal
@@ -570,6 +895,21 @@ const styles = StyleSheet.create({
   reorderButtonText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+  tabBar: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   summaryContainer: {
     flexDirection: "row",

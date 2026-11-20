@@ -15,6 +15,8 @@ import {
   Pressable,
   FlatList,
   ScrollView,
+  Modal,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -24,8 +26,11 @@ import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../contexts/AuthContext";
 import { formatCurrency } from "@budget-buddy/shared/src/utils/currency";
 
-const API_BASE_URL =
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+import { featuresApiUrl } from "../config/api";
+
+
+// /subscriptions lives on the features gateway, not the main gateway.
+const API_BASE_URL = featuresApiUrl;
 
 interface Subscription {
   subscriptionId: string;
@@ -65,6 +70,76 @@ export default function SubscriptionsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [form, setForm] = useState<{
+    name: string;
+    merchant: string;
+    amount: string;
+    frequency: "weekly" | "monthly" | "quarterly" | "yearly";
+    nextBillingDate: string;
+  }>({
+    name: "",
+    merchant: "",
+    amount: "",
+    frequency: "monthly",
+    nextBillingDate: "",
+  });
+
+  /**
+   * Create a subscription. POST /subscriptions requires name, a positive
+   * amount, and a frequency of weekly, monthly, quarterly or yearly
+   * (backend/functions/subscriptions/index.js).
+   */
+  const handleCreateSubscription = async () => {
+    const amount = parseFloat(form.amount);
+
+    if (!form.name.trim()) {
+      setCreateError("Enter a subscription name.");
+      return;
+    }
+    if (isNaN(amount) || amount <= 0) {
+      setCreateError("Enter a positive amount.");
+      return;
+    }
+
+    try {
+      setCreating(true);
+      setCreateError(null);
+
+      const response = await fetch(`${API_BASE_URL}/subscriptions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          merchant: form.merchant.trim() || form.name.trim(),
+          amount,
+          frequency: form.frequency,
+          nextBillingDate: form.nextBillingDate.trim() || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message ?? "Failed to add the subscription");
+      }
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowCreateModal(false);
+      await loadSubscriptions();
+    } catch (err) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setCreateError(
+        err instanceof Error ? err.message : "Failed to add the subscription"
+      );
+    } finally {
+      setCreating(false);
+    }
+  };
   const currency = "USD";
 
   const loadSubscriptions = useCallback(async () => {
@@ -458,7 +533,15 @@ export default function SubscriptionsScreen() {
             label: "Add Subscription",
             onPress: () => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              Alert.alert("Add Subscription", "Subscription form coming soon!");
+              setForm({
+                name: "",
+                merchant: "",
+                amount: "",
+                frequency: "monthly",
+                nextBillingDate: "",
+              });
+              setCreateError(null);
+              setShowCreateModal(true);
             },
           },
           {
@@ -474,11 +557,227 @@ export default function SubscriptionsScreen() {
           },
         ]}
       />
+
+      {/* Create subscription */}
+      <Modal
+        visible={showCreateModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View
+            style={[styles.modalContent, { backgroundColor: colors.surface }]}
+          >
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              Add Subscription
+            </Text>
+
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Name"
+              placeholderTextColor={colors.textSecondary}
+              value={form.name}
+              onChangeText={(name) => setForm((f) => ({ ...f, name }))}
+              accessibilityLabel="Subscription name"
+            />
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Merchant (optional)"
+              placeholderTextColor={colors.textSecondary}
+              value={form.merchant}
+              onChangeText={(merchant) => setForm((f) => ({ ...f, merchant }))}
+              accessibilityLabel="Merchant"
+            />
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Amount"
+              placeholderTextColor={colors.textSecondary}
+              keyboardType="decimal-pad"
+              value={form.amount}
+              onChangeText={(amount) => setForm((f) => ({ ...f, amount }))}
+              accessibilityLabel="Amount"
+            />
+
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+              Billing frequency
+            </Text>
+            <View style={styles.frequencyRow}>
+              {(["weekly", "monthly", "quarterly", "yearly"] as const).map(
+                (freq) => (
+                  <Pressable
+                    key={freq}
+                    onPress={() => setForm((f) => ({ ...f, frequency: freq }))}
+                    style={[
+                      styles.frequencyOption,
+                      {
+                        borderColor:
+                          form.frequency === freq
+                            ? colors.primary
+                            : colors.border,
+                        backgroundColor:
+                          form.frequency === freq
+                            ? colors.primary + "20"
+                            : "transparent",
+                      },
+                    ]}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: form.frequency === freq }}
+                  >
+                    <Text
+                      style={[
+                        styles.frequencyOptionText,
+                        {
+                          color:
+                            form.frequency === freq
+                              ? colors.primary
+                              : colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {freq}
+                    </Text>
+                  </Pressable>
+                )
+              )}
+            </View>
+
+            <TextInput
+              style={[
+                styles.input,
+                { borderColor: colors.border, color: colors.text },
+              ]}
+              placeholder="Next billing date YYYY-MM-DD (optional)"
+              placeholderTextColor={colors.textSecondary}
+              value={form.nextBillingDate}
+              onChangeText={(nextBillingDate) =>
+                setForm((f) => ({ ...f, nextBillingDate }))
+              }
+              accessibilityLabel="Next billing date"
+            />
+
+            {createError && (
+              <Text style={[styles.modalError, { color: colors.error }]}>
+                {createError}
+              </Text>
+            )}
+
+            <View style={styles.modalButtons}>
+              <Pressable
+                onPress={() => setShowCreateModal(false)}
+                style={[styles.modalButton, { borderColor: colors.border }]}
+              >
+                <Text style={[styles.modalButtonText, { color: colors.text }]}>
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleCreateSubscription}
+                disabled={creating}
+                style={[
+                  styles.modalButton,
+                  styles.modalButtonPrimary,
+                  {
+                    backgroundColor: creating
+                      ? colors.textSecondary
+                      : colors.primary,
+                  },
+                ]}
+              >
+                <Text style={styles.modalButtonTextPrimary}>
+                  {creating ? "Saving..." : "Add"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    padding: 24,
+  },
+  modalContent: {
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    marginBottom: 6,
+  },
+  frequencyRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+  frequencyOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  frequencyOptionText: {
+    fontSize: 13,
+    fontWeight: "500",
+    textTransform: "capitalize",
+  },
+  modalError: {
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 4,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+  modalButtonPrimary: {
+    borderWidth: 0,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  modalButtonTextPrimary: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#ffffff",
+  },
   container: {
     flex: 1,
   },

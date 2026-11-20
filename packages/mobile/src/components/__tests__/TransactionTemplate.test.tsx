@@ -3,375 +3,217 @@
  *
  * Tests for the transaction template management modal.
  * **Validates: Requirements 10.2**
+ *
+ * These render the REAL component. An earlier version of this file declared a
+ * `MockTransactionTemplateModal` inside the test and asserted against that, so
+ * it passed without exercising a single line of shipped code.
+ *
+ * Only the component's two dependencies are stubbed: useTemplates (which talks
+ * to AsyncStorage) and useHaptics (native).
  */
 
 import React from "react";
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, waitFor } from "@testing-library/react-native";
+import TransactionTemplateModal from "../TransactionTemplateModal";
 import {
-  View,
-  Text,
-  Pressable,
-  TextInput,
-  Modal,
-  FlatList,
-} from "react-native";
+  useTemplates,
+  type TransactionTemplate,
+} from "../../hooks/useTemplates";
 
-interface TransactionTemplate {
-  id: string;
-  name: string;
-  description: string;
-  amount: number;
-  categoryId: string;
+// The component reads useSafeAreaInsets, which throws outside a provider.
+jest.mock("react-native-safe-area-context", () => ({
+  ...jest.requireActual("react-native-safe-area-context"),
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
+jest.mock("../../hooks/useTemplates");
+jest.mock("../../hooks/useHaptics", () => ({
+  useHaptics: () => ({
+    light: jest.fn(),
+    medium: jest.fn(),
+    heavy: jest.fn(),
+    success: jest.fn(),
+    warning: jest.fn(),
+    error: jest.fn(),
+    selection: jest.fn(),
+  }),
+}));
+
+const useTemplatesMock = useTemplates as jest.Mock;
+
+const TEMPLATES: TransactionTemplate[] = [
+  {
+    id: "tpl_1",
+    name: "Morning Coffee",
+    description: "Latte",
+    amount: 4.5,
+    categoryId: "cat_food",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "tpl_2",
+    name: "Monthly Transit",
+    description: "Transit pass",
+    amount: 120,
+    categoryId: "cat_transport",
+    createdAt: "2026-01-02T00:00:00.000Z",
+  },
+];
+
+const saveTemplate = jest.fn();
+const deleteTemplate = jest.fn();
+
+function mockTemplates(templates: TransactionTemplate[], isLoading = false) {
+  useTemplatesMock.mockReturnValue({
+    templates,
+    isLoading,
+    saveTemplate,
+    deleteTemplate,
+    incrementUseCount: jest.fn(),
+    recentCategories: [],
+    addRecentCategory: jest.fn(),
+  });
 }
 
-// Create a simplified mock component for testing
-const MockTransactionTemplateModal = ({
-  visible,
-  onClose,
-  onSelectTemplate,
-  templates = [],
-  currentTransaction,
-  onSaveTemplate,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  onSelectTemplate: (template: TransactionTemplate) => void;
-  templates?: TransactionTemplate[];
-  currentTransaction?: {
-    description: string;
-    amount: number;
-    categoryId: string;
-  };
-  onSaveTemplate?: (name: string) => void;
-}) => {
-  const [mode, setMode] = React.useState<"list" | "save">("list");
-  const [templateName, setTemplateName] = React.useState("");
-
-  React.useEffect(() => {
-    if (visible) {
-      setMode("list");
-      setTemplateName("");
-    }
-  }, [visible]);
-
-  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
-
-  return (
-    <Modal visible={visible} testID="modal">
-      <View testID="modal-content">
-        <View testID="header">
-          <Text testID="title">
-            {mode === "list" ? "Transaction Templates" : "Save as Template"}
-          </Text>
-          <Pressable
-            testID="close-button"
-            accessibilityLabel="Close"
-            accessibilityRole="button"
-            onPress={onClose}
-          >
-            <Text>×</Text>
-          </Pressable>
-        </View>
-
-        {mode === "list" ? (
-          <>
-            {templates.length === 0 ? (
-              <View testID="empty-state">
-                <Text>No templates saved</Text>
-              </View>
-            ) : (
-              <FlatList
-                testID="template-list"
-                data={templates}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <Pressable
-                    testID={`template-${item.id}`}
-                    accessibilityLabel={`Template: ${item.name}, ${formatCurrency(item.amount)}`}
-                    accessibilityHint="Tap to use this template, long press to delete"
-                    onPress={() => {
-                      onSelectTemplate(item);
-                      onClose();
-                    }}
-                    onLongPress={() => {
-                      // Would show delete confirmation
-                    }}
-                  >
-                    <Text testID={`template-name-${item.id}`}>{item.name}</Text>
-                    <Text testID={`template-amount-${item.id}`}>
-                      {formatCurrency(item.amount)}
-                    </Text>
-                  </Pressable>
-                )}
-              />
-            )}
-
-            {currentTransaction && (
-              <Pressable
-                testID="save-template-button"
-                accessibilityLabel="Save current transaction as template"
-                accessibilityRole="button"
-                onPress={() => setMode("save")}
-              >
-                <Text>Save as Template</Text>
-              </Pressable>
-            )}
-          </>
-        ) : (
-          <View testID="save-form">
-            <Text>Template Name</Text>
-            <TextInput
-              testID="template-name-input"
-              placeholder="e.g., Morning Coffee"
-              value={templateName}
-              onChangeText={setTemplateName}
-              accessibilityLabel="Template name"
-            />
-            {currentTransaction && (
-              <View testID="preview">
-                <Text>Transaction Preview</Text>
-                <Text testID="preview-text">
-                  {currentTransaction.description} -{" "}
-                  {formatCurrency(currentTransaction.amount)}
-                </Text>
-              </View>
-            )}
-            <Pressable
-              testID="cancel-button"
-              onPress={() => {
-                setMode("list");
-                setTemplateName("");
-              }}
-            >
-              <Text>Cancel</Text>
-            </Pressable>
-            <Pressable
-              testID="save-button"
-              onPress={() => {
-                if (templateName.trim() && onSaveTemplate) {
-                  onSaveTemplate(templateName.trim());
-                  onClose();
-                }
-              }}
-            >
-              <Text>Save Template</Text>
-            </Pressable>
-          </View>
-        )}
-      </View>
-    </Modal>
-  );
-};
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockTemplates(TEMPLATES);
+});
 
 describe("TransactionTemplateModal", () => {
-  const mockOnClose = jest.fn();
-  const mockOnSelectTemplate = jest.fn();
-  const mockOnSaveTemplate = jest.fn();
+  it("lists every saved template by name", () => {
+    const { getByText } = render(
+      <TransactionTemplateModal
+        visible
+        onClose={jest.fn()}
+        onSelectTemplate={jest.fn()}
+      />,
+    );
 
-  const mockTemplates: TransactionTemplate[] = [
-    {
-      id: "template-1",
-      name: "Morning Coffee",
-      description: "Starbucks",
-      amount: 5.5,
-      categoryId: "cat-food",
-    },
-    {
-      id: "template-2",
-      name: "Gas Fill-up",
-      description: "Shell Station",
-      amount: 45.0,
-      categoryId: "cat-transport",
-    },
-  ];
-
-  const defaultProps = {
-    visible: true,
-    onClose: mockOnClose,
-    onSelectTemplate: mockOnSelectTemplate,
-    templates: mockTemplates,
-  };
-
-  beforeEach(() => {
-    jest.clearAllMocks();
+    expect(getByText("Morning Coffee")).toBeTruthy();
+    expect(getByText("Monthly Transit")).toBeTruthy();
   });
 
-  describe("Rendering", () => {
-    it("renders modal when visible", () => {
-      const { getByTestId } = render(
-        <MockTransactionTemplateModal {...defaultProps} />,
-      );
-      expect(getByTestId("modal")).toBeTruthy();
-    });
+  it("shows the list title", () => {
+    const { getByText } = render(
+      <TransactionTemplateModal
+        visible
+        onClose={jest.fn()}
+        onSelectTemplate={jest.fn()}
+      />,
+    );
 
-    it("renders template list", () => {
-      const { getByTestId } = render(
-        <MockTransactionTemplateModal {...defaultProps} />,
-      );
-      expect(getByTestId("template-list")).toBeTruthy();
-    });
-
-    it("displays template names", () => {
-      const { getByText } = render(
-        <MockTransactionTemplateModal {...defaultProps} />,
-      );
-      expect(getByText("Morning Coffee")).toBeTruthy();
-      expect(getByText("Gas Fill-up")).toBeTruthy();
-    });
-
-    it("displays template amounts formatted as currency", () => {
-      const { getByText } = render(
-        <MockTransactionTemplateModal {...defaultProps} />,
-      );
-      expect(getByText("$5.50")).toBeTruthy();
-      expect(getByText("$45.00")).toBeTruthy();
-    });
+    expect(getByText("Transaction Templates")).toBeTruthy();
   });
 
-  describe("Template Selection", () => {
-    it("calls onSelectTemplate when template is pressed", () => {
-      const { getByTestId } = render(
-        <MockTransactionTemplateModal {...defaultProps} />,
-      );
+  it("reports an empty state when nothing is saved", () => {
+    mockTemplates([]);
 
-      fireEvent.press(getByTestId("template-template-1"));
+    const { getByText } = render(
+      <TransactionTemplateModal
+        visible
+        onClose={jest.fn()}
+        onSelectTemplate={jest.fn()}
+      />,
+    );
 
-      expect(mockOnSelectTemplate).toHaveBeenCalledWith(mockTemplates[0]);
-    });
-
-    it("closes modal after template selection", () => {
-      const { getByTestId } = render(
-        <MockTransactionTemplateModal {...defaultProps} />,
-      );
-
-      fireEvent.press(getByTestId("template-template-1"));
-
-      expect(mockOnClose).toHaveBeenCalled();
-    });
+    expect(getByText(/No templates saved/i)).toBeTruthy();
   });
 
-  describe("Save Template", () => {
-    const propsWithCurrentTransaction = {
-      ...defaultProps,
-      currentTransaction: {
-        description: "New Transaction",
-        amount: 25.0,
-        categoryId: "cat-food",
-      },
-      onSaveTemplate: mockOnSaveTemplate,
-    };
+  it("passes the selected template back to the caller", () => {
+    const onSelectTemplate = jest.fn();
+    const { getByText } = render(
+      <TransactionTemplateModal
+        visible
+        onClose={jest.fn()}
+        onSelectTemplate={onSelectTemplate}
+      />,
+    );
 
-    it("shows save as template button when currentTransaction is provided", () => {
-      const { getByTestId } = render(
-        <MockTransactionTemplateModal {...propsWithCurrentTransaction} />,
-      );
-      expect(getByTestId("save-template-button")).toBeTruthy();
-    });
+    fireEvent.press(getByText("Morning Coffee"));
 
-    it("switches to save mode when save button is pressed", () => {
-      const { getByTestId, getByText } = render(
-        <MockTransactionTemplateModal {...propsWithCurrentTransaction} />,
-      );
+    expect(onSelectTemplate).toHaveBeenCalledTimes(1);
+    expect(onSelectTemplate).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tpl_1", name: "Morning Coffee" }),
+    );
+  });
 
-      fireEvent.press(getByTestId("save-template-button"));
+  it("resolves category names through getCategoryName", () => {
+    const getCategoryName = jest.fn((id: string) =>
+      id === "cat_food" ? "Food" : "Transport",
+    );
 
-      expect(getByText("Template Name")).toBeTruthy();
-    });
+    render(
+      <TransactionTemplateModal
+        visible
+        onClose={jest.fn()}
+        onSelectTemplate={jest.fn()}
+        getCategoryName={getCategoryName}
+      />,
+    );
 
-    it("shows transaction preview in save mode", () => {
-      const { getByTestId } = render(
-        <MockTransactionTemplateModal {...propsWithCurrentTransaction} />,
-      );
+    expect(getCategoryName).toHaveBeenCalledWith("cat_food");
+    expect(getCategoryName).toHaveBeenCalledWith("cat_transport");
+  });
 
-      fireEvent.press(getByTestId("save-template-button"));
+  it("offers the save affordance only when a current transaction is supplied", () => {
+    const withoutDraft = render(
+      <TransactionTemplateModal
+        visible
+        onClose={jest.fn()}
+        onSelectTemplate={jest.fn()}
+      />,
+    );
+    expect(withoutDraft.queryByText("Save as Template")).toBeNull();
 
-      expect(getByTestId("preview")).toBeTruthy();
-      expect(getByTestId("preview-text").props.children).toContain(
-        "New Transaction",
-      );
-    });
+    const withDraft = render(
+      <TransactionTemplateModal
+        visible
+        onClose={jest.fn()}
+        onSelectTemplate={jest.fn()}
+        currentTransaction={{
+          description: "Latte",
+          amount: 4.5,
+          categoryId: "cat_food",
+        }}
+      />,
+    );
+    expect(withDraft.getByText("Save as Template")).toBeTruthy();
+  });
 
-    it("saves template with entered name", () => {
-      const { getByTestId } = render(
-        <MockTransactionTemplateModal {...propsWithCurrentTransaction} />,
-      );
+  it("accepts a name for a template saved from the current transaction", async () => {
+    const { getByText, getByPlaceholderText } = render(
+      <TransactionTemplateModal
+        visible
+        onClose={jest.fn()}
+        onSelectTemplate={jest.fn()}
+        currentTransaction={{
+          description: "Latte",
+          amount: 4.5,
+          categoryId: "cat_food",
+        }}
+      />,
+    );
 
-      fireEvent.press(getByTestId("save-template-button"));
-      fireEvent.changeText(
-        getByTestId("template-name-input"),
-        "My New Template",
-      );
-      fireEvent.press(getByTestId("save-button"));
+    fireEvent.press(getByText("Save as Template"));
 
-      expect(mockOnSaveTemplate).toHaveBeenCalledWith("My New Template");
+    const input = getByPlaceholderText("e.g., Morning Coffee");
+    fireEvent.changeText(input, "Afternoon Latte");
+
+    await waitFor(() => {
+      expect(input.props.value).toBe("Afternoon Latte");
     });
   });
 
-  describe("Empty State", () => {
-    it("shows empty state when no templates exist", () => {
-      const { getByTestId } = render(
-        <MockTransactionTemplateModal {...defaultProps} templates={[]} />,
-      );
-      expect(getByTestId("empty-state")).toBeTruthy();
-    });
-  });
+  it("renders nothing interactive when not visible", () => {
+    const { queryByText } = render(
+      <TransactionTemplateModal
+        visible={false}
+        onClose={jest.fn()}
+        onSelectTemplate={jest.fn()}
+      />,
+    );
 
-  describe("Accessibility", () => {
-    it("has accessible close button", () => {
-      const { getByTestId } = render(
-        <MockTransactionTemplateModal {...defaultProps} />,
-      );
-      expect(getByTestId("close-button").props.accessibilityLabel).toBe(
-        "Close",
-      );
-    });
-
-    it("template items have accessibility hints", () => {
-      const { getByTestId } = render(
-        <MockTransactionTemplateModal {...defaultProps} />,
-      );
-      expect(getByTestId("template-template-1").props.accessibilityHint).toBe(
-        "Tap to use this template, long press to delete",
-      );
-    });
-  });
-
-  describe("Close Behavior", () => {
-    it("calls onClose when close button is pressed", () => {
-      const { getByTestId } = render(
-        <MockTransactionTemplateModal {...defaultProps} />,
-      );
-
-      fireEvent.press(getByTestId("close-button"));
-
-      expect(mockOnClose).toHaveBeenCalled();
-    });
-
-    it("resets to list mode when modal is reopened", () => {
-      const { getByTestId, rerender } = render(
-        <MockTransactionTemplateModal
-          {...defaultProps}
-          currentTransaction={{
-            description: "Test",
-            amount: 10,
-            categoryId: "cat-1",
-          }}
-        />,
-      );
-
-      // Enter save mode
-      fireEvent.press(getByTestId("save-template-button"));
-
-      // Close and reopen
-      rerender(
-        <MockTransactionTemplateModal {...defaultProps} visible={false} />,
-      );
-      rerender(
-        <MockTransactionTemplateModal {...defaultProps} visible={true} />,
-      );
-
-      // Should be back to list mode
-      expect(getByTestId("title").props.children).toBe("Transaction Templates");
-    });
+    expect(queryByText("Morning Coffee")).toBeNull();
   });
 });

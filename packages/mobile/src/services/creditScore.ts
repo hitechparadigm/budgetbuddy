@@ -5,7 +5,7 @@
  * **Validates: Requirement 43**
  */
 
-import { api } from './api';
+import { featuresApi } from './api';
 
 // Types
 export interface CreditFactor {
@@ -45,31 +45,31 @@ export interface CreditScoreSettings {
 export const creditScoreService = {
   // Get current credit score
   async getCreditScore(): Promise<CreditScore> {
-    const response = await api.get('/credit-score');
+    const response = await featuresApi.get('/credit-score');
     return response.data.data;
   },
 
   // Get credit score history
   async getHistory(): Promise<CreditScoreHistory> {
-    const response = await api.get('/credit-score/history');
+    const response = await featuresApi.get('/credit-score/history');
     return response.data.data;
   },
 
   // Refresh credit score from bureau
   async refreshScore(): Promise<CreditScore> {
-    const response = await api.post('/credit-score/refresh');
+    const response = await featuresApi.post('/credit-score/refresh');
     return response.data.data;
   },
 
   // Get credit score settings
   async getSettings(): Promise<CreditScoreSettings> {
-    const response = await api.get('/credit-score/settings');
+    const response = await featuresApi.get('/credit-score/settings');
     return response.data.data;
   },
 
   // Update credit score settings
   async updateSettings(settings: Partial<CreditScoreSettings>): Promise<CreditScoreSettings> {
-    const response = await api.put('/credit-score/settings', settings);
+    const response = await featuresApi.put('/credit-score/settings', settings);
     return response.data.data;
   },
 };

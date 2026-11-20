@@ -18,6 +18,8 @@ const {
   BudgetAccessResolver,
 } = require('/opt/nodejs/utils');
 
+const { PLANNED_TXN_SK_PREFIX, plannedTxnSK } = require('./keys');
+
 /**
  * Main Lambda handler for transaction planning operations
  */
@@ -52,6 +54,18 @@ exports.handler = async (event, context) => {
     // Resolve budget access using BudgetAccessResolver (BUDGET# model)
     const { budgetId, role, budgetStatus } = await BudgetAccessResolver.resolveAccess(userId, dynamoHelpers);
 
+    // POST /transaction-planning/{plannedTransactionId}/mark-paid — must be
+    // matched before the bare collection-level POST create branch.
+    if (
+      httpMethod === 'POST' &&
+      pathParameters?.plannedTransactionId &&
+      typeof path === 'string' &&
+      path.endsWith('/mark-paid')
+    ) {
+      BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
+      return await markPlannedTransactionPaid(userId, budgetId, pathParameters.plannedTransactionId);
+    }
+
     if (httpMethod === 'POST' && path === '/transaction-planning') {
       BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
       return await createPlannedTransaction(event, userId, budgetId);
@@ -62,19 +76,14 @@ exports.handler = async (event, context) => {
       return await getPlannedTransactions(event, userId, budgetId);
     }
 
-    if (httpMethod === 'PUT' && pathParameters?.planId) {
+    if (httpMethod === 'PUT' && pathParameters?.plannedTransactionId) {
       BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
-      return await updatePlannedTransaction(event, userId, budgetId, pathParameters.planId);
+      return await updatePlannedTransaction(event, userId, budgetId, pathParameters.plannedTransactionId);
     }
 
-    if (httpMethod === 'DELETE' && pathParameters?.planId) {
+    if (httpMethod === 'DELETE' && pathParameters?.plannedTransactionId) {
       BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
-      return await deletePlannedTransaction(userId, budgetId, pathParameters.planId);
-    }
-
-    if (httpMethod === 'POST' && path === '/transaction-planning/execute') {
-      BudgetAccessResolver.assertPermission(role, 'budget.edit', budgetStatus);
-      return await executePlannedTransaction(event, userId, budgetId);
+      return await deletePlannedTransaction(userId, budgetId, pathParameters.plannedTransactionId);
     }
 
     return errorResponse.notFound(`Route ${httpMethod} ${path} not found`);
@@ -126,7 +135,7 @@ async function createPlannedTransaction(event, userId, budgetId) {
 
   const item = {
     PK: `BUDGET#${budgetId}`,
-    SK: `PLAN#${planId}`,
+    SK: plannedTxnSK(planId),
     entityType: 'PLANNED_TRANSACTION',
     planId,
     budgetId,
@@ -174,8 +183,23 @@ async function createPlannedTransaction(event, userId, budgetId) {
 async function getPlannedTransactions(event, _userId, budgetId) {
   const q = event.queryStringParameters || {};
 
-  const filterParts = ['entityType = :et', 'attribute_not_exists(isDeleted) OR isDeleted = :f'];
-  const exprVals = { ':et': 'PLANNED_TRANSACTION', ':f': false };
+  // Every composite part is parenthesised. Without the parentheses DynamoDB
+  // binds AND tighter than OR, so
+  //   entityType = :et AND attribute_not_exists(isDeleted) OR isDeleted = :f
+  // evaluates as
+  //   (entityType = :et AND attribute_not_exists(isDeleted)) OR isDeleted = :f
+  // which returns every item in the partition that carries isDeleted: false
+  // regardless of entity type, and keeps returning soft-deleted plans.
+  const filterParts = [
+    'begins_with(SK, :skPrefix)',
+    'entityType = :et',
+    '(attribute_not_exists(isDeleted) OR isDeleted = :f)',
+  ];
+  const exprVals = {
+    ':skPrefix': PLANNED_TXN_SK_PREFIX,
+    ':et': 'PLANNED_TRANSACTION',
+    ':f': false,
+  };
 
   if (q.type) {
     filterParts.push('transactionType = :type');
@@ -244,7 +268,7 @@ async function updatePlannedTransaction(event, _userId, budgetId, planId) {
     return errorResponse.badRequest('amount must be positive');
   }
 
-  const updated = await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, `PLAN#${planId}`, updates);
+  const updated = await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, plannedTxnSK(planId), updates);
 
   return successResponse({ planId: updated.planId, updatedAt: updated.updatedAt }, 'Updated');
 }
@@ -253,7 +277,7 @@ async function deletePlannedTransaction(_userId, budgetId, planId) {
   const existing = await findPlan(budgetId, planId);
   if (!existing) return errorResponse.notFound(`Planned transaction ${planId} not found`);
 
-  await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, `PLAN#${planId}`, {
+  await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, plannedTxnSK(planId), {
     isDeleted: true,
     deletedAt: new Date().toISOString(),
   });
@@ -261,10 +285,14 @@ async function deletePlannedTransaction(_userId, budgetId, planId) {
   return successResponse(null, 'Deleted');
 }
 
-async function executePlannedTransaction(event, userId, budgetId) {
-  const body = parseRequestBody(event.body) || {};
-  const { planId } = body;
-  if (!planId) return errorResponse.badRequest('planId is required');
+/**
+ * Mark a planned transaction as paid: create the real transaction it stands
+ * for, flag the plan as executed, and schedule the next occurrence when the
+ * plan recurs. Reached via POST /transaction-planning/{id}/mark-paid, so the
+ * id arrives as a path parameter rather than in the request body.
+ */
+async function markPlannedTransactionPaid(userId, budgetId, planId) {
+  if (!planId) return errorResponse.badRequest('plannedTransactionId is required');
 
   const plan = await findPlan(budgetId, planId);
   if (!plan) return errorResponse.notFound(`Planned transaction ${planId} not found`);
@@ -297,7 +325,7 @@ async function executePlannedTransaction(event, userId, budgetId) {
   await dynamoHelpers.putItem(txn);
 
   // Mark plan as executed
-  await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, `PLAN#${planId}`, {
+  await dynamoHelpers.updateItem(`BUDGET#${budgetId}`, plannedTxnSK(planId), {
     isExecuted: true,
     executedTransactionId: txnId,
     executedAt: now,
@@ -317,7 +345,7 @@ async function executePlannedTransaction(event, userId, budgetId) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────────────
 
 async function findPlan(budgetId, planId) {
-  const result = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, `PLAN#${planId}`);
+  const result = await dynamoHelpers.getItem(`BUDGET#${budgetId}`, plannedTxnSK(planId));
   if (!result || result.isDeleted) return null;
   return result;
 }
@@ -335,7 +363,7 @@ async function scheduleNextOccurrence(plan, userId, budgetId) {
     ...plan,
     planId,
     PK: `BUDGET#${budgetId}`,
-    SK: `PLAN#${planId}`,
+    SK: plannedTxnSK(planId),
     scheduledDate,
     originalPlanId: plan.planId,
     isExecuted: false,

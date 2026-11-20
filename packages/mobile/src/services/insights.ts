@@ -5,7 +5,7 @@
  * **Validates: Requirement 39**
  */
 
-import { api } from './api';
+import { extendedFeaturesApi } from './api';
 
 // Types
 export interface SpendingSummary {
@@ -91,25 +91,25 @@ export interface AskResponse {
 export const insightsService = {
   // Get weekly insights
   async getWeeklyInsights(): Promise<WeeklyInsightsResponse> {
-    const response = await api.get('/insights/weekly');
+    const response = await extendedFeaturesApi.get('/insights/weekly');
     return response.data.data;
   },
 
   // Get spending trends
   async getTrends(months: number = 6): Promise<TrendsResponse> {
-    const response = await api.get('/insights/trends', { months });
+    const response = await extendedFeaturesApi.get('/insights/trends', { months });
     return response.data.data;
   },
 
   // Get spending patterns
   async getPatterns(months: number = 3): Promise<PatternsResponse> {
-    const response = await api.get('/insights/patterns', { months });
+    const response = await extendedFeaturesApi.get('/insights/patterns', { months });
     return response.data.data;
   },
 
   // Ask AI about spending
   async askAboutSpending(question: string): Promise<AskResponse> {
-    const response = await api.post('/insights/ask', { question });
+    const response = await extendedFeaturesApi.post('/insights/ask', { question });
     return response.data.data;
   },
 };

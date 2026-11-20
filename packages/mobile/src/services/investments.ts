@@ -6,6 +6,7 @@
  */
 
 import { apiCall } from './api';
+import { featuresApiUrl } from '../config/api';
 
 // Types
 export interface Holding {
@@ -69,20 +70,26 @@ export interface UpdateHoldingRequest {
   accountType?: Holding['accountType'];
 }
 
+// /investments/* lives on the features gateway (api-features-stack.ts), not
+// the main gateway that apiCall defaults to.
+const INVESTMENTS_BASE = { baseUrl: featuresApiUrl };
+
 // API Methods
 export const investmentsService = {
   /**
    * Get portfolio overview with summary statistics
    */
   async getPortfolio(): Promise<PortfolioSummary> {
-    return apiCall<PortfolioSummary>('/investments');
+    return apiCall<PortfolioSummary>('/investments', { ...INVESTMENTS_BASE });
   },
 
   /**
    * Get all holdings
    */
   async getHoldings(): Promise<Holding[]> {
-    const response = await apiCall<{ holdings: Holding[] }>('/investments/holdings');
+    const response = await apiCall<{ holdings: Holding[] }>('/investments/holdings', {
+      ...INVESTMENTS_BASE,
+    });
     return response.holdings;
   },
 
@@ -91,6 +98,7 @@ export const investmentsService = {
    */
   async createHolding(data: CreateHoldingRequest): Promise<Holding> {
     return apiCall<Holding>('/investments/holdings', {
+      ...INVESTMENTS_BASE,
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -101,6 +109,7 @@ export const investmentsService = {
    */
   async updateHolding(holdingId: string, data: UpdateHoldingRequest): Promise<Holding> {
     return apiCall<Holding>(`/investments/holdings/${holdingId}`, {
+      ...INVESTMENTS_BASE,
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -111,6 +120,7 @@ export const investmentsService = {
    */
   async deleteHolding(holdingId: string): Promise<{ success: boolean }> {
     return apiCall<{ success: boolean }>(`/investments/holdings/${holdingId}`, {
+      ...INVESTMENTS_BASE,
       method: 'DELETE',
     });
   },
@@ -120,7 +130,9 @@ export const investmentsService = {
    * @param period - Time period: 1M, 3M, 6M, 1Y, ALL
    */
   async getPerformance(period: string = '1M'): Promise<PerformanceHistory> {
-    return apiCall<PerformanceHistory>(`/investments/performance?period=${period}`);
+    return apiCall<PerformanceHistory>(`/investments/performance?period=${period}`, {
+      ...INVESTMENTS_BASE,
+    });
   },
 
   /**
@@ -128,6 +140,7 @@ export const investmentsService = {
    */
   async saveSnapshot(): Promise<any> {
     return apiCall('/investments/snapshot', {
+      ...INVESTMENTS_BASE,
       method: 'POST',
     });
   },

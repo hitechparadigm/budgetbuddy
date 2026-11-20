@@ -20,6 +20,15 @@ import {
   useDeleteTransaction,
 } from "../services/transaction";
 import { useBudgets } from "../services/budget";
+import { filterTransactions, countActiveFilters } from "../services/search";
+import { ReceiptScanner } from "../components/ReceiptScanner";
+import { ReceiptConfirmation } from "../components/ReceiptConfirmation";
+import TransactionTemplateModal from "../components/TransactionTemplateModal";
+import type { TransactionTemplate } from "../hooks/useTemplates";
+import type {
+  ExtractedReceiptData,
+  ProcessReceiptResponse,
+} from "../services/receipt";
 import {
   Transaction,
   BudgetCategory,
@@ -39,6 +48,14 @@ export default function TransactionsScreen() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<
     string | undefined
   >();
+  const [showReceiptScanner, setShowReceiptScanner] = useState(false);
+  const [showReceiptConfirmation, setShowReceiptConfirmation] = useState(false);
+  const [scannedReceipt, setScannedReceipt] =
+    useState<ExtractedReceiptData | null>(null);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templateDraft, setTemplateDraft] = useState<
+    TransactionTemplate | undefined
+  >();
 
   // Queries and mutations
   const {
@@ -53,120 +70,72 @@ export default function TransactionsScreen() {
   const updateTransactionMutation = useUpdateTransaction();
   const deleteTransactionMutation = useDeleteTransaction();
 
-  // Extract categories from budgets
-  const categories: BudgetCategory[] = budgets.flatMap((budget) =>
-    // For now, create a simple category structure from budget data
-    // This would be replaced with actual category data from the API
-    [
-      {
-        id: budget.id,
-        name: budget.name,
-        icon:
-          budget.type === "income"
-            ? "💰"
-            : budget.type === "savings"
-              ? "💾"
-              : "💸",
-        color:
-          budget.type === "income"
-            ? "#10B981"
-            : budget.type === "savings"
-              ? "#3B82F6"
-              : "#EF4444",
-        isRecurring: budget.frequency !== "one-time",
-        recurringFrequency:
-          budget.frequency === "weekly"
-            ? "weekly"
-            : budget.frequency === "monthly"
-              ? "monthly"
-              : budget.frequency === "quarterly"
-                ? "quarterly"
-                : budget.frequency === "yearly"
-                  ? "annually"
-                  : undefined,
-        baseAmount: budget.amount,
-        plannedMonthlyAmount: budget.amount,
-        actualAmount: 0,
-        variance: 0,
-        transactions: [],
-        order: 0,
-        isCustom: false,
-        isArchived: false,
-        usageCount: 0,
-        isPaused: false,
-      },
-    ],
+  // Extract categories from budgets.
+  //
+  // Memoised on `budgets` so the array keeps one identity across re-renders.
+  // Built inline it produced a fresh array on every render, which made the
+  // `filterCategories` memo below a no-op and, more seriously, re-triggered
+  // any child effect that depended on it.
+  const categories: BudgetCategory[] = useMemo(
+    () =>
+      budgets.flatMap((budget) =>
+        // For now, create a simple category structure from budget data
+        // This would be replaced with actual category data from the API
+        [
+          {
+            id: budget.id,
+            name: budget.name,
+            icon:
+              budget.type === "income"
+                ? "💰"
+                : budget.type === "savings"
+                  ? "💾"
+                  : "💸",
+            color:
+              budget.type === "income"
+                ? "#10B981"
+                : budget.type === "savings"
+                  ? "#3B82F6"
+                  : "#EF4444",
+            isRecurring: budget.frequency !== "one-time",
+            recurringFrequency:
+              budget.frequency === "weekly"
+                ? "weekly"
+                : budget.frequency === "monthly"
+                  ? "monthly"
+                  : budget.frequency === "quarterly"
+                    ? "quarterly"
+                    : budget.frequency === "yearly"
+                      ? "annually"
+                      : undefined,
+            baseAmount: budget.amount,
+            plannedMonthlyAmount: budget.amount,
+            actualAmount: 0,
+            variance: 0,
+            transactions: [],
+            order: 0,
+            isCustom: false,
+            isArchived: false,
+            usageCount: 0,
+            isPaused: false,
+          },
+        ],
+      ),
+    [budgets],
   );
 
-  // Filter transactions based on search query and filters
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((transaction) => {
-      // Search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchesSearch =
-          transaction.description.toLowerCase().includes(query) ||
-          transaction.merchant?.toLowerCase().includes(query) ||
-          transaction.tags?.some((tag) => tag.toLowerCase().includes(query));
-        if (!matchesSearch) return false;
-      }
-
-      // Type filter
-      if (filters.type !== "all") {
-        const isIncome = transaction.amount > 0;
-        if (filters.type === "income" && !isIncome) return false;
-        if (filters.type === "expense" && isIncome) return false;
-      }
-
-      // Category filter
-      if (filters.categoryIds.length > 0) {
-        if (!filters.categoryIds.includes(transaction.categoryId)) return false;
-      }
-
-      // Date range filter
-      if (filters.dateRange.start || filters.dateRange.end) {
-        const transactionDate = new Date(transaction.date);
-        if (
-          filters.dateRange.start &&
-          transactionDate < filters.dateRange.start
-        )
-          return false;
-        if (filters.dateRange.end && transactionDate > filters.dateRange.end)
-          return false;
-      }
-
-      // Amount range filter
-      if (
-        filters.amountRange.min !== null ||
-        filters.amountRange.max !== null
-      ) {
-        const amount = Math.abs(transaction.amount);
-        if (
-          filters.amountRange.min !== null &&
-          amount < filters.amountRange.min
-        )
-          return false;
-        if (
-          filters.amountRange.max !== null &&
-          amount > filters.amountRange.max
-        )
-          return false;
-      }
-
-      return true;
-    });
-  }, [transactions, searchQuery, filters]);
+  // Filtering lives in services/search so the screen and its property tests
+  // exercise the same code.
+  const filteredTransactions = useMemo(
+    () => filterTransactions(transactions, searchQuery, filters),
+    [transactions, searchQuery, filters]
+  );
 
   // Calculate active filter count for badge
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (filters.categoryIds.length > 0) count++;
-    if (filters.dateRange.start || filters.dateRange.end) count++;
-    if (filters.amountRange.min !== null || filters.amountRange.max !== null)
-      count++;
-    if (filters.type !== "all") count++;
-    return count;
-  }, [filters]);
+  const activeFilterCount = useMemo(
+    () => countActiveFilters(filters),
+    [filters]
+  );
 
   // Filter categories for FilterSheet (convert BudgetCategory to simpler format)
   const filterCategories = useMemo(() => {
@@ -189,7 +158,76 @@ export default function TransactionsScreen() {
     }, [refetchTransactions]),
   );
 
+  /**
+   * Receipt scan -> confirm -> create.
+   *
+   * ReceiptScanner uploads and OCRs through services/receipt (extended
+   * features gateway), hands back the extracted fields, and
+   * ReceiptConfirmation lets the user correct them before a transaction is
+   * created. Both components existed but were mounted nowhere.
+   */
+  const handleScanComplete = (result: ProcessReceiptResponse) => {
+    if (categories.length === 0) {
+      // Nothing the confirmation sheet could file this against.
+      Alert.alert(
+        "No categories",
+        "Create a budget category before saving a receipt.",
+      );
+      setShowReceiptScanner(false);
+      return;
+    }
+
+    setScannedReceipt(result.extractedData);
+    setShowReceiptScanner(false);
+    setShowReceiptConfirmation(true);
+  };
+
+  const handleReceiptSave = (data: {
+    merchant: string;
+    date: string;
+    amount: number;
+    categoryId: string;
+    notes?: string;
+  }) => {
+    // ReceiptConfirmation picks from this screen's own `categories`, so the
+    // id it returns is already one of the budget's. It used to return a name
+    // from a hardcoded list, so a name matching nothing was filed under
+    // categories[0] with a success haptic.
+    createTransactionMutation.mutate(
+      {
+        categoryId: data.categoryId,
+        amount: data.amount,
+        description: data.notes?.trim() || data.merchant,
+        merchant: data.merchant,
+        date: data.date,
+      },
+      {
+        onSuccess: () => {
+          setShowReceiptConfirmation(false);
+          setScannedReceipt(null);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        },
+        onError: (error) => {
+          console.error("Failed to save receipt transaction:", error);
+          Alert.alert("Error", "Failed to save the receipt. Please try again.");
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        },
+      },
+    );
+  };
+
+  /** Apply a saved template by opening the form prefilled from it. */
+  const handleSelectTemplate = (template: TransactionTemplate) => {
+    setShowTemplateModal(false);
+    setSelectedCategoryId(template.categoryId);
+    setEditingTransaction(undefined);
+    setTemplateDraft(template);
+    setShowTransactionForm(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
   const handleAddTransaction = (categoryId?: string) => {
+    setTemplateDraft(undefined);
     setSelectedCategoryId(categoryId);
     setEditingTransaction(undefined);
     setShowTransactionForm(true);
@@ -484,6 +522,24 @@ export default function TransactionsScreen() {
             onPress: () => handleAddTransaction(),
             color: colors.primary,
           },
+          {
+            icon: "camera-outline",
+            label: "Scan Receipt",
+            onPress: () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setShowReceiptScanner(true);
+            },
+            color: colors.primary,
+          },
+          {
+            icon: "copy-outline",
+            label: "Use Template",
+            onPress: () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setShowTemplateModal(true);
+            },
+            color: colors.primary,
+          },
         ]}
         mainIcon="add"
         mainColor={colors.primary}
@@ -495,6 +551,7 @@ export default function TransactionsScreen() {
           setShowTransactionForm(false);
           setEditingTransaction(undefined);
           setSelectedCategoryId(undefined);
+          setTemplateDraft(undefined);
         }}
         onSubmit={handleTransactionFormSubmit}
         transaction={editingTransaction}
@@ -503,6 +560,44 @@ export default function TransactionsScreen() {
         isLoading={
           createTransactionMutation.isPending ||
           updateTransactionMutation.isPending
+        }
+      />
+
+      {/* Receipt scan -> confirm -> create (extended features gateway) */}
+      <ReceiptScanner
+        visible={showReceiptScanner}
+        onClose={() => setShowReceiptScanner(false)}
+        onScanComplete={handleScanComplete}
+      />
+
+      <ReceiptConfirmation
+        visible={showReceiptConfirmation}
+        extractedData={scannedReceipt}
+        categories={categories}
+        onClose={() => {
+          setShowReceiptConfirmation(false);
+          setScannedReceipt(null);
+        }}
+        onSave={handleReceiptSave}
+      />
+
+      {/* The modal owns its own useTemplates(), so it loads and saves
+          templates itself; passing a second saver would double-write. */}
+      <TransactionTemplateModal
+        visible={showTemplateModal}
+        onClose={() => setShowTemplateModal(false)}
+        onSelectTemplate={handleSelectTemplate}
+        getCategoryName={(categoryId) =>
+          categories.find((c) => c.id === categoryId)?.name ?? "Unknown"
+        }
+        currentTransaction={
+          templateDraft
+            ? {
+                description: templateDraft.description,
+                amount: templateDraft.amount,
+                categoryId: templateDraft.categoryId,
+              }
+            : undefined
         }
       />
 

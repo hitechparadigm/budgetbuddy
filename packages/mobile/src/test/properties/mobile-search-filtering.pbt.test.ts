@@ -4,427 +4,344 @@
  * **Property 14: Mobile Search Filtering**
  * **Validates: Requirements 10.3**
  *
- * Tests that search filtering correctly filters transactions based on
- * various criteria and maintains data integrity.
+ * These exercise the REAL filter (src/services/search.ts), which is also what
+ * TransactionsScreen calls. An earlier version of this file re-declared its
+ * own filterTransactions whose semantics differed materially from the screen's
+ * (no tag matching, unsigned amount comparison, a single categoryId, ISO
+ * string dates), so it passed while proving nothing about shipped behaviour.
  */
 
 import fc from 'fast-check';
+import {
+  filterTransactions,
+  matchesQuery,
+  countActiveFilters,
+  EMPTY_FILTERS,
+  type SearchableTransaction,
+  type TransactionFilters,
+} from '../../services/search';
 
 // ============================================================================
-// Search Filtering Functions (extracted for testing)
+// Arbitraries
 // ============================================================================
 
-interface Transaction {
-  id: string;
-  description: string;
-  merchant?: string;
-  amount: number;
-  categoryId: string;
-  categoryName: string;
-  date: string;
-  type: 'income' | 'expense';
-}
-
-interface SearchFilters {
-  query?: string;
-  categoryId?: string;
-  minAmount?: number;
-  maxAmount?: number;
-  startDate?: string;
-  endDate?: string;
-  type?: 'income' | 'expense';
-}
-
-/**
- * Filter transactions based on search query and filters.
- */
-function filterTransactions(
-  transactions: Transaction[],
-  filters: SearchFilters
-): Transaction[] {
-  return transactions.filter((tx) => {
-    // Text search (description and merchant)
-    if (filters.query) {
-      const query = filters.query.toLowerCase();
-      const matchesDescription = tx.description.toLowerCase().includes(query);
-      const matchesMerchant = tx.merchant?.toLowerCase().includes(query) || false;
-      if (!matchesDescription && !matchesMerchant) {
-        return false;
-      }
-    }
-
-    // Category filter
-    if (filters.categoryId && tx.categoryId !== filters.categoryId) {
-      return false;
-    }
-
-    // Amount range filter
-    if (filters.minAmount !== undefined && tx.amount < filters.minAmount) {
-      return false;
-    }
-    if (filters.maxAmount !== undefined && tx.amount > filters.maxAmount) {
-      return false;
-    }
-
-    // Date range filter
-    if (filters.startDate && tx.date < filters.startDate) {
-      return false;
-    }
-    if (filters.endDate && tx.date > filters.endDate) {
-      return false;
-    }
-
-    // Type filter
-    if (filters.type && tx.type !== filters.type) {
-      return false;
-    }
-
-    return true;
-  });
-}
-
-/**
- * Highlight search matches in text.
- */
-function highlightMatches(text: string, query: string): { text: string; highlighted: boolean }[] {
-  if (!query) {
-    return [{ text, highlighted: false }];
-  }
-
-  const lowerText = text.toLowerCase();
-  const lowerQuery = query.toLowerCase();
-  const result: { text: string; highlighted: boolean }[] = [];
-  let lastIndex = 0;
-
-  let index = lowerText.indexOf(lowerQuery);
-  while (index !== -1) {
-    // Add non-highlighted text before match
-    if (index > lastIndex) {
-      result.push({ text: text.slice(lastIndex, index), highlighted: false });
-    }
-    // Add highlighted match
-    result.push({ text: text.slice(index, index + query.length), highlighted: true });
-    lastIndex = index + query.length;
-    index = lowerText.indexOf(lowerQuery, lastIndex);
-  }
-
-  // Add remaining text
-  if (lastIndex < text.length) {
-    result.push({ text: text.slice(lastIndex), highlighted: false });
-  }
-
-  return result;
-}
-
-/**
- * Sort transactions by various criteria.
- */
-function sortTransactions(
-  transactions: Transaction[],
-  sortBy: 'date' | 'amount' | 'description',
-  order: 'asc' | 'desc'
-): Transaction[] {
-  const sorted = [...transactions].sort((a, b) => {
-    let comparison = 0;
-    switch (sortBy) {
-      case 'date':
-        comparison = a.date.localeCompare(b.date);
-        break;
-      case 'amount':
-        comparison = a.amount - b.amount;
-        break;
-      case 'description':
-        comparison = a.description.localeCompare(b.description);
-        break;
-    }
-    return order === 'asc' ? comparison : -comparison;
-  });
-  return sorted;
-}
-
-/**
- * Debounce function for search input.
- */
-function createDebouncedSearch(
-  callback: (query: string) => void,
-  delay: number
-): { search: (query: string) => void; cancel: () => void } {
-  let timeoutId: NodeJS.Timeout | null = null;
-
-  return {
-    search: (query: string) => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      timeoutId = setTimeout(() => {
-        callback(query);
-        timeoutId = null;
-      }, delay);
-    },
-    cancel: () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
-      }
-    },
-  };
-}
-
-// ============================================================================
-// Arbitraries (Generators)
-// ============================================================================
-
-const transactionArbitrary = fc.record({
-  id: fc.uuid(),
-  description: fc.string({ minLength: 1, maxLength: 100 }),
-  merchant: fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: undefined }),
-  amount: fc.float({ min: Math.fround(0.01), max: Math.fround(10000), noNaN: true }),
-  categoryId: fc.string({ minLength: 1, maxLength: 20 }),
-  categoryName: fc.string({ minLength: 1, maxLength: 30 }),
-  date: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-12-31') })
-    .map((d) => d.toISOString().split('T')[0]),
-  type: fc.constantFrom('income', 'expense') as fc.Arbitrary<'income' | 'expense'>,
+const transactionArb: fc.Arbitrary<SearchableTransaction> = fc.record({
+  id: fc.string({ minLength: 1, maxLength: 12 }),
+  description: fc.string({ maxLength: 40 }),
+  merchant: fc.option(fc.string({ maxLength: 30 }), { nil: undefined }),
+  tags: fc.option(fc.array(fc.string({ maxLength: 12 }), { maxLength: 4 }), {
+    nil: undefined,
+  }),
+  // noNaN: a NaN amount makes every comparison false and produces a
+  // deterministic failure rather than a real counterexample.
+  amount: fc.double({ min: -100000, max: 100000, noNaN: true }),
+  categoryId: fc.constantFrom('cat_1', 'cat_2', 'cat_3'),
+  date: fc
+    .date({
+      min: new Date('2020-01-01T00:00:00.000Z'),
+      max: new Date('2030-12-31T00:00:00.000Z'),
+    })
+    .map(d => d.toISOString().slice(0, 10)),
 });
 
-const searchFiltersArbitrary = fc.record({
-  query: fc.option(fc.string({ minLength: 1, maxLength: 20 })),
-  categoryId: fc.option(fc.string({ minLength: 1, maxLength: 20 })),
-  minAmount: fc.option(fc.float({ min: Math.fround(0), max: Math.fround(5000), noNaN: true })),
-  maxAmount: fc.option(fc.float({ min: Math.fround(5000), max: Math.fround(10000), noNaN: true })),
-  startDate: fc.option(
-    fc.date({ min: new Date('2020-01-01'), max: new Date('2025-12-31') })
-      .map((d) => d.toISOString().split('T')[0])
-  ),
-  endDate: fc.option(
-    fc.date({ min: new Date('2025-01-01'), max: new Date('2030-12-31') })
-      .map((d) => d.toISOString().split('T')[0])
-  ),
-  type: fc.option(fc.constantFrom('income', 'expense') as fc.Arbitrary<'income' | 'expense'>),
+const transactionsArb = fc.array(transactionArb, { maxLength: 30 });
+
+const filtersArb: fc.Arbitrary<TransactionFilters> = fc.record({
+  type: fc.constantFrom('all', 'income', 'expense') as fc.Arbitrary<
+    TransactionFilters['type']
+  >,
+  categoryIds: fc.array(fc.constantFrom('cat_1', 'cat_2', 'cat_3'), {
+    maxLength: 3,
+  }),
+  dateRange: fc.record({
+    start: fc.option(
+      fc.date({ min: new Date('2020-01-01'), max: new Date('2030-12-31') }),
+      { nil: null },
+    ),
+    end: fc.option(
+      fc.date({ min: new Date('2020-01-01'), max: new Date('2030-12-31') }),
+      { nil: null },
+    ),
+  }),
+  amountRange: fc.record({
+    min: fc.option(fc.double({ min: 0, max: 50000, noNaN: true }), { nil: null }),
+    max: fc.option(fc.double({ min: 0, max: 100000, noNaN: true }), { nil: null }),
+  }),
 });
 
 // ============================================================================
-// Property Tests
+// Properties
 // ============================================================================
 
 describe('Property 14: Mobile Search Filtering', () => {
-  describe('14.1: Filter Result Subset', () => {
-    test('filtered results are always a subset of original transactions', () => {
-      fc.assert(
-        fc.property(
-          fc.array(transactionArbitrary, { minLength: 0, maxLength: 50 }),
-          searchFiltersArbitrary,
-          (transactions, filters) => {
-            const cleanFilters: SearchFilters = {
-              query: filters.query ?? undefined,
-              categoryId: filters.categoryId ?? undefined,
-              minAmount: filters.minAmount ?? undefined,
-              maxAmount: filters.maxAmount ?? undefined,
-              startDate: filters.startDate ?? undefined,
-              endDate: filters.endDate ?? undefined,
-              type: filters.type ?? undefined,
-            };
+  it('always returns a subset of the input, preserving order', () => {
+    fc.assert(
+      fc.property(
+        transactionsArb,
+        fc.string({ maxLength: 10 }),
+        filtersArb,
+        (txs, query, filters) => {
+          const result = filterTransactions(txs, query, filters);
 
-            const filtered = filterTransactions(transactions, cleanFilters);
-
-            // Every filtered transaction must exist in original
-            filtered.forEach((tx) => {
-              expect(transactions.some((orig) => orig.id === tx.id)).toBe(true);
-            });
-
-            // Filtered count must be <= original count
-            expect(filtered.length).toBeLessThanOrEqual(transactions.length);
+          expect(result.length).toBeLessThanOrEqual(txs.length);
+          for (const tx of result) {
+            expect(txs).toContain(tx);
           }
-        ),
-        { numRuns: 100 }
-      );
-    });
+          // Order is preserved: the result is a subsequence of the input.
+          const indices = result.map(tx => txs.indexOf(tx));
+          const ascending = [...indices].sort((a, b) => a - b);
+          expect(indices).toEqual(ascending);
+        },
+      ),
+      { numRuns: 100 },
+    );
   });
 
-  describe('14.2: Empty Query Returns All', () => {
-    test('empty filters return all transactions', () => {
-      fc.assert(
-        fc.property(
-          fc.array(transactionArbitrary, { minLength: 0, maxLength: 50 }),
-          (transactions) => {
-            const filtered = filterTransactions(transactions, {});
-            expect(filtered.length).toBe(transactions.length);
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+  it('returns everything when nothing is filtered', () => {
+    fc.assert(
+      fc.property(transactionsArb, txs => {
+        expect(filterTransactions(txs, '', EMPTY_FILTERS)).toHaveLength(txs.length);
+      }),
+      { numRuns: 50 },
+    );
   });
 
-  describe('14.3: Query Match Accuracy', () => {
-    test('all filtered results contain the search query', () => {
-      fc.assert(
-        fc.property(
-          fc.array(transactionArbitrary, { minLength: 1, maxLength: 30 }),
-          fc.string({ minLength: 1, maxLength: 10 }),
-          (transactions, query) => {
-            const filtered = filterTransactions(transactions, { query });
-
-            filtered.forEach((tx) => {
-              const matchesDescription = tx.description
-                .toLowerCase()
-                .includes(query.toLowerCase());
-              const matchesMerchant =
-                tx.merchant?.toLowerCase().includes(query.toLowerCase()) || false;
-              expect(matchesDescription || matchesMerchant).toBe(true);
-            });
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+  it('treats a whitespace-only query as no query', () => {
+    fc.assert(
+      fc.property(transactionsArb, fc.constantFrom('', ' ', '   ', '\t'), (txs, blank) => {
+        expect(filterTransactions(txs, blank, EMPTY_FILTERS)).toHaveLength(txs.length);
+      }),
+      { numRuns: 30 },
+    );
   });
 
-  describe('14.4: Amount Range Filter', () => {
-    test('filtered results respect amount bounds', () => {
-      fc.assert(
-        fc.property(
-          fc.array(transactionArbitrary, { minLength: 1, maxLength: 30 }),
-          fc.float({ min: Math.fround(0), max: Math.fround(100), noNaN: true }),
-          fc.float({ min: Math.fround(100), max: Math.fround(10000), noNaN: true }),
-          (transactions, minAmount, maxAmount) => {
-            const filtered = filterTransactions(transactions, { minAmount, maxAmount });
-
-            filtered.forEach((tx) => {
-              expect(tx.amount).toBeGreaterThanOrEqual(minAmount);
-              expect(tx.amount).toBeLessThanOrEqual(maxAmount);
-            });
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+  it('is idempotent, so filtering a filtered list changes nothing', () => {
+    fc.assert(
+      fc.property(
+        transactionsArb,
+        fc.string({ maxLength: 8 }),
+        filtersArb,
+        (txs, query, filters) => {
+          const once = filterTransactions(txs, query, filters);
+          const twice = filterTransactions(once, query, filters);
+          expect(twice).toEqual(once);
+        },
+      ),
+      { numRuns: 100 },
+    );
   });
 
-  describe('14.5: Date Range Filter', () => {
-    test('filtered results respect date bounds', () => {
-      fc.assert(
-        fc.property(
-          fc.array(transactionArbitrary, { minLength: 1, maxLength: 30 }),
-          (transactions) => {
-            const startDate = '2023-01-01';
-            const endDate = '2023-12-31';
-            const filtered = filterTransactions(transactions, { startDate, endDate });
-
-            filtered.forEach((tx) => {
-              expect(tx.date >= startDate).toBe(true);
-              expect(tx.date <= endDate).toBe(true);
-            });
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+  it('every retained transaction matches the query on description, merchant or a tag', () => {
+    fc.assert(
+      fc.property(transactionsArb, fc.string({ minLength: 1, maxLength: 6 }), (txs, query) => {
+        for (const tx of filterTransactions(txs, query, EMPTY_FILTERS)) {
+          expect(matchesQuery(tx, query)).toBe(true);
+        }
+      }),
+      { numRuns: 100 },
+    );
   });
 
-  describe('14.6: Category Filter Exactness', () => {
-    test('category filter returns only matching category', () => {
-      fc.assert(
-        fc.property(
-          fc.array(transactionArbitrary, { minLength: 1, maxLength: 30 }),
-          fc.string({ minLength: 1, maxLength: 20 }),
-          (transactions, categoryId) => {
-            const filtered = filterTransactions(transactions, { categoryId });
+  it('matches tags, which the screen has always done', () => {
+    const tx: SearchableTransaction = {
+      id: 't1',
+      description: 'nothing relevant',
+      merchant: 'nowhere',
+      tags: ['vacation', 'flights'],
+      amount: -250,
+      categoryId: 'cat_1',
+      date: '2026-05-01',
+    };
 
-            filtered.forEach((tx) => {
-              expect(tx.categoryId).toBe(categoryId);
-            });
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+    expect(filterTransactions([tx], 'vacation', EMPTY_FILTERS)).toHaveLength(1);
+    expect(filterTransactions([tx], 'VACATION', EMPTY_FILTERS)).toHaveLength(1);
+    expect(filterTransactions([tx], 'unrelated', EMPTY_FILTERS)).toHaveLength(0);
   });
 
-  describe('14.7: Type Filter Correctness', () => {
-    test('type filter returns only matching type', () => {
-      fc.assert(
-        fc.property(
-          fc.array(transactionArbitrary, { minLength: 1, maxLength: 30 }),
-          fc.constantFrom('income', 'expense') as fc.Arbitrary<'income' | 'expense'>,
-          (transactions, type) => {
-            const filtered = filterTransactions(transactions, { type });
+  it('derives income and expense from the sign of the amount', () => {
+    fc.assert(
+      fc.property(transactionsArb, txs => {
+        const income = filterTransactions(txs, '', { ...EMPTY_FILTERS, type: 'income' });
+        const expense = filterTransactions(txs, '', { ...EMPTY_FILTERS, type: 'expense' });
 
-            filtered.forEach((tx) => {
-              expect(tx.type).toBe(type);
-            });
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+        for (const tx of income) expect(tx.amount).toBeGreaterThan(0);
+        for (const tx of expense) expect(tx.amount).toBeLessThanOrEqual(0);
+        // Every transaction lands in exactly one of the two.
+        expect(income.length + expense.length).toBe(txs.length);
+      }),
+      { numRuns: 100 },
+    );
   });
 
-  describe('14.8: Highlight Preservation', () => {
-    test('highlighted text reconstructs original', () => {
-      fc.assert(
-        fc.property(
-          fc.string({ minLength: 1, maxLength: 100 }),
-          fc.string({ minLength: 1, maxLength: 10 }),
-          (text, query) => {
-            const highlighted = highlightMatches(text, query);
-            const reconstructed = highlighted.map((h) => h.text).join('');
-            expect(reconstructed).toBe(text);
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
+  it('treats an empty categoryIds list as any category', () => {
+    fc.assert(
+      fc.property(transactionsArb, txs => {
+        expect(
+          filterTransactions(txs, '', { ...EMPTY_FILTERS, categoryIds: [] }),
+        ).toHaveLength(txs.length);
+      }),
+      { numRuns: 50 },
+    );
   });
 
-  describe('14.9: Sort Stability', () => {
-    test('sorting preserves all transactions', () => {
-      fc.assert(
-        fc.property(
-          fc.array(transactionArbitrary, { minLength: 0, maxLength: 30 }),
-          fc.constantFrom('date', 'amount', 'description') as fc.Arbitrary<
-            'date' | 'amount' | 'description'
-          >,
-          fc.constantFrom('asc', 'desc') as fc.Arbitrary<'asc' | 'desc'>,
-          (transactions, sortBy, order) => {
-            const sorted = sortTransactions(transactions, sortBy, order);
-
-            // Same length
-            expect(sorted.length).toBe(transactions.length);
-
-            // Same IDs (all transactions preserved)
-            const originalIds = new Set(transactions.map((t) => t.id));
-            const sortedIds = new Set(sorted.map((t) => t.id));
-            expect(sortedIds).toEqual(originalIds);
+  it('keeps only the allow-listed categories', () => {
+    fc.assert(
+      fc.property(
+        transactionsArb,
+        fc.array(fc.constantFrom('cat_1', 'cat_2', 'cat_3'), {
+          minLength: 1,
+          maxLength: 2,
+        }),
+        (txs, categoryIds) => {
+          for (const tx of filterTransactions(txs, '', { ...EMPTY_FILTERS, categoryIds })) {
+            expect(categoryIds).toContain(tx.categoryId);
           }
-        ),
-        { numRuns: 100 }
-      );
-    });
+        },
+      ),
+      { numRuns: 100 },
+    );
   });
 
-  describe('14.10: Combined Filters', () => {
-    test('multiple filters are applied conjunctively (AND)', () => {
-      fc.assert(
-        fc.property(
-          fc.array(transactionArbitrary, { minLength: 1, maxLength: 30 }),
-          (transactions) => {
-            const filters: SearchFilters = {
-              minAmount: 50,
-              maxAmount: 500,
-              type: 'expense',
-            };
+  it('compares the absolute amount, so an expense matches a positive range', () => {
+    const expense: SearchableTransaction = {
+      id: 't1',
+      description: 'groceries',
+      amount: -40,
+      categoryId: 'cat_1',
+      date: '2026-05-01',
+    };
 
-            const filtered = filterTransactions(transactions, filters);
+    expect(
+      filterTransactions([expense], '', {
+        ...EMPTY_FILTERS,
+        amountRange: { min: 20, max: 60 },
+      }),
+    ).toHaveLength(1);
 
-            filtered.forEach((tx) => {
-              expect(tx.amount).toBeGreaterThanOrEqual(50);
-              expect(tx.amount).toBeLessThanOrEqual(500);
-              expect(tx.type).toBe('expense');
-            });
+    expect(
+      filterTransactions([expense], '', {
+        ...EMPTY_FILTERS,
+        amountRange: { min: 50, max: null },
+      }),
+    ).toHaveLength(0);
+  });
+
+  it('every retained transaction is inside the amount range', () => {
+    fc.assert(
+      fc.property(
+        transactionsArb,
+        fc.double({ min: 0, max: 1000, noNaN: true }),
+        fc.double({ min: 1000, max: 100000, noNaN: true }),
+        (txs, min, max) => {
+          for (const tx of filterTransactions(txs, '', {
+            ...EMPTY_FILTERS,
+            amountRange: { min, max },
+          })) {
+            const amount = Math.abs(tx.amount);
+            expect(amount).toBeGreaterThanOrEqual(min);
+            expect(amount).toBeLessThanOrEqual(max);
           }
-        ),
-        { numRuns: 100 }
-      );
-    });
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+
+  it('every retained transaction is inside the date range', () => {
+    fc.assert(
+      fc.property(transactionsArb, txs => {
+        const start = new Date('2024-01-01');
+        const end = new Date('2026-12-31');
+
+        for (const tx of filterTransactions(txs, '', {
+          ...EMPTY_FILTERS,
+          dateRange: { start, end },
+        })) {
+          const date = new Date(tx.date);
+          expect(date.getTime()).toBeGreaterThanOrEqual(start.getTime());
+          expect(date.getTime()).toBeLessThanOrEqual(end.getTime());
+        }
+      }),
+      { numRuns: 100 },
+    );
+  });
+
+  it('accepts Date objects as well as ISO strings for a transaction date', () => {
+    const base = {
+      id: 't1',
+      description: 'rent',
+      amount: -1200,
+      categoryId: 'cat_1',
+    };
+    const range = { start: new Date('2026-05-01'), end: new Date('2026-05-31') };
+
+    const asString: SearchableTransaction = { ...base, date: '2026-05-15' };
+    const asDate: SearchableTransaction = { ...base, date: new Date('2026-05-15') };
+
+    expect(
+      filterTransactions([asString], '', { ...EMPTY_FILTERS, dateRange: range }),
+    ).toHaveLength(1);
+    expect(
+      filterTransactions([asDate], '', { ...EMPTY_FILTERS, dateRange: range }),
+    ).toHaveLength(1);
+  });
+
+  it('does not mutate its inputs', () => {
+    fc.assert(
+      fc.property(
+        transactionsArb,
+        fc.string({ maxLength: 8 }),
+        filtersArb,
+        (txs, query, filters) => {
+          const txsBefore = JSON.stringify(txs);
+          const filtersBefore = JSON.stringify(filters);
+
+          filterTransactions(txs, query, filters);
+
+          expect(JSON.stringify(txs)).toBe(txsBefore);
+          expect(JSON.stringify(filters)).toBe(filtersBefore);
+        },
+      ),
+      { numRuns: 100 },
+    );
+  });
+});
+
+describe('countActiveFilters', () => {
+  it('is 0 for the empty filters', () => {
+    expect(countActiveFilters(EMPTY_FILTERS)).toBe(0);
+  });
+
+  it('counts each narrowing dimension once, never exceeding four', () => {
+    fc.assert(
+      fc.property(filtersArb, filters => {
+        const count = countActiveFilters(filters);
+        expect(count).toBeGreaterThanOrEqual(0);
+        expect(count).toBeLessThanOrEqual(4);
+      }),
+      { numRuns: 100 },
+    );
+  });
+
+  it('counts type, category, date and amount independently', () => {
+    expect(countActiveFilters({ ...EMPTY_FILTERS, type: 'income' })).toBe(1);
+    expect(countActiveFilters({ ...EMPTY_FILTERS, categoryIds: ['cat_1'] })).toBe(1);
+    expect(
+      countActiveFilters({
+        ...EMPTY_FILTERS,
+        dateRange: { start: new Date('2026-01-01'), end: null },
+      }),
+    ).toBe(1);
+    expect(
+      countActiveFilters({ ...EMPTY_FILTERS, amountRange: { min: 10, max: null } }),
+    ).toBe(1);
+    expect(
+      countActiveFilters({
+        type: 'expense',
+        categoryIds: ['cat_1'],
+        dateRange: { start: new Date('2026-01-01'), end: new Date('2026-12-31') },
+        amountRange: { min: 10, max: 100 },
+      }),
+    ).toBe(4);
   });
 });

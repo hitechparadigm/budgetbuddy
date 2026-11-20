@@ -5,7 +5,7 @@
  * **Validates: Requirement 44**
  */
 
-import { api } from './api';
+import { extendedFeaturesApi } from './api';
 
 // Types
 export interface ReceiptUploadResponse {
@@ -64,7 +64,7 @@ export const receiptService = {
     contentType: string = 'image/jpeg',
     fileName?: string
   ): Promise<ReceiptUploadResponse> {
-    const response = await api.post('/receipt/upload', {
+    const response = await extendedFeaturesApi.post('/receipt/upload', {
       contentType,
       fileName,
     });
@@ -87,25 +87,25 @@ export const receiptService = {
 
   // Process uploaded receipt with OCR
   async processReceipt(receiptId: string): Promise<ProcessReceiptResponse> {
-    const response = await api.post('/receipt/process', { receiptId });
+    const response = await extendedFeaturesApi.post('/receipt/process', { receiptId });
     return response.data.data;
   },
 
   // Get usage statistics
   async getUsage(): Promise<ReceiptUsageResponse> {
-    const response = await api.get('/receipt/usage');
+    const response = await extendedFeaturesApi.get('/receipt/usage');
     return response.data.data;
   },
 
   // Get receipt by ID
   async getReceipt(receiptId: string): Promise<Receipt> {
-    const response = await api.get(`/receipt/${receiptId}`);
+    const response = await extendedFeaturesApi.get(`/receipt/${receiptId}`);
     return response.data.data;
   },
 
   // Get receipt history
   async getHistory(limit: number = 20): Promise<{ receipts: Receipt[]; count: number }> {
-    const response = await api.get('/receipt/history', { limit });
+    const response = await extendedFeaturesApi.get('/receipt/history', { limit });
     return response.data.data;
   },
 

@@ -2,7 +2,12 @@
  * BorrowLendFormPage — Create / edit a borrowed or lent money entry
  *
  * Saves as a goal with subType 'borrowed' or 'lent'.
- * The goals Lambda stores arbitrary fields, so no backend changes are needed.
+ *
+ * The goals Lambda persists and returns `subType`, `personName` and `notes`
+ * explicitly (backend/functions/goals/index.js — createGoal, updateGoal and
+ * formatGoalResponse each name them). It does not store arbitrary fields: a
+ * field this form sends that the Lambda does not name is dropped, and
+ * `subType` is validated against 'goal' | 'borrowed' | 'lent'.
  *
  * Routes:
  *   /goals/borrow-lend/new?type=borrowed
@@ -95,7 +100,8 @@ export const BorrowLendFormPage: React.FC = () => {
       targetAmount: amount,
       currentAmount: parseFloat(form.currentAmount) || 0,
       targetDate: form.dueDate || null,
-      // Custom extension fields stored directly in DynamoDB
+      // Persisted and returned by the goals Lambda; personName is required
+      // server-side whenever subType is 'borrowed' or 'lent'.
       subType: form.subType,
       personName: form.personName.trim(),
       notes: form.notes.trim() || null,

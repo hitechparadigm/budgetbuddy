@@ -5,7 +5,7 @@
 
 import { AppState, AppStateStatus } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
-import { api } from './api';
+import { api, budgetsApi, type ApiClient } from './api';
 import {
   getSyncQueue,
   getPendingSyncItems,
@@ -26,6 +26,22 @@ export interface SyncResult {
   errors: string[];
 }
 
+/**
+ * A conflict that was resolved during a sync.
+ *
+ * Emitted so the UI can tell the user their local edit was overwritten.
+ * Previously a resolved conflict was only console.logged, so the local change
+ * disappeared silently.
+ */
+export interface SyncConflict {
+  /** Which local table the conflicting record lives in. */
+  entity: 'budgets' | 'transactions' | 'categories';
+  /** Id of the conflicting record. */
+  id: string;
+  /** How the conflict was resolved. */
+  strategy: 'server_wins' | 'client_wins' | 'merge';
+}
+
 export interface SyncOptions {
   force?: boolean;
   batchSize?: number;
@@ -37,6 +53,7 @@ class SyncService {
   private isInitialized = false;
   private isSyncing = false;
   private syncListeners: ((result: SyncResult) => void)[] = [];
+  private conflictListeners: ((conflict: SyncConflict) => void)[] = [];
   private networkListener: (() => void) | null = null;
   private appStateListener: any = null;
   private autoSyncInterval: NodeJS.Timeout | null = null;
@@ -124,6 +141,35 @@ class SyncService {
         this.syncListeners.splice(index, 1);
       }
     };
+  }
+
+  /**
+   * Add a resolved-conflict listener.
+   *
+   * Fires once per conflict resolved during a sync. Use it to tell the user a
+   * local edit was overwritten; without it the overwrite is invisible.
+   *
+   * @returns an unsubscribe function
+   */
+  addConflictListener(listener: (conflict: SyncConflict) => void): () => void {
+    this.conflictListeners.push(listener);
+    return () => {
+      const index = this.conflictListeners.indexOf(listener);
+      if (index > -1) {
+        this.conflictListeners.splice(index, 1);
+      }
+    };
+  }
+
+  /** Notify every conflict listener, isolating a throwing listener. */
+  private emitConflict(conflict: SyncConflict): void {
+    for (const listener of this.conflictListeners) {
+      try {
+        listener(conflict);
+      } catch (error) {
+        console.error('Conflict listener failed:', error);
+      }
+    }
   }
 
   /**
@@ -268,10 +314,13 @@ class SyncService {
       console.log('Syncing server changes to local');
 
       // Fetch latest data from server
+      // Each path goes to the gateway that owns it: /budgets is on the budgets
+      // gateway, and the categories route is /budget/categories on the main
+      // gateway (a bare /categories exists on no gateway).
       const [budgets, transactions, categories] = await Promise.all([
-        this.fetchServerData('/budgets'),
+        this.fetchServerData('/budgets', budgetsApi),
         this.fetchServerData('/transactions'),
-        this.fetchServerData('/categories'),
+        this.fetchServerData('/budget/categories'),
       ]);
 
       // Get local data for comparison
@@ -300,6 +349,9 @@ class SyncService {
       let endpoint: string;
       let method: 'post' | 'put' | 'delete';
       let data: any;
+      // Which gateway owns the route. /budgets is on the budgets gateway;
+      // transactions and categories are on the main gateway.
+      let client: ApiClient = api;
 
       // Determine API endpoint and method
       switch (item.entity) {
@@ -307,6 +359,7 @@ class SyncService {
           endpoint = item.type === 'CREATE' ? '/budgets' : `/budgets/${item.data.id}`;
           method = item.type === 'DELETE' ? 'delete' : item.type === 'CREATE' ? 'post' : 'put';
           data = item.type === 'DELETE' ? undefined : item.data;
+          client = budgetsApi;
           break;
 
         case 'transaction':
@@ -316,7 +369,18 @@ class SyncService {
           break;
 
         case 'category':
-          endpoint = item.type === 'CREATE' ? '/categories' : `/categories/${item.data.id}`;
+          // The route is /budget/categories on the main gateway; a bare
+          // /categories exists on no gateway.
+          //
+          // KNOWN GAP: the gateway exposes only GET and POST on
+          // /budget/categories (api-stack.ts:635-643). There is no PUT or
+          // DELETE on /budget/categories/{categoryId}, only the /rollover
+          // sub-resources, so a queued category UPDATE or DELETE still fails.
+          // CREATE and the read path now reach a real route.
+          endpoint =
+            item.type === 'CREATE'
+              ? '/budget/categories'
+              : `/budget/categories/${item.data.id}`;
           method = item.type === 'DELETE' ? 'delete' : item.type === 'CREATE' ? 'post' : 'put';
           data = item.type === 'DELETE' ? undefined : item.data;
           break;
@@ -326,7 +390,7 @@ class SyncService {
       }
 
       // Make API request
-      await api[method](endpoint, data);
+      await client[method](endpoint, data);
 
       // Mark as synced in local database
       if (item.type !== 'DELETE') {
@@ -346,9 +410,9 @@ class SyncService {
   /**
    * Fetch data from server
    */
-  private async fetchServerData(endpoint: string): Promise<any[]> {
+  private async fetchServerData(endpoint: string, client: ApiClient = api): Promise<any[]> {
     try {
-      const response = await api.get(endpoint);
+      const response = await client.get(endpoint);
       return response.data || [];
     } catch (error) {
       console.error(`Failed to fetch ${endpoint}:`, error);
@@ -384,6 +448,15 @@ class SyncService {
           );
           result.conflicts++;
           console.log(`Resolved conflict for ${tableName}:`, resolvedItem.id);
+
+          // Tell the UI. The resolution strategy itself is unchanged (server
+          // wins by default); this only makes the overwrite visible instead of
+          // discarding a local edit silently.
+          this.emitConflict({
+            entity: tableName,
+            id: resolvedItem.id,
+            strategy: options.conflictStrategy,
+          });
         } else {
           // Check if server item is newer
           const serverTime = new Date(serverItem.updatedAt || serverItem.updated_at).getTime();

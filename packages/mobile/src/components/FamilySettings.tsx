@@ -23,10 +23,14 @@ import * as SecureStore from "expo-secure-store";
 import * as Haptics from "expo-haptics";
 import { Card, Button } from "./ui";
 import { useTheme } from "../hooks/useTheme";
+import { apiBaseUrl } from "../config/api";
+import { ID_TOKEN_KEY } from "../services/storage-keys";
 
-const API_BASE =
-  process.env.EXPO_PUBLIC_API_URL ||
-  "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1";
+// NOTE: this component targets /family/*, which the backend now answers with
+// 410 Gone (replaced by /budgets/*). It has no importer. Recommended for
+// deletion in a later wave; the gateway and key constants are normalised here
+// only so it does not keep its own copies.
+const API_BASE = apiBaseUrl;
 
 interface FamilyMember {
   userId: string;
@@ -76,10 +80,10 @@ export const FamilySettings: React.FC<FamilySettingsProps> = ({ onClose }) => {
     try {
       // Use id_token for API Gateway Cognito authorizer
       // Try SecureStore first (preferred), then AsyncStorage as fallback
-      const token = await SecureStore.getItemAsync("auth_id_token");
+      const token = await SecureStore.getItemAsync(ID_TOKEN_KEY);
       if (token) return token;
       // Fallback to AsyncStorage for backwards compatibility
-      return await AsyncStorage.getItem("auth_id_token");
+      return await AsyncStorage.getItem(ID_TOKEN_KEY);
     } catch {
       return null;
     }

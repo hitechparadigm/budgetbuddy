@@ -38,6 +38,22 @@ Note: Redundant security scripts (`security-check.ps1`, `security-check-simple.p
 - `delete-corrupted-budgets.js` - Database cleanup utility
 - `check-cicd-status.js` - CI/CD monitoring
 
+### Migration Scripts
+
+- `migrate-budgets-currency.js` - Backfills `currency` on existing budgets
+- `migrate-accounts-family-to-budget.js` - Copies account rows from the
+  deprecated `FAMILY#` partition to `BUDGET#`. **Dry run unless `--apply` is
+  passed.** Idempotent (an existing target row is skipped, never overwritten),
+  logs every item in both modes, and never deletes or modifies the original.
+
+```bash
+# Preview what would be copied — makes no writes
+node scripts/migrate-accounts-family-to-budget.js
+
+# Write the copies (requires the table to be budgetbuddy-main)
+node scripts/migrate-accounts-family-to-budget.js --apply
+```
+
 ## Usage
 
 ### Documentation Validation

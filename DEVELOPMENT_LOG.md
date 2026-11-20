@@ -1,4 +1,45 @@
 # Development Log
+## 2026-11-20 - Wave 2 Core Flows Merged, develop History Rewritten (Session 170)
+Wave 2 (`fix/wave2-core-flows`, 24 commits, review pass 3 approved with 9 non-blocking findings)
+landed on `develop` as one squash commit, so the branch commits never reach the remote. It is
+Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`); no file under
+`infrastructure/` changed, and `api-features` stays at 484 of 500 CloudFormation resources.
+
+- Planned transactions: the handler and both clients now match the deployed gateway routes. PUT and
+  DELETE read `{plannedTransactionId}` (they returned 404), mark-paid is
+  `POST /transaction-planning/{plannedTransactionId}/mark-paid`, and the unrouted `/execute` branch
+  is deleted. The stored sort-key prefix stays `PLAN#` (live rows use it), now built in `keys.js`.
+- Goals: `subType`/`personName`/`notes` are persisted and returned, so the web Borrowed/Lent tabs
+  can populate; mobile got the same tabs and a create form.
+- Accounts: moved from `FAMILY#<budgetId>/ACCOUNT#<id>` to `BUDGET#<budgetId>/ACCOUNT#<id>`. The
+  onboarding Cash account, which was always written under `BUDGET#`, becomes visible to
+  `GET /accounts` and formats with a real balance. Existing rows need
+  `scripts/migrate-accounts-family-to-budget.js --apply` after the deploy (the pre-merge dry run
+  counted 28). The script copies and never deletes the `FAMILY#` originals.
+- Rules Lambda: five calls to layer members that do not exist made every path fail; repaired and
+  given its first test suite. Web: rule creation, rollover toggle/cap and AI suggestions are now
+  reachable from Settings and BudgetPage.
+- Mobile: per-gateway API clients and the shared storage key; onboarding wired with the picked
+  currency; real create forms for goals, bills, subscriptions and debts; sync-conflict toasts; a
+  real search module; receipt confirmation against the budget's own categories.
+- Not fixed by Wave 2: `GET /auth/profile` returns 500 when the `PROFILE` row lacks `userId`/
+  `email` (users created outside `/auth/register`, then onboarded). Neither `auth/index.js` nor
+  `auth-onboarding/index.js` is in this diff. The DEV test user's row gets a one-item backfill; the
+  code fix is a work-log follow-up.
+- Test suites (from the Wave 2 report): rules 24, transaction-planning 17, accounts 28, goals 53,
+  budget 59 passed / 8 failed (the 8 are the untouched `FAMILY#`-era `budget.test.js` cases),
+  web 248 / 26 failed (baseline), mobile 309 / 1 failed (known `TwoFactorSetup` flake).
+  `cdk synth` was not run (Docker engine down); no infrastructure file changed.
+- Follow-ups recorded in the work-log: onboarding "Skip for now" creates no budget; no web
+  recategorize control (W2-R-05); `PendingTransactions` posts `categoryName` instead of
+  `categoryId`; the 8 `budget.test.js` failures; device checks for the receipt/template mounts
+  (plan item 22); `api-features` CloudFormation headroom.
+
+History rewrite (2026-11-01/02): personal data and identity fields were removed from the whole
+history of `develop` with `git filter-repo`, and the rewritten `develop` (tip `576db4e`) was pushed.
+A fresh clone of `develop` shows no protected values. The owner decided to keep the repository
+public and to leave `main`'s old history untouched: remote main retains pre-rewrite history by
+owner decision; the leaked Google OAuth client secret in that history remains valid until rotated.
 ## 2026-11-20 - GitHub Actions Moved to Node 24 Action Versions (Session 170)
 - GitHub warned that `actions/checkout@v4`, `actions/setup-node@v4` and
   `aws-actions/configure-aws-credentials@v4` target Node 20 and were being forced onto Node 24.

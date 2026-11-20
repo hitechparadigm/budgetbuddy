@@ -233,6 +233,9 @@ async function createGoal(event, user) {
     return errorResponse.badRequest("Valid target amount is required");
   }
 
+  const subTypeFields = validateSubTypeFields(body, { requirePersonName: true });
+  if (subTypeFields.error) return errorResponse.badRequest(subTypeFields.error);
+
   // Check goal limit (max 10 active goals)
   const existingGoals = await dynamoHelpers.queryByPK(`BUDGET#${budgetId}`, {
     FilterExpression:
@@ -267,6 +270,11 @@ async function createGoal(event, user) {
     priority,
     status: "active",
     linkedCategoryId: body.linkedCategoryId || null,
+    // Borrowed/lent extension fields. subType defaults to 'goal' so a goal
+    // created without one keeps behaving as a plain savings goal.
+    subType: subTypeFields.subType,
+    personName: subTypeFields.personName,
+    notes: subTypeFields.notes,
     progressPercent: 0,
     monthlyRequired: null,
     milestones: {
@@ -328,6 +336,33 @@ async function updateGoal(event, user, goalId) {
   if (body.linkedCategoryId !== undefined)
     updates.linkedCategoryId = body.linkedCategoryId;
   if (body.status) updates.status = body.status;
+
+  // Borrowed/lent extension fields. The requirement is checked against the
+  // MERGED subType, not the incoming one: a PUT carrying an empty personName
+  // and no subType would otherwise skip the check and write null over a
+  // borrowed or lent goal's required name. Merging also means an update that
+  // leaves subType alone still does not have to resend personName - the
+  // existing value fills in and satisfies the check.
+  if (
+    body.subType !== undefined ||
+    body.personName !== undefined ||
+    body.notes !== undefined
+  ) {
+    const merged = {
+      subType: body.subType !== undefined ? body.subType : existingGoal.subType,
+      personName:
+        body.personName !== undefined ? body.personName : existingGoal.personName,
+      notes: body.notes !== undefined ? body.notes : existingGoal.notes,
+    };
+    const validated = validateSubTypeFields(merged, {
+      requirePersonName: true,
+    });
+    if (validated.error) return errorResponse.badRequest(validated.error);
+
+    if (body.subType !== undefined) updates.subType = validated.subType;
+    if (body.personName !== undefined) updates.personName = validated.personName;
+    if (body.notes !== undefined) updates.notes = validated.notes;
+  }
 
   // Recalculate progress if amounts changed
   if (
@@ -588,6 +623,51 @@ async function deleteGoal(event, user, goalId) {
   return successResponse(null, "Goal deleted successfully");
 }
 
+const GOAL_SUB_TYPES = ["goal", "borrowed", "lent"];
+const PERSON_NAME_MAX = 100;
+const NOTES_MAX = 500;
+
+/**
+ * Validate and normalise the borrowed/lent extension fields.
+ *
+ * @param {Object} body - request body (create) or merged existing+incoming (update)
+ * @param {Object} [options]
+ * @param {boolean} [options.requirePersonName] - enforce personName for borrowed/lent
+ * @returns {{subType: string, personName: string|null, notes: string|null, error?: string}}
+ */
+function validateSubTypeFields(body, options = {}) {
+  const raw = body.subType;
+
+  if (raw !== undefined && raw !== null && !GOAL_SUB_TYPES.includes(raw)) {
+    return { error: `subType must be one of: ${GOAL_SUB_TYPES.join(", ")}` };
+  }
+
+  const subType = raw || "goal";
+  const isPersonal = subType === "borrowed" || subType === "lent";
+
+  let personName = null;
+  if (body.personName !== undefined && body.personName !== null) {
+    if (typeof body.personName !== "string") {
+      return { error: "personName must be a string" };
+    }
+    personName = body.personName.trim().slice(0, PERSON_NAME_MAX) || null;
+  }
+
+  if (isPersonal && options.requirePersonName && !personName) {
+    return { error: `personName is required when subType is "${subType}"` };
+  }
+
+  let notes = null;
+  if (body.notes !== undefined && body.notes !== null) {
+    if (typeof body.notes !== "string") {
+      return { error: "notes must be a string" };
+    }
+    notes = body.notes.trim().slice(0, NOTES_MAX) || null;
+  }
+
+  return { subType, personName, notes };
+}
+
 /**
  * Calculate goal progress and monthly required amount
  */
@@ -694,6 +774,11 @@ function formatGoalResponse(goal) {
     status: goal.status,
     statusIndicator,
     linkedCategoryId: goal.linkedCategoryId,
+    // Goals written before borrowed/lent existed have no subType; they are
+    // plain savings goals.
+    subType: goal.subType || "goal",
+    personName: goal.personName ?? null,
+    notes: goal.notes ?? null,
     progressPercent: progress.progressPercent,
     monthlyRequired: progress.monthlyRequired,
     milestones: goal.milestones,
