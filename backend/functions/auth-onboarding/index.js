@@ -40,7 +40,8 @@ const dynamoClient = new DynamoDBClient({
  */
 exports.handler = async (event) => {
   console.log('=== AUTH ONBOARDING LAMBDA ===');
-  console.log('Event:', JSON.stringify(event, null, 2));
+  // Never log the event: it carries the bearer token and the email claim.
+  console.log('Request:', { httpMethod: event.httpMethod, hasBody: Boolean(event.body) });
 
   const origin = event.headers?.origin || event.headers?.Origin || '*';
 
@@ -174,22 +175,35 @@ exports.handler = async (event) => {
     await dynamoHelpers.putItem(memberRecord);
     console.log('Budget member record created:', { budgetId: defaultBudgetId, userId, role: 'owner' });
 
-    // Update user profile to mark onboarding as completed, save currency, and link defaultBudgetId
+    // Update user profile to mark onboarding as completed, save currency, and link defaultBudgetId.
+    // This upsert also creates the row for a user who never went through /auth/register, so it
+    // fills userId and email (if_not_exists: never overwrite) - GET /auth/profile requires both.
+    const profileSets = [
+      'onboardingCompleted = :completed',
+      'currency = :currency',
+      'defaultBudgetId = :budgetId',
+      'updatedAt = :updatedAt',
+      'userId = if_not_exists(userId, :userId)',
+    ];
+    const profileValues = {
+      ':completed': { BOOL: true },
+      ':currency': { S: currency },
+      ':budgetId': { S: defaultBudgetId },
+      ':updatedAt': { S: currentTime },
+      ':userId': { S: userId },
+    };
+    if (payload.email) {
+      profileSets.push('email = if_not_exists(email, :email)');
+      profileValues[':email'] = { S: payload.email };
+    }
     const updateCommand = new UpdateItemCommand({
       TableName: TABLE_NAME,
       Key: {
         PK: { S: `USER#${userId}` },
         SK: { S: 'PROFILE' },
       },
-      UpdateExpression:
-        'SET onboardingCompleted = :completed, currency = :currency, ' +
-        'defaultBudgetId = :budgetId, updatedAt = :updatedAt',
-      ExpressionAttributeValues: {
-        ':completed': { BOOL: true },
-        ':currency': { S: currency },
-        ':budgetId': { S: defaultBudgetId },
-        ':updatedAt': { S: currentTime },
-      },
+      UpdateExpression: `SET ${profileSets.join(', ')}`,
+      ExpressionAttributeValues: profileValues,
       ReturnValues: 'ALL_NEW',
     });
 

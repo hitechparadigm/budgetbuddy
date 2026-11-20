@@ -235,6 +235,47 @@ describe('Auth Onboarding Lambda', () => {
       const constructorArg = MockUpdateItemCommand.mock.calls[0][0];
       expect(constructorArg.ExpressionAttributeValues[':budgetId']).toEqual({ S: body.budgetId });
     });
+
+    test('writes userId and email to the profile without overwriting existing values', async () => {
+      parseIdToken.mockReturnValue({ sub: 'cognito-sub-123', email: 'user@example.com' });
+      validateOnboardingInput.mockReturnValue([]);
+      dynamoHelpers.getItem
+        .mockResolvedValueOnce(null) // no profile row yet (user created outside /auth/register)
+        .mockResolvedValueOnce({ budgetId: 'some-id', month: '2026-01' });
+      dynamoHelpers.putItem.mockResolvedValue();
+      const { UpdateItemCommand: MockUpdateItemCommand } = require('@aws-sdk/client-dynamodb');
+
+      const response = await handler(BASE_EVENT);
+
+      expect(response.statusCode).toBe(200);
+      const arg = MockUpdateItemCommand.mock.calls[0][0];
+      expect(arg.Key.PK).toEqual({ S: 'USER#cognito-sub-123' });
+      expect(arg.UpdateExpression).toContain('userId = if_not_exists(userId, :userId)');
+      expect(arg.UpdateExpression).toContain('email = if_not_exists(email, :email)');
+      expect(arg.ExpressionAttributeValues[':userId']).toEqual({ S: 'cognito-sub-123' });
+      expect(arg.ExpressionAttributeValues[':email']).toEqual({ S: 'user@example.com' });
+      // Existing values must never be overwritten by a bare SET.
+      expect(arg.UpdateExpression).not.toMatch(/(^|[ ,])userId = :userId/);
+      expect(arg.UpdateExpression).not.toMatch(/(^|[ ,])email = :email/);
+    });
+
+    test('omits email from the profile update when the token has no email claim', async () => {
+      parseIdToken.mockReturnValue({ sub: 'cognito-sub-456' });
+      validateOnboardingInput.mockReturnValue([]);
+      dynamoHelpers.getItem
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ budgetId: 'some-id', month: '2026-01' });
+      dynamoHelpers.putItem.mockResolvedValue();
+      const { UpdateItemCommand: MockUpdateItemCommand } = require('@aws-sdk/client-dynamodb');
+
+      const response = await handler(BASE_EVENT);
+
+      expect(response.statusCode).toBe(200);
+      const arg = MockUpdateItemCommand.mock.calls[0][0];
+      expect(arg.UpdateExpression).toContain('userId = if_not_exists(userId, :userId)');
+      expect(arg.UpdateExpression).not.toContain('email');
+      expect(arg.ExpressionAttributeValues[':email']).toBeUndefined();
+    });
   });
 
   describe('Budget period creation', () => {

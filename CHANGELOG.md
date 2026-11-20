@@ -8,6 +8,13 @@
   (`PK = :pk AND begins_with(SK, :skPrefix)`). The routes test asserts the key-condition shape and
   that no `PK`/`SK`/GSI key appears in the filter (the mocked query could not surface the error).
   Goals, accounts, rules and budget were checked for the same mistake; none had it.
+- `POST /auth/onboarding` now writes `userId` and the token's `email` claim to
+  `USER#<userId>/PROFILE` with `if_not_exists` (existing values are never overwritten). A user
+  created outside `/auth/register` and then onboarded used to get a `PROFILE` row without them, so
+  `GET /auth/profile` returned 500. The 409 re-onboarding response is unchanged.
+#### Security
+- The onboarding Lambda no longer logs the whole API Gateway event (it carried the bearer token and
+  the email claim); it logs the method and whether a body is present.
 
 ## [1.14.0] - 2026-11-20
 ### feat: core flows (Wave 2, Session 170)

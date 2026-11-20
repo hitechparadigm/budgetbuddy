@@ -6,8 +6,13 @@ the DEV test user's `PROFILE` row got `userId`/`email` (`GET /auth/profile` 500 
 live checks ran as that user. 30 passed. The failure was `GET /transaction-planning` returning
 500, because the Wave 2 list query filtered on the `SK` key attribute. Fixed in 1.14.1 by moving the
 prefix into the key condition. Every row the checks created was deleted afterwards.
+The backfill repaired only the test user's data. 1.14.1 also fixes the code: onboarding now writes
+`userId`/`email` with `if_not_exists`, and it stops logging the raw event (token and email).
 **Files Changed:** `backend/functions/transaction-planning/index.js`,
-`transaction-planning-routes.test.js` (18 passed).
+`transaction-planning-routes.test.js` (18 passed); `backend/functions/auth-onboarding/index.js`,
+`index.test.js` (2 new tests; suite 32 passed / 3 failed). The same 3 tests fail on the
+pre-change files (30 passed / 3 failed). They expect 403 for a missing profile and 409 on
+re-onboarding, but get 500. That is pre-existing and not investigated here.
 
 ## 2026-11-20 - Wave 2 Core Flows Merged, develop History Rewritten (Session 170)
 Wave 2 (`fix/wave2-core-flows`, 24 commits, review pass 3 approved with 9 non-blocking findings)
