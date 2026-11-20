@@ -1,4 +1,28 @@
 # Changelog
+## [1.14.3] - 2026-11-20
+### chore(infra): Lambda runtime nodejs20.x -> nodejs24.x (Session 170)
+Node.js 20 on Lambda was deprecated on Apr 30, 2026 and gets no more security patches;
+`nodejs24.x` is supported until Apr 30, 2028.
+#### Changed
+- Every Lambda function and layer now uses `LAMBDA_RUNTIME` from the new
+  `infrastructure/lib/config/runtime.ts`: each function's `runtime`, each layer's
+  `compatibleRuntimes`, and the Docker image for the six bundled functions (`plaid`, `investments`,
+  `insights`, `receipt`, `pattern-detection`, `budget-planning`), now
+  `public.ecr.aws/sam/build-nodejs24.x`. This replaced 33 `Runtime.NODEJS_20_X` sites in 10 files.
+- `LAMBDA_RUNTIME` is `new lambda.Runtime('nodejs24.x', RuntimeFamily.NODEJS, { supportsInlineCode:
+  true })` because aws-cdk-lib 2.221.0 predates `Runtime.NODEJS_24_X` (added in 2.225.0). No
+  dependency version changed.
+- No handler changes were needed. All 37 `backend/functions/*/index.js` handlers wired as
+  `index.handler` were already `async`, and none uses `callback`, `context.done/succeed/fail` or
+  `context.callbackWaitsForEmptyEventLoop`, which the Node 24 runtime removes. First-party
+  backend code uses none of the Node APIs that reached End-of-Life in Node 22-24.
+#### Documentation
+- Runtime statements now say Node.js 24: `README.md`, `backend/README.md`, `docs/architecture.md`,
+  the architecture diagram, `ARCHITECTURE_DECISIONS.md`, `infrastructure/lib/README-auth-onboarding.md`,
+  `infrastructure/lib/README-notification.md`, and the `tech`, `00-global` and `gotchas` steering files.
+#### Tests
+- New `infrastructure/test/runtime.test.ts` (with `infrastructure/jest.config.js`, ts-jest):
+  asserts `nodejs24.x`, the Node.js family and the SAM bundling image. 3 passed.
 ## [1.14.2] - 2026-11-20
 ### fix(web): Overview actual spending, Google sign-in hidden (Session 170)
 Web app only; no backend or infrastructure change.

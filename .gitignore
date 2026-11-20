@@ -109,6 +109,8 @@ cdk.context.json
 infrastructure/lib/*.d.ts
 infrastructure/lib/*.js
 infrastructure/lib/*.js.map
+infrastructure/test/*.js
+infrastructure/test/*.d.ts
 
 # Expo
 .expo/

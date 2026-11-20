@@ -22,6 +22,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import { BEDROCK_MODEL_ID, bedrockModelResourceArns } from './config/bedrock';
+import { LAMBDA_RUNTIME } from './config/runtime';
 
 export interface ApiFeaturesExtendedStackProps extends cdk.StackProps {
   table: dynamodb.Table;
@@ -42,7 +43,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
     const commonLayer = new lambda.LayerVersion(this, 'ExtendedCommonLayer', {
       layerVersionName: 'budgetbuddy-extended-common',
       code: lambda.Code.fromAsset('../backend/layers/common'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Common dependencies for BudgetBuddy Extended Features API',
     });
 
@@ -50,7 +51,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
     const sharedLayer = new lambda.LayerVersion(this, 'ExtendedSharedLayer', {
       layerVersionName: 'budgetbuddy-extended-shared',
       code: lambda.Code.fromAsset('../backend/layers/shared'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Shared utilities for BudgetBuddy Extended Features API',
     });
 
@@ -151,7 +152,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
 
     // Common Lambda configuration
     const commonProps = {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: LAMBDA_RUNTIME,
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
       layers: [commonLayer, sharedLayer],
@@ -231,7 +232,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       functionName: 'budgetbuddy-insights',
       code: lambda.Code.fromAsset('../backend/functions/insights', {
         bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          image: LAMBDA_RUNTIME.bundlingImage,
           user: 'root',
           command: [
             'bash', '-c', [
@@ -264,7 +265,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       functionName: 'budgetbuddy-receipt',
       code: lambda.Code.fromAsset('../backend/functions/receipt', {
         bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          image: LAMBDA_RUNTIME.bundlingImage,
           user: 'root',
           command: [
             'bash', '-c', [
@@ -301,7 +302,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       functionName: 'budgetbuddy-pattern-detection',
       code: lambda.Code.fromAsset('../backend/functions/pattern-detection', {
         bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          image: LAMBDA_RUNTIME.bundlingImage,
           user: 'root',
           command: [
             'bash', '-c', [
@@ -337,7 +338,7 @@ export class ApiFeaturesExtendedStack extends cdk.Stack {
       functionName: 'budgetbuddy-budget-planning',
       code: lambda.Code.fromAsset('../backend/functions/budget-planning', {
         bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          image: LAMBDA_RUNTIME.bundlingImage,
           user: 'root',
           command: [
             'bash', '-c', [

@@ -57,7 +57,7 @@ ExpressionAttributeNames: { '#s': 'status' }
   `backend/node_modules`, which the layer asset does not ship.
 - Symptom: every Lambda using the layer fails with `Runtime.ImportModuleError: Cannot find module
   '@smithy/core/client'` (2026-11-01, run 41318103714). Local jest cannot catch it.
-- The layer normally ships only `uuid`. Lambdas get SDK v3 from the Node 20 runtime.
+- The layer normally ships only `uuid`. Lambdas get SDK v3 from the Node.js 24 runtime.
 
 ## CDK / Infrastructure
 

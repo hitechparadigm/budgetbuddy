@@ -10,6 +10,7 @@ import * as sns from 'aws-cdk-lib/aws-sns';
 import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import * as cloudwatchActions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { Construct } from 'constructs';
+import { LAMBDA_RUNTIME } from './config/runtime';
 
 export interface NotificationStackProps extends cdk.StackProps {
   table: dynamodb.Table;
@@ -38,21 +39,21 @@ export class NotificationStack extends cdk.Stack {
     const commonLayer = new lambda.LayerVersion(this, 'NotificationCommonLayer', {
       layerVersionName: 'budgetbuddy-notification-common',
       code: lambda.Code.fromAsset('../backend/layers/common'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Common dependencies for BudgetBuddy Notification functions',
     });
 
     // Create SharedLayer for this stack (no longer importing from API stack)
     const sharedLayer = new lambda.LayerVersion(this, 'SharedLayer', {
       code: lambda.Code.fromAsset('../backend/layers/shared/nodejs'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Shared utilities layer for notification functions',
     });
 
     // 1. Create Notification Service Lambda
     this.notificationFunction = new lambda.Function(this, 'NotificationFunction', {
       functionName: `budgetbuddy-${this.node.tryGetContext('environment') || 'dev'}-notifications`,
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: LAMBDA_RUNTIME,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/notifications'),
       layers: [commonLayer, sharedLayer],
@@ -72,7 +73,7 @@ export class NotificationStack extends cdk.Stack {
     // 2. Create Budget Alerts Service Lambda
     this.budgetAlertsFunction = new lambda.Function(this, 'BudgetAlertsFunction', {
       functionName: `budgetbuddy-${this.node.tryGetContext('environment') || 'dev'}-budget-alerts`,
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: LAMBDA_RUNTIME,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/budget-alerts'),
       layers: [commonLayer, sharedLayer],
@@ -99,7 +100,7 @@ export class NotificationStack extends cdk.Stack {
     // 3. Create Daily Reminders Service Lambda
     this.dailyRemindersFunction = new lambda.Function(this, 'DailyRemindersFunction', {
       functionName: `budgetbuddy-${this.node.tryGetContext('environment') || 'dev'}-daily-reminders`,
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: LAMBDA_RUNTIME,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/daily-reminders'),
       layers: [commonLayer, sharedLayer],
@@ -124,7 +125,7 @@ export class NotificationStack extends cdk.Stack {
     // 4. Create Bill Scheduler Service Lambda
     this.billSchedulerFunction = new lambda.Function(this, 'BillSchedulerFunction', {
       functionName: `budgetbuddy-${this.node.tryGetContext('environment') || 'dev'}-bill-scheduler`,
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: LAMBDA_RUNTIME,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/bills-scheduler'),
       layers: [commonLayer],

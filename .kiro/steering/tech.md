@@ -22,7 +22,7 @@ inclusion: always
 
 ## Backend
 
-- Node.js 20.x on AWS Lambda (serverless)
+- Node.js 24.x on AWS Lambda (serverless); runtime set once in `infrastructure/lib/config/runtime.ts` (`LAMBDA_RUNTIME`)
 - API Gateway REST with Cognito authorizer
 - Pattern: `index.js` (handler + routing) → `service.js` (business logic) → `repository.js` (DynamoDB)
 - One Lambda per endpoint group

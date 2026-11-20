@@ -37,7 +37,7 @@ State of the system:
 | Features API | `0poeu07vth.execute-api.us-east-1.amazonaws.com`, stage `v1` | Deployed |
 | Extended Features API | `hkjzroedjf.execute-api.us-east-1.amazonaws.com`, stage `v1` | Deployed |
 | Cognito | User pool `budgetbuddy-users`, app client `budgetbuddy-client` | Deployed |
-| Lambda | 36 functions, Node.js 20, grouped into 10 domains (section 3) | Deployed |
+| Lambda | 36 functions, Node.js 24 (`nodejs24.x`, set once in `infrastructure/lib/config/runtime.ts`), grouped into 10 domains (section 3) | Deployed |
 | DynamoDB | Single table `budgetbuddy-main` with stream and 4 GSIs | Deployed |
 | S3 (data) | Receipts bucket and pattern-cache bucket, both with 30-day expiry | Deployed |
 | Bedrock | Claude Haiku 4.5 through the `us.` inference profile | Deployed |

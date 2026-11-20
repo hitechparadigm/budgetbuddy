@@ -27,6 +27,7 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as logs from "aws-cdk-lib/aws-logs";
 import { Construct } from "constructs";
 import * as path from "path";
+import { LAMBDA_RUNTIME } from "./config/runtime";
 
 interface AdminStackProps extends cdk.StackProps {
   mainTable: dynamodb.ITable;
@@ -122,7 +123,7 @@ export class AdminStack extends cdk.Stack {
 
     const adminLambda = new lambda.Function(this, "AdminFunction", {
       functionName: "budgetbuddy-admin",
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: LAMBDA_RUNTIME,
       handler: "index.handler",
       code: lambda.Code.fromAsset(
         path.join(__dirname, "../../backend/functions/admin")

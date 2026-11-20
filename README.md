@@ -877,7 +877,7 @@ curl -X GET "https://q0zoob6728.execute-api.us-east-1.amazonaws.com/v1/budget/he
 ## Technical Architecture
 
 BudgetBuddy is fully serverless on AWS: a React/Vite web app and a React Native/Expo mobile app call
-4 API Gateway REST APIs backed by 36 Node.js 20 Lambda functions, one DynamoDB table and Cognito, all
+4 API Gateway REST APIs backed by 36 Node.js 24 Lambda functions, one DynamoDB table and Cognito, all
 defined in 10 CDK stacks and deployed to dev through GitHub Actions. AI features use Amazon Bedrock
 (Claude Haiku 4.5). The full reference, with diagram, is [docs/architecture.md](docs/architecture.md).
 

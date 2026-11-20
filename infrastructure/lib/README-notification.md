@@ -49,7 +49,7 @@ The Notification Stack provides push notification and daily reminder functionali
 
 **Configuration**:
 
-- Runtime: Node.js 20.x
+- Runtime: Node.js 24.x (`nodejs24.x`)
 - Memory: 512 MB
 - Timeout: 30 seconds
 - Provisioned Concurrency: none
@@ -79,7 +79,7 @@ The Notification Stack provides push notification and daily reminder functionali
 
 **Configuration**:
 
-- Runtime: Node.js 20.x
+- Runtime: Node.js 24.x (`nodejs24.x`)
 - Memory: 512 MB
 - Timeout: 60 seconds
 - Reserved Concurrency: 10 (to prevent throttling)
@@ -119,7 +119,7 @@ The Notification Stack provides push notification and daily reminder functionali
 
 **Configuration**:
 
-- Runtime: Node.js 20.x
+- Runtime: Node.js 24.x (`nodejs24.x`)
 - Memory: 1024 MB
 - Timeout: 300 seconds (5 minutes for batch processing)
 

@@ -228,6 +228,13 @@ Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`
       Sonnet prices.
 
 ### Infrastructure
+- [x] Lambda runtime `nodejs20.x` (deprecated Apr 30, 2026) -> `nodejs24.x` (1.14.3, Session 170).
+      `infrastructure/lib/config/runtime.ts` `LAMBDA_RUNTIME` is the only place the runtime is set
+      (function `runtime`, layer `compatibleRuntimes`, Docker `bundlingImage`). No handler change:
+      all handlers were already `async`. The live proof is the post-deploy runtime census.
+- [ ] Follow-up: upgrade aws-cdk-lib to >= 2.225.0 and switch `LAMBDA_RUNTIME` to
+      `Runtime.NODEJS_24_X`. 2.221.0 lacks the constant, so `runtime.ts` builds it with
+      `new lambda.Runtime('nodejs24.x', ...)`. Bump CDK on its own change, with a synth diff.
 - [x] `api-family-stack` destroyed and removed from CDK app entrypoint (infra-cleanup spec)
 - [ ] SES still in sandbox - production access not yet requested
 - [x] `infrastructure/bin/app.js` drift from `app.ts` - fixed (see Mobile section below

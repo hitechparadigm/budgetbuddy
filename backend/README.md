@@ -56,7 +56,7 @@ See `functions/auth-onboarding/README.md` for detailed documentation.
 Function placement per stack and API, the request lifecycle (`getUserFromEvent` ->
 `BudgetAccessResolver.resolveAccess` -> `assertPermission` -> `canUseFeature`), the DynamoDB key
 layout and the scheduled and stream triggers are documented in
-[docs/architecture.md](../docs/architecture.md). All handlers run on Node.js 20 and use AWS SDK v3
+[docs/architecture.md](../docs/architecture.md). All handlers run on Node.js 24 (`nodejs24.x`), are `async`, and use AWS SDK v3
 (`@aws-sdk/*`) or the common layer's `dynamoHelpers`; SDK v2 (`aws-sdk`) is not available on that runtime.
 
 ## Environment Variables

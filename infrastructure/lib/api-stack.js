@@ -55,6 +55,7 @@ const lambda = __importStar(require("aws-cdk-lib/aws-lambda"));
 const iam = __importStar(require("aws-cdk-lib/aws-iam"));
 const logs = __importStar(require("aws-cdk-lib/aws-logs"));
 const bedrock_1 = require("./config/bedrock");
+const runtime_1 = require("./config/runtime");
 class ApiStack extends cdk.Stack {
     constructor(scope, id, props) {
         super(scope, id, props);
@@ -87,7 +88,7 @@ class ApiStack extends cdk.Stack {
         return new lambda.LayerVersion(this, 'CommonLayer', {
             layerVersionName: 'budgetbuddy-common',
             code: lambda.Code.fromAsset('../backend/layers/common'),
-            compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+            compatibleRuntimes: [runtime_1.LAMBDA_RUNTIME],
             description: 'Common dependencies and utilities for BudgetBuddy Lambda functions to reduce cold start times',
         });
     }
@@ -99,7 +100,7 @@ class ApiStack extends cdk.Stack {
         return new lambda.LayerVersion(this, 'SharedLayer', {
             layerVersionName: 'budgetbuddy-shared',
             code: lambda.Code.fromAsset('../backend/layers/shared'),
-            compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+            compatibleRuntimes: [runtime_1.LAMBDA_RUNTIME],
             description: 'Shared utilities (CORS, validation, token parsing) for BudgetBuddy Lambda functions',
         });
     }
@@ -116,7 +117,7 @@ class ApiStack extends cdk.Stack {
         };
         // Common Lambda function configuration
         const commonProps = {
-            runtime: lambda.Runtime.NODEJS_20_X,
+            runtime: runtime_1.LAMBDA_RUNTIME,
             timeout: cdk.Duration.seconds(30),
             memorySize: 512, // Balanced for cost and performance
             layers: [commonLayer, sharedLayer],

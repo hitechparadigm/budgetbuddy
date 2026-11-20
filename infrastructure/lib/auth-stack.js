@@ -54,6 +54,7 @@ const cdk = __importStar(require("aws-cdk-lib"));
 const cognito = __importStar(require("aws-cdk-lib/aws-cognito"));
 const lambda = __importStar(require("aws-cdk-lib/aws-lambda"));
 const data_protection_1 = require("./config/data-protection");
+const runtime_1 = require("./config/runtime");
 class AuthStack extends cdk.Stack {
     constructor(scope, id, props) {
         super(scope, id, props);
@@ -297,7 +298,7 @@ class AuthStack extends cdk.Stack {
          */
         this.authSharedLayer = new lambda.LayerVersion(this, 'AuthSharedLayer', {
             code: lambda.Code.fromAsset('../backend/layers/shared'),
-            compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+            compatibleRuntimes: [runtime_1.LAMBDA_RUNTIME],
             description: 'Shared authentication utilities for BudgetBuddy auth Lambda functions',
             layerVersionName: 'budgetbuddy-auth-shared',
             removalPolicy: cdk.RemovalPolicy.RETAIN, // Keep old versions for rollback

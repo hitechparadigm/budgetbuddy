@@ -1,4 +1,25 @@
 # Development Log
+## 2026-11-20 - Lambda Runtime Moved to nodejs24.x (Session 170)
+**Summary:** every Lambda function and layer moves from the deprecated `nodejs20.x` to `nodejs24.x`
+(1.14.3). The runtime is now defined once, as `LAMBDA_RUNTIME` in
+`infrastructure/lib/config/runtime.ts`, and used by all 33 former `Runtime.NODEJS_20_X` sites:
+function `runtime`, layer `compatibleRuntimes`, and the `bundlingImage` of the six Docker-bundled
+functions. The installed aws-cdk-lib (2.221.0) has no `Runtime.NODEJS_24_X` (it arrived in 2.225.0).
+The owner chose to build the runtime with the public `lambda.Runtime` constructor rather than bump
+CDK, because a CDK minor bump changes templates across all 10 stacks and `cdk synth`/`cdk diff`
+cannot run here (Docker engine down). The `public.ecr.aws/sam/build-nodejs24.x` image exists
+(`latest` tag resolves on the public registry).
+Handler audit against the AWS Node.js 24 runtime notes: the new runtime interface client drops
+callback handlers, `context.callbackWaitsForEmptyEventLoop` and `context.done/succeed/fail`. All 37
+handlers are already `async` and use none of these, so no handler code changed. A `git grep` of
+first-party backend code for the APIs that reached End-of-Life in Node 22-24 (`crypto.createCipher`,
+`util.is*`, `util.log`, `tls.createSecurePair`, `timers.enroll`, `dirent.path` and others) found
+nothing. No dependency version changed.
+Gates: `tsc --noEmit` exit 0; `git grep NODEJS_20_X -- infrastructure/lib` 0 lines; the new
+`infrastructure/test/runtime.test.ts` 3/3 (local Node v24.14.0); `consistency-check.js` 4/4.
+Proof that the deploy worked is the post-deploy runtime census (every function reports `nodejs24.x`).
+Follow-up: upgrade aws-cdk-lib to >= 2.225.0 and switch `LAMBDA_RUNTIME` to `Runtime.NODEJS_24_X`.
+
 ## 2026-11-20 - Overview Actual Spending, Google Sign-In Hidden on Web (Session 170)
 **Summary:** two bugs from the live DEV browser test, fixed in the web app only (1.14.2).
 Overview's Total Spent card, its mobile Spent strip and the Budget Health bar read the period's

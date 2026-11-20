@@ -19,6 +19,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
+import { LAMBDA_RUNTIME } from './config/runtime';
 
 /**
  * Props for the Auth Onboarding Stack
@@ -44,7 +45,7 @@ export class AuthOnboardingStack extends cdk.Stack {
      */
     const authSharedLayer = new lambda.LayerVersion(this, 'AuthSharedLayer', {
       code: lambda.Code.fromAsset('../backend/layers/shared'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Shared authentication utilities for auth-onboarding Lambda',
       layerVersionName: 'budgetbuddy-auth-shared-onboarding',
       removalPolicy: cdk.RemovalPolicy.RETAIN,
@@ -57,7 +58,7 @@ export class AuthOnboardingStack extends cdk.Stack {
     const commonLayer = new lambda.LayerVersion(this, 'CommonLayer', {
       layerVersionName: 'budgetbuddy-common-onboarding',
       code: lambda.Code.fromAsset('../backend/layers/common'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Common utilities for auth-onboarding Lambda (DynamoDB helpers, BudgetAccessResolver)',
     });
 
@@ -73,7 +74,7 @@ export class AuthOnboardingStack extends cdk.Stack {
      */
     this.onboardingFunction = new lambda.Function(this, 'AuthOnboardingFunction', {
       functionName: 'budgetbuddy-auth-onboarding',
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: LAMBDA_RUNTIME,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/auth-onboarding'),
       description: 'BudgetBuddy auth onboarding handler - completes user onboarding and creates initial budget',

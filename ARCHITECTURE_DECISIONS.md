@@ -91,7 +91,7 @@ See `docs/product-requirements.md` for the full gap analysis.
 
 ### Decision
 
-Lambda (Node.js 20.x) + API Gateway (REST) with Cognito authorizer. CDK v2 for all infrastructure.
+Lambda (Node.js 24.x; runtime moved from nodejs20.x to nodejs24.x in 1.14.3) + API Gateway (REST) with Cognito authorizer. CDK v2 for all infrastructure.
 
 ### Stack Layout
 

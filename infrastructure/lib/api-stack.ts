@@ -25,6 +25,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import { BEDROCK_MODEL_ID, bedrockModelResourceArns } from './config/bedrock';
+import { LAMBDA_RUNTIME } from './config/runtime';
 
 /**
  * Props for the API Stack
@@ -104,7 +105,7 @@ export class ApiStack extends cdk.Stack {
     return new lambda.LayerVersion(this, 'CommonLayer', {
       layerVersionName: 'budgetbuddy-common',
       code: lambda.Code.fromAsset('../backend/layers/common'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Common dependencies and utilities for BudgetBuddy Lambda functions to reduce cold start times',
     });
   }
@@ -117,7 +118,7 @@ export class ApiStack extends cdk.Stack {
     return new lambda.LayerVersion(this, 'SharedLayer', {
       layerVersionName: 'budgetbuddy-shared',
       code: lambda.Code.fromAsset('../backend/layers/shared'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Shared utilities (CORS, validation, token parsing) for BudgetBuddy Lambda functions',
     });
   }
@@ -136,7 +137,7 @@ export class ApiStack extends cdk.Stack {
 
     // Common Lambda function configuration
     const commonProps = {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: LAMBDA_RUNTIME,
       timeout: cdk.Duration.seconds(30),
       memorySize: 512, // Balanced for cost and performance
       layers: [commonLayer, sharedLayer],

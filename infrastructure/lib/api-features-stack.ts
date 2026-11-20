@@ -22,6 +22,7 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
+import { LAMBDA_RUNTIME } from './config/runtime';
 
 export interface ApiFeaturesStackProps extends cdk.StackProps {
   table: dynamodb.Table;
@@ -41,7 +42,7 @@ export class ApiFeaturesStack extends cdk.Stack {
     const commonLayer = new lambda.LayerVersion(this, 'FeaturesCommonLayer', {
       layerVersionName: 'budgetbuddy-features-common',
       code: lambda.Code.fromAsset('../backend/layers/common'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Common dependencies for BudgetBuddy Features API Lambda functions (independent copy)',
     });
 
@@ -50,7 +51,7 @@ export class ApiFeaturesStack extends cdk.Stack {
     const sharedLayer = new lambda.LayerVersion(this, 'FeaturesSharedLayer', {
       layerVersionName: 'budgetbuddy-features-shared',
       code: lambda.Code.fromAsset('../backend/layers/shared'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Shared utilities for BudgetBuddy Features API Lambda functions (independent copy)',
     });
 
@@ -103,7 +104,7 @@ export class ApiFeaturesStack extends cdk.Stack {
 
     // Common Lambda configuration
     const commonProps = {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: LAMBDA_RUNTIME,
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
       layers: [commonLayer, sharedLayer],
@@ -189,7 +190,7 @@ export class ApiFeaturesStack extends cdk.Stack {
       functionName: 'budgetbuddy-plaid',
       code: lambda.Code.fromAsset('../backend/functions/plaid', {
         bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          image: LAMBDA_RUNTIME.bundlingImage,
           user: 'root',
           command: [
             'bash', '-c', [
@@ -318,7 +319,7 @@ export class ApiFeaturesStack extends cdk.Stack {
       functionName: 'budgetbuddy-investments',
       code: lambda.Code.fromAsset('../backend/functions/investments', {
         bundling: {
-          image: lambda.Runtime.NODEJS_20_X.bundlingImage,
+          image: LAMBDA_RUNTIME.bundlingImage,
           user: 'root',
           command: [
             'bash', '-c', [

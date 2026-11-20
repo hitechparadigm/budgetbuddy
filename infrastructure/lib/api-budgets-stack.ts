@@ -22,6 +22,7 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
+import { LAMBDA_RUNTIME } from './config/runtime';
 
 export interface ApiBudgetsStackProps extends cdk.StackProps {
   table: dynamodb.Table;
@@ -39,7 +40,7 @@ export class ApiBudgetsStack extends cdk.Stack {
     const commonLayer = new lambda.LayerVersion(this, 'BudgetsCommonLayer', {
       layerVersionName: 'budgetbuddy-budgets-common',
       code: lambda.Code.fromAsset('../backend/layers/common'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Common dependencies for BudgetBuddy Budgets API Lambda functions (independent copy)',
     });
 
@@ -47,7 +48,7 @@ export class ApiBudgetsStack extends cdk.Stack {
     const sharedLayer = new lambda.LayerVersion(this, 'BudgetsSharedLayer', {
       layerVersionName: 'budgetbuddy-budgets-shared',
       code: lambda.Code.fromAsset('../backend/layers/shared'),
-      compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
+      compatibleRuntimes: [LAMBDA_RUNTIME],
       description: 'Shared utilities for BudgetBuddy Budgets API Lambda functions (independent copy)',
     });
 
@@ -98,7 +99,7 @@ export class ApiBudgetsStack extends cdk.Stack {
 
     // Common Lambda configuration
     const commonProps = {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: LAMBDA_RUNTIME,
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
       layers: [commonLayer, sharedLayer],

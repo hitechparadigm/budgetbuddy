@@ -41,7 +41,7 @@ The Auth Onboarding Stack creates a standalone Lambda function for handling user
 ## Function Details
 
 - **Name**: `budgetbuddy-auth-onboarding`
-- **Runtime**: Node.js 20.x
+- **Runtime**: Node.js 24.x (`nodejs24.x`)
 - **Handler**: `index.handler`
 - **Timeout**: 30 seconds
 - **Memory**: 512 MB
