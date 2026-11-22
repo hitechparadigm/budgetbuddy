@@ -78,7 +78,7 @@ The verified key layout, with writer file:line and known inconsistencies, is in
 
 **`GOAL#<id>` `subType`**: optional field — `'goal'` (default), `'borrowed'`, or `'lent'`. No migration needed; existing goals without `subType` treated as regular goals.
 
-**`PLAN#<planId>`**: planned future transactions (income or expense). The prefix is defined once in `backend/functions/transaction-planning/keys.js`. `isExecuted: false` on creation; `POST /transaction-planning/{plannedTransactionId}/mark-paid` creates the real `TXN#` record and sets `isExecuted: true` + `executedTransactionId` + `executedAt`.
+**`PLAN#<planId>`**: planned future transactions (income or expense). The prefix is defined once in the common layer `backend/layers/common/nodejs/keys.js` (`PLANNED_TXN_SK_PREFIX`), which `backend/functions/transaction-planning/keys.js` re-exports. `isExecuted: false` on creation; `POST /transaction-planning/{plannedTransactionId}/mark-paid` creates the real `TXN#` record and sets `isExecuted: true` + `executedTransactionId` + `executedAt`.
 
 **GSI1**: `GSI1PK = USER#<userId>` / `GSI1SK = BUDGET#<budgetId>` — lists all budgets a user belongs to.
 

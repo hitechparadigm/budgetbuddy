@@ -88,4 +88,32 @@ module.exports = [
       ],
     },
   },
+  {
+    // Wave 3 design 9.4: DynamoDB keys are built only by the layer's keys.js.
+    // "warn" from phase 0; becomes "error" in phase 11.
+    files: ["backend/**/*.js"],
+    ignores: [
+      "backend/layers/common/nodejs/keys.js",
+      "backend/**/*.test.js",
+      "backend/**/__tests__/**",
+      "backend/**/node_modules/**",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector:
+            "Literal[value=/^(BUDGET|USER|PERIOD|TOTAL|TRANSACTION|TXN|FAMILY|PLAN|MEMBER|ACCOUNT|GOAL|BILL)#/]",
+          message:
+            "Build DynamoDB keys with /opt/nodejs/keys (backend/layers/common/nodejs/keys.js), not string literals.",
+        },
+        {
+          selector:
+            "TemplateLiteral > TemplateElement:first-child[value.raw=/^(BUDGET|USER|PERIOD|TOTAL|TRANSACTION|TXN|FAMILY|PLAN|MEMBER|ACCOUNT|GOAL|BILL)#/]",
+          message:
+            "Build DynamoDB keys with /opt/nodejs/keys (backend/layers/common/nodejs/keys.js), not template literals.",
+        },
+      ],
+    },
+  },
 ];

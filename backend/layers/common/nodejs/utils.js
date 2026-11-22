@@ -15,6 +15,7 @@ const {
   ScanCommand,
   UpdateCommand,
   DeleteCommand,
+  TransactWriteCommand,
 } = require("@aws-sdk/lib-dynamodb");
 const { v4: uuidv4 } = require("uuid");
 
@@ -194,6 +195,85 @@ const generateId = {
   custom: (prefix) => `${prefix}_${uuidv4()}`,
 };
 
+/** Default cap on items a paginating query helper collects before it stops. */
+const DEFAULT_MAX_ITEMS = 5000;
+/** A key attribute (PK, SK, GSI1PK..GSI4SK) named directly in an expression. */
+const KEY_ATTRIBUTE_IN_EXPRESSION = /(^|[^:#\w])(PK|SK|GSI[1-4](?:PK|SK))\b/;
+const KEY_ATTRIBUTE_NAME = /^(PK|SK|GSI[1-4](?:PK|SK))$/;
+
+/**
+ * Warn (log line + `BudgetBuddy/Data` `FilterOnKeyAttribute` EMF metric) when a
+ * command filters on a key attribute. Such a filter reads every item of the
+ * partition or table first; the key belongs in the KeyConditionExpression.
+ * Never throws (Wave 3 design 9.2).
+ *
+ * @param {string} operation - helper name, e.g. "queryByPK"
+ * @param {Object} input - the command input
+ */
+const warnOnKeyFilter = (operation, input) => {
+  const expression = input && input.FilterExpression;
+  if (typeof expression !== "string") return;
+  let hit = KEY_ATTRIBUTE_IN_EXPRESSION.test(expression);
+  if (!hit && input.ExpressionAttributeNames) {
+    hit = Object.entries(input.ExpressionAttributeNames).some(
+      ([placeholder, name]) =>
+        KEY_ATTRIBUTE_NAME.test(name) && expression.includes(placeholder),
+    );
+  }
+  if (!hit) return;
+  logger.warn("FilterExpression names a key attribute", {
+    operation,
+    indexName: input.IndexName || null,
+    filterExpression: expression,
+  });
+  emitEmfMetric("FilterOnKeyAttribute", 1, {}, "BudgetBuddy/Data");
+};
+
+/**
+ * Run a Query and follow LastEvaluatedKey until the result set is exhausted or
+ * `maxItems` items are collected (then it logs a warning and stops).
+ *
+ * @param {Object} input - QueryCommand input without TableName
+ * @param {{ maxItems?: number, operation?: string }} [opts]
+ * @returns {Promise<Array>} items
+ */
+const queryAllPages = async (input, opts = {}) => {
+  const { maxItems = DEFAULT_MAX_ITEMS, operation = "queryAll" } = opts;
+  const client = getDynamoClient();
+  warnOnKeyFilter(operation, input);
+  const items = [];
+  let lastEvaluatedKey;
+  do {
+    const result = await client.send(
+      new QueryCommand({
+        TableName: process.env.TABLE_NAME,
+        ...input,
+        ...(lastEvaluatedKey ? { ExclusiveStartKey: lastEvaluatedKey } : {}),
+      }),
+    );
+    items.push(...(result.Items || []));
+    lastEvaluatedKey = result.LastEvaluatedKey;
+    if (lastEvaluatedKey && items.length >= maxItems) {
+      logger.warn("Query stopped at maxItems; results are truncated", {
+        operation,
+        maxItems,
+        itemsReturned: items.length,
+      });
+      break;
+    }
+  } while (lastEvaluatedKey);
+  return items;
+};
+
+/**
+ * Merge caller ExpressionAttributeValues into the helper's own values without
+ * letting the caller overwrite them.
+ * @param {Object} own
+ * @param {Object} [extra]
+ * @returns {Object}
+ */
+const mergeValues = (own, extra) => ({ ...(extra || {}), ...own });
+
 /**
  * DynamoDB helper functions for common operations
  */
@@ -239,6 +319,9 @@ const dynamoHelpers = {
 
   /**
    * Query items by partition key
+   * @deprecated Returns only the first 1 MB page, and its second argument is an
+   *   options object (a string is spread into the command). Use
+   *   `queryByPrefix(pk, skPrefix, opts)` or `queryPage` instead.
    * @param {string} pk - Partition key
    * @param {Object} options - Query options
    * @returns {Promise<Array>} Array of items
@@ -250,7 +333,7 @@ const dynamoHelpers = {
     const { ExpressionAttributeValues: optionValues, ...otherOptions } =
       options;
 
-    const command = new QueryCommand({
+    const input = {
       TableName: process.env.TABLE_NAME,
       KeyConditionExpression: "PK = :pk",
       ExpressionAttributeValues: {
@@ -258,7 +341,9 @@ const dynamoHelpers = {
         ...(optionValues || {}),
       },
       ...otherOptions,
-    });
+    };
+    warnOnKeyFilter("queryByPK", input);
+    const command = new QueryCommand(input);
 
     const result = await client.send(command);
     return result.Items || [];
@@ -286,6 +371,7 @@ const dynamoHelpers = {
 
     const items = [];
     let lastEvaluatedKey;
+    warnOnKeyFilter("queryByGSI", { ...otherOptions, IndexName: indexName });
 
     do {
       const command = new QueryCommand({
@@ -324,6 +410,7 @@ const dynamoHelpers = {
     const client = getDynamoClient();
 
     const { maxPages = 50, ...scanOptions } = options;
+    warnOnKeyFilter("scan", scanOptions);
 
     const items = [];
     let lastEvaluatedKey;
@@ -351,6 +438,125 @@ const dynamoHelpers = {
     } while (lastEvaluatedKey);
 
     return items;
+  },
+
+  /**
+   * Run a Query and follow LastEvaluatedKey up to `maxItems` (default 5,000;
+   * hitting the cap logs a warning).
+   *
+   * @param {Object} input - QueryCommand input without TableName
+   * @param {{ maxItems?: number }} [opts]
+   * @returns {Promise<Array>} items
+   */
+  async queryAll(input, opts = {}) {
+    return queryAllPages(input, { maxItems: opts.maxItems, operation: "queryAll" });
+  },
+
+  /**
+   * Query every item of a partition whose sort key begins with `skPrefix`,
+   * following LastEvaluatedKey up to `maxItems` (default 5,000; hitting the
+   * cap logs a warning).
+   *
+   * @param {string} pk - Partition key value
+   * @param {string} skPrefix - Sort-key prefix, e.g. "PERIOD#"
+   * @param {Object} [opts] - `maxItems` plus extra QueryCommand options
+   *   (FilterExpression on non-key attributes, ProjectionExpression,
+   *   ScanIndexForward, ...). Caller ExpressionAttributeValues are merged and
+   *   cannot override :pk / :skPrefix.
+   * @returns {Promise<Array>} items
+   */
+  async queryByPrefix(pk, skPrefix, opts = {}) {
+    const { maxItems, ExpressionAttributeValues, ...rest } = opts;
+    return queryAllPages(
+      {
+        ...rest,
+        KeyConditionExpression: "PK = :pk AND begins_with(SK, :skPrefix)",
+        ExpressionAttributeValues: mergeValues(
+          { ":pk": pk, ":skPrefix": skPrefix },
+          ExpressionAttributeValues,
+        ),
+      },
+      { maxItems, operation: "queryByPrefix" },
+    );
+  },
+
+  /**
+   * Query a GSI partition for sort keys between `from` and `to` (inclusive),
+   * following LastEvaluatedKey up to `maxItems` (default 5,000).
+   *
+   * @param {string} indexName - "GSI1".."GSI4"
+   * @param {string} pk - Index partition key value
+   * @param {string} from - Lower sort-key bound
+   * @param {string} to - Upper sort-key bound
+   * @param {Object} [opts] - `maxItems` plus extra QueryCommand options
+   * @returns {Promise<Array>} items
+   */
+  async queryGSIRange(indexName, pk, from, to, opts = {}) {
+    if (!/^GSI[1-4]$/.test(indexName)) {
+      throw new Error(`queryGSIRange: unknown index ${indexName}`);
+    }
+    const { maxItems, ExpressionAttributeValues, ...rest } = opts;
+    return queryAllPages(
+      {
+        ...rest,
+        IndexName: indexName,
+        KeyConditionExpression: `${indexName}PK = :gsipk AND ${indexName}SK BETWEEN :from AND :to`,
+        ExpressionAttributeValues: mergeValues(
+          { ":gsipk": pk, ":from": from, ":to": to },
+          ExpressionAttributeValues,
+        ),
+      },
+      { maxItems, operation: "queryGSIRange" },
+    );
+  },
+
+  /**
+   * Run one Query page, for APIs that hand a cursor back to the client.
+   *
+   * @param {Object} input - QueryCommand input without TableName, Limit or
+   *   ExclusiveStartKey
+   * @param {{ limit?: number, startKey?: Object }} [page]
+   * @returns {Promise<{ items: Array, lastEvaluatedKey: Object|undefined }>}
+   */
+  async queryPage(input, { limit, startKey } = {}) {
+    warnOnKeyFilter("queryPage", input);
+    const result = await getDynamoClient().send(
+      new QueryCommand({
+        TableName: process.env.TABLE_NAME,
+        ...input,
+        ...(limit ? { Limit: limit } : {}),
+        ...(startKey ? { ExclusiveStartKey: startKey } : {}),
+      }),
+    );
+    return { items: result.Items || [], lastEvaluatedKey: result.LastEvaluatedKey };
+  },
+
+  /**
+   * Write up to 100 actions atomically with TransactWriteItems. Each action is
+   * `{ Put | Update | Delete | ConditionCheck: {...} }`; TableName defaults to
+   * the function's table. A TransactionCanceledException is rethrown as is so
+   * callers can read `CancellationReasons`.
+   *
+   * @param {Array<Object>} items - transaction actions
+   * @param {string} [clientRequestToken] - idempotency token (1-36 chars)
+   * @returns {Promise<Object>} the TransactWriteItems response
+   */
+  async transactWrite(items, clientRequestToken) {
+    if (!Array.isArray(items) || items.length === 0 || items.length > 100) {
+      throw new Error("transactWrite: between 1 and 100 actions are required");
+    }
+    const TransactItems = items.map((action) => {
+      const [type] = Object.keys(action);
+      return {
+        [type]: { TableName: process.env.TABLE_NAME, ...action[type] },
+      };
+    });
+    return getDynamoClient().send(
+      new TransactWriteCommand({
+        TransactItems,
+        ...(clientRequestToken ? { ClientRequestToken: clientRequestToken } : {}),
+      }),
+    );
   },
 
   /**
@@ -637,15 +843,16 @@ const BEDROCK_MODEL_ID =
  * @param {string} metricName - e.g. 'AiFallbackUsed'
  * @param {number} value - Count to record
  * @param {Object<string, string>} [dimensions] - e.g. { Feature: 'generate-budget' }
+ * @param {string} [namespace] - CloudWatch namespace; defaults to BudgetBuddy/AI
  */
-const emitEmfMetric = (metricName, value, dimensions = {}) => {
+const emitEmfMetric = (metricName, value, dimensions = {}, namespace = "BudgetBuddy/AI") => {
   console.log(
     JSON.stringify({
       _aws: {
         Timestamp: Date.now(),
         CloudWatchMetrics: [
           {
-            Namespace: "BudgetBuddy/AI",
+            Namespace: namespace,
             Dimensions: Object.keys(dimensions).length
               ? [[], Object.keys(dimensions)]
               : [[]],

@@ -315,6 +315,10 @@ jobs:
 
       - name: Run consistency checks
         run: node scripts/consistency-check.js
+      - name: Run route contract check
+        run: node scripts/route-contract-check.js
+      - name: Run DynamoDB key-in-filter check
+        run: node scripts/dynamo-filter-check.js
 
   build-validation:
     name: Build Validation

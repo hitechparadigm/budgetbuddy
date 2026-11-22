@@ -72,6 +72,14 @@ jobs:
       - name: Run linting
         run: npm run lint
 
+      # Wave 3 guardrails (design 9.1, 9.2): pushes to develop skip pr-check.yml,
+      # so the same two static checks gate the deploy here. Node built-ins only.
+      - name: Run route contract check
+        run: node scripts/route-contract-check.js
+
+      - name: Run DynamoDB key-in-filter check
+        run: node scripts/dynamo-filter-check.js
+
       - name: Run unit tests
         run: npm run test:unit
 

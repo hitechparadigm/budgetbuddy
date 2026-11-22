@@ -26,6 +26,9 @@
   },
   "jest": {
     "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^/opt/nodejs/keys$": "<rootDir>/../../layers/common/nodejs/keys.js"
+    },
     "collectCoverageFrom": [
       "*.js",
       "!*.test.js"

@@ -1,4 +1,35 @@
 # Changelog
+## [1.15.3] - 2026-11-22
+### feat(guardrails): route contract and key-filter checks (Wave 3 phase 0, Session 170)
+Common layer code, the `transaction-planning` Lambda, CI workflows and scripts. No CDK source, IAM,
+route or table change.
+#### Added
+- `backend/layers/common/nodejs/keys.js`: one place for DynamoDB key strings (`PREFIX`, `SK`,
+  `ENTITY`, `userPK`, `budgetPK`, `periodSK`, `transactionSK`/`transactionGSI1`, `reminderGSI3`,
+  `invitationPK`, one builder per entity). IDs, months and dates are validated
+  (`KeyValidationError`, status 400). `plannedTxnSK` keeps its old behavior, and
+  `transaction-planning/keys.js` now re-exports the layer module.
+- `dynamoHelpers`: `queryAll`, `queryByPrefix`, `queryGSIRange`, `queryPage` and `transactWrite`,
+  paginated with a 5,000-item cap that logs a warning. `queryByPK` is marked deprecated.
+  `queryByPK`, `queryByGSI` and `scan` log a warning and emit `BudgetBuddy/Data`
+  `FilterOnKeyAttribute` when a `FilterExpression` names a key attribute; they never throw.
+- `scripts/route-contract-check.js`: parses the routes of the four API stacks (231 methods) and
+  checks the web and mobile client calls (309) against them, plus handler gaps and handlers that
+  decode the `Authorization` header themselves. Current mismatches are allowlisted in
+  `scripts/route-contract-allowlist.json`, each with a reason and the phase that resolves it.
+- `scripts/dynamo-filter-check.js`: flags key attributes inside a `FilterExpression` and every
+  `Scan` in `backend/` (27 current findings, all allowlisted in
+  `scripts/dynamo-filter-allowlist.json`).
+- ESLint `no-restricted-syntax` rule in warn mode on key-prefix string literals
+  (`BUDGET#`, `USER#`, `PERIOD#`, ...) in `backend/**/*.js` outside `keys.js` and tests.
+- Both checks run in `deploy-dev.yml` `pre-deployment-checks` and in `pr-check.yml`
+  `consistency-checks`. A new mismatch or a stale allowlist entry fails the run.
+#### Tests
+- New suites: layer `keys.test.js` (36), `dynamo-helpers.test.js` (13),
+  `route-contract-check.test.js` (24), `dynamo-filter-check.test.js` (12). Existing suites
+  unchanged: layer `common.test.js` 99/101 (the same 2 pre-existing `canUseFeature` failures),
+  planning `keys.test.js` 3/3 and routes 15/15, `consistency-check` 10/10,
+  `check-sensitive-data` 39/39. Infrastructure `tsc --noEmit` 0 errors; consistency check 4/4.
 ## [1.15.2] - 2026-11-22
 ### fix(security): accepting a budget invitation requires a verified Cognito token (Session 170)
 `api-budgets-stack.ts` (one method's authorizer, no new resources) plus Lambda code (`budgets`,

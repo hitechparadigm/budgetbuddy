@@ -223,7 +223,7 @@ Key layout as the code writes it:
 | Budget period | `BUDGET#<budgetId>` | `PERIOD#<YYYY-MM>` | `budget/index.js:299` |
 | Account | `BUDGET#<budgetId>` | `ACCOUNT#<accountId>` (no GSI keys) | `accounts/repository.js:25`, `auth-onboarding/index.js:265-266` |
 | Transaction | `BUDGET#<budgetId>` | `TRANSACTION#<transactionId>` (GSI1 `BUDGET#<id>` / `DATE#<date>`) | `transactions/index.js:445-448` |
-| Planned transaction | `BUDGET#<budgetId>` | `PLAN#<planId>`, `entityType: 'PLANNED_TRANSACTION'` | `transaction-planning/keys.js:13,20-24`, `transaction-planning/index.js:138` |
+| Planned transaction | `BUDGET#<budgetId>` | `PLAN#<planId>`, `entityType: 'PLANNED_TRANSACTION'` | `plannedTxnSK()` in layer `keys.js:69,221-223` (re-exported by `transaction-planning/keys.js`), `transaction-planning/index.js:138` |
 | Goal | `BUDGET#<budgetId>` | `GOAL#<goalId>` | `goals/index.js:258` |
 | Bill | `BUDGET#<budgetId>` | `BILL#<billId>` (GSI1PK `BILLS#<YYYY-MM>`) | `bills/index.js:282-283` |
 | Invitation | `INVITATION#<invitationId>` | `METADATA` (GSI4 `INVITATION#<email>` / `CREATED#<timestamp>`, 7-day expiry) | `budgets/index.js:483-486` |
@@ -260,7 +260,7 @@ site at a time.
   `BUDGET#` in Wave 2 (2026-11-20); `scripts/migrate-accounts-family-to-budget.js` copies the old
   `FAMILY#<budgetId>/ACCOUNT#...` rows and leaves the originals in place.
 - **`PLAN#` vs `PLANNED_TXN#`.** Older docs and steering describe `PLANNED_TXN#<id>`; the code writes
-  `PLAN#<planId>`, built only by `plannedTxnSK()` (`transaction-planning/keys.js:13,20-24`).
+  `PLAN#<planId>`, built only by `plannedTxnSK()` (common layer `keys.js:69,221-223`).
 - **Unused indexes.** GSI2 is written but never queried and GSI3 is never written
   (`database-stack.ts` comments describe access patterns that no code uses).
 - **Plaid access token in plaintext.** The token is stored on the `PLAID_ACCOUNT#` item
@@ -361,6 +361,14 @@ and so on). Physical names are hardcoded for most resources (32 function names, 
 - **`deploy-dev.yml`** runs on push to `develop` (markdown-only changes are ignored) and on manual
   dispatch: security check, `cdk synth`, staged `cdk deploy` (database, api-features, api, then `--all`),
   and a CloudFormation status check. A failed or rolled-back stack fails the run.
+- **Guardrail checks** (Node built-ins only) run in `deploy-dev.yml` `pre-deployment-checks` and in the
+  `pr-check.yml` `consistency-checks` job. `scripts/route-contract-check.js` compares the CDK routes of the
+  four gateways with the web and mobile client calls and the handler gaps; `scripts/dynamo-filter-check.js`
+  flags a key attribute (`PK`, `SK`, `GSI*PK/SK`) inside a `FilterExpression` and every `Scan`. Known
+  mismatches live in `scripts/route-contract-allowlist.json` and `scripts/dynamo-filter-allowlist.json`
+  with a reason each; a new mismatch or a stale entry fails the run. At run time, `dynamoHelpers`
+  `queryByPK`/`queryByGSI`/`scan` log a warning and emit `BudgetBuddy/Data` `FilterOnKeyAttribute` for
+  a key-attribute filter.
 - **`deploy-prod.yml`** is manual dispatch only; no prod stacks exist.
 - **`pr-check.yml`** runs on pull requests to `main` and `develop`. `deployment-security.yml` runs on
   push to `main` and only synthesizes. No workflow deploys staging.

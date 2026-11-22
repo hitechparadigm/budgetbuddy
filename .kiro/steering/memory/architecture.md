@@ -38,7 +38,7 @@ Known inconsistencies (see `docs/architecture.md`): executing a planned transact
 and export/comparison/tips read `TXN#`; a few handlers still use `FAMILY#`.
 
 The planned-transaction sort-key prefix is `PLAN#`, defined once in
-`backend/functions/transaction-planning/keys.js` (`PLANNED_TXN_SK_PREFIX`). Earlier revisions of this
+`backend/layers/common/nodejs/keys.js` (`PLANNED_TXN_SK_PREFIX`, re-exported by `transaction-planning/keys.js`). Earlier revisions of this
 document said `PLANNED_TXN#`; the live rows have always been `PLAN#`.
 
 ## DynamoDB GSIs

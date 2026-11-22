@@ -1,4 +1,24 @@
 # Development Log
+## 2026-11-22 - Wave 3 Phase 0: Route Contract and Key-Filter Guardrails (Session 170)
+**Summary:** first phase of the owner-approved Wave 3 plan (1.15.3). The common layer gains
+`keys.js` (validated key builders, including the `REMINDER#<HH>` GSI3 format phase 1 needs) and
+paginated `dynamoHelpers` queries with a 5,000-item cap. `transaction-planning/keys.js` re-exports
+the layer module, so `PLAN#` keys are unchanged. Two new CI checks, Node built-ins only, run in
+`deploy-dev.yml` `pre-deployment-checks` and `pr-check.yml` `consistency-checks`:
+`scripts/route-contract-check.js` (231 gateway routes vs 309 web/mobile client calls) and
+`scripts/dynamo-filter-check.js` (key attributes in a `FilterExpression`, plus every `Scan`).
+An ESLint rule warns on key-prefix literals in `backend/`.
+**Allowlists:** the route contract report lists the design's section 0.2 mismatches (dead mobile
+`GET /budgets/{id}/summary` and `PUT /budgets/{id}`, `GET /credit-score/settings`, admin pages on
+the main base URL, the syncService category replay, 12 self-decoded token sites, 5 gateway routes
+with no handler branch) plus 38 pre-existing client calls the design did not list (web and mobile
+`/family/*`, `/auth/mfa/*`, `DELETE /auth/account`, `POST /auth/refresh`, per-account Plaid sync,
+mobile `GET /tips` and `/notifications/register`, dead mobile `sync.ts`, presigned S3 uploads). The
+orchestrator accepted this wording of the phase 0 verify instead of narrowing the extractor. The
+key-filter check has 27 allowlisted findings (12 key-in-filter, 15 Scan).
+**Tests:** 4 new suites, 85 tests; existing suites unchanged (layer `common.test.js` keeps its 2
+pre-existing `canUseFeature` failures). Infrastructure `tsc` 0 errors, consistency check 4/4.
+`cdk synth` cannot run locally (no Docker engine); no CDK source changed.
 ## 2026-11-22 - Invitation Accept Requires a Verified Token (Session 170)
 **Summary:** `POST /budgets/accept-invitation` was `AuthorizationType.NONE`, and
 `budgets/index.js` took the caller's userId by base64-decoding the `Authorization` header with no
