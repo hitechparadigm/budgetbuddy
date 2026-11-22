@@ -149,8 +149,12 @@ export interface ApiError {
 }
 
 // Transaction request types
+/** POST /transactions requires a type and accepts only these two values. */
+export type TransactionType = 'income' | 'expense';
+
 export interface CreateTransactionRequest {
   categoryId: string;
+  type: TransactionType;
   amount: number;
   description: string;
   merchant?: string;
@@ -167,8 +171,9 @@ export interface CreateTransactionRequest {
   recurringTemplateId?: string;
 }
 
-export interface UpdateTransactionRequest extends CreateTransactionRequest {
+export interface UpdateTransactionRequest extends Omit<CreateTransactionRequest, 'type'> {
   id: string;
+  type?: TransactionType;
 }
 
 // Offline sync types

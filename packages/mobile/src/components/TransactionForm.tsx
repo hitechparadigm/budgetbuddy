@@ -34,7 +34,8 @@ import {
 interface TransactionFormProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateTransactionRequest | UpdateTransactionRequest) => void;
+  /** A create carries no `type`: the caller derives it from the chosen category. */
+  onSubmit: (data: Omit<CreateTransactionRequest, 'type'> | UpdateTransactionRequest) => void;
   transaction?: Transaction; // For editing
   categories: BudgetCategory[];
   selectedCategoryId?: string;
@@ -175,7 +176,7 @@ export default function TransactionForm({
     if (isEditing) {
       onSubmit({ ...submitData, id: transaction!.id } as UpdateTransactionRequest);
     } else {
-      onSubmit(submitData as CreateTransactionRequest);
+      onSubmit(submitData);
     }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

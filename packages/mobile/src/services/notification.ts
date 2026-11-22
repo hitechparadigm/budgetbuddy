@@ -108,9 +108,10 @@ export class NotificationService {
 
       this.deviceToken = token;
 
-      // Register with backend
+      // Register with backend. The handler requires `deviceToken` and `platform`
+      // and takes the user from the Cognito token, so no userId is sent.
       const response = await this.apiClient.post('/notifications/register-device', {
-        token,
+        deviceToken: token,
         platform: Platform.OS,
         deviceName: Device.deviceName || `${Platform.OS} Device`,
       });

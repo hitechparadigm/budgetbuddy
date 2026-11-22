@@ -18,6 +18,7 @@ import {
   useCreateTransaction,
   useUpdateTransaction,
   useDeleteTransaction,
+  transactionTypeForCategory,
 } from "../services/transaction";
 import { useBudgets } from "../services/budget";
 import { filterTransactions, countActiveFilters } from "../services/search";
@@ -196,6 +197,8 @@ export default function TransactionsScreen() {
     createTransactionMutation.mutate(
       {
         categoryId: data.categoryId,
+        // A scanned receipt is always money spent.
+        type: "expense",
         amount: data.amount,
         description: data.notes?.trim() || data.merchant,
         merchant: data.merchant,
@@ -254,7 +257,7 @@ export default function TransactionsScreen() {
   };
 
   const handleTransactionFormSubmit = (
-    data: CreateTransactionRequest | UpdateTransactionRequest,
+    data: Omit<CreateTransactionRequest, "type"> | UpdateTransactionRequest,
   ) => {
     if ("id" in data) {
       // Update existing transaction
@@ -274,8 +277,14 @@ export default function TransactionsScreen() {
         },
       });
     } else {
-      // Create new transaction
-      createTransactionMutation.mutate(data, {
+      // Create new transaction. The form's categories are built from `budgets`
+      // (category id === budget id), so the chosen budget's group gives the type.
+      const chosenBudget = budgets.find((budget) => budget.id === data.categoryId);
+      const createData: CreateTransactionRequest = {
+        ...data,
+        type: transactionTypeForCategory(chosenBudget?.type),
+      };
+      createTransactionMutation.mutate(createData, {
         onSuccess: () => {
           setShowTransactionForm(false);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

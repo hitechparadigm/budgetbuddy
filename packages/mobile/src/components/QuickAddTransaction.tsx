@@ -22,6 +22,7 @@ import { Button } from "./ui";
 import { useTheme } from "../hooks/useTheme";
 import { BudgetCategory, CreateTransactionRequest } from "../types";
 import {
+  transactionTypeForCategory,
   useFrequentMerchants,
   useRecentTransactions,
 } from "../services/transaction";
@@ -116,8 +117,11 @@ export default function QuickAddTransaction({
       return;
     }
 
+    // The type follows the category group the user picked (income vs expense/savings).
+    const chosenCategory = categories.find((c) => c.id === formData.categoryId);
     const submitData: CreateTransactionRequest = {
       categoryId: formData.categoryId,
+      type: transactionTypeForCategory(chosenCategory?.type),
       amount,
       description: formData.description.trim(),
       date: new Date().toISOString().split("T")[0],

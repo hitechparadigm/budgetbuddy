@@ -29,6 +29,33 @@
 - `auth-onboarding` 32 -> 33 passing of 36 (new: no claims -> 401). The same 3 tests that failed
   before this change still fail (they expect 403/409 for a missing profile, which the handler
   deliberately allows since the first-time onboarding fix).
+### fix(mobile): send transaction type and authenticate notification settings (Session 170)
+Mobile code only; ships with the next device/EAS build, not the deploy pipeline.
+#### Fixed
+- No mobile transaction create sent `type`, which `POST /transactions` requires, so every online
+  create got 400, fell into the offline queue, and failed again on every replay. Both
+  `CreateTransactionRequest` types now require `type: 'income' | 'expense'`.
+  `transactionTypeForCategory` maps the chosen category's group: income -> `income`, expense and
+  savings -> `expense`. The Transactions-screen form create uses it and a scanned receipt is always
+  `expense`; both go to `POST /transactions`. QuickAdd also sets it from the chosen category (it
+  has no income/expense toggle), but its only caller, BudgetScreen, still records through the
+  budget-record path (`budgetPeriod.ts`, `POST /budget`), which is unchanged and ignores `type`.
+- The offline-queue replay now drops an item the server rejects with 400 or 422 and shows a toast
+  ("A transaction you saved offline was rejected by the server and was not saved.") through a
+  rejection listener next to the existing sync-conflict one. Network, 401 and 5xx failures keep
+  the existing retry path. This also clears creates already stuck in the queue without `type`.
+- `NotificationSettings.tsx` called `GET`/`PUT /notifications/preferences` and
+  `POST /notifications/register-device` with raw `fetch` and no `Authorization` header, so all
+  three got 401 from the Cognito authorizer. Preferences now go through the authenticated `api`
+  client (no `?userId=`, body limited to the five fields the server accepts); device
+  registration goes through `NotificationService.registerDevice`, which now sends `deviceToken`
+  (it sent `token`, which the handler rejects with 400).
+#### Tests
+- New: `QuickAddTransaction.test.tsx` (3), `TransactionsScreen.createType.test.tsx` (2),
+  `syncService.rejections.test.ts` (4), `NotificationSettings.test.tsx` (3, real `api` client
+  with `fetch` stubbed; asserts the `Authorization` header and bodies). Affected existing suites
+  64 -> 64 passing; with the new suites and `BudgetScreen.test.tsx`, 80/80. `npm run typecheck`
+  0 errors; mobile lint 147 errors (unchanged).
 ## [1.15.1] - 2026-11-22
 ### fix(security): request bodies can no longer set DynamoDB keys (Session 170)
 Lambda code only (`notifications`, `accounts`); no infrastructure change.

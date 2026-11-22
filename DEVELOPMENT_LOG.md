@@ -26,6 +26,18 @@ an existing Cognito user, and that user's profile email. One accepted invitation
 row, and its inviter has no Cognito user either; it granted nothing. No sign the hole was used.
 **Tests:** budgets 12 -> 16 passing; auth-onboarding 32/35 -> 33/36 passing (the same 3
 pre-existing failures).
+**Mobile (same session, separate commit):** creates from the Transactions screen (form and scanned
+receipt) sent no `type`, so `POST /transactions` returned 400 and the offline queue replayed the
+same 400 until the retry limit. Both request types now require `type`; the form derives it from
+the chosen category's group (`transactionTypeForCategory`), receipts are `expense`. QuickAdd sets
+it too, though its caller still records through `POST /budget` (left for Wave 3 phase 4). The
+replay now drops a 400/422 item and shows a toast via a new rejection listener. Notification
+settings used raw `fetch` without `Authorization` (401 on all three calls); they now use the `api`
+client and `NotificationService.registerDevice`, whose body key was also wrong (`token` instead
+of `deviceToken`). The local `packages/mobile/node_modules` still held Expo 49 after the SDK 58
+upgrade (suites could not load `expo-file-system/legacy`); `npm ci` from the lockfile fixed it.
+Mobile: affected suites 64 -> 64, plus 12 new tests (80/80 with `BudgetScreen`); typecheck 0;
+lint 147 errors (unchanged).
 ## 2026-11-22 - Mass-Assignment Fix in Notification Preferences, Owner Decisions (Session 170)
 **Summary:** `PUT /notifications/preferences` built its `PutItem` as
 `{ PK, SK, ...body }`, so a body carrying `PK`/`SK` chose the item: any signed-in user could

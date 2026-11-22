@@ -42,6 +42,26 @@ export interface SyncConflict {
   strategy: 'server_wins' | 'client_wins' | 'merge';
 }
 
+/**
+ * A queued change the server rejected as invalid (HTTP 400 or 422).
+ *
+ * Replaying the same request cannot succeed, so the item is dropped from the
+ * queue and this is emitted so the UI can tell the user the change was not
+ * saved. Other failures (network, 401, 5xx) keep the existing retry path.
+ */
+export interface SyncRejection {
+  entity: SyncQueueItem['entity'];
+  /** Id of the queued record. */
+  id: string;
+  status: number;
+}
+
+/** Whether a failed replay is a validation rejection that no retry can fix. */
+export const isValidationRejection = (error: unknown): boolean => {
+  const status = (error as { status?: unknown } | null)?.status;
+  return status === 400 || status === 422;
+};
+
 export interface SyncOptions {
   force?: boolean;
   batchSize?: number;
@@ -54,6 +74,7 @@ class SyncService {
   private isSyncing = false;
   private syncListeners: ((result: SyncResult) => void)[] = [];
   private conflictListeners: ((conflict: SyncConflict) => void)[] = [];
+  private rejectionListeners: ((rejection: SyncRejection) => void)[] = [];
   private networkListener: (() => void) | null = null;
   private appStateListener: any = null;
   private autoSyncInterval: ReturnType<typeof setInterval> | null = null;
@@ -173,6 +194,33 @@ class SyncService {
   }
 
   /**
+   * Add a rejected-change listener. Fires once per queued change the server
+   * rejected as invalid; the change has already been dropped from the queue.
+   *
+   * @returns an unsubscribe function
+   */
+  addRejectionListener(listener: (rejection: SyncRejection) => void): () => void {
+    this.rejectionListeners.push(listener);
+    return () => {
+      const index = this.rejectionListeners.indexOf(listener);
+      if (index > -1) {
+        this.rejectionListeners.splice(index, 1);
+      }
+    };
+  }
+
+  /** Notify every rejection listener, isolating a throwing listener. */
+  private emitRejection(rejection: SyncRejection): void {
+    for (const listener of this.rejectionListeners) {
+      try {
+        listener(rejection);
+      } catch (error) {
+        console.error('Rejection listener failed:', error);
+      }
+    }
+  }
+
+  /**
    * Perform synchronization
    */
   async performSync(options: SyncOptions = {}): Promise<SyncResult> {
@@ -285,6 +333,17 @@ class SyncService {
               result.failedItems++;
             }
           } catch (error) {
+            if (isValidationRejection(error)) {
+              // The server rejected the change itself; a replay cannot fix it.
+              // Drop it and tell the user instead of retrying it.
+              const status = (error as { status: number }).status;
+              console.warn(`Dropping ${item.entity} ${item.type} rejected with ${status}:`, item.id);
+              await removeFromSyncQueue(item.id);
+              result.failedItems++;
+              result.errors.push(`Item ${item.id}: rejected by the server (${status})`);
+              this.emitRejection({ entity: item.entity, id: item.data?.id ?? item.id, status });
+              continue;
+            }
             console.error(`Failed to sync item ${item.id}:`, error);
             await updateSyncQueueItem(item.id, {
               retryCount: item.retryCount + 1,
@@ -402,6 +461,8 @@ class SyncService {
       console.log(`Successfully synced ${item.entity} ${item.type}:`, item.data.id);
       return true;
     } catch (error) {
+      // A validation rejection goes to the caller, which drops the item.
+      if (isValidationRejection(error)) throw error;
       console.error(`Failed to sync ${item.entity} ${item.type}:`, error);
       return false;
     }

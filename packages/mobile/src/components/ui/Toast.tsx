@@ -11,7 +11,11 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, View, Pressable } from 'react-native';
-import { syncService, type SyncConflict } from '../../services/syncService';
+import {
+  syncService,
+  type SyncConflict,
+  type SyncRejection,
+} from '../../services/syncService';
 
 export interface ToastProps {
   message: string;
@@ -85,6 +89,11 @@ export function conflictMessage(conflict: SyncConflict): string {
     : `A ${noun} you changed offline was updated elsewhere. The server version was kept.`;
 }
 
+/** What the user sees when the server rejected a change they saved offline. */
+export function rejectionMessage(rejection: SyncRejection): string {
+  return `A ${rejection.entity} you saved offline was rejected by the server and was not saved.`;
+}
+
 interface QueuedToast {
   key: string;
   message: string;
@@ -103,15 +112,22 @@ export const ToastHost: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = syncService.addConflictListener(conflict => {
-      const key = `conflict-${nextKey.current++}`;
-      // Cap the stack so a sync resolving many conflicts cannot bury the UI.
-      setToasts(prev =>
-        [...prev, { key, message: conflictMessage(conflict) }].slice(-3),
-      );
-    });
+    // Cap the stack so a sync resolving many conflicts cannot bury the UI.
+    const push = (message: string) => {
+      const key = `sync-${nextKey.current++}`;
+      setToasts(prev => [...prev, { key, message }].slice(-3));
+    };
+    const unsubscribeConflicts = syncService.addConflictListener(conflict =>
+      push(conflictMessage(conflict)),
+    );
+    const unsubscribeRejections = syncService.addRejectionListener(rejection =>
+      push(rejectionMessage(rejection)),
+    );
 
-    return unsubscribe;
+    return () => {
+      unsubscribeConflicts();
+      unsubscribeRejections();
+    };
   }, []);
 
   if (toasts.length === 0) return null;

@@ -12,15 +12,14 @@ import {
   Alert,
   ScrollView,
   TouchableOpacity,
-  Platform,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import Constants from "expo-constants";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../hooks/useTheme";
-import { isPushUnavailableInExpoGo } from "../services/notification";
+import { api } from "../services/api";
+import { NotificationService } from "../services/notification";
 
 interface NotificationPreferences {
   budgetAlertsEnabled: boolean;
@@ -29,6 +28,32 @@ interface NotificationPreferences {
   quietHoursStart: string; // HH:mm format
   quietHoursEnd: string; // HH:mm format;
 }
+
+/**
+ * The only fields PUT /notifications/preferences accepts (PREFERENCE_FIELDS in
+ * backend/functions/notifications/index.js). The server takes the user from the
+ * Cognito token, so neither request carries a userId.
+ */
+const PREFERENCE_KEYS: (keyof NotificationPreferences)[] = [
+  "budgetAlertsEnabled",
+  "dailyRemindersEnabled",
+  "reminderTime",
+  "quietHoursStart",
+  "quietHoursEnd",
+];
+
+const pickPreferences = (
+  source: Partial<NotificationPreferences> | undefined,
+): Partial<NotificationPreferences> => {
+  const picked: Record<string, unknown> = {};
+  for (const key of PREFERENCE_KEYS) {
+    if (source?.[key] !== undefined) picked[key] = source[key];
+  }
+  return picked as Partial<NotificationPreferences>;
+};
+
+// Device registration through the authenticated main-gateway client.
+const pushRegistration = new NotificationService(api);
 
 interface NotificationSettingsProps {
   userId: string;
@@ -107,54 +132,23 @@ export default function NotificationSettings({
   };
 
   const registerDevice = async () => {
-    try {
-      if (isPushUnavailableInExpoGo()) {
-        console.log("Push notifications are not available in Expo Go on Android");
-        return;
-      }
-
-      const token = await Notifications.getExpoPushTokenAsync({
-        projectId: Constants.expoConfig?.extra?.eas?.projectId,
-      });
-      setDeviceToken(token.data);
-
-      // Register device with backend
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/notifications/register-device`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId,
-            deviceToken: token.data,
-            platform: Platform.OS,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to register device");
-      }
-
-      console.log("Device registered successfully");
-    } catch (error) {
-      console.error("Error registering device:", error);
+    // NotificationService handles Expo Go, the push token and the authenticated
+    // POST /notifications/register-device; it never throws.
+    const result = await pushRegistration.registerDevice(userId);
+    if (result.success && result.token) {
+      setDeviceToken(result.token);
     }
   };
 
   const loadPreferences = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/notifications/preferences?userId=${userId}`,
+      // The response body is the { success, data } envelope from successResponse.
+      const response = await api.get<{ data?: Partial<NotificationPreferences> }>(
+        "/notifications/preferences",
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        setPreferences(data);
-      }
+      const saved = pickPreferences(response.data?.data);
+      setPreferences((prev) => ({ ...prev, ...saved }));
     } catch (error) {
       console.error("Error loading preferences:", error);
       Alert.alert("Error", "Failed to load notification settings");
@@ -166,23 +160,8 @@ export default function NotificationSettings({
   const savePreferences = async (newPreferences: NotificationPreferences) => {
     try {
       setSaving(true);
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/notifications/preferences`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId,
-            ...newPreferences,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to save preferences");
-      }
+      // Throws ApiError on a non-2xx response.
+      await api.put("/notifications/preferences", pickPreferences(newPreferences));
 
       setPreferences(newPreferences);
     } catch (error) {

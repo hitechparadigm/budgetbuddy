@@ -100,7 +100,7 @@ describe('NotificationService', () => {
       expect(mockApiClient.post).toHaveBeenCalledWith(
         '/notifications/register-device',
         expect.objectContaining({
-          token: 'ExponentPushToken[test-token-123]',
+          deviceToken: 'ExponentPushToken[test-token-123]',
           platform: 'ios',
         })
       );

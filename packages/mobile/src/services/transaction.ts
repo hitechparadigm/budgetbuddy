@@ -11,13 +11,23 @@ import {
   deleteOfflineData,
   addToSyncQueue,
 } from './offline';
-import { Transaction, BudgetCategory } from '../types';
+import { Transaction, BudgetCategory, TransactionType } from '../types';
+
+/**
+ * The POST /transactions `type` for a transaction filed under a category of the given
+ * group type. Only an income category records income; expense and savings categories
+ * are money going out.
+ */
+export const transactionTypeForCategory = (categoryType?: string): TransactionType =>
+  categoryType === 'income' ? 'income' : 'expense';
 
 /**
  * Transaction request types
  */
 export interface CreateTransactionRequest {
   categoryId: string;
+  /** Required by POST /transactions; a create without it gets 400. */
+  type: TransactionType;
   amount: number;
   description: string;
   merchant?: string;

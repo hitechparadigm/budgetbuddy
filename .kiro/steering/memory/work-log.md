@@ -10,7 +10,7 @@ inclusion: always
 **Date**: 2026-10-13
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Latest (2026-11-22, Session 170)**: `POST /budgets/accept-invitation` now requires a verified Cognito token and a matching invitee email (1.15.2; see Security).
+**Latest (2026-11-22, Session 170)**: `POST /budgets/accept-invitation` now requires a verified Cognito token and a matching invitee email (1.15.2; see Security); mobile transaction creates send `type`, the offline replay drops 400/422 items with a toast, and mobile notification settings authenticate (1.15.2; see Mobile).
 **Earlier (2026-11-22, Session 170)**: mass-assignment fix in `PUT /notifications/preferences` and `PUT /accounts/{id}` (1.15.1; see Security), plus owner feature decisions (see Owner Feature Decisions); mobile Expo SDK 49 -> 58 upgrade squash-merged to `develop` (1.15.0; see Mobile section).
 **Previous (2026-11-20, Session 170)**: Wave 2 core flows squash-merged to `develop` (see "Core Flows" under Known Open Items); the accounts `FAMILY#` -> `BUDGET#` data migration runs after its deploy.
 **Current Session**: ~169 (mobile app-store-readiness audit found 4 real bugs in services/api.ts - dead auth token path, placeholder base URL, URL path-prefix stripping, wrong reanimated major version - all fixed; added eas.json, placeholder icons, iOS/Android store-required permissions; discovered Expo SDK 49 cannot produce an App-Store-submittable build (Apple requires iOS 26 SDK/Xcode 26+) and every native dependency is multiple majors ahead of SDK 49's expectations - full SDK upgrade in progress, see Mobile section)
@@ -454,6 +454,12 @@ Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`
       `type: "navigation"` that routes to the new screen. Verified unchanged: `tsc --noEmit`
       0 errors, `jest` 257/259 (2 skipped), `lint:check:mobile` exactly 151 pre-existing
       errors (temporarily regressed to 153 from two unused imports, fixed back to baseline).
+- [x] Mobile API contract fixes (1.15.2, 2026-11-22): Transactions-screen creates (form, receipt)
+      now send the `type` `POST /transactions` requires (they all got 400 and looped in the
+      offline queue); the replay drops 400/422 items with a toast; NotificationSettings uses the
+      authenticated `api` client and `NotificationService` (`deviceToken` body key fixed).
+      QuickAdd sets `type` but BudgetScreen still records via `POST /budget` (Wave 3 phase 4).
+      Unit tests only; no device check.
 - [x] Expo SDK 49 -> 58 upgrade done (1.15.0, 2026-11-22): expo ~58.0.26, React Native 0.88.1,
       React 19.3.0, New Architecture on; Amplify removed (sign-in POSTs `/auth/login`); password
       reset screen; Budget tab on `/budget/current` + `POST /budget`; Accounts screen. typecheck 0,

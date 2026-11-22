@@ -55,10 +55,12 @@ describe('Transaction Entry Properties', () => {
           merchant: fc.option(fc.string({ minLength: 1, maxLength: 100 })),
           date: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-12-31') }),
           tags: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 20 }), { maxLength: 10 })),
+          type: fc.constantFrom('income' as const, 'expense' as const),
         }),
         async (data) => {
           const transactionRequest: CreateTransactionRequest = {
             categoryId: data.categoryId,
+            type: data.type,
             amount: Math.fround(data.amount),
             description: data.description,
             merchant: data.merchant || undefined,
@@ -349,6 +351,7 @@ describe('Transaction Entry Flow Integration', () => {
   it('should handle valid transaction creation data', () => {
     const validTransaction: CreateTransactionRequest = {
       categoryId: 'category-123',
+      type: 'expense',
       amount: 25.99,
       description: 'Coffee shop purchase',
       merchant: 'Starbucks',
