@@ -1,4 +1,43 @@
 # Development Log
+## 2026-11-22 - Mass-Assignment Fix in Notification Preferences, Owner Decisions (Session 170)
+**Summary:** `PUT /notifications/preferences` built its `PutItem` as
+`{ PK, SK, ...body }`, so a body carrying `PK`/`SK` chose the item: any signed-in user could
+write any key in `budgetbuddy-main` (1.15.1). The handler now allowlists the five preference
+fields, validates them (booleans; 24-hour `HH:MM`), and SETs only those on the caller's own
+`USER#<userId>/NOTIFICATION_PREFERENCES` through `dynamoHelpers.updateItem`. Unknown fields are
+dropped rather than rejected, because both shipped clients send `userId` with every save and
+installed mobile builds cannot be changed server-side; a body with no valid field returns 400.
+The web client nests the fields under `preferences`, the mobile client sends them flat; both
+shapes are accepted.
+**Sweep** of `backend/functions/**` for request data spread or assigned into an item or key:
+one more real hole, `accounts/service.js` passing the whole body to `UpdateItem` for manual
+accounts (client could SET `GSI1PK`/`GSI1SK`, `budgetId`, `entityType`, `isManual`; DynamoDB
+itself refuses `PK`/`SK` on UpdateItem). Fixed with an allowlist of the four validated fields.
+`notifications` `sendNotification` spread its payload after the key; it is not routed through
+API Gateway, reordered anyway. Every other spread either builds a response, copies a stored item,
+or merges an explicit allowlist (goals, rules, debt-payoff, subscriptions, transaction-planning,
+pattern-detection, net-worth, bills, transactions, budget, comparison, credit-score, learn).
+Client-chosen sort-key suffixes under a server-fixed prefix remain (budget `PERIOD#<month>`, bill
+GSI1 `BILLS#<dueDate>`, receipt/reconciliation ids) and stay inside the caller's own partition.
+**Exploitation check (DEV, read-only):** the notifications Lambda log group held no events in its
+7-day retention. The main API's execution logs (kept since 2025-10-25) show 6
+`PUT /notifications/preferences` requests in total (2026-06-02 to 2026-10-17), all 200. A scan
+of `budgetbuddy-main` (585 items) found 7 items with preference attributes, all at
+`USER#<id>/NOTIFICATION_PREFERENCES`, none carrying key, role or ownership attributes; no
+`MEMBER#` or `PROFILE` item has them. Items written within 1.5 s of each PUT were only that
+user's `NOTIFICATION_PREFERENCES` and `DEVICE#` rows. No sign the hole was used.
+**Tests:** `notifications/preferences.test.js` 23 passing (20 fail against the old handler);
+`accounts` 28 -> 31 passing. The two older notifications suites still fail to load, as before.
+**Owner decisions and actions (this session):**
+- Four unused Secrets Manager secrets (three from an unrelated video pipeline, one unused Google
+  OAuth configuration) were scheduled for deletion with a 30-day recovery window ending
+  2026-12-21.
+- Credit score: keep the scaffolding, stop returning a random score.
+- Peer comparison: replace it with a planned "shareable progress" feature (a short, encouraging
+  image a user can post, e.g. "I stayed 5% under budget this month").
+- Admin area: keep it for later; fix its `dataTraceEnabled` before it is ever deployed.
+- `investments-price-updater` and `scheduled-backup`: stay undeployed (AWS Backup covers the
+  table).
 ## 2026-11-22 - Mobile Expo SDK 58 Upgrade, Password Reset, Onboarding Skip (Session 170)
 **Summary:** the mobile app moves from Expo SDK 49 to SDK 58 (React Native 0.88.1, React 19.3.0)
 in one hop (1.15.0). SDK 49 could not produce an App-Store-submittable build, and SDKs 50-57

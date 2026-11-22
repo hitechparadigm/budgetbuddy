@@ -8,6 +8,9 @@
 const repository = require("./repository");
 const validators = require("./validators");
 
+/** Fields PUT /accounts/{accountId} may change; the ones validateUpdateAccountInput checks */
+const UPDATABLE_ACCOUNT_FIELDS = ["nickname", "institutionName", "currentBalance", "isTracked"];
+
 /**
  * Create a new manual account
  * @param {string} budgetId - Budget ID
@@ -101,7 +104,15 @@ async function updateAccount(budgetId, accountId, input) {
     }
   }
 
-  const updated = await repository.updateAccount(budgetId, accountId, input);
+  // Copy only the user-editable fields. Passing the raw body through let a
+  // client SET any attribute on the item (GSI keys, budgetId, entityType,
+  // isManual, plaid ids); unknown fields on a manual account are dropped.
+  const updates = {};
+  for (const field of UPDATABLE_ACCOUNT_FIELDS) {
+    if (input[field] !== undefined) updates[field] = input[field];
+  }
+
+  const updated = await repository.updateAccount(budgetId, accountId, updates);
   return updated;
 }
 

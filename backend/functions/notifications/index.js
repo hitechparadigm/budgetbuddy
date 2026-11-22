@@ -160,11 +160,12 @@ async function sendNotification(userId, notification) {
     await sendExpoPushNotification(expoTokens, notification.title, notification.body, notification.data);
   }
 
-  // Store notification in database
+  // Store notification in database. The key is set after the spread so the
+  // notification payload can never choose the item it is written to.
   await dynamoHelpers.putItem({
+    ...notification,
     PK: `USER#${userId}`,
     SK: `NOTIFICATION#${Date.now()}`,
-    ...notification,
     sentAt: new Date().toISOString(),
     read: false,
   });
@@ -172,31 +173,121 @@ async function sendNotification(userId, notification) {
   return { success: true, deviceCount: devices.length };
 }
 
+const PREFERENCES_SK = 'NOTIFICATION_PREFERENCES';
+
+const DEFAULT_NOTIFICATION_PREFERENCES = {
+  budgetAlertsEnabled: true,
+  dailyRemindersEnabled: true,
+  reminderTime: '19:00',
+  quietHoursStart: '22:00',
+  quietHoursEnd: '08:00',
+};
+
+/** 24-hour HH:MM, e.g. 07:30 or 22:00 */
+const TIME_HH_MM = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+const isBoolean = (value) => typeof value === 'boolean';
+const isTimeOfDay = (value) => typeof value === 'string' && TIME_HH_MM.test(value);
+
 /**
- * Get notification preferences for user
+ * The only attributes a client may write on its preferences item, with the
+ * check each value must pass. Anything else in the request body (PK, SK, GSI
+ * keys, userId, role, ...) is never copied into the item.
+ */
+const PREFERENCE_FIELDS = {
+  budgetAlertsEnabled: { isValid: isBoolean, expected: 'a boolean' },
+  dailyRemindersEnabled: { isValid: isBoolean, expected: 'a boolean' },
+  reminderTime: { isValid: isTimeOfDay, expected: 'a 24-hour HH:MM time' },
+  quietHoursStart: { isValid: isTimeOfDay, expected: 'a 24-hour HH:MM time' },
+  quietHoursEnd: { isValid: isTimeOfDay, expected: 'a 24-hour HH:MM time' },
+};
+
+const isPlainObject = (value) =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
+
+/**
+ * Copy only the allowlisted preference attributes from a stored item.
+ * @param {Object|null} item - DynamoDB item
+ * @returns {Object} Preference fields present on the item
+ */
+function pickPreferenceFields(item) {
+  const picked = {};
+  if (!item) return picked;
+  for (const field of Object.keys(PREFERENCE_FIELDS)) {
+    if (item[field] !== undefined) picked[field] = item[field];
+  }
+  return picked;
+}
+
+/**
+ * Build the attribute updates for PUT /notifications/preferences.
+ *
+ * Accepts the fields at the top level (mobile client) or nested under
+ * `preferences` (web client). Fields outside PREFERENCE_FIELDS are dropped
+ * rather than rejected, because both shipped clients send `userId` alongside
+ * the preferences and installed mobile builds cannot be changed from here.
+ *
+ * @param {*} body - Parsed request body
+ * @returns {{ updates?: Object, error?: string }}
+ */
+function parsePreferenceUpdates(body) {
+  if (!isPlainObject(body)) {
+    return { error: 'Request body must be a JSON object' };
+  }
+  let source = body;
+  if (body.preferences !== undefined) {
+    if (!isPlainObject(body.preferences)) {
+      return { error: 'preferences must be an object' };
+    }
+    source = body.preferences;
+  }
+
+  const updates = {};
+  for (const [field, rule] of Object.entries(PREFERENCE_FIELDS)) {
+    if (source[field] === undefined) continue;
+    if (!rule.isValid(source[field])) {
+      return { error: `${field} must be ${rule.expected}` };
+    }
+    updates[field] = source[field];
+  }
+
+  if (Object.keys(updates).length === 0) {
+    const allowed = Object.keys(PREFERENCE_FIELDS).join(', ');
+    return { error: `No valid preference fields provided (allowed: ${allowed})` };
+  }
+  return { updates };
+}
+
+/**
+ * Get notification preferences for user; fields never saved fall back to defaults
  */
 async function getNotificationPreferences(userId) {
-  const item = await dynamoHelpers.getItem(`USER#${userId}`, 'NOTIFICATION_PREFERENCES');
-  return item || {
-    budgetAlertsEnabled: true,
-    dailyRemindersEnabled: true,
-    reminderTime: '19:00',
-    quietHoursStart: '22:00',
-    quietHoursEnd: '08:00',
+  const item = await dynamoHelpers.getItem(`USER#${userId}`, PREFERENCES_SK);
+  return {
+    ...DEFAULT_NOTIFICATION_PREFERENCES,
+    ...pickPreferenceFields(item),
+    ...(item && item.updatedAt ? { updatedAt: item.updatedAt } : {}),
   };
 }
 
 /**
- * Update notification preferences
+ * Update notification preferences with SET on the validated fields only.
+ * The key is always the caller's own USER#<userId>/NOTIFICATION_PREFERENCES;
+ * fields the request leaves out keep their stored values. The first save
+ * seeds the missing fields with defaults so readers always see a full item.
+ *
+ * @param {string} userId - Caller's userId from the JWT
+ * @param {Object} updates - Output of parsePreferenceUpdates
  */
-async function updateNotificationPreferences(userId, preferences) {
-  await dynamoHelpers.putItem({
-    PK: `USER#${userId}`,
-    SK: 'NOTIFICATION_PREFERENCES',
-    ...preferences,
-    updatedAt: new Date().toISOString(),
-  });
-  return { success: true, preferences };
+async function updateNotificationPreferences(userId, updates) {
+  const pk = `USER#${userId}`;
+  const existing = await dynamoHelpers.getItem(pk, PREFERENCES_SK);
+  const fields = existing ? updates : { ...DEFAULT_NOTIFICATION_PREFERENCES, ...updates };
+  const updated = await dynamoHelpers.updateItem(pk, PREFERENCES_SK, fields);
+  return {
+    success: true,
+    preferences: { ...DEFAULT_NOTIFICATION_PREFERENCES, ...pickPreferenceFields(updated) },
+  };
 }
 
 /**
@@ -396,7 +487,11 @@ exports.handler = async (event, context) => {
 
     // ── PUT /notifications/preferences ──────────────────────────────────────
     if (method === 'PUT' && path.includes('/preferences')) {
-      const result = await updateNotificationPreferences(userId, body);
+      const { updates, error } = parsePreferenceUpdates(body);
+      if (error) {
+        return errorResponse.badRequest(error);
+      }
+      const result = await updateNotificationPreferences(userId, updates);
       return successResponse(result, 'Preferences updated');
     }
 

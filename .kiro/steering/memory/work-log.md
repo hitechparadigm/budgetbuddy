@@ -10,7 +10,8 @@ inclusion: always
 **Date**: 2026-10-13
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Latest (2026-11-22, Session 170)**: mobile Expo SDK 49 -> 58 upgrade squash-merged to `develop` (1.15.0; see Mobile section).
+**Latest (2026-11-22, Session 170)**: mass-assignment fix in `PUT /notifications/preferences` and `PUT /accounts/{id}` (1.15.1; see Security), plus owner feature decisions (see Owner Feature Decisions).
+**Earlier (2026-11-22, Session 170)**: mobile Expo SDK 49 -> 58 upgrade squash-merged to `develop` (1.15.0; see Mobile section).
 **Previous (2026-11-20, Session 170)**: Wave 2 core flows squash-merged to `develop` (see "Core Flows" under Known Open Items); the accounts `FAMILY#` -> `BUDGET#` data migration runs after its deploy.
 **Current Session**: ~169 (mobile app-store-readiness audit found 4 real bugs in services/api.ts - dead auth token path, placeholder base URL, URL path-prefix stripping, wrong reanimated major version - all fixed; added eas.json, placeholder icons, iOS/Android store-required permissions; discovered Expo SDK 49 cannot produce an App-Store-submittable build (Apple requires iOS 26 SDK/Xcode 26+) and every native dependency is multiple majors ahead of SDK 49's expectations - full SDK upgrade in progress, see Mobile section)
 
@@ -205,7 +206,8 @@ Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`
       `info@hitechparadigm.com`) plus a grant scoped to that identity ARN, and SES sandbox limits
       recipients anyway. Follow-up; not done in FEAT-004.
 - [ ] `restore` returns 501 until the key migration (its writes still target `FAMILY#`).
-- [ ] `investments-price-updater`, `scheduled-backup`: ported, still not wired into any stack;
+- [x] `investments-price-updater`, `scheduled-backup`: ported, not wired into any stack, and the
+      owner decided (Session 170, 1.15.1) to leave both undeployed; AWS Backup covers the table.
       `scheduled-backup` is `FAMILY#`-keyed throughout.
 - [ ] `credit-score`, `export`, `notifications`, `transaction-planning` still DECLARE `aws-sdk`
       in `package.json` (no production `require` remains); dead declarations, cleanup pending.
@@ -271,6 +273,14 @@ Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`
 
 ### Security
 - [ ] Security posture ~85% (up from ~80% - critical CVE fixed, security-check.sh now exits 0 clean, see below)
+- [x] Mass assignment closed (Session 170, 1.15.1): `PUT /notifications/preferences` spread the
+      body after `PK`/`SK` into a `PutItem`, so any signed-in user could write any key. It now
+      SETs only the five validated preference fields on the caller's own
+      `USER#<userId>/NOTIFICATION_PREFERENCES`. Same sweep: `PUT /accounts/{id}` (manual
+      accounts) now writes only `nickname`/`institutionName`/`currentBalance`/`isTracked`.
+      DEV check found no sign of use (6 PUTs ever, all on the caller's own item shape).
+- [x] Four unused Secrets Manager secrets scheduled for deletion (Session 170); the 30-day
+      recovery window ends 2026-12-21.
 - [x] Identity-spoofing path through Cognito closed (Session 170, FEAT-002, review finding
       AC-01). `selfSignUpEnabled: true` plus `custom:userId` in the public app client's
       `writeAttributes` let anyone call the Cognito `SignUp` API with the public client ID and
@@ -338,6 +348,14 @@ Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`
 - [ ] 22 moderate `npm audit` findings remain (`jest`/`aws-sdk` devDependency-only
       transitive deps, no production exposure, below the `--audit-level=critical` CI
       gate). No further action needed unless the gate threshold changes.
+
+### Owner Feature Decisions (Session 170)
+- [ ] Credit score: keep the scaffolding; stop returning a random (`Math.random`) score.
+- [ ] Peer comparison: replace with a planned "shareable progress" feature (an encouraging
+      image a user can post about staying on or under budget).
+- [ ] Admin area: keep for later; set its `dataTraceEnabled` to false before any deploy.
+- [x] `investments-price-updater`, `scheduled-backup`: leave undeployed (see Backend Scheduled
+      Functions).
 
 ### Mobile
 - [x] React Native + Expo app is SUBSTANTIALLY BUILT, not "not started" - corrected a stale

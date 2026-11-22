@@ -1,4 +1,32 @@
 # Changelog
+## [1.15.1] - 2026-11-22
+### fix(security): request bodies can no longer set DynamoDB keys (Session 170)
+Lambda code only (`notifications`, `accounts`); no infrastructure change.
+#### Security
+- `PUT /notifications/preferences` spread the request body into a `PutItem` after `PK`/`SK`, so
+  any signed-in user could write an item at any key in `budgetbuddy-main` (for example
+  `BUDGET#<id>/MEMBER#<self>` with `role: owner`, or another user's `PROFILE`). The handler now
+  copies only `budgetAlertsEnabled`, `dailyRemindersEnabled` (booleans) and `reminderTime`,
+  `quietHoursStart`, `quietHoursEnd` (24-hour `HH:MM`) and writes them with `UpdateItem` SET on
+  the caller's own `USER#<userId>/NOTIFICATION_PREFERENCES`. Other fields are dropped; an invalid
+  value or a body with no preference field returns 400. A partial update keeps the stored values.
+  DEV check: 6 PUTs on this route since API logging began (2025-10-25), all 200, and every item
+  carrying preference attributes sits at `USER#<id>/NOTIFICATION_PREFERENCES`; no sign of use.
+- `PUT /accounts/{accountId}` passed the whole body to `UpdateItem` for manual accounts, so a
+  client could SET `GSI1PK`/`GSI1SK`, `budgetId`, `entityType`, `isManual` or Plaid ids on its
+  own account item. It now writes only `nickname`, `institutionName`, `currentBalance` and
+  `isTracked`.
+- Internal `sendNotification` sets `PK`/`SK` after the payload spread (not reachable through API
+  Gateway; defense in depth).
+#### Fixed
+- The web client sends `{ userId, preferences: {...} }`; the old handler would have stored that
+  as a nested `preferences` attribute that GET never returned. The handler now accepts the nested
+  (web) and the flat (mobile) shape. GET returns only the five preference fields (defaults for
+  any never saved) plus `updatedAt`.
+#### Tests
+- New `notifications/preferences.test.js` (23 tests, real handler; 20 of them fail on the old
+  handler) and `accounts/update-allowlist.test.js` (3 tests). Accounts 28 -> 31 passing. The two
+  older notifications suites still cannot load (`/opt/nodejs/utils` unmapped), as before.
 ## [1.15.0] - 2026-11-22
 ### feat(mobile): Expo SDK 58, password reset, onboarding skip (Session 170)
 Mobile app only (`packages/mobile`, plus the `mobile-tests` job in `pr-check.yml`). The deploy
