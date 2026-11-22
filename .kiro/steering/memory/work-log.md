@@ -10,10 +10,10 @@ inclusion: always
 **Date**: 2026-10-13
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Latest (2026-11-22, Session 170)**: Wave 3 phase 0 guardrails (1.15.3): common layer `keys.js` key builders and paginated `dynamoHelpers` queries; `scripts/route-contract-check.js` and `scripts/dynamo-filter-check.js` run in `deploy-dev.yml` and `pr-check.yml` with allowlists (`scripts/*-allowlist.json`), so any new route mismatch or key-attribute filter fails CI; ESLint warns on key-prefix literals in `backend/`. Phase 1 (hourly reminders, first real notification delivery) is next.
-**Before that (2026-11-22, Session 170)**: `POST /budgets/accept-invitation` now requires a verified Cognito token and a matching invitee email (1.15.2; see Security); mobile transaction creates send `type`, the offline replay drops 400/422 items with a toast, and mobile notification settings authenticate (1.15.2; see Mobile).
-**Earlier (2026-11-22, Session 170)**: mass-assignment fix in `PUT /notifications/preferences` and `PUT /accounts/{id}` (1.15.1; see Security), plus owner feature decisions (see Owner Feature Decisions); mobile Expo SDK 49 -> 58 upgrade squash-merged to `develop` (1.15.0; see Mobile section).
-**Previous (2026-11-20, Session 170)**: Wave 2 core flows squash-merged to `develop` (see "Core Flows" under Known Open Items); the accounts `FAMILY#` -> `BUDGET#` data migration runs after its deploy.
+**Latest (2026-11-22, Session 170)**: Wave 3 phase 1 (1.15.4): `daily-reminders` runs hourly on the sparse GSI3 reminder index (`REMINDER#<HH>`, no Scan) and sends at most one "log today's spending" reminder per user per local day at their chosen whole hour (default 19:00, UTC until the app reports a time zone), skipped if they logged a transaction that day; nudges at 13:00 UTC; preferences parser and `upsertReminderPreferences` in the layer `reminder-preferences.js` (PUT preferences + onboarding); the notifications Lambda dispatches `{ internalAction }` before its auth check, so budget-alerts and daily-reminders deliver for the first time; `scripts/backfill-reminder-index.js` (dry run default, `--apply`) runs after the deploy. Live check: see DEVELOPMENT_LOG.md.
+**Before that (2026-11-22, Session 170)**: Wave 3 phase 0 guardrails (1.15.3): common layer `keys.js` key builders and paginated `dynamoHelpers` queries; `scripts/route-contract-check.js` and `scripts/dynamo-filter-check.js` run in `deploy-dev.yml` and `pr-check.yml` with allowlists (`scripts/*-allowlist.json`), so any new route mismatch or key-attribute filter fails CI; ESLint warns on key-prefix literals in `backend/`.
+**Earlier (2026-11-22, Session 170)**: `POST /budgets/accept-invitation` now requires a verified Cognito token and a matching invitee email (1.15.2; see Security); mobile transaction creates send `type`, the offline replay drops 400/422 items with a toast, and mobile notification settings authenticate (1.15.2; see Mobile).
+**Previous (2026-11-22, Session 170)**: mass-assignment fix in `PUT /notifications/preferences` and `PUT /accounts/{id}` (1.15.1; see Security), plus owner feature decisions (see Owner Feature Decisions); mobile Expo SDK 49 -> 58 upgrade squash-merged to `develop` (1.15.0; see Mobile section).
 **Current Session**: ~169 (mobile app-store-readiness audit found 4 real bugs in services/api.ts - dead auth token path, placeholder base URL, URL path-prefix stripping, wrong reanimated major version - all fixed; added eas.json, placeholder icons, iOS/Android store-required permissions; discovered Expo SDK 49 cannot produce an App-Store-submittable build (Apple requires iOS 26 SDK/Xcode 26+) and every native dependency is multiple majors ahead of SDK 49's expectations - full SDK upgrade in progress, see Mobile section)
 
 ## What's Live and Working
@@ -184,28 +184,25 @@ Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`
       `dynamoHelpers.queryByGSI`. No bundling change. Deployed 2026-11-01. Verified:
       `daily-reminders` scheduled runs at 15:36Z and 15:51Z finished with no import error;
       `budget-alerts` invoked with a no-op stream event returned 200 with no FunctionError.
-- [ ] Watch the first post-deploy scheduled runs: `budget-alerts` (rate 6 h, next about 19:47Z on
-      2026-11-01; its stream mapping still shows the pre-deploy "PROBLEM: Function call failed")
-      and `bill-scheduler` (cron 08:00Z). Not invoked by hand, because both write notifications
-      for real users.
+- [x] (Superseded by 1.15.4.) Watch the first post-deploy scheduled runs of `budget-alerts` and
+      `bill-scheduler`. Until 1.15.4 neither job could deliver (the notifications Lambda rejected
+      their payload); the Wave 3 phase 1 live check covers delivery. budget-alerts is still never
+      invoked by hand, because it alerts real users.
 - [x] `bills-scheduler` uses three GSI1 `BILLS#<YYYY-MM>` queries instead of the nonexistent
       `dynamoHelpers.scan`, and writes notifications at `USER#<userId>` / `NOTIFICATION#...`
       instead of `FAMILY#undefined`. Old orphaned rows were not migrated.
-- [ ] `daily-reminders` runs but sends 0 reminders: reminder paths still read `FAMILY#` keys
-      (`getLastTransactionDate`, `getUpcomingBillsForFamily`, `getTransactionsForFamily`) and the
-      kickoff email reads `BUDGET#${userId}`. `sendDailyReminder` now skips users with no
-      `familyId` (0 of 56 DEV profiles have one); without that skip the empty FAMILY# lookup
-      would remind every user on every 15-minute run in the window. Remove the skip as part of
-      the `FAMILY#` key migration.
+- [x] `daily-reminders` rewritten (1.15.4, Wave 3 phase 1): hourly GSI3 `REMINDER#<HH>` query,
+      one reminder per local day, `FAMILY#` reads and the `familyId` skip removed, A6 "logged today"
+      check on GSI1 `DATE#<localDate>`, claim via conditional `UpdateItem` (`dynamodb:UpdateItem` on
+      the table ARN only). Nudges moved to a 13:00 UTC rule. Run
+      `scripts/backfill-reminder-index.js --apply` once after the deploy.
 - [x] `budget-alerts` and `daily-reminders` now also get `dynamodb:PutItem` on the table
       (Session 170, FEAT-004, owner ruling on FEAT-003's D5), on top of `grantReadData`. This is
       narrower than `grantReadWriteData`. `budget-alerts`' alert-sent dedup record and
       `daily-reminders`' nudge record now persist, so alerts no longer repeat every 6 hours.
-- [ ] `daily-reminders` kickoff email: no `ses:SendEmail` grant, AND it sends from
-      `SES_FROM_EMAIL || 'noreply@budgetbuddy.app'`. The stack never sets `SES_FROM_EMAIL`, and
-      that address is not a verified SES identity. Fixing it needs an env var (e.g.
-      `info@hitechparadigm.com`) plus a grant scoped to that identity ARN, and SES sandbox limits
-      recipients anyway. Follow-up; not done in FEAT-004.
+- [x] `daily-reminders` monthly kickoff email: off by owner decision (Wave 3); the code and its SES
+      client were removed in 1.15.4. Bringing it back needs an SES grant scoped to a verified sender
+      identity and SES production access.
 - [ ] `restore` returns 501 until the key migration (its writes still target `FAMILY#`).
 - [x] `investments-price-updater`, `scheduled-backup`: ported, not wired into any stack, and the
       owner decided (Session 170, 1.15.1) to leave both undeployed; AWS Backup covers the table.

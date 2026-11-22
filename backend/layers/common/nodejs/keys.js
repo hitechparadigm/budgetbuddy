@@ -187,13 +187,22 @@ function periodGSI(budgetId, month) {
 }
 
 /**
+ * GSI3 partition key of the reminder bucket for one UTC hour.
+ * @param {number} hourUtc - 0-23
+ * @returns {string} e.g. `REMINDER#07`
+ */
+function reminderBucketPK(hourUtc) {
+  return `${PREFIX.REMINDER}${formatHour(hourUtc)}`;
+}
+
+/**
  * GSI3 keys of a notification-preferences item: users due at one UTC hour.
  * @param {number} hourUtc - 0-23
  * @param {string} userId
  * @returns {{ GSI3PK: string, GSI3SK: string }}
  */
 function reminderGSI3(hourUtc, userId) {
-  return { GSI3PK: `${PREFIX.REMINDER}${formatHour(hourUtc)}`, GSI3SK: userPK(userId) };
+  return { GSI3PK: reminderBucketPK(hourUtc), GSI3SK: userPK(userId) };
 }
 
 const planSK = (planId) => `${PREFIX.PLAN}${assertId(planId, 'planId')}`;
@@ -241,6 +250,7 @@ module.exports = {
   transactionGSI1,
   dateRangeGSI1,
   periodGSI,
+  reminderBucketPK,
   reminderGSI3,
   planSK,
   plannedTxnSK,

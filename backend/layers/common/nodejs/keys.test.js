@@ -141,3 +141,17 @@ describe('keys: validation (trust boundary)', () => {
     );
   });
 });
+
+describe('reminderBucketPK (Wave 3 phase 1)', () => {
+  const { reminderBucketPK, reminderGSI3: gsi3 } = require('./keys');
+
+  test('pads the UTC hour and matches reminderGSI3', () => {
+    expect(reminderBucketPK(7)).toBe('REMINDER#07');
+    expect(reminderBucketPK(23)).toBe('REMINDER#23');
+    expect(gsi3(7, 'u1').GSI3PK).toBe(reminderBucketPK(7));
+  });
+
+  test.each([-1, 24, 1.5, '07'])('rejects %p', (hour) => {
+    expect(() => reminderBucketPK(hour)).toThrow('hourUtc');
+  });
+});

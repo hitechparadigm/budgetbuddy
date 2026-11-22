@@ -80,6 +80,11 @@ const get = () => handler(event('GET'), { awsRequestId: 'req-2' });
 const parse = (res) => JSON.parse(res.body);
 const stored = () => utils.__table.get(`${OWN_PK}|${OWN_SK}`);
 
+// Server-derived attributes the writer adds next to the client's fields
+// (design section 3): the UTC hour bucket and the sparse GSI3 reminder keys.
+const DERIVED_FIELDS = ['reminderHourUtc', 'GSI3PK', 'GSI3SK'];
+const RESPONSE_FIELDS = [...Object.keys(FULL_PREFS), 'timezone'].sort();
+
 const ATTACK_FIELDS = {
   PK: 'USER#attacker-probe',
   SK: 'PROBE',
@@ -117,7 +122,8 @@ describe('PUT /notifications/preferences: client cannot choose the item key', ()
     const [pk, sk, updates] = utils.dynamoHelpers.updateItem.mock.calls[0];
     expect(pk).toBe(OWN_PK);
     expect(sk).toBe(OWN_SK);
-    expect(Object.keys(updates).sort()).toEqual(Object.keys(FULL_PREFS).sort());
+    expect(Object.keys(updates).sort()).toEqual([...RESPONSE_FIELDS, ...DERIVED_FIELDS].sort());
+    expect(updates.GSI3SK).toBe(OWN_PK);
     expect(utils.dynamoHelpers.putItem).not.toHaveBeenCalled();
   });
 
@@ -148,7 +154,7 @@ describe('PUT /notifications/preferences: client cannot choose the item key', ()
     const res = await put({ ...ATTACK_FIELDS, reminderTime: '06:45' });
     const { preferences } = parse(res).data;
 
-    expect(Object.keys(preferences).sort()).toEqual(Object.keys(FULL_PREFS).sort());
+    expect(Object.keys(preferences).sort()).toEqual(RESPONSE_FIELDS);
   });
 
   it('never logs the request body', async () => {
@@ -171,7 +177,13 @@ describe('PUT /notifications/preferences: partial updates keep stored values', (
     const res = await put({ reminderTime: '07:30' });
 
     expect(res.statusCode).toBe(200);
-    expect(utils.dynamoHelpers.updateItem.mock.calls[0][2]).toEqual({ reminderTime: '07:30' });
+    // UTC is the default zone, so 07:30 lands in the 07 bucket
+    expect(utils.dynamoHelpers.updateItem.mock.calls[0][2]).toEqual({
+      reminderTime: '07:30',
+      reminderHourUtc: 7,
+      GSI3PK: 'REMINDER#07',
+      GSI3SK: OWN_PK,
+    });
     expect(stored()).toMatchObject({ ...FULL_PREFS, reminderTime: '07:30' });
 
     const readBack = parse(await get()).data;
@@ -230,6 +242,65 @@ describe('PUT /notifications/preferences: invalid values return 400', () => {
   });
 });
 
+describe('PUT /notifications/preferences: timezone and the reminder index', () => {
+  it('stores an IANA timezone and derives the UTC bucket (Asia/Kolkata, 19:00 -> 14)', async () => {
+    const res = await put({ timezone: 'Asia/Kolkata', reminderTime: '19:00' });
+
+    expect(res.statusCode).toBe(200);
+    expect(stored()).toMatchObject({
+      timezone: 'Asia/Kolkata',
+      reminderHourUtc: 14,
+      GSI3PK: 'REMINDER#14',
+      GSI3SK: OWN_PK,
+    });
+    expect(parse(res).data.preferences.timezone).toBe('Asia/Kolkata');
+    expect(parse(res).data.preferences).not.toHaveProperty('reminderHourUtc');
+  });
+
+  it.each([
+    ['an unknown zone', 'Mars/Olympus'],
+    ['a 65-character string', 'A'.repeat(65)],
+    ['a number', 330],
+  ])('rejects %s with 400 and writes nothing', async (_label, timezone) => {
+    const res = await put({ timezone });
+
+    expect(res.statusCode).toBe(400);
+    expect(parse(res).message).toBe('timezone must be an IANA time zone');
+    expect(utils.dynamoHelpers.updateItem).not.toHaveBeenCalled();
+    expect(utils.__table.size).toBe(0);
+  });
+
+  it('never takes GSI3 keys, reminderHourUtc or lastReminderDate from the body', async () => {
+    const res = await put({
+      reminderTime: '19:00',
+      GSI3PK: 'REMINDER#99',
+      GSI3SK: 'USER#user_victim',
+      reminderHourUtc: 3,
+      lastReminderDate: '2099-01-01',
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(stored()).toMatchObject({ GSI3PK: 'REMINDER#19', GSI3SK: OWN_PK, reminderHourUtc: 19 });
+    expect(stored()).not.toHaveProperty('lastReminderDate');
+  });
+
+  it('a nested web body with only timezone keeps dailyRemindersEnabled and removes the index keys', async () => {
+    utils.__table.set(`${OWN_PK}|${OWN_SK}`, {
+      PK: OWN_PK, SK: OWN_SK, ...FULL_PREFS, dailyRemindersEnabled: false,
+    });
+
+    const res = await put({ userId: 'user_victim', preferences: { timezone: 'America/Toronto' } });
+
+    expect(res.statusCode).toBe(200);
+    const [, , updates, options] = utils.dynamoHelpers.updateItem.mock.calls[0];
+    expect(updates).not.toHaveProperty('dailyRemindersEnabled');
+    expect(updates).not.toHaveProperty('GSI3PK');
+    expect(options.remove).toEqual(['GSI3PK', 'GSI3SK']);
+    expect(stored().dailyRemindersEnabled).toBe(false);
+    expect(stored().timezone).toBe('America/Toronto');
+  });
+});
+
 describe('GET /notifications/preferences', () => {
   it('returns defaults when nothing is stored', async () => {
     const res = await get();
@@ -241,6 +312,7 @@ describe('GET /notifications/preferences', () => {
       reminderTime: '19:00',
       quietHoursStart: '22:00',
       quietHoursEnd: '08:00',
+      timezone: 'UTC',
     });
   });
 
@@ -251,7 +323,7 @@ describe('GET /notifications/preferences', () => {
 
     const data = parse(await get()).data;
 
-    expect(data).toEqual({ ...FULL_PREFS, updatedAt: '2026-11-19T00:00:00.000Z' });
+    expect(data).toEqual({ ...FULL_PREFS, timezone: 'UTC', updatedAt: '2026-11-19T00:00:00.000Z' });
   });
 });
 

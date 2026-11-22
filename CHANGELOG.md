@@ -1,4 +1,57 @@
 # Changelog
+## [1.15.4] - 2026-11-22
+### feat(reminders): hourly per-user reminders and first real notification delivery (Wave 3 phase 1, Session 170)
+`notification-stack.ts` (rules, one IAM statement, layers), common layer code, Lambda code
+(`daily-reminders`, `notifications`, `budget-alerts`, `bills-scheduler`, `auth-onboarding`), web and
+mobile notification settings, and one script. No table, route or gateway change.
+#### Changed
+- `daily-reminders` rewritten. The hourly run (`cron(0 * * * ? *)`, same `DailyRemindersRule`
+  construct, replaces the 15-minute rule) queries only the users due this UTC hour on the sparse
+  GSI3 reminder index (`REMINDER#<HH>` / `USER#<userId>`), with no table Scan. Each user gets at
+  most one "log today's spending / add your receipts" reminder per local day, at their chosen
+  whole hour (default on, 19:00, `timezone` UTC until the app reports one), skipped when they
+  already recorded a transaction that local day. Quiet hours do not apply to it. The day is
+  claimed with a conditional `UpdateItem` on `lastReminderDate`, and every user read is
+  re-bucketed for DST and time-zone changes. The `FAMILY#` reads, the `familyId` skip and the
+  monthly kickoff email (and its SES client) are gone.
+- New `DailyNudgesRule` `cron(0 13 * * ? *)` (`{ "mode": "daily-nudges" }`): spending-pace nudges
+  from current-month periods (GSI2 `PERIOD#<month>`, flat `groups.expenses`), and on Sundays the
+  weekly insight. Bill reminders stay at 08:00 UTC.
+- Preferences parser and defaults moved to the common layer `reminder-preferences.js` (the
+  allowlist parser from 1.15.1, plus a validated IANA `timezone`). `upsertReminderPreferences`
+  writes the caller's own preferences item and its GSI3 keys; `PUT /notifications/preferences`
+  and `auth-onboarding` both use it. `dynamoHelpers.updateItem` takes optional `remove` and
+  `condition` options.
+- The notifications Lambda dispatches internal `{ internalAction: 'send', userId, notification }`
+  events (no `requestContext`, no `httpMethod`) before its auth check, and always writes the
+  in-app `NOTIFICATION#` record before any push. `budget-alerts` and `daily-reminders` send that
+  event, so their notifications are delivered for the first time.
+- `budget-alerts`: the stream guard skips migration writes and transactions outside the current
+  month before any read, and it reads the stored period shape (`groups` as flat arrays), which the
+  old code threw on. Members of a budget at 80/90/100% in a category now get real alerts.
+- `{ healthCheck: true }` returns before any read in `budget-alerts`, `daily-reminders` and
+  `bills-scheduler`.
+- Web sends the device time zone (`syncTimezone()` after sign-in, and with saved settings) and
+  offers whole reminder hours; mobile sends `timezone` and saves the reminder at `HH:00` (ships
+  with the next mobile build).
+- The unused shared layer is removed from the four notification-stack functions.
+#### Security
+- One new permission: `dynamodb:UpdateItem` for `daily-reminders` on the table ARN only (no index
+  ARN, no wildcard). No request-body spread into DynamoDB items; no key attribute in any new
+  `FilterExpression`.
+#### Added
+- `scripts/backfill-reminder-index.js`: gives existing preferences items their GSI3 keys. Dry run
+  by default, `--apply` to write, idempotent, prints counts only.
+#### Tests
+- New suites: layer `reminder-preferences.test.js` (29), notifications `internal-action.test.js`
+  (10), daily-reminders `reminders.test.js` (15), budget-alerts `stream-guard.test.js` (7),
+  `backfill-reminder-index.test.js` (6), infrastructure `notification-stack.test.ts` (5), web
+  `NotificationSettings.test.tsx` (6). Grown: layer `dynamo-helpers` 13 -> 17, `keys` 36 -> 41,
+  notifications `preferences` 23 -> 29, daily-reminders `handler` 2 -> 4 (rewritten),
+  bills-scheduler 3 -> 4, auth-onboarding `index` 22 -> 25 passing (same 2 pre-existing
+  failures). Other pre-existing failures unchanged (layer `canUseFeature`, budget-alerts property
+  tests). Infrastructure, web and mobile `tsc --noEmit` 0 errors; consistency check 4/4; route
+  contract and key-filter checks exit 0 (25 allowlisted key-filter findings, down from 27).
 ## [1.15.3] - 2026-11-22
 ### feat(guardrails): route contract and key-filter checks (Wave 3 phase 0, Session 170)
 Common layer code, the `transaction-planning` Lambda, CI workflows and scripts. No CDK source, IAM,

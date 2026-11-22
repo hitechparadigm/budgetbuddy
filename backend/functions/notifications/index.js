@@ -15,6 +15,12 @@ const {
   successResponse,
   errorResponse,
 } = require('/opt/nodejs/utils');
+const { assertId } = require('/opt/nodejs/keys');
+const {
+  parsePreferenceUpdates,
+  getNotificationPreferences,
+  upsertReminderPreferences,
+} = require('/opt/nodejs/reminder-preferences');
 
 const TABLE_NAME = process.env.TABLE_NAME || 'budgetbuddy-main';
 const SNS_TOPIC_ARN = process.env.SNS_TOPIC_ARN;
@@ -142,14 +148,32 @@ async function sendExpoPushNotification(tokens, title, body, data = {}) {
 }
 
 /**
- * Send notification to user
+ * Send notification to user.
+ *
+ * The in-app record (USER#<userId>/NOTIFICATION#<ms>, read by
+ * GET /notifications/history) is written first, for every user, so a user
+ * with no registered device still sees it. The record holds only type, title,
+ * body and data; the payload never chooses the key or any other attribute.
+ * Then the push goes to the user's Expo tokens, if any.
  */
 async function sendNotification(userId, notification) {
-  const devices = await getUserDeviceTokens(userId);
+  const record = {
+    PK: `USER#${userId}`,
+    SK: `NOTIFICATION#${Date.now()}`,
+    entityType: 'NOTIFICATION',
+    type: notification.type || (notification.data && notification.data.type) || 'system',
+    title: notification.title,
+    body: notification.body,
+    ...(notification.data !== undefined ? { data: notification.data } : {}),
+    sentAt: new Date().toISOString(),
+    read: false,
+  };
+  await dynamoHelpers.putItem(record);
 
+  const devices = await getUserDeviceTokens(userId);
   if (devices.length === 0) {
     logger.info('No devices registered for user', { userId });
-    return { success: false, reason: 'No devices registered' };
+    return { success: true, stored: true, deviceCount: 0 };
   }
 
   const expoTokens = devices
@@ -160,135 +184,86 @@ async function sendNotification(userId, notification) {
     await sendExpoPushNotification(expoTokens, notification.title, notification.body, notification.data);
   }
 
-  // Store notification in database. The key is set after the spread so the
-  // notification payload can never choose the item it is written to.
-  await dynamoHelpers.putItem({
-    ...notification,
-    PK: `USER#${userId}`,
-    SK: `NOTIFICATION#${Date.now()}`,
-    sentAt: new Date().toISOString(),
-    read: false,
-  });
-
-  return { success: true, deviceCount: devices.length };
+  return { success: true, stored: true, deviceCount: devices.length };
 }
 
-const PREFERENCES_SK = 'NOTIFICATION_PREFERENCES';
-
-const DEFAULT_NOTIFICATION_PREFERENCES = {
-  budgetAlertsEnabled: true,
-  dailyRemindersEnabled: true,
-  reminderTime: '19:00',
-  quietHoursStart: '22:00',
-  quietHoursEnd: '08:00',
-};
-
-/** 24-hour HH:MM, e.g. 07:30 or 22:00 */
-const TIME_HH_MM = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-const isBoolean = (value) => typeof value === 'boolean';
-const isTimeOfDay = (value) => typeof value === 'string' && TIME_HH_MM.test(value);
+/** Longest title/body an internal send may carry. */
+const MAX_TITLE_LENGTH = 200;
+const MAX_BODY_LENGTH = 1000;
 
 /**
- * The only attributes a client may write on its preferences item, with the
- * check each value must pass. Anything else in the request body (PK, SK, GSI
- * keys, userId, role, ...) is never copied into the item.
+ * Validate the notification of an internal `send` event.
+ * @param {*} notification
+ * @returns {string|null} error, or null when valid
  */
-const PREFERENCE_FIELDS = {
-  budgetAlertsEnabled: { isValid: isBoolean, expected: 'a boolean' },
-  dailyRemindersEnabled: { isValid: isBoolean, expected: 'a boolean' },
-  reminderTime: { isValid: isTimeOfDay, expected: 'a 24-hour HH:MM time' },
-  quietHoursStart: { isValid: isTimeOfDay, expected: 'a 24-hour HH:MM time' },
-  quietHoursEnd: { isValid: isTimeOfDay, expected: 'a 24-hour HH:MM time' },
-};
-
-const isPlainObject = (value) =>
-  value !== null && typeof value === 'object' && !Array.isArray(value);
-
-/**
- * Copy only the allowlisted preference attributes from a stored item.
- * @param {Object|null} item - DynamoDB item
- * @returns {Object} Preference fields present on the item
- */
-function pickPreferenceFields(item) {
-  const picked = {};
-  if (!item) return picked;
-  for (const field of Object.keys(PREFERENCE_FIELDS)) {
-    if (item[field] !== undefined) picked[field] = item[field];
+function invalidNotification(notification) {
+  if (notification === null || typeof notification !== 'object' || Array.isArray(notification)) {
+    return 'notification must be an object';
   }
-  return picked;
+  if (typeof notification.title !== 'string' || !notification.title
+    || notification.title.length > MAX_TITLE_LENGTH) {
+    return `notification.title must be a string of 1-${MAX_TITLE_LENGTH} characters`;
+  }
+  if (typeof notification.body !== 'string' || !notification.body
+    || notification.body.length > MAX_BODY_LENGTH) {
+    return `notification.body must be a string of 1-${MAX_BODY_LENGTH} characters`;
+  }
+  if (notification.data !== undefined
+    && (notification.data === null || typeof notification.data !== 'object')) {
+    return 'notification.data must be an object';
+  }
+  return null;
 }
 
 /**
- * Build the attribute updates for PUT /notifications/preferences.
+ * Lambda-to-Lambda events `{ internalAction, ... }` from the jobs functions
+ * (budget-alerts, daily-reminders). They carry no API Gateway requestContext,
+ * so they are dispatched before the Cognito-claims check; an API Gateway event
+ * never reaches this path. Callers invoke asynchronously, so a failure is
+ * logged and returned, never thrown (a throw would make Lambda retry and
+ * could push twice).
  *
- * Accepts the fields at the top level (mobile client) or nested under
- * `preferences` (web client). Fields outside PREFERENCE_FIELDS are dropped
- * rather than rejected, because both shipped clients send `userId` alongside
- * the preferences and installed mobile builds cannot be changed from here.
- *
- * @param {*} body - Parsed request body
- * @returns {{ updates?: Object, error?: string }}
+ * @param {{ internalAction: string, userId?: string, notification?: Object }} event
+ * @returns {Promise<{ statusCode: number, body: string }>}
  */
-function parsePreferenceUpdates(body) {
-  if (!isPlainObject(body)) {
-    return { error: 'Request body must be a JSON object' };
-  }
-  let source = body;
-  if (body.preferences !== undefined) {
-    if (!isPlainObject(body.preferences)) {
-      return { error: 'preferences must be an object' };
-    }
-    source = body.preferences;
+async function handleInternalAction(event) {
+  const respond = (statusCode, payload) => ({ statusCode, body: JSON.stringify(payload) });
+
+  if (event.internalAction !== 'send') {
+    logger.warn('Unknown internal action', { internalAction: String(event.internalAction) });
+    return respond(400, { success: false, error: 'Unknown internalAction' });
   }
 
-  const updates = {};
-  for (const [field, rule] of Object.entries(PREFERENCE_FIELDS)) {
-    if (source[field] === undefined) continue;
-    if (!rule.isValid(source[field])) {
-      return { error: `${field} must be ${rule.expected}` };
-    }
-    updates[field] = source[field];
+  try {
+    assertId(event.userId, 'userId');
+  } catch (_e) {
+    logger.warn('Internal send rejected: invalid userId');
+    return respond(400, { success: false, error: 'userId is invalid' });
+  }
+  const problem = invalidNotification(event.notification);
+  if (problem) {
+    logger.warn('Internal send rejected', { userId: event.userId, reason: problem });
+    return respond(400, { success: false, error: problem });
   }
 
-  if (Object.keys(updates).length === 0) {
-    const allowed = Object.keys(PREFERENCE_FIELDS).join(', ');
-    return { error: `No valid preference fields provided (allowed: ${allowed})` };
+  try {
+    const result = await sendNotification(event.userId, event.notification);
+    logger.info('Internal notification sent', {
+      userId: event.userId,
+      type: event.notification.type || (event.notification.data && event.notification.data.type),
+      deviceCount: result.deviceCount,
+    });
+    return respond(200, result);
+  } catch (error) {
+    logger.error('Internal notification send failed', error, { userId: event.userId });
+    return respond(500, { success: false, error: 'send failed' });
   }
-  return { updates };
 }
 
-/**
- * Get notification preferences for user; fields never saved fall back to defaults
- */
-async function getNotificationPreferences(userId) {
-  const item = await dynamoHelpers.getItem(`USER#${userId}`, PREFERENCES_SK);
-  return {
-    ...DEFAULT_NOTIFICATION_PREFERENCES,
-    ...pickPreferenceFields(item),
-    ...(item && item.updatedAt ? { updatedAt: item.updatedAt } : {}),
-  };
-}
-
-/**
- * Update notification preferences with SET on the validated fields only.
- * The key is always the caller's own USER#<userId>/NOTIFICATION_PREFERENCES;
- * fields the request leaves out keep their stored values. The first save
- * seeds the missing fields with defaults so readers always see a full item.
- *
- * @param {string} userId - Caller's userId from the JWT
- * @param {Object} updates - Output of parsePreferenceUpdates
- */
-async function updateNotificationPreferences(userId, updates) {
-  const pk = `USER#${userId}`;
-  const existing = await dynamoHelpers.getItem(pk, PREFERENCES_SK);
-  const fields = existing ? updates : { ...DEFAULT_NOTIFICATION_PREFERENCES, ...updates };
-  const updated = await dynamoHelpers.updateItem(pk, PREFERENCES_SK, fields);
-  return {
-    success: true,
-    preferences: { ...DEFAULT_NOTIFICATION_PREFERENCES, ...pickPreferenceFields(updated) },
-  };
-}
+/** True for a direct Lambda invoke with an internal action, never an API Gateway event. */
+const isInternalEvent = (event) =>
+  Boolean(event) && event.internalAction !== undefined
+  && event.requestContext === undefined && event.httpMethod === undefined;
 
 /**
  * Get notification history for user
@@ -420,6 +395,11 @@ async function notifyBudgetSuggestionsAvailable(userId, targetMonth, suggestionC
  * No endpoint accepts userId from the request body or query string.
  */
 exports.handler = async (event, context) => {
+  // Lambda-to-Lambda sends from the jobs functions: no requestContext, no claims.
+  if (isInternalEvent(event)) {
+    return handleInternalAction(event);
+  }
+
   logger.info('Notification request received', {
     httpMethod: event.httpMethod,
     path: event.path,
@@ -491,7 +471,7 @@ exports.handler = async (event, context) => {
       if (error) {
         return errorResponse.badRequest(error);
       }
-      const result = await updateNotificationPreferences(userId, updates);
+      const result = await upsertReminderPreferences(userId, updates);
       return successResponse(result, 'Preferences updated');
     }
 
@@ -517,8 +497,9 @@ exports.handler = async (event, context) => {
     // ── POST /notifications/send (internal use) ──────────────────────────────
     if (method === 'POST' && path.includes('/send')) {
       const { notification } = body;
-      if (!notification) {
-        return errorResponse.badRequest('notification is required');
+      const problem = invalidNotification(notification);
+      if (problem) {
+        return errorResponse.badRequest(problem);
       }
       const result = await sendNotification(userId, notification);
       return successResponse(result, 'Notification sent');

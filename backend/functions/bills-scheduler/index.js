@@ -13,6 +13,11 @@ const { dynamoHelpers, logger } = require("/opt/nodejs/utils");
  * Main Lambda handler for scheduled bill notifications
  */
 exports.handler = async (event, context) => {
+  // Direct health invoke: answer before any read, so it never sends reminders.
+  if (event && event.healthCheck === true) {
+    return { statusCode: 200, body: JSON.stringify({ status: "healthy" }) };
+  }
+
   logger.info("Bill notification scheduler triggered", {
     requestId: context.awsRequestId,
     time: new Date().toISOString(),

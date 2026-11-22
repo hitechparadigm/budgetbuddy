@@ -22,6 +22,56 @@ const NOTIFICATION_FUNCTION =
 // Alert thresholds
 const ALERT_THRESHOLDS = [0.8, 0.9, 1.0]; // 80%, 90%, 100%
 
+/** Widest UTC offsets in use (UTC-12 .. UTC+14), in ms. */
+const WEST_MS = 12 * 60 * 60 * 1000;
+const EAST_MS = 14 * 60 * 60 * 1000;
+
+/**
+ * The months that are "current" somewhere on Earth right now (one month, or
+ * two around a month boundary), as YYYY-MM.
+ * @param {Date} [now]
+ * @returns {Set<string>}
+ */
+function currentMonths(now = new Date()) {
+  const at = (ms) => new Date(ms).toISOString().slice(0, 7);
+  return new Set([at(now.getTime() - WEST_MS), at(now.getTime() + EAST_MS)]);
+}
+
+/**
+ * Stream guard (Wave 3 phase 1): a transaction row alerts only when a user
+ * wrote it for the current month. Rows a data migration writes (they carry
+ * `migrationRunId`) and rows dated in another month never alert, so a backfill
+ * or an old-month edit cannot send a burst of stale alerts.
+ * @param {Object} image - unmarshalled NewImage
+ * @param {string} month - the row's budget month
+ * @param {Date} [now]
+ * @returns {string|null} skip reason, or null to process
+ */
+function streamSkipReason(image, month, now = new Date()) {
+  if (image.migrationRunId !== undefined) return 'migration_row';
+  if (!currentMonths(now).has(month)) return 'other_month';
+  return null;
+}
+
+/**
+ * Categories of a period that alerts apply to. Stored periods keep
+ * `groups` as an object of flat category arrays (`{ income, savings,
+ * expenses }`); older records used an array of groups with `categories`.
+ * Income is not a spending budget, so only expenses and savings count.
+ * @param {Object} budget - PERIOD# item
+ * @returns {Object[]}
+ */
+function alertCategories(budget) {
+  const groups = budget.groups;
+  const flatten = (list) => (Array.isArray(list) ? list : []).flatMap((entry) =>
+    (entry && Array.isArray(entry.categories) ? entry.categories : [entry]));
+  if (Array.isArray(groups)) return flatten(groups);
+  if (groups && typeof groups === 'object') {
+    return [...flatten(groups.expenses), ...flatten(groups.savings)];
+  }
+  return Array.isArray(budget.categories) ? budget.categories : [];
+}
+
 /**
  * Get budget period by budgetId and month
  * Key: { PK: 'BUDGET#<budgetId>', SK: 'PERIOD#<month>' }
@@ -97,15 +147,10 @@ async function sendNotification(userId, notification) {
       new InvokeCommand({
         FunctionName: NOTIFICATION_FUNCTION,
         InvocationType: 'Event', // Async
+        // Internal event: the notifications function dispatches it before
+        // its Cognito-claims check (an HTTP-shaped event got 401).
         Payload: Buffer.from(
-          JSON.stringify({
-            httpMethod: 'POST',
-            path: '/notifications/send',
-            body: JSON.stringify({
-              userId,
-              notification,
-            }),
-          }),
+          JSON.stringify({ internalAction: 'send', userId, notification }),
         ),
       }),
     );
@@ -205,17 +250,7 @@ async function processBudgetAlerts(budget) {
 
     console.log(`Checking budget alerts for budgetId ${budgetId}, month ${month}`);
 
-    // Get all categories from all groups
-    const categories = [];
-    if (budget.groups) {
-      budget.groups.forEach((group) => {
-        if (group.categories) {
-          categories.push(...group.categories);
-        }
-      });
-    } else if (budget.categories) {
-      categories.push(...budget.categories);
-    }
+    const categories = alertCategories(budget);
 
     if (categories.length === 0) {
       console.log(`No categories found for budget ${budgetId}`);
@@ -292,6 +327,11 @@ async function checkAllBudgets() {
  * Main Lambda handler
  */
 exports.handler = async (event) => {
+  // Direct health invoke: answer before any read, so it never runs a sweep.
+  if (event && event.healthCheck === true) {
+    return { statusCode: 200, body: JSON.stringify({ status: 'healthy' }) };
+  }
+
   console.log('Budget alerts event type:', event.Records ? 'DynamoDB Stream' : (event.source || 'manual'));
 
   try {
@@ -312,6 +352,12 @@ exports.handler = async (event) => {
 
             if (!budgetId || !month) {
               console.warn('Transaction missing budgetId or month in stream record');
+              continue;
+            }
+
+            const skipReason = streamSkipReason(newImage, month);
+            if (skipReason) {
+              console.log('Stream record skipped:', { budgetId, reason: skipReason });
               continue;
             }
 
@@ -370,3 +416,7 @@ exports.handler = async (event) => {
     };
   }
 };
+
+// Exported for tests
+module.exports.streamSkipReason = streamSkipReason;
+module.exports.alertCategories = alertCategories;

@@ -495,3 +495,55 @@ describe('Auth Onboarding Lambda', () => {
     });
   });
 });
+
+describe('Reminder index on onboarding (Wave 3 phase 1)', () => {
+  const { upsertReminderPreferences } = require('/opt/nodejs/reminder-preferences');
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    if (_mockDynamoClientSend) {
+      _mockDynamoClientSend.mockResolvedValue({});
+    }
+    process.env.TABLE_NAME = 'test-table';
+    authorizeAs({ 'custom:userId': 'user-123' });
+    validateOnboardingInput.mockReturnValue([]);
+    dynamoHelpers.putItem.mockResolvedValue();
+  });
+
+  test('a completed onboarding enters the caller in the index with the default preferences', async () => {
+    dynamoHelpers.getItem
+      .mockResolvedValueOnce({ userId: 'user-123' })
+      .mockResolvedValueOnce({ budgetId: 'some-id', month: '2026-01' });
+
+    const response = await handler(BASE_EVENT);
+
+    expect(response.statusCode).toBe(200);
+    expect(upsertReminderPreferences).toHaveBeenCalledTimes(1);
+    expect(upsertReminderPreferences).toHaveBeenCalledWith('user-123', {});
+  });
+
+  test('a failure to write the preferences does not fail onboarding', async () => {
+    dynamoHelpers.getItem
+      .mockResolvedValueOnce({ userId: 'user-123' })
+      .mockResolvedValueOnce({ budgetId: 'some-id', month: '2026-01' });
+    upsertReminderPreferences.mockRejectedValueOnce(Object.assign(new Error('boom'), { name: 'ProvisionedThroughputExceededException' }));
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const response = await handler(BASE_EVENT);
+
+    expect(response.statusCode).toBe(200);
+    expect(warn).toHaveBeenCalledWith('Reminder preferences not initialized:', {
+      errorName: 'ProvisionedThroughputExceededException',
+    });
+    warn.mockRestore();
+  });
+
+  test('a re-onboarding (409) does not touch the preferences', async () => {
+    dynamoHelpers.getItem.mockResolvedValueOnce({ defaultBudgetId: 'budget-abc', onboardingCompleted: true });
+
+    const response = await handler(BASE_EVENT);
+
+    expect(response.statusCode).toBe(409);
+    expect(upsertReminderPreferences).not.toHaveBeenCalled();
+  });
+});

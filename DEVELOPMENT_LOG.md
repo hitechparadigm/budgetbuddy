@@ -1,4 +1,33 @@
 # Development Log
+## 2026-11-22 - Wave 3 Phase 1: Hourly Reminders and First Notification Delivery (Session 170)
+**Summary:** second phase of the Wave 3 plan (1.15.4), following the owner's reminder decision:
+at most one "log today's spending / add your receipts" reminder per user per local day, at the
+user's chosen whole hour (default on, 19:00, UTC until the app reports a time zone), skipped if the
+user already recorded a transaction that day, with no quiet-hours check. `daily-reminders` now runs
+hourly and queries only the GSI3 bucket `REMINDER#<HH>` for that UTC hour (no Scan); nudges moved to
+a 13:00 UTC rule; bill reminders stay at 08:00 UTC; the monthly kickoff email is off. The
+preferences parser, defaults (now with `timezone`) and `upsertReminderPreferences` live in the
+common layer `reminder-preferences.js`, used by `PUT /notifications/preferences` and
+`auth-onboarding`. The notifications Lambda dispatches internal `{ internalAction }` events before
+its auth check and always writes the in-app record, so `budget-alerts` and `daily-reminders`
+deliver for the first time. `budget-alerts` gained a stream guard and reads the stored period shape.
+**IAM:** one new statement, `dynamodb:UpdateItem` for `daily-reminders` on the table ARN only
+(`table.grant()` would also add the `index/*` ARN, so the statement is explicit). The unused shared
+layer is gone from the four notification functions.
+**Deviations from the design (accepted in review):** the in-app record is written for users with no
+device; budget-alerts' `groups` reader fixed (it threw on every stored period); nudges read the
+period's embedded `spentAmount` and find periods through GSI2, so periods without GSI2 keys are not
+nudged yet; the backfill lives at `scripts/backfill-reminder-index.js` and scans `PK, SK` with no
+FilterExpression.
+**Tests:** 7 new suites (78 tests) and grown suites, all passing apart from failures that existed
+before (layer `canUseFeature`, budget-alerts property tests, 2 auth-onboarding guard cases, 2
+unrelated web suites). Infrastructure, web and mobile `tsc` 0 errors; consistency check 4/4; route
+contract and key-filter checks exit 0. `cdk synth` cannot run locally (no Docker engine);
+`infrastructure/test/notification-stack.test.ts` synthesizes the notification stack alone.
+**Review:** iteration 1 CHANGES_REQUESTED (the backfill's profile Scan filtered on `PK`/`SK`);
+iteration 2 APPROVED.
+**After the deploy:** run `node.exe scripts/backfill-reminder-index.js` (dry run), then `--apply`.
+budget-alerts is never invoked by hand. The live verification is recorded in the next entry.
 ## 2026-11-22 - Wave 3 Phase 0: Route Contract and Key-Filter Guardrails (Session 170)
 **Summary:** first phase of the owner-approved Wave 3 plan (1.15.3). The common layer gains
 `keys.js` (validated key builders, including the `REMINDER#<HH>` GSI3 format phase 1 needs) and

@@ -178,3 +178,55 @@ describe('dynamoHelpers query helpers', () => {
     expect(logLines(warnSpy).some((l) => l.includes('FilterExpression names a key attribute'))).toBe(false);
   });
 });
+
+describe('dynamoHelpers.updateItem options (Wave 3 phase 1)', () => {
+  beforeEach(() => {
+    mockSend.mockReset();
+    mockSend.mockResolvedValue({ Attributes: { PK: 'USER#u1', SK: 'S' } });
+    process.env.TABLE_NAME = 'test-table';
+  });
+
+  test('three arguments: SET only, no condition (unchanged behavior)', async () => {
+    await dynamoHelpers.updateItem('USER#u1', 'S', { a: 1 });
+
+    const input = mockSend.mock.calls[0][0].input;
+    expect(input.Key).toEqual({ PK: 'USER#u1', SK: 'S' });
+    expect(input.UpdateExpression).toBe('SET #attr0 = :val0, #updatedAt1 = :updatedAt1');
+    expect(input.ConditionExpression).toBeUndefined();
+    expect(input.ReturnValues).toBe('ALL_NEW');
+  });
+
+  test('remove and condition are added to the same UpdateItem', async () => {
+    await dynamoHelpers.updateItem('USER#u1', 'S', { a: 1 }, {
+      remove: ['GSI3PK', 'GSI3SK'],
+      condition: {
+        expression: '#seen = :seen',
+        names: { '#seen': 'updatedAt' },
+        values: { ':seen': '2026-11-20T00:00:00.000Z' },
+      },
+    });
+
+    const input = mockSend.mock.calls[0][0].input;
+    expect(input.UpdateExpression).toBe(
+      'SET #attr0 = :val0, #updatedAt1 = :updatedAt1 REMOVE #rm0, #rm1',
+    );
+    expect(input.ExpressionAttributeNames).toMatchObject({
+      '#attr0': 'a', '#rm0': 'GSI3PK', '#rm1': 'GSI3SK', '#seen': 'updatedAt',
+    });
+    expect(input.ExpressionAttributeValues[':seen']).toBe('2026-11-20T00:00:00.000Z');
+    expect(input.ConditionExpression).toBe('#seen = :seen');
+  });
+
+  test('a condition placeholder that collides with the helper\'s own throws before any call', async () => {
+    await expect(dynamoHelpers.updateItem('USER#u1', 'S', { a: 1 }, {
+      condition: { expression: '#attr0 = :x', names: { '#attr0': 'b' }, values: { ':x': 1 } },
+    })).rejects.toThrow('collides');
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  test('an attribute both SET and REMOVEd throws', async () => {
+    await expect(dynamoHelpers.updateItem('USER#u1', 'S', { a: 1 }, { remove: ['a'] }))
+      .rejects.toThrow('both SET and REMOVEd');
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+});

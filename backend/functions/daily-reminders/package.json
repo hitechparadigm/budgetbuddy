@@ -10,5 +10,11 @@
   "devDependencies": {
     "jest": "^29.0.0",
     "fast-check": "^3.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^/opt/nodejs/(keys|reminder-preferences)$": "<rootDir>/../../layers/common/nodejs/$1.js"
+    }
   }
 }

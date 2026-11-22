@@ -1,6 +1,6 @@
 # BudgetBuddy Product Requirements
 
-**Last Updated**: 2026-11-20 (Session 170 — Wave 2 core flows: planned-transaction routes, borrowed/lent goal fields, accounts on `BUDGET#` keys, rules engine, web rollover/rules/AI-suggestion entry points, mobile onboarding and create forms)
+**Last Updated**: 2026-11-22 (Session 170 — Wave 3 phase 1: hourly per-user daily reminders on the GSI3 reminder index, notification delivery from budget-alerts and daily-reminders, time zone sent by web and mobile)
 **Status**: Living document — reflects what is built, what is in progress, and what is planned.
 
 ---
@@ -301,7 +301,7 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 - ✅ **Welcome tooltip chain** — `WelcomeTooltipChain.tsx` shows on first login to `/overview`; 3-step spotlight tour; localStorage gated
 - ✅ **Premium gates** — `PremiumGate` + `PremiumBadge` components; 3 gates: Insights memory, Export buttons, Budget Health Score
 - ✅ **Daily rotating AI insight pool** — 30+ insight templates in `OverviewPage.tsx`; day-of-year cycling; falls back to pool if API call fails
-- ✅ **Monthly SES kickoff email** — `sendMonthlyKickoffEmail()` in `daily-reminders/index.js`; triggered on `isFirstDayOfMonth` check; includes pre-filled category count from previous month
+- ⏸️ **Monthly SES kickoff email** — off by owner decision (Session 170, Wave 3); the code was removed from `daily-reminders/index.js` in 1.15.4. It needs an SES grant and a verified sender before it can return
 
 ### Session 162 — New Components & Features (2026-09-23)
 
@@ -359,9 +359,9 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 
 ### Scheduled Notifications (New)
 
-13. **Daily reminders, spending nudges and the monthly kickoff email do not deliver** — until Session 170, `daily-reminders` and `budget-alerts` crashed on every invocation (`require('aws-sdk')` on Node.js 20), so the ✅ marks above for proactive spending nudges, the monthly SES kickoff email and EventBridge push reminders describe code that never ran. The SDK v3 port (deployed 2026-11-01) stops the crashes, but `daily-reminders` still reads the retired `FAMILY#` keys and now skips every user without a `familyId` (all current profiles), so it sends nothing. Its nudge write now persists through a narrow `dynamodb:PutItem` grant, but it has no `ses:SendEmail` permission and its default sender is not a verified SES identity. Restoring the feature needs the `FAMILY#` key migration plus an SES grant and sender.
+13. **Daily reminders and spending nudges: rewritten in 1.15.4 (Wave 3 phase 1)** — until Session 170, `daily-reminders` and `budget-alerts` crashed on every invocation (`require('aws-sdk')` on Node.js 20); after the SDK v3 port, `daily-reminders` still read retired `FAMILY#` keys and sent nothing, and both jobs invoked the notifications Lambda with a payload its auth check rejected, so no reminder, nudge or alert ever reached a user. Now: the job runs hourly (`cron(0 * * * ? *)`) and queries only the users due that UTC hour on the sparse GSI3 reminder index (`REMINDER#<HH>`), with no table Scan. Each user gets at most one "log today's spending / add your receipts" reminder per local day, at the whole hour they chose (default on, 19:00), skipped when they already recorded a transaction that day; the time zone is UTC until the web or mobile app reports one, and quiet hours do not apply. The notifications Lambda accepts an internal `{ internalAction }` event before its auth check and always writes the in-app `NOTIFICATION#` record, then pushes to registered devices. Spending nudges and the Sunday weekly insight run once a day at 13:00 UTC; bill reminders stay at 08:00 UTC. The monthly kickoff email stays off. Existing preference items get their index keys from `scripts/backfill-reminder-index.js` (dry run by default, `--apply` to write). The live DEV check follows the deploy.
 
-14. **Budget alerts repeating: fixed in Session 170 (FEAT-004), deployed to DEV 2026-11-01** — `budget-alerts` is BUDGET#-keyed and loads without error since the deploy (a direct test invocation returned 200). Its first scheduled run after the deploy had not happened at the time of writing. It previously had a read-only IAM grant, so the "alert already sent" marker would never have been saved. `notification-stack.ts` now also grants it `dynamodb:PutItem`, so each alert is sent once per category, threshold and month.
+14. **Budget alerts repeating: fixed in Session 170 (FEAT-004), deployed to DEV 2026-11-01** — `budget-alerts` is BUDGET#-keyed and loads without error since the deploy (a direct test invocation returned 200). Its first scheduled run after the deploy had not happened at the time of writing. It previously had a read-only IAM grant, so the "alert already sent" marker would never have been saved. `notification-stack.ts` now also grants it `dynamodb:PutItem`, so each alert is sent once per category, threshold and month. Since 1.15.4 alerts are actually delivered (internal event to the notifications Lambda); the function also reads the stored period shape (`groups` as flat `expenses`/`savings` arrays, which the old code threw on), and its stream guard skips migration writes and transactions outside the current month before any read.
 
 15. **Bill reminders and data restore** — `bills-scheduler` now queries bills by month on GSI1 and writes notifications where the notification center reads them (`USER#<userId>`); earlier rows written under `FAMILY#undefined` remain orphaned. `POST /restore` returns 501 until the key migration, because its write path still targets the `FAMILY#` layout. `scheduled-backup` and `investments-price-updater` are ported but not deployed; the owner decided (1.15.1) to keep them undeployed, since AWS Backup already backs up the table.
 ### AI (New)
@@ -603,6 +603,7 @@ New endpoints added during web app polish, verified live:
 | Notification preferences | `NotificationSettings.tsx` | `GET/PUT /notifications/preferences` | ✅ |
 | In-app notification center | `NotificationCenter.tsx` | `GET /notifications/history` | ✅ |
 | Push notifications | Mobile (Expo) | EventBridge + Lambda | ✅ |
+| Daily "log today's spending" reminder (one per local day, chosen whole hour, time zone from the app) | `NotificationSettings.tsx` (web and mobile) | `daily-reminders` hourly + GSI3 reminder index | ✅ (1.15.4) |
 | AI bill reminders | `BillsPage.tsx` | `GET /pattern-detection/bills` | ✅ |
 
 ---

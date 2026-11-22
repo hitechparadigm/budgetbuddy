@@ -5,5 +5,6 @@ module.exports = {
   moduleNameMapper: {
     "^/opt/nodejs/shared/(.*)$": "<rootDir>/__mocks__/shared/$1.js",
     "^/opt/nodejs/utils$": "<rootDir>/__mocks__/utils.js",
+    "^/opt/nodejs/reminder-preferences$": "<rootDir>/__mocks__/reminder-preferences.js",
   },
 };

@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import { config } from "../config/environment";
+import { getDeviceTimeZone } from "../utils/timezoneHelpers";
 
 interface NotificationPreferences {
   budgetAlertsEnabled: boolean;
@@ -14,7 +15,16 @@ interface NotificationPreferences {
   reminderTime: string;
   quietHoursStart: string;
   quietHoursEnd: string;
+  timezone?: string;
 }
+
+/** Whole-hour choices for the daily reminder; the server ignores minutes. */
+const REMINDER_HOURS = Array.from({ length: 24 }, (_, hour) =>
+  `${String(hour).padStart(2, "0")}:00`,
+);
+
+/** "19:30" -> "19:00" */
+const toWholeHour = (time: string): string => `${time.slice(0, 2)}:00`;
 
 interface NotificationSettingsProps {
   userId: string;
@@ -83,6 +93,15 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
     }
   };
 
+  const preferencesToSave = (): NotificationPreferences => {
+    const timezone = getDeviceTimeZone();
+    return {
+      ...preferences,
+      reminderTime: toWholeHour(preferences.reminderTime),
+      ...(timezone ? { timezone } : {}),
+    };
+  };
+
   const savePreferences = async () => {
     try {
       setSaving(true);
@@ -111,7 +130,9 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
         {
           method: "PUT",
           headers: getAuthHeaders(),
-          body: JSON.stringify({ userId, preferences }),
+          // The server reads the nested preferences object; timezone is the
+          // device zone the reminder hour is read in (left out if unknown).
+          body: JSON.stringify({ userId, preferences: preferencesToSave() }),
         },
       );
 
@@ -244,15 +265,21 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           >
             Reminder Time
           </label>
-          <input
+          <select
             id="reminderTime"
-            type="time"
-            value={preferences.reminderTime}
+            value={toWholeHour(preferences.reminderTime)}
             onChange={(e) => handleTimeChange("reminderTime", e.target.value)}
             className="px-3 py-2 border border-[var(--color-border)] dark:border-gray-600 rounded-lg bg-[var(--color-surface)] dark:bg-gray-800 text-[var(--color-foreground)] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
+          >
+            {REMINDER_HOURS.map((hour) => (
+              <option key={hour} value={hour}>
+                {hour}
+              </option>
+            ))}
+          </select>
           <p className="mt-1 text-sm text-[var(--color-muted-foreground)] dark:text-[var(--color-muted-foreground)]">
-            Time of day to receive daily reminders
+            One reminder a day at this hour in your time zone, skipped on days
+            you already logged a transaction
           </p>
         </div>
       )}

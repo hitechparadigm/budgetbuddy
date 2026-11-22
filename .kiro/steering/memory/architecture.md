@@ -44,8 +44,8 @@ document said `PLANNED_TXN#`; the live rows have always been `PLAN#`.
 ## DynamoDB GSIs
 Generic `GSI{1-4}PK`/`GSI{1-4}SK`, all project `ALL`.
 - GSI1: overloaded — memberships by user (`USER#<userId>`), transactions/periods by budget, bills by month
-- GSI2: written by budget and transactions, never queried
-- GSI3: never written
+- GSI2: written by budget and transactions; queried only by the daily-reminders 13:00 nudge run (`PERIOD#<YYYY-MM>`)
+- GSI3: sparse reminder index on `USER#<userId>/NOTIFICATION_PREFERENCES` (`REMINDER#<HH>` / `USER#<userId>`), queried hourly by daily-reminders (1.15.4)
 - GSI4: `INVITATION#<email>` / `CREATED#<timestamp>` — invitation lookups
 
 ## API Gateways (4 total)

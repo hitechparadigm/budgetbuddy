@@ -24,6 +24,7 @@ const ALLOWED_FIELDS = [
   "reminderTime",
   "quietHoursStart",
   "quietHoursEnd",
+  "timezone",
 ];
 
 type FetchCall = { url: string; method: string; headers: Record<string, string>; body?: string };
@@ -96,6 +97,8 @@ describe("NotificationSettings", () => {
     expect(body).not.toHaveProperty("userId");
     expect(body).not.toHaveProperty("updatedAt");
     expect(body.budgetAlertsEnabled).toBe(true);
+    // the device zone rides along so the server reads the reminder hour in it
+    expect(body.timezone).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
   });
 
   it("registers the device with the bearer token and no userId", async () => {

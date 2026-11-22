@@ -560,14 +560,24 @@ const dynamoHelpers = {
   },
 
   /**
-   * Update item (last-write-wins; no conditional check is applied)
+   * Update item. Without `options` this is last-write-wins SET of `updates`
+   * (plus `updatedAt`), exactly as before.
+   *
    * @param {string} pk - Partition key
    * @param {string} sk - Sort key
-   * @param {Object} updates - Fields to update
+   * @param {Object} updates - Fields to SET
+   * @param {Object} [options]
+   * @param {string[]} [options.remove] - Attributes to REMOVE in the same call
+   * @param {{ expression: string, names?: Object, values?: Object }} [options.condition] -
+   *   ConditionExpression with its own placeholders. Placeholders must not
+   *   start with `#attr`, `:val`, `#updatedAt`, `:updatedAt` or `#rm` (the
+   *   helper's own); a collision throws. A failed condition rejects with the
+   *   SDK's ConditionalCheckFailedException.
    * @returns {Promise<Object>} Updated item
    */
-  async updateItem(pk, sk, updates) {
+  async updateItem(pk, sk, updates, options = {}) {
     const client = getDynamoClient();
+    const { remove = [], condition } = options;
 
     // Build update expression dynamically
     const updateExpressions = [];
@@ -594,15 +604,40 @@ const dynamoHelpers = {
         new Date().toISOString();
     }
 
+    const removeNames = remove.map((attribute, index) => {
+      if (Object.prototype.hasOwnProperty.call(updates, attribute)) {
+        throw new Error(`updateItem: ${attribute} is both SET and REMOVEd`);
+      }
+      const nameKey = `#rm${index}`;
+      expressionAttributeNames[nameKey] = attribute;
+      return nameKey;
+    });
+
+    if (condition) {
+      const merge = (target, extra) => {
+        for (const [placeholder, value] of Object.entries(extra || {})) {
+          if (Object.prototype.hasOwnProperty.call(target, placeholder)) {
+            throw new Error(`updateItem: condition placeholder ${placeholder} collides`);
+          }
+          target[placeholder] = value;
+        }
+      };
+      merge(expressionAttributeNames, condition.names);
+      merge(expressionAttributeValues, condition.values);
+    }
+
     const command = new UpdateCommand({
       TableName: process.env.TABLE_NAME,
       Key: {
         PK: pk,
         SK: sk,
       },
-      UpdateExpression: `SET ${updateExpressions.join(", ")}`,
+      UpdateExpression:
+        `SET ${updateExpressions.join(", ")}` +
+        (removeNames.length ? ` REMOVE ${removeNames.join(", ")}` : ""),
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
+      ...(condition ? { ConditionExpression: condition.expression } : {}),
       ReturnValues: "ALL_NEW",
     });
 

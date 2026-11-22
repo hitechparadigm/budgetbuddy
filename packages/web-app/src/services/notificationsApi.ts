@@ -4,6 +4,7 @@
  */
 
 import { config } from '../config/environment';
+import { getDeviceTimeZone } from '../utils/timezoneHelpers';
 
 const MAIN_API_BASE = config.apiBaseUrl;
 
@@ -87,6 +88,8 @@ export interface NotificationPreferences {
   reminderTime: string;
   quietHoursStart: string;
   quietHoursEnd: string;
+  /** IANA zone the daily reminder hour is read in (server default UTC) */
+  timezone?: string;
 }
 
 export interface NotificationHistoryResponse {
@@ -160,6 +163,31 @@ export const notificationsApi = {
       method: 'PUT',
       body: JSON.stringify({ userId, preferences }),
     });
+  },
+
+  /**
+   * Report the device time zone when it differs from the stored one, so the
+   * daily reminder arrives at the chosen local hour. Sends only
+   * { preferences: { timezone } }; the server keeps every other choice.
+   * Never throws.
+   * @returns true when a PUT was sent and succeeded
+   */
+  async syncTimezone(): Promise<boolean> {
+    const timezone = getDeviceTimeZone();
+    if (!timezone || !getToken()) return false;
+    try {
+      const response = await notificationsApiCall<{ data?: { timezone?: string } }>(
+        '/notifications/preferences'
+      );
+      if (response?.data?.timezone === timezone) return false;
+      await notificationsApiCall('/notifications/preferences', {
+        method: 'PUT',
+        body: JSON.stringify({ preferences: { timezone } }),
+      });
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   // Get unread count

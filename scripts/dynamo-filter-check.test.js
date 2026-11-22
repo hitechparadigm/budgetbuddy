@@ -82,8 +82,9 @@ describe('dynamo-filter-check: repository', () => {
     const r = run();
     expect(r.fresh).toEqual([]);
     expect(r.stale).toEqual([]);
-    // design 9.2: 12 key-in-filter lines on af9450b
-    expect(r.findings.filter((x) => x.rule === 'key-in-filter')).toHaveLength(12);
+    // design 9.2: 12 key-in-filter lines on af9450b; Wave 3 phase 1 removed the
+    // daily-reminders full-table user sweep (now the GSI3 reminder-index query)
+    expect(r.findings.filter((x) => x.rule === 'key-in-filter')).toHaveLength(11);
   });
 
   test('a new violation fails the check', () => {

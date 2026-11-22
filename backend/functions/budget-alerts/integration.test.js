@@ -19,7 +19,8 @@ const { __send: mockLambdaSend } = require('@aws-sdk/client-lambda');
 const { handler } = require('./index');
 
 const BUDGET_ID = 'budget-123';
-const MONTH = '2024-01';
+// The stream guard alerts only for the current month (Wave 3 phase 1)
+const MONTH = new Date().toISOString().slice(0, 7);
 
 /** DynamoDB Stream INSERT event for a transaction in BUDGET#budget-123 */
 function transactionStreamEvent(amount) {
@@ -89,10 +90,12 @@ function mockMembers(userIds) {
   );
 }
 
-/** Decode the notification envelope from an InvokeCommand Payload */
+/** Decode the internal send event from an InvokeCommand Payload */
 function decodePayload(command) {
-  const envelope = JSON.parse(Buffer.from(command.input.Payload).toString('utf8'));
-  return JSON.parse(envelope.body);
+  const event = JSON.parse(Buffer.from(command.input.Payload).toString('utf8'));
+  expect(event.internalAction).toBe('send');
+  expect(event).not.toHaveProperty('httpMethod');
+  return event;
 }
 
 function alertPuts() {

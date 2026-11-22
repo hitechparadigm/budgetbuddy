@@ -19,6 +19,21 @@ export const detectUserTimezone = (): string => {
 };
 
 /**
+ * The device's IANA time zone for the server's reminder schedule, or
+ * undefined when the browser cannot report one (never a guessed fallback, so
+ * the server keeps the zone it has).
+ * @returns IANA timezone string (e.g. "America/Toronto"), or undefined
+ */
+export const getDeviceTimeZone = (): string | undefined => {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return typeof zone === 'string' && zone.length > 0 ? zone : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
  * Gets the current date/time in a specific timezone
  * @param timezone - IANA timezone string
  * @returns Date object representing current time in the specified timezone

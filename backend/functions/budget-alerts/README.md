@@ -25,7 +25,19 @@ The Budget Alerts Service Lambda monitors budget spending and sends alerts when 
 ## Environment Variables
 
 - `TABLE_NAME`: DynamoDB table name (default: `budgetbuddy-main`)
-- `NOTIFICATION_FUNCTION`: Notification Service Lambda function name (default: `budgetbuddy-notifications`)
+- `NOTIFICATION_FUNCTION_ARN`: Notification Service Lambda ARN, set by the notification stack. The
+  function invokes it asynchronously with `{ internalAction: 'send', userId, notification }`, which
+  the notifications Lambda dispatches before its auth check (Wave 3 phase 1, 1.15.4). Before that,
+  the payload had no claims and every alert was rejected, so no alert was ever delivered.
+
+## Wave 3 phase 1 changes (1.15.4)
+
+- `{ "healthCheck": true }` returns `{ statusCode: 200, body: '{"status":"healthy"}' }` before any read.
+- Stream guard (`streamSkipReason`): records with a `migrationRunId`, and transactions dated outside
+  the months current somewhere on Earth (UTC-12..UTC+14), are skipped before any read.
+- `alertCategories` reads the stored period shape (`groups` is an object of flat `expenses` and
+  `savings` arrays); the older array-of-groups form is still accepted. The old
+  `budget.groups.forEach` threw on every stored period.
 
 ## IAM Permissions Required
 
@@ -296,25 +308,9 @@ npm test
 
 ### Manual Testing
 
-Test with DynamoDB Stream event:
-
-```bash
-aws lambda invoke \
-  --function-name budgetbuddy-dev-budget-alerts \
-  --payload file://test-stream-event.json \
-  response.json \
-  --profile hitechparadigm
-```
-
-Test scheduled check:
-
-```bash
-aws lambda invoke \
-  --function-name budgetbuddy-dev-budget-alerts \
-  --payload '{"source":"aws.events"}' \
-  response.json \
-  --profile hitechparadigm
-```
+Do not invoke this function by hand in DEV. Since 1.15.4 its alerts reach real users (DEV holds
+real users and data), and a stream or scheduled payload would send them. Test with the jest suites
+(`stream-guard.test.js`, `integration.test.js`), which mock every AWS call.
 
 ### View Logs
 

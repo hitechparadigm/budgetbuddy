@@ -30,9 +30,9 @@ interface NotificationPreferences {
 }
 
 /**
- * The only fields PUT /notifications/preferences accepts (PREFERENCE_FIELDS in
- * backend/functions/notifications/index.js). The server takes the user from the
- * Cognito token, so neither request carries a userId.
+ * The preference fields PUT /notifications/preferences accepts (PREFERENCE_FIELDS in
+ * backend/layers/common/nodejs/reminder-preferences.js; timezone is added on save).
+ * The server takes the user from the Cognito token, so neither request carries a userId.
  */
 const PREFERENCE_KEYS: (keyof NotificationPreferences)[] = [
   "budgetAlertsEnabled",
@@ -50,6 +50,19 @@ const pickPreferences = (
     if (source?.[key] !== undefined) picked[key] = source[key];
   }
   return picked as Partial<NotificationPreferences>;
+};
+
+/**
+ * The device's IANA time zone, sent with every save so the server reads the
+ * reminder hour in it; undefined (left out of the body) when unavailable.
+ */
+const deviceTimeZone = (): string | undefined => {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return typeof zone === "string" && zone.length > 0 ? zone : undefined;
+  } catch {
+    return undefined;
+  }
 };
 
 // Device registration through the authenticated main-gateway client.
@@ -161,7 +174,11 @@ export default function NotificationSettings({
     try {
       setSaving(true);
       // Throws ApiError on a non-2xx response.
-      await api.put("/notifications/preferences", pickPreferences(newPreferences));
+      const timezone = deviceTimeZone();
+      await api.put("/notifications/preferences", {
+        ...pickPreferences(newPreferences),
+        ...(timezone ? { timezone } : {}),
+      });
 
       setPreferences(newPreferences);
     } catch (error) {
@@ -182,7 +199,9 @@ export default function NotificationSettings({
     date: Date,
   ) => {
     const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
+    // The daily reminder is sent once at a whole hour; the server ignores minutes.
+    const minutes =
+      key === "reminderTime" ? "00" : date.getMinutes().toString().padStart(2, "0");
     const timeString = `${hours}:${minutes}`;
 
     const newPreferences = { ...preferences, [key]: timeString };

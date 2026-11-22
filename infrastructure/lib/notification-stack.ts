@@ -43,12 +43,8 @@ export class NotificationStack extends cdk.Stack {
       description: 'Common dependencies for BudgetBuddy Notification functions',
     });
 
-    // Create SharedLayer for this stack (no longer importing from API stack)
-    const sharedLayer = new lambda.LayerVersion(this, 'SharedLayer', {
-      code: lambda.Code.fromAsset('../backend/layers/shared/nodejs'),
-      compatibleRuntimes: [LAMBDA_RUNTIME],
-      description: 'Shared utilities layer for notification functions',
-    });
+    // No shared layer: none of the four jobs functions requires it (it was also
+    // packaged one directory too deep, so its files landed at /opt/shared).
 
     // 1. Create Notification Service Lambda
     this.notificationFunction = new lambda.Function(this, 'NotificationFunction', {
@@ -56,7 +52,7 @@ export class NotificationStack extends cdk.Stack {
       runtime: LAMBDA_RUNTIME,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/notifications'),
-      layers: [commonLayer, sharedLayer],
+      layers: [commonLayer],
       environment: {
         TABLE_NAME: props.table.tableName,
         EXPO_ACCESS_TOKEN: props.expoAccessToken,
@@ -76,7 +72,7 @@ export class NotificationStack extends cdk.Stack {
       runtime: LAMBDA_RUNTIME,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/budget-alerts'),
-      layers: [commonLayer, sharedLayer],
+      layers: [commonLayer],
       environment: {
         TABLE_NAME: props.table.tableName,
         NOTIFICATION_FUNCTION_ARN: this.notificationFunction.functionArn,
@@ -103,7 +99,7 @@ export class NotificationStack extends cdk.Stack {
       runtime: LAMBDA_RUNTIME,
       handler: 'index.handler',
       code: lambda.Code.fromAsset('../backend/functions/daily-reminders'),
-      layers: [commonLayer, sharedLayer],
+      layers: [commonLayer],
       environment: {
         TABLE_NAME: props.table.tableName,
         NOTIFICATION_FUNCTION_ARN: this.notificationFunction.functionArn,
@@ -111,13 +107,23 @@ export class NotificationStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(300), // 5 minutes for batch processing
       memorySize: 1024,
       logRetention: logs.RetentionDays.ONE_WEEK,
-      description: 'Sends daily reminders to users who haven\'t logged transactions',
+      description: 'Hourly per-user daily reminders (GSI3 index) and the 13:00 UTC nudges',
     });
 
-    // Grant DynamoDB read permissions to Daily Reminders Service
+    // Grant DynamoDB read permissions to Daily Reminders Service (includes the GSI3
+    // reminder-index Query: grantReadData covers the table's index/* ARN).
     props.table.grantReadData(this.dailyRemindersFunction);
-    // Best-effort spending-nudge record (putItem) is its only key-correct write today.
+    // Spending-nudge record (NUDGE#<date>) is a PutItem.
     props.table.grant(this.dailyRemindersFunction, 'dynamodb:PutItem');
+    // The once-a-day claim (lastReminderDate) and the re-bucket (reminderHourUtc, GSI3PK)
+    // are conditional UpdateItem calls on NOTIFICATION_PREFERENCES items. An explicit
+    // statement on the table ARN only: table.grant() would also add the index/* ARN.
+    this.dailyRemindersFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        actions: ['dynamodb:UpdateItem'],
+        resources: [props.table.tableArn],
+      })
+    );
 
     // Grant Lambda invoke permission to call Notification Service
     this.notificationFunction.grantInvoke(this.dailyRemindersFunction);
@@ -188,10 +194,11 @@ export class NotificationStack extends cdk.Stack {
       })
     );
 
+    // Hourly: users due this UTC hour from the GSI3 reminder index (24 runs a day).
     const dailyRemindersRule = new events.Rule(this, 'DailyRemindersRule', {
       ruleName: `budgetbuddy-${this.node.tryGetContext('environment') || 'dev'}-daily-reminders`,
-      description: 'Triggers daily reminders service every 15 minutes',
-      schedule: events.Schedule.rate(cdk.Duration.minutes(15)),
+      description: 'Triggers the per-user daily reminders at minute 0 of every hour',
+      schedule: events.Schedule.cron({ minute: '0' }),
       enabled: true,
     });
 
@@ -199,6 +206,22 @@ export class NotificationStack extends cdk.Stack {
       new targets.LambdaFunction(this.dailyRemindersFunction, {
         retryAttempts: 2,
         maxEventAge: cdk.Duration.hours(1),
+      })
+    );
+
+    // Daily at 13:00 UTC: spending-pace nudges, plus the weekly insight on Sundays.
+    const dailyNudgesRule = new events.Rule(this, 'DailyNudgesRule', {
+      ruleName: `budgetbuddy-${this.node.tryGetContext('environment') || 'dev'}-daily-nudges`,
+      description: 'Triggers spending nudges (and the Sunday weekly insight) daily at 13:00 UTC',
+      schedule: events.Schedule.cron({ minute: '0', hour: '13' }),
+      enabled: true,
+    });
+
+    dailyNudgesRule.addTarget(
+      new targets.LambdaFunction(this.dailyRemindersFunction, {
+        event: events.RuleTargetInput.fromObject({ mode: 'daily-nudges' }),
+        retryAttempts: 2,
+        maxEventAge: cdk.Duration.hours(2),
       })
     );
 

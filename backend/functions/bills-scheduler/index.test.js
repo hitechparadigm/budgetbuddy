@@ -126,3 +126,19 @@ describe("bills-scheduler", () => {
     expect(dynamoHelpers.putItem).not.toHaveBeenCalled();
   });
 });
+
+describe("direct health invoke (Wave 3 phase 1)", () => {
+  it("returns 200 for { healthCheck: true } before any read or write", async () => {
+    jest.clearAllMocks();
+    for (const fn of Object.values(dynamoHelpers)) {
+      fn.mockImplementation(async () => {
+        throw new Error("no data access expected");
+      });
+    }
+
+    const result = await handler({ healthCheck: true }, context);
+
+    expect(result).toEqual({ statusCode: 200, body: JSON.stringify({ status: "healthy" }) });
+    for (const fn of Object.values(dynamoHelpers)) expect(fn).not.toHaveBeenCalled();
+  });
+});

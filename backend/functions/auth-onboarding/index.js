@@ -17,6 +17,7 @@ const { UpdateItemCommand } = require('@aws-sdk/client-dynamodb');
 // Shared utilities from Lambda Layer (MUST be at top)
 const { getCorsHeaders } = require('/opt/nodejs/shared/cors');
 const { getUserFromEvent } = require('/opt/nodejs/utils');
+const { upsertReminderPreferences } = require('/opt/nodejs/reminder-preferences');
 const { validateOnboardingInput } = require('/opt/nodejs/shared/validators');
 const {
   formatErrorResponse,
@@ -202,6 +203,15 @@ exports.handler = async (event) => {
 
     await dynamoClient.send(updateCommand);
     console.log('User profile updated - onboarding completed');
+
+    // Enter the user in the daily-reminder index with the default preferences
+    // (saved choices are kept). Best effort: the backfill script repairs a miss,
+    // so a failure here never fails onboarding.
+    try {
+      await upsertReminderPreferences(userId, {});
+    } catch (prefsError) {
+      console.warn('Reminder preferences not initialized:', { errorName: prefsError.name });
+    }
 
     // Transform selected categories into budget groups
     const expenseCategories = requestBody.selectedCategories.map((cat) => ({

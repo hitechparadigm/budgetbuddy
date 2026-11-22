@@ -11,6 +11,7 @@ import React, {
   ReactNode,
 } from "react";
 import { apiClient, ApiClientError } from "../utils/apiClient";
+import { notificationsApi } from "../services/notificationsApi";
 import type {
   AuthState,
   User,
@@ -167,6 +168,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     initializeAuth();
   }, []);
+
+  // Once signed in (fresh login or restored session), report the device time
+  // zone so the daily reminder arrives at the chosen local hour. Best effort.
+  useEffect(() => {
+    if (authState.isAuthenticated) {
+      void notificationsApi.syncTimezone();
+    }
+  }, [authState.isAuthenticated, authState.user?.userId]);
 
   // ============================================================================
   // Authentication Methods

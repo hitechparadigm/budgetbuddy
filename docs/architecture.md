@@ -1,6 +1,6 @@
 # BudgetBuddy Architecture
 
-**Last updated**: 2026-11-01
+**Last updated**: 2026-11-22
 
 This is the single architecture reference for BudgetBuddy. It describes the tip of `develop`, checked
 against `infrastructure/bin/app.ts`, `infrastructure/lib/*.ts` and the backend code. The Wave 1
@@ -43,7 +43,7 @@ State of the system:
 | Bedrock | Claude Haiku 4.5 through the `us.` inference profile | Deployed |
 | Textract | Receipt scanning (`AnalyzeExpense`, `DetectDocumentText`) | Deployed |
 | SES | Invitation and notification email, sandbox mode | Sandbox |
-| EventBridge | 3 schedules driving the notification functions | Deployed |
+| EventBridge | 4 schedules driving the notification functions: bill reminders `cron(0 8 * * ? *)`, daily reminders hourly `cron(0 * * * ? *)`, spending nudges `cron(0 13 * * ? *)`, budget-alert sweep every 6 hours | Deployed |
 | SNS | Monitoring and notification alert topics, each with a confirmed `ALERT_EMAIL` subscription | Deployed |
 | Secrets Manager | Plaid, Stripe and Alpha Vantage keys, read at runtime | Deployed |
 | AWS Backup | Daily plan, 35-day retention, vault `budgetbuddy-<env>-vault` | Deployed |
@@ -184,6 +184,13 @@ Not deployed (code exists, nothing in `app.ts` instantiates it): `infrastructure
 `infrastructure/lib/auth-register-stack.ts`, and the function directories `auth-register`, `config`,
 `investments-price-updater` and `scheduled-backup`.
 
+Notification delivery (1.15.4): `budget-alerts` and `daily-reminders` invoke `<env>-notifications`
+asynchronously with `{ internalAction: 'send', userId, notification }`. The handler dispatches that
+event before its Cognito-claims check, and only when the event has no `requestContext` and no
+`httpMethod`, so an API Gateway request cannot take that path. It writes the in-app `NOTIFICATION#`
+record for every user, then pushes to the user's Expo device tokens if any are registered. Before
+1.15.4 the jobs sent a payload the claims check rejected, so nothing was delivered.
+
 ## 4. Request lifecycle
 
 Every Lambda that touches budget data runs the same sequence:
@@ -230,7 +237,8 @@ Key layout as the code writes it:
 | Plaid account | `BUDGET#<budgetId>` | `PLAID_ACCOUNT#<accountId>` | `plaid/index.js:300-301` |
 | Pending bank transaction | `BUDGET#<budgetId>` | `PENDING_TRANSACTION#<pendingId>` | `plaid/index.js:708-709` |
 | Budget alert dedup | `BUDGET#<budgetId>` | `ALERT#<alertKey>` | `budget-alerts/index.js:78` |
-| Device / notification | `USER#<userId>` | `DEVICE#<token>`, `NOTIFICATION#<id>` | `notifications/index.js:71,166` |
+| Device / notification | `USER#<userId>` | `DEVICE#<token>`, `NOTIFICATION#<ms>` | `notifications/index.js:75,162` |
+| Notification preferences | `USER#<userId>` | `NOTIFICATION_PREFERENCES` (`timezone`, `reminderTime`, `reminderHourUtc`, `lastReminderDate`; GSI3 `REMINDER#<HH>` / `USER#<userId>` while reminders are on) | `upsertReminderPreferences()` in layer `reminder-preferences.js:319` |
 
 Other entity prefixes in use: `DEBT#`, `SUBSCRIPTION#`, `RULE#`, `ASSET#`, `NETWORTH_SNAPSHOT#`.
 
@@ -239,8 +247,8 @@ Global secondary indexes (generic `GSI{1-4}PK`/`GSI{1-4}SK`, all project `ALL`):
 | GSI | What is actually written and read |
 |---|---|
 | GSI1 | Overloaded: memberships by user (`USER#<userId>`, queried at `budgets/index.js:249`), transactions and periods by budget (`BUDGET#<id>`), bills by month (`BILLS#<YYYY-MM>`, queried at `bills-scheduler/index.js:146`) |
-| GSI2 | Written (`budget/index.js:300`, `transactions/index.js:449`), never queried |
-| GSI3 | Never written |
+| GSI2 | Written (`budget/index.js:300`, `transactions/index.js:449`); queried only by the daily-reminders 13:00 nudge run (`PERIOD#<YYYY-MM>`). Periods written without GSI2 keys (onboarding) are not found by it yet |
+| GSI3 | Sparse reminder index (1.15.4): `GSI3PK = REMINDER#<HH>` (UTC hour), `GSI3SK = USER#<userId>`, only on `NOTIFICATION_PREFERENCES` items with reminders on. Written by `upsertReminderPreferences` (PUT `/notifications/preferences`, onboarding, `scripts/backfill-reminder-index.js`) and re-bucketed by `daily-reminders`, which queries one bucket per hourly run |
 | GSI4 | Invitations by email (`budgets/index.js:441-442`, `:485`) |
 
 ### Known inconsistencies
@@ -255,14 +263,15 @@ site at a time.
   they miss every normally created transaction. The stream filter that feeds budget alerts matches only
   `TRANSACTION#` inserts (`notification-stack.ts:155`), so executed planned transactions raise no alert.
 - **Surviving `FAMILY#` keys.** `FAMILY#` is still read or written by
-  `daily-reminders/index.js:67,254,601`, `pattern-detection/pattern-detection-repository.js:46,74`,
+  `pattern-detection/pattern-detection-repository.js:46,74`,
   `restore/index.js:110,150` and the undeployed `scheduled-backup/index.js:65`. Accounts moved to
   `BUDGET#` in Wave 2 (2026-11-20); `scripts/migrate-accounts-family-to-budget.js` copies the old
   `FAMILY#<budgetId>/ACCOUNT#...` rows and leaves the originals in place.
 - **`PLAN#` vs `PLANNED_TXN#`.** Older docs and steering describe `PLANNED_TXN#<id>`; the code writes
   `PLAN#<planId>`, built only by `plannedTxnSK()` (common layer `keys.js:69,221-223`).
-- **Unused indexes.** GSI2 is written but never queried and GSI3 is never written
-  (`database-stack.ts` comments describe access patterns that no code uses).
+- **Partly used indexes.** GSI2 is queried only by the daily nudge run, and only some periods carry
+  GSI2 keys; GSI3 has been the reminder index since 1.15.4. The other access patterns in the
+  `database-stack.ts` comments are not used by any code.
 - **Plaid access token in plaintext.** The token is stored on the `PLAID_ACCOUNT#` item
   (`plaid/index.js:308`) instead of Secrets Manager or a KMS-encrypted attribute.
 - **Route and handler drift.** (The planned-transaction `{plannedTransactionId}` mismatch was fixed in
@@ -328,7 +337,7 @@ CDK v2 TypeScript; entry point `infrastructure/bin/app.ts`; stack names are `bud
 | `database` | `database-stack.ts` | Table `budgetbuddy-main`, 4 GSIs, stream, AWS Backup plan |
 | `auth` | `auth-stack.ts` | User pool, app client, `Admins` group, auth shared layer |
 | `auth-onboarding` | `auth-onboarding-stack.ts` | `auth-onboarding` function |
-| `notification` | `notification-stack.ts` | 4 notification functions, stream mapping, 3 EventBridge rules, alert topic, 12 alarms, dashboard |
+| `notification` | `notification-stack.ts` | 4 notification functions (common layer only), stream mapping, 4 EventBridge rules, alert topic, 12 alarms, dashboard |
 | `api` | `api-stack.ts` | Main API and 11 functions; also routes `/auth/onboarding` and `/notifications` to functions from other stacks |
 | `api-features` | `api-features-stack.ts` | Features API and 11 functions |
 | `api-features-extended` | `api-features-extended-stack.ts` | Extended API, 7 functions, receipts and pattern-cache buckets |
@@ -420,8 +429,8 @@ Known gaps:
   [Known inconsistencies](#known-inconsistencies)).
 - No WAF, no API stage throttling and no usage plans on any stack.
 - Plaid access token stored in plaintext in DynamoDB.
-- Every function gets `grantReadWriteData` on the whole table except `budget-alerts` and
-  `daily-reminders`; SES send is granted on `*` for the features and budgets email functions.
+- Every function gets `grantReadWriteData` on the whole table except `budget-alerts` (read plus
+  `PutItem`) and `daily-reminders` (read plus `PutItem`, and `UpdateItem` on the table ARN only); SES send is granted on `*` for the features and budgets email functions.
 - CloudFront uses the legacy origin access identity (`origins.S3Origin`) and default TLS and headers.
 - Long-lived CI access keys; GuardDuty and AWS Config are not enabled.
 - SES is in sandbox, so mail reaches verified addresses only. Verified sender identities are managed in
@@ -437,7 +446,7 @@ Known gaps:
 | Edge | No WAF or throttling, legacy OAI | WAF on CloudFront and API, origin access control, security headers |
 | Identity | Proxied password auth, no MFA, broken Google path | Cognito managed login with Google IdP, PKCE, TOTP MFA, identity keyed on `sub` |
 | Functions | Unbundled `Code.fromAsset`, per-stack layers | Bundled `NodejsFunction`, Powertools logging and tracing |
-| Async work | AI, export and restore inline; scheduled jobs scan the table | Queues or Step Functions with dead-letter queues; EventBridge Scheduler |
+| Async work | AI, export and restore inline; the budget-alert sweep scans the table (daily reminders query the GSI3 index since 1.15.4) | Queues or Step Functions with dead-letter queues; EventBridge Scheduler |
 | Data | Key drift, unused GSIs, plaintext Plaid token | One key builder, sparse GSIs per access pattern, KMS-encrypted tokens |
 | Billing | All features free, Stripe not configured | Stripe and app-store notifications writing one subscription record |
 | Accounts | Single account, dev serves as production, long-lived CI keys | Separate dev and prod accounts, GitHub OIDC roles per account |
