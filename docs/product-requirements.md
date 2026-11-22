@@ -191,7 +191,7 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 
 ### Membership & Invitations
 - ✅ Invite members (`POST /budgets/{id}/invite`) — partner, household_member, viewer
-- ✅ Accept invitation (`POST /budgets/accept-invitation`) — public endpoint, no auth required (invitee follows email link)
+- ✅ Accept invitation (`POST /budgets/accept-invitation`) — Cognito-authorized (1.15.2): the invitee signs in first, and the verified token email must match the invited email. Only `GET /budgets/invitation-preview` is public.
 - ✅ Resend invitation (`POST /budgets/{id}/invitations/{id}/resend`)
 - ✅ Revoke invitation (`DELETE /budgets/{id}/invitations/{id}`)\
 - ✅ View pending invitations (`GET /budgets/{id}/invitations`)
@@ -450,7 +450,7 @@ New endpoints added during web app polish, verified live:
 | Register | `AuthPage.tsx` / `RegisterForm.tsx` — autocomplete attrs, design token buttons, proper `htmlFor`/`id` structure | `POST /auth/register` | ✅ |
 | Google Sign-In | `GoogleSignInButton.tsx` (hidden unless `VITE_ENABLE_GOOGLE_SIGNIN=true`) | `POST /auth/google` | ❌ Not working: no Google IdP on the pool (see [architecture](./architecture.md#6-authentication)) |
 | Sign In | `LoginForm.tsx` — autocomplete on email+password, design token submit button, full 3-step Forgot Password inline flow (email → code → new password) | `POST /auth/login`, `POST /auth/forgot-password`, `POST /auth/confirm-forgot-password` | ✅ |
-| Accept invitation | `AcceptInvitationPage.tsx` — smart tab (Login vs Create Account), pre-fills email; fixed: JWT decoded manually on NONE-auth route, `acceptInvitationCore` bypasses stale React state | `POST /budgets/accept-invitation` | ✅ |
+| Accept invitation | `AcceptInvitationPage.tsx` — smart tab (Login vs Create Account), pre-fills email; `acceptInvitationCore` bypasses stale React state and sends the ID token. The route has the Cognito authorizer since 1.15.2 (it was NONE and trusted an unsigned, manually decoded JWT) | `POST /budgets/accept-invitation` | ✅ |
 | Budget type selection | `OnboardingPage.tsx` — 5-step total, inline descriptions, no disclosure modal | `POST /auth/onboarding` | ✅ |
 | Location + currency + household | `OnboardingFlow.tsx` Steps 2-4 | `GET /auth/geolocation` | ✅ |
 | Subscriptions step | `OnboardingFlow.tsx` Step 4 — Yes/No + amount input, quick presets; carries into Subscriptions category | — | ✅ |
@@ -543,7 +543,7 @@ New endpoints added during web app polish, verified live:
 |---------|----------|-------------|--------|
 | Budget Members page | `BudgetMembersPage.tsx` | `GET /budgets/{id}/members` | ✅ |
 | Send invitation | `BudgetMembersPage.tsx` | `POST /budgets/{id}/invite` | ✅ |
-| Accept invitation | `AcceptInvitationPage.tsx` | `POST /budgets/accept-invitation` | ✅ (public endpoint) |
+| Accept invitation | `AcceptInvitationPage.tsx` | `POST /budgets/accept-invitation` | ✅ (Cognito-authorized; invitation preview is the public endpoint) |
 | Invitation preview | `AcceptInvitationPage.tsx` | `GET /budgets/invitation-preview` | ✅ |
 | Smart auth tab on accept | `AcceptInvitationPage.tsx` | `GET /auth/check-email` | ✅ |
 | Pending invitations | `BudgetMembersPage.tsx` | `GET /budgets/{id}/invitations` | ✅ |

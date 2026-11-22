@@ -105,28 +105,20 @@ exports.handler = async (event) => {
       return withCors(event, await handleInvitationPreview(event));
     }
 
-    // POST /budgets/accept-invitation — handle before getUserFromEvent since the
-    // endpoint is public (NONE auth) but still requires the user to be logged in.
-    // We extract userId from the raw Authorization header JWT (no Cognito authorizer
-    // populates requestContext.authorizer for NONE auth routes).
+    // POST /budgets/accept-invitation — the route has the Cognito authorizer, so the
+    // caller's userId and email come only from the verified token claims. Never decode
+    // the Authorization header here: its contents are unverified.
     if (
       httpMethod === 'POST' &&
       (path === '/budgets/accept-invitation' || path === '/v1/budgets/accept-invitation')
     ) {
-      let userId;
+      let caller;
       try {
-        // Manually decode the JWT from the Authorization header.
-        // The Cognito authorizer is NOT active on this route (NONE auth), so
-        // event.requestContext.authorizer.claims is empty. We decode it here.
-        const authHeader = event.headers?.Authorization || event.headers?.authorization || '';
-        const rawToken = authHeader.replace(/^Bearer\s+/i, '').trim();
-        if (!rawToken) throw new Error('No Authorization header');
-        const parts = rawToken.split('.');
-        if (parts.length !== 3) throw new Error('Invalid JWT format');
-        const payload = JSON.parse(Buffer.from(parts[1] + '==', 'base64').toString('utf8'));
-        userId = payload['custom:userId'] || payload.sub;
-        if (!userId) throw new Error('No userId in token');
+        caller = getUserFromEvent(event);
       } catch (_e) {
+        caller = null;
+      }
+      if (!caller || !caller.userId) {
         return withCors(event, {
           statusCode: 401,
           headers: { 'Content-Type': 'application/json' },
@@ -137,7 +129,7 @@ exports.handler = async (event) => {
           }),
         });
       }
-      return withCors(event, await handleAcceptInvitation(event, userId));
+      return withCors(event, await handleAcceptInvitation(event, caller.userId, caller.email));
     }
 
     const user = getUserFromEvent(event);
@@ -608,7 +600,13 @@ async function handleInvitationPreview(event) {
 // POST /budgets/accept-invitation
 // ---------------------------------------------------------------------------
 
-async function handleAcceptInvitation(event, userId) {
+/**
+ * Accept a pending invitation as the signed-in caller.
+ * @param {Object} event - API Gateway event (body carries the invitation token)
+ * @param {string} userId - caller's userId from the verified Cognito claims
+ * @param {string|undefined} callerEmail - caller's email from the verified Cognito claims
+ */
+async function handleAcceptInvitation(event, userId, callerEmail) {
   const body = parseRequestBody(event.body);
   const { token } = body;
 
@@ -641,13 +639,12 @@ async function handleAcceptInvitation(event, userId) {
 
   const invitation = scanResult.Items[0];
 
-  // Require logged-in email matches invitedEmail
-  const acceptingEmail = event.requestContext?.authorizer?.claims?.email || '';
-  if (
-    invitation.invitedEmail &&
-    acceptingEmail &&
-    invitation.invitedEmail.toLowerCase() !== acceptingEmail.toLowerCase()
-  ) {
+  // The verified token email must match invitedEmail. A missing email on either side is a
+  // mismatch: there is no "skip when empty".
+  const normalizeEmail = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '');
+  const acceptingEmail = normalizeEmail(callerEmail);
+  const invitedEmail = normalizeEmail(invitation.invitedEmail);
+  if (!acceptingEmail || !invitedEmail || acceptingEmail !== invitedEmail) {
     throwError(403, 'This invitation was sent to a different email address.');
   }
 

@@ -263,10 +263,12 @@ export class ApiBudgetsStack extends cdk.Stack {
     });
 
     // /budgets/accept-invitation — accept a budget invitation
-    // PUBLIC — invitee may not be logged in yet when following invitation link
+    // COGNITO — the handler takes the member's userId and email from the verified token claims.
+    // The invitee signs in before accepting; only invitation-preview below stays public.
     const budgetsAcceptResource = budgetsResource.addResource('accept-invitation');
     budgetsAcceptResource.addMethod('POST', budgetsIntegration, {
-      authorizationType: apigateway.AuthorizationType.NONE,
+      authorizer,
+      authorizationType: apigateway.AuthorizationType.COGNITO,
       operationName: 'AcceptBudgetInvitation',
     });
 

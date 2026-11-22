@@ -16,7 +16,7 @@ const { UpdateItemCommand } = require('@aws-sdk/client-dynamodb');
 
 // Shared utilities from Lambda Layer (MUST be at top)
 const { getCorsHeaders } = require('/opt/nodejs/shared/cors');
-const { parseIdToken } = require('/opt/nodejs/shared/token-parser');
+const { getUserFromEvent } = require('/opt/nodejs/utils');
 const { validateOnboardingInput } = require('/opt/nodejs/shared/validators');
 const {
   formatErrorResponse,
@@ -55,22 +55,15 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Extract and validate Authorization header
-    const authHeader = event.headers.Authorization || event.headers.authorization;
-    if (!authHeader) {
+    // The route has the Cognito authorizer: read the caller from the verified token claims
+    // (custom:userId, falling back to sub). Never decode the Authorization header here.
+    let user;
+    try {
+      user = getUserFromEvent(event);
+    } catch (_e) {
       throw new AuthenticationError('Authorization header is required');
     }
-
-    // Parse ID token to get userId
-    const token = authHeader.replace('Bearer ', '');
-    const payload = parseIdToken(token);
-
-    // Get userId from custom attribute or fallback to sub
-    let userId = payload['custom:userId'];
-    if (!userId) {
-      console.log('custom:userId not found in token, using sub as fallback');
-      userId = payload.sub;
-    }
+    const userId = user.userId;
 
     if (!userId) {
       throw new AuthenticationError('User ID not found in token');
@@ -192,9 +185,9 @@ exports.handler = async (event) => {
       ':updatedAt': { S: currentTime },
       ':userId': { S: userId },
     };
-    if (payload.email) {
+    if (user.email) {
       profileSets.push('email = if_not_exists(email, :email)');
-      profileValues[':email'] = { S: payload.email };
+      profileValues[':email'] = { S: user.email };
     }
     const updateCommand = new UpdateItemCommand({
       TableName: TABLE_NAME,

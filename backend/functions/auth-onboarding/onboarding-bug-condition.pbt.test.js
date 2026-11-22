@@ -22,7 +22,7 @@ jest.mock('./utils/dynamo-helpers');
 const fc = require('fast-check');
 const { handler } = require('./index');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { parseIdToken } = require('/opt/nodejs/shared/token-parser');
+const { authorizeAs } = require('/opt/nodejs/utils');
 const { validateOnboardingInput } = require('/opt/nodejs/shared/validators');
 const dynamoHelpers = require('./utils/dynamo-helpers');
 
@@ -42,7 +42,7 @@ describe('Property 1: Bug Condition — First-Time Onboarding Returns 403', () =
     process.env.AWS_REGION = 'us-east-1';
 
     // Token always resolves to a valid userId
-    parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+    authorizeAs({ 'custom:userId': 'user-123' });
 
     // Validation always passes (we are testing the bug condition, not validation)
     validateOnboardingInput.mockReturnValue([]);

@@ -10,8 +10,8 @@ inclusion: always
 **Date**: 2026-10-13
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Latest (2026-11-22, Session 170)**: mass-assignment fix in `PUT /notifications/preferences` and `PUT /accounts/{id}` (1.15.1; see Security), plus owner feature decisions (see Owner Feature Decisions).
-**Earlier (2026-11-22, Session 170)**: mobile Expo SDK 49 -> 58 upgrade squash-merged to `develop` (1.15.0; see Mobile section).
+**Latest (2026-11-22, Session 170)**: `POST /budgets/accept-invitation` now requires a verified Cognito token and a matching invitee email (1.15.2; see Security).
+**Earlier (2026-11-22, Session 170)**: mass-assignment fix in `PUT /notifications/preferences` and `PUT /accounts/{id}` (1.15.1; see Security), plus owner feature decisions (see Owner Feature Decisions); mobile Expo SDK 49 -> 58 upgrade squash-merged to `develop` (1.15.0; see Mobile section).
 **Previous (2026-11-20, Session 170)**: Wave 2 core flows squash-merged to `develop` (see "Core Flows" under Known Open Items); the accounts `FAMILY#` -> `BUDGET#` data migration runs after its deploy.
 **Current Session**: ~169 (mobile app-store-readiness audit found 4 real bugs in services/api.ts - dead auth token path, placeholder base URL, URL path-prefix stripping, wrong reanimated major version - all fixed; added eas.json, placeholder icons, iOS/Android store-required permissions; discovered Expo SDK 49 cannot produce an App-Store-submittable build (Apple requires iOS 26 SDK/Xcode 26+) and every native dependency is multiple majors ahead of SDK 49's expectations - full SDK upgrade in progress, see Mobile section)
 
@@ -273,6 +273,14 @@ Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`
 
 ### Security
 - [ ] Security posture ~85% (up from ~80% - critical CVE fixed, security-check.sh now exits 0 clean, see below)
+- [x] Unsigned-JWT invitation accept closed (Session 170, 1.15.2): `POST /budgets/accept-invitation`
+      was a NONE route whose handler base64-decoded the `Authorization` header and skipped the
+      invitee-email check (claims always empty), so an invitation token plus a hand-made token
+      could add `MEMBER#<any userId>`. The route now has the budgets Cognito authorizer; the
+      handler uses `getUserFromEvent` and 403s unless the claim email equals `invitedEmail`.
+      `auth-onboarding` also moved off `parseIdToken`. Sweep: `auth/index.js`
+      `decodeCognitoToken` remains, only on Cognito-authorized routes. DEV read-only check found
+      no sign of use. Details: DEVELOPMENT_LOG.md 2026-11-22.
 - [x] Mass assignment closed (Session 170, 1.15.1): `PUT /notifications/preferences` spread the
       body after `PK`/`SK` into a `PutItem`, so any signed-in user could write any key. It now
       SETs only the five validated preference fields on the caller's own

@@ -233,7 +233,104 @@ describe('Budgets Lambda', () => {
     });
   });
 
-  // ── 7. 404 for unknown routes ─────────────────────────────────────────────
+  // ── 7. POST /budgets/accept-invitation — identity comes only from verified claims ──
+  describe('POST /budgets/accept-invitation', () => {
+    // The common layer's real getUserFromEvent, so the test exercises the claim parsing the
+    // handler runs in Lambda instead of the layer mock's fixed user.
+    const { getUserFromEvent: realGetUserFromEvent } =
+      jest.requireActual('../../layers/common/nodejs/utils.js');
+
+    const INVITE_TOKEN = 'invite-token-abc';
+    const invitation = {
+      PK: 'INVITATION#inv-1',
+      SK: 'METADATA',
+      budgetId: 'budget-shared-1',
+      role: 'partner',
+      invitedEmail: 'invitee@example.com',
+      invitedBy: 'owner-user',
+      status: 'pending',
+      expiresAt: new Date(Date.now() + 86400000).toISOString(),
+    };
+
+    /** An unsigned, hand-made JWT naming another user: what an attacker could send. */
+    function forgedBearer(userId) {
+      const b64 = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url');
+      return `Bearer ${b64({ alg: 'none' })}.${b64({ 'custom:userId': userId, sub: userId })}.`;
+    }
+
+    function acceptEvent({ claims, headers } = {}) {
+      return makeEvent({
+        httpMethod: 'POST',
+        path: '/budgets/accept-invitation',
+        headers: headers || { Authorization: forgedBearer('attacker-user') },
+        body: JSON.stringify({ token: INVITE_TOKEN, userId: 'body-supplied-user' }),
+        requestContext: claims ? { authorizer: { claims } } : {},
+      });
+    }
+
+    function mockInvitationLookup() {
+      mockSend.mockImplementation(async (command) => {
+        if (command.input.FilterExpression && command.input.ExpressionAttributeValues[':invPrefix']) {
+          return { Items: [invitation] };
+        }
+        if (command.input.Key && command.input.Key.SK === 'METADATA') {
+          return { Item: { status: 'active', budgetType: 'shared' } };
+        }
+        return {};
+      });
+    }
+
+    const putCalls = () => mockSend.mock.calls
+      .map(([command]) => command.input)
+      .filter((input) => input.Item);
+
+    beforeEach(() => {
+      getUserFromEvent.mockImplementation(realGetUserFromEvent);
+      mockInvitationLookup();
+    });
+
+    it('returns 401 and writes nothing when the request has no authorizer claims', async () => {
+      const result = await handler(acceptEvent());
+
+      expect(result.statusCode).toBe(401);
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 and writes nothing when the claim email differs from invitedEmail', async () => {
+      const result = await handler(acceptEvent({
+        claims: { 'custom:userId': 'user-c', email: 'someone-else@example.com' },
+      }));
+
+      expect(result.statusCode).toBe(403);
+      expect(putCalls()).toHaveLength(0);
+    });
+
+    it('returns 403 when the claims carry no email (no skip-when-empty)', async () => {
+      const result = await handler(acceptEvent({ claims: { 'custom:userId': 'user-b' } }));
+
+      expect(result.statusCode).toBe(403);
+      expect(putCalls()).toHaveLength(0);
+    });
+
+    it('accepts matching claims and writes MEMBER# for the claims userId only', async () => {
+      const result = await handler(acceptEvent({
+        claims: { 'custom:userId': 'user-b', sub: 'sub-b', email: '  Invitee@Example.com ' },
+      }));
+
+      expect(result.statusCode).toBe(200);
+      const puts = putCalls();
+      expect(puts).toHaveLength(1);
+      expect(puts[0].Item.PK).toBe('BUDGET#budget-shared-1');
+      expect(puts[0].Item.SK).toBe('MEMBER#user-b');
+      expect(puts[0].Item.userId).toBe('user-b');
+      expect(puts[0].Item.GSI1PK).toBe('USER#user-b');
+      const written = JSON.stringify(mockSend.mock.calls.map(([command]) => command.input));
+      expect(written).not.toContain('attacker-user');
+      expect(written).not.toContain('body-supplied-user');
+    });
+  });
+
+  // ── 8. 404 for unknown routes ─────────────────────────────────────────────
   describe('Unknown routes', () => {
     it('returns 404 for unrecognised endpoints', async () => {
       const event = makeEvent({ httpMethod: 'GET', path: '/budgets/unknown-route-xyz' });

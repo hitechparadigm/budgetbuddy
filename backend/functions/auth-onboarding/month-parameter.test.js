@@ -24,12 +24,8 @@ jest.mock('/opt/nodejs/shared/cors', () => ({
   })),
 }));
 
-jest.mock('/opt/nodejs/shared/token-parser', () => ({
-  parseIdToken: jest.fn(() => ({
-    sub: 'user123',
-    'custom:userId': 'user123',
-  })),
-}));
+// Verified Cognito claims, read by the common layer's real getUserFromEvent
+const { authorizeAs } = require('/opt/nodejs/utils');
 
 jest.mock('/opt/nodejs/shared/validators', () => ({
   validateOnboardingInput: jest.fn(() => []),
@@ -64,6 +60,7 @@ describe('Onboarding Month Parameter Preservation (Req 42)', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    authorizeAs({ sub: 'user123', 'custom:userId': 'user123' });
 
     // Mock DynamoDB send (for UpdateItemCommand calls)
     mockSend = jest.fn().mockResolvedValue({

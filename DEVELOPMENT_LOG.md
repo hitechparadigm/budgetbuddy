@@ -1,4 +1,31 @@
 # Development Log
+## 2026-11-22 - Invitation Accept Requires a Verified Token (Session 170)
+**Summary:** `POST /budgets/accept-invitation` was `AuthorizationType.NONE`, and
+`budgets/index.js` took the caller's userId by base64-decoding the `Authorization` header with no
+signature, issuer or expiry check. The invitee-email check read
+`requestContext.authorizer.claims.email`, always empty on a NONE route, so it never ran. Anyone
+holding an invitation token could add `MEMBER#<any userId>` to the budget (1.15.2). The route now
+has the budgets Cognito authorizer (`api-budgets-stack.ts`; one method changes, no resource is
+added). The handler reads userId and email from the verified claims with `getUserFromEvent` and
+returns 403 unless the claim email equals `invitedEmail` (trimmed, case-insensitive); an empty
+email is a mismatch. The web accept page already signed in first and sends the ID token; mobile
+has no accept path. `auth-onboarding` switched from `parseIdToken` to `getUserFromEvent` too
+(its route was already Cognito-authorized).
+**Sweep** of `backend/functions` and both layers for handlers that decode the header themselves:
+`auth/index.js:56` `decodeCognitoToken`, used by `GET /auth/profile` (:788), `PUT /auth/profile`
+(:891) and the legacy `/auth/onboarding` branch (:1047). All three routes carry the main Cognito
+authorizer (`api-stack.ts:528-535`, `:562`), so the token is verified before the Lambda runs;
+not exploitable, left as is. `auth/index.js:1357` decodes the ID token Cognito has just returned
+from `InitiateAuth` on login, a trusted source. `budgets/index.js` forwards the header to the
+email service and does not decode it. No other handler decodes a token.
+**Exploitation check (DEV, read-only, counts only):** 56 Cognito users, 128 `MEMBER#` items
+(127 `BUDGET#`, 1 legacy `FAMILY#`), 4 invitations (2 accepted, 2 pending). Every `MEMBER#`
+userId has a Cognito user. The one invitation-based membership matches its accepted invitation,
+an existing Cognito user, and that user's profile email. One accepted invitation from 2026-05-31
+(role `spouse`, pre-redesign) names an `acceptedBy` with no Cognito user, profile or `MEMBER#`
+row, and its inviter has no Cognito user either; it granted nothing. No sign the hole was used.
+**Tests:** budgets 12 -> 16 passing; auth-onboarding 32/35 -> 33/36 passing (the same 3
+pre-existing failures).
 ## 2026-11-22 - Mass-Assignment Fix in Notification Preferences, Owner Decisions (Session 170)
 **Summary:** `PUT /notifications/preferences` built its `PutItem` as
 `{ PK, SK, ...body }`, so a body carrying `PK`/`SK` chose the item: any signed-in user could

@@ -41,7 +41,7 @@ jest.mock('./utils/dynamo-helpers');
 const fc = require('fast-check');
 const { handler } = require('./index');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { parseIdToken } = require('/opt/nodejs/shared/token-parser');
+const { authorizeAs } = require('/opt/nodejs/utils');
 const { validateOnboardingInput } = require('/opt/nodejs/shared/validators');
 const dynamoHelpers = require('./utils/dynamo-helpers');
 
@@ -121,7 +121,7 @@ beforeEach(() => {
   process.env.AWS_REGION = 'us-east-1';
 
   // Default: token resolves to a valid userId
-  parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+  authorizeAs({ 'custom:userId': 'user-123' });
 
   // Default: validation passes
   validateOnboardingInput.mockReturnValue([]);
@@ -243,7 +243,7 @@ describe('P2c — Profile not found: statusCode === 403 and correct message', ()
     await fc.assert(
       fc.asyncProperty(validPayloadArb, userIdArb, async (payload, userId) => {
         // Token resolves to the generated userId
-        parseIdToken.mockReturnValue({ 'custom:userId': userId });
+        authorizeAs({ 'custom:userId': userId });
 
         // Validation passes
         validateOnboardingInput.mockReturnValue([]);
@@ -292,7 +292,7 @@ describe('P2d — Re-onboarding guard: statusCode === 409 on fixed code', () => 
 
     await fc.assert(
       fc.asyncProperty(validPayloadArb, userIdArb, existingBudgetIdArb, async (payload, userId, existingBudgetId) => {
-        parseIdToken.mockReturnValue({ 'custom:userId': userId });
+        authorizeAs({ 'custom:userId': userId });
         validateOnboardingInput.mockReturnValue([]);
 
         // Profile already has defaultBudgetId — re-onboarding scenario
@@ -339,7 +339,7 @@ describe('P2e — Verification failure: statusCode === 500 on fixed code', () =>
   test('Property 2e: verification getItem returns null → 500 on fixed code', async () => {
     await fc.assert(
       fc.asyncProperty(validPayloadArb, userIdArb, async (payload, userId) => {
-        parseIdToken.mockReturnValue({ 'custom:userId': userId });
+        authorizeAs({ 'custom:userId': userId });
         validateOnboardingInput.mockReturnValue([]);
 
         // DynamoDBClient.send must succeed for UpdateItemCommand calls

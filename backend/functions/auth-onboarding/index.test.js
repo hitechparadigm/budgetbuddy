@@ -10,7 +10,7 @@ jest.mock('./utils/dynamo-helpers');
 
 const { handler } = require('./index');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { parseIdToken } = require('/opt/nodejs/shared/token-parser');
+const { getUserFromEvent, authorizeAs, realGetUserFromEvent } = require('/opt/nodejs/utils');
 const { validateOnboardingInput } = require('/opt/nodejs/shared/validators');
 const dynamoHelpers = require('./utils/dynamo-helpers');
 
@@ -73,8 +73,8 @@ describe('Auth Onboarding Lambda', () => {
       expect(body.error).toBeDefined();
     });
 
-    test('should parse JWT token and extract userId', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+    test('should read userId from the verified authorizer claims', async () => {
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId
@@ -83,11 +83,22 @@ describe('Auth Onboarding Lambda', () => {
 
       await handler(BASE_EVENT);
 
-      expect(parseIdToken).toHaveBeenCalledWith('valid-token');
+      expect(getUserFromEvent).toHaveBeenCalled();
+      expect(dynamoHelpers.getItem).toHaveBeenCalledWith('USER#user-123', 'PROFILE');
+    });
+
+    test('should return 401 when the request carries no authorizer claims', async () => {
+      // The real getUserFromEvent on an event with no requestContext (header present, no claims).
+      getUserFromEvent.mockImplementationOnce(realGetUserFromEvent);
+
+      const response = await handler(BASE_EVENT);
+
+      expect(response.statusCode).toBe(401);
+      expect(dynamoHelpers.putItem).not.toHaveBeenCalled();
     });
 
     test('should fallback to sub if custom:userId not in token', async () => {
-      parseIdToken.mockReturnValue({ sub: 'cognito-sub-123' });
+      authorizeAs({ sub: 'cognito-sub-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'cognito-sub-123' }) // profile without defaultBudgetId
@@ -102,7 +113,7 @@ describe('Auth Onboarding Lambda', () => {
 
   describe('Validation', () => {
     test('should return 400 if request body is missing', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
 
       const event = { httpMethod: 'POST', headers: { Authorization: 'Bearer valid-token' }, body: null };
       const response = await handler(event);
@@ -113,7 +124,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('should return 400 if JSON is invalid', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
 
       const event = { httpMethod: 'POST', headers: { Authorization: 'Bearer valid-token' }, body: 'invalid-json' };
       const response = await handler(event);
@@ -122,7 +133,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('should return 400 if validation fails', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue(['City is required', 'Family size must be between 1 and 20']);
 
       const event = {
@@ -140,7 +151,7 @@ describe('Auth Onboarding Lambda', () => {
 
   describe('Profile resolution', () => {
     test('should return 403 if user profile not found', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem.mockResolvedValueOnce(null); // no profile
       dynamoHelpers.putItem.mockResolvedValue();
@@ -153,7 +164,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('should return 409 if profile already has defaultBudgetId (re-onboarding guard)', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem.mockResolvedValueOnce({ defaultBudgetId: 'budget-abc' }); // profile with existing budget
 
@@ -165,7 +176,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('should proceed with first-time onboarding if profile has no defaultBudgetId', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId
@@ -182,7 +193,7 @@ describe('Auth Onboarding Lambda', () => {
 
   describe('Successful onboarding', () => {
     test('should complete onboarding and create budget period', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId (first-time)
@@ -215,7 +226,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('should call UpdateItemCommand with :budgetId matching the budgetId in the response body', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId (first-time)
@@ -237,7 +248,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('writes userId and email to the profile without overwriting existing values', async () => {
-      parseIdToken.mockReturnValue({ sub: 'cognito-sub-123', email: 'user@example.com' });
+      authorizeAs({ sub: 'cognito-sub-123', email: 'user@example.com' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce(null) // no profile row yet (user created outside /auth/register)
@@ -260,7 +271,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('omits email from the profile update when the token has no email claim', async () => {
-      parseIdToken.mockReturnValue({ sub: 'cognito-sub-456' });
+      authorizeAs({ sub: 'cognito-sub-456' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce(null)
@@ -280,7 +291,7 @@ describe('Auth Onboarding Lambda', () => {
 
   describe('Budget period creation', () => {
     test('should write METADATA record before budget period', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId
@@ -298,7 +309,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('should write MEMBER#userId record after METADATA', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId
@@ -319,7 +330,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('should write budget period with BUDGET#/PERIOD# key pattern', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId
@@ -340,7 +351,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('should write cash account under BUDGET# partition key', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId
@@ -357,7 +368,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('should return 500 if budget period verification fails', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId
@@ -374,7 +385,7 @@ describe('Auth Onboarding Lambda', () => {
 
   describe('budgetType handling', () => {
     test('should write METADATA with budgetType family via putItem', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId
@@ -409,7 +420,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('should write METADATA with budgetType shared via putItem', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId
@@ -443,7 +454,7 @@ describe('Auth Onboarding Lambda', () => {
     });
 
     test('should NOT update budget metadata when budgetType is personal', async () => {
-      parseIdToken.mockReturnValue({ 'custom:userId': 'user-123' });
+      authorizeAs({ 'custom:userId': 'user-123' });
       validateOnboardingInput.mockReturnValue([]);
       dynamoHelpers.getItem
         .mockResolvedValueOnce({ userId: 'user-123' }) // profile without defaultBudgetId

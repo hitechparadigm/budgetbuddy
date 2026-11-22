@@ -1,4 +1,34 @@
 # Changelog
+## [1.15.2] - 2026-11-22
+### fix(security): accepting a budget invitation requires a verified Cognito token (Session 170)
+`api-budgets-stack.ts` (one method's authorizer, no new resources) plus Lambda code (`budgets`,
+`auth-onboarding`).
+#### Security
+- `POST /budgets/accept-invitation` was an `AuthorizationType.NONE` route, and the handler took the
+  caller's userId by base64-decoding the `Authorization` header with no signature, issuer or
+  expiry check. Its invitee-email check read `requestContext.authorizer.claims.email`, which is
+  always empty on a NONE route, so the check was skipped. Anyone holding an invitation token could
+  write `BUDGET#<id>/MEMBER#<any userId>` by sending a hand-made token. The route now has the
+  budgets Cognito authorizer, so API Gateway rejects a missing or unsigned token with 401. The
+  handler reads userId and email only from the verified claims (`getUserFromEvent`) and returns
+  403 unless the claim email equals the invitation's `invitedEmail` (trimmed, case-insensitive).
+  A missing email on either side is a mismatch. `GET /budgets/invitation-preview` stays public.
+- `auth-onboarding` read the caller with `parseIdToken` on the raw header. Its route already had
+  the Cognito authorizer, so it was not exploitable; it now uses `getUserFromEvent` too.
+- DEV check (read-only, counts only): 128 `MEMBER#` items, 4 invitations (2 accepted, 2 pending),
+  1 invitation-based membership, which matches its accepted invitation, an existing Cognito user
+  and that user's profile email. Every `MEMBER#` userId has a Cognito user. One accepted
+  invitation from 2026-05-31 (role `spouse`, the pre-redesign model) names an `acceptedBy` that has
+  no Cognito user, no profile and no `MEMBER#` row; its inviter has no Cognito user either. No
+  membership exists for it.
+#### Tests
+- `budgets.test.js` 12 -> 16 (real `getUserFromEvent`): no claims -> 401 and no write; a forged
+  unsigned header naming another user is ignored; claim email different from `invitedEmail` ->
+  403; no claim email -> 403; matching claims write `MEMBER#` for the claims userId only. Three of
+  the four fail on the old handler.
+- `auth-onboarding` 32 -> 33 passing of 36 (new: no claims -> 401). The same 3 tests that failed
+  before this change still fail (they expect 403/409 for a missing profile, which the handler
+  deliberately allows since the first-time onboarding fix).
 ## [1.15.1] - 2026-11-22
 ### fix(security): request bodies can no longer set DynamoDB keys (Session 170)
 Lambda code only (`notifications`, `accounts`); no infrastructure change.
