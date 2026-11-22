@@ -62,7 +62,7 @@ beforeEach(() => {
     statusText: 'OK',
     json: async () => ({ data: [] }),
   });
-  (global as unknown as { fetch: unknown }).fetch = fetchMock;
+  (globalThis as unknown as { fetch: unknown }).fetch = fetchMock;
 
   // A token must be present or apiRequest short-circuits with 401 before
   // reaching fetch.

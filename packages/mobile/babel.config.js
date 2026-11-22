@@ -22,8 +22,8 @@ module.exports = function (api) {
           },
         },
       ],
-      // react-native-reanimated/plugin must be listed last
-      'react-native-reanimated/plugin',
+      // No react-native-reanimated/plugin entry: since SDK 54, babel-preset-expo
+      // adds the react-native-worklets plugin that Reanimated 4 needs.
     ],
   };
 };

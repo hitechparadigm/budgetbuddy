@@ -5,10 +5,11 @@
  * Covers device registration, notification handlers, and navigation logic.
  */
 
-import { NotificationService } from './notification';
+import { NotificationService, getExpoPushToken } from './notification';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform, Alert } from 'react-native';
+import ExpoConstants from 'expo-constants';
 
 // Mock dependencies
 jest.mock('expo-notifications');
@@ -25,7 +26,14 @@ jest.mock('react-native', () => ({
   },
 }));
 jest.mock('expo-constants', () => ({
+  __esModule: true,
+  ExecutionEnvironment: {
+    Bare: 'bare',
+    Standalone: 'standalone',
+    StoreClient: 'storeClient',
+  },
   default: {
+    executionEnvironment: 'bare',
     expoConfig: {
       extra: {
         eas: {
@@ -541,6 +549,55 @@ describe('NotificationService', () => {
       const result = await service.registerDevice('user-123');
 
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe('Expo Go push guard', () => {
+    const Constants = ExpoConstants as unknown as { executionEnvironment: string };
+
+    afterEach(() => {
+      Constants.executionEnvironment = 'bare';
+      (Platform.OS as any) = 'ios';
+    });
+
+    it('skips push-token registration in Expo Go on Android', async () => {
+      Constants.executionEnvironment = 'storeClient';
+      (Platform.OS as any) = 'android';
+
+      const result = await service.registerDevice('user-123');
+
+      expect(result.success).toBe(false);
+      expect(Notifications.getExpoPushTokenAsync).not.toHaveBeenCalled();
+      expect(mockApiClient.post).not.toHaveBeenCalled();
+    });
+
+    it('still registers in Expo Go on iOS', async () => {
+      Constants.executionEnvironment = 'storeClient';
+      (Platform.OS as any) = 'ios';
+
+      const result = await service.registerDevice('user-123');
+
+      expect(result.success).toBe(true);
+      expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledWith({
+        projectId: 'test-project-id',
+      });
+    });
+
+    it('still registers in an Android standalone build', async () => {
+      Constants.executionEnvironment = 'standalone';
+      (Platform.OS as any) = 'android';
+
+      const result = await service.registerDevice('user-123');
+
+      expect(result.success).toBe(true);
+    });
+
+    it('getExpoPushToken returns null in Expo Go on Android', async () => {
+      Constants.executionEnvironment = 'storeClient';
+      (Platform.OS as any) = 'android';
+
+      await expect(getExpoPushToken()).resolves.toBeNull();
+      expect(Notifications.getExpoPushTokenAsync).not.toHaveBeenCalled();
     });
   });
 

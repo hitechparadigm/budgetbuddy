@@ -284,9 +284,15 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      # @budget-buddy/shared is linked into mobile as file:../shared and must be
+      # built before mobile typechecks.
+      - name: Install and build shared package
+        working-directory: packages/shared
+        run: npm ci && npm run build
+
       - name: Install mobile dependencies
         working-directory: packages/mobile
-        run: npm install --legacy-peer-deps
+        run: npm ci
 
       - name: Type check mobile
         run: npm run type-check:mobile

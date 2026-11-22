@@ -10,7 +10,8 @@ inclusion: always
 **Date**: 2026-10-13
 **Phase**: Web App Complete -> Mobile Development
 **Progress**: 100% Web Core | 100% Web Polish | 100% AI Features | CI/CD Stabilized | Repo Docs/Specs Consolidated
-**Latest (2026-11-20, Session 170)**: Wave 2 core flows squash-merged to `develop` (see "Core Flows" under Known Open Items); the accounts `FAMILY#` -> `BUDGET#` data migration runs after its deploy.
+**Latest (2026-11-22, Session 170)**: mobile Expo SDK 49 -> 58 upgrade squash-merged to `develop` (1.15.0; see Mobile section).
+**Previous (2026-11-20, Session 170)**: Wave 2 core flows squash-merged to `develop` (see "Core Flows" under Known Open Items); the accounts `FAMILY#` -> `BUDGET#` data migration runs after its deploy.
 **Current Session**: ~169 (mobile app-store-readiness audit found 4 real bugs in services/api.ts - dead auth token path, placeholder base URL, URL path-prefix stripping, wrong reanimated major version - all fixed; added eas.json, placeholder icons, iOS/Android store-required permissions; discovered Expo SDK 49 cannot produce an App-Store-submittable build (Apple requires iOS 26 SDK/Xcode 26+) and every native dependency is multiple majors ahead of SDK 49's expectations - full SDK upgrade in progress, see Mobile section)
 
 ## What's Live and Working
@@ -146,7 +147,7 @@ Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`
       `auth-onboarding` SETs only onboarding fields. Wave 2 did not change either file. The DEV
       test user's row is backfilled by hand; the code fix (fall back to the ID-token claims, or
       `if_not_exists` SET in onboarding) is open.
-- [ ] Mobile onboarding "Skip for now" creates no budget, so a skipped user lands in an empty app.
+- [x] Mobile onboarding "Skip for now" posts `/auth/onboarding` with defaults and creates a budget (1.15.0).
 - [ ] No web recategorize control for manually entered transactions, so the "always categorize
       this merchant" prompt (W2-R-05) has no place to live.
 - [ ] `PendingTransactions.tsx` posts `categoryName` where `POST /rules` requires `categoryId`, so
@@ -427,6 +428,12 @@ Lambda code only (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`
       `type: "navigation"` that routes to the new screen. Verified unchanged: `tsc --noEmit`
       0 errors, `jest` 257/259 (2 skipped), `lint:check:mobile` exactly 151 pre-existing
       errors (temporarily regressed to 153 from two unused imports, fixed back to baseline).
+- [x] Expo SDK 49 -> 58 upgrade done (1.15.0, 2026-11-22): expo ~58.0.26, React Native 0.88.1,
+      React 19.3.0, New Architecture on; Amplify removed (sign-in POSTs `/auth/login`); password
+      reset screen; Budget tab on `/budget/current` + `POST /budget`; Accounts screen. typecheck 0,
+      jest 374/1 known flake/2 skipped, lint 147 errors (unchanged), android/ios/web exports OK.
+      Open: store builds need owner Expo/Apple/Google accounts; iPhone needs `eas go`; push needs a
+      development build; no device check yet. Details: DEVELOPMENT_LOG.md 2026-11-22.
 - [~] Mobile app-store-readiness audit (`mobile-app` spec task 16, Session 169) - found
       and fixed 4 real bugs in `services/api.ts` masked by offline-fallback catches on
       every call site: `getAuthToken()` read a nonexistent AsyncStorage key (real tokens

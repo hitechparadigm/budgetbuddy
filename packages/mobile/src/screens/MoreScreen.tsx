@@ -1,7 +1,7 @@
 /**
  * More Screen - Hub for features that don't have their own bottom tab
  *
- * Links out to Bills, Insights, Accounts (BankSync), Credit Score, Debt Payoff,
+ * Links out to Bills, Insights, Accounts, Bank Sync, Credit Score, Debt Payoff,
  * Investments, Net Worth, Subscriptions, Tips, Sync Settings, Offline Settings,
  * and Settings - all of which existed as fully-built screens with zero navigator
  * routes before this change (see .kiro/specs/mobile-app/tasks.md task 6.4).
@@ -30,7 +30,8 @@ const MENU_SECTIONS: { title: string; items: MoreMenuItem[] }[] = [
     items: [
       { id: "Bills", title: "Bills", subtitle: "Upcoming and recurring bills", icon: "receipt-outline" },
       { id: "PlannedTransactions", title: "Planned Transactions", subtitle: "Schedule future income and expenses", icon: "calendar-outline" },
-      { id: "BankSync", title: "Accounts", subtitle: "Linked bank accounts", icon: "card-outline" },
+      { id: "Accounts", title: "Accounts", subtitle: "Cash, bank and card balances", icon: "wallet-outline" },
+      { id: "BankSync", title: "Bank Sync", subtitle: "Linked bank accounts", icon: "card-outline" },
       { id: "Subscriptions", title: "Subscriptions", subtitle: "Recurring subscriptions", icon: "repeat-outline" },
       { id: "DebtPayoff", title: "Debt Payoff", subtitle: "Snowball and avalanche plans", icon: "trending-down-outline" },
     ],

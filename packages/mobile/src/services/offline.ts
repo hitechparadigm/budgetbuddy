@@ -41,29 +41,30 @@ export interface OfflineData {
 let db: SQLite.SQLiteDatabase | null = null;
 
 /**
- * expo-sqlite@11 (the version this app is pinned to - matches Expo SDK 49's
- * bundled native modules) only exposes the WebSQL-style `execAsync(queries,
- * readOnly)` API, not the newer `runAsync`/`getAllAsync` promise methods the
- * rest of this file was originally written against. These two helpers
- * translate the simpler (sql, args) call shape used everywhere below onto
- * the real v11 API so only this one spot needs to know about the
- * difference.
+ * expo-sqlite (SDK 52+) exposes only the async API: `runAsync` for writes,
+ * `getAllAsync` for reads, `execAsync` for raw statements. These two helpers
+ * keep the (sql, args) call shape used everywhere below and the result shape
+ * the old WebSQL-style API returned, so only this spot knows about the API.
+ *
+ * The legacy API bound `undefined` as NULL; the new API rejects `undefined`,
+ * so `toBind` maps it to `null` (e.g. a budget with no endDate).
  */
-const execWrite = async (
+const toBind = (args: unknown[]): SQLite.SQLiteBindValue[] =>
+  args.map((a) => (a === undefined ? null : a)) as SQLite.SQLiteBindValue[];
+
+/** Exported for tests only. */
+export const execWrite = async (
   sql: string,
   args: unknown[] = []
 ): Promise<{ insertId?: number; rowsAffected: number }> => {
   if (!db) throw new Error('Database not initialized');
-  const [result] = await db.execAsync([{ sql, args }], false);
-  if ('error' in result) throw result.error;
-  return { insertId: result.insertId, rowsAffected: result.rowsAffected };
+  const result = await db.runAsync(sql, toBind(args));
+  return { insertId: result.lastInsertRowId, rowsAffected: result.changes };
 };
 
 const execRead = async <T = any>(sql: string, args: unknown[] = []): Promise<T[]> => {
   if (!db) throw new Error('Database not initialized');
-  const [result] = await db.execAsync([{ sql, args }], true);
-  if ('error' in result) throw result.error;
-  return result.rows as T[];
+  return db.getAllAsync<T>(sql, toBind(args));
 };
 
 /**
@@ -71,9 +72,9 @@ const execRead = async <T = any>(sql: string, args: unknown[] = []): Promise<T[]
  */
 export const initializeOfflineStorage = async (): Promise<void> => {
   try {
-    // Initialize SQLite database - openDatabase() is synchronous in v11,
-    // unlike the newer openDatabaseAsync()
-    db = SQLite.openDatabase(DB_NAME);
+    // Same file name as before; the default directory is the documents
+    // `SQLite` folder the legacy openDatabase() used, so existing data stays.
+    db = await SQLite.openDatabaseAsync(DB_NAME);
 
     // Create tables if they don't exist
     await createTables();
@@ -94,7 +95,7 @@ export const initializeOfflineStorage = async (): Promise<void> => {
 /**
  * Create database tables
  */
-const CREATE_TABLE_STATEMENTS = [
+export const CREATE_TABLE_STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS budgets (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -145,13 +146,14 @@ const CREATE_TABLE_STATEMENTS = [
 
 const createTables = async (): Promise<void> => {
   if (!db) throw new Error('Database not initialized');
-  // v11's execAsync() runs one statement per Query entry - unlike some newer
-  // expo-sqlite versions, it does not split a single semicolon-separated
-  // SQL string into multiple statements.
-  const queries = CREATE_TABLE_STATEMENTS.map((sql) => ({ sql, args: [] }));
-  const results = await db.execAsync(queries, false);
-  const failure = results.find((r): r is { error: Error } => 'error' in r);
-  if (failure) throw failure.error;
+  const database = db;
+  // One statement per execAsync call, all in one transaction, as the legacy
+  // batch call ran them.
+  await database.withTransactionAsync(async () => {
+    for (const sql of CREATE_TABLE_STATEMENTS) {
+      await database.execAsync(sql);
+    }
+  });
 };
 
 /**
@@ -448,15 +450,13 @@ export const clearOfflineData = async (): Promise<void> => {
   if (!db) throw new Error('Database not initialized');
 
   try {
-    await db.execAsync(
-      [
-        { sql: 'DELETE FROM budgets', args: [] },
-        { sql: 'DELETE FROM transactions', args: [] },
-        { sql: 'DELETE FROM categories', args: [] },
-        { sql: 'DELETE FROM sync_metadata', args: [] },
-      ],
-      false
-    );
+    const database = db;
+    await database.withTransactionAsync(async () => {
+      await database.runAsync('DELETE FROM budgets');
+      await database.runAsync('DELETE FROM transactions');
+      await database.runAsync('DELETE FROM categories');
+      await database.runAsync('DELETE FROM sync_metadata');
+    });
 
     await AsyncStorage.multiRemove([
       STORAGE_KEYS.SYNC_QUEUE,

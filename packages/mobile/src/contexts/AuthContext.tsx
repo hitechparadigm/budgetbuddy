@@ -101,8 +101,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await handleSignOut();
           }
         },
-        45 * 60 * 1000,
-      ); // Refresh every 45 minutes
+        5 * 60 * 1000,
+      ); // Check every 5 minutes; refreshTokens() only refreshes near expiry
 
       return () => clearInterval(refreshInterval);
     }
@@ -172,15 +172,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return; // Don't complete sign-in yet, wait for MFA verification
       }
 
+      // Decide onboarding before the app renders, the way the web AuthPage
+      // does: GET /auth/profile, onboarding unless onboardingCompleted is true.
+      // If the profile call fails, only the just-registered rule applies, so a
+      // failed check never blocks entry (the web falls through the same way).
+      let profileNeedsOnboarding = false;
+      try {
+        const profile = await authService.getProfile();
+        profileNeedsOnboarding = profile?.onboardingCompleted !== true;
+      } catch {
+        profileNeedsOnboarding = false;
+      }
+      const justRegistered = pendingOnboardingEmails.has(credentials.email);
+      pendingOnboardingEmails.delete(credentials.email);
+
       // No MFA required, complete sign-in
+      setNeedsOnboarding(justRegistered || profileNeedsOnboarding);
       setUser(result.user);
       setTokens(result.tokens);
       setIsAuthenticated(true);
       setMfaChallenge(null);
-      if (pendingOnboardingEmails.has(credentials.email)) {
-        pendingOnboardingEmails.delete(credentials.email);
-        setNeedsOnboarding(true);
-      }
     } catch (error) {
       throw error;
     } finally {

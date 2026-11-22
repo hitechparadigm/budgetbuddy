@@ -1,19 +1,20 @@
 /**
  * Authentication Service for React Native
  *
- * Handles user authentication using AWS Cognito with secure token storage
- * using Expo SecureStore for JWT tokens and user session management.
+ * Signs in through the backend's POST /auth/login (the same route the web app uses;
+ * the auth Lambda talks to Cognito) and keeps the session in secure storage: Expo
+ * SecureStore on native, localStorage on web. No Amplify: its native module is not
+ * part of Expo Go.
  */
 
-import { signIn, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { googleAuthService, GoogleAuthResult, GoogleUser } from './googleAuth';
-import { API_CONFIG } from './api';
+import { api, API_CONFIG } from './api';
 import { STORAGE_KEYS } from './storage-keys';
 
 // Secure storage keys live in their own import-free module so that callers which only
-// need a key (e.g. services/plaid.ts) do not pull in Amplify or Google-auth side effects.
+// need a key (e.g. services/plaid.ts) do not pull in Google-auth side effects.
 // Re-exported here so existing deep imports keep working.
 export { STORAGE_KEYS } from './storage-keys';
 
@@ -48,10 +49,39 @@ export interface RegisterCredentials {
   name?: string;
 }
 
+/** The fields of GET /auth/profile this app reads. */
+export interface UserProfile {
+  onboardingCompleted?: boolean;
+  [key: string]: unknown;
+}
+
 export interface AuthError {
   code: string;
   message: string;
 }
+
+/** Refresh only when the stored session has less than this left. */
+const REFRESH_MARGIN_MS = 5 * 60 * 1000;
+
+/** Absolute expiry (ms since epoch) for an `expiresIn` in seconds; 1 hour if absent. */
+const expiresAtFrom = (expiresIn: unknown): number =>
+  Date.now() + (Number(expiresIn) || 3600) * 1000;
+
+/**
+ * Map a failed POST /auth/login response to the error codes handleAuthError knows.
+ * Status and error codes come from backend/functions/auth/index.js.
+ */
+const loginError = (status: number, data: { error?: string; message?: string }) => {
+  if (status === 401) return { name: 'NotAuthorizedException' };
+  if (status === 403 && data.error === 'PASSWORD_RESET_REQUIRED') {
+    return { name: 'PasswordResetRequiredException' };
+  }
+  if (status === 403 && data.error === 'USER_NOT_CONFIRMED') {
+    return { name: 'UserNotConfirmedException' };
+  }
+  if (status === 429) return { name: 'LimitExceededException' };
+  return { name: 'LoginError', message: data.message || 'Sign in failed. Please try again' };
+};
 
 class AuthService {
   /**
@@ -183,14 +213,12 @@ class AuthService {
     }
   }
   /**
-   * Sign in user with email and password
+   * Sign in user with email and password through POST /auth/login on the main
+   * gateway, as the web app does. The request is unauthenticated and does not go
+   * through the shared `apiRequest` helper. Nothing here logs the body or tokens.
    *
-   * The Cognito User Pool backing this app does not have MFA enabled
-   * (see infrastructure/lib/auth-stack.ts), so `nextStep` here is never an
-   * MFA challenge in practice. `challengeName`/`session` are included on the
-   * return type only so callers (AuthContext) can check for a challenge
-   * without a type error if MFA is ever enabled on the pool later - they
-   * will always be `undefined` today.
+   * The Cognito User Pool has no MFA, so `challengeName`/`session` are always
+   * `undefined`; they stay on the return type so AuthContext's MFA branch compiles.
    */
   async signInUser(credentials: LoginCredentials): Promise<{
     user: User;
@@ -199,55 +227,57 @@ class AuthService {
     session?: string;
   }> {
     try {
-      const { isSignedIn, nextStep } = await signIn({
-        username: credentials.email,
-        password: credentials.password,
-      });
-
-      if (!isSignedIn) {
-        if (
-          nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_TOTP_CODE' ||
-          nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_SMS_CODE'
-        ) {
-          // The User Pool has no MFA methods configured, so Amplify should
-          // never return these steps - but if it ever does, surface a clear
-          // error instead of silently mismapping fields the UI can't act on.
-          throw new Error('MFA sign-in is not supported yet');
-        }
-        // Amplify v6 turns Cognito's PasswordResetRequiredException (an admin-forced
-        // reset) into this step instead of throwing it.
-        if (nextStep?.signInStep === 'RESET_PASSWORD') {
-          throw { name: 'PasswordResetRequiredException' };
-        }
-        throw new Error('Sign in failed');
+      let response: Response;
+      try {
+        response = await fetch(`${API_CONFIG.baseURL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: credentials.email, password: credentials.password }),
+        });
+      } catch {
+        throw { name: 'NetworkError' };
       }
 
-      // Get current session
-      const session = await fetchAuthSession();
-      const tokens: AuthTokens = {
-        accessToken: session.tokens?.accessToken?.toString() || '',
-        refreshToken: '', // Refresh token not directly accessible in Amplify v6
-        idToken: session.tokens?.idToken?.toString() || '',
-      };
+      const data = await response.json().catch(() => ({}));
 
-      // Get user info
-      const currentUser = await getCurrentUser();
+      if (!response.ok) {
+        throw loginError(response.status, data);
+      }
+      if (!data.accessToken || !data.idToken) {
+        throw { name: 'LoginError', message: 'Sign in failed. Please try again' };
+      }
+
+      const tokens: AuthTokens = {
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken || '',
+        idToken: data.idToken,
+      };
       const user: User = {
-        id: currentUser.userId,
-        email: credentials.email,
-        name: currentUser.username,
+        id: data.user?.userId,
+        email: data.user?.email || credentials.email,
+        name: [data.user?.firstName, data.user?.lastName].filter(Boolean).join(' '),
         emailVerified: true,
         createdAt: new Date().toISOString(),
+        authProvider: 'cognito',
       };
 
-      // Store tokens securely
-      await this.storeTokens(tokens);
+      await this.storeTokens(tokens, expiresAtFrom(data.expiresIn));
       await this.storeUserData(user);
 
       return { user, tokens };
     } catch (error: any) {
       throw this.handleAuthError(error);
     }
+  }
+
+  /**
+   * Fetch the signed-in user's profile (GET /auth/profile on the main gateway).
+   * The backend returns the profile at the JSON root; `onboardingCompleted`
+   * decides whether onboarding is shown, as in the web AuthPage.
+   */
+  async getProfile(): Promise<UserProfile> {
+    const response = await api.get<UserProfile>('/auth/profile');
+    return response.data;
   }
 
   /**
@@ -324,61 +354,52 @@ class AuthService {
    * Sign out user and clear stored tokens
    */
   async signOutUser(): Promise<void> {
-    try {
-      await signOut();
-      await this.clearStoredData();
-    } catch (error: any) {
-      // Even if Cognito sign out fails, clear local data
-      await this.clearStoredData();
-      throw this.handleAuthError(error);
-    }
+    // The session lives only in local storage; there is no server-side sign-out call.
+    await this.clearStoredData();
   }
 
   /**
-   * Get current authenticated user
+   * Get current authenticated user (the profile stored at sign-in)
    */
   async getCurrentUser(): Promise<User | null> {
     try {
-      const currentUser = await getCurrentUser();
-
-      if (!currentUser) {
-        return null;
-      }
-
-      return {
-        id: currentUser.userId,
-        email: currentUser.username,
-        name: currentUser.username,
-        emailVerified: true,
-        createdAt: new Date().toISOString(),
-      };
+      const userData = await this.readItem(STORAGE_KEYS.USER_DATA);
+      return userData ? (JSON.parse(userData) as User) : null;
     } catch (error) {
       return null;
     }
   }
 
   /**
-   * Check if user is authenticated
+   * Check if user is authenticated: an ID token is stored and has not expired
    */
   async isAuthenticated(): Promise<boolean> {
     try {
-      const user = await getCurrentUser();
-      return !!user;
+      const idToken = await this.readItem(STORAGE_KEYS.ID_TOKEN);
+      const expiresAt = Number(await this.readItem(STORAGE_KEYS.EXPIRES_AT));
+      return !!idToken && expiresAt > Date.now();
     } catch (error) {
       return false;
     }
   }
 
   /**
-   * Get current session tokens
+   * Get current session tokens from storage
    */
   async getCurrentTokens(): Promise<AuthTokens | null> {
     try {
-      const session = await fetchAuthSession();
+      const [accessToken, refreshToken, idToken] = await Promise.all([
+        this.readItem(STORAGE_KEYS.ACCESS_TOKEN),
+        this.readItem(STORAGE_KEYS.REFRESH_TOKEN),
+        this.readItem(STORAGE_KEYS.ID_TOKEN),
+      ]);
+      if (!idToken) {
+        return null;
+      }
       return {
-        accessToken: session.tokens?.accessToken?.toString() || '',
-        refreshToken: '', // Refresh token not directly accessible in Amplify v6
-        idToken: session.tokens?.idToken?.toString() || '',
+        accessToken: accessToken || '',
+        refreshToken: refreshToken || '',
+        idToken,
       };
     } catch (error) {
       return null;
@@ -387,18 +408,45 @@ class AuthService {
 
   /**
    * Refresh authentication tokens
+   *
+   * Returns the stored tokens while more than 5 minutes remain. Otherwise it
+   * POSTs /auth/refresh as the web app does. That route is not deployed yet, so
+   * near expiry this throws and AuthContext signs the user out, the same as the web.
    */
   async refreshTokens(): Promise<AuthTokens> {
     try {
-      const session = await fetchAuthSession({ forceRefresh: true });
-      const tokens: AuthTokens = {
-        accessToken: session.tokens?.accessToken?.toString() || '',
-        refreshToken: '', // Refresh token not directly accessible in Amplify v6
-        idToken: session.tokens?.idToken?.toString() || '',
-      };
+      const tokens = await this.getCurrentTokens();
+      const expiresAt = Number(await this.readItem(STORAGE_KEYS.EXPIRES_AT));
+      if (tokens && expiresAt - Date.now() > REFRESH_MARGIN_MS) {
+        return tokens;
+      }
+      if (!tokens?.refreshToken) {
+        throw { name: 'SessionExpired' };
+      }
 
-      await this.storeTokens(tokens);
-      return tokens;
+      let response: Response;
+      try {
+        response = await fetch(`${API_CONFIG.baseURL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: tokens.refreshToken }),
+        });
+      } catch {
+        throw { name: 'NetworkError' };
+      }
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.accessToken || !data.idToken) {
+        throw { name: 'SessionExpired' };
+      }
+
+      const refreshed: AuthTokens = {
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken || tokens.refreshToken,
+        idToken: data.idToken,
+      };
+      await this.storeTokens(refreshed, expiresAtFrom(data.expiresIn));
+      return refreshed;
     } catch (error: any) {
       throw this.handleAuthError(error);
     }
@@ -482,18 +530,30 @@ class AuthService {
       await SecureStore.deleteItemAsync(STORAGE_KEYS.GOOGLE_ID_TOKEN).catch(() => { });
     }
   }
-  private async storeTokens(tokens: AuthTokens): Promise<void> {
+  private async storeTokens(tokens: AuthTokens, expiresAt: number): Promise<void> {
     if (Platform.OS === 'web') {
       // For web platform, use localStorage as fallback
       localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
       localStorage.setItem(STORAGE_KEYS.ID_TOKEN, tokens.idToken);
+      localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, String(expiresAt));
     } else {
       // For mobile platforms, use SecureStore
       await SecureStore.setItemAsync(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken);
       await SecureStore.setItemAsync(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
       await SecureStore.setItemAsync(STORAGE_KEYS.ID_TOKEN, tokens.idToken);
+      await SecureStore.setItemAsync(STORAGE_KEYS.EXPIRES_AT, String(expiresAt));
     }
+  }
+
+  /**
+   * Read one stored auth value (SecureStore on native, localStorage on web)
+   */
+  private async readItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    }
+    return SecureStore.getItemAsync(key);
   }
 
   /**
@@ -544,10 +604,10 @@ class AuthService {
         message = 'Invalid email or password';
         break;
       case 'PasswordResetRequiredException':
-        // The app has no reset screen yet, so point the user at the web app's reset flow.
-        message =
-          'Your password must be reset. On the BudgetBuddy website, choose "Forgot your ' +
-          'password?" to get a reset code and set a new password, then sign in here.';
+        message = 'Your password must be reset. Enter the code we emailed you.';
+        break;
+      case 'SessionExpired':
+        message = 'Your session has expired. Please sign in again';
         break;
       case 'UserNotFoundException':
         message = 'No account found with this email address';

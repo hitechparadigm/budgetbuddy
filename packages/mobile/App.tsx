@@ -20,9 +20,6 @@ import { initializeApiClient, getApiClient } from "./src/services/api";
 import { syncService } from "./src/services/syncService";
 import { ToastHost } from "./src/components/ui";
 
-// Import Amplify configuration
-import "./src/config/amplify";
-
 // Create a client
 const queryClient = new QueryClient({
   defaultOptions: {

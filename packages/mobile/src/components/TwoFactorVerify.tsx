@@ -14,6 +14,7 @@ import {
   Text,
   StyleSheet,
   TextInput,
+  type TextInputInstance,
   Pressable,
   KeyboardAvoidingView,
   Platform,
@@ -39,7 +40,7 @@ export default function TwoFactorVerify({
   const { colors } = useTheme();
   const [code, setCode] = useState("");
   const [useBackupCode, setUseBackupCode] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
 
   useEffect(() => {
     inputRef.current?.focus();

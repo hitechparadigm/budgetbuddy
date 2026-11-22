@@ -1,4 +1,40 @@
 # Changelog
+## [1.15.0] - 2026-11-22
+### feat(mobile): Expo SDK 58, password reset, onboarding skip (Session 170)
+Mobile app only (`packages/mobile`, plus the `mobile-tests` job in `pr-check.yml`). The deploy
+pipeline does not ship mobile; nothing ran on a phone or emulator.
+#### Changed
+- Expo SDK 49 -> 58: `expo ~58.0.26`, React Native 0.72.10 -> 0.88.1, React 18.2.0 -> 19.3.0,
+  Reanimated 3.3.0 -> 4.7.1 (with `react-native-worklets`), React Navigation 6 -> 7, TypeScript
+  ~6.0.3, jest ~30.5.2 / jest-expo ~58.0.15. Every native dependency matches SDK 58
+  (`npx expo install --check` clean, expo-doctor 20/20). The New Architecture is on; SDK 55+
+  has no opt-out.
+- `expo-sqlite` moved to the async API in `services/offline.ts`; schema, SQL and database file
+  are unchanged. `backup.ts`/`export.ts` use `expo-file-system/legacy`. `ReceiptScanner` uses
+  `CameraView`. `app.json` splash settings moved into the `expo-splash-screen` plugin.
+- Sign-in no longer uses Amplify: it POSTs `/auth/login` on the main gateway, the endpoint the
+  web uses. Removed `aws-amplify`, `@aws-amplify/react-native`, `react-native-get-random-values`,
+  `@types/react-native`, `@testing-library/jest-native`; `npm ci` no longer needs
+  `--legacy-peer-deps` (also dropped from the CI `mobile-tests` job, which now builds
+  `packages/shared` first).
+- `.env.example` lists only the variables the app reads.
+#### Added
+- `ForgotPasswordScreen` using `POST /auth/forgot-password` and
+  `POST /auth/confirm-forgot-password`; a 403 `PASSWORD_RESET_REQUIRED` at sign-in opens its
+  code step.
+- Budget tab reads `GET /budget/current?month=YYYY-MM` and saves through `POST /budget`, like the
+  web BudgetPage; month navigation; recording against a category.
+- More -> Accounts lists `GET /accounts`; the old item is renamed "Bank Sync".
+#### Fixed
+- Onboarding "Skip for now" now posts `/auth/onboarding` with defaults, so a skipped user gets a
+  budget (was Known Gaps 18).
+- Every sign-in checks `GET /auth/profile` and routes to onboarding when
+  `onboardingCompleted !== true`.
+- Exports for android, ios and web succeed (the SDK 49 CLI failed on Node 24 with `node:sea`).
+#### Tests
+- jest 374 passed / 1 failed / 2 skipped (was 309 / 1 / 2); the failure is the known
+  `TwoFactorSetup` order-dependent flake. typecheck 0 errors; lint 147 errors (unchanged) /
+  264 warnings (React Compiler rules at warn).
 ## [1.14.3] - 2026-11-20
 ### chore(infra): Lambda runtime nodejs20.x -> nodejs24.x (Session 170)
 Node.js 20 on Lambda was deprecated on Apr 30, 2026 and gets no more security patches;

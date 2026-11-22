@@ -40,7 +40,8 @@ interface OnboardingFlowProps {
     selectedCategories: CategorySuggestion[],
     currency: string,
   ) => void;
-  onSkip: () => void;
+  /** Receives the location detected so far, so a skipped setup can use it. */
+  onSkip: (context: { location: GeolocationResult | null }) => void;
 }
 
 type OnboardingStep = "location" | "currency" | "family-size" | "categories";
@@ -160,7 +161,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         <Text style={styles.subtitle}>
           Let's set up your budget with personalized suggestions
         </Text>
-        <TouchableOpacity onPress={onSkip} style={styles.skipButton}>
+        <TouchableOpacity
+          onPress={() => onSkip({ location })}
+          style={styles.skipButton}
+        >
           <Text style={styles.skipText}>Skip for now</Text>
         </TouchableOpacity>
       </View>

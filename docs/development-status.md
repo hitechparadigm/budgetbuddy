@@ -1,11 +1,18 @@
 # Development Status - BudgetBuddy
 
-**Last Updated**: 2026-11-20
+**Last Updated**: 2026-11-22
 **Architecture**: see [architecture.md](./architecture.md) for the current system; this file is a status history.
 **Current Phase**: Production Readiness ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â MVP ready for 100+ user testing + mobile app planning
 **Overall Progress**: 95% Core + 100% Competitive Features + Security (85%) + Phase 1-6 Polish ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ + Production Audit ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦
 
-## LATEST - Session 170: Wave 2 Core Flows Merged (2026-11-20)
+## LATEST - Session 170: Mobile on Expo SDK 58 (2026-11-22)
+The mobile app moved from Expo SDK 49 to SDK 58 (React Native 0.88.1, React 19.3.0, New
+Architecture on) in one squash commit on `develop` (1.15.0). Sign-in POSTs `/auth/login` (Amplify
+removed); a password reset screen, onboarding skip with a default budget, a Budget tab on the web's
+`/budget/current` + `POST /budget`, and an Accounts screen were added. typecheck 0 errors, jest
+374 passed / 1 known flake / 2 skipped, android/ios/web exports OK. Nothing ran on a device; store
+builds need the owner's Expo, Apple and Google accounts. Mobile is not deployed by this pipeline.
+## Session 170: Wave 2 Core Flows Merged (2026-11-20)
 Wave 2 landed on `develop` as one squash commit. It deploys as Lambda code only
 (`transaction-planning`, `goals`, `accounts`, `rules`, `budget`); no infrastructure file changed.
 Planned transactions can be edited, deleted and marked paid through the routes the gateway

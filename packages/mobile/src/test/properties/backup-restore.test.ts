@@ -8,7 +8,7 @@ import { backupService, BackupData, BackupOptions } from '../../services/backup'
 import { Budget, Transaction } from '../../types';
 
 // Mock dependencies
-jest.mock('expo-file-system', () => ({
+jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file:///mock/document/',
   writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
   readAsStringAsync: jest.fn().mockResolvedValue('{"version":"1.0.0","timestamp":"2023-01-01T00:00:00.000Z","userId":"test","budgets":[],"transactions":[],"settings":{},"metadata":{"totalBudgets":0,"totalTransactions":0,"dateRange":{"earliest":"2023-01-01T00:00:00.000Z","latest":"2023-01-01T00:00:00.000Z"},"categories":[]}}'),
@@ -158,7 +158,7 @@ describe('Backup and Restore Property Tests', () => {
           // Mock the File.write to capture the backup data
           // Mock writeAsStringAsync to capture the backup data
           let capturedBackupData: BackupData | null = null;
-          const FileSystem = require('expo-file-system');
+          const FileSystem = require('expo-file-system/legacy');
           FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
             capturedBackupData = JSON.parse(data);
             return Promise.resolve();
@@ -222,7 +222,7 @@ describe('Backup and Restore Property Tests', () => {
           // Mock the File.write to capture the backup data
           // Mock writeAsStringAsync to capture the backup data
           let capturedBackupData: BackupData | null = null;
-          const FileSystem = require('expo-file-system');
+          const FileSystem = require('expo-file-system/legacy');
           FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
             capturedBackupData = JSON.parse(data);
             return Promise.resolve();
@@ -290,7 +290,7 @@ describe('Backup and Restore Property Tests', () => {
           };
 
           // Mock readAsStringAsync to return the backup data
-          const FileSystem = require('expo-file-system');
+          const FileSystem = require('expo-file-system/legacy');
           FileSystem.readAsStringAsync.mockResolvedValue(JSON.stringify(mockBackupData));
 
           // Perform restore

@@ -17,8 +17,10 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
+import Constants from "expo-constants";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../hooks/useTheme";
+import { isPushUnavailableInExpoGo } from "../services/notification";
 
 interface NotificationPreferences {
   budgetAlertsEnabled: boolean;
@@ -106,7 +108,14 @@ export default function NotificationSettings({
 
   const registerDevice = async () => {
     try {
-      const token = await Notifications.getExpoPushTokenAsync();
+      if (isPushUnavailableInExpoGo()) {
+        console.log("Push notifications are not available in Expo Go on Android");
+        return;
+      }
+
+      const token = await Notifications.getExpoPushTokenAsync({
+        projectId: Constants.expoConfig?.extra?.eas?.projectId,
+      });
       setDeviceToken(token.data);
 
       // Register device with backend

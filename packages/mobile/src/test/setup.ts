@@ -5,11 +5,11 @@
 
 import 'react-native-gesture-handler/jestSetup';
 
-// Mock Reanimated (react-native-reanimated v4 depends on the native
-// react-native-worklets package, which is not installed in this repo, and
-// the library's own jest mock still imports its real entry point that
-// requires that native module. A minimal manual mock avoids the dependency
-// entirely for tests that only need Reanimated's components to render.)
+// Mock Reanimated (react-native-reanimated v4 runs on the native
+// react-native-worklets module; both are installed, but neither native module
+// exists under Jest, and the library's own jest mock still imports its real
+// entry point. A minimal manual mock avoids the native dependency entirely
+// for tests that only need Reanimated's components to render.)
 jest.mock('react-native-reanimated', () => {
   const View = require('react-native').View;
   return {
@@ -89,6 +89,12 @@ jest.mock('expo-device', () => ({
 
 // Mock Expo Constants
 jest.mock('expo-constants', () => ({
+  ExecutionEnvironment: {
+    Bare: 'bare',
+    Standalone: 'standalone',
+    StoreClient: 'storeClient',
+  },
+  executionEnvironment: 'bare',
   expoConfig: {
     extra: {
       eas: {
@@ -124,7 +130,7 @@ jest.mock('expo-secure-store', () => ({
 }));
 
 // Mock Expo FileSystem
-jest.mock('expo-file-system', () => ({
+jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file://test-directory/',
   writeAsStringAsync: jest.fn(() => Promise.resolve()),
   readAsStringAsync: jest.fn(() => Promise.resolve('')),
@@ -205,6 +211,9 @@ jest.mock('@react-navigation/native', () => ({
     navigate: jest.fn(),
     goBack: jest.fn(),
     dispatch: jest.fn(),
+    // React Navigation 7's own header (HeaderSearchBar) subscribes through
+    // useNavigation(), so the mock must return an unsubscribe function.
+    addListener: jest.fn(() => jest.fn()),
   }),
   useRoute: () => ({
     params: {},
@@ -220,33 +229,6 @@ jest.mock('@react-native-community/netinfo', () => ({
     type: 'wifi',
   })),
   addEventListener: jest.fn(() => jest.fn()),
-}));
-
-// Mock AWS Amplify
-jest.mock('aws-amplify', () => ({
-  Amplify: {
-    configure: jest.fn(),
-  },
-  Auth: {
-    signIn: jest.fn(),
-    signOut: jest.fn(),
-    signUp: jest.fn(),
-    confirmSignUp: jest.fn(),
-    getCurrentUser: jest.fn(),
-    fetchAuthSession: jest.fn(),
-  },
-}));
-
-// Mock AWS Amplify Auth subpath (used directly by src/services/auth.ts;
-// the real module is ESM-only and fails Jest's CJS transform otherwise)
-jest.mock('aws-amplify/auth', () => ({
-  signIn: jest.fn(),
-  signUp: jest.fn(),
-  confirmSignUp: jest.fn(),
-  resendSignUpCode: jest.fn(),
-  signOut: jest.fn(),
-  getCurrentUser: jest.fn(),
-  fetchAuthSession: jest.fn(),
 }));
 
 // Mock React Query
@@ -310,6 +292,12 @@ jest.mock('../services/api', () => {
     getNetworkStatus: () => ({ isOnline: true }),
   };
 });
+
+// Mock expo-localization (native module). Tests that need another locale
+// override getLocales with jest.mocked(...).mockReturnValue(...).
+jest.mock('expo-localization', () => ({
+  getLocales: jest.fn(() => [{ languageTag: 'en-US', currencyCode: 'USD' }]),
+}));
 
 // Global test timeout
 jest.setTimeout(30000);

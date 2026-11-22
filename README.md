@@ -17,6 +17,13 @@ A comprehensive family budgeting application similar to EveryDollar by Dave Rams
 - **Family Collaboration**: Complete invitation system with role-based permissions ✓
 - **Overall Progress**: 99% complete (Phase 10 PBT complete, documentation in progress)
 
+### Recent Achievements (2026-11-22)
+- **Mobile on Expo SDK 58** - React Native 0.88.1 and React 19.3.0 (from SDK 49 / RN 0.72.10),
+  New Architecture on, android/ios/web exports succeed. Sign-in uses the backend's `/auth/login`
+  (Amplify removed). New password reset screen; onboarding "Skip for now" creates a default
+  budget; the Budget tab and a new Accounts screen use the same endpoints as the web. Not yet
+  tested on a device or submitted to the stores.
+
 ### Recent Achievements (2026-11-20)
 - **Wave 2 core flows** - planned transactions can be edited, deleted and marked paid (the routes
   returned 404 or were unreachable); borrowed/lent goals keep their `subType`, `personName` and

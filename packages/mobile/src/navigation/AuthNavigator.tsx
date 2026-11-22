@@ -10,6 +10,7 @@ import { createStackNavigator, StackScreenProps } from '@react-navigation/stack'
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import ConfirmSignUpScreen from '../screens/auth/ConfirmSignUpScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -17,7 +18,7 @@ export type AuthStackParamList = {
   ConfirmSignUp: {
     email: string;
   };
-  ForgotPassword: undefined;
+  ForgotPassword: { email?: string; resetRequired?: boolean } | undefined;
   ResetPassword: {
     email: string;
   };
@@ -64,6 +65,11 @@ export const AuthNavigator: React.FC = () => {
           title: 'Verify Email',
           gestureEnabled: false, // Prevent going back without verification
         }}
+      />
+      <Stack.Screen
+        name="ForgotPassword"
+        component={ForgotPasswordScreen}
+        options={{ title: 'Reset Password' }}
       />
     </Stack.Navigator>
   );

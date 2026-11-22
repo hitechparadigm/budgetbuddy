@@ -11,37 +11,51 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
-import { Ionicons } from "@expo/vector-icons";
 import { Card, FloatingActionButton, LoadingSpinner } from "../components/ui";
 import { useTheme } from "../hooks/useTheme";
+import { useCurrency } from "../contexts/CurrencyContext";
 import MonthNavigator from "../components/MonthNavigator";
 import MonthPickerModal from "../components/MonthPickerModal";
-import BudgetList from "../components/BudgetList";
-import BudgetForm from "../components/BudgetForm";
-import UpcomingOccurrences from "../components/UpcomingOccurrences";
-import SummaryModal from "../components/SummaryModal";
-import QuickAddTransaction from "../components/QuickAddTransaction";
+import QuickAddTransaction, {
+  QuickAddCategory,
+} from "../components/QuickAddTransaction";
 import ConnectionStatus from "../components/ConnectionStatus";
 import OfflineBanner from "../components/OfflineBanner";
 import {
-  useMonthlyBudgetOverview,
-  useCreateBudget,
-  useUpdateBudget,
-  useDeleteBudget,
-} from "../services/budget";
-import { useCreateTransaction } from "../services/transaction";
+  monthKey,
+  PeriodCategory,
+  useBudgetPeriod,
+  useRecordCategoryTransaction,
+} from "../services/budgetPeriod";
 import { useOfflineSync } from "../hooks/useOfflineSync";
-import {
-  Budget,
-  BudgetWithSummary,
-  CreateBudgetRequest,
-  UpdateBudgetRequest,
-  BudgetType,
-} from "../types/budget";
 import { CreateTransactionRequest } from "../services/transaction";
 
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const sumSpent = (categories: PeriodCategory[]) =>
+  categories.reduce((sum, cat) => sum + cat.spentAmount, 0);
+
+/**
+ * Budget tab: the month's budget period (GET /budget/current on the main
+ * gateway), the same data the web app's BudgetPage shows. Recording a
+ * transaction from a category saves the period with POST /budget.
+ */
 export default function BudgetScreen() {
   const { colors } = useTheme();
+  const { formatAmount } = useCurrency();
   const [currentDate, setCurrentDate] = useState(() => {
     const now = new Date();
     return {
@@ -49,27 +63,16 @@ export default function BudgetScreen() {
       month: now.getMonth() + 1,
     };
   });
-  const [showBudgetForm, setShowBudgetForm] = useState(false);
-  const [editingBudget, setEditingBudget] = useState<Budget | undefined>();
-  const [selectedBudgetType, setSelectedBudgetType] =
-    useState<BudgetType>("expense");
   const [refreshing, setRefreshing] = useState(false);
-  const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const [preselectedCategoryId, setPreselectedCategoryId] = useState<
+    string | undefined
+  >();
   const [showMonthPicker, setShowMonthPicker] = useState(false);
 
-  // Queries and mutations
-  const {
-    data: monthlyOverview,
-    isLoading,
-    error,
-    refetch,
-  } = useMonthlyBudgetOverview(currentDate.year, currentDate.month);
-
-  const createBudgetMutation = useCreateBudget();
-  const updateBudgetMutation = useUpdateBudget();
-  const deleteBudgetMutation = useDeleteBudget();
-  const createTransactionMutation = useCreateTransaction();
+  const month = monthKey(currentDate.year, currentDate.month);
+  const { data: period, isLoading, error, refetch } = useBudgetPeriod(month);
+  const recordTransaction = useRecordCategoryTransaction(month);
   const { syncStatus, triggerSync } = useOfflineSync();
 
   // Refresh data when screen comes into focus
@@ -94,174 +97,68 @@ export default function BudgetScreen() {
     }
   }, [refetch, syncStatus.isOnline, triggerSync]);
 
-  const handleMonthChange = (year: number, month: number) => {
-    setCurrentDate({ year, month });
+  const handleMonthChange = (year: number, monthNumber: number) => {
+    setCurrentDate({ year, month: monthNumber });
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const handleMonthPickerSelect = (year: number, month: number) => {
-    setCurrentDate({ year, month });
+  const handleMonthPickerSelect = (year: number, monthNumber: number) => {
+    setCurrentDate({ year, month: monthNumber });
     setShowMonthPicker(false);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
-  const handleCreateBudget = (type: BudgetType) => {
-    setSelectedBudgetType(type);
-    setEditingBudget(undefined);
-    setShowBudgetForm(true);
+  const openQuickAdd = (categoryId?: string) => {
+    setPreselectedCategoryId(categoryId);
+    setShowQuickAdd(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
-  const handleEditBudget = (budget: BudgetWithSummary) => {
-    setEditingBudget(budget);
-    setShowBudgetForm(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  };
-
-  const handleDeleteBudget = (budget: BudgetWithSummary) => {
-    Alert.alert(
-      "Delete Budget",
-      `Are you sure you want to delete "${budget.name}"? This action cannot be undone.`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
+  const handleRecordTransaction = (data: CreateTransactionRequest) => {
+    recordTransaction.mutate(
+      {
+        categoryId: data.categoryId,
+        amount: data.amount,
+        description: data.description,
+        date: data.date,
+      },
+      {
+        onSuccess: () => {
+          setShowQuickAdd(false);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            deleteBudgetMutation.mutate(budget.id, {
-              onSuccess: () => {
-                Haptics.notificationAsync(
-                  Haptics.NotificationFeedbackType.Success
-                );
-              },
-              onError: (error) => {
-                console.error("Failed to delete budget:", error);
-                Alert.alert(
-                  "Error",
-                  "Failed to delete budget. Please try again."
-                );
-                Haptics.notificationAsync(
-                  Haptics.NotificationFeedbackType.Error
-                );
-              },
-            });
-          },
+        onError: (err) => {
+          Alert.alert(
+            "Error",
+            err instanceof Error && err.message
+              ? err.message
+              : "Failed to record the transaction. Please try again."
+          );
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         },
-      ]
+      }
     );
   };
 
-  const handleBudgetFormSubmit = (
-    data: CreateBudgetRequest | UpdateBudgetRequest
-  ) => {
-    if ("id" in data) {
-      // Update existing budget
-      updateBudgetMutation.mutate(data, {
-        onSuccess: () => {
-          setShowBudgetForm(false);
-          setEditingBudget(undefined);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        },
-        onError: (error) => {
-          console.error("Failed to update budget:", error);
-          Alert.alert("Error", "Failed to update budget. Please try again.");
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        },
-      });
-    } else {
-      // Create new budget
-      const createData = { ...data, type: selectedBudgetType };
-      createBudgetMutation.mutate(createData, {
-        onSuccess: () => {
-          setShowBudgetForm(false);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        },
-        onError: (error) => {
-          console.error("Failed to create budget:", error);
-          Alert.alert("Error", "Failed to create budget. Please try again.");
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        },
-      });
-    }
-  };
-
-  const handleQuickAddTransaction = (data: CreateTransactionRequest) => {
-    createTransactionMutation.mutate(data, {
-      onSuccess: () => {
-        setShowQuickAdd(false);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // Refresh budget data to show updated amounts
-        refetch();
-      },
-      onError: (error) => {
-        console.error("Failed to create transaction:", error);
-        Alert.alert("Error", "Failed to create transaction. Please try again.");
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      },
-    });
-  };
-
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
-
-  const getMonthName = (month: number): string => {
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    return monthNames[month - 1];
-  };
-
-  // Memoize categories for performance — sorted A-Z
-  const quickAddCategories = useMemo(() => {
-    const cats = monthlyOverview?.budgets || [];
-    return [...cats].sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''));
-  }, [monthlyOverview?.budgets]);
+  // QuickAdd shows "expense" categories by default; tag each group so the
+  // modal's filter can tell them apart. Sorted A-Z within the list.
+  const quickAddCategories = useMemo<QuickAddCategory[]>(() => {
+    if (!period) return [];
+    const tag = (cats: PeriodCategory[], type: string) =>
+      cats.map((c) => ({ id: c.id, name: c.name, icon: c.icon, type }));
+    return [
+      ...tag(period.groups.expenses, "expense"),
+      ...tag(period.groups.savings, "savings"),
+      ...tag(period.groups.income, "income"),
+    ].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  }, [period]);
 
   const fabActions = [
     {
-      icon: "flash" as const,
-      label: "Quick Add",
-      onPress: () => {
-        setShowQuickAdd(true);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      },
+      icon: "add-circle" as const,
+      label: "Record transaction",
+      onPress: () => openQuickAdd(undefined),
       color: "#F59E0B",
-    },
-    {
-      icon: "trending-up" as const,
-      label: "Add Income",
-      onPress: () => handleCreateBudget("income"),
-      color: "#10B981",
-    },
-    {
-      icon: "trending-down" as const,
-      label: "Add Expense",
-      onPress: () => handleCreateBudget("expense"),
-      color: "#EF4444",
-    },
-    {
-      icon: "save" as const,
-      label: "Add Savings",
-      onPress: () => handleCreateBudget("savings"),
-      color: "#3B82F6",
     },
   ];
 
@@ -277,22 +174,6 @@ export default function BudgetScreen() {
       paddingHorizontal: 16,
       paddingTop: 16,
       paddingBottom: 8,
-    },
-    summaryButton: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: colors.primary,
-    },
-    summaryButtonText: {
-      color: colors.primary,
-      fontSize: 14,
-      fontWeight: "600",
-      marginLeft: 4,
     },
     content: {
       flex: 1,
@@ -340,10 +221,67 @@ export default function BudgetScreen() {
       fontWeight: "bold",
     },
     positiveAmount: {
-      color: "#10B981",
+      color: colors.success,
     },
     negativeAmount: {
-      color: "#EF4444",
+      color: colors.error,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: "600",
+      color: colors.text,
+      marginTop: 8,
+      marginBottom: 8,
+    },
+    emptyGroup: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 16,
+    },
+    categoryRow: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 8,
+    },
+    categoryHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    categoryIcon: {
+      fontSize: 20,
+      marginRight: 8,
+    },
+    categoryName: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: "500",
+      color: colors.text,
+    },
+    categoryAmounts: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 6,
+    },
+    amountLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    amountValue: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    progressTrack: {
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.border,
+      overflow: "hidden",
+    },
+    progressFill: {
+      height: 6,
+      borderRadius: 3,
     },
     loadingContainer: {
       flex: 1,
@@ -375,6 +313,85 @@ export default function BudgetScreen() {
     },
   });
 
+  const renderCategory = (cat: PeriodCategory) => {
+    const remaining = cat.plannedAmount - cat.spentAmount;
+    const isOver = cat.spentAmount > cat.plannedAmount;
+    const ratio =
+      cat.plannedAmount > 0 ? cat.spentAmount / cat.plannedAmount : isOver ? 1 : 0;
+    const percent = Math.min(Math.max(ratio, 0), 1) * 100;
+
+    return (
+      <Pressable
+        key={cat.id}
+        testID={`category-${cat.id}`}
+        style={dynamicStyles.categoryRow}
+        onPress={() => openQuickAdd(cat.id)}
+        accessibilityRole="button"
+        accessibilityLabel={`Record a transaction for ${cat.name}`}
+      >
+        <View style={dynamicStyles.categoryHeader}>
+          {cat.icon ? (
+            <Text style={dynamicStyles.categoryIcon}>{cat.icon}</Text>
+          ) : null}
+          <Text style={dynamicStyles.categoryName}>{cat.name}</Text>
+        </View>
+        <View style={dynamicStyles.progressTrack}>
+          <View
+            style={[
+              dynamicStyles.progressFill,
+              {
+                width: `${percent}%`,
+                backgroundColor: isOver ? colors.error : colors.primary,
+              },
+            ]}
+          />
+        </View>
+        <View style={dynamicStyles.categoryAmounts}>
+          <View>
+            <Text style={dynamicStyles.amountLabel}>Planned</Text>
+            <Text style={dynamicStyles.amountValue}>
+              {formatAmount(cat.plannedAmount)}
+            </Text>
+          </View>
+          <View>
+            <Text style={dynamicStyles.amountLabel}>Spent</Text>
+            <Text
+              testID={`spent-${cat.id}`}
+              style={[
+                dynamicStyles.amountValue,
+                isOver && dynamicStyles.negativeAmount,
+              ]}
+            >
+              {formatAmount(cat.spentAmount)}
+            </Text>
+          </View>
+          <View>
+            <Text style={dynamicStyles.amountLabel}>Remaining</Text>
+            <Text
+              style={[
+                dynamicStyles.amountValue,
+                remaining < 0 && dynamicStyles.negativeAmount,
+              ]}
+            >
+              {formatAmount(remaining)}
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+    );
+  };
+
+  const renderGroup = (title: string, categories: PeriodCategory[]) => (
+    <View key={title}>
+      <Text style={dynamicStyles.sectionTitle}>{title}</Text>
+      {categories.length === 0 ? (
+        <Text style={dynamicStyles.emptyGroup}>No categories yet</Text>
+      ) : (
+        categories.map(renderCategory)
+      )}
+    </View>
+  );
+
   if (isLoading) {
     return (
       <SafeAreaView style={dynamicStyles.container}>
@@ -400,6 +417,12 @@ export default function BudgetScreen() {
   }
 
   if (error) {
+    // Show the server's message: a user with no budget gets the access
+    // resolver's explanation rather than a generic connection error.
+    const message =
+      error instanceof Error && error.message
+        ? error.message
+        : "Failed to load budget data. Please check your connection and try again.";
     return (
       <SafeAreaView style={dynamicStyles.container}>
         <Text style={dynamicStyles.title}>Budget</Text>
@@ -409,10 +432,7 @@ export default function BudgetScreen() {
           onMonthChange={handleMonthChange}
         />
         <View style={dynamicStyles.errorContainer}>
-          <Text style={dynamicStyles.errorText}>
-            Failed to load budget data. Please check your connection and try
-            again.
-          </Text>
+          <Text style={dynamicStyles.errorText}>{message}</Text>
           <Pressable
             style={dynamicStyles.retryButton}
             onPress={() => refetch()}
@@ -424,31 +444,25 @@ export default function BudgetScreen() {
     );
   }
 
+  const groups = period?.groups ?? { income: [], savings: [], expenses: [] };
+  const spent = sumSpent(groups.expenses);
+  const saved = sumSpent(groups.savings);
+  const leftToBudget = period?.remainingBalance ?? 0;
+
   return (
     <SafeAreaView style={dynamicStyles.container}>
       {/* Offline Banner */}
       <OfflineBanner
         isVisible={!syncStatus.isOnline}
         pendingItems={syncStatus.pendingItems}
-        onPress={() => {
-          // Could show detailed sync status or settings
-          console.log("Offline banner pressed");
-        }}
       />
 
       <View style={dynamicStyles.header}>
         <Text style={dynamicStyles.title}>Budget</Text>
-        <Pressable
-          style={dynamicStyles.summaryButton}
-          onPress={() => setShowSummaryModal(true)}
-        >
-          <Ionicons name="pie-chart" size={20} color={colors.primary} />
-          <Text style={dynamicStyles.summaryButtonText}>Summary</Text>
-        </Pressable>
       </View>
 
       <Text style={dynamicStyles.subtitle}>
-        {getMonthName(currentDate.month)} {currentDate.year} overview
+        {MONTH_NAMES[currentDate.month - 1]} {currentDate.year} overview
       </Text>
 
       <Pressable
@@ -464,40 +478,6 @@ export default function BudgetScreen() {
         />
       </Pressable>
 
-      {monthlyOverview && (
-        <Card variant="elevated" style={dynamicStyles.summaryCard}>
-          <View style={dynamicStyles.summaryRow}>
-            <Text style={dynamicStyles.summaryLabel}>Total Planned</Text>
-            <Text style={dynamicStyles.summaryAmount}>
-              {formatCurrency(monthlyOverview.totalPlanned)}
-            </Text>
-          </View>
-
-          <View style={dynamicStyles.summaryRow}>
-            <Text style={dynamicStyles.summaryLabel}>Total Actual</Text>
-            <Text style={dynamicStyles.summaryAmount}>
-              {formatCurrency(monthlyOverview.totalActual)}
-            </Text>
-          </View>
-
-          <View style={[dynamicStyles.summaryRow, dynamicStyles.totalRow]}>
-            <Text style={[dynamicStyles.summaryLabel, { fontWeight: "600" }]}>
-              Remaining
-            </Text>
-            <Text
-              style={[
-                dynamicStyles.totalAmount,
-                monthlyOverview.totalRemaining >= 0
-                  ? dynamicStyles.positiveAmount
-                  : dynamicStyles.negativeAmount,
-              ]}
-            >
-              {formatCurrency(monthlyOverview.totalRemaining)}
-            </Text>
-          </View>
-        </Card>
-      )}
-
       <ScrollView
         style={dynamicStyles.content}
         refreshControl={
@@ -510,27 +490,49 @@ export default function BudgetScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        <UpcomingOccurrences
-          daysAhead={30}
-          maxItems={5}
-          onOccurrencePress={(occurrence) => {
-            console.log("Occurrence pressed:", occurrence.budgetName);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            // Could navigate to budget details or transaction entry
-          }}
-        />
+        {period && (
+          <Card variant="elevated" style={dynamicStyles.summaryCard}>
+            <View style={dynamicStyles.summaryRow}>
+              <Text style={dynamicStyles.summaryLabel}>Income planned</Text>
+              <Text style={dynamicStyles.summaryAmount}>
+                {formatAmount(period.totalIncome)}
+              </Text>
+            </View>
+            <View style={dynamicStyles.summaryRow}>
+              <Text style={dynamicStyles.summaryLabel}>Spent</Text>
+              <Text style={dynamicStyles.summaryAmount}>
+                {formatAmount(spent)}
+              </Text>
+            </View>
+            <View style={dynamicStyles.summaryRow}>
+              <Text style={dynamicStyles.summaryLabel}>Saved</Text>
+              <Text style={dynamicStyles.summaryAmount}>
+                {formatAmount(saved)}
+              </Text>
+            </View>
+            {/* remainingBalance is planned income - planned savings - planned
+                expenses, so it reads as "left to budget", not cash left. */}
+            <View style={[dynamicStyles.summaryRow, dynamicStyles.totalRow]}>
+              <Text style={[dynamicStyles.summaryLabel, { fontWeight: "600" }]}>
+                Left to budget
+              </Text>
+              <Text
+                style={[
+                  dynamicStyles.totalAmount,
+                  leftToBudget >= 0
+                    ? dynamicStyles.positiveAmount
+                    : dynamicStyles.negativeAmount,
+                ]}
+              >
+                {formatAmount(leftToBudget)}
+              </Text>
+            </View>
+          </Card>
+        )}
 
-        <BudgetList
-          budgets={monthlyOverview?.budgets || []}
-          isLoading={isLoading}
-          onBudgetPress={(budget) => {
-            console.log("Budget pressed:", budget.name);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }}
-          onEditBudget={handleEditBudget}
-          onDeleteBudget={handleDeleteBudget}
-          groupByType={true}
-        />
+        {renderGroup("Income", groups.income)}
+        {renderGroup("Savings", groups.savings)}
+        {renderGroup("Expenses", groups.expenses)}
 
         {/* Add bottom padding for FAB */}
         <View style={{ height: 100 }} />
@@ -542,36 +544,14 @@ export default function BudgetScreen() {
         mainColor={colors.primary}
       />
 
-      <BudgetForm
-        visible={showBudgetForm}
-        onClose={() => {
-          setShowBudgetForm(false);
-          setEditingBudget(undefined);
-        }}
-        onSubmit={handleBudgetFormSubmit}
-        budget={editingBudget}
-        isLoading={
-          createBudgetMutation.isPending || updateBudgetMutation.isPending
-        }
-      />
-
-      {/* Summary Modal */}
-      {showSummaryModal && monthlyOverview && (
-        <SummaryModal
-          visible={showSummaryModal}
-          onClose={() => setShowSummaryModal(false)}
-          monthlyOverview={monthlyOverview}
-          currentMonth={getMonthName(currentDate.month)}
-        />
-      )}
-
-      {/* Quick Add Transaction Modal */}
+      {/* Record Transaction Modal */}
       <QuickAddTransaction
         visible={showQuickAdd}
         onClose={() => setShowQuickAdd(false)}
-        onSubmit={handleQuickAddTransaction}
+        onSubmit={handleRecordTransaction}
         categories={quickAddCategories}
-        isLoading={createTransactionMutation.isPending}
+        selectedCategoryId={preselectedCategoryId}
+        isLoading={recordTransaction.isLoading}
       />
 
       {/* Month Picker Modal */}

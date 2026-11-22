@@ -56,7 +56,7 @@ class SyncService {
   private conflictListeners: ((conflict: SyncConflict) => void)[] = [];
   private networkListener: (() => void) | null = null;
   private appStateListener: any = null;
-  private autoSyncInterval: NodeJS.Timeout | null = null;
+  private autoSyncInterval: ReturnType<typeof setInterval> | null = null;
 
   private readonly DEFAULT_OPTIONS: Required<SyncOptions> = {
     force: false,

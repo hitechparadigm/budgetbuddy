@@ -8,7 +8,7 @@ import { exportService } from '../../services/export';
 import { Budget, Transaction } from '../../types';
 
 // Mock dependencies
-jest.mock('expo-file-system', () => ({
+jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file:///mock/document/',
   writeAsStringAsync: jest.fn().mockResolvedValue(undefined),
   readAsStringAsync: jest.fn().mockResolvedValue('mock,csv,data\n1,2,3'),
@@ -152,7 +152,7 @@ describe('Data Export Property Tests', () => {
         async (budgets, options) => {
           // Mock writeAsStringAsync to capture CSV data
           let capturedCsvData = '';
-          const FileSystem = require('expo-file-system');
+          const FileSystem = require('expo-file-system/legacy');
           FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
             capturedCsvData = data;
             return Promise.resolve();
@@ -220,7 +220,7 @@ describe('Data Export Property Tests', () => {
         async (transactions, options) => {
           // Mock writeAsStringAsync to capture CSV data
           let capturedCsvData = '';
-          const FileSystem = require('expo-file-system');
+          const FileSystem = require('expo-file-system/legacy');
           FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
             capturedCsvData = data;
             return Promise.resolve();
@@ -359,7 +359,7 @@ describe('Data Export Property Tests', () => {
         async (transactions, filters) => {
           // Mock writeAsStringAsync to capture CSV data
           let capturedCsvData = '';
-          const FileSystem = require('expo-file-system');
+          const FileSystem = require('expo-file-system/legacy');
           FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
             capturedCsvData = data;
             return Promise.resolve();
@@ -433,7 +433,7 @@ describe('Data Export Property Tests', () => {
         async (transactions) => {
           // Mock file operations to capture and return CSV data
           let capturedCsvData = '';
-          const FileSystem = require('expo-file-system');
+          const FileSystem = require('expo-file-system/legacy');
           FileSystem.writeAsStringAsync.mockImplementation((_uri: string, data: string) => {
             capturedCsvData = data;
             return Promise.resolve();

@@ -1,4 +1,23 @@
 # Development Log
+## 2026-11-22 - Mobile Expo SDK 58 Upgrade, Password Reset, Onboarding Skip (Session 170)
+**Summary:** the mobile app moves from Expo SDK 49 to SDK 58 (React Native 0.88.1, React 19.3.0)
+in one hop (1.15.0). SDK 49 could not produce an App-Store-submittable build, and SDKs 50-57
+cannot be opened by any current Expo Go, so intermediate hops would only have repeated the same
+typecheck/jest/export checks. The app uses Continuous Native Generation (no `android/`/`ios/`),
+so the breaking changes of SDKs 50-58 were applied as one checklist: async `expo-sqlite`,
+`expo-file-system/legacy`, `CameraView`, Reanimated 4 / worklets via `babel-preset-expo`,
+React Navigation 7, React 19 types, splash config in the `expo-splash-screen` plugin. The New
+Architecture is mandatory since SDK 55. Amplify is removed; sign-in POSTs `/auth/login` like the
+web. Core-flow gaps fixed in the same branch: password reset screen, onboarding skip creates a
+default budget, sign-in checks the profile's `onboardingCompleted`, Budget tab on the web's
+`/budget/current` + `POST /budget`, and an Accounts screen on `GET /accounts`.
+Gates (integrated branch): `npm ci` without `--legacy-peer-deps` exit 0; typecheck 0 errors;
+jest 374 passed / 1 failed (known `TwoFactorSetup` flake) / 2 skipped; lint 147 errors (same as
+before) / 264 warnings; `expo install --check` clean; expo-doctor 20/20; android, ios and web
+exports OK (all three failed before); `consistency-check.js` 4/4. Nothing ran on a device. Open:
+no `/auth/refresh` route, the two transaction stores, push needs a development build, iPhone
+testing needs `eas go`, `expo-file-system/legacy` and RNGH builder API migrations, store builds
+need the owner's Expo/Apple/Google accounts.
 ## 2026-11-20 - Lambda Runtime Moved to nodejs24.x (Session 170)
 **Summary:** every Lambda function and layer moves from the deprecated `nodejs20.x` to `nodejs24.x`
 (1.14.3). The runtime is now defined once, as `LAMBDA_RUNTIME` in

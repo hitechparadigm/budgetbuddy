@@ -8,8 +8,20 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform, Alert } from 'react-native';
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+/**
+ * Expo Go on Android has no remote push support (removed in SDK 53;
+ * getExpoPushTokenAsync throws there since SDK 55). Local notifications
+ * still work, so callers skip only push-token registration.
+ */
+export function isPushUnavailableInExpoGo(): boolean {
+  return (
+    Constants.executionEnvironment === ExecutionEnvironment.StoreClient &&
+    Platform.OS === 'android'
+  );
+}
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -79,6 +91,11 @@ export class NotificationService {
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
         console.log('Push notification permissions denied');
+        return { success: false };
+      }
+
+      if (isPushUnavailableInExpoGo()) {
+        console.log('Push notifications are not available in Expo Go on Android');
         return { success: false };
       }
 
@@ -312,7 +329,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
  */
 export async function getExpoPushToken(): Promise<string | null> {
   try {
-    if (!Device.isDevice) {
+    if (!Device.isDevice || isPushUnavailableInExpoGo()) {
       return null;
     }
 

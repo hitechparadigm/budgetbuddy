@@ -22,7 +22,7 @@ import {
   Alert,
   Modal,
 } from "react-native";
-import { Camera, CameraType } from "expo-camera";
+import { Camera, CameraView } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { receiptService, ProcessReceiptResponse } from "../services/receipt";
 
@@ -41,7 +41,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [remainingScans, setRemainingScans] = useState<number | null>(null);
-  const cameraRef = useRef<Camera>(null);
+  const cameraRef = useRef<CameraView>(null);
 
   useEffect(() => {
     if (visible) {
@@ -85,7 +85,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
   const pickImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ["images"],
         allowsEditing: true,
         quality: 0.8,
       });
@@ -224,9 +224,14 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
         ) : (
           // Camera view
           <View style={styles.cameraContainer}>
-            <Camera ref={cameraRef} style={styles.camera} type={CameraType.back}>
-              {/* Overlay guide */}
-              <View style={styles.cameraOverlay}>
+            <View style={styles.camera}>
+              <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+              {/* Overlay guide: CameraView takes no children, so the guide is
+                  an absolutely positioned sibling over the preview. */}
+              <View
+                style={[StyleSheet.absoluteFill, styles.cameraOverlay]}
+                pointerEvents="none"
+              >
                 <View style={styles.guideFrame}>
                   <View style={[styles.corner, styles.topLeft]} />
                   <View style={[styles.corner, styles.topRight]} />
@@ -237,7 +242,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
                   Position receipt within the frame
                 </Text>
               </View>
-            </Camera>
+            </View>
 
             {/* Camera controls */}
             <View style={styles.cameraControls}>
@@ -426,7 +431,7 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   processingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "rgba(0, 0, 0, 0.7)",
     justifyContent: "center",
     alignItems: "center",

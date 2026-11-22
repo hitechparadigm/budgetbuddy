@@ -349,7 +349,7 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 
 ### Mobile (New)
 
-10. **React Native + Expo mobile app** — substantially built, not "not yet started" (corrected stale claim, Session 168). Real implementations exist for auth, budget, transactions, offline SQLite sync, notifications, receipts, exports, 2FA-stub, currency, backup/restore, biometric unlock, and planned transactions, with a 25-file property-based test suite (256 passing / 2 skipped / 1 failing as of Session 170 — the failure, `TwoFactorSetup > Close Behavior > does not show close button on backup step`, reproduces standalone on a pristine checkout, so the earlier "257/259, flaky only in a full run" reading was wrong). `npm run typecheck` reports 0 errors. 5-tab navigation (Budget/Transactions/Goals/Summary/More) covers all screens. Remaining gap: App Store/Play Store submission prep (not started) and Detox E2E (not started). See `.kiro/specs/mobile-app/tasks.md` for the full audited task list.
+10. **React Native + Expo mobile app** — substantially built, not "not yet started" (corrected stale claim, Session 168). Real implementations exist for auth, budget, transactions, offline SQLite sync, notifications, receipts, exports, 2FA-stub, currency, backup/restore, biometric unlock, and planned transactions, with a 25-file property-based test suite (256 passing / 2 skipped / 1 failing as of Session 170 — the failure, `TwoFactorSetup > Close Behavior > does not show close button on backup step`, reproduces standalone on a pristine checkout, so the earlier "257/259, flaky only in a full run" reading was wrong). `npm run typecheck` reports 0 errors. 5-tab navigation (Budget/Transactions/Goals/Summary/More) covers all screens. Remaining gap: App Store/Play Store submission prep (not started) and Detox E2E (not started). See `.kiro/specs/mobile-app/tasks.md` for the full audited task list. **Update 1.15.0 (2026-11-22):** the app is on Expo SDK 58 (React Native 0.88.1, React 19.3.0, New Architecture on), which removes the SDK 49 blocker for store builds; android, ios and web exports succeed. jest 374 passed / 1 failed (the same `TwoFactorSetup` flake) / 2 skipped. Store builds still need the owner's Expo, Apple Developer and Google Play accounts. iPhone testing needs `eas go` or a development build (App Store Expo Go is frozen at SDK 54); push notifications need a development build. Nothing has run on a device.
 
 ### Security (New)
 
@@ -367,10 +367,17 @@ re-gates these two features by changing only their `tier` field back to `'premiu
 ### AI (New)
 16. **AI features were serving fallbacks: fixed in Session 170 (FEAT-005), deployed and verified in DEV 2026-11-01** — the hardcoded Claude 3.x model IDs had reached end of life on Bedrock, so AI budget generation, AI insights/coach and AI pattern enhancement silently returned their deterministic fallbacks while reporting success. All now use one model, `us.anthropic.claude-haiku-4-5-20251001-v1:0` (Claude Haiku 4.5). Every fallback emits `AiFallbackUsed` (namespace `BudgetBuddy/AI`), and alarm `budgetbuddy-ai-fallback-in-use` fires on it. Verified in DEV on 2026-11-01: `POST /budget/ai-generate` returned a generated budget with no fallback, `AiInvokeSucceeded` was recorded, and the alarm is OK, so REQ-NEW-04 below holds.
 
+### Mobile (1.15.0 follow-ups)
+
+27. **No `/auth/refresh` route is deployed** — the mobile app and the web both sign the user out about 5 minutes before the 1-hour token expiry.
+28. **Mobile Budget tab recording needs a connection** — it no longer goes through the offline queue. `POST /budget` replaces the month's groups with the client copy, so two devices editing one month at once can overwrite each other (same as the web).
+29. **Deprecated mobile APIs still in use** — `expo-file-system/legacy` in backup and export, and the react-native-gesture-handler 3 builder API (`Gesture.Pan()`) in `DraggableGoalList` and `SwipeableTipCard`.
+30. **`src/config/google.ts` reads `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_SECRET`** — any `EXPO_PUBLIC_` value ships in the bundle, so a client secret must never be set there; remove the read when Google sign-in moves to PKCE. Google sign-in stays disabled.
+
 ### Core Flows (New — Wave 2 follow-ups, Session 170)
 
 17. **`GET /auth/profile` returns 500 when the PROFILE row lacks `userId`/`email`** — a user created outside `POST /auth/register` (for example by an admin) and then onboarded gets a `USER#<userId>/PROFILE` row holding only the onboarding fields, because `auth-onboarding` SETs only those. The profile handler in `auth/index.js` reads `userId` and `email` from the row without a guard and throws. Wave 2 did not change either file; the DEV test user's row was backfilled by hand. Fix options: fall back to the ID-token claims in the handler, or `SET userId/email if_not_exists` in onboarding.
-18. **Mobile onboarding "Skip for now" creates no budget** — a user who skips lands in an app with no budget to read.
+18. ~~**Mobile onboarding "Skip for now" creates no budget**~~ ✅ **Fixed (1.15.0)** — "Skip for now" posts `/auth/onboarding` with defaults (device currency, the detected or fallback city's suggested categories).
 19. **"Create a rule?" prompt in `PendingTransactions.tsx` never creates a rule** (W2-R-19) — it posts `categoryName`; `POST /rules` requires `categoryId`. Plaid-coupled.
 20. **No web recategorize control for manually entered transactions** (W2-R-05) — the "always categorize this merchant" affordance has no flow to attach to. Rules can be created from Settings instead.
 21. **`budget.test.js` has 8 failing cases** that assert the pre-ADR-001 world (`custom:familyId`, `family_user_*` keys, wildcard CORS). They are entangled with the `FAMILY#` key migration.
@@ -656,16 +663,17 @@ is verified by unit tests only, with no device check.
 
 | Feature | Frontend | Status |
 |---------|----------|--------|
-| Authentication (email; Google PKCE not working, no Google IdP on the pool) | `LoginScreen`, `RegisterScreen` | ✅ Built — registration goes through `POST /auth/register` (Cognito self sign-up is disabled); sign-in stays on Amplify SRP. `RegisterScreen` collects first and last name, which the user pool requires. Email confirmation is not used: accounts are created already confirmed, so `ConfirmSignUpScreen` is unreachable |
-| Onboarding | `OnboardingScreen` + `OnboardingFlow`, `services/onboarding.ts` | ✅ Built (Wave 2) — posts the web payload to `POST /auth/onboarding` with the picked currency, 409 counts as success, failures are shown. "Skip for now" creates no budget (Known Gaps 18) |
+| Authentication (email; Google PKCE not working, no Google IdP on the pool) | `LoginScreen`, `RegisterScreen` | ✅ Built — registration goes through `POST /auth/register` (Cognito self sign-up is disabled); sign-in POSTs `/auth/login` (Amplify removed, 1.15.0) and checks `GET /auth/profile` for `onboardingCompleted`; `ForgotPasswordScreen` resets the password through `/auth/forgot-password` + `/auth/confirm-forgot-password`. `RegisterScreen` collects first and last name, which the user pool requires. Email confirmation is not used: accounts are created already confirmed, so `ConfirmSignUpScreen` is unreachable |
+| Onboarding | `OnboardingScreen` + `OnboardingFlow`, `services/onboarding.ts` | ✅ Built (Wave 2) — posts the web payload to `POST /auth/onboarding` with the picked currency, 409 counts as success, failures are shown. "Skip for now" posts defaults and creates a budget (1.15.0) |
 | Added in Wave 2: create forms | `GoalsScreen`, `BillsScreen`, `SubscriptionsScreen`, `DebtPayoffScreen` | ✅ Built — `POST /goals`, `POST /bills` (main), `POST /subscriptions`, `POST /debts` (features) |
 | Added in Wave 2: per-gateway clients | `config/api.ts`, `services/api.ts` | ✅ Built — `api`, `featuresApi`, `extendedFeaturesApi`, `budgetsApi`; shared `ID_TOKEN_KEY` |
 | Added in Wave 2: search, sync conflicts, receipts | `services/search.ts`, `components/ui/Toast.tsx`, `ReceiptConfirmation` in `TransactionsScreen` | ✅ Built — conflict toasts; receipt files against the budget's real categories |
-| Budget screen (groups, categories, FAB) | `BudgetScreen` | 🔲 Not started |
+| Budget screen (groups, categories, FAB) | `BudgetScreen` | ✅ Built (1.15.0) — `GET /budget/current?month=YYYY-MM` + `POST /budget` like the web BudgetPage; month arrows; record against a category |
+| Accounts | `AccountsScreen` | ✅ Built (1.15.0) — `GET /accounts` (main); More -> Accounts |
 | Quick transaction entry (bottom sheet) | `AddTransactionSheet` | 🔲 Not started |
 | Goals screen (Goals/Borrowed/Lent tabs) | `GoalsScreen` | ✅ Built (Wave 2) — three tabs filtered by `subType`, create form including `personName` |
-| Offline SQLite sync | `db/` + sync hooks | 🔲 Not started |
-| Push notifications | Expo Notifications | 🔲 Not started |
+| Offline SQLite sync | `services/offline.ts` | ✅ Built — async `expo-sqlite` API since 1.15.0; Budget tab recording is online-only |
+| Push notifications | Expo Notifications | ⚠ Code present; remote push needs a development build (Expo Go on Android has none since SDK 53) |
 
 ---
 

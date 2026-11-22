@@ -119,6 +119,13 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             },
           ],
         );
+      } else if (authError.code === "PasswordResetRequiredException") {
+        // Same as the web LoginForm: go straight to the code step, since the
+        // backend has already emailed a reset code.
+        navigation.navigate("ForgotPassword", {
+          email: email.trim(),
+          resetRequired: true,
+        });
       } else {
         Alert.alert("Login Failed", authError.message);
       }
@@ -172,7 +179,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
    * Navigate to forgot password screen
    */
   const handleForgotPasswordPress = (): void => {
-    navigation.navigate("ForgotPassword");
+    navigation.navigate("ForgotPassword", { email: email.trim() || undefined });
   };
 
   /**

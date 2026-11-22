@@ -97,6 +97,7 @@ jest.mock('../screens/BillsScreen', () => mockScreen('bills-screen', 'Bills Scre
 jest.mock('../screens/InsightsScreen', () => ({
   InsightsScreen: mockScreen('insights-screen', 'Insights Screen'),
 }));
+jest.mock('../screens/AccountsScreen', () => mockScreen('accounts-screen', 'Accounts Screen'));
 jest.mock('../screens/BankSyncScreen', () => ({
   BankSyncScreen: mockScreen('banksync-screen', 'BankSync Screen'),
 }));

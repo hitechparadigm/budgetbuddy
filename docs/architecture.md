@@ -18,8 +18,8 @@ State of the system:
 
 - Fully serverless on AWS: 10 CDK stacks, 36 Lambda functions, 4 REST APIs, one DynamoDB table.
 - Dev is the only deployed environment, and it holds the real users and data.
-- Web app is deployed; the mobile app is built but cannot be submitted to the App Store until the Expo
-  SDK upgrade lands (it pins Expo `~49.0.15`, React Native `0.72.10`).
+- Web app is deployed; the mobile app is built on Expo SDK 58 (`expo ~58.0.26`, React Native `0.88.1`,
+  React `19.3.0`, New Architecture) and is not yet in the stores.
 - Plaid runs in sandbox, SES in sandbox, Stripe is not configured, and every feature is free today.
 - Main gaps: storage-key drift between modules, no MFA, no edge protection (WAF, throttling), and
   long-lived CI keys. See [Known inconsistencies](#known-inconsistencies) and

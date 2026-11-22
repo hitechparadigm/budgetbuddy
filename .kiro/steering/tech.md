@@ -14,8 +14,8 @@ inclusion: always
 
 ## Frontend — Mobile
 
-- Target: React Native 0.74+ + Expo SDK 51+. Current: Expo SDK 49 (`~49.0.15`) + React Native 0.72.10; SDK upgrade in progress
-- TypeScript strict / React Navigation v6
+- Expo SDK 58 (`expo ~58.0.26`) + React Native 0.88.1 + React 19.3.0; New Architecture on (mandatory since SDK 55)
+- TypeScript strict / React Navigation v7
 - SQLite (expo-sqlite) + AsyncStorage for offline storage
 - Expo SecureStore for token storage (hardware-backed)
 - Expo Notifications for push

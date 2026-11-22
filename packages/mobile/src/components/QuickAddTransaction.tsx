@@ -21,7 +21,6 @@ import * as Haptics from "expo-haptics";
 import { Button } from "./ui";
 import { useTheme } from "../hooks/useTheme";
 import { BudgetCategory, CreateTransactionRequest } from "../types";
-import { BudgetWithSummary } from "../types/budget";
 import {
   useFrequentMerchants,
   useRecentTransactions,
@@ -29,11 +28,24 @@ import {
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
+/**
+ * The fields this modal reads from a category. Both the collaboration
+ * BudgetWithSummary and the monthly-period PeriodCategory satisfy it.
+ */
+export interface QuickAddCategory {
+  id: string;
+  name: string;
+  icon?: string;
+  type?: string;
+  category?: string;
+}
+
 interface QuickAddTransactionProps {
   visible: boolean;
   onClose: () => void;
   onSubmit: (data: CreateTransactionRequest) => void;
-  categories: BudgetWithSummary[];
+  categories: QuickAddCategory[];
+  /** Preselects this category each time the modal opens. */
   selectedCategoryId?: string;
   isLoading?: boolean;
 }
@@ -155,7 +167,8 @@ export default function QuickAddTransaction({
 
   const getCategoryIcon = (categoryId: string): string => {
     const category = categories.find((c) => c.id === categoryId);
-    // BudgetWithSummary doesn't have icon, use category name to determine icon
+    // A period category carries its own icon; BudgetWithSummary does not, so
+    // fall back to the category name.
     if (!category) return "📝";
 
     // Map category names to icons
@@ -184,19 +197,34 @@ export default function QuickAddTransaction({
       "Other Savings": "💾",
     };
 
-    return iconMap[category.category] || iconMap[category.name] || "📝";
+    return (
+      category.icon ||
+      iconMap[category.category ?? ""] ||
+      iconMap[category.name] ||
+      "📝"
+    );
   };
 
-  const expenseCategories = categories
-    .filter(
-      (c) =>
+  const topExpenseCategories = categories
+    .filter((c) => {
+      const label = (c.category ?? "").toLowerCase();
+      return (
         c.type === "expense" ||
-        c.category.toLowerCase().includes("expense") ||
-        c.category.toLowerCase().includes("food") ||
-        c.category.toLowerCase().includes("transport") ||
-        c.category.toLowerCase().includes("shopping")
-    )
+        label.includes("expense") ||
+        label.includes("food") ||
+        label.includes("transport") ||
+        label.includes("shopping")
+      );
+    })
     .slice(0, 6);
+
+  // Keep a preselected category visible even when it is not one of the top
+  // expense categories (for example an income or savings category).
+  const preselected = categories.find((c) => c.id === formData.categoryId);
+  const expenseCategories =
+    preselected && !topExpenseCategories.some((c) => c.id === preselected.id)
+      ? [preselected, ...topExpenseCategories]
+      : topExpenseCategories;
 
   const dynamicStyles = StyleSheet.create({
     overlay: {
@@ -576,7 +604,7 @@ export default function QuickAddTransaction({
                           dynamicStyles.categoryTextSelected,
                       ]}
                     >
-                      {category.category}
+                      {category.category ?? category.name}
                     </Text>
                   </Pressable>
                 ))}

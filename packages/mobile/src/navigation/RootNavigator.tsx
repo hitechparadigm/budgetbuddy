@@ -22,6 +22,7 @@ import TipsScreen from '@/screens/TipsScreen';
 import SyncSettingsScreen from '@/screens/SyncSettingsScreen';
 import OfflineSettingsScreen from '@/screens/OfflineSettingsScreen';
 import PlannedTransactionsScreen from '@/screens/PlannedTransactionsScreen';
+import AccountsScreen from '@/screens/AccountsScreen';
 import BiometricSetupScreen from '@/screens/auth/BiometricSetupScreen';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -36,6 +37,7 @@ export type MoreStackParamList = {
   MoreMenu: undefined;
   Bills: undefined;
   Insights: undefined;
+  Accounts: undefined;
   BankSync: undefined;
   CreditScore: undefined;
   DebtPayoff: undefined;
@@ -96,7 +98,8 @@ function MoreStackNavigator() {
       />
       <MoreStack.Screen name="Bills" component={BillsScreen} options={{ title: 'Bills' }} />
       <MoreStack.Screen name="Insights" component={InsightsScreen} options={{ title: 'Insights' }} />
-      <MoreStack.Screen name="BankSync" component={BankSyncScreen} options={{ title: 'Accounts' }} />
+      <MoreStack.Screen name="Accounts" component={AccountsScreen} options={{ title: 'Accounts' }} />
+      <MoreStack.Screen name="BankSync" component={BankSyncScreen} options={{ title: 'Bank Sync' }} />
       <MoreStack.Screen name="CreditScore" component={CreditScoreScreen} options={{ title: 'Credit Score' }} />
       <MoreStack.Screen name="DebtPayoff" component={DebtPayoffScreen} options={{ title: 'Debt Payoff' }} />
       <MoreStack.Screen name="Investments" component={InvestmentsScreen} options={{ title: 'Investments' }} />

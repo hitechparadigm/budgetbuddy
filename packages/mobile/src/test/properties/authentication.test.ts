@@ -21,25 +21,6 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
 }));
 
-// Mock AWS Amplify Auth
-jest.mock('aws-amplify', () => ({
-  Auth: {
-    signIn: jest.fn(),
-    signUp: jest.fn(),
-    confirmSignUp: jest.fn(),
-    signOut: jest.fn(),
-    currentAuthenticatedUser: jest.fn(),
-    currentUserInfo: jest.fn(),
-    currentSession: jest.fn(),
-    resendSignUp: jest.fn(),
-    forgotPassword: jest.fn(),
-    forgotPasswordSubmit: jest.fn(),
-  },
-  Amplify: {
-    configure: jest.fn(),
-  },
-}));
-
 // Mock platform detection for testing
 const mockPlatform = (platform: 'ios' | 'android' | 'web') => {
   Object.defineProperty(Platform, 'OS', {
@@ -77,7 +58,7 @@ describe('Authentication System Properties', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Setup default localStorage mock for web
-    Object.defineProperty(global, 'localStorage', {
+    Object.defineProperty(globalThis, 'localStorage', {
       value: mockLocalStorage(),
       configurable: true,
     });

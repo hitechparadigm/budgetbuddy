@@ -332,7 +332,7 @@ describe('Notification System Properties', () => {
             // Mock current time
             const mockDate = new Date();
             mockDate.setHours(currentHour, 0, 0, 0);
-            jest.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
+            jest.spyOn(globalThis, 'Date').mockImplementation(() => mockDate as any);
 
             // Determine if current time is in quiet hours (computed before the
             // mock below so it can be used as the mocked return value)
@@ -566,14 +566,14 @@ describe('Notification System Properties', () => {
             const originalDate = Date;
             const mockDate = new Date();
             mockDate.setHours(quietStart, 30, 0, 0); // Set to 30 minutes after quiet start
-            global.Date = jest.fn(() => mockDate) as any;
-            global.Date.now = jest.fn(() => mockDate.getTime());
+            globalThis.Date = jest.fn(() => mockDate) as any;
+            globalThis.Date.now = jest.fn(() => mockDate.getTime());
 
             // Send daily expense reminder
             await notificationService.sendDailyExpenseReminder();
 
             // Restore original Date
-            global.Date = originalDate;
+            globalThis.Date = originalDate;
 
             // Only meaningful when quiet hours span a real window - use
             // fc.pre so degenerate iterations are discarded and re-drawn by

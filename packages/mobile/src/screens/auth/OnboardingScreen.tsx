@@ -10,9 +10,12 @@ import {
   OnboardingSuggestions,
   CategorySuggestion,
 } from "@budget-buddy/shared/src/services/categorySuggestionService";
+import { GeolocationResult } from "@budget-buddy/shared/src/services/geolocationService";
 import {
+  buildSkipOnboardingInput,
   completeOnboarding,
   currentMonthString,
+  getDeviceCurrencyCode,
 } from "../../services/onboarding";
 
 interface OnboardingScreenProps {
@@ -82,15 +85,36 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
   };
 
   /**
-   * KNOWN GAP (pre-existing, tracked follow-up): skipping does not call
-   * POST /auth/onboarding, so the user lands in the app with no budget and
-   * every budget-scoped screen fails to resolve one. Fixing it means deciding
-   * what a skipped setup should create - a minimal empty budget, or a blocking
-   * prompt on the first budget screen - which is a product decision. Left
-   * unchanged here rather than altered silently.
+   * "Skip for now" still creates a budget, so the user never lands in an app
+   * with nothing to show: a personal budget for one person, with the device
+   * currency (USD if unsupported), the detected or fallback city and the
+   * flow's default categories (see buildSkipOnboardingInput). A 409 means the
+   * budget already exists and counts as done; any other failure keeps the
+   * user here with the error.
    */
-  const handleSkip = () => {
-    onFinished();
+  const handleSkip = async (context: {
+    location: GeolocationResult | null;
+  }) => {
+    setSaving(true);
+    setError(null);
+    try {
+      await completeOnboarding(
+        buildSkipOnboardingInput({
+          location: context.location,
+          currencyCode: getDeviceCurrencyCode(),
+        })
+      );
+      onFinished();
+    } catch (err) {
+      console.error("Error skipping onboarding:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not finish setting up your budget. Please try again."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (

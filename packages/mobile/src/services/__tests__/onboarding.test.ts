@@ -7,7 +7,13 @@
  * is success, not failure.
  */
 
-import { completeOnboarding, currentMonthString } from '../onboarding';
+import { getLocales } from 'expo-localization';
+import {
+  buildSkipOnboardingInput,
+  completeOnboarding,
+  currentMonthString,
+  getDeviceCurrencyCode,
+} from '../onboarding';
 import { api } from '../api';
 
 const postMock = api.post as jest.Mock;
@@ -126,5 +132,76 @@ describe('completeOnboarding', () => {
 
     const [, body] = postMock.mock.calls[0];
     expect(body.selectedCategories).toEqual([]);
+  });
+});
+
+describe('getDeviceCurrencyCode', () => {
+  it('returns the first locale currency', () => {
+    (getLocales as jest.Mock).mockReturnValueOnce([{ languageTag: 'en-CA', currencyCode: 'CAD' }]);
+    expect(getDeviceCurrencyCode()).toBe('CAD');
+  });
+
+  it('returns null when the OS reports no currency', () => {
+    (getLocales as jest.Mock).mockReturnValueOnce([{ languageTag: 'en', currencyCode: null }]);
+    expect(getDeviceCurrencyCode()).toBeNull();
+    (getLocales as jest.Mock).mockReturnValueOnce([]);
+    expect(getDeviceCurrencyCode()).toBeNull();
+  });
+});
+
+describe('buildSkipOnboardingInput', () => {
+  const vancouver = {
+    city: 'Vancouver',
+    country: 'Canada',
+    countryCode: 'ca',
+    latitude: 49.28,
+    longitude: -123.12,
+    timezone: '',
+    success: true,
+  };
+
+  it('builds a one-person personal budget for the detected city', () => {
+    const input = buildSkipOnboardingInput({ location: vancouver, currencyCode: 'CAD' });
+    expect(input).toMatchObject({
+      city: 'Vancouver',
+      country: 'Canada',
+      familySize: 1,
+      budgetType: 'personal',
+      currency: 'CAD',
+    });
+    expect(input.currentMonth).toMatch(/^\d{4}-\d{2}$/);
+    expect(input.selectedCategories.length).toBeGreaterThanOrEqual(1);
+    expect(input.selectedCategories.length).toBeLessThanOrEqual(8);
+    input.selectedCategories.forEach((c) => {
+      expect(Object.keys(c).sort()).toEqual(['adjustedAmount', 'icon', 'name']);
+    });
+  });
+
+  it('falls back to the first city when no location was detected', () => {
+    const input = buildSkipOnboardingInput({ location: null, currencyCode: 'USD' });
+    expect(input.city).toBe('Toronto');
+    expect(input.selectedCategories.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('falls back when detection failed or the city is unknown', () => {
+    const failed = buildSkipOnboardingInput({
+      location: { ...vancouver, success: false },
+      currencyCode: 'USD',
+    });
+    expect(failed.city).toBe('Toronto');
+    const unknown = buildSkipOnboardingInput({
+      location: { ...vancouver, city: 'Nowhere Town', countryCode: 'zz' },
+      currencyCode: 'USD',
+    });
+    expect(unknown.city).toBe('Toronto');
+  });
+
+  it('uses USD when the currency is missing or unsupported', () => {
+    expect(buildSkipOnboardingInput({ location: null, currencyCode: null }).currency).toBe('USD');
+    expect(buildSkipOnboardingInput({ location: null, currencyCode: 'XXX' }).currency).toBe('USD');
+  });
+
+  it('accepts a supported currency in any case', () => {
+    expect(buildSkipOnboardingInput({ location: null, currencyCode: 'eur' }).currency).toBe('EUR');
   });
 });
